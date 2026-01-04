@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -34,16 +35,16 @@ import SitterDashboardScreen from './pages/SitterDashboardScreen';
 import ChatScreen from './pages/ChatScreen';
 
 import { checkIfBabyExists } from './services/babyService';
-import { SleepTimerProvider } from './context/SleepTimerContext';
-import { FoodTimerProvider } from './context/FoodTimerContext';
+import { SleepTimerProvider, useSleepTimer } from './context/SleepTimerContext';
+import { FoodTimerProvider, useFoodTimer } from './context/FoodTimerContext';
+import { saveEventToFirebase } from './services/firebaseService';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { ActiveChildProvider, useActiveChild } from './context/ActiveChildContext';
 import { QuickActionsProvider } from './context/QuickActionsContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ScrollTrackingProvider } from './context/ScrollTrackingContext';
 import { ToastProvider } from './context/ToastContext';
-import { DynamicIslandProvider } from './context/DynamicIslandContext';
-import DynamicIsland from './components/DynamicIsland';
+// Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 
 
@@ -56,12 +57,7 @@ const BabysitterStack = createNativeStackNavigator();
 
 // --- רכיבים עזר ---
 
-const LoaderScreen = () => (
-  <View style={styles.loaderContainer}>
-    <ActivityIndicator size="large" color="#4f46e5" />
-    <Text style={styles.loaderText}>טוען נתונים...</Text>
-  </View>
-);
+// Removed LoaderScreen - using native splash instead
 
 const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => (
   <View style={styles.loaderContainer}>
@@ -210,13 +206,122 @@ function BabysitterStackScreen() {
   );
 }
 
-// --- האפליקציה הראשית ---
+// Keep splash screen visible while loading
+SplashScreen.preventAutoHideAsync();
+
+// Component to handle URL Scheme deep links from Live Activity
+function LiveActivityURLHandler() {
+  const foodTimer = useFoodTimer();
+  const sleepTimer = useSleepTimer();
+  const { activeChild } = useActiveChild();
+
+  useEffect(() => {
+    const handleURL = async (event: { url: string }) => {
+      try {
+        const url = new URL(event.url);
+        const path = url.pathname || url.hostname;
+
+        if (path === 'pause-timer' || url.href.includes('pause-timer')) {
+          // Pause timer based on current activity
+          if (foodTimer.pumpingIsRunning && !foodTimer.pumpingIsPaused) {
+            await foodTimer.pausePumping();
+          } else if (foodTimer.breastIsRunning && !foodTimer.breastIsPaused) {
+            await foodTimer.pauseBreast();
+          } else if (sleepTimer.isRunning && !sleepTimer.isPaused) {
+            await sleepTimer.pause();
+          }
+        } else if (path === 'resume-timer' || url.href.includes('resume-timer')) {
+          // Resume timer
+          if (foodTimer.pumpingIsRunning && foodTimer.pumpingIsPaused) {
+            await foodTimer.resumePumping();
+          } else if (foodTimer.breastIsRunning && foodTimer.breastIsPaused) {
+            await foodTimer.resumeBreast();
+          } else if (sleepTimer.isRunning && sleepTimer.isPaused) {
+            await sleepTimer.resume();
+          }
+        } else if (path === 'save-timer' || url.href.includes('save-timer')) {
+          // Save timer data
+          const type = url.searchParams.get('type') || '';
+          const elapsedSeconds = parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
+          const childName = url.searchParams.get('childName') || '';
+          const side = url.searchParams.get('side') || '';
+
+          if (!auth.currentUser || !activeChild?.childId) return;
+
+          try {
+            const mins = Math.floor(elapsedSeconds / 60);
+            const secs = elapsedSeconds % 60;
+            const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            let data: any = {
+              type: type.includes('הנקה') || type.includes('breast') ? 'food' : type.includes('שינה') || type.includes('sleep') ? 'sleep' : 'food',
+              timestamp: new Date()
+            };
+
+            if (data.type === 'food') {
+              if (type.includes('הנקה') || type.includes('breast')) {
+                data.subType = 'breast';
+                data.note = side ? `${side}: ${timeStr}` : `זמן: ${timeStr}`;
+              } else if (type.includes('שאיבה') || type.includes('pump')) {
+                data.subType = 'pumping';
+                data.note = `זמן: ${timeStr}`;
+              }
+            } else if (data.type === 'sleep') {
+              data.duration = elapsedSeconds;
+            }
+
+            await saveEventToFirebase(auth.currentUser.uid, activeChild.childId, data);
+
+            // Stop Live Activity
+            if (Platform.OS === 'ios') {
+              const { liveActivityService } = await import('./services/liveActivityService');
+              if (type.includes('הנקה') || type.includes('breast')) {
+                await liveActivityService.stopBreastfeedingTimer();
+              } else if (type.includes('שאיבה') || type.includes('pump')) {
+                await liveActivityService.stopPumpingTimer();
+              } else if (type.includes('שינה') || type.includes('sleep')) {
+                await liveActivityService.stopSleepTimer();
+              }
+            }
+          } catch (error) {
+            if (__DEV__) console.error('Error saving timer from Live Activity:', error);
+          }
+        }
+      } catch (error) {
+        if (__DEV__) console.error('Error handling URL:', error);
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleURL);
+
+    // Handle initial URL if app was opened via deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleURL({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [foodTimer, sleepTimer, activeChild]);
+
+  return null;
+}
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [hasBabyProfile, setHasBabyProfile] = useState<boolean | null>(null);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const [childrenReady, setChildrenReady] = useState(false);
+
+  // Hide splash when app is FULLY ready (auth + children loaded)
+  const onLayoutRootView = useCallback(async () => {
+    if (!isAppLoading && childrenReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [isAppLoading, childrenReady]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -273,7 +378,14 @@ export default function App() {
     } catch (e) { if (__DEV__) console.log('Authentication error:', e); }
   };
 
-  if (isAppLoading) return <LoaderScreen />;
+  // Keep splash visible while loading - return null to not render anything
+  if (isAppLoading) {
+    // Splash screen is still visible
+    return null;
+  }
+
+  // Don't hide splash yet - we'll hide it when children are loaded via onReady callback
+
   if (isLocked) return <BiometricLockScreen onUnlock={authenticateUser} />;
 
   if (!user) {
@@ -309,13 +421,15 @@ export default function App() {
                 <LanguageProvider>
                   <ThemeProvider>
                     <ToastProvider>
-                      <DynamicIslandProvider>
-                        <ActiveChildProvider>
-                          <SafeAreaProvider>
-                            <DynamicIsland />
-                            <NavigationContainer
+                      <ActiveChildProvider onReady={() => {
+                        setChildrenReady(true);
+                        SplashScreen.hideAsync();
+                      }}>
+                        <LiveActivityURLHandler />
+                        <SafeAreaProvider>
+                          <NavigationContainer
                             linking={{
-                              prefixes: ['calmparent://', 'https://calmparent.app'],
+                              prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
                               config: {
                                 screens: {
                                   בית: 'home',
@@ -347,10 +461,9 @@ export default function App() {
                             }}
                           >
                             <MainAppNavigator />
-                            </NavigationContainer>
-                          </SafeAreaProvider>
-                        </ActiveChildProvider>
-                      </DynamicIslandProvider>
+                          </NavigationContainer>
+                        </SafeAreaProvider>
+                      </ActiveChildProvider>
                     </ToastProvider>
                   </ThemeProvider>
                 </LanguageProvider>

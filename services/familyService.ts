@@ -729,6 +729,98 @@ export const revokeGuestAccess = async (guestUserId: string, familyId: string): 
     }
 };
 
+/**
+ * Guest invite interface
+ */
+export interface GuestInvite {
+    code: string;
+    familyId: string;
+    childId: string;
+    createdBy: string;
+    createdAt: Date;
+    expiresAt: Date;
+    used: boolean;
+    usedBy?: string;
+    usedAt?: Date;
+}
+
+/**
+ * Get all active (non-expired, non-used) guest invites created by current user
+ */
+export const getActiveGuestInvites = async (familyId: string): Promise<GuestInvite[]> => {
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+
+    try {
+        // Query invites created by current user for this family
+        const q = query(
+            collection(db, 'invites'),
+            where('familyId', '==', familyId),
+            where('createdBy', '==', userId),
+            where('used', '==', false)
+        );
+
+        const snapshot = await getDocs(q);
+        const now = new Date();
+
+        const invites: GuestInvite[] = [];
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const expiresAt = data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
+
+            // Only include non-expired invites
+            if (expiresAt > now) {
+                invites.push({
+                    code: data.code,
+                    familyId: data.familyId,
+                    childId: data.childId,
+                    createdBy: data.createdBy,
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+                    expiresAt,
+                    used: data.used,
+                    usedBy: data.usedBy,
+                    usedAt: data.usedAt?.toDate ? data.usedAt.toDate() : undefined,
+                });
+            }
+        });
+
+        return invites;
+    } catch (error) {
+        if (__DEV__) console.log('Error getting active guest invites:', error);
+        return [];
+    }
+};
+
+/**
+ * Cancel/delete a guest invite
+ */
+export const cancelGuestInvite = async (inviteCode: string): Promise<boolean> => {
+    const userId = getCurrentUserId();
+    if (!userId) return false;
+
+    try {
+        // Verify this invite belongs to current user
+        const inviteDoc = await getDoc(doc(db, 'invites', inviteCode));
+        if (!inviteDoc.exists()) return false;
+
+        const inviteData = inviteDoc.data();
+        if (inviteData.createdBy !== userId) {
+            if (__DEV__) console.log('Not authorized to cancel this invite');
+            return false;
+        }
+
+        // Delete the invite document (deleteDoc is already imported at top)
+        const { deleteDoc: deleteDocument } = require('firebase/firestore');
+        await deleteDocument(doc(db, 'invites', inviteCode));
+
+        return true;
+    } catch (error) {
+        if (__DEV__) console.log('Error canceling guest invite:', error);
+        return false;
+    }
+};
+
+
 export default {
     createFamily,
     getMyFamily,
@@ -745,4 +837,6 @@ export default {
     createGuestInvite,
     joinAsGuest,
     revokeGuestAccess,
+    getActiveGuestInvites,
+    cancelGuestInvite,
 };

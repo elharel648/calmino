@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Modal,
     View,
@@ -12,18 +12,18 @@ import {
     Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X, UserPlus, Copy, Share2, Clock, CheckCircle, Check, Users, Baby } from 'lucide-react-native';
+import { X, UserPlus, Copy, Share2, Clock, CheckCircle, Check, Users, Baby, Trash2 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
-import { createGuestInvite } from '../../services/familyService';
+import { createGuestInvite, createFamily, getActiveGuestInvites, cancelGuestInvite, GuestInvite } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 
 interface Props {
     visible: boolean;
     onClose: () => void;
-    familyId: string;
+    familyId?: string;
 }
 
 type Step = 'select' | 'code';
@@ -39,6 +39,11 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
     const [inviteCode, setInviteCode] = useState<string | null>(null);
     const [expiresAt, setExpiresAt] = useState<Date | null>(null);
     const [copied, setCopied] = useState(false);
+
+    // Active invites state
+    const [activeInvites, setActiveInvites] = useState<GuestInvite[]>([]);
+    const [loadingInvites, setLoadingInvites] = useState(false);
+    const [cancelingCode, setCancelingCode] = useState<string | null>(null);
 
     const toggleChild = (childId: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -65,6 +70,52 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
         }
     };
 
+    // Load active invites
+    const loadActiveInvites = useCallback(async () => {
+        if (!familyId) return;
+        setLoadingInvites(true);
+        try {
+            const invites = await getActiveGuestInvites(familyId);
+            setActiveInvites(invites);
+        } catch (error) {
+            if (__DEV__) console.log('Error loading active invites:', error);
+        } finally {
+            setLoadingInvites(false);
+        }
+    }, [familyId]);
+
+    // Handle cancel invite
+    const handleCancelInvite = async (code: string) => {
+        Alert.alert(
+            'ביטול הזמנה',
+            'האם לבטל את ההזמנה? האורח לא יוכל להשתמש בקוד זה.',
+            [
+                { text: 'ביטול', style: 'cancel' },
+                {
+                    text: 'כן, בטל',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setCancelingCode(code);
+                        try {
+                            const success = await cancelGuestInvite(code);
+                            if (success) {
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                setActiveInvites(prev => prev.filter(inv => inv.code !== code));
+                            } else {
+                                Alert.alert('שגיאה', 'לא הצלחנו לבטל את ההזמנה');
+                            }
+                        } catch (error) {
+                            if (__DEV__) console.log('Cancel invite error:', error);
+                            Alert.alert('שגיאה', 'משהו השתבש');
+                        } finally {
+                            setCancelingCode(null);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const handleCreateInvite = async () => {
         if (selectedChildren.length === 0) {
             Alert.alert('שגיאה', 'יש לבחור לפחות ילד אחד');
@@ -73,18 +124,38 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
 
         setIsLoading(true);
         try {
+            let targetFamilyId = familyId;
+
+            // Auto-create family if none exists
+            if (!targetFamilyId) {
+                const firstChild = allChildren.find(c => selectedChildren.includes(c.childId)) || allChildren[0];
+                if (!firstChild) {
+                    Alert.alert('שגיאה', 'לא נמצא ילד');
+                    return;
+                }
+                const newFamily = await createFamily(firstChild.childId, firstChild.childName);
+                if (!newFamily) {
+                    Alert.alert('שגיאה', 'לא הצלחנו ליצור משפחה');
+                    return;
+                }
+                targetFamilyId = newFamily.id;
+            }
+
             // For now, we'll use the first selected child as the primary
             // In the future, the service can be updated to support multiple children
-            const result = await createGuestInvite(selectedChildren[0], familyId, 24);
+            const result = await createGuestInvite(selectedChildren[0], targetFamilyId, 24);
             if (result) {
                 setInviteCode(result.code);
                 setExpiresAt(result.expiresAt);
                 setStep('code');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                // Refresh active invites after creating new one
+                loadActiveInvites();
             } else {
                 Alert.alert('שגיאה', 'לא הצלחנו ליצור קוד הזמנה');
             }
         } catch (error) {
+            if (__DEV__) console.log('Guest invite error:', error);
             Alert.alert('שגיאה', 'משהו השתבש');
         } finally {
             setIsLoading(false);
@@ -116,8 +187,19 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
 
     const formatExpiry = (date: Date) => {
         const hours = Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60));
+        if (hours < 1) {
+            const minutes = Math.round((date.getTime() - Date.now()) / (1000 * 60));
+            return `${minutes} דקות`;
+        }
         return `${hours} שעות`;
     };
+
+    // Load active invites when modal opens
+    useEffect(() => {
+        if (visible && familyId) {
+            loadActiveInvites();
+        }
+    }, [visible, familyId, loadActiveInvites]);
 
     // Reset when modal closes
     useEffect(() => {
@@ -255,6 +337,67 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                                 האורח יוכל לצפות במעקב בלבד.{'\n'}
                                 ללא גישה לדוחות ובייביסיטר.
                             </Text>
+
+                            {/* Active Invites Section */}
+                            {activeInvites.length > 0 && (
+                                <View style={styles.activeInvitesSection}>
+                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                                        הזמנות פעילות ({activeInvites.length})
+                                    </Text>
+                                    {activeInvites.map((invite) => {
+                                        const childName = allChildren.find(c => c.childId === invite.childId)?.childName || 'ילד';
+                                        return (
+                                            <View
+                                                key={invite.code}
+                                                style={[styles.activeInviteCard, { backgroundColor: theme.background }]}
+                                            >
+                                                <View style={styles.inviteCardContent}>
+                                                    <View style={styles.inviteCodeRow}>
+                                                        <Text style={[styles.inviteCodeLabel, { color: theme.textSecondary }]}>
+                                                            קוד:
+                                                        </Text>
+                                                        <Text style={[styles.inviteCodeValue, { color: theme.textPrimary }]}>
+                                                            {invite.code}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.inviteInfoRow}>
+                                                        <View style={styles.inviteChildBadge}>
+                                                            <Baby size={12} color="#6366F1" />
+                                                            <Text style={styles.inviteChildName}>{childName}</Text>
+                                                        </View>
+                                                        <View style={styles.inviteExpiryBadge}>
+                                                            <Clock size={12} color="#F59E0B" />
+                                                            <Text style={styles.inviteExpiryText}>
+                                                                {formatExpiry(invite.expiresAt)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                                <TouchableOpacity
+                                                    style={styles.cancelInviteBtn}
+                                                    onPress={() => handleCancelInvite(invite.code)}
+                                                    disabled={cancelingCode === invite.code}
+                                                >
+                                                    {cancelingCode === invite.code ? (
+                                                        <ActivityIndicator size="small" color="#EF4444" />
+                                                    ) : (
+                                                        <Trash2 size={18} color="#EF4444" />
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
+                                        );
+                                    })}
+                                </View>
+                            )}
+
+                            {loadingInvites && (
+                                <View style={styles.loadingInvites}>
+                                    <ActivityIndicator size="small" color={theme.textSecondary} />
+                                    <Text style={[styles.loadingInvitesText, { color: theme.textSecondary }]}>
+                                        טוען הזמנות...
+                                    </Text>
+                                </View>
+                            )}
 
                             {/* Create Button */}
                             <TouchableOpacity
@@ -509,6 +652,91 @@ const styles = StyleSheet.create({
     actionText: {
         fontSize: 14,
         fontWeight: '600',
+    },
+    // Active invites section
+    activeInvitesSection: {
+        marginBottom: 16,
+        marginTop: 8,
+    },
+    sectionTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 10,
+        textAlign: 'right',
+    },
+    activeInviteCard: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    inviteCardContent: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
+    inviteCodeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 6,
+    },
+    inviteCodeLabel: {
+        fontSize: 12,
+    },
+    inviteCodeValue: {
+        fontSize: 16,
+        fontWeight: '700',
+        letterSpacing: 2,
+    },
+    inviteInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    inviteChildBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#EEF2FF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    inviteChildName: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#6366F1',
+    },
+    inviteExpiryBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#FFF7ED',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    inviteExpiryText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#F59E0B',
+    },
+    cancelInviteBtn: {
+        padding: 10,
+        marginLeft: 8,
+    },
+    loadingInvites: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 12,
+    },
+    loadingInvitesText: {
+        fontSize: 13,
     },
 });
 

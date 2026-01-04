@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { notificationService, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/notificationService';
+import { notificationStorageService } from '../services/notificationStorageService';
+import { auth } from '../services/firebaseConfig';
 
 interface UseNotificationsReturn {
     settings: NotificationSettings;
@@ -41,12 +43,18 @@ export const useNotifications = (): UseNotificationsReturn => {
         init();
 
         // Listeners for when app is open
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+        notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
             if (__DEV__) console.log('🔔 Notification received:', notification);
+            // Note: Saving to Firebase is handled in setNotificationHandler (works even when app is closed)
         });
 
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
             if (__DEV__) console.log('🔔 Notification tapped:', response);
+            
+            // Mark as read when tapped
+            // Note: We can't mark by notification ID since we don't have it here
+            // The user will mark it as read when they see it in the notifications screen
+            
             // Handle navigation based on notification type
             const type = response.notification.request.content.data?.type;
             // You can add navigation logic here

@@ -1,6 +1,16 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, TouchableWithoutFeedback } from 'react-native';
-import { Sun, Droplet, Check, X, Pill } from 'lucide-react-native';
+import { Sun, Droplet, Check, X, Pill, Sparkles } from 'lucide-react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withSequence,
+    withTiming,
+    withDelay,
+    runOnJS,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { MedicationsState } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
@@ -13,71 +23,232 @@ interface SupplementsModalProps {
     onRefresh?: () => void;
 }
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
 const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: SupplementsModalProps) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
+
+    // Animation values - MUST be before any early return
+    const vitaminDScale = useSharedValue(1);
+    const ironScale = useSharedValue(1);
+    const checkVitaminD = useSharedValue(meds.vitaminD ? 1 : 0);
+    const checkIron = useSharedValue(meds.iron ? 1 : 0);
+    const celebrationScale = useSharedValue(0);
+    const celebrationOpacity = useSharedValue(0);
+
+    // Animated styles - MUST be before any early return
+    const vitaminDStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: vitaminDScale.value }],
+    }));
+
+    const ironStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: ironScale.value }],
+    }));
+
+    const celebrationStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: celebrationScale.value }],
+        opacity: celebrationOpacity.value,
+    }));
+
+    // Sync animation state with meds prop
+    useEffect(() => {
+        checkVitaminD.value = withSpring(meds.vitaminD ? 1 : 0, { damping: 12 });
+        checkIron.value = withSpring(meds.iron ? 1 : 0, { damping: 12 });
+
+        // Celebration when both are done
+        if (meds.vitaminD && meds.iron) {
+            celebrationScale.value = withSequence(
+                withSpring(1.2, { damping: 8, stiffness: 200 }),
+                withSpring(1, { damping: 10 })
+            );
+            celebrationOpacity.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withDelay(1500, withTiming(0, { duration: 300 }))
+            );
+        }
+    }, [meds.vitaminD, meds.iron]);
+
+    // Early return AFTER all hooks
     if (!visible) return null;
 
     const handleToggle = (type: 'vitaminD' | 'iron') => {
         const isCurrentlyTaken = meds[type];
-        if (Platform.OS !== 'web') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        // Bounce animation
+        if (type === 'vitaminD') {
+            vitaminDScale.value = withSequence(
+                withSpring(0.9, { damping: 5, stiffness: 400 }),
+                withSpring(1.1, { damping: 5, stiffness: 400 }),
+                withSpring(1, { damping: 10, stiffness: 300 })
+            );
+        } else {
+            ironScale.value = withSequence(
+                withSpring(0.9, { damping: 5, stiffness: 400 }),
+                withSpring(1.1, { damping: 5, stiffness: 400 }),
+                withSpring(1, { damping: 10, stiffness: 300 })
+            );
         }
+
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(
+                isCurrentlyTaken
+                    ? Haptics.ImpactFeedbackStyle.Light
+                    : Haptics.ImpactFeedbackStyle.Medium
+            );
+        }
+
         onToggle(type);
+
         if (!isCurrentlyTaken && onRefresh) {
             setTimeout(onRefresh, 300);
         }
     };
+
+    const allDone = meds.vitaminD && meds.iron;
 
     return (
         <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
             <TouchableWithoutFeedback onPress={onClose}>
                 <View style={styles.overlay}>
                     <TouchableWithoutFeedback>
-                        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <View style={[
+                            styles.modalContent,
+                            { backgroundColor: isDarkMode ? '#1C1C1E' : theme.card }
+                        ]}>
                             {/* Header */}
                             <View style={styles.header}>
-                                <View style={styles.iconCircle}>
+                                <View style={[
+                                    styles.iconCircle,
+                                    { backgroundColor: isDarkMode ? 'rgba(14,165,233,0.15)' : '#E0F2FE' }
+                                ]}>
                                     <Pill size={20} color="#0EA5E9" strokeWidth={2} />
                                 </View>
-                                <Text style={[styles.title, { color: theme.textPrimary }]}>תוספים יומיים</Text>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>
+                                    תוספים יומיים
+                                </Text>
                                 <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                                     <X size={18} color={theme.textSecondary} strokeWidth={2} />
                                 </TouchableOpacity>
                             </View>
 
+                            {/* Celebration badge */}
+                            {allDone && (
+                                <Animated.View style={[styles.celebrationBadge, celebrationStyle]}>
+                                    <Sparkles size={16} color="#fff" strokeWidth={2} />
+                                    <Text style={styles.celebrationText}>כל הכבוד! 🎉</Text>
+                                </Animated.View>
+                            )}
+
                             {/* Supplements */}
                             <View style={styles.buttonsRow}>
                                 {/* Vitamin D */}
-                                <TouchableOpacity
-                                    style={[styles.medBtn, meds.vitaminD && styles.medBtnDone]}
-                                    onPress={() => handleToggle('vitaminD')}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={[styles.medIcon, meds.vitaminD && styles.medIconDone]}>
-                                        {meds.vitaminD ? (
-                                            <Check size={24} color="#fff" strokeWidth={2.5} />
-                                        ) : (
-                                            <Sun size={24} color="#F59E0B" strokeWidth={2} />
-                                        )}
-                                    </View>
-                                    <Text style={[styles.medText, meds.vitaminD && styles.medTextDone]}>ויטמין D</Text>
-                                </TouchableOpacity>
+                                <Animated.View style={vitaminDStyle}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.medBtn,
+                                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB' },
+                                            meds.vitaminD && styles.medBtnDone
+                                        ]}
+                                        onPress={() => handleToggle('vitaminD')}
+                                        activeOpacity={0.85}
+                                    >
+                                        <View style={styles.medIconWrapper}>
+                                            {meds.vitaminD ? (
+                                                <LinearGradient
+                                                    colors={['#22C55E', '#16A34A']}
+                                                    style={styles.medIconGradient}
+                                                >
+                                                    <Check size={24} color="#fff" strokeWidth={2.5} />
+                                                </LinearGradient>
+                                            ) : (
+                                                <View style={[
+                                                    styles.medIcon,
+                                                    { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FEF3C7' }
+                                                ]}>
+                                                    <Sun size={24} color="#F59E0B" strokeWidth={2} />
+                                                </View>
+                                            )}
+                                        </View>
+                                        <Text style={[
+                                            styles.medText,
+                                            { color: theme.textPrimary },
+                                            meds.vitaminD && styles.medTextDone
+                                        ]}>
+                                            ויטמין D
+                                        </Text>
+                                        <Text style={[
+                                            styles.medStatus,
+                                            { color: meds.vitaminD ? '#16A34A' : theme.textSecondary }
+                                        ]}>
+                                            {meds.vitaminD ? 'ניתן ✓' : 'לא ניתן'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </Animated.View>
 
                                 {/* Iron */}
-                                <TouchableOpacity
-                                    style={[styles.medBtn, meds.iron && styles.medBtnDone]}
-                                    onPress={() => handleToggle('iron')}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={[styles.medIcon, meds.iron && styles.medIconDone]}>
-                                        {meds.iron ? (
-                                            <Check size={24} color="#fff" strokeWidth={2.5} />
-                                        ) : (
-                                            <Droplet size={24} color="#EF4444" strokeWidth={2} />
-                                        )}
-                                    </View>
-                                    <Text style={[styles.medText, meds.iron && styles.medTextDone]}>ברזל</Text>
-                                </TouchableOpacity>
+                                <Animated.View style={ironStyle}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.medBtn,
+                                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB' },
+                                            meds.iron && styles.medBtnDone
+                                        ]}
+                                        onPress={() => handleToggle('iron')}
+                                        activeOpacity={0.85}
+                                    >
+                                        <View style={styles.medIconWrapper}>
+                                            {meds.iron ? (
+                                                <LinearGradient
+                                                    colors={['#22C55E', '#16A34A']}
+                                                    style={styles.medIconGradient}
+                                                >
+                                                    <Check size={24} color="#fff" strokeWidth={2.5} />
+                                                </LinearGradient>
+                                            ) : (
+                                                <View style={[
+                                                    styles.medIcon,
+                                                    { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.15)' : '#FEE2E2' }
+                                                ]}>
+                                                    <Droplet size={24} color="#EF4444" strokeWidth={2} />
+                                                </View>
+                                            )}
+                                        </View>
+                                        <Text style={[
+                                            styles.medText,
+                                            { color: theme.textPrimary },
+                                            meds.iron && styles.medTextDone
+                                        ]}>
+                                            ברזל
+                                        </Text>
+                                        <Text style={[
+                                            styles.medStatus,
+                                            { color: meds.iron ? '#16A34A' : theme.textSecondary }
+                                        ]}>
+                                            {meds.iron ? 'ניתן ✓' : 'לא ניתן'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            </View>
+
+                            {/* Progress indicator */}
+                            <View style={styles.progressContainer}>
+                                <View style={[
+                                    styles.progressTrack,
+                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB' }
+                                ]}>
+                                    <LinearGradient
+                                        colors={['#22C55E', '#16A34A']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={[
+                                            styles.progressFill,
+                                            { width: `${((meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)) * 50}%` }
+                                        ]}
+                                    />
+                                </View>
+                                <Text style={[styles.progressText, { color: theme.textSecondary }]}>
+                                    {(meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)}/2 ניתנו היום
+                                </Text>
                             </View>
                         </View>
                     </TouchableWithoutFeedback>
@@ -92,45 +263,62 @@ SupplementsModal.displayName = 'SupplementsModal';
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
     },
     modalContent: {
         width: '100%',
-        maxWidth: 320,
-        borderRadius: 20,
+        maxWidth: 340,
+        borderRadius: 24,
         paddingVertical: 24,
-        paddingHorizontal: 20,
-        shadowColor: '#1F2937',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
+        paddingHorizontal: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.15,
         shadowRadius: 24,
-        elevation: 8,
+        elevation: 12,
     },
     header: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 20,
     },
     iconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#E0F2FE',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
     },
     title: {
         flex: 1,
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 18,
+        fontWeight: '700',
         textAlign: 'right',
         marginRight: 12,
+        letterSpacing: -0.3,
     },
     closeBtn: {
-        padding: 6,
+        padding: 8,
+    },
+    celebrationBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#22C55E',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        gap: 6,
+        alignSelf: 'center',
+        marginBottom: 16,
+    },
+    celebrationText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '700',
     },
     buttonsRow: {
         flexDirection: 'row-reverse',
@@ -138,39 +326,69 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     medBtn: {
-        width: 110,
+        width: 130,
         paddingVertical: 20,
-        borderRadius: 16,
+        paddingHorizontal: 12,
+        borderRadius: 20,
         alignItems: 'center',
-        backgroundColor: '#F9FAFB',
     },
     medBtnDone: {
-        backgroundColor: '#DCFCE7',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    },
+    medIconWrapper: {
+        marginBottom: 12,
     },
     medIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#fff',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 10,
-        shadowColor: '#1F2937',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-        elevation: 2,
     },
-    medIconDone: {
-        backgroundColor: '#22C55E',
+    medIconGradient: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
+        // Success glow
+        shadowColor: '#22C55E',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
     },
     medText: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
-        color: '#4B5563',
+        letterSpacing: -0.3,
     },
     medTextDone: {
         color: '#16A34A',
+    },
+    medStatus: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginTop: 4,
+    },
+    progressContainer: {
+        marginTop: 24,
+        alignItems: 'center',
+    },
+    progressTrack: {
+        width: '100%',
+        height: 6,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    progressText: {
+        marginTop: 10,
+        fontSize: 13,
+        fontWeight: '500',
     },
 });
 

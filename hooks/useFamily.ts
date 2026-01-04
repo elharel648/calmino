@@ -119,6 +119,10 @@ export const useFamily = (): UseFamilyReturn => {
     // Actions
     const create = useCallback(async (babyId: string, babyName: string): Promise<boolean> => {
         const newFamily = await createFamily(babyId, babyName);
+        if (newFamily) {
+            // Immediately update state - don't wait for listener
+            setFamily(newFamily);
+        }
         return !!newFamily;
     }, []);
 

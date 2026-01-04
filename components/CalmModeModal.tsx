@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated, Dimensions } from 'react-native';
-import { X, Phone, Siren, Shield, Skull } from 'lucide-react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated } from 'react-native';
+import { X, Phone, Siren, Shield, Skull, AlertTriangle } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../context/ThemeContext';
 
 interface CalmModeModalProps {
   visible: boolean;
@@ -9,6 +12,8 @@ interface CalmModeModalProps {
 }
 
 export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) {
+  const { theme, isDarkMode } = useTheme();
+
   // Animations
   const slideAnim = useRef(new Animated.Value(400)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -19,8 +24,9 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
         Animated.spring(slideAnim, {
           toValue: 0,
           useNativeDriver: true,
-          damping: 22,
-          stiffness: 200,
+          damping: 20,
+          stiffness: 180,
+          mass: 0.8,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -54,9 +60,9 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
   };
 
   const emergencyContacts = [
-    { name: 'מד"א', subtitle: 'חירום רפואי', number: '101', Icon: Siren },
-    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield },
-    { name: 'הרעלות', subtitle: 'בליעת חומר', number: '048541900', Icon: Skull },
+    { name: 'מד"א', subtitle: 'חירום רפואי', number: '101', Icon: Siren, color: '#EF4444', bgColor: '#FEE2E2' },
+    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield, color: '#3B82F6', bgColor: '#DBEAFE' },
+    { name: 'הרעלות', subtitle: 'בליעת חומר', number: '048541900', Icon: Skull, color: '#8B5CF6', bgColor: '#EDE9FE' },
   ];
 
   const hmoContacts = [
@@ -72,20 +78,47 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
         <Animated.View
           style={[
             styles.container,
-            { transform: [{ translateY: slideAnim }], opacity: fadeAnim }
+            {
+              transform: [{ translateY: slideAnim }],
+              opacity: fadeAnim,
+              backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+            }
           ]}
         >
-          {/* Header - Ultra Minimalist */}
+          {/* Drag Handle */}
+          <View style={styles.dragHandle}>
+            <View style={[
+              styles.dragHandleBar,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }
+            ]} />
+          </View>
+
+          {/* Glass Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <X size={20} color="#6B7280" strokeWidth={2} />
-            </TouchableOpacity>
+            {Platform.OS === 'ios' && (
+              <BlurView
+                intensity={60}
+                tint={isDarkMode ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            <View style={[
+              styles.headerContent,
+              { backgroundColor: isDarkMode ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.85)' }
+            ]}>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <X size={20} color={theme.textSecondary} strokeWidth={2} />
+              </TouchableOpacity>
 
-            <View style={styles.titleContainer}>
-              <Text style={styles.mainTitle}>מצב חירום</Text>
+              <View style={styles.titleContainer}>
+                <View style={styles.titleIcon}>
+                  <AlertTriangle size={18} color="#EF4444" strokeWidth={2} />
+                </View>
+                <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>מצב חירום</Text>
+              </View>
+
+              <View style={{ width: 36 }} />
             </View>
-
-            <View style={{ width: 36 }} />
           </View>
 
           {/* Content */}
@@ -94,47 +127,71 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Emergency - Minimalist Row */}
-            <Text style={styles.sectionTitle}>חירום מיידי</Text>
+            {/* Emergency - Premium Row */}
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
             <View style={styles.emergencyRow}>
               {emergencyContacts.map((contact, index) => {
                 const { Icon } = contact;
                 return (
                   <TouchableOpacity
                     key={index}
-                    style={styles.emergencyCard}
+                    style={[
+                      styles.emergencyCard,
+                      { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB' }
+                    ]}
                     onPress={() => makeCall(contact.number, contact.name)}
                     activeOpacity={0.7}
                   >
-                    <View style={styles.emergencyIcon}>
-                      <Icon size={24} color="#1F2937" strokeWidth={1.5} />
+                    {/* Icon with color */}
+                    <View style={[styles.emergencyIcon, { backgroundColor: contact.bgColor }]}>
+                      <Icon size={22} color={contact.color} strokeWidth={2} />
                     </View>
-                    <Text style={styles.emergencyName}>{contact.name}</Text>
-                    <Text style={styles.emergencyNumber}>{contact.number}</Text>
+                    <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
+                      {contact.name}
+                    </Text>
+                    <Text style={[styles.emergencyNumber, { color: contact.color }]}>
+                      {contact.number}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
             {/* HMO - Clean List */}
-            <Text style={styles.sectionTitle}>קופות חולים</Text>
-            {hmoContacts.map((hmo, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.hmoRow}
-                onPress={() => makeCall(hmo.number, hmo.name)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.hmoInfo}>
-                  <Text style={styles.hmoName}>{hmo.name}</Text>
-                  <Text style={styles.hmoSubtitle}>{hmo.subtitle}</Text>
-                </View>
-                <View style={styles.hmoCall}>
-                  <Phone size={14} color="#6B7280" strokeWidth={2} />
-                  <Text style={styles.hmoNumber}>{hmo.number}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
+            <View style={[
+              styles.hmoContainer,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }
+            ]}>
+              {hmoContacts.map((hmo, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.hmoRow,
+                    index < hmoContacts.length - 1 && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
+                    }
+                  ]}
+                  onPress={() => makeCall(hmo.number, hmo.name)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.hmoInfo}>
+                    <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
+                    <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
+                  </View>
+                  <View style={styles.hmoCall}>
+                    <View style={[
+                      styles.phoneIcon,
+                      { backgroundColor: isDarkMode ? 'rgba(59,130,246,0.2)' : '#DBEAFE' }
+                    ]}>
+                      <Phone size={14} color="#3B82F6" strokeWidth={2} />
+                    </View>
+                    <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
         </Animated.View>
       </View>
@@ -145,43 +202,72 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '92%',
     minHeight: '60%',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
   },
 
-  // Header - Minimal
+  // Drag Handle
+  dragHandle: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  dragHandleBar: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+  },
+
+  // Glass Header
   header: {
+    marginHorizontal: -24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+  headerContent: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingVertical: 16,
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   titleContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  titleIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mainTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '700',
     letterSpacing: -0.3,
   },
 
@@ -190,64 +276,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 24,
     paddingBottom: 50,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#9CA3AF',
-    marginBottom: 12,
+    marginBottom: 14,
     textAlign: 'right',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
-  // Emergency Row - Minimalist
+  // Emergency Row - Premium
   emergencyRow: {
     flexDirection: 'row-reverse',
     gap: 12,
-    marginBottom: 28,
+    marginBottom: 32,
   },
   emergencyCard: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     alignItems: 'center',
   },
   emergencyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#fff',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    marginBottom: 12,
   },
   emergencyName: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1F2937',
     textAlign: 'center',
   },
   emergencyNumber: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#374151',
     marginTop: 4,
   },
 
-  // HMO List - Clean
+  // HMO List - Premium
+  hmoContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   hmoRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
   hmoInfo: {
     alignItems: 'flex-end',
@@ -255,21 +337,25 @@ const styles = StyleSheet.create({
   hmoName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
   },
   hmoSubtitle: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 2,
   },
   hmoCall: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+  },
+  phoneIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   hmoNumber: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
   },
 });

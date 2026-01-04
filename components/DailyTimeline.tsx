@@ -38,7 +38,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const { t } = useLanguage();
   const { family } = useFamily();
   const { showSuccess, showError } = useToast();
-  
+
   // Get translated TYPE_CONFIG
   const TYPE_CONFIG = {
     food: {
@@ -123,13 +123,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     try {
       await deleteEvent(eventId);
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
-      showSuccess('נמחק בהצלחה', 3000, {
-        label: 'ביטול',
-        onPress: async () => {
-          // TODO: Re-add event (would need to store full event data)
-          showSuccess('בוטל');
-        },
-      });
+      showSuccess('נמחק בהצלחה', 3000);
     } catch (error) {
       showError('שגיאה במחיקה');
     }
@@ -148,21 +142,21 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const seconds = Math.floor(diffMs / 1000);
-    
+
     if (seconds < 60) return t('time.now');
-    
+
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `לפני ${minutes} דקות`;
-    
+
     const hours = Math.floor(minutes / 60);
     if (hours < 24) {
       return hours === 1 ? 'לפני שעה' : `לפני ${hours} שעות`;
     }
-    
+
     const days = Math.floor(hours / 24);
     if (days === 1) return t('timeline.yesterday');
     if (days < 7) return t('time.daysAgo', { count: days });
-    
+
     // For older events, show date
     return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
   };
@@ -587,32 +581,35 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
-  // Right: Content - Pill Style
+  // Right: Content - Premium Card Style
   eventCardContainer: {
     flex: 1,
-    borderRadius: 16,
-    // Clean shadow on white card
+    borderRadius: 18,
+    // Enhanced premium shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
   },
   eventCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 64,
+    minHeight: 68,
+    // Subtle border for depth
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
   deleteBtn: {
     padding: 4,
     borderRadius: 6,
   },
   cardContent: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   eventHeader: {
     flexDirection: 'row-reverse',
@@ -624,9 +621,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#374151',
+    color: '#1F2937',
     lineHeight: 20,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
     textAlign: 'right',
   },
   iconBadge: {
@@ -703,32 +700,38 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
 
-  // Reporter Badge
+  // Reporter Badge - Enhanced with glow
   reporterBadge: {
     position: 'absolute',
-    bottom: 6,
-    left: 6,
+    bottom: 8,
+    left: 8,
     zIndex: 10,
+    // Subtle glow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   reporterAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2.5,
     borderColor: '#fff',
   },
   reporterAvatarPlaceholder: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: '#fff',
   },
   reporterInitial: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });
 

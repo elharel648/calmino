@@ -4,8 +4,6 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>NSSupportsLiveActivities </key>
-	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>CalmParent Live Activity</string>
 	<key>CFBundleExecutable</key>
@@ -29,3 +27,4 @@
 	</dict>
 </dict>
 </plist>
+

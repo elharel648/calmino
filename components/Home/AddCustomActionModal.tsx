@@ -1,6 +1,7 @@
-import React, { memo, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform } from 'react-native';
-import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText } from 'lucide-react-native';
+import React, { memo, useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
+import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/ThemeContext';
@@ -22,29 +23,98 @@ export interface CustomAction {
     notes?: string;
 }
 
+// Extended preset icons with more variety
 const PRESET_ICONS = [
-    { key: 'sparkles', icon: Sparkles, color: '#F59E0B' },
-    { key: 'baby', icon: Baby, color: '#EC4899' },
-    { key: 'bath', icon: Bath, color: '#06B6D4' },
-    { key: 'stethoscope', icon: Stethoscope, color: '#10B981' },
-    { key: 'pill', icon: Pill, color: '#8B5CF6' },
-    { key: 'thermometer', icon: Thermometer, color: '#EF4444' },
-    { key: 'camera', icon: Camera, color: '#6366F1' },
-    { key: 'book', icon: Book, color: '#14B8A6' },
-    { key: 'music', icon: Music, color: '#A855F7' },
-    { key: 'star', icon: Star, color: '#FBBF24' },
+    // Row 1 - Activities
+    { key: 'sparkles', icon: Sparkles, color: '#F59E0B', label: 'כוכב' },
+    { key: 'baby', icon: Baby, color: '#EC4899', label: 'תינוק' },
+    { key: 'bath', icon: Bath, color: '#06B6D4', label: 'אמבטיה' },
+    { key: 'stethoscope', icon: Stethoscope, color: '#10B981', label: 'בדיקה' },
+    { key: 'pill', icon: Pill, color: '#8B5CF6', label: 'תרופה' },
+    { key: 'thermometer', icon: Thermometer, color: '#EF4444', label: 'חום' },
+    // Row 2 - Fun & Care
+    { key: 'camera', icon: Camera, color: '#6366F1', label: 'צילום' },
+    { key: 'book', icon: Book, color: '#14B8A6', label: 'ספר' },
+    { key: 'music', icon: Music, color: '#A855F7', label: 'מוזיקה' },
+    { key: 'star', icon: Star, color: '#FBBF24', label: 'הישג' },
+    { key: 'heart', icon: Heart, color: '#F43F5E', label: 'אהבה' },
+    { key: 'smile', icon: Smile, color: '#22C55E', label: 'חיוך' },
+    // Row 3 - More activities
+    { key: 'gamepad', icon: Gamepad2, color: '#3B82F6', label: 'משחק' },
+    { key: 'sun', icon: Sun, color: '#F97316', label: 'שמש' },
+    { key: 'droplets', icon: Droplets, color: '#0EA5E9', label: 'שתייה' },
+    { key: 'footprints', icon: Footprints, color: '#84CC16', label: 'הליכה' },
+    { key: 'gift', icon: Gift, color: '#D946EF', label: 'מתנה' },
+    { key: 'zap', icon: Zap, color: '#EAB308', label: 'אנרגיה' },
+];
+
+// Quick action presets for common activities
+const QUICK_PRESETS = [
+    { name: 'אמבטיה', icon: 'bath', color: '#06B6D4' },
+    { name: 'משחק', icon: 'gamepad', color: '#3B82F6' },
+    { name: 'סיפור', icon: 'book', color: '#14B8A6' },
+    { name: 'שתייה', icon: 'droplets', color: '#0EA5E9' },
+    { name: 'טיול', icon: 'footprints', color: '#84CC16' },
 ];
 
 const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose, onAdd }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const [name, setName] = useState('');
     const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
     const [notes, setNotes] = useState('');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
+    // Apple-style Animations
+    const slideAnim = useRef(new RNAnimated.Value(400)).current;
+    const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+    useEffect(() => {
+        if (visible) {
+            resetForm();
+            // Apple-style sheet animation
+            RNAnimated.parallel([
+                RNAnimated.timing(backdropAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                RNAnimated.spring(slideAnim, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    damping: 20,
+                    stiffness: 200,
+                    mass: 0.8,
+                }),
+            ]).start();
+        }
+    }, [visible, slideAnim, backdropAnim]);
+
+    const handleClose = () => {
+        RNAnimated.parallel([
+            RNAnimated.timing(backdropAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            RNAnimated.timing(slideAnim, {
+                toValue: 400,
+                duration: 250,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            resetForm();
+            onClose();
+        });
+    };
 
     const formatDate = (date: Date) => {
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+            return 'היום';
+        }
         return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
     };
 
@@ -72,9 +142,13 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
 
-        onAdd(newAction);
-        resetForm();
-        onClose();
+        // Show checkmark and delay close
+        setSaveSuccess(true);
+        setTimeout(() => {
+            setSaveSuccess(false);
+            onAdd(newAction);
+            handleClose();
+        }, 600);
     };
 
     const resetForm = () => {
@@ -82,32 +156,116 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
         setSelectedIcon(null);
         setNotes('');
         setSelectedDate(new Date());
+        setSaveSuccess(false);
     };
 
-    const handleClose = () => {
-        resetForm();
-        onClose();
+    const selectQuickPreset = (preset: typeof QUICK_PRESETS[0]) => {
+        setName(preset.name);
+        setSelectedIcon(preset.icon);
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
     };
+
+    const isFormValid = name.trim() && selectedIcon;
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-            <View style={styles.overlay}>
-                <View style={[styles.container, { backgroundColor: theme.card }]}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
-                            <X size={20} color={theme.textSecondary} />
-                        </TouchableOpacity>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
-                        <View style={{ width: 32 }} />
+        <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose} statusBarTranslucent>
+            <KeyboardAvoidingView
+                style={styles.overlay}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+                {/* Backdrop */}
+                <TouchableWithoutFeedback onPress={handleClose}>
+                    <RNAnimated.View
+                        style={[
+                            styles.backdrop,
+                            { opacity: backdropAnim }
+                        ]}
+                    />
+                </TouchableWithoutFeedback>
+
+                {/* Modal Card */}
+                <RNAnimated.View
+                    style={[
+                        styles.modalCard,
+                        {
+                            backgroundColor: theme.card,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
+                >
+                    {/* Drag Handle - iOS Sheet Style */}
+                    <View style={styles.dragHandle}>
+                        <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
+                    {/* Close Button */}
+                    <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
+                        <X size={24} color={theme.textSecondary} />
+                    </TouchableOpacity>
+
+                    {/* Header - Premium Glass Effect */}
+                    <View style={styles.header}>
+                        {Platform.OS === 'ios' && (
+                            <BlurView
+                                intensity={80}
+                                tint={isDarkMode ? 'systemMaterialDark' : 'systemMaterialLight'}
+                                style={StyleSheet.absoluteFill}
+                            />
+                        )}
+                        <View style={[styles.headerContent, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.7)' }]}>
+                            <View style={[styles.emojiCircle, { backgroundColor: '#10B98115' }]}>
+                                <Sparkles size={28} color="#10B981" strokeWidth={2.5} />
+                            </View>
+                            <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
+                        </View>
+                    </View>
+
+                    {/* Content */}
+                    <ScrollView
+                        style={{ width: '100%' }}
+                        contentContainerStyle={styles.content}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
+                    >
+                        {/* Quick Presets */}
+                        <View style={styles.quickPresetsSection}>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>פעולות מהירות</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                <View style={styles.quickPresetsRow}>
+                                    {QUICK_PRESETS.map((preset) => {
+                                        const IconComponent = PRESET_ICONS.find(i => i.key === preset.icon)?.icon || Sparkles;
+                                        const isSelected = name === preset.name && selectedIcon === preset.icon;
+                                        return (
+                                            <TouchableOpacity
+                                                key={preset.name}
+                                                style={[
+                                                    styles.quickPresetBtn,
+                                                    { backgroundColor: preset.color + '15', borderColor: preset.color + '30' },
+                                                    isSelected && { borderColor: preset.color, backgroundColor: preset.color + '25' }
+                                                ]}
+                                                onPress={() => selectQuickPreset(preset)}
+                                            >
+                                                <IconComponent size={18} color={preset.color} strokeWidth={2} />
+                                                <Text style={[styles.quickPresetText, { color: preset.color }]}>{preset.name}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            </ScrollView>
+                        </View>
+
                         {/* Name Input */}
                         <View style={styles.inputSection}>
-                            <Text style={[styles.label, { color: theme.textSecondary }]}>שם הפעולה</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>שם הפעולה</Text>
                             <TextInput
-                                style={[styles.input, { backgroundColor: theme.background, color: theme.textPrimary }]}
+                                style={[styles.input, {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB',
+                                    color: theme.textPrimary,
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'
+                                }]}
                                 value={name}
                                 onChangeText={setName}
                                 placeholder="למשל: אמבטיה, משחק..."
@@ -116,18 +274,24 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                             />
                         </View>
 
-                        {/* Icon Selection */}
+                        {/* Icon Selection - Grid Layout */}
                         <View style={styles.inputSection}>
-                            <Text style={[styles.label, { color: theme.textSecondary }]}>בחר אייקון</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                <View style={styles.iconsRow}>
-                                    {PRESET_ICONS.map(({ key, icon: Icon, color }) => (
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>בחר אייקון</Text>
+                            <View style={styles.iconsGrid}>
+                                {PRESET_ICONS.map(({ key, icon: Icon, color }) => {
+                                    const isSelected = selectedIcon === key;
+                                    return (
                                         <TouchableOpacity
                                             key={key}
                                             style={[
                                                 styles.iconOption,
-                                                { backgroundColor: color + '20' },
-                                                selectedIcon === key && { borderColor: color, borderWidth: 2 }
+                                                { backgroundColor: color + '15' },
+                                                isSelected && {
+                                                    borderColor: color,
+                                                    borderWidth: 2.5,
+                                                    backgroundColor: color + '25',
+                                                    transform: [{ scale: 1.05 }]
+                                                }
                                             ]}
                                             onPress={() => {
                                                 setSelectedIcon(key);
@@ -136,31 +300,43 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                                 }
                                             }}
                                         >
-                                            <Icon size={20} color={color} />
+                                            <Icon size={22} color={color} strokeWidth={isSelected ? 2.5 : 2} />
                                         </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </ScrollView>
+                                    );
+                                })}
+                            </View>
                         </View>
 
-                        {/* Date & Time Row */}
+                        {/* Date & Time Row - Premium Style */}
                         <View style={styles.inputSection}>
-                            <Text style={[styles.label, { color: theme.textSecondary }]}>תאריך ושעה</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>תאריך ושעה</Text>
                             <View style={styles.dateTimeRow}>
                                 <TouchableOpacity
-                                    style={[styles.dateTimeBtn, { backgroundColor: theme.background }]}
-                                    onPress={() => setShowTimePicker(true)}
+                                    style={[styles.dateTimeBtn, {
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB',
+                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'
+                                    }]}
+                                    onPress={() => {
+                                        setShowTimePicker(true);
+                                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
                                 >
-                                    <Clock size={16} color={theme.textSecondary} />
+                                    <Clock size={18} color="#6366F1" strokeWidth={2} />
                                     <Text style={[styles.dateTimeText, { color: theme.textPrimary }]}>
                                         {formatTime(selectedDate)}
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.dateTimeBtn, { backgroundColor: theme.background }]}
-                                    onPress={() => setShowDatePicker(true)}
+                                    style={[styles.dateTimeBtn, {
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB',
+                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'
+                                    }]}
+                                    onPress={() => {
+                                        setShowDatePicker(true);
+                                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
                                 >
-                                    <Calendar size={16} color={theme.textSecondary} />
+                                    <Calendar size={18} color="#6366F1" strokeWidth={2} />
                                     <Text style={[styles.dateTimeText, { color: theme.textPrimary }]}>
                                         {formatDate(selectedDate)}
                                     </Text>
@@ -168,14 +344,18 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                             </View>
                         </View>
 
-                        {/* Notes Input */}
+                        {/* Notes Input - Premium Style */}
                         <View style={styles.inputSection}>
                             <View style={styles.labelRow}>
-                                <FileText size={14} color={theme.textSecondary} />
-                                <Text style={[styles.label, { color: theme.textSecondary }]}>הערות (אופציונלי)</Text>
+                                <MessageSquare size={14} color={theme.textSecondary} strokeWidth={2} />
+                                <Text style={[styles.sectionLabel, { color: theme.textSecondary, marginBottom: 0 }]}>הערות (אופציונלי)</Text>
                             </View>
                             <TextInput
-                                style={[styles.notesInput, { backgroundColor: theme.background, color: theme.textPrimary }]}
+                                style={[styles.notesInput, {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB',
+                                    color: theme.textPrimary,
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'
+                                }]}
                                 value={notes}
                                 onChangeText={setNotes}
                                 placeholder="הוסף פרטים נוספים..."
@@ -187,45 +367,75 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                         </View>
                     </ScrollView>
 
-                    {/* Add Button */}
+                    {/* Save Button - Premium Full Width */}
                     <TouchableOpacity
                         style={[
-                            styles.addButton,
-                            (!name.trim() || !selectedIcon) && styles.addButtonDisabled
+                            styles.saveBtn,
+                            !isFormValid && styles.saveBtnDisabled,
+                            saveSuccess && styles.saveBtnSuccess
                         ]}
                         onPress={handleAdd}
-                        disabled={!name.trim() || !selectedIcon}
+                        disabled={!isFormValid || saveSuccess}
                     >
-                        <Text style={styles.addButtonText}>הוסף פעולה</Text>
+                        <Check size={18} color="#fff" strokeWidth={2.5} />
+                        <Text style={styles.saveBtnText}>
+                            {saveSuccess ? 'נשמר!' : 'הוסף פעולה'}
+                        </Text>
                     </TouchableOpacity>
 
                     {/* Date Picker Modal */}
                     {showDatePicker && (
-                        <DateTimePicker
-                            value={selectedDate}
-                            mode="date"
-                            display="spinner"
-                            onChange={(event, date) => {
-                                setShowDatePicker(false);
-                                if (date) setSelectedDate(date);
-                            }}
-                        />
+                        <View style={styles.pickerOverlay}>
+                            <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                                <DateTimePicker
+                                    value={selectedDate}
+                                    mode="date"
+                                    display="spinner"
+                                    onChange={(event, date) => {
+                                        if (Platform.OS === 'android') setShowDatePicker(false);
+                                        if (date) setSelectedDate(date);
+                                    }}
+                                    locale="he-IL"
+                                />
+                                {Platform.OS === 'ios' && (
+                                    <TouchableOpacity
+                                        style={styles.pickerDoneBtn}
+                                        onPress={() => setShowDatePicker(false)}
+                                    >
+                                        <Text style={styles.pickerDoneBtnText}>סיום</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </View>
                     )}
 
                     {/* Time Picker Modal */}
                     {showTimePicker && (
-                        <DateTimePicker
-                            value={selectedDate}
-                            mode="time"
-                            display="spinner"
-                            onChange={(event, date) => {
-                                setShowTimePicker(false);
-                                if (date) setSelectedDate(date);
-                            }}
-                        />
+                        <View style={styles.pickerOverlay}>
+                            <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                                <DateTimePicker
+                                    value={selectedDate}
+                                    mode="time"
+                                    display="spinner"
+                                    onChange={(event, date) => {
+                                        if (Platform.OS === 'android') setShowTimePicker(false);
+                                        if (date) setSelectedDate(date);
+                                    }}
+                                    locale="he-IL"
+                                />
+                                {Platform.OS === 'ios' && (
+                                    <TouchableOpacity
+                                        style={styles.pickerDoneBtn}
+                                        onPress={() => setShowTimePicker(false)}
+                                    >
+                                        <Text style={styles.pickerDoneBtnText}>סיום</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </View>
                     )}
-                </View>
-            </View>
+                </RNAnimated.View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 });
@@ -235,79 +445,151 @@ AddCustomActionModal.displayName = 'AddCustomActionModal';
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
+        justifyContent: 'flex-end'
     },
-    container: {
-        width: '100%',
-        maxWidth: 360,
-        maxHeight: '80%',
-        borderRadius: 24,
-        paddingTop: 20,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        shadowColor: '#1F2937',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.15,
-        shadowRadius: 30,
+    backdrop: {
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0
+    },
+    modalCard: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingBottom: 44,
+        paddingHorizontal: 24,
+        maxHeight: '92%',
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: -8 },
         elevation: 12,
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    // Drag Handle
+    dragHandle: {
         alignItems: 'center',
-        marginBottom: 16,
+        paddingTop: 12,
+        paddingBottom: 8,
+    },
+    dragHandleBar: {
+        width: 36,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(0,0,0,0.15)',
     },
     closeBtn: {
-        padding: 6,
+        position: 'absolute',
+        top: 24,
+        right: 20,
+        zIndex: 10,
+        padding: 8
+    },
+    // Header
+    header: {
+        alignItems: 'center',
+        paddingVertical: 20,
+        marginHorizontal: -24,
+        marginTop: 0,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        overflow: 'hidden',
+    },
+    headerContent: {
+        alignItems: 'center',
+        width: '100%',
+        paddingVertical: 16,
+    },
+    emojiCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
     },
     title: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: '700',
+        marginTop: 14,
+        letterSpacing: -0.5
     },
-    scrollContent: {
-        maxHeight: 320,
+    content: {
+        paddingVertical: 20,
+        paddingHorizontal: 4
     },
+    // Quick Presets
+    quickPresetsSection: {
+        marginBottom: 24,
+    },
+    quickPresetsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        paddingRight: 4,
+    },
+    quickPresetBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 16,
+        borderWidth: 1.5,
+    },
+    quickPresetText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    // Sections
     inputSection: {
-        marginBottom: 18,
+        marginBottom: 22,
+    },
+    sectionLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        marginBottom: 10,
+        textAlign: 'right',
     },
     labelRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 8,
-        textAlign: 'right',
+        marginBottom: 10,
     },
     input: {
-        borderRadius: 14,
-        padding: 14,
-        fontSize: 15,
+        borderRadius: 16,
+        padding: 16,
+        fontSize: 16,
+        borderWidth: 1,
     },
     notesInput: {
-        borderRadius: 14,
-        padding: 14,
+        borderRadius: 16,
+        padding: 16,
         fontSize: 15,
-        minHeight: 80,
+        minHeight: 90,
         textAlignVertical: 'top',
+        borderWidth: 1,
     },
-    iconsRow: {
+    // Icons Grid
+    iconsGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 10,
+        justifyContent: 'flex-start',
     },
     iconOption: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+        width: 50,
+        height: 50,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: 'transparent',
     },
+    // Date Time Row
     dateTimeRow: {
         flexDirection: 'row-reverse',
         gap: 12,
@@ -316,30 +598,74 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 8,
-        padding: 14,
-        borderRadius: 14,
+        gap: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 16,
+        borderWidth: 1,
     },
     dateTimeText: {
-        fontSize: 15,
-        fontWeight: '500',
+        fontSize: 16,
+        fontWeight: '600',
     },
-    addButton: {
+    // Save Button
+    saveBtn: {
+        flexDirection: 'row',
         backgroundColor: '#10B981',
-        borderRadius: 14,
-        padding: 16,
+        borderRadius: 16,
+        paddingVertical: 18,
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
         marginTop: 8,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
-    addButtonDisabled: {
+    saveBtnDisabled: {
         backgroundColor: '#D1D5DB',
+        shadowOpacity: 0,
     },
-    addButtonText: {
+    saveBtnSuccess: {
+        backgroundColor: '#059669',
+    },
+    saveBtnText: {
+        color: '#fff',
+        fontSize: 17,
+        fontWeight: '700',
+    },
+    // Picker Overlay
+    pickerOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+        zIndex: 100,
+    },
+    pickerContainer: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingBottom: 34,
+        paddingTop: 16,
+    },
+    pickerDoneBtn: {
+        alignSelf: 'center',
+        paddingHorizontal: 32,
+        paddingVertical: 14,
+        backgroundColor: '#6366F1',
+        borderRadius: 14,
+        marginTop: 12,
+    },
+    pickerDoneBtnText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '700',
+        fontWeight: '600',
     },
 });
 
 export default AddCustomActionModal;
-

@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -31,19 +30,16 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     food: {
       title: t('tracking.food.title'),
       icon: Utensils,
-      gradient: ['#FDF6E3', '#FCEFC7'] as [string, string],
       accent: '#E5B85C',
     },
     sleep: {
       title: t('tracking.sleep.title'),
       icon: Moon,
-      gradient: ['#E0E7FF', '#C7D2FE'] as [string, string],
       accent: '#6366F1',
     },
     diaper: {
       title: t('tracking.diaper.title'),
       icon: Baby,
-      gradient: ['#D1FAE5', '#A7F3D0'] as [string, string],
       accent: '#10B981',
     },
   };
@@ -83,6 +79,56 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Apple-style Animations
   const slideAnim = useRef(new RNAnimated.Value(400)).current;
   const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+  // Swipe down to dismiss
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      // Only respond to downward swipes
+      return gestureState.dy > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+    },
+    onPanResponderMove: (_, gestureState) => {
+      // Only allow dragging down (positive dy)
+      if (gestureState.dy > 0) {
+        slideAnim.setValue(gestureState.dy);
+        // Fade backdrop as we drag
+        backdropAnim.setValue(1 - Math.min(gestureState.dy / 300, 0.5));
+      }
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy > 150 || gestureState.vy > 0.5) {
+        // Dismiss if dragged far enough or fast enough
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        RNAnimated.parallel([
+          RNAnimated.timing(slideAnim, {
+            toValue: 500,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          RNAnimated.timing(backdropAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onClose());
+      } else {
+        // Snap back
+        RNAnimated.spring(slideAnim, {
+          toValue: 0,
+          damping: 20,
+          stiffness: 200,
+          useNativeDriver: true,
+        }).start();
+        RNAnimated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  }), [slideAnim, backdropAnim, onClose]);
 
   useEffect(() => {
     if (visible) {
@@ -277,7 +323,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // --- Food Content ---
   const renderFoodContent = () => (
     <View style={{ width: '100%' }}>
-      {/* 4 Food Type Tabs */}
+      {/* 4 Food Type Tabs - Segmented Control */}
       <View style={styles.foodTabs}>
         <TouchableOpacity
           style={[styles.foodTab, foodType === 'breast' && styles.activeFoodTab]}
@@ -289,7 +335,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             ) : (leftTimer > 0 || rightTimer > 0) ? (
               <Text style={{ color: '#6366F1', fontSize: 12, fontWeight: '600' }}>{formatTime(leftTimer + rightTimer)}</Text>
             ) : (
-              <Baby size={22} color={foodType === 'breast' ? '#fff' : '#9CA3AF'} strokeWidth={1.5} />
+              <Baby size={20} color={foodType === 'breast' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
             )}
           </View>
           <Text style={[styles.foodTabText, foodType === 'breast' && styles.activeFoodTabText]}>{t('tracking.breast')}</Text>
@@ -299,7 +345,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           onPress={() => { setFoodType('bottle'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <View style={styles.foodTabIconContainer}>
-            <Milk size={22} color={foodType === 'bottle' ? '#fff' : '#9CA3AF'} strokeWidth={1.5} />
+            <Milk size={20} color={foodType === 'bottle' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
           </View>
           <Text style={[styles.foodTabText, foodType === 'bottle' && styles.activeFoodTabText]}>{t('tracking.bottle')}</Text>
         </TouchableOpacity>
@@ -308,7 +354,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           onPress={() => { setFoodType('solids'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <View style={styles.foodTabIconContainer}>
-            <Apple size={22} color={foodType === 'solids' ? '#fff' : '#9CA3AF'} strokeWidth={1.5} />
+            <Apple size={20} color={foodType === 'solids' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
           </View>
           <Text style={[styles.foodTabText, foodType === 'solids' && styles.activeFoodTabText]}>{t('tracking.solids')}</Text>
         </TouchableOpacity>
@@ -322,7 +368,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             ) : pumpingTimer > 0 ? (
               <Text style={{ color: '#6366F1', fontSize: 12, fontWeight: '600' }}>{formatTime(pumpingTimer)}</Text>
             ) : (
-              <Droplets size={22} color={foodType === 'pumping' ? '#fff' : '#9CA3AF'} strokeWidth={1.5} />
+              <Droplets size={20} color={foodType === 'pumping' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
             )}
           </View>
           <Text style={[styles.foodTabText, foodType === 'pumping' && styles.activeFoodTabText]}>{t('tracking.pumping')}</Text>
@@ -912,18 +958,24 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               },
             ]}
           >
+            {/* Drag Handle - iOS Sheet Style - Swipeable */}
+            <View style={styles.dragHandle} {...panResponder.panHandlers}>
+              <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+            </View>
+
             {/* Close Button */}
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <X size={24} color={theme.textSecondary} />
             </TouchableOpacity>
 
-            {/* Header */}
-            <LinearGradient colors={isDarkMode ? [theme.card, theme.cardSecondary] : config.gradient} style={styles.header}>
-              <View style={styles.emojiCircle}>
+
+            {/* Header - Clean Solid Background */}
+            <View style={[styles.header, { backgroundColor: theme.card }]}>
+              <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
                 {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
               </View>
               <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
-            </LinearGradient>
+            </View>
 
             {/* Content - Wrapped in ScrollView */}
             <ScrollView
@@ -936,13 +988,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               {renderContent()}
             </ScrollView>
 
-            {/* Save Button - Minimal with success checkmark */}
+            {/* Save Button - Premium Full Width */}
             <TouchableOpacity
               style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess]}
               onPress={handleSave}
               disabled={saveSuccess}
             >
-              <Check size={18} color={saveSuccess ? '#10B981' : '#374151'} strokeWidth={2.5} />
+              <Check size={18} color="#fff" strokeWidth={2.5} />
               <Text style={[styles.saveBtnText, saveSuccess && styles.saveBtnTextSuccess]}>
                 {saveSuccess ? 'נשמר!' : 'שמור תיעוד'}
               </Text>
@@ -1138,24 +1190,56 @@ const styles = StyleSheet.create({
   backdrop: { backgroundColor: 'rgba(0,0,0,0.4)', position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   modalCard: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-    maxHeight: '90%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 44,
+    paddingHorizontal: 24,
+    maxHeight: '92%',
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 12,
   },
-  closeBtn: { position: 'absolute', top: 16, right: 16, zIndex: 10, padding: 8 },
-  header: { alignItems: 'center', paddingVertical: 24, marginHorizontal: -20, marginTop: -0, borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-  emojiCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  // Drag Handle - iOS Sheet Style - larger hit area for swipe
+  dragHandle: {
+    alignItems: 'center',
+    paddingTop: 14,
+    paddingBottom: 20,
+    paddingHorizontal: 50,
+  },
+  dragHandleBar: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  closeBtn: { position: 'absolute', top: 24, right: 20, zIndex: 10, padding: 8 },
+  header: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  headerContent: {
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 16,
+  },
+  emojiCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Subtle inner shadow effect
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
   emoji: { fontSize: 28 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#1F2937', marginTop: 12 },
-  content: { paddingVertical: 24, alignItems: 'center' },
-  subtitle: { fontSize: 16, color: '#6B7280', marginBottom: 20, textAlign: 'right' },
-  label: { fontSize: 16, color: '#374151', fontWeight: '600', textAlign: 'right', marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: '700', color: '#1F2937', marginTop: 14, letterSpacing: -0.5 },
+  content: { paddingVertical: 28, alignItems: 'center' },
+  subtitle: { fontSize: 15, color: '#6B7280', marginBottom: 20, textAlign: 'right', fontWeight: '500' },
+  label: { fontSize: 15, color: '#374151', fontWeight: '600', textAlign: 'right', marginBottom: 16 },
 
   // Date Picker Button - Minimal
   datePickerBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12 },
@@ -1180,43 +1264,47 @@ const styles = StyleSheet.create({
   calendarDaySelectedText: { color: '#fff' },
   calendarDayDisabled: { opacity: 0.3 },
 
-  // Food Tabs
+  // Food Tabs - Segmented Control Style
   foodTabs: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
-    marginBottom: 28,
-    paddingHorizontal: 4,
-    gap: 8,
+    marginBottom: 24,
+    paddingHorizontal: 0,
+    gap: 0,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 14,
+    padding: 4,
   },
   foodTab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
   },
   activeFoodTab: {
-    backgroundColor: '#6366F1',
-    borderColor: '#6366F1',
-    borderWidth: 1.5,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   foodTabIconContainer: {
-    marginBottom: 6,
+    marginBottom: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 24,
+    height: 22,
   },
   foodTabText: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: '#6B7280',
     textAlign: 'center',
     fontWeight: '600',
     letterSpacing: -0.2,
   },
   activeFoodTabText: {
-    color: '#fff',
+    color: '#6366F1',
     fontWeight: '700',
   },
   // Premium Food Tabs (kept for backward compatibility)
@@ -1719,11 +1807,27 @@ const styles = StyleSheet.create({
   diaperBtnText: { fontSize: 16, fontWeight: '600', color: '#374151' },
   diaperNoteInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, fontSize: 14, textAlign: 'right', marginTop: 20, borderWidth: 1, borderColor: '#E5E7EB' },
 
-  // Save
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24, marginTop: 16, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
-  saveBtnText: { color: '#374151', fontSize: 15, fontWeight: '600' },
-  saveBtnSuccess: { backgroundColor: '#D1FAE5', borderColor: '#10B981' },
-  saveBtnTextSuccess: { color: '#10B981' },
+  // Save - Premium Full Width
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    marginTop: 20,
+    backgroundColor: '#6366F1',
+    // Premium shadow
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
+  saveBtnSuccess: { backgroundColor: '#10B981', shadowColor: '#10B981' },
+  saveBtnTextSuccess: { color: '#fff' },
 
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },

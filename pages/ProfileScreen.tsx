@@ -217,13 +217,11 @@ export default function ProfileScreen() {
         />
 
         {/* Guest Invite Modal */}
-        {family && (
-          <GuestInviteModal
-            visible={isGuestInviteOpen}
-            onClose={() => setIsGuestInviteOpen(false)}
-            familyId={family.id}
-          />
-        )}
+        <GuestInviteModal
+          visible={isGuestInviteOpen}
+          onClose={() => setIsGuestInviteOpen(false)}
+          familyId={family?.id}
+        />
 
         {/* Family Invite Modal */}
         {baby?.id && family && (

@@ -2,8 +2,9 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from './firebaseConfig';
+import { db, auth } from './firebaseConfig';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { notificationStorageService } from './notificationStorageService';
 
 // --- Pattern Analysis Types ---
 export interface PatternData {
@@ -182,11 +183,40 @@ const NOTIFICATION_CONTENT = {
 
 // --- Configure Notifications ---
 Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-    }),
+    handleNotification: async (notification) => {
+        // Save notification to Firebase even when app is closed/background
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+            try {
+                const notificationType = notification.request.content.data?.type || 'reminder';
+                const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+                    'feeding_reminder': 'feed',
+                    'sleep_reminder': 'sleep',
+                    'supplement_reminder': 'medication',
+                    'vaccine_reminder': 'medication',
+                    'daily_summary': 'reminder',
+                };
+                
+                await notificationStorageService.saveNotification({
+                    userId,
+                    type: typeMap[notificationType] || 'reminder',
+                    title: notification.request.content.title || 'התראה',
+                    message: notification.request.content.body || '',
+                    timestamp: new Date(),
+                    isRead: false,
+                    isUrgent: notificationType === 'vaccine_reminder',
+                });
+            } catch (error) {
+                if (__DEV__) console.log('Failed to save notification in handler:', error);
+            }
+        }
+
+        return {
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+        };
+    },
 });
 
 // --- Service Class ---
@@ -415,6 +445,28 @@ class NotificationService {
     // Send immediate notification
     async sendImmediate(type: NotificationType, customBody?: string): Promise<void> {
         const content = NOTIFICATION_CONTENT[type];
+        const userId = auth.currentUser?.uid;
+
+        // Save to Firebase immediately
+        if (userId) {
+            const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+                'feeding_reminder': 'feed',
+                'sleep_reminder': 'sleep',
+                'supplement_reminder': 'medication',
+                'vaccine_reminder': 'medication',
+                'daily_summary': 'reminder',
+            };
+
+            await notificationStorageService.saveNotification({
+                userId,
+                type: typeMap[type] || 'reminder',
+                title: content.title,
+                message: customBody || content.body,
+                timestamp: new Date(),
+                isRead: false,
+                isUrgent: type === 'vaccine_reminder',
+            });
+        }
 
         await Notifications.scheduleNotificationAsync({
             content: {

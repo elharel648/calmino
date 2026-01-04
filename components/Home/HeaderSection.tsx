@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert, Scrol
 import { Camera, Cloud, Plus, X, Link2, UserPlus, Moon, Utensils, Baby as BabyIcon, Pill, Bell, Award, Heart, TrendingUp } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import { auth, db } from '../../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ChildProfile, MedicationsState } from '../../types/home';
@@ -10,6 +11,7 @@ import { useWeather } from '../../hooks/useWeather';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
+import { notificationStorageService } from '../../services/notificationStorageService';
 
 interface DailyStats {
     feedCount: number;
@@ -68,6 +70,9 @@ const HeaderSection = memo<HeaderSectionProps>(({
     const [uploading, setUploading] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const { weather } = useWeather();
+    const [unreadCount, setUnreadCount] = useState(0);
+    const bellScale = useRef(new Animated.Value(1)).current;
+    const pulseAnim = useRef(new Animated.Value(1)).current;
 
     // Calculate age - Better format
     const ageText = useMemo(() => {
@@ -332,6 +337,61 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
     const NotificationIcon = currentNotification?.icon;
 
+    // Fetch unread notification count
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const count = await notificationStorageService.getUnreadCount();
+                setUnreadCount(count);
+            } catch (error) {
+                if (__DEV__) console.log('Failed to fetch unread count:', error);
+            }
+        };
+
+        fetchUnreadCount();
+        
+        // Refresh every 10 seconds (more frequent for better UX)
+        const interval = setInterval(fetchUnreadCount, 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Listen for new notifications to update count
+    useEffect(() => {
+        const subscription = Notifications.addNotificationReceivedListener(async () => {
+            // Refresh count when new notification arrives
+            const count = await notificationStorageService.getUnreadCount();
+            setUnreadCount(count);
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, []);
+
+    // Pulse animation when there are unread notifications
+    useEffect(() => {
+        if (unreadCount > 0) {
+            const pulse = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pulseAnim, {
+                        toValue: 1.15,
+                        duration: 1000,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(pulseAnim, {
+                        toValue: 1,
+                        duration: 1000,
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+            pulse.start();
+            return () => pulse.stop();
+        } else {
+            pulseAnim.setValue(1);
+        }
+    }, [unreadCount, pulseAnim]);
+
     return (
         <View style={styles.container}>
             {/* Top Row: Greeting + Weather */}
@@ -344,15 +404,53 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
                 {/* Weather + Notification Group */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {/* Notification Bell */}
+                    {/* Premium Notification Bell */}
                     <TouchableOpacity
                         style={styles.notificationBell}
                         activeOpacity={0.7}
-                        onPress={() => navigation?.navigate('Notifications')}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                            // Animate bell press
+                            Animated.sequence([
+                                Animated.timing(bellScale, {
+                                    toValue: 0.9,
+                                    duration: 100,
+                                    useNativeDriver: true,
+                                }),
+                                Animated.timing(bellScale, {
+                                    toValue: 1,
+                                    duration: 100,
+                                    useNativeDriver: true,
+                                }),
+                            ]).start();
+                            navigation?.navigate('Notifications');
+                        }}
                     >
-                        <Bell size={20} color="#6B7280" strokeWidth={1.5} />
-                        {/* Blue dot - shows when there are unread notifications */}
-                        <View style={styles.notificationDot} />
+                        <Animated.View style={{ transform: [{ scale: bellScale }] }}>
+                            <View style={[styles.bellContainer, unreadCount > 0 && styles.bellContainerActive]}>
+                                <Bell 
+                                    size={22} 
+                                    color={unreadCount > 0 ? "#3B82F6" : "#6B7280"} 
+                                    strokeWidth={2.5}
+                                    fill={unreadCount > 0 ? "#3B82F620" : "none"}
+                                />
+                            </View>
+                        </Animated.View>
+                        {/* Badge with count */}
+                        {unreadCount > 0 && (
+                            <Animated.View 
+                                style={[
+                                    styles.notificationBadge,
+                                    { transform: [{ scale: pulseAnim }] }
+                                ]}
+                            >
+                                <Text style={styles.badgeText}>
+                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                </Text>
+                            </Animated.View>
+                        )}
                     </TouchableOpacity>
 
                     {weather && (
@@ -684,17 +782,44 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     notificationBell: {
-        padding: 6,
+        padding: 8,
         position: 'relative',
     },
-    notificationDot: {
+    bellContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F3F4F6',
+    },
+    bellContainerActive: {
+        backgroundColor: '#EFF6FF',
+    },
+    notificationBadge: {
         position: 'absolute',
-        top: 5,
-        right: 5,
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-        backgroundColor: '#3B82F6',
+        top: 2,
+        right: 2,
+        minWidth: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#EF4444',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 6,
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    badgeText: {
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: '700',
+        textAlign: 'center',
     },
 
     // Modal

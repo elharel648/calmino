@@ -401,67 +401,79 @@ export default function SettingsScreen() {
             </View>
           )}
 
-          {/* Family Actions - Premium Minimalist Design */}
+          {/* Family Actions - Premium Design with Visual Hierarchy */}
+
+          {/* PRIMARY: Create/Invite Family - Premium Gradient Card */}
+          {(isAdmin || !family) && (
+            <TouchableOpacity
+              style={styles.primaryFamilyAction}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setInviteModalVisible(true);
+              }}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#6366F1', '#8B5CF6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryFamilyGradient}
+              >
+                <View style={styles.primaryFamilyContent}>
+                  <View style={styles.primaryFamilyIconContainer}>
+                    <UserPlus size={24} color="#fff" strokeWidth={2} />
+                  </View>
+                  <View style={styles.primaryFamilyTextContainer}>
+                    <Text style={styles.primaryFamilyTitle}>
+                      {family ? t('account.inviteFamily') : t('account.createFamily')}
+                    </Text>
+                    <Text style={styles.primaryFamilySubtitle}>
+                      {family ? t('account.inviteFamily.subtitle') : t('account.createFamily.subtitle')}
+                    </Text>
+                  </View>
+                </View>
+                {family && members.length > 0 && (
+                  <View style={styles.memberCountBadge}>
+                    <Text style={styles.memberCountText}>{members.length}</Text>
+                  </View>
+                )}
+                <ChevronLeft size={20} color="rgba(255,255,255,0.7)" strokeWidth={2} />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+
+          {/* SECONDARY: Guest & Join Actions */}
           <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
-            {/* Show Create/Invite Family when: user is admin OR user has no family */}
-            {(isAdmin || !family) && (
-              <>
-                <TouchableOpacity
-                  style={[styles.listItem, styles.listItemFirst]}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setInviteModalVisible(true);
-                  }}
-                  activeOpacity={0.6}
-                >
-                  <View style={styles.listItemContent}>
-                    <View style={[styles.listItemIcon, { backgroundColor: '#EEF2FF' }]}>
-                      <UserPlus size={18} color="#6366F1" strokeWidth={2.5} />
-                    </View>
-                    <View style={styles.listItemTextContainer}>
-                      <Text style={[styles.listItemText, { color: theme.textPrimary }]}>
-                        {family ? t('account.inviteFamily') : t('account.createFamily')}
-                      </Text>
-                      <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                        {family ? t('account.inviteFamily.subtitle') : t('account.createFamily.subtitle')}
-                      </Text>
+            {/* Guest invite */}
+            <TouchableOpacity
+              style={[styles.listItem, styles.listItemFirst]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsGuestInviteOpen(true);
+              }}
+              activeOpacity={0.6}
+            >
+              <View style={styles.listItemContent}>
+                <View style={[styles.listItemIcon, { backgroundColor: '#ECFDF5' }]}>
+                  <Users size={18} color="#10B981" strokeWidth={2.5} />
+                </View>
+                <View style={styles.listItemTextContainer}>
+                  <View style={styles.listItemTitleRow}>
+                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
+                    <View style={[styles.timeBadge, { backgroundColor: '#ECFDF5' }]}>
+                      <Text style={[styles.timeBadgeText, { color: '#10B981' }]}>24h</Text>
                     </View>
                   </View>
-                  <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
-                </TouchableOpacity>
+                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
+                    {t('account.inviteGuest.subtitle')}
+                  </Text>
+                </View>
+              </View>
+              <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
 
-                <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-              </>
-            )}
-
-            {/* Guest invite - any family member can invite (24h access is low risk) */}
-            {family && (
-              <>
-                <TouchableOpacity
-                  style={styles.listItem}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setIsGuestInviteOpen(true);
-                  }}
-                  activeOpacity={0.6}
-                >
-                  <View style={styles.listItemContent}>
-                    <View style={[styles.listItemIcon, { backgroundColor: '#ECFDF5' }]}>
-                      <Users size={18} color="#10B981" strokeWidth={2.5} />
-                    </View>
-                    <View style={styles.listItemTextContainer}>
-                      <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                      <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                        {t('account.inviteGuest.subtitle')}
-                      </Text>
-                    </View>
-                  </View>
-                  <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
-                </TouchableOpacity>
-                <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-              </>
-            )}
-
+            {/* Join with code */}
             <TouchableOpacity
               style={[styles.listItem, styles.listItemLast]}
               onPress={() => {
@@ -475,7 +487,12 @@ export default function SettingsScreen() {
                   <LinkIcon size={18} color="#F59E0B" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
+                  <View style={styles.listItemTitleRow}>
+                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
+                    <View style={[styles.autoDetectBadge, { backgroundColor: '#FFF7ED' }]}>
+                      <Text style={[styles.autoDetectText, { color: '#F59E0B' }]}>אוטומטי</Text>
+                    </View>
+                  </View>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
                     {t('account.joinWithCode.subtitle')}
                   </Text>
@@ -515,13 +532,11 @@ export default function SettingsScreen() {
       </ScrollView>
 
       {/* Guest Invite Modal */}
-      {family && (
-        <GuestInviteModal
-          visible={isGuestInviteOpen}
-          onClose={() => setIsGuestInviteOpen(false)}
-          familyId={family.id}
-        />
-      )}
+      <GuestInviteModal
+        visible={isGuestInviteOpen}
+        onClose={() => setIsGuestInviteOpen(false)}
+        familyId={family?.id}
+      />
 
       {/* Family Invite Modal */}
       {baby?.id && (
@@ -991,6 +1006,90 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     textAlign: 'right',
     opacity: 0.7,
+  },
+  listItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  // Premium Family Action Card
+  primaryFamilyAction: {
+    marginBottom: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  primaryFamilyGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    padding: 20,
+  },
+  primaryFamilyContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    flex: 1,
+    gap: 14,
+  },
+  primaryFamilyIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryFamilyTextContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  primaryFamilyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  primaryFamilySubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: -0.2,
+  },
+  // Badges
+  memberCountBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  memberCountText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  timeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  timeBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  autoDetectBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  autoDetectText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,

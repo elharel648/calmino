@@ -36,12 +36,14 @@ const ActiveChildContext = createContext<ActiveChildContextType | null>(null);
 // --- Provider ---
 interface ActiveChildProviderProps {
     children: ReactNode;
+    onReady?: () => void; // Called when initial load is complete
 }
 
-export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ children }) => {
+export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ children, onReady }) => {
     const [activeChild, setActiveChildState] = useState<ActiveChild | null>(null);
     const [allChildren, setAllChildren] = useState<ActiveChild[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const hasCalledOnReady = useRef(false);
 
     // Ref to track activeChild without causing refreshChildren to recreate
     // This fixes the infinite loop when joining with code
@@ -181,14 +183,24 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
             if (__DEV__) console.log('Error loading children:', error);
         } finally {
             setIsLoading(false);
+            // Notify App.tsx that initial load is complete
+            if (!hasCalledOnReady.current && onReady) {
+                hasCalledOnReady.current = true;
+                onReady();
+            }
         }
-    }, []); // Empty deps - uses ref instead of state to avoid infinite loop
+    }, [onReady]); // Include onReady in deps
 
     // Listen to auth state and refresh
     useEffect(() => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
             setIsLoading(false);
+            // Still call onReady even if no user
+            if (!hasCalledOnReady.current && onReady) {
+                hasCalledOnReady.current = true;
+                onReady();
+            }
             return;
         }
 

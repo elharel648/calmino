@@ -1,10 +1,13 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { Bell, ChevronRight, Clock, Utensils, Moon, Pill, CheckCircle2, X, Trash2 } from 'lucide-react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Bell, ChevronRight, Clock, Utensils, Moon, Pill, CheckCircle2, X, Trash2, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { notificationStorageService, StoredNotification } from '../services/notificationStorageService';
+import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 export default function NotificationsScreen() {
     const navigation = useNavigation();
@@ -29,6 +32,25 @@ export default function NotificationsScreen() {
     useEffect(() => {
         fetchNotifications();
     }, [fetchNotifications]);
+
+    // Listen for new notifications and refresh
+    useEffect(() => {
+        const subscription = Notifications.addNotificationReceivedListener(async (notification) => {
+            // Refresh notifications list when new one arrives
+            await fetchNotifications();
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, [fetchNotifications]);
+
+    // Refresh when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchNotifications();
+        }, [fetchNotifications])
+    );
 
     const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
 
@@ -66,6 +88,9 @@ export default function NotificationsScreen() {
 
     const markAsRead = async (id: string) => {
         if (!id) return;
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         await notificationStorageService.markAsRead(id);
         setNotifications(prev =>
             prev.map(n => n.id === id ? { ...n, isRead: true } : n)
@@ -139,63 +164,83 @@ export default function NotificationsScreen() {
             >
                 {notifications.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <Bell size={48} color="#D1D5DB" />
-                        <Text style={styles.emptyTitle}>אין התראות</Text>
-                        <Text style={styles.emptySubtitle}>כאן יופיעו התראות ותזכורות</Text>
+                        <Bell size={48} color={isDarkMode ? '#4B5563' : '#D1D5DB'} strokeWidth={1.5} />
+                        <Text style={[styles.emptyTitle, isDarkMode && styles.textDark]}>אין התראות</Text>
+                        <Text style={[styles.emptySubtitle, isDarkMode && styles.textSecondaryDark]}>
+                            כאן יופיעו התראות ותזכורות
+                        </Text>
                     </View>
                 ) : (
-                    notifications.map((notification) => {
-                        const Icon = getIcon(notification.type);
-                        const iconColor = getIconColor(notification.type);
+                    <View style={[styles.listContainer, isDarkMode && { backgroundColor: '#2C2C2E' }]}>
+                        {notifications.map((notification, index) => {
+                            const Icon = getIcon(notification.type);
+                            const iconColor = getIconColor(notification.type);
 
-                        return (
-                            <TouchableOpacity
-                                key={notification.id}
-                                style={[
-                                    styles.notificationCard,
-                                    !notification.isRead && styles.notificationUnread,
-                                    notification.isUrgent && styles.notificationUrgent,
-                                    isDarkMode && styles.cardDark,
-                                ]}
-                                onPress={() => markAsRead(notification.id)}
-                                activeOpacity={0.7}
-                            >
-                                {/* Icon */}
-                                <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
-                                    <Icon size={20} color={iconColor} />
-                                </View>
+                            return (
+                                <React.Fragment key={notification.id}>
+                                    <Animated.View
+                                        style={[
+                                            styles.notificationCard,
+                                            !notification.isRead && styles.notificationUnread,
+                                            notification.isUrgent && styles.notificationUrgent,
+                                            isDarkMode && styles.cardDark,
+                                            index === 0 && { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+                                            index === notifications.length - 1 && { borderBottomLeftRadius: 20, borderBottomRightRadius: 20, borderBottomWidth: 0 },
+                                        ]}
+                                    >
+                                        <TouchableOpacity
+                                            style={styles.notificationTouchable}
+                                            onPress={() => markAsRead(notification.id)}
+                                            activeOpacity={0.7}
+                                        >
+                                            {/* Icon */}
+                                            <View style={[
+                                                styles.iconContainer,
+                                                { backgroundColor: `${iconColor}15` },
+                                            ]}>
+                                                <Icon size={18} color={iconColor} strokeWidth={2} />
+                                            </View>
 
-                                {/* Content */}
-                                <View style={styles.notificationContent}>
-                                    <Text style={[styles.notificationTitle, isDarkMode && styles.textDark]}>
-                                        {notification.title}
-                                    </Text>
-                                    <Text style={styles.notificationMessage}>
-                                        {notification.message}
-                                    </Text>
-                                    <View style={styles.notificationMeta}>
-                                        <Clock size={12} color="#9CA3AF" />
-                                        <Text style={styles.notificationTime}>
-                                            {formatTime(notification.timestamp)}
-                                        </Text>
-                                    </View>
-                                </View>
+                                            {/* Content */}
+                                            <View style={styles.notificationContent}>
+                                                <View style={styles.notificationTitleRow}>
+                                                    {!notification.isRead && (
+                                                        <View style={[styles.unreadDot, { backgroundColor: iconColor }]} />
+                                                    )}
+                                                    <Text style={[styles.notificationTitle, isDarkMode && styles.textDark]}>
+                                                        {notification.title}
+                                                    </Text>
+                                                </View>
+                                                <Text style={[styles.notificationMessage, isDarkMode && styles.textSecondaryDark]}>
+                                                    {notification.message}
+                                                </Text>
+                                                <View style={styles.notificationMeta}>
+                                                    <Text style={[styles.notificationTime, isDarkMode && styles.textTertiaryDark]}>
+                                                        {formatTime(notification.timestamp)}
+                                                    </Text>
+                                                    <Clock size={12} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
 
-                                {/* Unread dot */}
-                                {!notification.isRead && (
-                                    <View style={styles.unreadDot} />
-                                )}
-
-                                {/* Dismiss button */}
-                                <TouchableOpacity
-                                    style={styles.dismissBtn}
-                                    onPress={() => dismissNotification(notification.id)}
-                                >
-                                    <X size={16} color="#9CA3AF" />
-                                </TouchableOpacity>
-                            </TouchableOpacity>
-                        );
-                    })
+                                        {/* Dismiss button */}
+                                        <TouchableOpacity
+                                            style={styles.dismissBtn}
+                                            onPress={() => {
+                                                if (Platform.OS !== 'web') {
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                }
+                                                dismissNotification(notification.id);
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <X size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                                        </TouchableOpacity>
+                                    </Animated.View>
+                                </React.Fragment>
+                            );
+                        })}
+                    </View>
                 )}
             </ScrollView>
         </SafeAreaView>
@@ -211,37 +256,39 @@ const styles = StyleSheet.create({
         backgroundColor: '#1C1C1E',
     },
     header: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingVertical: 12,
-        borderBottomWidth: 1,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#E5E7EB',
     },
     backBtn: {
-        padding: 8,
+        padding: 4,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 34,
+        fontWeight: '700',
+        letterSpacing: 0.37,
         color: '#1C1C1E',
     },
     textDark: {
         color: '#FFFFFF',
     },
     markAllBtn: {
-        padding: 8,
+        padding: 4,
     },
     markAllText: {
-        fontSize: 13,
+        fontSize: 15,
         color: '#6366F1',
-        fontWeight: '500',
+        fontWeight: '400',
+        letterSpacing: -0.24,
     },
     headerActions: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 8,
+        gap: 12,
     },
     clearBtn: {
         padding: 8,
@@ -250,8 +297,19 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
-        gap: 12,
+        paddingHorizontal: 20,
+        paddingTop: 8,
+        paddingBottom: 20,
+    },
+    listContainer: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 1,
     },
     emptyState: {
         alignItems: 'center',
@@ -259,77 +317,131 @@ const styles = StyleSheet.create({
         paddingVertical: 80,
     },
     emptyTitle: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '400',
+        letterSpacing: -0.41,
         color: '#6B7280',
         marginTop: 16,
     },
     emptySubtitle: {
-        fontSize: 14,
+        fontSize: 13,
+        fontWeight: '400',
+        letterSpacing: -0.08,
         color: '#9CA3AF',
         marginTop: 4,
     },
     notificationCard: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
-        padding: 16,
+        marginBottom: 0,
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        borderRadius: 0,
+        borderWidth: 0,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#E5E7EB',
+        shadowColor: 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
+        overflow: 'visible',
+    },
+    notificationTouchable: {
+        flex: 1,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        minHeight: 56,
     },
     notificationUnread: {
         backgroundColor: '#F0F9FF',
     },
     notificationUrgent: {
-        borderLeftWidth: 3,
-        borderLeftColor: '#EF4444',
+        borderRightWidth: 3,
+        borderRightColor: '#EF4444',
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     cardDark: {
         backgroundColor: '#2C2C2E',
+        borderBottomColor: '#3A3A3C',
     },
     iconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
+        width: 32,
+        height: 32,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginLeft: 12,
+        position: 'relative',
+    },
+    iconGlow: {
+        position: 'absolute',
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        opacity: 0.5,
     },
     notificationContent: {
         flex: 1,
+        alignItems: 'flex-end',
+    },
+    notificationTitleRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 2,
     },
     notificationTitle: {
-        fontSize: 15,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '400',
+        letterSpacing: -0.41,
         color: '#1C1C1E',
-        marginBottom: 2,
     },
     notificationMessage: {
         fontSize: 13,
         color: '#6B7280',
-        marginBottom: 6,
+        lineHeight: 18,
+        marginBottom: 4,
+        letterSpacing: -0.08,
     },
     notificationMeta: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 4,
     },
     notificationTime: {
-        fontSize: 11,
+        fontSize: 13,
         color: '#9CA3AF',
+        fontWeight: '400',
+        letterSpacing: -0.08,
     },
     unreadDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
         backgroundColor: '#3B82F6',
-        marginRight: 8,
+    },
+    textSecondaryDark: {
+        color: '#9CA3AF',
+    },
+    textTertiaryDark: {
+        color: '#6B7280',
+    },
+    emptyIconContainer: {
+        position: 'relative',
+        marginBottom: 20,
+    },
+    emptyIconGlow: {
+        position: 'absolute',
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        top: -12,
+        left: -12,
     },
     dismissBtn: {
         padding: 8,
+        marginLeft: 8,
     },
 });

@@ -1,15 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { Clock, Play, Pause, RotateCcw } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
-import { useDynamicIsland } from '../context/DynamicIslandContext';
 import { useClockTimer } from '../hooks/useClockTimer';
 import { useAppleWatch } from '../hooks/useAppleWatch';
 import * as Haptics from 'expo-haptics';
@@ -21,7 +14,6 @@ interface ClockWidgetProps {
 
 export default function ClockWidget({ initialDuration = 0, onComplete }: ClockWidgetProps) {
     const { theme, isDarkMode } = useTheme();
-    const { show: showDynamicIsland, hide: hideDynamicIsland, isVisible, updateContent } = useDynamicIsland();
     const { sendTimer, stop: stopWatch } = useAppleWatch();
     const { isRunning, remainingSeconds, elapsedSeconds, start, pause, reset, formatTime } = useClockTimer({
         duration: initialDuration > 0 ? initialDuration : undefined,
@@ -32,52 +24,26 @@ export default function ClockWidget({ initialDuration = 0, onComplete }: ClockWi
             if (onComplete) {
                 onComplete();
             }
-            // Auto-hide after completion
-            setTimeout(() => {
-                hideDynamicIsland();
-            }, 2000);
         },
     });
 
     const currentTime = initialDuration > 0 ? remainingSeconds : elapsedSeconds;
     const isCountdown = initialDuration > 0;
 
-    useEffect(() => {
-        // Show in Dynamic Island when timer starts
+    // Sync to Apple Watch
+    React.useEffect(() => {
         if (isRunning) {
-            showDynamicIsland({
-                type: 'timer',
-                title: isCountdown ? 'ספירה לאחור' : 'שעון עצר',
-                subtitle: formatTime(currentTime),
-                icon: Clock,
-                color: '#6366F1',
-                duration: 0, // Don't auto-hide
-            });
-        } else if (!isRunning && isVisible) {
-            // Hide when paused
-            hideDynamicIsland();
-        }
-    }, [isRunning, isCountdown, formatTime, showDynamicIsland, hideDynamicIsland, isVisible]);
-
-    // Update Dynamic Island subtitle in real-time and sync to Apple Watch
-    useEffect(() => {
-        if (isRunning && isVisible) {
             const timeStr = formatTime(currentTime);
-            updateContent({
-                subtitle: timeStr,
-            });
-            // Sync to Apple Watch
             sendTimer({
                 title: isCountdown ? 'ספירה לאחור' : 'שעון עצר',
                 time: timeStr,
                 isRunning: true,
                 color: '#6366F1',
             });
-        } else if (!isRunning) {
-            // Stop watch when timer stops
+        } else {
             stopWatch();
         }
-    }, [currentTime, isRunning, formatTime, updateContent, isVisible, isCountdown, sendTimer, stopWatch]);
+    }, [currentTime, isRunning, formatTime, isCountdown, sendTimer, stopWatch]);
 
     const handleToggle = () => {
         if (Platform.OS !== 'web') {
@@ -95,7 +61,6 @@ export default function ClockWidget({ initialDuration = 0, onComplete }: ClockWi
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         reset();
-        hideDynamicIsland();
     };
 
     return (

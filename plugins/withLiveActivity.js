@@ -30,10 +30,13 @@ const withLiveActivity = (config) => {
       
       // רשימת הקבצים להעתקה
       const filesToCopy = [
+        'ActivityAttributes.swift',
         'CalmParentLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
         'ActivityKitManager.swift',
+        'ActivityKitManagerBridge.m',
         'Info.plist',
+        'CalmParentLiveActivity.entitlements',
       ];
       
       // העתקת הקבצים
@@ -55,7 +58,7 @@ const withLiveActivity = (config) => {
         console.warn(`⚠️  No files found in ${sourceDir}. Make sure the Swift files exist in the root ${widgetName}/ folder.`);
       }
       
-      // יצירת Entitlements (אם לא קיים)
+      // יצירת Entitlements (אם לא קיים) - כולל App Group
       const entitlementsPath = path.join(targetDir, `${widgetName}.entitlements`);
       if (!fs.existsSync(entitlementsPath)) {
         const entitlementsContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -64,6 +67,10 @@ const withLiveActivity = (config) => {
 <dict>
 	<key>com.apple.developer.usernotifications.live-activities</key>
 	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.harel.calmparentapp</string>
+	</array>
 </dict>
 </plist>`;
         fs.writeFileSync(entitlementsPath, entitlementsContent);
@@ -120,9 +127,22 @@ const withLiveActivity = (config) => {
       return config;
     }
 
+    // בדיקת bundleIdentifier
+    if (!config.ios || !config.ios.bundleIdentifier) {
+      console.warn(`⚠️  iOS bundleIdentifier not found. Skipping Live Activity target setup.`);
+      return config;
+    }
+
     const bundleId = `${config.ios.bundleIdentifier}.${widgetName}`;
     const pbxProjectSection = xcodeProject.pbxProjectSection();
     const projectUuid = Object.keys(pbxProjectSection).find(key => key !== 'undefined' && !key.endsWith('_comment'));
+    
+    // בדיקת projectUuid
+    if (!projectUuid || !pbxProjectSection[projectUuid]) {
+      console.warn(`⚠️  Could not find Xcode project UUID. Skipping Live Activity target setup.`);
+      return config;
+    }
+    
     const mainGroupKey = pbxProjectSection[projectUuid].mainGroup;
 
     const target = xcodeProject.addTarget(widgetName, 'app_extension', widgetName);

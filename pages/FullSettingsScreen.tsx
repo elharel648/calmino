@@ -56,6 +56,7 @@ import { useActiveChild } from '../context/ActiveChildContext';
 import { deleteChild } from '../services/babyService';
 import { IntervalPicker } from '../components/Settings/IntervalPicker';
 import { TimePicker } from '../components/Settings/TimePicker';
+import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
 
 const LANGUAGES = [
   { key: 'he', label: 'עברית', flag: '🇮🇱' },
@@ -409,7 +410,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
-        {/* התראות ותזכורות */}
+        {/* התראות ותזכורות - Premium Design */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIconContainer, { backgroundColor: '#FFF4E6' }]}>
@@ -418,145 +419,7 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.notifications')}</Text>
           </View>
 
-          <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
-            <View style={[styles.listItem, styles.listItemFirst]}>
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FFF4E6' }]}>
-                  <Bell size={18} color="#FF9500" strokeWidth={2} />
-                </View>
-                <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.notificationsEnabled')}</Text>
-                </View>
-              </View>
-              <Switch
-                trackColor={{ false: theme.divider, true: '#FF9500' }}
-                thumbColor="#fff"
-                onValueChange={(val) => updateNotifSettings({ enabled: val })}
-                value={notifSettings.enabled}
-              />
-            </View>
-
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-            <View style={styles.listItem}>
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FEF3C7' }]}>
-                  <Utensils size={18} color="#F59E0B" strokeWidth={2} />
-                </View>
-                <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.feedReminder')}</Text>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                    {t('time.every')} {notifSettings.feedingIntervalHours} {t('time.hours')}
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                trackColor={{ false: theme.divider, true: '#F59E0B' }}
-                thumbColor="#fff"
-                onValueChange={(val) => updateNotifSettings({ feedingReminder: val })}
-                value={notifSettings.feedingReminder}
-                disabled={!notifSettings.enabled}
-              />
-            </View>
-
-            {notifSettings.feedingReminder && (
-              <>
-                <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-                <View style={styles.listItem}>
-                  <IntervalPicker
-                    value={notifSettings.feedingIntervalHours}
-                    options={[1, 2, 3, 4]}
-                    unit={t('settings.hours')}
-                    onChange={(val) => updateNotifSettings({ feedingIntervalHours: val as 1 | 2 | 3 | 4 })}
-                    disabled={!notifSettings.enabled}
-                  />
-                </View>
-                <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-                <View style={styles.listItem}>
-                  <TimePicker
-                    value={notifSettings.feedingStartTime || "08:00"}
-                    label={t('time.startTime')}
-                    onChange={(time) => updateNotifSettings({ feedingStartTime: time })}
-                    disabled={!notifSettings.enabled}
-                  />
-                </View>
-              </>
-            )}
-
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-            <View style={styles.listItem}>
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#D1FAE5' }]}>
-                  <Pill size={18} color="#10B981" strokeWidth={2} />
-                </View>
-                <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.supplementsReminder')}</Text>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                    כל יום בשעה {notifSettings.supplementTime}
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                trackColor={{ false: theme.divider, true: '#10B981' }}
-                thumbColor="#fff"
-                onValueChange={(val) => updateNotifSettings({ supplementReminder: val })}
-                value={notifSettings.supplementReminder}
-                disabled={!notifSettings.enabled}
-              />
-            </View>
-
-            {notifSettings.supplementReminder && (
-              <>
-                <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-                <View style={styles.listItem}>
-                  <TimePicker
-                    value={notifSettings.supplementTime}
-                    label={t('time.intakeTime')}
-                    onChange={(time) => updateNotifSettings({ supplementTime: time })}
-                    disabled={!notifSettings.enabled}
-                  />
-                </View>
-              </>
-            )}
-
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-            <View style={[styles.listItem, styles.listItemLast]}>
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FCE7F3' }]}>
-                  <FileText size={18} color="#EC4899" strokeWidth={2} />
-                </View>
-                <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.dailySummary')}</Text>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                    כל יום בשעה {notifSettings.dailySummaryTime}
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                trackColor={{ false: theme.divider, true: '#EC4899' }}
-                thumbColor="#fff"
-                onValueChange={(val) => updateNotifSettings({ dailySummary: val })}
-                value={notifSettings.dailySummary}
-                disabled={!notifSettings.enabled}
-              />
-            </View>
-
-            {notifSettings.dailySummary && (
-              <>
-                <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-                <View style={[styles.listItem, styles.listItemLast]}>
-                  <TimePicker
-                    value={notifSettings.dailySummaryTime}
-                    label={t('time.summaryTime')}
-                    onChange={(time) => updateNotifSettings({ dailySummaryTime: time })}
-                    disabled={!notifSettings.enabled}
-                  />
-                </View>
-              </>
-            )}
-          </View>
+          <PremiumNotificationSettings />
         </View>
 
         {/* תצוגה והתנהגות */}
