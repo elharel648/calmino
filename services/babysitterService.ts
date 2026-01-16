@@ -25,6 +25,34 @@ import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage } from '../ty
 // ===================
 
 /**
+ * Create a new booking request
+ */
+export async function createBooking(bookingData: {
+    parentId: string;
+    babysitterId: string;
+    date: Date;
+    startTime: string;
+    endTime: string;
+    hourlyRate: number;
+    notes?: string;
+}): Promise<string> {
+    const bookingRef = await addDoc(collection(db, 'bookings'), {
+        parentId: bookingData.parentId,
+        babysitterId: bookingData.babysitterId,
+        status: 'pending',
+        date: Timestamp.fromDate(bookingData.date),
+        startTime: bookingData.startTime,
+        endTime: bookingData.endTime,
+        hourlyRate: bookingData.hourlyRate,
+        notes: bookingData.notes || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+
+    return bookingRef.id;
+}
+
+/**
  * Get all bookings for a parent
  */
 export async function getParentBookings(parentId: string): Promise<BabysitterBooking[]> {

@@ -1,5 +1,5 @@
 // pages/SitterRegistrationScreen.tsx - Minimalist Sitter Registration
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -16,14 +16,24 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import {
-    User, Camera, Clock,
+    User, Camera, Clock, MapPin,
     ChevronLeft, ChevronRight, Check, Plus, Minus,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
+
+// Israeli cities for picker
+const ISRAELI_CITIES = [
+    'תל אביב', 'ירושלים', 'חיפה', 'באר שבע', 'ראשון לציון',
+    'פתח תקווה', 'אשדוד', 'נתניה', 'חולון', 'בני ברק',
+    'רמת גן', 'אשקלון', 'בת ים', 'הרצליה', 'כפר סבא',
+    'רעננה', 'מודיעין', 'רחובות', 'לוד', 'רמלה',
+    'נצרת', 'עכו', 'טבריה', 'אילת', 'קריית גת',
+];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -37,11 +47,17 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Step 2: Personal info
+    // Step 1: Personal info
     const [name, setName] = useState(auth.currentUser?.displayName || '');
     const [age, setAge] = useState('');
     const [phone, setPhone] = useState('');
     const [bio, setBio] = useState('');
+    const [experienceYears, setExperienceYears] = useState(''); // Years of experience
+
+    // Location
+    const [city, setCity] = useState('');
+    const [gpsLocation, setGpsLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
     // Step 3: Media
     const [profilePhoto, setProfilePhoto] = useState<string | null>(auth.currentUser?.photoURL || null);
@@ -116,11 +132,46 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         }));
     };
 
+    // Get GPS location
+    const getLocation = async () => {
+        setIsLoadingLocation(true);
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('הרשאה נדרשת', 'יש לאשר גישה למיקום כדי שהורים יוכלו למצוא אותך');
+                setIsLoadingLocation(false);
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+            });
+
+            setGpsLocation({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+            });
+
+            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error) {
+            if (__DEV__) console.error('Location error:', error);
+            Alert.alert('שגיאה', 'לא ניתן לקבל מיקום');
+        } finally {
+            setIsLoadingLocation(false);
+        }
+    };
+
     // Submit registration
     const handleSubmit = async () => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
             Alert.alert('שגיאה', 'יש להתחבר קודם');
+            return;
+        }
+
+        // Validate city
+        if (!city) {
+            Alert.alert('שדה חובה', 'יש לבחור עיר');
             return;
         }
 
@@ -133,6 +184,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 sitterActive: true,
                 sitterPrice: pricePerHour,
                 sitterBio: bio,
+                sitterExperience: experienceYears ? `${experienceYears} שנות ניסיון` : null,
                 sitterAvailability: Object.entries(availability)
                     .filter(([_, v]) => v)
                     .map(([k]) => parseInt(k)),
@@ -140,6 +192,9 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 phone: phone,
                 age: parseInt(age),
                 displayName: name,
+                // Location data
+                sitterCity: city,
+                sitterLocation: gpsLocation || null,
             });
 
             // Navigate directly to dashboard
@@ -151,10 +206,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         }
     };
 
-    // ========== STEP COMPONENTS ==========
+    // ========== STEP COMPONENTS (using useMemo to prevent recreation) ==========
 
-    // Step 1: Personal Info
-    const PersonalInfoStep = () => (
+    // Step 1: Personal Info - memoized to prevent input lag
+    const PersonalInfoStep = useMemo(() => (
         <View style={styles.stepContent}>
             <View style={styles.stepHeader}>
                 <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
@@ -206,6 +261,85 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
+                {/* Experience */}
+                <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>שנות ניסיון</Text>
+                    <TextInput
+                        style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
+                        value={experienceYears}
+                        onChangeText={setExperienceYears}
+                        placeholder="כמה שנים של ניסיון עם ילדים?"
+                        placeholderTextColor={theme.textSecondary}
+                        keyboardType="numeric"
+                        textAlign="right"
+                    />
+                </View>
+
+                {/* City Picker */}
+                <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>עיר *</Text>
+
+                    {/* Text input for custom city */}
+                    <TextInput
+                        style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border, marginBottom: 8 }]}
+                        value={city}
+                        onChangeText={setCity}
+                        placeholder="הקלד עיר או בחר מהרשימה"
+                        placeholderTextColor={theme.textSecondary}
+                        textAlign="right"
+                    />
+
+                    {/* Popular cities chips */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.cityPickerScroll}
+                        contentContainerStyle={styles.cityPickerContent}
+                    >
+                        {ISRAELI_CITIES.map((cityName) => (
+                            <TouchableOpacity
+                                key={cityName}
+                                style={[
+                                    styles.cityChip,
+                                    {
+                                        backgroundColor: city === cityName ? theme.textPrimary : theme.card,
+                                        borderColor: city === cityName ? theme.textPrimary : theme.border,
+                                    }
+                                ]}
+                                onPress={() => {
+                                    setCity(cityName);
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                }}
+                            >
+                                <Text style={[
+                                    styles.cityChipText,
+                                    { color: city === cityName ? '#fff' : theme.textPrimary }
+                                ]}>
+                                    {cityName}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+
+                {/* GPS Location Button */}
+                <TouchableOpacity
+                    style={[styles.locationBtn, { backgroundColor: gpsLocation ? '#E8F5E9' : theme.card, borderColor: gpsLocation ? '#4CAF50' : theme.border }]}
+                    onPress={getLocation}
+                    disabled={isLoadingLocation}
+                >
+                    {isLoadingLocation ? (
+                        <ActivityIndicator size="small" color={theme.textPrimary} />
+                    ) : (
+                        <>
+                            <MapPin size={20} color={gpsLocation ? '#4CAF50' : theme.textSecondary} />
+                            <Text style={[styles.locationBtnText, { color: gpsLocation ? '#4CAF50' : theme.textPrimary }]}>
+                                {gpsLocation ? 'מיקום נשמר ✓' : 'שתף מיקום GPS (מומלץ)'}
+                            </Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>קצת עליך</Text>
                     <TextInput
@@ -221,10 +355,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 </View>
             </View>
         </View>
-    );
+    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, theme]);
 
-    // Step 2: Photo
-    const PhotoStep = () => (
+    // Step 2: Photo - memoized
+    const PhotoStep = useMemo(() => (
         <View style={styles.stepContent}>
             <View style={styles.stepHeader}>
                 <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
@@ -252,10 +386,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 )}
             </TouchableOpacity>
         </View>
-    );
+    ), [profilePhoto, pickImage, theme]);
 
-    // Step 3: Pricing
-    const PricingStep = () => (
+    // Step 3: Pricing - memoized
+    const PricingStep = useMemo(() => (
         <View style={styles.stepContent}>
             <View style={styles.stepHeader}>
                 <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
@@ -324,24 +458,9 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 </View>
             </View>
         </View>
-    );
+    ), [name, pricePerHour, availability, theme]);
 
-    // Render current step - using direct JSX to avoid re-creating components
-    const renderStep = () => {
-        if (currentStep === 1) {
-            return <PersonalInfoStep />;
-        }
-
-        if (currentStep === 2) {
-            return <PhotoStep />;
-        }
-
-        if (currentStep === 3) {
-            return <PricingStep />;
-        }
-
-        return null;
-    };
+    // Steps are now memoized and won't cause input lag
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -378,7 +497,9 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             {/* Content */}
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                    {renderStep()}
+                    {currentStep === 1 && PersonalInfoStep}
+                    {currentStep === 2 && PhotoStep}
+                    {currentStep === 3 && PricingStep}
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -708,6 +829,42 @@ const styles = StyleSheet.create({
     primaryBtnText: {
         fontSize: 15,
         fontWeight: '600',
+    },
+
+    // City Picker styles
+    cityPickerScroll: {
+        marginTop: 8,
+    },
+    cityPickerContent: {
+        flexDirection: 'row-reverse',
+        paddingHorizontal: 4,
+        gap: 8,
+    },
+    cityChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    cityChipText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+
+    // Location button styles
+    locationBtn: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginTop: 12,
+        gap: 8,
+    },
+    locationBtnText: {
+        fontSize: 14,
+        fontWeight: '500',
     },
 });
 

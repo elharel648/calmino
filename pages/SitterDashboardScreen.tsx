@@ -21,7 +21,7 @@ import {
 import {
     Calendar, Clock, Users, CheckCircle,
     XCircle, ChevronRight, Star, MessageSquare, Settings,
-    User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send
+    User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send, DollarSign
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
@@ -99,6 +99,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [chatInput, setChatInput] = useState('');
     const [availableDays, setAvailableDays] = useState<string[]>(['0', '1', '2', '3', '4']); // Sun-Thu
     const [savingSettings, setSavingSettings] = useState(false);
+    const [sitterCity, setSitterCity] = useState(''); // City for location search
+    const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
 
     // Mock messages for DEV mode
     const mockMessages = __DEV__ ? [
@@ -188,6 +190,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 setPhoneNumber(data.phone || '');
                 setNotificationsEnabled(data.sitterNotificationsEnabled !== false);
                 setAvailableForBookings(data.sitterActive !== false);
+                setSitterCity(data.sitterCity || '');
+                setHourlyRate(data.sitterPrice || 50);
+                if (data.sitterAvailableDays) setAvailableDays(data.sitterAvailableDays);
 
                 return {
                     id: userId,
@@ -757,6 +762,47 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 />
                             </View>
 
+                            {/* City for search matching */}
+                            <View style={styles.settingsSection}>
+                                <View style={styles.settingRow}>
+                                    <MapPin size={18} color={theme.textSecondary} />
+                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>עיר (לחיפוש)</Text>
+                                </View>
+                                <TextInput
+                                    style={[styles.settingsInput, { backgroundColor: theme.cardSecondary, color: theme.textPrimary }]}
+                                    value={sitterCity}
+                                    onChangeText={setSitterCity}
+                                    placeholder="תל אביב, ירושלים..."
+                                    placeholderTextColor={theme.textSecondary}
+                                    textAlign="right"
+                                />
+                            </View>
+
+                            {/* Hourly Rate */}
+                            <View style={styles.settingsSection}>
+                                <View style={styles.settingRow}>
+                                    <DollarSign size={18} color={theme.textSecondary} />
+                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>מחיר לשעה</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
+                                    <TouchableOpacity
+                                        style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
+                                        onPress={() => setHourlyRate(Math.max(30, hourlyRate - 5))}
+                                    >
+                                        <Text style={{ fontSize: 20, color: theme.textPrimary }}>-</Text>
+                                    </TouchableOpacity>
+                                    <Text style={{ fontSize: 24, fontWeight: '700', color: theme.textPrimary }}>
+                                        ₪{hourlyRate}
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
+                                        onPress={() => setHourlyRate(Math.min(200, hourlyRate + 5))}
+                                    >
+                                        <Text style={{ fontSize: 20, color: theme.textPrimary }}>+</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
                             {/* Toggle Settings */}
                             <View style={styles.settingsSection}>
                                 <View style={styles.settingToggleRow}>
@@ -805,6 +851,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             phone: phoneNumber.trim() || null,
                                             sitterNotificationsEnabled: notificationsEnabled,
                                             sitterActive: availableForBookings,
+                                            sitterCity: sitterCity.trim() || null,
+                                            sitterPrice: hourlyRate,
+                                            sitterAvailableDays: availableDays,
                                         });
 
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -1656,6 +1705,13 @@ const styles = StyleSheet.create({
         height: 42,
         borderRadius: 21,
         backgroundColor: '#10B981',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    priceBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },

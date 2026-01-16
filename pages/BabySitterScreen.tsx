@@ -12,12 +12,14 @@ import {
     RefreshControl,
     Platform,
     ActivityIndicator,
+    TextInput,
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronRight,
-    User, Award, UserPlus
+    User, Award, UserPlus, MapPin
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
@@ -40,9 +42,88 @@ const BabySitterScreen = ({ navigation }: any) => {
     const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance'>('rating');
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
     const [checkingStatus, setCheckingStatus] = useState(false);
+    const [filterCity, setFilterCity] = useState<string>(''); // Manual city filter
 
-    // Get user photo
-    const userPhoto = auth.currentUser?.photoURL;
+    // User location state
+    const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [userCity, setUserCity] = useState<string | null>(null);
+
+    // Get user photo from Auth or Firestore
+    const [userPhoto, setUserPhoto] = useState<string | null>(auth.currentUser?.photoURL || null);
+
+    // Load user photo from Firestore if not in Auth
+    useEffect(() => {
+        const loadUserPhoto = async () => {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
+            // If already have photo from auth, use it
+            if (auth.currentUser?.photoURL) {
+                setUserPhoto(auth.currentUser.photoURL);
+                return;
+            }
+
+            // Try to get from Firestore
+            try {
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists() && userDoc.data().photoUrl) {
+                    setUserPhoto(userDoc.data().photoUrl);
+                }
+            } catch (error) {
+                // Silent fail
+            }
+        };
+
+        loadUserPhoto();
+    }, []);
+
+    // Calculate distance between two GPS coordinates (Haversine formula)
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(R * c * 10) / 10; // Round to 1 decimal
+    };
+
+    // Fetch user's location on mount
+    useEffect(() => {
+        const fetchUserLocation = async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    if (__DEV__) console.log('Location permission denied');
+                    return;
+                }
+
+                const location = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                });
+
+                setUserLocation({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                });
+
+                // Get city name from coordinates (reverse geocoding)
+                const [address] = await Location.reverseGeocodeAsync({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                });
+
+                if (address?.city) {
+                    setUserCity(address.city);
+                }
+            } catch (error) {
+                if (__DEV__) console.error('Location fetch error:', error);
+            }
+        };
+
+        fetchUserLocation();
+    }, []);
 
     // Check if user is registered as sitter
     const checkSitterStatus = async () => {
@@ -93,12 +174,40 @@ const BabySitterScreen = ({ navigation }: any) => {
         setRefreshing(false);
     }, [refetch]);
 
+    // Process sitters: add distance, filter by city match
+    const processedSitters = sitters.map(sitter => {
+        let distance = 0;
+
+        // Calculate real distance if both user and sitter have GPS
+        if (userLocation && sitter.location) {
+            distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                sitter.location.latitude,
+                sitter.location.longitude
+            );
+        }
+
+        return { ...sitter, distance };
+    });
+
+    // Determine which city to filter by: manual filter takes priority over auto-detected
+    const activeCity = filterCity.trim() || userCity;
+
+    // Filter: Show sitters from selected/detected city, or all if no city set
+    const citySitters = activeCity
+        ? processedSitters.filter(s => s.city?.toLowerCase().includes(activeCity.toLowerCase()))
+        : processedSitters;
+
+    // If no sitters in selected city, show all
+    const sittersToShow = citySitters.length > 0 ? citySitters : processedSitters;
+
     // Sort sitters
-    const sortedSitters = [...sitters].sort((a, b) => {
+    const sortedSitters = [...sittersToShow].sort((a, b) => {
         switch (sortBy) {
             case 'rating': return b.rating - a.rating;
             case 'price': return a.pricePerHour - b.pricePerHour;
-            case 'distance': return (a.distance || 0) - (b.distance || 0);
+            case 'distance': return (a.distance || 999) - (b.distance || 999);
             default: return 0;
         }
     });
@@ -315,10 +424,28 @@ const BabySitterScreen = ({ navigation }: any) => {
             {/* Parent Mode Content */}
             {userMode === 'parent' && (
                 <>
+                    {/* City Filter */}
+                    <View style={[styles.cityFilterContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <MapPin size={18} color={theme.textSecondary} />
+                        <TextInput
+                            style={[styles.cityFilterInput, { color: theme.textPrimary }]}
+                            value={filterCity}
+                            onChangeText={setFilterCity}
+                            placeholder={userCity ? `${userCity} (אוטומטי)` : 'חפש לפי עיר...'}
+                            placeholderTextColor={theme.textSecondary}
+                            textAlign="right"
+                        />
+                        {filterCity.length > 0 && (
+                            <TouchableOpacity onPress={() => setFilterCity('')}>
+                                <Text style={{ color: theme.textSecondary, fontSize: 18 }}>×</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
                     {/* Sort & Count */}
                     <View style={styles.filterSection}>
                         <Text style={[styles.resultsCount, { color: theme.textSecondary }]}>
-                            {sortedSitters.length} סיטרים זמינים
+                            {sortedSitters.length} סיטרים זמינים {activeCity ? `ב${activeCity}` : ''}
                         </Text>
                         <SortPills />
                     </View>
@@ -624,6 +751,24 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: '#1877F2',
         fontWeight: '600',
+    },
+
+    // City filter styles
+    cityFilterContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        marginHorizontal: 20,
+        marginBottom: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        gap: 10,
+    },
+    cityFilterInput: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '500',
     },
 });
 
