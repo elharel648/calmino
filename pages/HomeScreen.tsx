@@ -190,15 +190,15 @@ export default function HomeScreen({ navigation }: any) {
     }, []);
 
     // --- Handlers ---
-    const { showSuccess, showError } = useToast();
+    const { showToast, showSuccess, showError } = useToast();
     const handleSaveTracking = useCallback(async (data: any) => {
         if (!user) {
-            showError('יש להתחבר למערכת');
+            showError(t('errors.loginRequired'));
             return;
         }
 
         if (!profile.id) {
-            showError('לא נמצא פרופיל ילד. אנא צור פרופיל בהגדרות.');
+            showError(t('errors.noChildProfile'));
             return;
         }
 
@@ -214,16 +214,21 @@ export default function HomeScreen({ navigation }: any) {
             });
 
             // Show success toast with undo
-            showSuccess('נשמר בהצלחה!', 5000, {
-                label: 'ביטול',
-                onPress: async () => {
-                    const success = await undoService.undo();
-                    if (success) {
-                        showSuccess('בוטל');
-                        refreshHomeData();
-                    } else {
-                        showError('לא ניתן לבטל');
-                    }
+            showToast({
+                message: t('common.savedSuccess'),
+                type: 'success',
+                duration: 5000,
+                action: {
+                    label: t('common.undo'),
+                    onPress: async () => {
+                        const success = await undoService.undo();
+                        if (success) {
+                            showSuccess(t('common.undone'));
+                            refreshHomeData();
+                        } else {
+                            showError(t('errors.cannotUndo'));
+                        }
+                    },
                 },
             });
 
@@ -232,7 +237,7 @@ export default function HomeScreen({ navigation }: any) {
                 scheduleFeedingReminder(new Date());
             }
         } catch (error) {
-            showError('שגיאה בשמירה. נסה שוב.');
+            showError(t('errors.saveError'));
         }
 
         refreshHomeData();
@@ -413,7 +418,7 @@ export default function HomeScreen({ navigation }: any) {
                                     meds={meds}
                                     navigation={navigation}
                                     onAddChild={() => navigation.navigate('CreateBaby')}
-                                    onJoinWithCode={() => { console.log('🔗 HomeScreen: Opening JoinModal'); setIsJoinModalOpen(true); }}
+                                    onJoinWithCode={() => { if (__DEV__) console.log('🔗 HomeScreen: Opening JoinModal'); setIsJoinModalOpen(true); }}
                                     onEditChild={(child) => {
                                         setEditingChild(child);
                                         setIsEditChildModalOpen(true);
@@ -564,7 +569,7 @@ export default function HomeScreen({ navigation }: any) {
                                 });
                                 onRefresh();
                             } catch (e) {
-                                console.error('Failed to update child:', e);
+                                if (__DEV__) console.error('Failed to update child:', e);
                             }
                         }}
                         onClose={() => {

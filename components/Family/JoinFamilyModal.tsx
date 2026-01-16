@@ -29,7 +29,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    console.log('🔗 JoinFamilyModal RENDER - visible:', visible);
+    if (__DEV__) console.log('\ud83d\udd17 JoinFamilyModal RENDER - visible:', visible);
 
     const handleJoin = async () => {
         if (code.length !== 6) {

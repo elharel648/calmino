@@ -2,8 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, Text, TouchableOpacity, Platform, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Edit2, TrendingUp, Award, Sparkles, ChevronRight, Camera, UserPlus, Users, User } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+import { Edit2, TrendingUp, Award, Sparkles, ChevronRight, Camera, UserPlus, Users, User, Plus } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 // Custom Hooks
@@ -109,8 +109,8 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6366F1" />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -118,21 +118,18 @@ export default function ProfileScreen() {
   return (
     <GradientBackground>
       <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <StatusBar style={isDarkMode ? 'light' : 'light'} />
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
 
-        {/* Header */}
-        <LinearGradient
-          colors={['#A78BFA', '#C4B5FD']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.header}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ChevronRight size={22} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>פרופיל</Text>
-          <View style={{ width: 38 }} />
-        </LinearGradient>
+        {/* Glass Header */}
+        <BlurView intensity={80} tint={isDarkMode ? 'dark' : 'light'} style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <ChevronRight size={22} color={theme.textPrimary} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>פרופיל</Text>
+            <View style={{ width: 38 }} />
+          </View>
+        </BlurView>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
@@ -142,12 +139,12 @@ export default function ProfileScreen() {
               {baby?.photoUrl ? (
                 <Image source={{ uri: baby.photoUrl }} style={styles.avatar} />
               ) : (
-                <View style={styles.avatarPlaceholder}>
+                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? '#2D2D3A' : '#EEF2FF' }]}>
                   {getGenderIcon()}
                 </View>
               )}
               <View style={styles.cameraBadge}>
-                <Camera size={12} color="#fff" />
+                <Camera size={14} color="#fff" />
               </View>
             </TouchableOpacity>
 
@@ -158,7 +155,7 @@ export default function ProfileScreen() {
             </View>
 
             <TouchableOpacity
-              style={styles.editProfileBtn}
+              style={[styles.editProfileBtn, { backgroundColor: isDarkMode ? '#2D2D3A' : '#EEF2FF' }]}
               onPress={() => {
                 if (Platform.OS !== 'web') {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -166,20 +163,53 @@ export default function ProfileScreen() {
                 setIsEditBasicInfoOpen(true);
               }}
             >
-              <Edit2 size={14} color="#6366F1" />
+              <Edit2 size={14} color={theme.primary} />
             </TouchableOpacity>
           </View>
 
+          {/* Growth Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <TrendingUp size={18} color="#10B981" />
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>צמיחה והתפתחות</Text>
+            </View>
+            <GrowthSection
+              stats={baby?.stats}
+              onEditWeight={() => setEditMetric({ type: 'weight', title: 'משקל', unit: 'ק"ג', value: baby?.stats?.weight || '' })}
+              onEditHeight={() => setEditMetric({ type: 'height', title: 'גובה', unit: 'ס"מ', value: baby?.stats?.height || '' })}
+              onEditHead={() => setEditMetric({ type: 'head', title: 'היקף ראש', unit: 'ס"מ', value: baby?.stats?.headCircumference || '' })}
+            />
+          </View>
 
-
-
-
+          {/* Milestones Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Award size={18} color="#F59E0B" />
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>אבני דרך</Text>
+              <TouchableOpacity
+                style={styles.addTextBtn}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setIsMilestoneOpen(true);
+                }}
+              >
+                <Plus size={18} color={theme.primary} />
+              </TouchableOpacity>
+            </View>
+            <MilestoneTimeline
+              milestones={baby?.milestones || []}
+              onAdd={() => setIsMilestoneOpen(true)}
+              onDelete={handleDeleteMilestone}
+            />
+          </View>
 
           {/* Magical Moments Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Sparkles size={18} color="#8B5CF6" />
-              <Text style={styles.sectionTitle}>רגעים קסומים</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>רגעים קסומים</Text>
             </View>
             <AlbumCarousel
               album={baby?.album}
@@ -246,21 +276,29 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
+  // Glass Header
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  headerContent: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 56,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   backBtn: {
     padding: 8,
@@ -268,15 +306,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#fff',
   },
   scrollContent: {
-    padding: 16,
+    paddingTop: 110, // Account for glass header
+    paddingHorizontal: 16,
     paddingBottom: 100,
   },
   // Profile Card
   profileCard: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
     flexDirection: 'row-reverse',
@@ -284,7 +321,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -292,104 +329,71 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F3F4F6',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
   avatarPlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#EEF2FF',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarEmoji: {
-    fontSize: 28,
   },
   cameraBadge: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#6366F1',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#fff',
   },
   profileInfo: {
     flex: 1,
-    marginRight: 14,
+    marginRight: 16,
     alignItems: 'flex-end',
   },
   profileName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   profileAge: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6366F1',
+    fontSize: 15,
+    fontWeight: '600',
     marginBottom: 2,
   },
   profileDate: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 13,
   },
   editProfileBtn: {
-    padding: 10,
-    backgroundColor: '#EEF2FF',
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 12,
   },
   // Sections
   section: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   sectionHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 14,
   },
   sectionTitle: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
     textAlign: 'right',
   },
   addTextBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  addText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6366F1',
-  },
-  // Guest Invite Button
-  inviteGuestBtn: {
-    borderRadius: 16,
-    overflow: 'hidden' as const,
-    marginHorizontal: 20,
-    marginBottom: 16,
-  },
-  inviteGuestGradient: {
-    flexDirection: 'row-reverse' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingVertical: 14,
-    gap: 10,
-  },
-  inviteGuestText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600' as const,
+    padding: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 10,
   },
 });

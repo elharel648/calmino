@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { getBabysitterReviews } from '../services/babysitterService';
 
 // Types
 interface Review {
@@ -27,7 +28,7 @@ interface SitterData {
 
 type RootStackParamList = {
     SitterProfile: { sitterData: SitterData };
-    ChatScreen: { sitterName: string; sitterImage: string };
+    ChatScreen: { sitterName: string; sitterImage: string; sitterId: string };
 };
 
 type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'SitterProfile'>;
@@ -35,6 +36,9 @@ type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Sitt
 const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) => {
     const { sitterData } = route.params || {};
     const [showFullVideo, setShowFullVideo] = useState(false);
+
+    // Check if sitter has a real video (not from database yet, so hide video feature for now)
+    const hasVideo = false; // TODO: Set to true when sitter.videoUri is available from Firebase
 
     // Extended data (in reality would come from database)
     const extendedData = {
@@ -46,33 +50,69 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             'https://images.pexels.com/photos/3845492/pexels-photo-3845492.jpeg',
             'https://images.pexels.com/photos/5426401/pexels-photo-5426401.jpeg',
         ],
-        videoUri: 'https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4',
+        videoUri: null, // Only show video if sitter uploaded one
     };
 
     if (!sitterData) return null;
 
+    const hasPhone = Boolean(sitterData.phone && sitterData.phone.trim());
+
     const handleCall = () => {
-        if (sitterData.phone) {
+        if (hasPhone) {
             Linking.openURL(`tel:${sitterData.phone}`);
         } else {
-            Alert.alert('שים לב', 'מספר טלפון לא זמין');
+            Alert.alert('שים לב', 'מספר טלפון לא זמין. נסה ליצור קשר בצ׳אט.');
         }
     };
 
     const handleWhatsApp = () => {
-        const cleanPhone = sitterData.phone ? sitterData.phone.replace(/\D/g, '') : '';
+        if (!hasPhone) {
+            Alert.alert('שים לב', 'מספר טלפון לא זמין. נסה ליצור קשר בצ׳אט.');
+            return;
+        }
+        const cleanPhone = sitterData.phone!.replace(/\D/g, '');
         const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
         const message = `היי ${sitterData.name}, הגעתי דרך CalmParent, אשמח לשמוע פרטים :)`;
         const url = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
-        Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'וואצאפ לא מותקן'));
+        Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'ואצאפ לא מותקן'));
     };
 
     const handleChat = () => {
         navigation.navigate('ChatScreen', {
             sitterName: sitterData.name,
-            sitterImage: sitterData.image
+            sitterImage: sitterData.image,
+            sitterId: sitterData.id,
         });
     };
+
+    // Fetch reviews from Firebase
+    const [reviewsList, setReviewsList] = useState<Review[]>(sitterData.reviewsList || []);
+    const [loadingReviews, setLoadingReviews] = useState(true);
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const reviews = await getBabysitterReviews(sitterData.id);
+                const formattedReviews: Review[] = reviews.map(r => ({
+                    user: r.parentName || 'הורה',
+                    text: r.text || '',
+                    rating: r.rating,
+                }));
+                setReviewsList(formattedReviews);
+            } catch (error) {
+                console.log('Could not fetch reviews:', error);
+            } finally {
+                setLoadingReviews(false);
+            }
+        };
+
+        if (sitterData.id && !sitterData.id.startsWith('mock_')) {
+            fetchReviews();
+        } else {
+            // Mock data - don't fetch
+            setLoadingReviews(false);
+        }
+    }, [sitterData.id]);
 
     return (
         <View style={styles.container}>
@@ -84,16 +124,24 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                {/* Video Hero */}
+                {/* Hero Section - Static image or video */}
                 <View style={styles.heroContainer}>
-                    <Video
-                        style={styles.heroVideo}
-                        source={{ uri: extendedData.videoUri }}
-                        resizeMode={ResizeMode.COVER}
-                        isLooping
-                        shouldPlay
-                        isMuted
-                    />
+                    {hasVideo && extendedData.videoUri ? (
+                        <Video
+                            style={styles.heroVideo}
+                            source={{ uri: extendedData.videoUri }}
+                            resizeMode={ResizeMode.COVER}
+                            isLooping
+                            shouldPlay
+                            isMuted
+                        />
+                    ) : (
+                        <Image
+                            source={{ uri: sitterData.image }}
+                            style={styles.heroVideo}
+                            resizeMode="cover"
+                        />
+                    )}
                     <View style={styles.heroOverlay} />
 
                     <View style={styles.heroContent}>
@@ -110,10 +158,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.playFullBtn} onPress={() => setShowFullVideo(true)}>
-                        <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.95)" />
-                        <Text style={styles.playText}>נגן היכרות</Text>
-                    </TouchableOpacity>
+                    {hasVideo && (
+                        <TouchableOpacity style={styles.playFullBtn} onPress={() => setShowFullVideo(true)}>
+                            <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.95)" />
+                            <Text style={styles.playText}>נגן היכרות</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Stats Row */}
@@ -150,8 +200,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {/* Reviews */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>מה ההורים אומרים</Text>
-                    {sitterData.reviewsList && sitterData.reviewsList.length > 0 ? (
-                        sitterData.reviewsList.map((review, i) => (
+                    {loadingReviews ? (
+                        <View style={styles.emptyReviews}>
+                            <ActivityIndicator size="small" color="#6366F1" />
+                        </View>
+                    ) : reviewsList.length > 0 ? (
+                        reviewsList.map((review, i) => (
                             <View key={i} style={styles.reviewCard}>
                                 <View style={styles.reviewHeader}>
                                     <Text style={styles.reviewerName}>{review.user}</Text>
@@ -162,7 +216,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                         </View>
                                     )}
                                 </View>
-                                <Text style={styles.reviewBody}>"{review.text}"</Text>
+                                {review.text && <Text style={styles.reviewBody}>"{review.text}"</Text>}
                             </View>
                         ))
                     ) : (

@@ -118,30 +118,30 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
   // Google response handler
   useEffect(() => {
-    console.log('🔐 Google Auth - request:', !!request, 'response type:', response?.type);
+    if (__DEV__) console.log('🔐 Google Auth - request:', !!request, 'response type:', response?.type);
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      console.log('🔐 Google Auth - Got id_token, length:', id_token?.length);
+      if (__DEV__) console.log('🔐 Google Auth - Got id_token, length:', id_token?.length);
       const credential = GoogleAuthProvider.credential(id_token);
 
       setLoading(true);
       signInWithCredential(auth, credential)
         .then(() => {
-          console.log('✅ Google Sign-In Success!');
+          if (__DEV__) console.log('✅ Google Sign-In Success!');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           onLoginSuccess();
         })
         .catch((error) => {
-          console.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
+          if (__DEV__) console.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           Alert.alert('שגיאה', `לא הצלחנו להתחבר עם גוגל: ${error.code}`);
         })
         .finally(() => setLoading(false));
     } else if (response?.type === 'error') {
-      console.error('❌ Google Auth Error:', response.error);
+      if (__DEV__) console.error('❌ Google Auth Error:', response.error);
       Alert.alert('שגיאת Google', response.error?.message || 'Unknown error');
     } else if (response?.type === 'dismiss') {
-      console.log('🔐 Google Auth - User dismissed');
+      if (__DEV__) console.log('🔐 Google Auth - User dismissed');
     }
   }, [response]);
 
@@ -557,7 +557,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     style={styles.socialBtn}
                     onPress={async () => {
                       try {
-                        console.log('🍎 Apple Sign-In - Starting...');
+                        if (__DEV__) console.log('🍎 Apple Sign-In - Starting...');
                         // Generate a random nonce
                         const rawNonce = Math.random().toString(36).substring(2, 15) +
                           Math.random().toString(36).substring(2, 15);
@@ -567,7 +567,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                           Crypto.CryptoDigestAlgorithm.SHA256,
                           rawNonce
                         );
-                        console.log('🍎 Apple Sign-In - Nonce generated, calling signInAsync...');
+                        if (__DEV__) console.log('🍎 Apple Sign-In - Nonce generated, calling signInAsync...');
 
                         const credential = await AppleAuthentication.signInAsync({
                           requestedScopes: [
@@ -576,7 +576,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                           ],
                           nonce: hashedNonce,
                         });
-                        console.log('🍎 Apple Sign-In - Got credential, identityToken length:', credential.identityToken?.length);
+                        if (__DEV__) console.log('🍎 Apple Sign-In - Got credential, identityToken length:', credential.identityToken?.length);
 
                         // Create Firebase credential with rawNonce
                         const provider = new OAuthProvider('apple.com');
@@ -586,13 +586,13 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                         });
 
                         setLoading(true);
-                        console.log('🍎 Apple Sign-In - Signing in to Firebase...');
+                        if (__DEV__) console.log('🍎 Apple Sign-In - Signing in to Firebase...');
                         await signInWithCredential(auth, firebaseCredential);
-                        console.log('✅ Apple Sign-In Success!');
+                        if (__DEV__) console.log('✅ Apple Sign-In Success!');
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         onLoginSuccess();
                       } catch (e: any) {
-                        console.error('❌ Apple Sign-In Error:', e.code, e.message);
+                        if (__DEV__) console.error('❌ Apple Sign-In Error:', e.code, e.message);
                         if (e.code !== 'ERR_REQUEST_CANCELED') {
                           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                           Alert.alert('שגיאת Apple', `${e.code}: ${e.message}`);

@@ -29,8 +29,8 @@ export const setUserOnline = async (familyId: string): Promise<void> => {
             userId,
             name: auth.currentUser?.displayName || 'משתמש',
         }, { merge: true });
-    } catch {
-        // Silently fail
+    } catch (e) {
+        if (__DEV__) console.error('setUserOnline error:', e);
     }
 };
 
@@ -45,8 +45,8 @@ export const setUserOffline = async (familyId: string): Promise<void> => {
             isOnline: false,
             lastSeen: serverTimestamp(),
         });
-    } catch {
-        // Silently fail
+    } catch (e) {
+        if (__DEV__) console.error('setUserOffline error:', e);
     }
 };
 
@@ -95,7 +95,8 @@ export const subscribeToFamilyPresence = (
                         lastSeen: null,
                     };
                 }
-            } catch {
+            } catch (e) {
+                if (__DEV__) console.error('getPresence error:', e);
                 return {
                     userId: memberId,
                     name: members[memberId]?.name || 'משתמש',

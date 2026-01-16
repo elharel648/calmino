@@ -16,7 +16,7 @@ import {
 import { X, Star, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { auth, db } from '../../services/firebaseConfig';
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
 import { ReviewTag, REVIEW_TAG_LABELS } from '../../types/babysitter';
 
@@ -101,6 +101,29 @@ const RatingModal: React.FC<RatingModalProps> = ({
                     rated: true,
                     ratedAt: serverTimestamp(),
                 });
+            }
+
+            // Update babysitter's average rating
+            try {
+                const sitterDoc = await getDoc(doc(db, 'users', babysitterId));
+                if (sitterDoc.exists()) {
+                    const sitterData = sitterDoc.data();
+                    const currentRating = sitterData.sitterRating || 0;
+                    const currentCount = sitterData.sitterReviewCount || 0;
+
+                    // Calculate new average: (oldAvg * oldCount + newRating) / newCount
+                    const newCount = currentCount + 1;
+                    const newAverage = ((currentRating * currentCount) + rating) / newCount;
+
+                    await updateDoc(doc(db, 'users', babysitterId), {
+                        sitterRating: Math.round(newAverage * 10) / 10, // Round to 1 decimal
+                        sitterReviewCount: increment(1),
+                    });
+                    console.log('✅ Rating updated: new average =', newAverage.toFixed(1));
+                }
+            } catch (ratingError) {
+                console.log('⚠️ Could not update sitter rating:', ratingError);
+                // Don't fail the whole submission if rating update fails
             }
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

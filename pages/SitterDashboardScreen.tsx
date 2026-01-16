@@ -98,6 +98,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [chatInput, setChatInput] = useState('');
     const [availableDays, setAvailableDays] = useState<string[]>(['0', '1', '2', '3', '4']); // Sun-Thu
+    const [savingSettings, setSavingSettings] = useState(false);
 
     // Mock messages for DEV mode
     const mockMessages = __DEV__ ? [
@@ -181,6 +182,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             const userDoc = await getDoc(doc(db, 'users', userId));
             if (userDoc.exists()) {
                 const data = userDoc.data();
+
+                // Load settings from Firebase
+                setPreferredLocation(data.sitterPreferredLocation || '');
+                setPhoneNumber(data.phone || '');
+                setNotificationsEnabled(data.sitterNotificationsEnabled !== false);
+                setAvailableForBookings(data.sitterActive !== false);
+
                 return {
                     id: userId,
                     name: data.displayName || auth.currentUser?.displayName || 'סיטר',
@@ -783,13 +791,39 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             {/* Save Button */}
                             <TouchableOpacity
                                 style={styles.saveSettingsBtn}
-                                onPress={() => {
-                                    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                    setSettingsVisible(false);
-                                    Alert.alert('נשמר!', 'ההגדרות נשמרו בהצלחה');
+                                onPress={async () => {
+                                    const userId = auth.currentUser?.uid;
+                                    if (!userId) {
+                                        Alert.alert('שגיאה', 'יש להתחבר קודם');
+                                        return;
+                                    }
+
+                                    try {
+                                        setSavingSettings(true);
+                                        await updateDoc(doc(db, 'users', userId), {
+                                            sitterPreferredLocation: preferredLocation.trim() || null,
+                                            phone: phoneNumber.trim() || null,
+                                            sitterNotificationsEnabled: notificationsEnabled,
+                                            sitterActive: availableForBookings,
+                                        });
+
+                                        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                        setSettingsVisible(false);
+                                        Alert.alert('נשמר!', 'ההגדרות נשמרו בהצלחה');
+                                    } catch (error) {
+                                        console.error('Failed to save settings:', error);
+                                        Alert.alert('שגיאה', 'לא ניתן לשמור, נסה שוב');
+                                    } finally {
+                                        setSavingSettings(false);
+                                    }
                                 }}
+                                disabled={savingSettings}
                             >
-                                <Text style={styles.saveSettingsBtnText}>שמור הגדרות</Text>
+                                {savingSettings ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.saveSettingsBtnText}>שמור הגדרות</Text>
+                                )}
                             </TouchableOpacity>
 
                             {/* Edit Profile */}

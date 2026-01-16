@@ -150,7 +150,7 @@ export function subscribeToActiveShift(
 // ===================
 
 /**
- * Get reviews for a babysitter
+ * Get reviews for a babysitter (with parent names)
  */
 export async function getBabysitterReviews(babysitterId: string): Promise<Review[]> {
     const q = query(
@@ -160,7 +160,32 @@ export async function getBabysitterReviews(babysitterId: string): Promise<Review
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+    const reviews: Review[] = [];
+
+    for (const docSnap of snapshot.docs) {
+        const data = docSnap.data();
+        let parentName = 'הורה';
+
+        // Try to get parent name
+        if (data.parentId) {
+            try {
+                const parentDoc = await getDoc(doc(db, 'users', data.parentId));
+                if (parentDoc.exists()) {
+                    parentName = parentDoc.data().displayName || 'הורה';
+                }
+            } catch (e) {
+                if (__DEV__) console.error('getParentName error:', e);
+            }
+        }
+
+        reviews.push({
+            id: docSnap.id,
+            ...data,
+            parentName,
+        } as Review);
+    }
+
+    return reviews;
 }
 
 /**
@@ -318,14 +343,41 @@ export async function getBabysitterStats(babysitterId: string): Promise<{
 
     // Count unique parents who booked 2+ times
     const parentCounts: Record<string, number> = {};
-    bookingsSnapshot.docs.forEach(doc => {
-        const parentId = doc.data().parentId;
+    bookingsSnapshot.docs.forEach(docSnap => {
+        const parentId = docSnap.data().parentId;
         parentCounts[parentId] = (parentCounts[parentId] || 0) + 1;
     });
     const repeatFamilies = Object.values(parentCounts).filter(count => count >= 2).length;
 
-    // TODO: Calculate actual response time from pending->confirmed timestamps
-    const avgResponseTime = 5; // Placeholder
+    // Calculate average response time from pending->confirmed timestamps
+    let avgResponseTime = 5; // Default fallback in minutes
+    try {
+        const confirmedQuery = query(
+            collection(db, 'bookings'),
+            where('babysitterId', '==', babysitterId),
+            where('status', 'in', ['confirmed', 'completed', 'active'])
+        );
+        const confirmedSnapshot = await getDocs(confirmedQuery);
+
+        const responseTimes: number[] = [];
+        confirmedSnapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.createdAt && data.updatedAt) {
+                const created = data.createdAt.toDate?.() || new Date(data.createdAt);
+                const updated = data.updatedAt.toDate?.() || new Date(data.updatedAt);
+                const diffMinutes = Math.floor((updated.getTime() - created.getTime()) / (1000 * 60));
+                if (diffMinutes > 0 && diffMinutes < 1440) { // Less than 24 hours
+                    responseTimes.push(diffMinutes);
+                }
+            }
+        });
+
+        if (responseTimes.length > 0) {
+            avgResponseTime = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
+        }
+    } catch (e) {
+        if (__DEV__) console.error('getSitterStats error:', e);
+    }
 
     return {
         completedShifts,

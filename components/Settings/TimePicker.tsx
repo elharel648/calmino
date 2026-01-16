@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Clock } from 'lucide-react-native';
+import { useTheme } from '../../context/ThemeContext';
+import * as Haptics from 'expo-haptics';
+
+// Unified accent color
+const ACCENT_COLOR = '#6366F1';
 
 interface TimePickerProps {
     value: string; // HH:MM format
@@ -16,6 +21,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     onChange,
     disabled = false,
 }) => {
+    const { theme } = useTheme();
     const [showPicker, setShowPicker] = useState(false);
 
     // Convert HH:MM string to Date object
@@ -33,6 +39,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         return `${hours}:${minutes}`;
     };
 
+    const handlePress = () => {
+        if (disabled) return;
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        setShowPicker(true);
+    };
+
     const handleTimeChange = (event: any, selectedDate?: Date) => {
         if (Platform.OS === 'android') {
             setShowPicker(false);
@@ -44,22 +58,44 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         }
     };
 
+    const handleConfirm = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        setShowPicker(false);
+    };
+
+    const handleCancel = () => {
+        setShowPicker(false);
+    };
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <TouchableOpacity
-                style={[styles.button, disabled && styles.buttonDisabled]}
-                onPress={() => !disabled && setShowPicker(true)}
+                style={[
+                    styles.button,
+                    {
+                        backgroundColor: theme.card,
+                        borderColor: theme.divider,
+                    },
+                    disabled && styles.buttonDisabled,
+                ]}
+                onPress={handlePress}
                 activeOpacity={0.7}
                 disabled={disabled}
             >
                 <View style={styles.content}>
-                    <Clock size={18} color={disabled ? '#9CA3AF' : '#6366F1'} />
-                    <Text style={[styles.label, disabled && styles.labelDisabled]}>
+                    <View style={[styles.iconContainer, { backgroundColor: `${ACCENT_COLOR}15` }]}>
+                        <Clock size={16} color={disabled ? theme.textSecondary : ACCENT_COLOR} />
+                    </View>
+                    <Text style={[styles.label, { color: disabled ? theme.textSecondary : theme.textPrimary }]}>
                         {label}
                     </Text>
-                    <Text style={[styles.time, disabled && styles.timeDisabled]}>
-                        {value}
-                    </Text>
+                    <View style={[styles.timeContainer, { backgroundColor: `${ACCENT_COLOR}10` }]}>
+                        <Text style={[styles.time, { color: disabled ? theme.textSecondary : ACCENT_COLOR }]}>
+                            {value}
+                        </Text>
+                    </View>
                 </View>
             </TouchableOpacity>
 
@@ -80,18 +116,26 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                     visible={showPicker}
                     transparent={true}
                     animationType="fade"
-                    onRequestClose={() => setShowPicker(false)}
+                    onRequestClose={handleCancel}
                 >
                     <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <TouchableOpacity onPress={() => setShowPicker(false)}>
-                                    <Text style={styles.cancelText}>ביטול</Text>
+                        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                            {/* Drag Handle */}
+                            <View style={styles.dragHandleContainer}>
+                                <View style={[styles.dragHandle, { backgroundColor: theme.divider }]} />
+                            </View>
+
+                            {/* Header */}
+                            <View style={[styles.modalHeader, { borderBottomColor: theme.divider }]}>
+                                <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+                                    <Text style={[styles.cancelText, { color: theme.textSecondary }]}>ביטול</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                                <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{label}</Text>
+                                <TouchableOpacity onPress={handleConfirm} style={styles.headerButton}>
                                     <Text style={styles.confirmText}>אישור</Text>
                                 </TouchableOpacity>
                             </View>
+
                             <DateTimePicker
                                 value={getDateFromTime(value)}
                                 mode="time"
@@ -99,7 +143,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                                 display="spinner"
                                 onChange={handleTimeChange}
                                 locale="he-IL"
-                                textColor="#000"
+                                textColor={theme.textPrimary}
+                                style={styles.picker}
                             />
                         </View>
                     </View>
@@ -111,18 +156,18 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingVertical: 8,
-        backgroundColor: '#F9FAFB',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
     },
     button: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
         padding: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        elevation: 1,
     },
     buttonDisabled: {
         opacity: 0.4,
@@ -132,56 +177,76 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
     },
+    iconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     label: {
         flex: 1,
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#374151',
+        fontSize: 15,
+        fontWeight: '500',
         textAlign: 'right',
     },
-    labelDisabled: {
-        color: '#9CA3AF',
+    timeContainer: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
     },
     time: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#6366F1',
-        minWidth: 50,
-        textAlign: 'left',
-    },
-    timeDisabled: {
-        color: '#9CA3AF',
     },
     // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 20,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingBottom: 30,
+    },
+    dragHandleContainer: {
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    dragHandle: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
-        backgroundColor: '#F9FAFB',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    headerButton: {
+        minWidth: 60,
+    },
+    modalTitle: {
+        fontSize: 17,
+        fontWeight: '600',
+        textAlign: 'center',
     },
     confirmText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#6366F1',
+        color: ACCENT_COLOR,
+        textAlign: 'left',
     },
     cancelText: {
         fontSize: 16,
-        color: '#6B7280',
+        textAlign: 'right',
+    },
+    picker: {
+        height: 200,
     },
 });
 

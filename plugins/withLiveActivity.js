@@ -18,16 +18,16 @@ const withLiveActivity = (config) => {
       const widgetName = 'CalmParentLiveActivity';
       const projectRoot = config.modRequest.projectRoot;
       const iosRoot = config.modRequest.platformProjectRoot;
-      
+
       // נתיבים: מקור (בשורש הפרויקט) ויעד (ב-ios/)
       const sourceDir = path.join(projectRoot, widgetName);
       const targetDir = path.join(iosRoot, widgetName);
-      
+
       // יצירת תיקיית היעד
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }
-      
+
       // רשימת הקבצים להעתקה
       const filesToCopy = [
         'ActivityAttributes.swift',
@@ -38,13 +38,13 @@ const withLiveActivity = (config) => {
         'Info.plist',
         'CalmParentLiveActivity.entitlements',
       ];
-      
+
       // העתקת הקבצים
       let copiedCount = 0;
       filesToCopy.forEach((fileName) => {
         const sourcePath = path.join(sourceDir, fileName);
         const targetPath = path.join(targetDir, fileName);
-        
+
         if (fs.existsSync(sourcePath)) {
           fs.copyFileSync(sourcePath, targetPath);
           console.log(`✅ Copied ${fileName} to ${targetDir}`);
@@ -53,11 +53,11 @@ const withLiveActivity = (config) => {
           console.warn(`⚠️  Source file not found: ${sourcePath}`);
         }
       });
-      
+
       if (copiedCount === 0) {
         console.warn(`⚠️  No files found in ${sourceDir}. Make sure the Swift files exist in the root ${widgetName}/ folder.`);
       }
-      
+
       // יצירת Entitlements (אם לא קיים) - כולל App Group
       const entitlementsPath = path.join(targetDir, `${widgetName}.entitlements`);
       if (!fs.existsSync(entitlementsPath)) {
@@ -76,7 +76,7 @@ const withLiveActivity = (config) => {
         fs.writeFileSync(entitlementsPath, entitlementsContent);
         console.log(`✅ Created ${widgetName}.entitlements`);
       }
-      
+
       // יצירת Info.plist אם לא הועתק
       const infoPlistPath = path.join(targetDir, 'Info.plist');
       if (!fs.existsSync(infoPlistPath)) {
@@ -112,7 +112,7 @@ const withLiveActivity = (config) => {
         fs.writeFileSync(infoPlistPath, infoPlistContent);
         console.log(`✅ Created Info.plist`);
       }
-      
+
       console.log(`✅ ${widgetName} files processed successfully (${copiedCount}/${filesToCopy.length} files copied).`);
       return config;
     }
@@ -122,7 +122,7 @@ const withLiveActivity = (config) => {
   config = withXcodeProject(config, (config) => {
     const xcodeProject = config.modResults;
     const widgetName = 'CalmParentLiveActivity';
-    
+
     if (xcodeProject.pbxTargetByName(widgetName)) {
       return config;
     }
@@ -133,20 +133,21 @@ const withLiveActivity = (config) => {
       return config;
     }
 
-    const bundleId = `${config.ios.bundleIdentifier}.${widgetName}`;
+    // Use 'LiveActivity' (capital L) to match existing App ID in Apple Developer Portal
+    const bundleId = `${config.ios.bundleIdentifier}.LiveActivity`;
     const pbxProjectSection = xcodeProject.pbxProjectSection();
     const projectUuid = Object.keys(pbxProjectSection).find(key => key !== 'undefined' && !key.endsWith('_comment'));
-    
+
     // בדיקת projectUuid
     if (!projectUuid || !pbxProjectSection[projectUuid]) {
       console.warn(`⚠️  Could not find Xcode project UUID. Skipping Live Activity target setup.`);
       return config;
     }
-    
+
     const mainGroupKey = pbxProjectSection[projectUuid].mainGroup;
 
     const target = xcodeProject.addTarget(widgetName, 'app_extension', widgetName);
-    
+
     const files = [
       'CalmParentLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
@@ -174,6 +175,9 @@ const withLiveActivity = (config) => {
           settings.CODE_SIGN_ENTITLEMENTS = `"${widgetName}/${widgetName}.entitlements"`;
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
+          // Enable automatic signing for EAS Build
+          settings.CODE_SIGN_STYLE = 'Automatic';
+          settings.DEVELOPMENT_TEAM = 'Q5555SW7GS'; // Ziv Tothani's team ID
         }
       }
     });

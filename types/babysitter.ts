@@ -109,6 +109,7 @@ export interface Review {
     bookingId: string;
     parentId: string;
     babysitterId: string;
+    parentName?: string; // For display purposes
 
     rating: number; // 1-5
     text?: string;

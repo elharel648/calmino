@@ -31,7 +31,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // 🔧 DEBUG: Log when screen loads
     useEffect(() => {
-        console.log('🔧 BabySitterScreen: Mounted! isLoading:', isLoading, 'sitters:', sitters.length);
+        if (__DEV__) console.log('🔧 BabySitterScreen: Mounted! isLoading:', isLoading, 'sitters:', sitters.length);
     }, [sitters, isLoading]);
 
     // State
@@ -116,9 +116,9 @@ const BabySitterScreen = ({ navigation }: any) => {
             reviews: sitter.reviewCount,
             price: sitter.pricePerHour,
             distance: sitter.distance || 0,
-            phone: '050-1234567', // TODO: Get from Firebase
+            phone: sitter.phone || undefined, // Use actual phone from Firebase
             bio: sitter.bio,
-            reviewsList: [], // TODO: Fetch from Firebase
+            reviewsList: [], // TODO: Fetch reviews from Firebase if needed
         };
         navigation.navigate('SitterProfile', { sitterData });
     };

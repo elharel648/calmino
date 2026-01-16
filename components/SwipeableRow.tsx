@@ -11,7 +11,7 @@ interface SwipeableRowProps {
     onShare?: () => void;
     rightActions?: Array<{
         label: string;
-        icon: React.ComponentType<{ size: number; color: string }>;
+        icon: React.ElementType;
         color: string;
         onPress: () => void;
     }>;

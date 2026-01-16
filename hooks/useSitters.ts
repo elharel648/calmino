@@ -31,6 +31,7 @@ export interface Sitter {
     isVerified: boolean;
     experience: string;
     bio: string;
+    phone?: string; // Contact phone number
     distance?: number;
     availability: string[];
     languages: string[];
@@ -67,6 +68,7 @@ const useSitters = () => {
                     isVerified: true,
                     experience: '3 שנות ניסיון',
                     bio: 'סטודנטית לחינוך, אוהבת ילדים ויצירתיות',
+                    phone: '052-1234567',
                     distance: 1.2,
                     availability: ['0', '1', '2', '3', '4'],
                     languages: ['עברית', 'אנגלית'],
@@ -84,6 +86,7 @@ const useSitters = () => {
                     isVerified: true,
                     experience: '2 שנות ניסיון',
                     bio: 'אחות לשניים, סבלנית ואוהבת משחקים',
+                    phone: '054-9876543',
                     distance: 0.8,
                     availability: ['1', '2', '3', '4', '5'],
                     languages: ['עברית'],
@@ -101,6 +104,7 @@ const useSitters = () => {
                     isVerified: false,
                     experience: 'שנה ניסיון',
                     bio: 'סטודנט לפסיכולוגיה, אוהב לקרוא סיפורים',
+                    phone: undefined, // No phone - for testing fallback
                     distance: 2.5,
                     availability: ['3', '4', '5', '6'],
                     languages: ['עברית', 'צרפתית'],
@@ -118,6 +122,7 @@ const useSitters = () => {
                     isVerified: true,
                     experience: '5 שנות ניסיון',
                     bio: 'גננת מוסמכת, מתמחה בפעוטות',
+                    phone: '050-5555555',
                     distance: 1.8,
                     availability: ['0', '1', '2', '3', '4', '5', '6'],
                     languages: ['עברית', 'אנגלית', 'ערבית'],
@@ -135,6 +140,7 @@ const useSitters = () => {
                     isVerified: true,
                     experience: '2 שנות ניסיון',
                     bio: 'אוהבת אומנות ויצירה עם ילדים',
+                    phone: '053-3333333',
                     distance: 3.0,
                     availability: ['0', '2', '4', '6'],
                     languages: ['עברית'],
@@ -173,108 +179,22 @@ const useSitters = () => {
                     isVerified: data.sitterVerified || false,
                     experience: data.sitterExperience || '',
                     bio: data.sitterBio || '',
+                    phone: data.phone || undefined, // Include phone from Firebase
                     distance: 0, // Calculate based on location if needed
                     availability: data.sitterAvailability || [],
                     languages: data.sitterLanguages || ['עברית'],
                     certifications: data.sitterCertifications || [],
-                    // 🔧 DEV MOCK: Add mock mutual friends in development
+                    // DEV MOCK: Add mock mutual friends in development
                     mutualFriends: __DEV__ ? MOCK_MUTUAL_FRIENDS.slice(0, Math.floor(Math.random() * 4)) : undefined,
                 });
             });
 
-            console.log('🔧 useSitters: fetchedSitters.length =', fetchedSitters.length, '__DEV__ =', __DEV__);
+            console.log('🔧 useSitters: fetchedSitters.length =', fetchedSitters.length);
 
-            // 🔧 DEV MOCK: If no sitters found, add mock sitters (always in dev for testing)
+            // In production, if no sitters found, show empty state (no mock data)
             if (fetchedSitters.length === 0) {
-                console.log('🔧 DEV MOCK: No sitters found, adding mock sitters...');
-                const mockSitters: Sitter[] = [
-                    {
-                        id: 'mock_1',
-                        name: 'נועה לוי',
-                        age: 22,
-                        photoUrl: 'https://i.pravatar.cc/200?img=5',
-                        rating: 4.9,
-                        reviewCount: 28,
-                        pricePerHour: 55,
-                        isVerified: true,
-                        experience: '3 שנות ניסיון',
-                        bio: 'סטודנטית לחינוך, אוהבת ילדים ויצירתיות',
-                        distance: 1.2,
-                        availability: ['0', '1', '2', '3', '4'],
-                        languages: ['עברית', 'אנגלית'],
-                        certifications: ['עזרה ראשונה'],
-                        mutualFriends: MOCK_MUTUAL_FRIENDS.slice(0, 2),
-                    },
-                    {
-                        id: 'mock_2',
-                        name: 'יעל כהן',
-                        age: 24,
-                        photoUrl: 'https://i.pravatar.cc/200?img=9',
-                        rating: 4.7,
-                        reviewCount: 15,
-                        pricePerHour: 50,
-                        isVerified: true,
-                        experience: '2 שנות ניסיון',
-                        bio: 'אחות לשניים, סבלנית ואוהבת משחקים',
-                        distance: 0.8,
-                        availability: ['1', '2', '3', '4', '5'],
-                        languages: ['עברית'],
-                        certifications: [],
-                        mutualFriends: MOCK_MUTUAL_FRIENDS.slice(0, 3),
-                    },
-                    {
-                        id: 'mock_3',
-                        name: 'דניאל אברהם',
-                        age: 20,
-                        photoUrl: 'https://i.pravatar.cc/200?img=12',
-                        rating: 4.5,
-                        reviewCount: 8,
-                        pricePerHour: 45,
-                        isVerified: false,
-                        experience: 'שנה ניסיון',
-                        bio: 'סטודנט לפסיכולוגיה, אוהב לקרוא סיפורים',
-                        distance: 2.5,
-                        availability: ['3', '4', '5', '6'],
-                        languages: ['עברית', 'צרפתית'],
-                        certifications: [],
-                        mutualFriends: MOCK_MUTUAL_FRIENDS.slice(0, 1),
-                    },
-                    {
-                        id: 'mock_4',
-                        name: 'שרה מזרחי',
-                        age: 26,
-                        photoUrl: 'https://i.pravatar.cc/200?img=25',
-                        rating: 5.0,
-                        reviewCount: 42,
-                        pricePerHour: 65,
-                        isVerified: true,
-                        experience: '5 שנות ניסיון',
-                        bio: 'גננת מוסמכת, מתמחה בפעוטות',
-                        distance: 1.8,
-                        availability: ['0', '1', '2', '3', '4', '5', '6'],
-                        languages: ['עברית', 'אנגלית', 'ערבית'],
-                        certifications: ['עזרה ראשונה', 'גננת מוסמכת'],
-                        mutualFriends: MOCK_MUTUAL_FRIENDS,
-                    },
-                    {
-                        id: 'mock_5',
-                        name: 'תמר רוזנברג',
-                        age: 21,
-                        photoUrl: 'https://i.pravatar.cc/200?img=32',
-                        rating: 4.6,
-                        reviewCount: 12,
-                        pricePerHour: 48,
-                        isVerified: true,
-                        experience: '2 שנות ניסיון',
-                        bio: 'אוהבת אומנות ויצירה עם ילדים',
-                        distance: 3.0,
-                        availability: ['0', '2', '4', '6'],
-                        languages: ['עברית'],
-                        certifications: ['עזרה ראשונה'],
-                        mutualFriends: [],
-                    },
-                ];
-                setSitters(mockSitters);
+                console.log('📭 useSitters: No sitters found in database');
+                setSitters([]);
                 setIsLoading(false);
                 return;
             }

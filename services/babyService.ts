@@ -80,7 +80,8 @@ export const getBabyData = async (): Promise<BabyData | null> => {
         }
       }
     }
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.error('Error fetching baby data from family:', e);
   }
 
   return null;
@@ -94,7 +95,8 @@ export const getBabyDataById = async (childId: string): Promise<BabyData | null>
       return { id: babyDoc.id, ...babyDoc.data() } as BabyData;
     }
     return null;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.error('Error fetching baby data by ID:', e);
     return null;
   }
 };

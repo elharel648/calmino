@@ -265,15 +265,17 @@ export default function SettingsScreen() {
             style={styles.avatarContainer}
             activeOpacity={0.8}
           >
-            {userPhotoURL ? (
-              <Image source={{ uri: userPhotoURL }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: '#EEF2FF' }]}>
-                <User size={48} color="#6366F1" strokeWidth={1.5} />
-              </View>
-            )}
+            <View style={styles.avatarGlow}>
+              {userPhotoURL ? (
+                <Image source={{ uri: userPhotoURL }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? '#2D2D3A' : '#EEF2FF' }]}>
+                  <User size={48} color="#6366F1" strokeWidth={1.5} />
+                </View>
+              )}
+            </View>
             <View style={[styles.cameraBadge, { backgroundColor: theme.primary }]}>
-              <Camera size={12} color="#fff" strokeWidth={2.5} />
+              <Camera size={14} color="#fff" strokeWidth={2.5} />
             </View>
           </TouchableOpacity>
 
@@ -285,7 +287,7 @@ export default function SettingsScreen() {
             <Text style={[styles.userName, { color: theme.textPrimary }]}>
               {userName || t('account.myUser')}
             </Text>
-            <Pencil size={13} color={theme.textTertiary} strokeWidth={2} />
+            <Pencil size={16} color={theme.primary} strokeWidth={2} />
           </TouchableOpacity>
 
           {user?.email && (
@@ -748,6 +750,17 @@ const styles = StyleSheet.create({
     height: 110,
     borderRadius: 55,
   },
+  avatarGlow: {
+    borderWidth: 3,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+    borderRadius: 60,
+    padding: 2,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
+  },
   avatarPlaceholder: {
     width: 110,
     height: 110,
@@ -757,18 +770,20 @@ const styles = StyleSheet.create({
   },
   cameraBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    bottom: 4,
+    right: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
   nameRow: {
     flexDirection: 'row',
@@ -787,8 +802,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
   },
   premiumCard: {
-    marginTop: 20,
-    marginBottom: 32,
+    marginTop: 16,
+    marginBottom: 8,
     borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#FF6B35',
@@ -846,21 +861,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.5,
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'right',
     textTransform: 'uppercase',
     opacity: 0.6,
   },
-  // Family Info Card - Clean, Minimal
   familyInfoCard: {
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   familyInfoHeader: {
     flexDirection: 'row-reverse',
@@ -953,10 +967,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   listItem: {
     flexDirection: 'row-reverse',

@@ -20,7 +20,7 @@ export function useFormValidation<T extends Record<string, string>>(
 ) {
     const [values, setValues] = useState<T>(initialValues);
     const [errors, setErrors] = useState<FormErrors>({});
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
 
     const validateField = useCallback(
         (name: keyof T, value: string): string | null => {

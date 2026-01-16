@@ -1,46 +1,117 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { auth } from '../services/firebaseConfig';
+import { getOrCreateChat, sendMessage as sendFirebaseMessage, subscribeToChatMessages, markChatAsRead } from '../services/babysitterService';
+import { ChatMessage } from '../types/babysitter';
 
 // Navigation types
 type RootStackParamList = {
-    ChatScreen: { sitterName?: string; sitterImage?: string };
+    ChatScreen: { sitterName?: string; sitterImage?: string; sitterId?: string };
 };
 
 type ChatScreenProps = NativeStackScreenProps<RootStackParamList, 'ChatScreen'>;
 
-// Message type
-interface Message {
-    id: number;
+// Message type for display
+interface DisplayMessage {
+    id: string;
     text: string;
     sender: 'me' | 'other';
     time: string;
 }
 
 const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
-    const { sitterName = 'בייביסיטר', sitterImage } = route.params || {};
+    const { sitterName = 'בייביסיטר', sitterImage, sitterId } = route.params || {};
     const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState<DisplayMessage[]>([]);
+    const [chatId, setChatId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const flatListRef = useRef<FlatList>(null);
 
-    const [messages, setMessages] = useState<Message[]>([
-        { id: 1, text: 'היי! ראיתי את הפרופיל שלך ואשמח לבדוק זמינות להיום בערב.', sender: 'me', time: '18:30' },
-        { id: 2, text: 'היי! בטח, אני פנויה החל מ-19:00. איפה אתם גרים?', sender: 'other', time: '18:32' },
-    ]);
+    // Initialize chat
+    useEffect(() => {
+        const initChat = async () => {
+            const userId = auth.currentUser?.uid;
+            if (!userId || !sitterId) {
+                // Fallback to mock mode if no sitter ID
+                setLoading(false);
+                setMessages([
+                    { id: '1', text: 'היי! ראיתי את הפרופיל שלך ואשמח לבדוק זמינות להיום בערב.', sender: 'me', time: '18:30' },
+                    { id: '2', text: 'היי! בטח, אני פנויה החל מ-19:00. איפה אתם גרים?', sender: 'other', time: '18:32' },
+                ]);
+                return;
+            }
 
-    const sendMessage = () => {
-        if (message.trim().length > 0) {
-            const newMessage: Message = {
-                id: Date.now(),
-                text: message,
+            try {
+                const chat = await getOrCreateChat(userId, sitterId);
+                setChatId(chat.id);
+
+                // Mark as read
+                await markChatAsRead(chat.id, userId);
+                setLoading(false);
+            } catch (error) {
+                console.error('Failed to init chat:', error);
+                setLoading(false);
+            }
+        };
+
+        initChat();
+    }, [sitterId]);
+
+    // Subscribe to messages
+    useEffect(() => {
+        if (!chatId) return;
+        const userId = auth.currentUser?.uid;
+
+        const unsubscribe = subscribeToChatMessages(chatId, (firebaseMessages: ChatMessage[]) => {
+            const displayMessages: DisplayMessage[] = firebaseMessages.map(msg => ({
+                id: msg.id,
+                text: msg.text,
+                sender: msg.senderId === userId ? 'me' : 'other',
+                time: msg.createdAt?.toDate?.()
+                    ? msg.createdAt.toDate().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                    : '',
+            }));
+            setMessages(displayMessages);
+        });
+
+        return () => unsubscribe();
+    }, [chatId]);
+
+    const handleSendMessage = async () => {
+        if (!message.trim()) return;
+
+        const userId = auth.currentUser?.uid;
+        const text = message.trim();
+        setMessage('');
+
+        if (!chatId || !userId) {
+            // Mock mode - add locally
+            const newMessage: DisplayMessage = {
+                id: Date.now().toString(),
+                text,
                 sender: 'me',
                 time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
             };
             setMessages(prev => [...prev, newMessage]);
-            setMessage('');
+            return;
+        }
+
+        try {
+            setSending(true);
+            await sendFirebaseMessage(chatId, userId, text);
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            // Restore message on error
+            setMessage(text);
+        } finally {
+            setSending(false);
         }
     };
 
-    const renderMessage = ({ item }: { item: Message }) => (
+    const renderMessage = ({ item }: { item: DisplayMessage }) => (
         <View style={[styles.bubble, item.sender === 'me' ? styles.myBubble : styles.otherBubble]}>
             <Text style={[styles.msgText, item.sender === 'me' ? styles.myText : styles.otherText]}>
                 {item.text}
@@ -71,15 +142,21 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                 />
             </View>
 
-            {/* Messages List */}
-            <FlatList
-                data={[...messages].reverse()}
-                inverted
-                keyExtractor={item => item.id.toString()}
-                contentContainerStyle={styles.listContent}
-                renderItem={renderMessage}
-                showsVerticalScrollIndicator={false}
-            />
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#6366F1" />
+                </View>
+            ) : (
+                <FlatList
+                    ref={flatListRef}
+                    data={[...messages].reverse()}
+                    inverted
+                    keyExtractor={item => item.id.toString()}
+                    contentContainerStyle={styles.listContent}
+                    renderItem={renderMessage}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
 
             {/* Input Area */}
             <KeyboardAvoidingView
@@ -88,11 +165,15 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
             >
                 <View style={styles.inputContainer}>
                     <TouchableOpacity
-                        style={[styles.sendBtn, !message.trim() && styles.sendBtnDisabled]}
-                        onPress={sendMessage}
-                        disabled={!message.trim()}
+                        style={[styles.sendBtn, (!message.trim() || sending) && styles.sendBtnDisabled]}
+                        onPress={handleSendMessage}
+                        disabled={!message.trim() || sending}
                     >
-                        <Ionicons name="send" size={18} color="#fff" />
+                        {sending ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Ionicons name="send" size={18} color="#fff" />
+                        )}
                     </TouchableOpacity>
                     <TextInput
                         style={styles.input}
@@ -114,6 +195,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F9FAFB'
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',

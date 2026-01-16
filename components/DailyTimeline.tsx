@@ -123,9 +123,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     try {
       await deleteEvent(eventId);
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
-      showSuccess('נמחק בהצלחה', 3000);
+      showSuccess(t('common.deletedSuccess'), 3000);
     } catch (error) {
-      showError('שגיאה במחיקה');
+      showError(t('errors.deleteError'));
     }
   };
 
@@ -134,7 +134,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     try {
       await Share.share({ message: eventText });
     } catch (error) {
-      showError('לא ניתן לשתף');
+      showError(t('errors.shareError'));
     }
   };
 
@@ -146,11 +146,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     if (seconds < 60) return t('time.now');
 
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `לפני ${minutes} דקות`;
+    if (minutes < 60) return t('time.minutesAgo', { count: minutes });
 
     const hours = Math.floor(minutes / 60);
     if (hours < 24) {
-      return hours === 1 ? 'לפני שעה' : `לפני ${hours} שעות`;
+      return hours === 1 ? t('time.hourAgo') : t('time.hoursAgo', { count: hours });
     }
 
     const days = Math.floor(hours / 24);
@@ -295,7 +295,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           </View>
           <Text style={[styles.emptyText, { color: theme.textPrimary }]}>{t('timeline.noRecordsToday')}</Text>
           <Text style={[styles.emptyHint, { color: theme.textSecondary }]}>
-            השתמש בפעולות המהירות למעלה{'\n'}כדי להתחיל לתעד פעילויות
+            {t('timeline.emptyHint')}
           </Text>
         </View>
       </View>
@@ -307,7 +307,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleSection}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>סדר היום</Text>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
         </View>
 
         {/* Stats Pills */}

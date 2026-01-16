@@ -96,7 +96,8 @@ export const getChildProfile = async (userId: string): Promise<ChildProfile | nu
       }
     }
     return null;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.error('Error getting child profile:', e);
     return null;
   }
 };
@@ -196,7 +197,8 @@ export const getLastEvent = async (childId: string, eventType: 'food' | 'sleep' 
     }
 
     return null;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.error('Error getting last event:', e);
     return null;
   }
 };
@@ -248,7 +250,8 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
 
     // Already sorted by server, return directly
     return events;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.error('Error getting recent history:', e);
     return [];
   }
 };

@@ -16,16 +16,14 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import {
-    Shield, User, Camera, Clock, CreditCard,
-    ChevronLeft, ChevronRight, Check, Plus, Minus, X,
-    Facebook, Instagram, Loader
+    User, Camera, Clock,
+    ChevronLeft, ChevronRight, Check, Plus, Minus,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../services/firebaseConfig';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
-import { loginWithFacebook } from '../services/facebookService';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -33,15 +31,11 @@ const DAYS_HEB = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
 const SitterRegistrationScreen = ({ navigation }: any) => {
     const { theme } = useTheme();
-    const progressAnim = useRef(new Animated.Value(0.2)).current;
+    const progressAnim = useRef(new Animated.Value(0.33)).current;
 
-    // Current step
+    // Current step (3 steps: Personal Info, Photo, Pricing)
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Step 1: Verification
-    const [fbConnected, setFbConnected] = useState(false);
-    const [igConnected, setIgConnected] = useState(false);
 
     // Step 2: Personal info
     const [name, setName] = useState(auth.currentUser?.displayName || '');
@@ -60,12 +54,12 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
     // Navigate between steps
     const goToStep = (step: number) => {
-        if (step < 1 || step > 4) return;
+        if (step < 1 || step > 3) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setCurrentStep(step);
 
         Animated.spring(progressAnim, {
-            toValue: step / 4,
+            toValue: step / 3,
             useNativeDriver: false,
         }).start();
     };
@@ -82,18 +76,12 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     const validateCurrentStep = () => {
         switch (currentStep) {
             case 1:
-                if (!fbConnected && !igConnected) {
-                    Alert.alert('נדרש אימות', 'יש לחבר לפחות רשת חברתית אחת');
-                    return false;
-                }
-                return true;
-            case 2:
                 if (!name.trim() || !age || !phone.trim()) {
                     Alert.alert('שדות חובה', 'יש למלא שם, גיל וטלפון');
                     return false;
                 }
                 return true;
-            case 3:
+            case 2:
                 if (!profilePhoto) {
                     Alert.alert('תמונה נדרשת', 'יש להעלות תמונת פרופיל');
                     return false;
@@ -102,45 +90,6 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             default:
                 return true;
         }
-    };
-
-    // Social connect handlers
-    const [fbLoading, setFbLoading] = useState(false);
-    const [igLoading, setIgLoading] = useState(false);
-
-    const connectFacebook = async () => {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setFbLoading(true);
-
-        try {
-            const result = await loginWithFacebook();
-
-            if (result.success) {
-                setFbConnected(true);
-                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert('מחובר!', `שלום ${result.user?.name || 'משתמש'}! פייסבוק מחובר בהצלחה`);
-            } else {
-                Alert.alert('שגיאה', result.error || 'התחברות נכשלה');
-            }
-        } catch (error) {
-            Alert.alert('שגיאה', 'לא ניתן להתחבר לפייסבוק');
-        } finally {
-            setFbLoading(false);
-        }
-    };
-
-    const connectInstagram = async () => {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        // Instagram Basic Display API requires same Facebook App
-        // For now, we'll show that FB connection also verifies identity
-        Alert.alert(
-            'אימות אינסטגרם',
-            'כרגע אנחנו משתמשים בפייסבוק לאימות. רוצה להתחבר עם פייסבוק?',
-            [
-                { text: 'לא', style: 'cancel' },
-                { text: 'התחבר עם פייסבוק', onPress: connectFacebook }
-            ]
-        );
     };
 
     // Media handlers
@@ -187,9 +136,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 sitterAvailability: Object.entries(availability)
                     .filter(([_, v]) => v)
                     .map(([k]) => parseInt(k)),
-                sitterVerified: fbConnected || igConnected,
-                sitterFbConnected: fbConnected,
-                sitterIgConnected: igConnected,
+                sitterVerified: true, // Verified by app registration
                 phone: phone,
                 age: parseInt(age),
                 displayName: name,
@@ -206,58 +153,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
     // ========== STEP COMPONENTS ==========
 
-    // Step 1: Verification
-    const VerificationStep = () => (
-        <View style={styles.stepContent}>
-            <View style={styles.stepHeader}>
-                <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
-                    <Shield size={28} color={theme.textSecondary} strokeWidth={1.5} />
-                </View>
-                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>אימות חשבון</Text>
-                <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                    חבר רשת חברתית אחת לפחות לאימות
-                </Text>
-            </View>
-
-            <View style={styles.socialButtons}>
-                <TouchableOpacity
-                    style={[
-                        styles.socialBtn,
-                        { backgroundColor: theme.card, borderColor: theme.border },
-                        fbConnected && styles.socialBtnConnected
-                    ]}
-                    onPress={connectFacebook}
-                    disabled={fbConnected}
-                >
-                    <Text style={[styles.socialBtnText, { color: fbConnected ? '#fff' : theme.textPrimary }]}>
-                        {fbConnected ? '✓ פייסבוק מחובר' : 'התחבר עם פייסבוק'}
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[
-                        styles.socialBtn,
-                        { backgroundColor: theme.card, borderColor: theme.border },
-                        igConnected && styles.socialBtnConnectedIG
-                    ]}
-                    onPress={connectInstagram}
-                    disabled={igConnected}
-                >
-                    <Text style={[styles.socialBtnText, { color: igConnected ? '#fff' : theme.textPrimary }]}>
-                        {igConnected ? '✓ אינסטגרם מחובר' : 'התחבר עם אינסטגרם'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={[styles.infoBox, { backgroundColor: theme.cardSecondary }]}>
-                <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-                    החיבור מאפשר להורים לראות שאתה אדם אמיתי ומגביר את האמון בפרופיל
-                </Text>
-            </View>
-        </View>
-    );
-
-    // Step 2: Personal Info
+    // Step 1: Personal Info
     const PersonalInfoStep = () => (
         <View style={styles.stepContent}>
             <View style={styles.stepHeader}>
@@ -327,7 +223,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         </View>
     );
 
-    // Step 3: Photo
+    // Step 2: Photo
     const PhotoStep = () => (
         <View style={styles.stepContent}>
             <View style={styles.stepHeader}>
@@ -358,7 +254,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         </View>
     );
 
-    // Step 4: Pricing
+    // Step 3: Pricing
     const PricingStep = () => (
         <View style={styles.stepContent}>
             <View style={styles.stepHeader}>
@@ -433,127 +329,14 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     // Render current step - using direct JSX to avoid re-creating components
     const renderStep = () => {
         if (currentStep === 1) {
-            return (
-                <View style={styles.stepContent}>
-                    <View style={styles.stepHeader}>
-                        <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
-                            <Shield size={28} color={theme.textSecondary} strokeWidth={1.5} />
-                        </View>
-                        <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>אימות חשבון</Text>
-                        <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                            חבר רשת חברתית אחת לפחות לאימות
-                        </Text>
-                    </View>
-                    <View style={styles.socialButtons}>
-                        <TouchableOpacity
-                            style={[styles.socialBtn, { backgroundColor: theme.card, borderColor: theme.border }, fbConnected && styles.socialBtnConnected]}
-                            onPress={connectFacebook}
-                            disabled={fbConnected}
-                        >
-                            <View style={styles.socialBtnContent}>
-                                <Facebook size={20} color={fbConnected ? '#fff' : '#1877F2'} />
-                                <Text style={[styles.socialBtnText, { color: fbConnected ? '#fff' : theme.textPrimary }]}>
-                                    {fbConnected ? 'פייסבוק מחובר' : 'התחבר עם פייסבוק'}
-                                </Text>
-                                {fbConnected && <Check size={18} color="#10B981" />}
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.socialBtn, { backgroundColor: theme.card, borderColor: theme.border }, igConnected && styles.socialBtnConnectedIG]}
-                            onPress={connectInstagram}
-                            disabled={igConnected}
-                        >
-                            <View style={styles.socialBtnContent}>
-                                <Instagram size={20} color={igConnected ? '#fff' : '#E4405F'} />
-                                <Text style={[styles.socialBtnText, { color: igConnected ? '#fff' : theme.textPrimary }]}>
-                                    {igConnected ? 'אינסטגרם מחובר' : 'התחבר עם אינסטגרם'}
-                                </Text>
-                                {igConnected && <Check size={18} color="#10B981" />}
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={[styles.infoBox, { backgroundColor: theme.cardSecondary }]}>
-                        <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-                            החיבור מאפשר להורים לראות שאתה אדם אמיתי ומגביר את האמון בפרופיל
-                        </Text>
-                    </View>
-                </View>
-            );
+            return <PersonalInfoStep />;
         }
 
         if (currentStep === 2) {
-            return (
-                <View style={styles.stepContent}>
-                    <View style={styles.stepHeader}>
-                        <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
-                            <User size={28} color={theme.textSecondary} strokeWidth={1.5} />
-                        </View>
-                        <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>פרטים אישיים</Text>
-                        <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                            ספר לנו קצת על עצמך
-                        </Text>
-                    </View>
-                    <View style={styles.inputsContainer}>
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>שם מלא *</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                                value={name}
-                                onChangeText={setName}
-                                placeholder="השם שלך"
-                                placeholderTextColor={theme.textSecondary}
-                                textAlign="right"
-                            />
-                        </View>
-                        <View style={styles.inputRow}>
-                            <View style={[styles.inputGroup, { flex: 1 }]}>
-                                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>גיל *</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                                    value={age}
-                                    onChangeText={setAge}
-                                    placeholder="18+"
-                                    placeholderTextColor={theme.textSecondary}
-                                    keyboardType="numeric"
-                                    textAlign="right"
-                                />
-                            </View>
-                            <View style={[styles.inputGroup, { flex: 2 }]}>
-                                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>טלפון *</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                                    value={phone}
-                                    onChangeText={setPhone}
-                                    placeholder="050-1234567"
-                                    placeholderTextColor={theme.textSecondary}
-                                    keyboardType="phone-pad"
-                                    textAlign="right"
-                                />
-                            </View>
-                        </View>
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>קצת עליך</Text>
-                            <TextInput
-                                style={[styles.input, styles.textArea, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                                value={bio}
-                                onChangeText={setBio}
-                                placeholder="ספר על הניסיון שלך, מה אתה אוהב לעשות עם ילדים..."
-                                placeholderTextColor={theme.textSecondary}
-                                multiline
-                                numberOfLines={4}
-                                textAlign="right"
-                            />
-                        </View>
-                    </View>
-                </View>
-            );
-        }
-
-        if (currentStep === 3) {
             return <PhotoStep />;
         }
 
-        if (currentStep === 4) {
+        if (currentStep === 3) {
             return <PricingStep />;
         }
 
@@ -588,7 +371,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     />
                 </View>
                 <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                    שלב {currentStep} מתוך 4
+                    שלב {currentStep} מתוך 3
                 </Text>
             </View>
 
@@ -611,7 +394,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
                 )}
 
-                {currentStep < 4 ? (
+                {currentStep < 3 ? (
                     <TouchableOpacity
                         style={[styles.primaryBtn, { backgroundColor: theme.textPrimary }]}
                         onPress={nextStep}

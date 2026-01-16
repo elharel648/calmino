@@ -1,5 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
+import * as Haptics from 'expo-haptics';
+
+// Unified accent color
+const ACCENT_COLOR = '#6366F1';
 
 interface IntervalPickerProps {
     value: number;
@@ -16,34 +21,70 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
     onChange,
     disabled = false,
 }) => {
+    const { theme } = useTheme();
+    const scaleAnims = React.useRef(options.map(() => new Animated.Value(1))).current;
+
+    const handlePress = (option: number, index: number) => {
+        if (disabled) return;
+
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+
+        // Bounce animation
+        Animated.sequence([
+            Animated.timing(scaleAnims[index], {
+                toValue: 0.9,
+                duration: 50,
+                useNativeDriver: true,
+            }),
+            Animated.spring(scaleAnims[index], {
+                toValue: 1,
+                friction: 5,
+                tension: 300,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        onChange(option);
+    };
+
     return (
-        <View style={styles.container}>
-            <Text style={styles.label}>כל {unit}:</Text>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>כל {unit}:</Text>
             <View style={styles.optionsContainer}>
-                {options.map((option) => {
+                {options.map((option, index) => {
                     const isSelected = option === value;
                     return (
-                        <TouchableOpacity
+                        <Animated.View
                             key={option}
-                            style={[
-                                styles.optionButton,
-                                isSelected && styles.optionButtonSelected,
-                                disabled && styles.optionButtonDisabled,
-                            ]}
-                            onPress={() => !disabled && onChange(option)}
-                            activeOpacity={0.7}
-                            disabled={disabled}
+                            style={{ transform: [{ scale: scaleAnims[index] }] }}
                         >
-                            <Text
+                            <TouchableOpacity
                                 style={[
-                                    styles.optionText,
-                                    isSelected && styles.optionTextSelected,
-                                    disabled && styles.optionTextDisabled,
+                                    styles.optionButton,
+                                    {
+                                        backgroundColor: isSelected ? ACCENT_COLOR : theme.card,
+                                        borderColor: isSelected ? ACCENT_COLOR : theme.divider,
+                                    },
+                                    isSelected && styles.optionButtonSelected,
+                                    disabled && styles.optionButtonDisabled,
                                 ]}
+                                onPress={() => handlePress(option, index)}
+                                activeOpacity={0.7}
+                                disabled={disabled}
                             >
-                                {option}
-                            </Text>
-                        </TouchableOpacity>
+                                <Text
+                                    style={[
+                                        styles.optionText,
+                                        { color: isSelected ? '#fff' : theme.textPrimary },
+                                        disabled && styles.optionTextDisabled,
+                                    ]}
+                                >
+                                    {option}
+                                </Text>
+                            </TouchableOpacity>
+                        </Animated.View>
                     );
                 })}
             </View>
@@ -53,52 +94,49 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#F9FAFB',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
+        paddingHorizontal: 20,
+        paddingVertical: 14,
     },
     label: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#6B7280',
-        marginBottom: 10,
+        marginBottom: 12,
         textAlign: 'right',
     },
     optionsContainer: {
         flexDirection: 'row',
-        flexWrap: 'wrap', // Allow wrapping
+        flexWrap: 'wrap',
         gap: 10,
         justifyContent: 'flex-end',
     },
     optionButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: '#fff',
-        borderWidth: 2,
-        borderColor: '#E5E7EB',
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
     },
     optionButtonSelected: {
-        backgroundColor: '#6366F1',
-        borderColor: '#6366F1',
+        shadowColor: ACCENT_COLOR,
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
     },
     optionButtonDisabled: {
         opacity: 0.4,
     },
     optionText: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '700',
-        color: '#374151',
-    },
-    optionTextSelected: {
-        color: '#fff',
     },
     optionTextDisabled: {
-        color: '#9CA3AF',
+        opacity: 0.6,
     },
 });
 
