@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Sitter Photos
+    match /sitterPhotos/{userId}/{filename} {
+      // Allow authenticated users to upload their own photos
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Child Photos
+    match /childPhotos/{userId}/{childId}/{filename} {
+      // Allow authenticated users to upload their children's photos
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User Photos
+    match /userPhotos/{userId}/{filename} {
+      // Allow authenticated users to upload their own photos
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Baby Photos (legacy path compatibility)
+    match /babyPhotos/{userId}/{babyId}/{filename} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Default: deny all
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,10 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+// pages/ChatScreen.tsx - Real-time Firebase Chat
+
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { auth } from '../services/firebaseConfig';
-import { getOrCreateChat, sendMessage as sendFirebaseMessage, subscribeToChatMessages, markChatAsRead } from '../services/babysitterService';
-import { ChatMessage } from '../types/babysitter';
+import { getOrCreateChat, sendMessage } from '../services/chatService';
+import { useMessages } from '../hooks/useMessages';
 
 // Navigation types
 type RootStackParamList = {
@@ -23,89 +36,56 @@ interface DisplayMessage {
 
 const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     const { sitterName = 'בייביסיטר', sitterImage, sitterId } = route.params || {};
-    const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState<DisplayMessage[]>([]);
+    const [messageText, setMessageText] = useState('');
     const [chatId, setChatId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [initLoading, setInitLoading] = useState(true);
     const [sending, setSending] = useState(false);
-    const flatListRef = useRef<FlatList>(null);
+
+    const { messages, loading: messagesLoading } = useMessages(chatId);
 
     // Initialize chat
     useEffect(() => {
         const initChat = async () => {
-            const userId = auth.currentUser?.uid;
-            if (!userId || !sitterId) {
-                // Fallback to mock mode if no sitter ID
-                setLoading(false);
-                setMessages([
-                    { id: '1', text: 'היי! ראיתי את הפרופיל שלך ואשמח לבדוק זמינות להיום בערב.', sender: 'me', time: '18:30' },
-                    { id: '2', text: 'היי! בטח, אני פנויה החל מ-19:00. איפה אתם גרים?', sender: 'other', time: '18:32' },
-                ]);
+            if (!sitterId) {
+                setInitLoading(false);
                 return;
             }
 
             try {
-                const chat = await getOrCreateChat(userId, sitterId);
-                setChatId(chat.id);
-
-                // Mark as read
-                await markChatAsRead(chat.id, userId);
-                setLoading(false);
+                const id = await getOrCreateChat(sitterId, sitterName, sitterImage || '');
+                setChatId(id);
             } catch (error) {
                 console.error('Failed to init chat:', error);
-                setLoading(false);
+            } finally {
+                setInitLoading(false);
             }
         };
 
         initChat();
-    }, [sitterId]);
+    }, [sitterId, sitterName, sitterImage]);
 
-    // Subscribe to messages
-    useEffect(() => {
-        if (!chatId) return;
-        const userId = auth.currentUser?.uid;
-
-        const unsubscribe = subscribeToChatMessages(chatId, (firebaseMessages: ChatMessage[]) => {
-            const displayMessages: DisplayMessage[] = firebaseMessages.map(msg => ({
-                id: msg.id,
-                text: msg.text,
-                sender: msg.senderId === userId ? 'me' : 'other',
-                time: msg.createdAt?.toDate?.()
-                    ? msg.createdAt.toDate().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-                    : '',
-            }));
-            setMessages(displayMessages);
-        });
-
-        return () => unsubscribe();
-    }, [chatId]);
+    // Convert Firebase messages to display format
+    const displayMessages: DisplayMessage[] = messages.map((msg) => ({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.senderId === auth.currentUser?.uid ? 'me' : 'other',
+        time: msg.timestamp?.toDate?.()
+            ? msg.timestamp.toDate().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+            : '',
+    }));
 
     const handleSendMessage = async () => {
-        if (!message.trim()) return;
+        if (!messageText.trim() || !chatId) return;
 
-        const userId = auth.currentUser?.uid;
-        const text = message.trim();
-        setMessage('');
-
-        if (!chatId || !userId) {
-            // Mock mode - add locally
-            const newMessage: DisplayMessage = {
-                id: Date.now().toString(),
-                text,
-                sender: 'me',
-                time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
-            };
-            setMessages(prev => [...prev, newMessage]);
-            return;
-        }
+        const text = messageText.trim();
+        setMessageText('');
 
         try {
             setSending(true);
-            await sendFirebaseMessage(chatId, userId, text);
+            await sendMessage(chatId, text);
         } catch (error) {
             console.error('Failed to send message:', error);
-            // Restore message on error
-            setMessage(text);
+            setMessageText(text); // Restore on error
         } finally {
             setSending(false);
         }
@@ -142,16 +122,15 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                 />
             </View>
 
-            {loading ? (
+            {initLoading || messagesLoading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#6366F1" />
                 </View>
             ) : (
                 <FlatList
-                    ref={flatListRef}
-                    data={[...messages].reverse()}
+                    data={[...displayMessages].reverse()}
                     inverted
-                    keyExtractor={item => item.id.toString()}
+                    keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     renderItem={renderMessage}
                     showsVerticalScrollIndicator={false}
@@ -165,9 +144,9 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
             >
                 <View style={styles.inputContainer}>
                     <TouchableOpacity
-                        style={[styles.sendBtn, (!message.trim() || sending) && styles.sendBtnDisabled]}
+                        style={[styles.sendBtn, (!messageText.trim() || sending) && styles.sendBtnDisabled]}
                         onPress={handleSendMessage}
-                        disabled={!message.trim() || sending}
+                        disabled={!messageText.trim() || sending}
                     >
                         {sending ? (
                             <ActivityIndicator size="small" color="#fff" />
@@ -179,8 +158,8 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         style={styles.input}
                         placeholder="כתוב הודעה..."
                         placeholderTextColor="#9CA3AF"
-                        value={message}
-                        onChangeText={setMessage}
+                        value={messageText}
+                        onChangeText={setMessageText}
                         textAlign="right"
                         multiline
                         maxLength={500}
@@ -194,7 +173,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9FAFB'
+        backgroundColor: '#F9FAFB',
     },
     loadingContainer: {
         flex: 1,
@@ -216,12 +195,12 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     headerInfo: {
-        alignItems: 'center'
+        alignItems: 'center',
     },
     headerName: {
         fontSize: 17,
         fontWeight: '600',
-        color: '#1F2937'
+        color: '#1F2937',
     },
     statusContainer: {
         flexDirection: 'row-reverse',
@@ -233,7 +212,7 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#10B981'
+        backgroundColor: '#10B981',
     },
     statusText: {
         fontSize: 12,
@@ -275,10 +254,10 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     myText: {
-        color: '#fff'
+        color: '#fff',
     },
     otherText: {
-        color: '#1F2937'
+        color: '#1F2937',
     },
     timeText: {
         fontSize: 11,

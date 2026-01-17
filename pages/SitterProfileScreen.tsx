@@ -45,11 +45,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
         ...sitterData,
         responseRate: '100%',
         repeatHires: 12,
-        gallery: [
-            'https://images.pexels.com/photos/1741230/pexels-photo-1741230.jpeg',
-            'https://images.pexels.com/photos/3845492/pexels-photo-3845492.jpeg',
-            'https://images.pexels.com/photos/5426401/pexels-photo-5426401.jpeg',
-        ],
+        gallery: [], // No mock photos in production
         videoUri: null, // Only show video if sitter uploaded one
     };
 
@@ -190,11 +186,13 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     <Text style={styles.bioText}>
                         {sitterData.bio || "היי! אני סטודנטית לחינוך, יש לי ניסיון של 4 שנים. אני מביאה איתי תיק הפעלות ואוהבת יצירה."}
                     </Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.galleryScroll}>
-                        {extendedData.gallery.map((img, index) => (
-                            <Image key={index} source={{ uri: img }} style={styles.galleryImg} />
-                        ))}
-                    </ScrollView>
+                    {extendedData.gallery.length > 0 && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.galleryScroll}>
+                            {extendedData.gallery.map((img, index) => (
+                                <Image key={index} source={{ uri: img }} style={styles.galleryImg} />
+                            ))}
+                        </ScrollView>
+                    )}
                 </View>
 
                 {/* Reviews */}

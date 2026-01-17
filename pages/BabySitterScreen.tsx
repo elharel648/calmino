@@ -1,5 +1,5 @@
 // pages/BabySitterScreen.tsx - Minimalist Parent Sitter Search
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -21,12 +21,14 @@ import {
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import useSitters, { Sitter } from '../hooks/useSitters';
 
 const BabySitterScreen = ({ navigation }: any) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
 
     // Hooks
     const { sitters, isLoading, refetch } = useSitters();
@@ -78,7 +80,7 @@ const BabySitterScreen = ({ navigation }: any) => {
     }, []);
 
     // Calculate distance between two GPS coordinates (Haversine formula)
-    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
         const R = 6371; // Earth's radius in km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -87,7 +89,7 @@ const BabySitterScreen = ({ navigation }: any) => {
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return Math.round(R * c * 10) / 10; // Round to 1 decimal
-    };
+    }, []);
 
     // Fetch user's location on mount
     useEffect(() => {
@@ -116,6 +118,12 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                 if (address?.city) {
                     setUserCity(address.city);
+                } else {
+                    // Fallback to other address fields
+                    const cityFallback = address?.subregion || address?.region;
+                    if (cityFallback) {
+                        setUserCity(cityFallback);
+                    }
                 }
             } catch (error) {
                 if (__DEV__) console.error('Location fetch error:', error);
@@ -159,11 +167,21 @@ const BabySitterScreen = ({ navigation }: any) => {
     );
 
     // Navigate directly to dashboard when sitter mode selected and user is registered
+    const navigatedToDashboard = useRef(false);
+
     useEffect(() => {
-        if (userMode === 'sitter' && isSitterRegistered === true && !checkingStatus) {
+        if (userMode === 'sitter' &&
+            isSitterRegistered === true &&
+            !checkingStatus &&
+            !navigatedToDashboard.current) {
+            navigatedToDashboard.current = true;
             navigation.navigate('SitterDashboard');
-            // Reset to parent mode so when they come back, they see parent view
-            setUserMode('parent');
+
+            // Reset to parent mode after navigation completes
+            setTimeout(() => {
+                setUserMode('parent');
+                navigatedToDashboard.current = false;
+            }, 100);
         }
     }, [userMode, isSitterRegistered, checkingStatus]);
 
@@ -174,43 +192,52 @@ const BabySitterScreen = ({ navigation }: any) => {
         setRefreshing(false);
     }, [refetch]);
 
-    // Process sitters: add distance, filter by city match
-    const processedSitters = sitters.map(sitter => {
-        let distance = 0;
+    // Process sitters: add distance, filter by city match (memoized for performance)
+    const processedSitters = useMemo(() => {
+        return sitters.map(sitter => {
+            let distance = 0;
 
-        // Calculate real distance if both user and sitter have GPS
-        if (userLocation && sitter.location) {
-            distance = calculateDistance(
-                userLocation.latitude,
-                userLocation.longitude,
-                sitter.location.latitude,
-                sitter.location.longitude
-            );
-        }
+            // Calculate real distance if both user and sitter have GPS (with validation)
+            if (userLocation &&
+                sitter.location &&
+                typeof sitter.location.latitude === 'number' &&
+                typeof sitter.location.longitude === 'number') {
+                distance = calculateDistance(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    sitter.location.latitude,
+                    sitter.location.longitude
+                );
+            }
 
-        return { ...sitter, distance };
-    });
+            return { ...sitter, distance };
+        });
+    }, [sitters, userLocation, calculateDistance]);
 
     // Determine which city to filter by: manual filter takes priority over auto-detected
     const activeCity = filterCity.trim() || userCity;
 
-    // Filter: Show sitters from selected/detected city, or all if no city set
-    const citySitters = activeCity
-        ? processedSitters.filter(s => s.city?.toLowerCase().includes(activeCity.toLowerCase()))
-        : processedSitters;
+    // Filter: Show sitters from selected/detected city, or all if no city set (memoized)
+    const sittersToShow = useMemo(() => {
+        const citySitters = activeCity
+            ? processedSitters.filter(s => s.city?.toLowerCase().includes(activeCity.toLowerCase()))
+            : processedSitters;
 
-    // If no sitters in selected city, show all
-    const sittersToShow = citySitters.length > 0 ? citySitters : processedSitters;
+        // If no sitters in selected city, show all
+        return citySitters.length > 0 ? citySitters : processedSitters;
+    }, [processedSitters, activeCity]);
 
-    // Sort sitters
-    const sortedSitters = [...sittersToShow].sort((a, b) => {
-        switch (sortBy) {
-            case 'rating': return b.rating - a.rating;
-            case 'price': return a.pricePerHour - b.pricePerHour;
-            case 'distance': return (a.distance || 999) - (b.distance || 999);
-            default: return 0;
-        }
-    });
+    // Sort sitters (memoized for performance)
+    const sortedSitters = useMemo(() => {
+        return [...sittersToShow].sort((a, b) => {
+            switch (sortBy) {
+                case 'rating': return b.rating - a.rating;
+                case 'price': return a.pricePerHour - b.pricePerHour;
+                case 'distance': return (a.distance || 999) - (b.distance || 999);
+                default: return 0;
+            }
+        });
+    }, [sittersToShow, sortBy]);
 
     // Handle sitter press
     const handleSitterPress = (sitter: Sitter) => {
@@ -244,6 +271,8 @@ const BabySitterScreen = ({ navigation }: any) => {
                 style={[styles.sitterCard, { backgroundColor: theme.card }]}
                 onPress={() => handleSitterPress(sitter)}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`${sitter.name}, ${t('babysitter.rating')} ${sitter.rating.toFixed(1)}, ${t('babysitter.price')} ${sitter.pricePerHour} ${t('babysitter.perHour')}`}
             >
                 <View style={styles.sitterCardContent}>
                     {sitter.photoUrl ? (
@@ -274,13 +303,13 @@ const BabySitterScreen = ({ navigation }: any) => {
                             )}
                         </View>
                         {/* 🔥 חברים משותפים */}
-                        {hasMutualFriends && (
+                        {hasMutualFriends && mutualFriends.every(f => f.id && f.name) && (
                             <View style={styles.mutualFriendsRow}>
                                 <View style={styles.mutualAvatars}>
                                     {mutualFriends.slice(0, 3).map((friend, index) => (
                                         <Image
                                             key={friend.id}
-                                            source={{ uri: friend.picture?.data?.url || 'https://i.pravatar.cc/50' }}
+                                            source={{ uri: friend.picture?.data?.url || `https://i.pravatar.cc/50?u=${friend.id}` }}
                                             style={[
                                                 styles.mutualAvatar,
                                                 { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }
@@ -289,14 +318,14 @@ const BabySitterScreen = ({ navigation }: any) => {
                                     ))}
                                 </View>
                                 <Text style={styles.mutualText}>
-                                    {mutualFriends.length} חברים משותפים
+                                    {t('babysitter.mutualFriends', { count: mutualFriends.length })}
                                 </Text>
                             </View>
                         )}
                     </View>
                     <View style={styles.priceSection}>
                         <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>₪{sitter.pricePerHour}</Text>
-                        <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>לשעה</Text>
+                        <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>{t('babysitter.perHour')}</Text>
                     </View>
                 </View>
             </TouchableOpacity>
@@ -320,9 +349,14 @@ const BabySitterScreen = ({ navigation }: any) => {
                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         setSortBy(sort);
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('common.sortBy')} ${sort === 'rating' ? t('babysitter.sortByRating') : sort === 'price' ? t('babysitter.sortByPrice') : t('babysitter.sortByDistance')}`}
+                    accessibilityState={{ selected: sortBy === sort }}
                 >
                     <Text style={[styles.sortPillText, { color: sortBy === sort ? theme.card : theme.textSecondary }]}>
-                        {sort === 'rating' ? 'דירוג' : sort === 'price' ? 'מחיר' : 'מרחק'}
+                        {sort === 'rating' ? t('babysitter.sortByRating') :
+                            sort === 'price' ? t('babysitter.sortByPrice') :
+                                t('babysitter.sortByDistance')}
                     </Text>
                 </TouchableOpacity>
             ))}
@@ -335,10 +369,10 @@ const BabySitterScreen = ({ navigation }: any) => {
             <View style={[styles.registrationCard, { backgroundColor: theme.card }]}>
                 <UserPlus size={48} color={theme.textSecondary} strokeWidth={1} />
                 <Text style={[styles.registrationTitle, { color: theme.textPrimary }]}>
-                    הצטרף כסיטר/ית
+                    {t('babysitter.becomeSitter')}
                 </Text>
                 <Text style={[styles.registrationSubtitle, { color: theme.textSecondary }]}>
-                    הרוויח/י כסף ועזור/י להורים באזור שלך
+                    {t('babysitter.earnMoney')}
                 </Text>
                 <TouchableOpacity
                     style={[styles.registrationBtn, { backgroundColor: theme.textPrimary }]}
@@ -348,7 +382,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     }}
                 >
                     <Text style={[styles.registrationBtnText, { color: theme.card }]}>
-                        התחל הרשמה
+                        {t('babysitter.startRegistration')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -359,15 +393,15 @@ const BabySitterScreen = ({ navigation }: any) => {
     const SitterDashboardCTA = () => (
         <View style={styles.sitterModeContainer}>
             <Briefcase size={48} color={theme.textSecondary} strokeWidth={1} />
-            <Text style={[styles.sitterModeTitle, { color: theme.textPrimary }]}>מצב סיטר</Text>
+            <Text style={[styles.sitterModeTitle, { color: theme.textPrimary }]}>{t('babysitter.sitterDashboard')}</Text>
             <Text style={[styles.sitterModeSubtitle, { color: theme.textSecondary }]}>
-                עבור לדשבורד שלך לצפייה בהזמנות
+                {t('babysitter.goToDashboard')}
             </Text>
             <TouchableOpacity
                 style={[styles.dashboardBtn, { backgroundColor: theme.textPrimary }]}
                 onPress={() => navigation.navigate('SitterDashboard')}
             >
-                <Text style={[styles.dashboardBtnText, { color: theme.card }]}>עבור לדשבורד →</Text>
+                <Text style={[styles.dashboardBtnText, { color: theme.card }]}>{t('babysitter.openDashboard')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -385,10 +419,14 @@ const BabySitterScreen = ({ navigation }: any) => {
             {/* Header */}
             <View style={[styles.header, { backgroundColor: '#FFFFFF', borderBottomColor: '#E5E5EA' }]}>
                 <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('common.back')}
+                    >
                         <ChevronRight size={24} color={theme.textSecondary} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>מצא סיטר</Text>
+                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('babysitter.findSitter')}</Text>
                     {userPhoto ? (
                         <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
                     ) : (
@@ -403,19 +441,25 @@ const BabySitterScreen = ({ navigation }: any) => {
                     <TouchableOpacity
                         style={[styles.modeBtn, userMode === 'parent' && [styles.modeBtnActive, { backgroundColor: theme.card }]]}
                         onPress={() => setUserMode('parent')}
+                        accessibilityRole="tab"
+                        accessibilityLabel={t('babysitter.parentMode')}
+                        accessibilityState={{ selected: userMode === 'parent' }}
                     >
                         <Search size={16} color={userMode === 'parent' ? theme.textPrimary : theme.textSecondary} strokeWidth={1.5} />
                         <Text style={[styles.modeBtnText, { color: userMode === 'parent' ? theme.textPrimary : theme.textSecondary }]}>
-                            מצב הורה
+                            {t('babysitter.parentMode')}
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.modeBtn, userMode === 'sitter' && [styles.modeBtnActive, { backgroundColor: theme.card }]]}
                         onPress={() => setUserMode('sitter')}
+                        accessibilityRole="tab"
+                        accessibilityLabel={t('babysitter.sitterMode')}
+                        accessibilityState={{ selected: userMode === 'sitter' }}
                     >
                         <Briefcase size={16} color={userMode === 'sitter' ? theme.textPrimary : theme.textSecondary} strokeWidth={1.5} />
                         <Text style={[styles.modeBtnText, { color: userMode === 'sitter' ? theme.textPrimary : theme.textSecondary }]}>
-                            מצב סיטר
+                            {t('babysitter.sitterMode')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -440,9 +484,11 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 style={[styles.locationInput, { color: theme.textPrimary }]}
                                 value={filterCity}
                                 onChangeText={setFilterCity}
-                                placeholder={userCity ? `${userCity} (אוטומטי)` : 'הזן עיר או אזור...'}
+                                placeholder={userCity ? `${userCity} ${t('babysitter.automatic')}` : t('babysitter.enterCity')}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
+                                accessibilityLabel={t('babysitter.enterCity')}
+                                accessibilityHint="Search for sitters in a specific city"
                             />
                             {filterCity.length > 0 ? (
                                 <TouchableOpacity
@@ -462,7 +508,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     {/* Sort & Count */}
                     <View style={styles.filterSection}>
                         <Text style={[styles.resultsCount, { color: theme.textSecondary }]}>
-                            {sortedSitters.length} סיטרים זמינים {activeCity ? `ב${activeCity}` : ''}
+                            {t('babysitter.availableSitters', { count: sortedSitters.length })} {activeCity ? t('babysitter.inCity', { city: activeCity }) : ''}
                         </Text>
                         <SortPills />
                     </View>
@@ -475,7 +521,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     ) : sortedSitters.length === 0 ? (
                         <View style={styles.emptyState}>
                             <User size={48} color={theme.border} strokeWidth={1} />
-                            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>אין סיטרים זמינים כרגע</Text>
+                            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('babysitter.noSitters')}</Text>
                         </View>
                     ) : (
                         <ScrollView
@@ -500,7 +546,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     {checkingStatus ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="large" color="#6366F1" />
-                            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>בודק סטטוס...</Text>
+                            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>{t('babysitter.checkingStatus')}</Text>
                         </View>
                     ) : isSitterRegistered ? (
                         <SitterDashboardCTA />
@@ -511,6 +557,31 @@ const BabySitterScreen = ({ navigation }: any) => {
             )}
         </View>
     );
+};
+
+// Premium Shadow System - 3 Levels
+const SHADOWS = {
+    subtle: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    medium: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    elevated: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 4,
+    },
 };
 
 const styles = StyleSheet.create({
@@ -594,14 +665,15 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 
-    // Sitter Card
+    // Sitter Card - Enhanced with shadow
     scrollContent: {
         paddingHorizontal: 20,
     },
     sitterCard: {
-        borderRadius: 14,
-        marginBottom: 10,
-        padding: 14,
+        borderRadius: 16,
+        marginBottom: 12,
+        padding: 16,
+        ...SHADOWS.subtle,
     },
     sitterCardContent: {
         flexDirection: 'row-reverse',
@@ -684,7 +756,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 
-    // Registration CTA
+    // Registration CTA - Enhanced with elevated shadow
     registrationContainer: {
         flex: 1,
         paddingHorizontal: 20,
@@ -697,6 +769,8 @@ const styles = StyleSheet.create({
         padding: 32,
         borderRadius: 20,
         gap: 12,
+        backgroundColor: '#FFFFFF',
+        ...SHADOWS.elevated,
     },
     registrationTitle: {
         fontSize: 22,
@@ -713,6 +787,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
         borderRadius: 12,
         marginTop: 8,
+        ...SHADOWS.medium,
     },
     registrationBtnText: {
         fontSize: 16,
@@ -740,6 +815,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 28,
         borderRadius: 12,
         marginTop: 8,
+        ...SHADOWS.medium,
     },
     dashboardBtnText: {
         fontSize: 15,
@@ -770,7 +846,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    // Location filter styles - Premium Design
+    // Location filter styles - Enhanced with medium shadow
     locationSection: {
         paddingHorizontal: 20,
         marginBottom: 16,
@@ -782,11 +858,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 16,
         borderWidth: StyleSheet.hairlineWidth,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
+        ...SHADOWS.medium,
     },
     locationIconContainer: {
         width: 36,

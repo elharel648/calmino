@@ -18,6 +18,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.loading': 'טוען...',
     'common.error': 'שגיאה',
     'common.retry': 'נסה שוב',
+    'common.back': 'חזרה',
+    'common.sortBy': 'מיון לפי',
 
     // Home Screen
     'home.greeting.morning': 'בוקר טוב',
@@ -326,6 +328,30 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Share
     'share.message': 'היי! אני משתמש/ת ב-CalmParent וזה ממש עוזר לי לנהל את הטיפול בבייבי. ממליץ/ה בחום! 👶📱',
+
+    // Babysitter
+    'babysitter.findSitter': 'מצא סיטר',
+    'babysitter.parentMode': 'מצב הורה',
+    'babysitter.sitterMode': 'מצב סיטר',
+    'babysitter.enterCity': 'הזן עיר או אזור...',
+    'babysitter.automatic': '(אוטומטי)',
+    'babysitter.availableSitters': '{count} סיטרים זמינים',
+    'babysitter.inCity': 'ב{city}',
+    'babysitter.sortByRating': 'דירוג',
+    'babysitter.sortByPrice': 'מחיר',
+    'babysitter.sortByDistance': 'מרחק',
+    'babysitter.perHour': 'לשעה',
+    'babysitter.mutualFriends': '{count} חברים משותפים',
+    'babysitter.noSitters': 'אין סיטרים זמינים כרגע',
+    'babysitter.checkingStatus': 'בודק סטטוס...',
+    'babysitter.becomeSitter': 'הצטרף כסיטר/ית',
+    'babysitter.earnMoney': 'הרוויח/י כסף ועזור/י להורים באזור שלך',
+    'babysitter.startRegistration': 'התחל הרשמה',
+    'babysitter.sitterDashboard': 'מצב סיטר',
+    'babysitter.goToDashboard': 'עבור לדשבורד שלך לצפייה בהזמנות',
+    'babysitter.openDashboard': 'עבור לדשבורד →',
+    'babysitter.rating': 'דירוג',
+    'babysitter.price': 'מחיר',
   },
   en: {
     // Common
@@ -337,6 +363,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.retry': 'Retry',
+    'common.back': 'Back',
+    'common.sortBy': 'Sort by',
 
     // Home Screen
     'home.greeting.morning': 'Good Morning',
@@ -643,6 +671,30 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Share
     'share.message': 'Hey! I\'m using CalmParent and it really helps me manage baby care. Highly recommend! 👶📱',
+
+    // Babysitter
+    'babysitter.findSitter': 'Find Sitter',
+    'babysitter.parentMode': 'Parent Mode',
+    'babysitter.sitterMode': 'Sitter Mode',
+    'babysitter.enterCity': 'Enter city or area...',
+    'babysitter.automatic': '(automatic)',
+    'babysitter.availableSitters': '{count} sitters available',
+    'babysitter.inCity': 'in {city}',
+    'babysitter.sortByRating': 'Rating',
+    'babysitter.sortByPrice': 'Price',
+    'babysitter.sortByDistance': 'Distance',
+    'babysitter.perHour': 'per hour',
+    'babysitter.mutualFriends': '{count} mutual friends',
+    'babysitter.noSitters': 'No sitters available at this time',
+    'babysitter.checkingStatus': 'Checking status...',
+    'babysitter.becomeSitter': 'Become a Sitter',
+    'babysitter.earnMoney': 'Earn money and help parents in your area',
+    'babysitter.startRegistration': 'Start Registration',
+    'babysitter.sitterDashboard': 'Sitter Mode',
+    'babysitter.goToDashboard': 'Go to your dashboard to view bookings',
+    'babysitter.openDashboard': 'Open Dashboard →',
+    'babysitter.rating': 'Rating',
+    'babysitter.price': 'Price',
 
     // Time Labels
     'time.every': 'Every',

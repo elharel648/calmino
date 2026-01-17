@@ -24,12 +24,17 @@ import {
     User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send, DollarSign
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { auth, db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { uploadSitterPhoto } from '../services/imageUploadService';
+import { Camera } from 'lucide-react-native';
+import { useChats } from '../hooks/useChats';
+import { useBookings } from '../hooks/useBookings';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -101,20 +106,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [savingSettings, setSavingSettings] = useState(false);
     const [sitterCity, setSitterCity] = useState(''); // City for location search
     const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
+    const [profilePhoto, setProfilePhoto] = useState<string | null>(null); // Profile photo URL
+    const [uploadingPhoto, setUploadingPhoto] = useState(false); // Photo upload loading state
 
-    // Messages are loaded from backend in production
-    const mockMessages: {
-        id: string;
-        parentName: string;
-        parentPhoto: string;
-        lastMessage: string;
-        timestamp: Date;
-        unread: boolean;
-    }[] = [];
+    // Real-time chats from Firebase
+    const { chats } = useChats();
 
-    const mockChatHistory: { [key: string]: { id: string; text: string; fromMe: boolean; time: string }[] } = {};
-
-    const activeChat = mockMessages.find(m => m.id === activeChatId);
+    const activeChat = chats.find(c => c.id === activeChatId);
 
     const [sitterProfile, setSitterProfile] = useState<SitterProfile | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -142,6 +140,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 setAvailableForBookings(data.sitterActive !== false);
                 setSitterCity(data.sitterCity || '');
                 setHourlyRate(data.sitterPrice || 50);
+                setProfilePhoto(data.photoUrl || auth.currentUser?.photoURL || null);
                 if (data.sitterAvailableDays) setAvailableDays(data.sitterAvailableDays);
 
                 return {
@@ -221,6 +220,51 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             return fetchedBookings;
         } catch {
             return [];
+        }
+    };
+
+    // Handle photo change
+    const handleChangePhoto = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                const uri = result.assets[0].uri;
+                setUploadingPhoto(true);
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+                try {
+                    // Upload to Firebase Storage
+                    const downloadUrl = await uploadSitterPhoto(uri);
+
+                    // Update Firestore
+                    const userId = auth.currentUser?.uid;
+                    if (userId) {
+                        await updateDoc(doc(db, 'users', userId), {
+                            photoUrl: downloadUrl,
+                        });
+                    }
+
+                    // Update local state
+                    setProfilePhoto(downloadUrl);
+                    setSitterProfile(prev => prev ? { ...prev, photoUrl: downloadUrl } : prev);
+
+                    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Alert.alert('✅', 'התמונה עודכנה בהצלחה!');
+                } catch (uploadError) {
+                    console.error('Failed to upload photo:', uploadError);
+                    Alert.alert('שגיאה', 'לא ניתן להעלות תמונה, נסה שוב');
+                }
+            }
+        } catch (error) {
+            console.error('Image picker error:', error);
+        } finally {
+            setUploadingPhoto(false);
         }
     };
 
@@ -488,9 +532,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     >
                         <View>
                             <MessageSquare size={20} color={theme.textSecondary} strokeWidth={1.5} />
-                            {mockMessages.filter(m => m.unread).length > 0 && (
+                            {chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length > 0 && (
                                 <View style={styles.unreadBadge}>
-                                    <Text style={styles.unreadBadgeText}>{mockMessages.filter(m => m.unread).length}</Text>
+                                    <Text style={styles.unreadBadgeText}>{chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length}</Text>
                                 </View>
                             )}
                         </View>
@@ -559,35 +603,80 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         </View>
 
                         <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContent}>
-                            {/* Location */}
-                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-                                <View style={styles.settingRow}>
-                                    <MapPin size={18} color={theme.textSecondary} />
-                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>מיקום מועדף</Text>
+                            {/* Profile Photo */}
+                            <TouchableOpacity
+                                style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', alignItems: 'center', paddingVertical: 20 }]}
+                                onPress={handleChangePhoto}
+                                disabled={uploadingPhoto}
+                            >
+                                <View style={{ position: 'relative' }}>
+                                    {profilePhoto ? (
+                                        <Image
+                                            source={{ uri: profilePhoto }}
+                                            style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6' }}
+                                        />
+                                    ) : (
+                                        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+                                            <User size={36} color="#9CA3AF" />
+                                        </View>
+                                    )}
+                                    <View style={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        right: 0,
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: 14,
+                                        backgroundColor: '#6366F1',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderWidth: 2,
+                                        borderColor: '#FFFFFF',
+                                    }}>
+                                        {uploadingPhoto ? (
+                                            <ActivityIndicator size="small" color="#fff" />
+                                        ) : (
+                                            <Camera size={14} color="#fff" />
+                                        )}
+                                    </View>
                                 </View>
+                                <Text style={{ fontSize: 14, color: '#6366F1', marginTop: 10, fontWeight: '500' }}>
+                                    {uploadingPhoto ? 'מעלה...' : 'שנה תמונה'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* City - used for search */}
+                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
+                                <View style={styles.settingRow}>
+                                    <MapPin size={18} color="#6366F1" />
+                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>עיר</Text>
+                                </View>
+                                <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginBottom: 8 }}>
+                                    הורים יוכלו למצוא אותך לפי עיר זו
+                                </Text>
                                 <TextInput
                                     style={[
                                         styles.settingsInput,
-                                        { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }
+                                        { backgroundColor: '#F9FAFB', color: theme.textPrimary, borderColor: '#E5E7EB' }
                                     ]}
-                                    value={preferredLocation}
-                                    onChangeText={setPreferredLocation}
-                                    placeholder="עיר או שכונה..."
+                                    value={sitterCity}
+                                    onChangeText={setSitterCity}
+                                    placeholder="תל אביב, ירושלים, חיפה..."
                                     placeholderTextColor={theme.textSecondary}
                                     textAlign="right"
                                 />
                             </View>
 
                             {/* Phone */}
-                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
                                 <View style={styles.settingRow}>
-                                    <Phone size={18} color={theme.textSecondary} />
+                                    <Phone size={18} color="#10B981" />
                                     <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>טלפון ליצירת קשר</Text>
                                 </View>
                                 <TextInput
                                     style={[
                                         styles.settingsInput,
-                                        { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }
+                                        { backgroundColor: '#F9FAFB', color: theme.textPrimary, borderColor: '#E5E7EB' }
                                     ]}
                                     value={phoneNumber}
                                     onChangeText={setPhoneNumber}
@@ -598,56 +687,37 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 />
                             </View>
 
-                            {/* City for search matching */}
-                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-                                <View style={styles.settingRow}>
-                                    <MapPin size={18} color={theme.textSecondary} />
-                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>עיר (לחיפוש)</Text>
-                                </View>
-                                <TextInput
-                                    style={[
-                                        styles.settingsInput,
-                                        { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }
-                                    ]}
-                                    value={sitterCity}
-                                    onChangeText={setSitterCity}
-                                    placeholder="תל אביב, ירושלים..."
-                                    placeholderTextColor={theme.textSecondary}
-                                    textAlign="right"
-                                />
-                            </View>
-
                             {/* Hourly Rate */}
-                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
                                 <View style={styles.settingRow}>
-                                    <DollarSign size={18} color={theme.textSecondary} />
+                                    <DollarSign size={18} color="#F59E0B" />
                                     <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>מחיר לשעה</Text>
                                 </View>
-                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }}>
+                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 }}>
                                     <TouchableOpacity
-                                        style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
+                                        style={[styles.priceBtn, { backgroundColor: '#FEE2E2' }]}
                                         onPress={() => setHourlyRate(Math.max(30, hourlyRate - 5))}
                                     >
-                                        <Text style={{ fontSize: 18, color: theme.textPrimary }}>-</Text>
+                                        <Text style={{ fontSize: 18, color: '#EF4444', fontWeight: '600' }}>-</Text>
                                     </TouchableOpacity>
-                                    <Text style={{ fontSize: 20, fontWeight: '700', color: theme.textPrimary }}>
+                                    <Text style={{ fontSize: 28, fontWeight: '700', color: theme.textPrimary }}>
                                         ₪{hourlyRate}
                                     </Text>
                                     <TouchableOpacity
-                                        style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
+                                        style={[styles.priceBtn, { backgroundColor: '#D1FAE5' }]}
                                         onPress={() => setHourlyRate(Math.min(200, hourlyRate + 5))}
                                     >
-                                        <Text style={{ fontSize: 18, color: theme.textPrimary }}>+</Text>
+                                        <Text style={{ fontSize: 18, color: '#10B981', fontWeight: '600' }}>+</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             {/* Toggle Settings */}
-                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
                                 <View style={styles.settingToggleRow}>
                                     <View style={styles.settingRow}>
                                         <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>התראות</Text>
-                                        <Bell size={18} color={theme.textSecondary} />
+                                        <Bell size={18} color="#6366F1" />
                                     </View>
                                     <Switch
                                         value={notificationsEnabled}
@@ -658,11 +728,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </View>
                             </View>
 
-                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
                                 <View style={styles.settingToggleRow}>
                                     <View style={styles.settingRow}>
                                         <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>זמין להזמנות</Text>
-                                        <Calendar size={18} color={theme.textSecondary} />
+                                        <Calendar size={18} color="#10B981" />
                                     </View>
                                     <Switch
                                         value={availableForBookings}
@@ -723,7 +793,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     navigation.navigate('SitterRegistration');
                                 }}
                             >
-                                <Edit3 size={16} color="#6366F1" strokeWidth={1.5} />
+                                <Edit3 size={14} color="#6B7280" strokeWidth={1.5} />
                                 <Text style={styles.editProfileBtnText}>ערוך פרופיל סיטר</Text>
                             </TouchableOpacity>
 
@@ -762,7 +832,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     );
                                 }}
                             >
-                                <Trash2 size={16} color="#EF4444" strokeWidth={1.5} />
+                                <Trash2 size={13} color="#9CA3AF" strokeWidth={1.5} />
                                 <Text style={styles.deleteAccountBtnText}>מחק חשבון סיטר</Text>
                             </TouchableOpacity>
                         </ScrollView>
@@ -865,7 +935,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         </View>
 
                         <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContent}>
-                            {mockMessages.length === 0 ? (
+                            {chats.length === 0 ? (
                                 <View style={styles.emptyMessages}>
                                     <MessageSquare size={48} color={theme.textSecondary} strokeWidth={1} />
                                     <Text style={[styles.emptyMessagesText, { color: theme.textSecondary }]}>
@@ -873,137 +943,54 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     </Text>
                                 </View>
                             ) : (
-                                mockMessages.map((message) => (
+                                chats.map((chat) => (
                                     <TouchableOpacity
-                                        key={message.id}
+                                        key={chat.id}
                                         style={[
                                             styles.messageRow,
-                                            { backgroundColor: message.unread ? '#F0FDF4' : theme.cardSecondary }
+                                            { backgroundColor: ((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) ? '#F0FDF4' : theme.cardSecondary }
                                         ]}
                                         onPress={() => {
                                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            setActiveChatId(message.id);
+                                            setMessagesModalVisible(false);
+                                            navigation.navigate('ChatScreen', {
+                                                sitterName: chat.parentName,
+                                                sitterImage: chat.sitterImage,
+                                                sitterId: chat.parentId,
+                                            });
                                         }}
                                     >
-                                        <Image source={{ uri: message.parentPhoto }} style={styles.messageAvatar} />
+                                        {chat.sitterImage ? (
+                                            <Image source={{ uri: chat.sitterImage }} style={styles.messageAvatar} />
+                                        ) : (
+                                            <View style={[styles.messageAvatar, { backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' }]}>
+                                                <User size={20} color={theme.textSecondary} />
+                                            </View>
+                                        )}
                                         <View style={styles.messageContent}>
                                             <View style={styles.messageHeader}>
                                                 <Text style={[styles.messageName, { color: theme.textPrimary }]}>
-                                                    {message.parentName}
+                                                    {chat.parentName}
                                                 </Text>
                                                 <Text style={[styles.messageTime, { color: theme.textSecondary }]}>
-                                                    {formatRelativeTime(message.timestamp)}
+                                                    {chat.lastMessageTime?.toDate?.() ? formatRelativeTime(chat.lastMessageTime.toDate()) : ''}
                                                 </Text>
                                             </View>
                                             <Text
                                                 style={[
                                                     styles.messagePreview,
-                                                    { color: message.unread ? theme.textPrimary : theme.textSecondary }
+                                                    { color: ((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) ? theme.textPrimary : theme.textSecondary }
                                                 ]}
                                                 numberOfLines={1}
                                             >
-                                                {message.lastMessage}
+                                                {chat.lastMessage || 'התחל שיחה...'}
                                             </Text>
                                         </View>
-                                        {message.unread && <View style={styles.unreadDot} />}
+                                        {((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) && <View style={styles.unreadDot} />}
                                     </TouchableOpacity>
                                 ))
                             )}
                         </ScrollView>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Chat Modal */}
-            <Modal
-                visible={activeChatId !== null}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setActiveChatId(null)}
-            >
-                <View style={styles.chatOverlay}>
-                    <View style={[styles.chatModal, { backgroundColor: theme.card }]}>
-                        {/* Chat Header */}
-                        <View style={[styles.chatHeader, { borderBottomColor: theme.border }]}>
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setActiveChatId(null);
-                                    setChatInput('');
-                                }}
-                                style={styles.chatBackBtn}
-                            >
-                                <X size={22} color={theme.textSecondary} />
-                            </TouchableOpacity>
-                            {activeChat && (
-                                <View style={styles.chatHeaderInfo}>
-                                    <Image source={{ uri: activeChat.parentPhoto }} style={styles.chatAvatar} />
-                                    <Text style={[styles.chatName, { color: theme.textPrimary }]}>{activeChat.parentName}</Text>
-                                </View>
-                            )}
-                            <View style={{ width: 22 }} />
-                        </View>
-
-                        {/* Messages */}
-                        <ScrollView
-                            style={styles.chatMessages}
-                            contentContainerStyle={styles.chatMessagesContent}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {activeChatId && mockChatHistory[activeChatId]?.map((msg) => (
-                                <View
-                                    key={msg.id}
-                                    style={[
-                                        styles.chatBubble,
-                                        msg.fromMe ? styles.chatBubbleMine : styles.chatBubbleTheirs,
-                                        { backgroundColor: msg.fromMe ? '#10B981' : theme.cardSecondary }
-                                    ]}
-                                >
-                                    <Text style={[
-                                        styles.chatBubbleText,
-                                        { color: msg.fromMe ? '#fff' : theme.textPrimary }
-                                    ]}>
-                                        {msg.text}
-                                    </Text>
-                                    <Text style={[
-                                        styles.chatBubbleTime,
-                                        { color: msg.fromMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }
-                                    ]}>
-                                        {msg.time}
-                                    </Text>
-                                </View>
-                            ))}
-                        </ScrollView>
-
-                        {/* Input Area */}
-                        <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                            keyboardVerticalOffset={100}
-                        >
-                            <View style={[styles.chatInputContainer, { borderTopColor: theme.border }]}>
-                                <TextInput
-                                    style={[styles.chatInput, { backgroundColor: theme.cardSecondary, color: theme.textPrimary }]}
-                                    placeholder="הקלד הודעה..."
-                                    placeholderTextColor={theme.textSecondary}
-                                    value={chatInput}
-                                    onChangeText={setChatInput}
-                                    multiline
-                                    textAlign="right"
-                                />
-                                <TouchableOpacity
-                                    style={[styles.chatSendBtn, { opacity: chatInput.trim() ? 1 : 0.5 }]}
-                                    onPress={() => {
-                                        if (chatInput.trim()) {
-                                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            Alert.alert('נשלח!', `ההודעה "${chatInput}" נשלחה בהצלחה`);
-                                            setChatInput('');
-                                        }
-                                    }}
-                                    disabled={!chatInput.trim()}
-                                >
-                                    <Send size={20} color="#fff" />
-                                </TouchableOpacity>
-                            </View>
-                        </KeyboardAvoidingView>
                     </View>
                 </View>
             </Modal>
@@ -1324,51 +1311,43 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     saveSettingsBtn: {
-        backgroundColor: '#374151',
-        borderRadius: 14,
-        paddingVertical: 10,
+        backgroundColor: '#111827',
+        borderRadius: 12,
+        paddingVertical: 14,
         alignItems: 'center',
-        marginTop: 6,
-        marginBottom: 12,
+        marginTop: 16,
+        marginBottom: 16,
     },
     saveSettingsBtnText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: '600',
-        letterSpacing: -0.2,
     },
     editProfileBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        paddingVertical: 9,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#6366F1',
-        marginBottom: 8,
+        paddingVertical: 8,
+        marginBottom: 4,
     },
     editProfileBtnText: {
-        color: '#6366F1',
+        color: '#6B7280',
         fontSize: 14,
         fontWeight: '500',
-        letterSpacing: -0.1,
     },
     deleteAccountBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        paddingVertical: 9,
-        borderRadius: 12,
-        backgroundColor: '#FEE2E2',
-        marginBottom: 12,
+        gap: 4,
+        paddingVertical: 8,
+        marginBottom: 8,
     },
     deleteAccountBtnText: {
-        color: '#EF4444',
-        fontSize: 14,
-        fontWeight: '500',
-        letterSpacing: -0.1,
+        color: '#9CA3AF',
+        fontSize: 13,
+        fontWeight: '400',
     },
 
     // Availability Modal Styles

@@ -25,6 +25,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
+import { uploadSitterPhoto } from '../services/imageUploadService';
 
 // Israeli cities for picker
 const ISRAELI_CITIES = [
@@ -179,6 +180,19 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         try {
+            // Upload photo to Firebase Storage if user selected one
+            let photoUrl = profilePhoto;
+            if (profilePhoto && !profilePhoto.startsWith('http')) {
+                // Local URI - need to upload
+                try {
+                    photoUrl = await uploadSitterPhoto(profilePhoto);
+                    console.log('📸 Sitter photo uploaded:', photoUrl);
+                } catch (uploadError) {
+                    console.warn('⚠️ Failed to upload photo, continuing without:', uploadError);
+                    photoUrl = null; // Don't save local URI
+                }
+            }
+
             await updateDoc(doc(db, 'users', userId), {
                 isSitter: true,
                 sitterActive: true,
@@ -195,6 +209,8 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 // Location data
                 sitterCity: city,
                 sitterLocation: gpsLocation || null,
+                // Photo URL (from Storage)
+                photoUrl: photoUrl,
             });
 
             // Navigate directly to dashboard

@@ -31,9 +31,9 @@
       ]
     ],
     "splash": {
-      "image": "./assets/original_logo.png",
+      "image": "./assets/splash-clean.png",
       "resizeMode": "contain",
-      "backgroundColor": "#EFF5EF"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,

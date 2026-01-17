@@ -17,7 +17,13 @@ service cloud.firestore {
     // USERS COLLECTION
     // ===================
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // Read: owner can always read their data
+      // OR any authenticated user can read if user is an active sitter
+      allow read: if isOwner(userId) || 
+                     (isAuthenticated() && resource.data.isSitter == true && resource.data.sitterActive == true);
+      
+      // Write: only owner
+      allow write: if isOwner(userId);
     }
 
     // ===================
@@ -103,13 +109,38 @@ service cloud.firestore {
       allow write: if isAuthenticated() && request.auth.uid == docId;
     }
 
-    // ===================
+    // =================== 
     // SITTERS COLLECTION
     // ===================
     match /sitters/{sitterId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.auth.uid == sitterId;
       allow update, delete: if isAuthenticated() && request.auth.uid == sitterId;
+    }
+
+    // ===================
+    // CHATS COLLECTION
+    // ===================
+    match /chats/{chatId} {
+      // Read: participants only
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      
+      // Create: if user is in participants
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participants;
+      
+      // Update: participants only (for unread counts, last message)
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Read: if user is chat participant
+        allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Create: if user is chat participant and is the sender
+        allow create: if isAuthenticated() && 
+                         request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
+                         request.resource.data.senderId == request.auth.uid;
+      }
     }
 
     // ===================

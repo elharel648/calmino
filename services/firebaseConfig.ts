@@ -5,6 +5,7 @@ import { initializeAuth, getAuth } from 'firebase/auth';
 // @ts-ignore - getReactNativePersistence exists but TypeScript may not recognize it
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
@@ -33,3 +34,5 @@ try {
 
 export { auth };
 export const db = getFirestore(app);
+// Storage - use default bucket from config
+export const storage = getStorage(app);
