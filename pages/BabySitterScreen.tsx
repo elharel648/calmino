@@ -424,22 +424,39 @@ const BabySitterScreen = ({ navigation }: any) => {
             {/* Parent Mode Content */}
             {userMode === 'parent' && (
                 <>
-                    {/* City Filter */}
-                    <View style={[styles.cityFilterContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <MapPin size={18} color={theme.textSecondary} />
-                        <TextInput
-                            style={[styles.cityFilterInput, { color: theme.textPrimary }]}
-                            value={filterCity}
-                            onChangeText={setFilterCity}
-                            placeholder={userCity ? `${userCity} (אוטומטי)` : 'חפש לפי עיר...'}
-                            placeholderTextColor={theme.textSecondary}
-                            textAlign="right"
-                        />
-                        {filterCity.length > 0 && (
-                            <TouchableOpacity onPress={() => setFilterCity('')}>
-                                <Text style={{ color: theme.textSecondary, fontSize: 18 }}>×</Text>
-                            </TouchableOpacity>
-                        )}
+                    {/* Location Filter - Premium Design */}
+                    <View style={styles.locationSection}>
+                        <TouchableOpacity
+                            style={[styles.locationButton, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            onPress={() => {
+                                // Could open location picker modal
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.locationIconContainer}>
+                                <MapPin size={18} color="#6366F1" />
+                            </View>
+                            <TextInput
+                                style={[styles.locationInput, { color: theme.textPrimary }]}
+                                value={filterCity}
+                                onChangeText={setFilterCity}
+                                placeholder={userCity ? `${userCity} (אוטומטי)` : 'הזן עיר או אזור...'}
+                                placeholderTextColor={theme.textSecondary}
+                                textAlign="right"
+                            />
+                            {filterCity.length > 0 ? (
+                                <TouchableOpacity
+                                    onPress={() => setFilterCity('')}
+                                    style={styles.clearButton}
+                                >
+                                    <Text style={{ color: '#9CA3AF', fontSize: 16, fontWeight: '600' }}>×</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={styles.locationBadge}>
+                                    <Search size={14} color="#6366F1" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
                     </View>
 
                     {/* Sort & Count */}
@@ -753,7 +770,56 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    // City filter styles
+    // Location filter styles - Premium Design
+    locationSection: {
+        paddingHorizontal: 20,
+        marginBottom: 16,
+    },
+    locationButton: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    locationIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 12,
+    },
+    locationInput: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
+    },
+    clearButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    locationBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: 'rgba(99, 102, 241, 0.08)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // Legacy city filter (kept for reference)
     cityFilterContainer: {
         flexDirection: 'row-reverse',
         alignItems: 'center',

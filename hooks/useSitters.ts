@@ -1,14 +1,7 @@
-// hooks/useSitters.ts - Real Firebase Sitters Hook
+// hooks/useSitters.ts - Production Firebase Sitters Hook
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/firebaseConfig';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-
-// Mock mutual friends for DEV mode
-const MOCK_MUTUAL_FRIENDS = [
-    { id: 'friend_1', name: 'דנה לוי', picture: { data: { url: 'https://i.pravatar.cc/100?img=5' } } },
-    { id: 'friend_2', name: 'יוסי כהן', picture: { data: { url: 'https://i.pravatar.cc/100?img=12' } } },
-    { id: 'friend_3', name: 'שירה אברהם', picture: { data: { url: 'https://i.pravatar.cc/100?img=9' } } },
-];
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export interface MutualFriend {
     id: string;
@@ -95,8 +88,6 @@ const useSitters = () => {
                     // Location fields
                     city: data.sitterCity || undefined,
                     location: data.sitterLocation || undefined,
-                    // DEV MOCK: Add mock mutual friends in development
-                    mutualFriends: __DEV__ ? MOCK_MUTUAL_FRIENDS.slice(0, Math.floor(Math.random() * 4)) : undefined,
                 });
             });
 
@@ -115,74 +106,10 @@ const useSitters = () => {
             setSitters(fetchedSitters);
 
         } catch (err) {
-            // Use console.warn instead of console.error to avoid red popup in dev
-            if (__DEV__) console.warn('useSitters: Firebase permission issue, using demo sitters');
-
-            // Fallback to mock sitters when Firebase permission fails
-            // This allows the app to work while user updates Firestore security rules
-            const mockSitters: Sitter[] = [
-                {
-                    id: 'demo_1',
-                    name: 'נועה לוי',
-                    age: 22,
-                    photoUrl: 'https://i.pravatar.cc/200?img=5',
-                    rating: 4.9,
-                    reviewCount: 28,
-                    pricePerHour: 55,
-                    isVerified: true,
-                    experience: '3 שנות ניסיון',
-                    bio: 'סטודנטית לחינוך, אוהבת ילדים ויצירתיות',
-                    phone: '052-1234567',
-                    city: 'תל אביב',
-                    distance: 1.2,
-                    availability: ['0', '1', '2', '3', '4'],
-                    languages: ['עברית', 'אנגלית'],
-                    certifications: ['עזרה ראשונה'],
-                    mutualFriends: MOCK_MUTUAL_FRIENDS.slice(0, 2),
-                },
-                {
-                    id: 'demo_2',
-                    name: 'יעל כהן',
-                    age: 24,
-                    photoUrl: 'https://i.pravatar.cc/200?img=9',
-                    rating: 4.7,
-                    reviewCount: 15,
-                    pricePerHour: 50,
-                    isVerified: true,
-                    experience: '2 שנות ניסיון',
-                    bio: 'אחות לשניים, סבלנית ואוהבת משחקים',
-                    phone: '054-9876543',
-                    city: 'ראשון לציון',
-                    distance: 0.8,
-                    availability: ['1', '2', '3', '4', '5'],
-                    languages: ['עברית'],
-                    certifications: [],
-                    mutualFriends: MOCK_MUTUAL_FRIENDS.slice(0, 3),
-                },
-                {
-                    id: 'demo_3',
-                    name: 'שרה מזרחי',
-                    age: 26,
-                    photoUrl: 'https://i.pravatar.cc/200?img=25',
-                    rating: 5.0,
-                    reviewCount: 42,
-                    pricePerHour: 65,
-                    isVerified: true,
-                    experience: '5 שנות ניסיון',
-                    bio: 'גננת מוסמכת, מתמחה בפעוטות',
-                    phone: '050-5555555',
-                    city: 'תל אביב',
-                    distance: 1.8,
-                    availability: ['0', '1', '2', '3', '4', '5', '6'],
-                    languages: ['עברית', 'אנגלית', 'ערבית'],
-                    certifications: ['עזרה ראשונה', 'גננת מוסמכת'],
-                    mutualFriends: MOCK_MUTUAL_FRIENDS,
-                },
-            ];
-
-            console.log('🔧 useSitters: Using demo sitters as fallback');
-            setSitters(mockSitters);
-            setError(null); // Don't show error to user, just use fallback
+            // Silent fail - just show empty state (user needs to update Firebase rules)
+            console.warn('useSitters: Firebase permission issue');
+            setSitters([]);
+            setError(null);
         } finally {
             setIsLoading(false);
         }

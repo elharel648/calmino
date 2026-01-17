@@ -102,67 +102,17 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [sitterCity, setSitterCity] = useState(''); // City for location search
     const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
 
-    // Mock messages for DEV mode
-    const mockMessages = __DEV__ ? [
-        {
-            id: 'msg_1',
-            parentName: 'שירה לוי',
-            parentPhoto: 'https://i.pravatar.cc/100?img=5',
-            lastMessage: 'היי! האם את זמינה ביום שישי בערב?',
-            timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 min ago
-            unread: true,
-        },
-        {
-            id: 'msg_2',
-            parentName: 'יוסי כהן',
-            parentPhoto: 'https://i.pravatar.cc/100?img=12',
-            lastMessage: 'מעולה, אישרתי את ההזמנה. תודה!',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-            unread: true,
-        },
-        {
-            id: 'msg_3',
-            parentName: 'רונית אברהם',
-            parentPhoto: 'https://i.pravatar.cc/100?img=25',
-            lastMessage: 'הילדים נהנו מאוד! תודה רבה 💕',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
-            unread: false,
-        },
-        {
-            id: 'msg_4',
-            parentName: 'נועה רוזנברג',
-            parentPhoto: 'https://i.pravatar.cc/100?img=45',
-            lastMessage: 'האם תוכלי להישאר שעה נוספת?',
-            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-            unread: false,
-        },
-    ] : [];
+    // Messages are loaded from backend in production
+    const mockMessages: {
+        id: string;
+        parentName: string;
+        parentPhoto: string;
+        lastMessage: string;
+        timestamp: Date;
+        unread: boolean;
+    }[] = [];
 
-    // Mock chat history for each conversation
-    const mockChatHistory: { [key: string]: { id: string; text: string; fromMe: boolean; time: string }[] } = {
-        'msg_1': [
-            { id: 'c1', text: 'היי! ראיתי את הפרופיל שלך ואת נראית מעולה!', fromMe: false, time: '14:20' },
-            { id: 'c2', text: 'תודה רבה! 😊', fromMe: true, time: '14:25' },
-            { id: 'c3', text: 'האם את זמינה ביום שישי בערב?', fromMe: false, time: '14:30' },
-        ],
-        'msg_2': [
-            { id: 'c1', text: 'שלום, אשמח להזמין אותך ליום שלישי', fromMe: false, time: '10:00' },
-            { id: 'c2', text: 'בשמחה! באיזה שעות?', fromMe: true, time: '10:15' },
-            { id: 'c3', text: '18:00-22:00, מתאים?', fromMe: false, time: '10:20' },
-            { id: 'c4', text: 'מושלם! אני שם 👍', fromMe: true, time: '10:22' },
-            { id: 'c5', text: 'מעולה, אישרתי את ההזמנה. תודה!', fromMe: false, time: '10:25' },
-        ],
-        'msg_3': [
-            { id: 'c1', text: 'איך היה אתמול?', fromMe: false, time: '09:00' },
-            { id: 'c2', text: 'היה נהדר! הילדים ממש מתוקים', fromMe: true, time: '09:30' },
-            { id: 'c3', text: 'הילדים נהנו מאוד! תודה רבה 💕', fromMe: false, time: '09:45' },
-        ],
-        'msg_4': [
-            { id: 'c1', text: 'היי, יש לי בקשה קטנה...', fromMe: false, time: '16:00' },
-            { id: 'c2', text: 'כן, מה קורה?', fromMe: true, time: '16:05' },
-            { id: 'c3', text: 'האם תוכלי להישאר שעה נוספת?', fromMe: false, time: '16:10' },
-        ],
-    };
+    const mockChatHistory: { [key: string]: { id: string; text: string; fromMe: boolean; time: string }[] } = {};
 
     const activeChat = mockMessages.find(m => m.id === activeChatId);
 
@@ -306,126 +256,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     // Load all data
     const loadData = async () => {
         setLoading(true);
-
-        // 🔧 DEV MOCK: Return mock data in development mode
-        if (__DEV__) {
-            console.log('🔧 DEV MOCK: Loading mock sitter dashboard data...');
-
-            // Mock sitter profile with good stats
-            const mockProfile: SitterProfile = {
-                id: auth.currentUser?.uid || 'mock_sitter',
-                name: auth.currentUser?.displayName || 'הראל אליהו',
-                photoUrl: auth.currentUser?.photoURL || 'https://i.pravatar.cc/200?img=68',
-                rating: 4.8,
-                reviewCount: 15,
-                pricePerHour: 60,
-                isVerified: true,
-            };
-            setSitterProfile(mockProfile);
-
-            // Mock bookings
-            const now = new Date();
-            const mockBookings: Booking[] = [
-                {
-                    id: 'booking_1',
-                    parentId: 'parent_1',
-                    parentName: 'שירה לוי',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=5',
-                    date: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-                    startTime: '17:00',
-                    endTime: '21:00',
-                    childrenCount: 2,
-                    totalPrice: 240,
-                    status: 'pending',
-                },
-                {
-                    id: 'booking_2',
-                    parentId: 'parent_2',
-                    parentName: 'יוסי כהן',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=12',
-                    date: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-                    startTime: '18:30',
-                    endTime: '23:00',
-                    childrenCount: 1,
-                    totalPrice: 270,
-                    status: 'accepted',
-                },
-                {
-                    id: 'booking_3',
-                    parentId: 'parent_3',
-                    parentName: 'מיכל דוד',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=9',
-                    date: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // Yesterday
-                    startTime: '16:00',
-                    endTime: '20:00',
-                    childrenCount: 3,
-                    totalPrice: 320,
-                    status: 'pending',
-                },
-                {
-                    id: 'booking_4',
-                    parentId: 'parent_4',
-                    parentName: 'רונית אברהם',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=25',
-                    date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-                    startTime: '19:00',
-                    endTime: '23:30',
-                    childrenCount: 2,
-                    totalPrice: 360,
-                    status: 'completed',
-                },
-                {
-                    id: 'booking_5',
-                    parentId: 'parent_5',
-                    parentName: 'אורי מזרחי',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=15',
-                    date: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), // Week ago
-                    startTime: '15:00',
-                    endTime: '19:00',
-                    childrenCount: 1,
-                    totalPrice: 240,
-                    status: 'completed',
-                },
-                {
-                    id: 'booking_6',
-                    parentId: 'parent_6',
-                    parentName: 'נועה רוזנברג',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=45',
-                    date: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-                    startTime: '18:00',
-                    endTime: '22:00',
-                    childrenCount: 2,
-                    totalPrice: 280,
-                    status: 'completed',
-                },
-                {
-                    id: 'booking_7',
-                    parentId: 'parent_7',
-                    parentName: 'דניאל גולדשטיין',
-                    parentPhoto: 'https://i.pravatar.cc/100?img=33',
-                    date: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
-                    startTime: '17:30',
-                    endTime: '21:30',
-                    childrenCount: 1,
-                    totalPrice: 240,
-                    status: 'completed',
-                },
-            ];
-            setBookings(mockBookings);
-
-            // Mock stats
-            setStats({
-                monthlyEarnings: 1120, // Sum of completed bookings
-                completedBookings: 4,
-                pendingBookings: 2,
-                totalHours: 18,
-            });
-
-            setLoading(false);
-            setRefreshing(false);
-            console.log('🔧 DEV MOCK: Dashboard loaded with', mockBookings.length, 'bookings');
-            return;
-        }
 
         const profile = await fetchSitterProfile();
         setSitterProfile(profile);
@@ -730,13 +560,16 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                         <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContent}>
                             {/* Location */}
-                            <View style={styles.settingsSection}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
                                     <MapPin size={18} color={theme.textSecondary} />
                                     <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>מיקום מועדף</Text>
                                 </View>
                                 <TextInput
-                                    style={[styles.settingsInput, { backgroundColor: theme.cardSecondary, color: theme.textPrimary }]}
+                                    style={[
+                                        styles.settingsInput,
+                                        { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }
+                                    ]}
                                     value={preferredLocation}
                                     onChangeText={setPreferredLocation}
                                     placeholder="עיר או שכונה..."
@@ -746,13 +579,16 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </View>
 
                             {/* Phone */}
-                            <View style={styles.settingsSection}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
                                     <Phone size={18} color={theme.textSecondary} />
                                     <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>טלפון ליצירת קשר</Text>
                                 </View>
                                 <TextInput
-                                    style={[styles.settingsInput, { backgroundColor: theme.cardSecondary, color: theme.textPrimary }]}
+                                    style={[
+                                        styles.settingsInput,
+                                        { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }
+                                    ]}
                                     value={phoneNumber}
                                     onChangeText={setPhoneNumber}
                                     placeholder="050-0000000"
@@ -763,13 +599,16 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </View>
 
                             {/* City for search matching */}
-                            <View style={styles.settingsSection}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
                                     <MapPin size={18} color={theme.textSecondary} />
                                     <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>עיר (לחיפוש)</Text>
                                 </View>
                                 <TextInput
-                                    style={[styles.settingsInput, { backgroundColor: theme.cardSecondary, color: theme.textPrimary }]}
+                                    style={[
+                                        styles.settingsInput,
+                                        { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }
+                                    ]}
                                     value={sitterCity}
                                     onChangeText={setSitterCity}
                                     placeholder="תל אביב, ירושלים..."
@@ -779,58 +618,58 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </View>
 
                             {/* Hourly Rate */}
-                            <View style={styles.settingsSection}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
                                     <DollarSign size={18} color={theme.textSecondary} />
                                     <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>מחיר לשעה</Text>
                                 </View>
-                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
+                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }}>
                                     <TouchableOpacity
                                         style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
                                         onPress={() => setHourlyRate(Math.max(30, hourlyRate - 5))}
                                     >
-                                        <Text style={{ fontSize: 20, color: theme.textPrimary }}>-</Text>
+                                        <Text style={{ fontSize: 18, color: theme.textPrimary }}>-</Text>
                                     </TouchableOpacity>
-                                    <Text style={{ fontSize: 24, fontWeight: '700', color: theme.textPrimary }}>
+                                    <Text style={{ fontSize: 20, fontWeight: '700', color: theme.textPrimary }}>
                                         ₪{hourlyRate}
                                     </Text>
                                     <TouchableOpacity
                                         style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
                                         onPress={() => setHourlyRate(Math.min(200, hourlyRate + 5))}
                                     >
-                                        <Text style={{ fontSize: 20, color: theme.textPrimary }}>+</Text>
+                                        <Text style={{ fontSize: 18, color: theme.textPrimary }}>+</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             {/* Toggle Settings */}
-                            <View style={styles.settingsSection}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                                 <View style={styles.settingToggleRow}>
+                                    <View style={styles.settingRow}>
+                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>התראות</Text>
+                                        <Bell size={18} color={theme.textSecondary} />
+                                    </View>
                                     <Switch
                                         value={notificationsEnabled}
                                         onValueChange={setNotificationsEnabled}
                                         trackColor={{ false: '#D1D5DB', true: '#A5B4FC' }}
                                         thumbColor={notificationsEnabled ? '#6366F1' : '#9CA3AF'}
                                     />
-                                    <View style={styles.settingRow}>
-                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>התראות</Text>
-                                        <Bell size={18} color={theme.textSecondary} />
-                                    </View>
                                 </View>
                             </View>
 
-                            <View style={styles.settingsSection}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                                 <View style={styles.settingToggleRow}>
+                                    <View style={styles.settingRow}>
+                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>זמין להזמנות</Text>
+                                        <Calendar size={18} color={theme.textSecondary} />
+                                    </View>
                                     <Switch
                                         value={availableForBookings}
                                         onValueChange={setAvailableForBookings}
                                         trackColor={{ false: '#D1D5DB', true: '#86EFAC' }}
                                         thumbColor={availableForBookings ? '#10B981' : '#9CA3AF'}
                                     />
-                                    <View style={styles.settingRow}>
-                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>זמין להזמנות</Text>
-                                        <Calendar size={18} color={theme.textSecondary} />
-                                    </View>
                                 </View>
                             </View>
 
@@ -1434,92 +1273,102 @@ const styles = StyleSheet.create({
     settingsModal: {
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        maxHeight: '75%',
-        paddingBottom: 40,
+        maxHeight: '80%',
+        paddingBottom: 24,
     },
     settingsHeader: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#E5E7EB',
     },
     settingsTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '700',
     },
     settingsContent: {
         paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingTop: 8,
     },
     settingsSection: {
-        marginBottom: 20,
+        marginBottom: 12,
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: StyleSheet.hairlineWidth,
     },
     settingRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 10,
+        marginBottom: 6,
     },
     settingLabel: {
         fontSize: 15,
-        fontWeight: '600',
+        fontWeight: '500',
     },
     settingsInput: {
-        borderRadius: 12,
-        padding: 14,
-        fontSize: 15,
+        borderRadius: 10,
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        fontSize: 14,
+        minHeight: 42,
     },
     settingToggleRow: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingVertical: 4,
     },
     saveSettingsBtn: {
         backgroundColor: '#374151',
-        borderRadius: 12,
-        paddingVertical: 14,
+        borderRadius: 14,
+        paddingVertical: 10,
         alignItems: 'center',
-        marginTop: 10,
-        marginBottom: 20,
+        marginTop: 6,
+        marginBottom: 12,
     },
     saveSettingsBtnText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
+        letterSpacing: -0.2,
     },
     editProfileBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 12,
+        gap: 6,
+        paddingVertical: 9,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#6366F1',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     editProfileBtnText: {
         color: '#6366F1',
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '500',
+        letterSpacing: -0.1,
     },
     deleteAccountBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 12,
+        gap: 6,
+        paddingVertical: 9,
         borderRadius: 12,
         backgroundColor: '#FEE2E2',
-        marginBottom: 20,
+        marginBottom: 12,
     },
     deleteAccountBtnText: {
         color: '#EF4444',
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '500',
+        letterSpacing: -0.1,
     },
 
     // Availability Modal Styles
@@ -1709,9 +1558,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     priceBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },

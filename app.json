@@ -5,7 +5,7 @@
     "scheme": "calmparentapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/original_logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "plugins": [
@@ -31,9 +31,9 @@
       ]
     ],
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/original_logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#EFF5EF"
     },
     "ios": {
       "supportsTablet": true,
