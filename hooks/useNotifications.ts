@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { notificationService, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/notificationService';
 import { notificationStorageService } from '../services/notificationStorageService';
 import { auth } from '../services/firebaseConfig';
+import { navigateFromNotification } from '../services/navigationService';
 
 interface UseNotificationsReturn {
     settings: NotificationSettings;
@@ -50,14 +51,17 @@ export const useNotifications = (): UseNotificationsReturn => {
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
             if (__DEV__) console.log('🔔 Notification tapped:', response);
-            
+
             // Mark as read when tapped
             // Note: We can't mark by notification ID since we don't have it here
             // The user will mark it as read when they see it in the notifications screen
-            
+
             // Handle navigation based on notification type
-            const type = response.notification.request.content.data?.type;
-            // You can add navigation logic here
+            const type = response.notification.request.content.data?.type as string;
+            const data = response.notification.request.content.data;
+
+            // Import and navigate
+            navigateFromNotification(type, data);
         });
 
         return () => {

@@ -46,6 +46,7 @@ import { ScrollTrackingProvider } from './context/ScrollTrackingContext';
 import { ToastProvider } from './context/ToastContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
+import { navigationRef } from './services/navigationService';
 
 
 
@@ -428,6 +429,7 @@ export default function App() {
                         <LiveActivityURLHandler />
                         <SafeAreaProvider>
                           <NavigationContainer
+                            ref={navigationRef}
                             linking={{
                               prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
                               config: {
