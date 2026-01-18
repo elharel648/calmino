@@ -38,6 +38,7 @@ import {
 
 import { auth } from '../services/firebaseConfig';
 import { joinFamily } from '../services/familyService';
+import { useTheme } from '../context/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -66,6 +67,7 @@ const getPasswordStrengthColor = (password: string): string => {
 };
 
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+  const { theme, isDarkMode } = useTheme();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -298,8 +300,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       <View style={styles.header}>
         <LinearGradient colors={['#1e1b4b', '#4338ca']} style={StyleSheet.absoluteFill} />
         <View style={styles.headerContent}>
-          <View style={styles.iconCircle}>
-            <Baby size={40} color="#4f46e5" />
+          <View style={[styles.iconCircle, { backgroundColor: theme.card }]}>
+            <Baby size={40} color={theme.primary} />
           </View>
           <Text style={styles.appTitle}>הורה רגוע</Text>
           <Text style={styles.appSubtitle}>ניהול חכם ושקט להורים טריים</Text>
@@ -311,6 +313,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.formContainer}>
         <Animated.View style={[
           styles.scrollContent,
+          { backgroundColor: theme.card },
           {
             opacity: fadeAnim,
             transform: [{ translateY: slideAnim }, { translateX: shakeAnim }]
@@ -487,7 +490,14 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 {/* Babysitter Registration Option - Visible in signup mode */}
                 {!isLogin && (
                   <TouchableOpacity
-                    style={[styles.babysitterOptionCard, registerAsBabysitter && styles.babysitterOptionCardActive]}
+                    style={[
+                      styles.babysitterOptionCard,
+                      { backgroundColor: isDarkMode ? 'rgba(251, 191, 36, 0.1)' : '#FFFBEB', borderColor: isDarkMode ? 'rgba(251, 191, 36, 0.3)' : '#FDE68A' },
+                      registerAsBabysitter && [
+                        styles.babysitterOptionCardActive,
+                        { borderColor: theme.warning, backgroundColor: isDarkMode ? 'rgba(251, 191, 36, 0.15)' : '#FEF3C7' }
+                      ]
+                    ]}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                       setRegisterAsBabysitter(!registerAsBabysitter);
@@ -495,18 +505,18 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     activeOpacity={0.8}
                   >
                     <View style={[styles.babysitterIconCircle, registerAsBabysitter && styles.babysitterIconCircleActive]}>
-                      <Briefcase size={20} color={registerAsBabysitter ? '#fff' : '#F59E0B'} />
+                      <Briefcase size={20} color={registerAsBabysitter ? theme.card : theme.warning} />
                     </View>
                     <View style={styles.babysitterTextSection}>
-                      <Text style={[styles.babysitterTitle, registerAsBabysitter && { color: '#F59E0B' }]}>
+                      <Text style={[styles.babysitterTitle, { color: theme.textPrimary }, registerAsBabysitter && { color: theme.warning }]}>
                         {registerAsBabysitter ? '✓ נרשם/ת כבייביסיטר' : 'רוצה לעבוד כבייביסיטר?'}
                       </Text>
-                      <Text style={styles.babysitterSubtitle}>
+                      <Text style={[styles.babysitterSubtitle, { color: theme.textSecondary }]}>
                         {registerAsBabysitter ? 'תוכל/י לקבל הזמנות משפחות' : 'הצטרפ/י לרשת הבייביסיטרים שלנו'}
                       </Text>
                     </View>
                     <View style={[styles.babysitterCheckbox, registerAsBabysitter && styles.babysitterCheckboxActive]}>
-                      {registerAsBabysitter && <Check size={14} color="#fff" />}
+                      {registerAsBabysitter && <Check size={14} color={theme.card} />}
                     </View>
                   </TouchableOpacity>
                 )}
@@ -540,7 +550,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 {/* Social buttons */}
                 <View style={styles.socialRow}>
                   <TouchableOpacity
-                    style={[styles.socialBtn, !request && { opacity: 0.5 }]}
+                    style={[
+                      styles.socialBtn,
+                      { backgroundColor: theme.card, borderColor: theme.border },
+                      !request && { opacity: 0.5 }
+                    ]}
                     onPress={() => {
                       if (request) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -550,11 +564,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     disabled={!request}
                   >
                     <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} style={styles.socialIcon} />
-                    <Text style={styles.socialText}>Google</Text>
+                    <Text style={[styles.socialText, { color: theme.textPrimary }]}>Google</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.socialBtn}
+                    style={[styles.socialBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
                     onPress={async () => {
                       try {
                         if (__DEV__) console.log('🍎 Apple Sign-In - Starting...');
@@ -603,7 +617,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     }}
                   >
                     <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/0/747.png' }} style={styles.socialIcon} />
-                    <Text style={styles.socialText}>Apple</Text>
+                    <Text style={[styles.socialText, { color: theme.textPrimary }]}>Apple</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -658,7 +672,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       {/* Join Code Modal */}
       <Modal visible={showJoinCodeModal} transparent animationType="fade">
         <View style={styles.joinModalOverlay}>
-          <View style={styles.joinModalContent}>
+          <View style={[styles.joinModalContent, { backgroundColor: theme.card }]}>
             <TouchableOpacity
               style={styles.joinModalClose}
               onPress={() => setShowJoinCodeModal(false)}
@@ -692,7 +706,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 Alert.alert('מעולה! 🎉', 'הקוד נשמר! המשך להרשמה והקוד יופעל אוטומטית.');
               }}
             >
-              <Text style={styles.joinModalBtnText}>שמור קוד</Text>
+              <Text style={[styles.joinModalBtnText, { color: theme.card }]}>שמור קוד</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -737,7 +751,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 24,
     paddingBottom: 40,
-    backgroundColor: 'white',
     marginHorizontal: 20,
     borderRadius: 24,
     shadowColor: '#000',
@@ -871,12 +884,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
     gap: 8,
-    backgroundColor: '#fff',
   },
   socialIcon: { width: 20, height: 20 },
-  socialText: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  socialText: { fontSize: 14, fontWeight: '600' },
 
   // Switch mode
   switchMode: { alignItems: 'center', marginTop: 8 },
@@ -989,7 +1000,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1D5DB',
   },
   joinModalBtnText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
@@ -1045,20 +1055,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     padding: 14,
-    backgroundColor: '#FFFBEB',
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#FDE68A',
     marginBottom: 16,
     marginTop: 8,
   },
   babysitterOptionCardActive: {
-    borderColor: '#F59E0B',
-    backgroundColor: '#FEF3C7',
   },
   babysitterBtnActive: {
-    borderColor: '#F59E0B',
-    backgroundColor: '#FFFBEB',
   },
   babysitterIconCircle: {
     width: 44,

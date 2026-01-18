@@ -643,24 +643,24 @@ ${comparisonText}
           {/* Toggle: Single Day vs Range */}
           <View style={styles.modeToggleRow}>
             <TouchableOpacity
-              style={[styles.modeToggleBtn, isSingleDayMode && { backgroundColor: '#6366F1' }]}
+              style={[styles.modeToggleBtn, { backgroundColor: theme.inputBackground }, isSingleDayMode && { backgroundColor: theme.primary }]}
               onPress={() => {
                 setSingleDayMode(true);
                 setActivePickerField('start');
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.modeToggleText, isSingleDayMode && { color: '#fff' }]}>יום בודד</Text>
+              <Text style={[styles.modeToggleText, { color: theme.textSecondary }, isSingleDayMode && { color: theme.card }]}>יום בודד</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.modeToggleBtn, !isSingleDayMode && { backgroundColor: '#6366F1' }]}
+              style={[styles.modeToggleBtn, { backgroundColor: theme.inputBackground }, !isSingleDayMode && { backgroundColor: theme.primary }]}
               onPress={() => {
                 setSingleDayMode(false);
                 setActivePickerField('start');
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.modeToggleText, !isSingleDayMode && { color: '#fff' }]}>טווח תאריכים</Text>
+              <Text style={[styles.modeToggleText, { color: theme.textSecondary }, !isSingleDayMode && { color: theme.card }]}>טווח תאריכים</Text>
             </TouchableOpacity>
           </View>
 
@@ -668,10 +668,10 @@ ${comparisonText}
           {isSingleDayMode ? (
             <View style={styles.singleDatePicker}>
               <TouchableOpacity
-                style={[styles.datePickerBtn, styles.singleDateBtn, { backgroundColor: activePickerField === 'start' ? '#EEF2FF' : theme.cardSecondary }]}
+                style={[styles.datePickerBtn, styles.singleDateBtn, { backgroundColor: activePickerField === 'start' ? (isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF') : theme.cardSecondary }]}
                 onPress={() => setActivePickerField('start')}
               >
-                <Calendar size={18} color="#6366F1" />
+                <Calendar size={18} color={theme.primary} />
                 <Text style={[styles.datePickerValue, { color: theme.textPrimary }]}>
                   {format(tempStartDate, 'd MMMM yyyy', { locale: he })}
                 </Text>
@@ -682,7 +682,7 @@ ${comparisonText}
               <View style={styles.datePickerItem}>
                 <Text style={[styles.datePickerLabel, { color: theme.textSecondary }]}>מתאריך</Text>
                 <TouchableOpacity
-                  style={[styles.datePickerBtn, { backgroundColor: activePickerField === 'start' ? '#EEF2FF' : theme.cardSecondary }]}
+                  style={[styles.datePickerBtn, { backgroundColor: activePickerField === 'start' ? (isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF') : theme.cardSecondary }]}
                   onPress={() => setActivePickerField('start')}
                 >
                   <Text style={[styles.datePickerValue, { color: theme.textPrimary }]}>
@@ -693,7 +693,7 @@ ${comparisonText}
               <View style={styles.datePickerItem}>
                 <Text style={[styles.datePickerLabel, { color: theme.textSecondary }]}>עד תאריך</Text>
                 <TouchableOpacity
-                  style={[styles.datePickerBtn, { backgroundColor: activePickerField === 'end' ? '#EEF2FF' : theme.cardSecondary }]}
+                  style={[styles.datePickerBtn, { backgroundColor: activePickerField === 'end' ? (isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF') : theme.cardSecondary }]}
                   onPress={() => setActivePickerField('end')}
                 >
                   <Text style={[styles.datePickerValue, { color: theme.textPrimary }]}>
@@ -1155,7 +1155,7 @@ ${comparisonText}
       {/* Enhanced Background - Minimalist Apple Style */}
       <LinearGradient
         colors={isDarkMode
-          ? ['#0A0A0F', '#0F0F18', '#0C0C12', '#0A0A0F']
+          ? ['#0F0F0F', '#1C1C1E', '#0A0A0A', '#0F0F0F']
           : ['#FAFAFA', '#F7F7F7', '#F3F3F3', '#FAFAFA']
         }
         start={{ x: 0, y: 0 }}
@@ -1258,7 +1258,7 @@ ${comparisonText}
       {/* Content */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6366F1" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : !activeChild?.childId ? (
         <View style={styles.emptyState}>
@@ -1403,8 +1403,8 @@ const styles = StyleSheet.create({
   datePickerBtn: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, alignItems: 'center' },
   datePickerValue: { fontSize: 16, fontWeight: '600' },
   modeToggleRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 20 },
-  modeToggleBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F3F4F6' },
-  modeToggleText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
+  modeToggleBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  modeToggleText: { fontSize: 14, fontWeight: '600' },
   singleDatePicker: { alignItems: 'center' },
   singleDateBtn: { flexDirection: 'row', gap: 10, paddingVertical: 14, paddingHorizontal: 20 },
   inlineCalendarContainer: { marginTop: 16, alignItems: 'center' },

@@ -328,7 +328,7 @@ export default function HomeScreen({ navigation }: any) {
             <Animated.View style={[StyleSheet.absoluteFill, parallaxBackgroundStyle]}>
                 <LinearGradient
                     colors={isDarkMode
-                        ? ['#0A0A0F', '#0F0F18', '#0C0C12', '#0A0A0F']
+                        ? ['#0F0F0F', '#1C1C1E', '#0A0A0A', '#0F0F0F']
                         : ['#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF']
                     }
                     start={{ x: 0, y: 0 }}
@@ -624,7 +624,6 @@ const styles = StyleSheet.create({
     loadingContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
     },
     scrollContent: {
         padding: 20,

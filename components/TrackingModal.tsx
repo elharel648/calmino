@@ -324,54 +324,54 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const renderFoodContent = () => (
     <View style={{ width: '100%' }}>
       {/* 4 Food Type Tabs - Segmented Control */}
-      <View style={styles.foodTabs}>
+      <View style={[styles.foodTabs, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
         <TouchableOpacity
-          style={[styles.foodTab, foodType === 'breast' && styles.activeFoodTab]}
+          style={[styles.foodTab, foodType === 'breast' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
           onPress={() => { setFoodType('breast'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <View style={styles.foodTabIconContainer}>
             {activeSide !== null ? (
-              <Text style={{ color: '#6366F1', fontSize: 13, fontWeight: '700' }}>{formatTime(activeSide === 'left' ? leftTimer : rightTimer)}</Text>
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>{formatTime(activeSide === 'left' ? leftTimer : rightTimer)}</Text>
             ) : (leftTimer > 0 || rightTimer > 0) ? (
-              <Text style={{ color: '#6366F1', fontSize: 12, fontWeight: '600' }}>{formatTime(leftTimer + rightTimer)}</Text>
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(leftTimer + rightTimer)}</Text>
             ) : (
-              <Baby size={20} color={foodType === 'breast' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
+              <Baby size={20} color={foodType === 'breast' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
             )}
           </View>
-          <Text style={[styles.foodTabText, foodType === 'breast' && styles.activeFoodTabText]}>{t('tracking.breast')}</Text>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'breast' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.breast')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.foodTab, foodType === 'bottle' && styles.activeFoodTab]}
+          style={[styles.foodTab, foodType === 'bottle' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
           onPress={() => { setFoodType('bottle'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <View style={styles.foodTabIconContainer}>
-            <Milk size={20} color={foodType === 'bottle' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
+            <Milk size={20} color={foodType === 'bottle' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
           </View>
-          <Text style={[styles.foodTabText, foodType === 'bottle' && styles.activeFoodTabText]}>{t('tracking.bottle')}</Text>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'bottle' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.bottle')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.foodTab, foodType === 'solids' && styles.activeFoodTab]}
+          style={[styles.foodTab, foodType === 'solids' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
           onPress={() => { setFoodType('solids'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <View style={styles.foodTabIconContainer}>
-            <Apple size={20} color={foodType === 'solids' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
+            <Apple size={20} color={foodType === 'solids' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
           </View>
-          <Text style={[styles.foodTabText, foodType === 'solids' && styles.activeFoodTabText]}>{t('tracking.solids')}</Text>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'solids' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.solids')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.foodTab, foodType === 'pumping' && styles.activeFoodTab]}
+          style={[styles.foodTab, foodType === 'pumping' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
           onPress={() => { setFoodType('pumping'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
           <View style={styles.foodTabIconContainer}>
             {isPumpingActive ? (
-              <Text style={{ color: '#6366F1', fontSize: 13, fontWeight: '700' }}>{formatTime(pumpingTimer)}</Text>
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>{formatTime(pumpingTimer)}</Text>
             ) : pumpingTimer > 0 ? (
-              <Text style={{ color: '#6366F1', fontSize: 12, fontWeight: '600' }}>{formatTime(pumpingTimer)}</Text>
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(pumpingTimer)}</Text>
             ) : (
-              <Droplets size={20} color={foodType === 'pumping' ? '#6366F1' : '#9CA3AF'} strokeWidth={1.5} />
+              <Droplets size={20} color={foodType === 'pumping' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
             )}
           </View>
-          <Text style={[styles.foodTabText, foodType === 'pumping' && styles.activeFoodTabText]}>{t('tracking.pumping')}</Text>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'pumping' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.pumping')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -942,7 +942,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       <Modal visible={visible} transparent animationType="none">
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
           <TouchableWithoutFeedback onPress={onClose}>
-            <RNAnimatedView style={[styles.backdrop, { opacity: backdropAnim }]}>
+            <RNAnimatedView style={[styles.backdrop, { opacity: backdropAnim, backgroundColor: theme.modalOverlay }]}>
               {Platform.OS === 'ios' && (
                 <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
               )}
@@ -1089,33 +1089,33 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         onRequestClose={() => setShowCalendar(false)}
         statusBarTranslucent={true}
       >
-        <TouchableOpacity style={styles.calendarModal} activeOpacity={1} onPress={() => setShowCalendar(false)}>
-          <TouchableOpacity style={styles.calendarCard} activeOpacity={1} onPress={() => { }}>
+        <TouchableOpacity style={[styles.calendarModal, { backgroundColor: theme.modalOverlay }]} activeOpacity={1} onPress={() => setShowCalendar(false)}>
+          <TouchableOpacity style={[styles.calendarCard, { backgroundColor: theme.card }]} activeOpacity={1} onPress={() => { }}>
             {/* Month Header */}
             <View style={styles.calendarHeader}>
-              <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
+              <TouchableOpacity style={[styles.calendarNavBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]} onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setMonth(newDate.getMonth() + 1);
                 setSelectedDate(newDate);
               }}>
-                <ChevronLeft size={18} color="#374151" strokeWidth={1.5} />
+                <ChevronLeft size={18} color={theme.textPrimary} strokeWidth={1.5} />
               </TouchableOpacity>
-              <Text style={styles.calendarMonthText}>
+              <Text style={[styles.calendarMonthText, { color: theme.textPrimary }]}>
                 {selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
               </Text>
-              <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
+              <TouchableOpacity style={[styles.calendarNavBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]} onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setMonth(newDate.getMonth() - 1);
                 setSelectedDate(newDate);
               }}>
-                <ChevronRight size={18} color="#374151" strokeWidth={1.5} />
+                <ChevronRight size={18} color={theme.textPrimary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
 
             {/* Week Days Header */}
             <View style={styles.calendarWeekRow}>
               {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map((day, i) => (
-                <Text key={i} style={styles.calendarWeekDay}>{day}</Text>
+                <Text key={i} style={[styles.calendarWeekDay, { color: theme.textTertiary }]}>{day}</Text>
               ))}
             </View>
 
@@ -1146,8 +1146,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                       key={d}
                       style={[
                         styles.calendarDay,
-                        isToday && styles.calendarDayToday,
-                        isSelected && styles.calendarDaySelected,
+                        isToday && [styles.calendarDayToday, { backgroundColor: theme.cardSecondary }],
+                        isSelected && [styles.calendarDaySelected, { backgroundColor: theme.primary }],
                         isFuture && styles.calendarDayDisabled
                       ]}
                       onPress={() => {
@@ -1159,7 +1159,11 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                       }}
                       disabled={isFuture}
                     >
-                      <Text style={[styles.calendarDayText, isSelected && styles.calendarDaySelectedText]}>{d}</Text>
+                      <Text style={[
+                        styles.calendarDayText, 
+                        { color: theme.textPrimary },
+                        isSelected && [styles.calendarDaySelectedText, { color: theme.card }]
+                      ]}>{d}</Text>
                     </TouchableOpacity>
                   );
                 }
@@ -1169,14 +1173,14 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
             {/* Today Button */}
             <TouchableOpacity
-              style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0 }]}
+              style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0, backgroundColor: theme.inputBackground, borderColor: theme.border }]}
               onPress={() => {
                 setSelectedDate(new Date());
                 setShowCalendar(false);
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={styles.datePickerBtnText}>היום</Text>
+              <Text style={[styles.datePickerBtnText, { color: theme.primary }]}>היום</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -1187,9 +1191,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { backgroundColor: 'rgba(0,0,0,0.4)', position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   modalCard: {
-    backgroundColor: 'white',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingBottom: 44,
@@ -1212,7 +1215,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 3,
-    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   closeBtn: { position: 'absolute', top: 24, right: 20, zIndex: 10, padding: 8 },
   header: {
@@ -1236,32 +1238,32 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.3)',
   },
   emoji: { fontSize: 28 },
-  title: { fontSize: 22, fontWeight: '700', color: '#1F2937', marginTop: 14, letterSpacing: -0.5 },
+  title: { fontSize: 22, fontWeight: '700', marginTop: 14, letterSpacing: -0.5 },
   content: { paddingVertical: 28, alignItems: 'center' },
-  subtitle: { fontSize: 15, color: '#6B7280', marginBottom: 20, textAlign: 'right', fontWeight: '500' },
-  label: { fontSize: 15, color: '#374151', fontWeight: '600', textAlign: 'right', marginBottom: 16 },
+  subtitle: { fontSize: 15, marginBottom: 20, textAlign: 'right', fontWeight: '500' },
+  label: { fontSize: 15, fontWeight: '600', textAlign: 'right', marginBottom: 16 },
 
   // Date Picker Button - Minimal
-  datePickerBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12 },
-  datePickerBtnText: { fontSize: 13, color: '#6366F1', fontWeight: '600' },
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
+  datePickerBtnText: { fontSize: 13, fontWeight: '600' },
 
   // Calendar Modal - Minimal
-  calendarModal: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  calendarOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  calendarModal: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  calendarOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   calendarInlineOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' },
-  calendarCard: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 10, zIndex: 1001 },
+  calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 10, zIndex: 1001 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  calendarMonthText: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
-  calendarNavBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  calendarMonthText: { fontSize: 16, fontWeight: '600' },
+  calendarNavBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   calendarWeekRow: { flexDirection: 'row-reverse', marginBottom: 8 },
-  calendarWeekDay: { flex: 1, textAlign: 'center', fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
+  calendarWeekDay: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600' },
   calendarDaysGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap' },
   calendarDay: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
-  calendarDayText: { fontSize: 14, color: '#374151', fontWeight: '500' },
-  calendarDayToday: { backgroundColor: '#F3F4F6', borderRadius: 20 },
-  calendarDaySelected: { backgroundColor: '#6366F1', borderRadius: 20 },
-  calendarDaySelectedText: { color: '#fff' },
+  calendarDayText: { fontSize: 14, fontWeight: '500' },
+  calendarDayToday: { borderRadius: 20 },
+  calendarDaySelected: { borderRadius: 20 },
+  calendarDaySelectedText: { },
   calendarDayDisabled: { opacity: 0.3 },
 
   // Food Tabs - Segmented Control Style
@@ -1298,13 +1300,11 @@ const styles = StyleSheet.create({
   },
   foodTabText: {
     fontSize: 11,
-    color: '#6B7280',
     textAlign: 'center',
     fontWeight: '600',
     letterSpacing: -0.2,
   },
   activeFoodTabText: {
-    color: '#6366F1',
     fontWeight: '700',
   },
   // Premium Food Tabs (kept for backward compatibility)

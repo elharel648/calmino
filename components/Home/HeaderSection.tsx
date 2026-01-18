@@ -65,7 +65,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
     onEditChild,
 }) => {
     const { t } = useLanguage();
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { allChildren, activeChild, setActiveChild } = useActiveChild();
     const [uploading, setUploading] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -397,7 +397,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
             {/* Top Row: Greeting + Weather */}
             <View style={styles.topRow}>
                 <View style={styles.greetingSection}>
-                    <Text style={[styles.greetingLarge, { color: '#1C1C1E' }]}>
+                    <Text style={[styles.greetingLarge, { color: theme.textPrimary }]}>
                         {greeting}, {profile.name}{ageText ? ` · ${ageText}` : ''}
                     </Text>
                 </View>
@@ -429,12 +429,16 @@ const HeaderSection = memo<HeaderSectionProps>(({
                         }}
                     >
                         <Animated.View style={{ transform: [{ scale: bellScale }] }}>
-                            <View style={[styles.bellContainer, unreadCount > 0 && styles.bellContainerActive]}>
+                            <View style={[
+                                styles.bellContainer, 
+                                { backgroundColor: theme.inputBackground },
+                                unreadCount > 0 && [styles.bellContainerActive, { backgroundColor: isDarkMode ? 'rgba(59,130,246,0.2)' : '#EFF6FF' }]
+                            ]}>
                                 <Bell 
                                     size={22} 
-                                    color={unreadCount > 0 ? "#3B82F6" : "#6B7280"} 
+                                    color={unreadCount > 0 ? theme.primary : theme.textTertiary} 
                                     strokeWidth={2.5}
-                                    fill={unreadCount > 0 ? "#3B82F620" : "none"}
+                                    fill={unreadCount > 0 ? (isDarkMode ? 'rgba(59,130,246,0.2)' : '#3B82F620') : "none"}
                                 />
                             </View>
                         </Animated.View>
@@ -443,10 +447,15 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             <Animated.View 
                                 style={[
                                     styles.notificationBadge,
-                                    { transform: [{ scale: pulseAnim }] }
+                                    { 
+                                        backgroundColor: theme.danger,
+                                        borderColor: theme.card,
+                                        shadowColor: theme.danger,
+                                        transform: [{ scale: pulseAnim }] 
+                                    }
                                 ]}
                             >
-                                <Text style={styles.badgeText}>
+                                <Text style={[styles.badgeText, { color: theme.card }]}>
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </Text>
                             </Animated.View>
@@ -454,9 +463,9 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     </TouchableOpacity>
 
                     {weather && (
-                        <View style={styles.weatherBadge}>
-                            <Cloud size={14} color="#6B7280" />
-                            <Text style={styles.weatherText}>{weather.city} {weather.temp}°</Text>
+                        <View style={[styles.weatherBadge, { backgroundColor: theme.cardSecondary }]}>
+                            <Cloud size={14} color={theme.textTertiary} />
+                            <Text style={[styles.weatherText, { color: theme.textSecondary }]}>{weather.city} {weather.temp}°</Text>
                         </View>
                     )}
                 </View>
@@ -512,11 +521,11 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
                     {/* Plus Button */}
                     <TouchableOpacity
-                        style={styles.addChildBtn}
+                        style={[styles.addChildBtn, { borderColor: theme.border }]}
                         onPress={handlePlusPress}
                         activeOpacity={0.7}
                     >
-                        <Plus size={18} color="#9CA3AF" />
+                        <Plus size={18} color={theme.textTertiary} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -568,42 +577,44 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
             {/* Add Child Modal */}
             <Modal visible={showAddModal} transparent animationType="fade">
-                <Pressable style={styles.modalOverlay} onPress={() => setShowAddModal(false)}>
-                    <View style={styles.modalContent}>
+                <Pressable style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]} onPress={() => setShowAddModal(false)}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
                         <TouchableOpacity
                             style={styles.modalClose}
                             onPress={() => setShowAddModal(false)}
                         >
-                            <X size={20} color="#6B7280" />
+                            <X size={20} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        <Text style={styles.modalTitle}>{t('header.addChildTitle')}</Text>
+                        <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('header.addChildTitle')}</Text>
 
                         {/* Option 1: New Child */}
                         <TouchableOpacity
-                            style={styles.modalOption}
+                            style={[styles.modalOption, { backgroundColor: theme.cardSecondary }]}
                             onPress={handleAddNewChild}
+                            activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: '#EEF2FF' }]}>
-                                <UserPlus size={24} color="#6366F1" />
+                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.2)' : '#EEF2FF' }]}>
+                                <UserPlus size={24} color={theme.primary} />
                             </View>
                             <View style={styles.modalOptionText}>
-                                <Text style={styles.modalOptionTitle}>{t('header.registerNewChild')}</Text>
-                                <Text style={styles.modalOptionSubtitle}>{t('header.registerNewChildSubtitle')}</Text>
+                                <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.registerNewChild')}</Text>
+                                <Text style={[styles.modalOptionSubtitle, { color: theme.textSecondary }]}>{t('header.registerNewChildSubtitle')}</Text>
                             </View>
                         </TouchableOpacity>
 
                         {/* Option 2: Join with Code */}
                         <TouchableOpacity
-                            style={styles.modalOption}
+                            style={[styles.modalOption, { backgroundColor: theme.cardSecondary }]}
                             onPress={handleJoinWithCode}
+                            activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: '#D1FAE5' }]}>
-                                <Link2 size={24} color="#10B981" />
+                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#D1FAE5' }]}>
+                                <Link2 size={24} color={theme.success} />
                             </View>
                             <View style={styles.modalOptionText}>
-                                <Text style={styles.modalOptionTitle}>{t('header.joinWithCode')}</Text>
-                                <Text style={styles.modalOptionSubtitle}>{t('header.joinWithCodeSubtitle')}</Text>
+                                <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.joinWithCode')}</Text>
+                                <Text style={[styles.modalOptionSubtitle, { color: theme.textSecondary }]}>{t('header.joinWithCodeSubtitle')}</Text>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -658,7 +669,7 @@ const styles = StyleSheet.create({
     weatherText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#6B7280',
+        letterSpacing: -0.2,
     },
 
     // Children Row - RTL aligned to right side
@@ -744,11 +755,9 @@ const styles = StyleSheet.create({
         height: 42,
         borderRadius: 21,
         borderWidth: 1.5,
-        borderColor: '#D1D5DB',
         borderStyle: 'dashed',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#F9FAFB',
         marginLeft: 8,
     },
 
@@ -791,10 +800,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#F3F4F6',
     },
     bellContainerActive: {
-        backgroundColor: '#EFF6FF',
     },
     notificationBadge: {
         position: 'absolute',
@@ -803,20 +810,16 @@ const styles = StyleSheet.create({
         minWidth: 20,
         height: 20,
         borderRadius: 10,
-        backgroundColor: '#EF4444',
         borderWidth: 2,
-        borderColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 6,
-        shadowColor: '#EF4444',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
         elevation: 4,
     },
     badgeText: {
-        color: '#FFFFFF',
         fontSize: 11,
         fontWeight: '700',
         textAlign: 'center',
@@ -825,17 +828,20 @@ const styles = StyleSheet.create({
     // Modal
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
     },
     modalContent: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
-        padding: 24,
+        borderRadius: 28,
+        padding: 28,
         width: '100%',
-        maxWidth: 340,
+        maxWidth: 360,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.25,
+        shadowRadius: 24,
+        elevation: 12,
     },
     modalClose: {
         position: 'absolute',
@@ -844,18 +850,17 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     modalTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: '700',
-        color: '#1F2937',
         textAlign: 'center',
         marginBottom: 24,
+        letterSpacing: -0.5,
     },
     modalOption: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 16,
+        padding: 18,
+        borderRadius: 18,
         marginBottom: 12,
     },
     modalOptionIcon: {
@@ -872,13 +877,13 @@ const styles = StyleSheet.create({
     },
     modalOptionTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#1F2937',
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     modalOptionSubtitle: {
         fontSize: 13,
-        color: '#6B7280',
-        marginTop: 2,
+        marginTop: 4,
+        letterSpacing: -0.2,
     },
 });
 

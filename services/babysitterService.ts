@@ -18,7 +18,9 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
-import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage } from '../types/babysitter';
+import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage, SitterBadge } from '../types/babysitter';
+import { logger } from '../utils/logger';
+import { getUserPushToken, sendPushNotification } from './pushNotificationService';
 
 // ===================
 // BOOKINGS
@@ -87,10 +89,66 @@ export async function updateBookingStatus(
     bookingId: string,
     status: BabysitterBooking['status']
 ): Promise<void> {
+    // Get booking data before update
+    const bookingDoc = await getDoc(doc(db, 'bookings', bookingId));
+    if (!bookingDoc.exists()) return;
+
+    const bookingData = bookingDoc.data();
+    const oldStatus = bookingData.status;
+
+    // Update status
     await updateDoc(doc(db, 'bookings', bookingId), {
         status,
         updatedAt: serverTimestamp(),
     });
+
+    // Send push notification if status changed
+    if (oldStatus !== status) {
+        try {
+            const recipientId = status === 'confirmed' || status === 'declined' || status === 'active' || status === 'completed'
+                ? bookingData.parentId
+                : bookingData.babysitterId;
+
+            const recipientToken = await getUserPushToken(recipientId);
+            if (recipientToken) {
+                let title = '';
+                let body = '';
+
+                switch (status) {
+                    case 'confirmed':
+                        title = '✅ הזמנה אושרה!';
+                        body = 'הבייביסיטר אישר את ההזמנה שלך';
+                        break;
+                    case 'declined':
+                        title = '❌ הזמנה נדחתה';
+                        body = 'הבייביסיטר דחה את ההזמנה';
+                        break;
+                    case 'active':
+                        title = '⏱️ השירות התחיל';
+                        body = 'הבייביסיטר התחיל את השירות';
+                        break;
+                    case 'completed':
+                        title = '✅ השירות הושלם';
+                        body = 'השירות הושלם בהצלחה. תוכל/י לתת ביקורת';
+                        break;
+                    case 'cancelled':
+                        title = '🚫 הזמנה בוטלה';
+                        body = 'ההזמנה בוטלה';
+                        break;
+                }
+
+                if (title && body) {
+                    await sendPushNotification(recipientToken, title, body, {
+                        type: 'booking_update',
+                        bookingId,
+                        status,
+                    });
+                }
+            }
+        } catch (error) {
+            logger.error('Error sending booking notification:', error);
+        }
+    }
 }
 
 /**
@@ -202,7 +260,7 @@ export async function getBabysitterReviews(babysitterId: string): Promise<Review
                     parentName = parentDoc.data().displayName || 'הורה';
                 }
             } catch (e) {
-                if (__DEV__) console.error('getParentName error:', e);
+                logger.error('getParentName error:', e);
             }
         }
 
@@ -231,6 +289,192 @@ export async function getBabysitterRating(babysitterId: string): Promise<{ avera
         average: Math.round((sum / reviews.length) * 10) / 10,
         count: reviews.length,
     };
+}
+
+/**
+ * Mark review as helpful
+ */
+export async function markReviewHelpful(reviewId: string, userId: string): Promise<boolean> {
+    try {
+        const reviewRef = doc(db, 'reviews', reviewId);
+        const reviewDoc = await getDoc(reviewRef);
+        
+        if (!reviewDoc.exists()) {
+            return false;
+        }
+
+        const data = reviewDoc.data();
+        const helpfulBy = data.helpfulBy || [];
+        const isAlreadyHelpful = helpfulBy.includes(userId);
+
+        if (isAlreadyHelpful) {
+            // Remove helpful
+            await updateDoc(reviewRef, {
+                helpfulBy: helpfulBy.filter((id: string) => id !== userId),
+                helpfulCount: (data.helpfulCount || 0) - 1,
+            });
+        } else {
+            // Add helpful
+            await updateDoc(reviewRef, {
+                helpfulBy: [...helpfulBy, userId],
+                helpfulCount: (data.helpfulCount || 0) + 1,
+            });
+        }
+
+        return true;
+    } catch (error) {
+        logger.error('Error marking review helpful:', error);
+        return false;
+    }
+}
+
+/**
+ * Add sitter response to review
+ */
+export async function addSitterResponse(reviewId: string, sitterId: string, responseText: string): Promise<boolean> {
+    try {
+        const reviewRef = doc(db, 'reviews', reviewId);
+        const reviewDoc = await getDoc(reviewRef);
+        
+        if (!reviewDoc.exists()) {
+            return false;
+        }
+
+        const data = reviewDoc.data();
+        if (data.babysitterId !== sitterId) {
+            return false; // Not this sitter's review
+        }
+
+        await updateDoc(reviewRef, {
+            sitterResponse: {
+                text: responseText.trim(),
+                createdAt: serverTimestamp(),
+            },
+        });
+
+        return true;
+    } catch (error) {
+        logger.error('Error adding sitter response:', error);
+        return false;
+    }
+}
+
+/**
+ * Get review statistics for a babysitter
+ */
+export async function getReviewStats(babysitterId: string): Promise<{
+    total: number;
+    average: number;
+    distribution: { [rating: number]: number }; // {5: 10, 4: 5, ...}
+    verifiedCount: number;
+    withResponseCount: number;
+}> {
+    const reviews = await getBabysitterReviews(babysitterId);
+
+    if (reviews.length === 0) {
+        return {
+            total: 0,
+            average: 0,
+            distribution: {},
+            verifiedCount: 0,
+            withResponseCount: 0,
+        };
+    }
+
+    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+    const distribution: { [rating: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    
+    reviews.forEach(review => {
+        distribution[review.rating] = (distribution[review.rating] || 0) + 1;
+    });
+
+    return {
+        total: reviews.length,
+        average: Math.round((sum / reviews.length) * 10) / 10,
+        distribution,
+        verifiedCount: reviews.filter(r => r.isVerified).length,
+        withResponseCount: reviews.filter(r => r.sitterResponse).length,
+    };
+}
+
+/**
+ * Calculate badges for a babysitter based on their stats
+ */
+export async function calculateSitterBadges(
+    babysitterId: string,
+    stats?: {
+        rating: number;
+        reviewCount: number;
+        isAvailable?: boolean;
+        createdAt?: Date | any;
+    }
+): Promise<SitterBadge[]> {
+    const badges: SitterBadge[] = [];
+
+    // If stats not provided, fetch them
+    if (!stats) {
+        try {
+            const sitterDoc = await getDoc(doc(db, 'users', babysitterId));
+            if (!sitterDoc.exists()) return badges;
+
+            const data = sitterDoc.data();
+            const reviewStats = await getReviewStats(babysitterId);
+            
+            stats = {
+                rating: reviewStats.average || data.sitterRating || 0,
+                reviewCount: reviewStats.total || data.sitterReviewCount || 0,
+                isAvailable: data.sitterAvailable || false,
+                createdAt: data.createdAt?.toDate?.() || data.createdAt,
+            };
+        } catch (error) {
+            logger.error('Error calculating badges:', error);
+            return badges;
+        }
+    }
+
+    const { rating, reviewCount, isAvailable, createdAt } = stats;
+
+    // ⭐ Top Sitter - מעל 4.8 עם 20+ ביקורות
+    if (rating >= 4.8 && reviewCount >= 20) {
+        badges.push('top_sitter');
+    }
+
+    // 🏆 Highly Recommended - מעל 95% המלצות (4-5 כוכבים)
+    if (reviewCount > 0) {
+        try {
+            const reviewStats = await getReviewStats(babysitterId);
+            const highRatings = (reviewStats.distribution[4] || 0) + (reviewStats.distribution[5] || 0);
+            const recommendationRate = (highRatings / reviewStats.total) * 100;
+            if (recommendationRate >= 95) {
+                badges.push('highly_recommended');
+            }
+        } catch (error) {
+            // Silent fail
+        }
+    }
+
+    // 💎 VIP Sitter - מעל 50 ביקורות
+    if (reviewCount >= 50) {
+        badges.push('vip_sitter');
+    }
+
+    // ✨ Rising Star - סיטר חדש (פחות מ-3 חודשים) עם ביקורות מעולות (4.5+)
+    if (createdAt) {
+        const createdDate = createdAt instanceof Date ? createdAt : createdAt.toDate?.() || new Date(createdAt);
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        
+        if (createdDate > threeMonthsAgo && rating >= 4.5 && reviewCount >= 5) {
+            badges.push('rising_star');
+        }
+    }
+
+    // ⚡ Available Now - זמין עכשיו
+    if (isAvailable) {
+        badges.push('available_now');
+    }
+
+    return badges;
 }
 
 // ===================
@@ -404,7 +648,7 @@ export async function getBabysitterStats(babysitterId: string): Promise<{
             avgResponseTime = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
         }
     } catch (e) {
-        if (__DEV__) console.error('getSitterStats error:', e);
+        logger.error('getSitterStats error:', e);
     }
 
     return {

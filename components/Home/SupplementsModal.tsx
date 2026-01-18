@@ -9,8 +9,10 @@ import Animated, {
     withTiming,
     withDelay,
     runOnJS,
+    FadeInDown,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { MedicationsState } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
@@ -107,13 +109,20 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
     const allDone = meds.vitaminD && meds.iron;
 
     return (
-        <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+        <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
             <TouchableWithoutFeedback onPress={onClose}>
-                <View style={styles.overlay}>
+                <View style={[styles.overlay, { backgroundColor: theme.modalOverlay }]}>
+                    {Platform.OS === 'ios' && (
+                        <BlurView
+                            intensity={20}
+                            tint={isDarkMode ? 'dark' : 'light'}
+                            style={StyleSheet.absoluteFill}
+                        />
+                    )}
                     <TouchableWithoutFeedback>
                         <View style={[
                             styles.modalContent,
-                            { backgroundColor: isDarkMode ? '#1C1C1E' : theme.card }
+                            { backgroundColor: theme.card }
                         ]}>
                             {/* Header */}
                             <View style={styles.header}>
@@ -263,20 +272,19 @@ SupplementsModal.displayName = 'SupplementsModal';
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
     },
     modalContent: {
         width: '100%',
-        maxWidth: 340,
-        borderRadius: 24,
-        paddingVertical: 24,
-        paddingHorizontal: 24,
+        maxWidth: 380,
+        borderRadius: 28,
+        paddingVertical: 28,
+        paddingHorizontal: 28,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.2,
         shadowRadius: 24,
         elevation: 12,
     },

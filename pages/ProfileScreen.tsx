@@ -143,8 +143,8 @@ export default function ProfileScreen() {
                   {getGenderIcon()}
                 </View>
               )}
-              <View style={styles.cameraBadge}>
-                <Camera size={14} color="#fff" />
+              <View style={[styles.cameraBadge, { borderColor: theme.card }]}>
+                <Camera size={14} color={theme.card} />
               </View>
             </TouchableOpacity>
 
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,

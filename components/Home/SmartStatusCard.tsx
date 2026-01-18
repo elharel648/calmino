@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Baby, Utensils, Moon, AlertCircle, Clock, Sparkles } from 'lucide-react-native';
 import { useSleepTimer } from '../../context/SleepTimerContext';
+import { useTheme } from '../../context/ThemeContext';
 
 interface SmartStatusCardProps {
     babyName: string;
@@ -94,6 +95,7 @@ const SmartStatusCard = memo(({
     lastSleepTime,
     onPress
 }: SmartStatusCardProps) => {
+    const { theme, isDarkMode } = useTheme();
     const { isRunning, elapsedSeconds, formatTime } = useSleepTimer();
 
     const age = useMemo(() => calculateAge(birthDate), [birthDate]);
@@ -117,20 +119,25 @@ const SmartStatusCard = memo(({
     return (
         <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
             <LinearGradient
-                colors={isRunning ? ['#6366F1', '#4F46E5'] : ['#ffffff', '#f8fafc']}
+                colors={isRunning 
+                    ? [theme.primary, theme.primaryLight] 
+                    : isDarkMode 
+                        ? [theme.card, theme.cardSecondary] 
+                        : [theme.card, theme.cardSecondary]
+                }
                 style={styles.card}
             >
                 {/* Main Info Row */}
                 <View style={styles.mainRow}>
-                    <View style={styles.avatarCircle}>
-                        <Baby size={24} color={isRunning ? '#6366F1' : '#6366F1'} />
+                    <View style={[styles.avatarCircle, { backgroundColor: isRunning ? 'rgba(255,255,255,0.25)' : (isDarkMode ? 'rgba(139,92,246,0.2)' : '#E0E7FF') }]}>
+                        <Baby size={24} color={isRunning ? theme.card : theme.primary} />
                     </View>
                     <View style={styles.infoContainer}>
-                        <Text style={[styles.babyName, isRunning && styles.whiteText]}>
+                        <Text style={[styles.babyName, { color: isRunning ? theme.card : theme.textPrimary }, isRunning && styles.whiteText]}>
                             {babyName} 👶
                         </Text>
                         {age ? (
-                            <Text style={[styles.ageText, isRunning && styles.whiteTextLight]}>
+                            <Text style={[styles.ageText, { color: isRunning ? 'rgba(255,255,255,0.8)' : theme.textSecondary }, isRunning && styles.whiteTextLight]}>
                                 {age}
                             </Text>
                         ) : null}
@@ -148,9 +155,9 @@ const SmartStatusCard = memo(({
                 ) : (
                     <>
                         {/* Last Events */}
-                        <View style={styles.eventsRow}>
-                            <Clock size={14} color="#9CA3AF" />
-                            <Text style={styles.eventsText}>{lastEventText}</Text>
+                        <View style={[styles.eventsRow, { borderTopColor: theme.border }]}>
+                            <Clock size={14} color={theme.textTertiary} />
+                            <Text style={[styles.eventsText, { color: theme.textSecondary }]}>{lastEventText}</Text>
                         </View>
 
                         {/* Smart Alert */}
@@ -173,13 +180,12 @@ SmartStatusCard.displayName = 'SmartStatusCard';
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 20,
-        padding: 16,
+        borderRadius: 22,
+        padding: 18,
         marginBottom: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.01)', // Required for efficient shadow calculation
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
+        shadowOpacity: 0.1,
         shadowRadius: 12,
         elevation: 4,
     },
@@ -191,7 +197,6 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#E0E7FF',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -202,8 +207,8 @@ const styles = StyleSheet.create({
     },
     babyName: {
         fontSize: 20,
-        fontWeight: 'bold',
-        color: '#1F2937',
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     whiteText: {
         color: '#fff',
@@ -213,8 +218,8 @@ const styles = StyleSheet.create({
     },
     ageText: {
         fontSize: 14,
-        color: '#6B7280',
         marginTop: 2,
+        letterSpacing: -0.2,
     },
     eventsRow: {
         flexDirection: 'row-reverse',
@@ -222,12 +227,11 @@ const styles = StyleSheet.create({
         gap: 6,
         marginTop: 12,
         paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
     eventsText: {
         fontSize: 13,
-        color: '#6B7280',
+        letterSpacing: -0.2,
     },
     sleepingRow: {
         flexDirection: 'row-reverse',

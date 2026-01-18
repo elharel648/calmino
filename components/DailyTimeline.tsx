@@ -272,8 +272,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             onPress={loadTimeline}
             activeOpacity={0.7}
           >
-            <RefreshCw size={16} color="#fff" />
-            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+            <RefreshCw size={16} color={theme.card} />
+            <Text style={[styles.retryButtonText, { color: theme.card }]}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -289,9 +289,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           </View>
         </View>
 
-        <View style={[styles.emptyCard, { backgroundColor: theme.card }]}>
-          <View style={styles.emptyIcon}>
-            <FileText size={32} color="#9CA3AF" strokeWidth={1.5} />
+        <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={[styles.emptyIcon, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+            <FileText size={32} color={theme.textSecondary} strokeWidth={1.5} />
           </View>
           <Text style={[styles.emptyText, { color: theme.textPrimary }]}>{t('timeline.noRecordsToday')}</Text>
           <Text style={[styles.emptyHint, { color: theme.textSecondary }]}>
@@ -319,7 +319,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             return (
               <View key={type} style={[styles.statPill, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <Text style={[styles.statCount, { color: theme.textPrimary }]}>{count}</Text>
-                <Icon size={11} color="#6B7280" strokeWidth={2.5} />
+                <Icon size={11} color={theme.textSecondary} strokeWidth={2.5} />
               </View>
             );
           })}
@@ -348,14 +348,14 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                 <View style={styles.eventRow} collapsable={false}>
                   {/* Left side: Time + Dot */}
                   <View style={styles.leftSection}>
-                    <Text style={styles.time}>
+                    <Text style={[styles.time, { color: theme.textPrimary }]}>
                       {event.timestamp.toLocaleTimeString('he-IL', {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: false
                       })}
                     </Text>
-                    <Text style={styles.timeAgo}>{getTimeAgo(event.timestamp)}</Text>
+                    <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>
                   </View>
 
                   {/* Timeline icon + line */}
@@ -364,12 +364,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       <Icon size={14} color={config.color} strokeWidth={2} />
                     </View>
                     {/* Line connector */}
-                    {!isLast && <View style={styles.connector} />}
+                    {!isLast && <View style={[styles.connector, { backgroundColor: theme.border }]} />}
                   </View>
 
                   {/* Right side: Content */}
                   <View style={styles.eventCardContainer}>
-                    <View style={styles.eventCard}>
+                    <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                       <View style={styles.cardContent}>
                         <View style={styles.eventHeader}>
                           <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
@@ -406,7 +406,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {hasMore && (
         <Animated.View entering={FadeIn.duration(300).delay(visibleEvents.length * 80)}>
           <TouchableOpacity
-            style={styles.expandButton}
+            style={[styles.expandButton, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
             onPress={() => {
               setIsExpanded(!isExpanded);
               if (Platform.OS !== 'web') {
@@ -417,13 +417,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           >
             {isExpanded ? (
               <>
-                <ChevronUp size={14} color="#9CA3AF" strokeWidth={2.5} />
-                <Text style={styles.expandText}>{t('timeline.showLess')}</Text>
+                <ChevronUp size={14} color={theme.textSecondary} strokeWidth={2.5} />
+                <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showLess')}</Text>
               </>
             ) : (
               <>
-                <Text style={styles.expandText}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
-                <ChevronDown size={14} color="#9CA3AF" strokeWidth={2.5} />
+                <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
+                <ChevronDown size={14} color={theme.textSecondary} strokeWidth={2.5} />
               </>
             )}
           </TouchableOpacity>
@@ -456,13 +456,11 @@ const styles = StyleSheet.create({
   accentLine: {
     width: 3,
     height: 18,
-    backgroundColor: '#6366F1',
     borderRadius: 2,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
   },
   statsContainer: {
     flexDirection: 'row-reverse',
@@ -474,15 +472,12 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: '#F9FAFB',
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   statCount: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#374151',
     fontVariant: ['tabular-nums'],
   },
 
@@ -524,7 +519,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   retryButtonText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -538,14 +532,12 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111827',
     fontVariant: ['tabular-nums'],
     letterSpacing: -0.2,
   },
   timeAgo: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#9CA3AF',
     marginTop: 2,
     fontVariant: ['tabular-nums'],
   },
@@ -577,7 +569,6 @@ const styles = StyleSheet.create({
     top: 30,
     width: 1.5,
     height: '100%',
-    backgroundColor: '#E5E7EB',
     zIndex: 1,
   },
 
@@ -594,14 +585,12 @@ const styles = StyleSheet.create({
   },
   eventCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     overflow: 'hidden',
     position: 'relative',
     minHeight: 68,
     // Subtle border for depth
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
   },
   deleteBtn: {
     padding: 4,
@@ -621,7 +610,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
     lineHeight: 20,
     letterSpacing: -0.3,
     textAlign: 'right',
@@ -635,7 +623,6 @@ const styles = StyleSheet.create({
   },
   eventSubtext: {
     fontSize: 13,
-    color: '#9CA3AF',
     lineHeight: 18,
     fontWeight: '500',
     textAlign: 'right',
@@ -644,23 +631,19 @@ const styles = StyleSheet.create({
 
   // Empty
   emptyCard: {
-    backgroundColor: '#FAFAFA',
     padding: 40,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
   },
   emptyIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   emptyEmoji: {
     fontSize: 28,
@@ -668,13 +651,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 4,
     letterSpacing: -0.2,
   },
   emptyHint: {
     fontSize: 12,
-    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -688,15 +669,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#FAFAFA',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   expandText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
     letterSpacing: -0.1,
   },
 
@@ -718,7 +696,6 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2.5,
-    borderColor: '#fff',
   },
   reporterAvatarPlaceholder: {
     width: 24,
@@ -727,7 +704,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
-    borderColor: '#fff',
   },
   reporterInitial: {
     fontSize: 10,

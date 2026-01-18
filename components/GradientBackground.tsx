@@ -17,7 +17,7 @@ export default function GradientBackground({ children }: GradientBackgroundProps
     return (
         <LinearGradient
             colors={isDarkMode
-                ? ['#1a1625', '#231d2e', '#0f0d14']
+                ? ['#0F0F0F', '#1C1C1E', '#0A0A0A']
                 : ['#F5F3FF', '#EDE9FE', '#FAF5FF']
             }
             start={{ x: 0, y: 0 }}

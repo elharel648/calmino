@@ -422,7 +422,7 @@ const QuickActions = memo<QuickActionsProps>(({
                             
                             {/* Icon */}
                             {isActive ? (
-                                <Pause size={20} color="#fff" strokeWidth={2.5} />
+                                <Pause size={20} color={theme.card} strokeWidth={2.5} />
                             ) : (
                                 <Icon size={20} color={config.color} strokeWidth={2} />
                             )}
@@ -437,8 +437,8 @@ const QuickActions = memo<QuickActionsProps>(({
                     {/* Time, Badge, or Last Time */}
                 {activeTime && isActive ? (
                     <View style={[styles.timerBadge, { backgroundColor: config.color }]}>
-                            <Timer size={7} color="#fff" strokeWidth={2} />
-                        <Text style={styles.timerText}>{activeTime}</Text>
+                            <Timer size={7} color={theme.card} strokeWidth={2} />
+                        <Text style={[styles.timerText, { color: theme.card }]}>{activeTime}</Text>
                     </View>
                 ) : lastTime ? (
                     <Text style={[styles.subText, { color: theme.textSecondary }]}>
@@ -606,7 +606,6 @@ const styles = StyleSheet.create({
     },
     iconCircleBorder: {
         borderWidth: 1.5,
-        borderColor: 'rgba(0, 0, 0, 0.08)',
         borderStyle: 'dashed',
     },
     iconCircleGlass: {
@@ -640,7 +639,6 @@ const styles = StyleSheet.create({
     timerText: {
         fontSize: 9,
         fontWeight: '700',
-        color: '#fff',
         letterSpacing: 0.2,
     },
     badgeContainer: {

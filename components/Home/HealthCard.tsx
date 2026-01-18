@@ -11,6 +11,7 @@ import { saveEventToFirebase } from '../../services/firebaseService';
 import { doc, getDoc, updateDoc, arrayUnion, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { VACCINE_SCHEDULE, CustomVaccine } from '../../types/profile';
 import { useActiveChild } from '../../context/ActiveChildContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -51,6 +52,7 @@ const HEALTH_OPTIONS: HealthOption[] = [
 ];
 
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
+    const { theme, isDarkMode } = useTheme();
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
@@ -1015,24 +1017,24 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     return (
         <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={closeModal}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
+            <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
                     {/* Minimal Header */}
-                    <View style={styles.modalHeader}>
+                    <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
                         {currentScreen !== 'menu' ? (
-                            <TouchableOpacity onPress={goBack} style={styles.headerBtn}>
-                                <ChevronRight size={22} color="#374151" />
+                            <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
+                                <ChevronRight size={22} color={theme.textPrimary} />
                             </TouchableOpacity>
                         ) : (
-                            <TouchableOpacity onPress={closeModal} style={styles.headerBtn}>
-                                <X size={22} color="#374151" />
+                            <TouchableOpacity onPress={closeModal} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
+                                <X size={22} color={theme.textPrimary} />
                             </TouchableOpacity>
                         )}
-                        <Text style={styles.modalTitle}>{getScreenTitle()}</Text>
+                        <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
                         <View style={{ width: 40 }} />
                     </View>
 
-                    <View style={styles.modalBody}>
+                    <View style={[styles.modalBody, { backgroundColor: theme.background }]}>
                         {currentScreen === 'menu' && renderMenu()}
                         {currentScreen === 'vaccines' && renderVaccines()}
                         {currentScreen === 'doctor' && renderDoctor()}

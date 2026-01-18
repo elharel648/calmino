@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -7,14 +7,17 @@ import {
     TouchableOpacity,
     Platform,
     Alert,
+    Animated as RNAnimated,
 } from 'react-native';
 import { X, Sparkles, Camera } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import AlbumCarousel from '../Profile/AlbumCarousel';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 
 interface MagicMomentsModalProps {
     visible: boolean;
@@ -22,15 +25,49 @@ interface MagicMomentsModalProps {
 }
 
 export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModalProps) {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { activeChild } = useActiveChild();
     const { baby, updatePhoto, updateAlbumNote } = useBabyProfile(activeChild?.childId);
+    const fadeAnim = useRef(new RNAnimated.Value(0)).current;
+    const scaleAnim = useRef(new RNAnimated.Value(0.9)).current;
+
+    useEffect(() => {
+        if (visible) {
+            RNAnimated.parallel([
+                RNAnimated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                RNAnimated.spring(scaleAnim, {
+                    toValue: 1,
+                    damping: 20,
+                    stiffness: 200,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        } else {
+            fadeAnim.setValue(0);
+            scaleAnim.setValue(0.9);
+        }
+    }, [visible]);
 
     const handleClose = () => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        onClose();
+        RNAnimated.parallel([
+            RNAnimated.timing(fadeAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            RNAnimated.timing(scaleAnim, {
+                toValue: 0.9,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start(() => onClose());
     };
 
     const handleMonthPress = async (month: number) => {
@@ -53,30 +90,72 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
         <Modal
             visible={visible}
             transparent
-            animationType="fade"
+            animationType="none"
             onRequestClose={handleClose}
         >
-            <View style={styles.overlay}>
-                <View style={[styles.modal, { backgroundColor: theme.card }]}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <View style={{ width: 30 }} />
+            <RNAnimated.View 
+                style={[
+                    styles.overlay,
+                    {
+                        opacity: fadeAnim,
+                        backgroundColor: theme.modalOverlay,
+                    }
+                ]}
+            >
+                {Platform.OS === 'ios' && (
+                    <BlurView
+                        intensity={20}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
+                    />
+                )}
+                <TouchableOpacity 
+                    style={StyleSheet.absoluteFill}
+                    activeOpacity={1}
+                    onPress={handleClose}
+                />
+                <RNAnimated.View
+                    style={[
+                        styles.modal,
+                        {
+                            backgroundColor: theme.card,
+                            transform: [{ scale: scaleAnim }],
+                        }
+                    ]}
+                >
+                    {/* Premium Header */}
+                    <Animated.View 
+                        entering={FadeInDown.duration(400).springify().damping(15)}
+                        style={styles.header}
+                    >
+                        <View style={{ width: 40 }} />
                         <View style={styles.headerContent}>
+                            <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.2)' : 'rgba(167, 139, 250, 0.15)' }]}>
+                                <Sparkles size={20} color="#A78BFA" strokeWidth={2.5} />
+                            </View>
                             <Text style={[styles.title, { color: theme.textPrimary }]}>רגעים קסומים</Text>
-                            <Sparkles size={18} color="#A78BFA" strokeWidth={2.5} />
                         </View>
-                        <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
-                            <X size={22} color={theme.textSecondary} />
+                        <TouchableOpacity 
+                            onPress={handleClose} 
+                            style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}
+                            activeOpacity={0.7}
+                        >
+                            <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
                         </TouchableOpacity>
-                    </View>
+                    </Animated.View>
 
-                    {/* Description */}
-                    <Text style={[styles.description, { color: theme.textSecondary }]}>
-                        לחצו על חודש כדי להוסיף תמונה מהרגע הקסום
-                    </Text>
+                    {/* Premium Description */}
+                    <Animated.View entering={FadeInDown.duration(400).delay(50).springify().damping(15)}>
+                        <Text style={[styles.description, { color: theme.textSecondary }]}>
+                            לחצו על חודש כדי להוסיף תמונה מהרגע הקסום
+                        </Text>
+                    </Animated.View>
 
                     {/* Album Carousel */}
-                    <View style={styles.carouselContainer}>
+                    <Animated.View 
+                        entering={FadeInDown.duration(400).delay(100).springify().damping(15)}
+                        style={styles.carouselContainer}
+                    >
                         <AlbumCarousel
                             album={baby?.album}
                             albumNotes={baby?.albumNotes}
@@ -84,19 +163,24 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                             onAddCustomPhoto={handleAddCustomPhoto}
                             onNoteUpdate={handleNoteUpdate}
                         />
-                    </View>
+                    </Animated.View>
 
-                    {/* Baby Name with Camera Icon */}
+                    {/* Baby Name with Camera Icon - Premium */}
                     {baby?.name && (
-                        <View style={styles.babyNameRow}>
-                            <Camera size={16} color={theme.textSecondary} strokeWidth={2} />
+                        <Animated.View 
+                            entering={FadeInDown.duration(400).delay(150).springify().damping(15)}
+                            style={[styles.babyNameRow, { borderTopColor: theme.border }]}
+                        >
+                            <View style={[styles.cameraIconWrapper, { backgroundColor: theme.cardSecondary }]}>
+                                <Camera size={14} color={theme.textSecondary} strokeWidth={2} />
+                            </View>
                             <Text style={[styles.babyName, { color: theme.textPrimary }]}>
                                 האלבום של {baby.name}
                             </Text>
-                        </View>
+                        </Animated.View>
                     )}
-                </View>
-            </View>
+                </RNAnimated.View>
+            </RNAnimated.View>
         </Modal>
     );
 }
@@ -104,53 +188,81 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
     },
     modal: {
         width: '100%',
-        maxWidth: 360,
-        borderRadius: 20,
-        padding: 20,
+        maxWidth: 420,
+        borderRadius: 28,
+        padding: 28,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 24,
+        elevation: 12,
     },
     header: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 24,
     },
     headerContent: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 6,
+        gap: 10,
     },
-    closeBtn: {
-        padding: 2,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    description: {
-        fontSize: 13,
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    carouselContainer: {
-        marginBottom: 16,
-    },
-    babyNameRow: {
-        flexDirection: 'row',
+    iconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        marginTop: 8,
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    description: {
+        fontSize: 15,
+        textAlign: 'center',
+        marginBottom: 28,
+        lineHeight: 22,
+        letterSpacing: -0.2,
+    },
+    carouselContainer: {
+        marginBottom: 24,
+    },
+    babyNameRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 4,
+        paddingTop: 16,
+        borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    cameraIconWrapper: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     babyName: {
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: '600',
         textAlign: 'center',
+        letterSpacing: -0.2,
     },
 });

@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronRight,
-    User, Award, UserPlus, MapPin
+    User, Award, UserPlus, MapPin, Calendar
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -25,9 +25,11 @@ import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import useSitters, { Sitter } from '../hooks/useSitters';
+import { calculateSitterBadges } from '../services/babysitterService';
+import { BADGE_INFO, SitterBadge } from '../types/babysitter';
 
 const BabySitterScreen = ({ navigation }: any) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
 
     // Hooks
@@ -265,6 +267,28 @@ const BabySitterScreen = ({ navigation }: any) => {
     const SitterCard = ({ sitter }: { sitter: Sitter }) => {
         const mutualFriends = sitter.mutualFriends || [];
         const hasMutualFriends = mutualFriends.length > 0;
+        const [imageError, setImageError] = useState(false);
+        const [badges, setBadges] = useState<SitterBadge[]>([]);
+
+        // Calculate badges on mount
+        useEffect(() => {
+            const loadBadges = async () => {
+                try {
+                    const calculatedBadges = await calculateSitterBadges(sitter.id, {
+                        rating: sitter.rating,
+                        reviewCount: sitter.reviewCount,
+                        isAvailable: sitter.isAvailable,
+                        createdAt: sitter.createdAt,
+                    });
+                    setBadges(calculatedBadges);
+                } catch (error) {
+                    // Silent fail
+                }
+            };
+            if (sitter.id && !sitter.id.startsWith('mock_')) {
+                loadBadges();
+            }
+        }, [sitter.id, sitter.rating, sitter.reviewCount]);
 
         return (
             <TouchableOpacity
@@ -275,8 +299,12 @@ const BabySitterScreen = ({ navigation }: any) => {
                 accessibilityLabel={`${sitter.name}, ${t('babysitter.rating')} ${sitter.rating.toFixed(1)}, ${t('babysitter.price')} ${sitter.pricePerHour} ${t('babysitter.perHour')}`}
             >
                 <View style={styles.sitterCardContent}>
-                    {sitter.photoUrl ? (
-                        <Image source={{ uri: sitter.photoUrl }} style={styles.sitterPhoto} />
+                    {sitter.photoUrl && !imageError ? (
+                        <Image
+                            source={{ uri: sitter.photoUrl }}
+                            style={styles.sitterPhoto}
+                            onError={() => setImageError(true)}
+                        />
                     ) : (
                         <View style={[styles.sitterPhotoPlaceholder, { backgroundColor: theme.cardSecondary }]}>
                             <User size={24} color={theme.textSecondary} />
@@ -286,14 +314,28 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <View style={styles.sitterHeader}>
                             <Text style={[styles.sitterName, { color: theme.textPrimary }]}>{sitter.name}</Text>
                             {sitter.isVerified && (
-                                <Award size={14} color="#10B981" strokeWidth={1.5} />
+                                <Award size={14} color={theme.success} strokeWidth={1.5} />
                             )}
                         </View>
+                        {/* Badges */}
+                        {badges.length > 0 && (
+                            <View style={styles.badgesRow}>
+                                {badges.slice(0, 2).map((badgeType) => {
+                                    const badge = BADGE_INFO[badgeType];
+                                    return (
+                                        <View key={badgeType} style={[styles.badge, { backgroundColor: badge.bgColor }]}>
+                                            <Text style={styles.badgeIcon}>{badge.icon}</Text>
+                                            <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
                         <View style={styles.sitterMeta}>
                             {sitter.rating > 0 && (
                                 <View style={styles.ratingBadge}>
-                                    <Star size={12} color="#FBBF24" fill="#FBBF24" />
-                                    <Text style={styles.ratingText}>{sitter.rating.toFixed(1)}</Text>
+                                    <Star size={12} color={theme.warning} fill={theme.warning} />
+                                    <Text style={[styles.ratingText, { color: theme.textPrimary }]}>{sitter.rating.toFixed(1)}</Text>
                                 </View>
                             )}
                             {sitter.experience && (
@@ -312,12 +354,17 @@ const BabySitterScreen = ({ navigation }: any) => {
                                             source={{ uri: friend.picture?.data?.url || `https://i.pravatar.cc/50?u=${friend.id}` }}
                                             style={[
                                                 styles.mutualAvatar,
-                                                { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }
+                                                {
+                                                    marginLeft: index > 0 ? -8 : 0,
+                                                    zIndex: 3 - index,
+                                                    borderColor: theme.card,
+                                                    backgroundColor: theme.cardSecondary
+                                                }
                                             ]}
                                         />
                                     ))}
                                 </View>
-                                <Text style={styles.mutualText}>
+                                <Text style={[styles.mutualText, { color: theme.primary }]}>
                                     {t('babysitter.mutualFriends', { count: mutualFriends.length })}
                                 </Text>
                             </View>
@@ -407,17 +454,20 @@ const BabySitterScreen = ({ navigation }: any) => {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Background Gradient - Apple Style */}
             <LinearGradient
-                colors={['#FAFAFA', '#F5F5F5', '#FAFAFA']}
+                colors={isDarkMode
+                    ? [theme.background, theme.cardSecondary, theme.background]
+                    : ['#FAFAFA', '#F5F5F5', '#FAFAFA']
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
             />
 
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: '#FFFFFF', borderBottomColor: '#E5E5EA' }]}>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
@@ -427,13 +477,25 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <ChevronRight size={24} color={theme.textSecondary} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('babysitter.findSitter')}</Text>
-                    {userPhoto ? (
-                        <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
-                    ) : (
-                        <View style={[styles.userPhotoPlaceholder, { backgroundColor: theme.cardSecondary }]}>
-                            <User size={16} color={theme.textSecondary} />
-                        </View>
-                    )}
+                    <View style={styles.headerRight}>
+                        {userMode === 'parent' && (
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('ParentBookings')}
+                                style={styles.bookingsButton}
+                                accessibilityRole="button"
+                                accessibilityLabel="ההזמנות שלי"
+                            >
+                                <Calendar size={20} color={theme.textPrimary} />
+                            </TouchableOpacity>
+                        )}
+                        {userPhoto ? (
+                            <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
+                        ) : (
+                            <View style={[styles.userPhotoPlaceholder, { backgroundColor: theme.cardSecondary }]}>
+                                <User size={16} color={theme.textSecondary} />
+                            </View>
+                        )}
+                    </View>
                 </View>
 
                 {/* Mode Toggle */}
@@ -477,8 +539,8 @@ const BabySitterScreen = ({ navigation }: any) => {
                             }}
                             activeOpacity={0.8}
                         >
-                            <View style={styles.locationIconContainer}>
-                                <MapPin size={18} color="#6366F1" />
+                            <View style={[styles.locationIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
+                                <MapPin size={18} color={theme.primary} />
                             </View>
                             <TextInput
                                 style={[styles.locationInput, { color: theme.textPrimary }]}
@@ -493,13 +555,13 @@ const BabySitterScreen = ({ navigation }: any) => {
                             {filterCity.length > 0 ? (
                                 <TouchableOpacity
                                     onPress={() => setFilterCity('')}
-                                    style={styles.clearButton}
+                                    style={[styles.clearButton, { backgroundColor: theme.cardSecondary }]}
                                 >
-                                    <Text style={{ color: '#9CA3AF', fontSize: 16, fontWeight: '600' }}>×</Text>
+                                    <Text style={{ color: theme.textSecondary, fontSize: 16, fontWeight: '600' }}>×</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <View style={styles.locationBadge}>
-                                    <Search size={14} color="#6366F1" />
+                                <View style={[styles.locationBadge, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)' }]}>
+                                    <Search size={14} color={theme.primary} />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -516,7 +578,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     {/* Sitters List */}
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#6366F1" />
+                            <ActivityIndicator size="large" color={theme.primary} />
                         </View>
                     ) : sortedSitters.length === 0 ? (
                         <View style={styles.emptyState}>
@@ -527,7 +589,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <ScrollView
                             showsVerticalScrollIndicator={false}
                             refreshControl={
-                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                             }
                             contentContainerStyle={styles.scrollContent}
                         >
@@ -545,7 +607,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 <>
                     {checkingStatus ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#6366F1" />
+                            <ActivityIndicator size="large" color={theme.primary} />
                             <Text style={[styles.loadingText, { color: theme.textSecondary }]}>{t('babysitter.checkingStatus')}</Text>
                         </View>
                     ) : isSitterRegistered ? (
@@ -599,6 +661,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 16,
+    },
+    headerRight: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 12,
+    },
+    bookingsButton: {
+        padding: 8,
     },
     headerTitle: {
         fontSize: 18,
@@ -719,10 +789,30 @@ const styles = StyleSheet.create({
     ratingText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#92400E',
     },
     experienceText: {
         fontSize: 12,
+    },
+    badgesRow: {
+        flexDirection: 'row-reverse',
+        gap: 6,
+        marginTop: 6,
+        flexWrap: 'wrap',
+    },
+    badge: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+    },
+    badgeIcon: {
+        fontSize: 12,
+    },
+    badgeText: {
+        fontSize: 10,
+        fontWeight: '600',
     },
     priceSection: {
         alignItems: 'center',
@@ -769,7 +859,6 @@ const styles = StyleSheet.create({
         padding: 32,
         borderRadius: 20,
         gap: 12,
-        backgroundColor: '#FFFFFF',
         ...SHADOWS.elevated,
     },
     registrationTitle: {
@@ -837,12 +926,9 @@ const styles = StyleSheet.create({
         height: 22,
         borderRadius: 11,
         borderWidth: 2,
-        borderColor: '#fff',
-        backgroundColor: '#E5E7EB',
     },
     mutualText: {
         fontSize: 11,
-        color: '#1877F2',
         fontWeight: '600',
     },
 
@@ -864,7 +950,6 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 12,
@@ -878,7 +963,6 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: '#F3F4F6',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -886,7 +970,6 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: 'rgba(99, 102, 241, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
     },

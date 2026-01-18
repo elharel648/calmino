@@ -4,6 +4,7 @@ import { X, ListChecks, Clock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../../context/ThemeContext';
+import Reanimated, { FadeInDown } from 'react-native-reanimated';
 
 interface ToolsModalProps {
     visible: boolean;
@@ -82,10 +83,19 @@ export default function ToolsModal({
 
     return (
         <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
-            <View style={styles.overlay}>
-                <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose}>
-                    <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
-                </TouchableOpacity>
+            <Animated.View style={[styles.overlay, { opacity: fadeAnim, backgroundColor: theme.modalOverlay }]}>
+                {Platform.OS === 'ios' && (
+                    <BlurView
+                        intensity={20}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
+                    />
+                )}
+                <TouchableOpacity 
+                    style={StyleSheet.absoluteFill} 
+                    activeOpacity={1} 
+                    onPress={onClose}
+                />
 
                 <Animated.View
                     style={[
@@ -97,36 +107,50 @@ export default function ToolsModal({
                         }
                     ]}
                 >
+                    {/* Drag Handle */}
+                    <View style={styles.dragHandle}>
+                        <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+                    </View>
+
                     {/* Header */}
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: theme.cardSecondary }]}>
-                            <X size={20} color={theme.textSecondary} />
+                    <Reanimated.View 
+                        entering={FadeInDown.duration(400).springify().damping(15)}
+                        style={styles.header}
+                    >
+                        <TouchableOpacity 
+                            onPress={onClose} 
+                            style={[styles.closeButton, { backgroundColor: theme.inputBackground }]}
+                            activeOpacity={0.7}
+                        >
+                            <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
                         </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>ארגז כלים</Text>
                         <View style={{ width: 36 }} />
-                    </View>
+                    </Reanimated.View>
 
                     {/* Grid */}
                     <View style={styles.grid}>
-                        {tools.map((tool) => (
-                            <TouchableOpacity
+                        {tools.map((tool, index) => (
+                            <Reanimated.View
                                 key={tool.id}
-                                style={[styles.card, { backgroundColor: theme.cardSecondary }]}
-                                onPress={() => handlePress(tool.action)}
-                                activeOpacity={0.7}
+                                entering={FadeInDown.duration(400).delay(100 + index * 100).springify().damping(15)}
                             >
-                                <View style={[styles.iconCircle, { backgroundColor: tool.bg }]}>
-                                    <tool.icon size={28} color={tool.color} strokeWidth={1.5} />
-                                </View>
-                                <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{tool.title}</Text>
-                                <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>{tool.subtitle}</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.card, { backgroundColor: theme.cardSecondary }]}
+                                    onPress={() => handlePress(tool.action)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : tool.bg }]}>
+                                        <tool.icon size={28} color={tool.color} strokeWidth={2} />
+                                    </View>
+                                    <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{tool.title}</Text>
+                                    <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>{tool.subtitle}</Text>
+                                </TouchableOpacity>
+                            </Reanimated.View>
                         ))}
                     </View>
-
-
                 </Animated.View>
-            </View>
+            </Animated.View>
         </Modal>
     );
 }
@@ -136,31 +160,38 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'flex-end',
     },
-    backdrop: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-    },
     container: {
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        paddingHorizontal: 20,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 24,
         paddingBottom: 40,
-        paddingTop: 24,
+        paddingTop: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 10,
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    dragHandle: {
+        alignItems: 'center',
+        paddingTop: 12,
+        paddingBottom: 8,
+    },
+    dragHandleBar: {
+        width: 36,
+        height: 5,
+        borderRadius: 3,
     },
     header: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 28,
     },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: '700',
+        letterSpacing: -0.5,
     },
     closeButton: {
         width: 36,
@@ -172,34 +203,39 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row-reverse',
         flexWrap: 'wrap',
-        gap: 12,
+        gap: 16,
         marginBottom: 20,
     },
     card: {
-        width: '100%', // Full width for 2 items
-        padding: 20,
-        borderRadius: 20,
+        width: '100%',
+        padding: 24,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
+        gap: 14,
         marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     iconCircle: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
     },
     cardTitle: {
-        fontSize: 15,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '700',
         textAlign: 'center',
+        letterSpacing: -0.3,
     },
     cardSubtitle: {
-        fontSize: 12,
+        fontSize: 13,
         textAlign: 'center',
-        opacity: 0.8,
+        letterSpacing: -0.2,
     },
-
 });

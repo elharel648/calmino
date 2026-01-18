@@ -19,6 +19,7 @@ import { auth, db } from '../../services/firebaseConfig';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
 import { ReviewTag, REVIEW_TAG_LABELS } from '../../types/babysitter';
+import { logger } from '../../utils/logger';
 
 interface RatingModalProps {
     visible: boolean;
@@ -53,6 +54,12 @@ const RatingModal: React.FC<RatingModalProps> = ({
     const [text, setText] = useState('');
     const [selectedTags, setSelectedTags] = useState<ReviewTag[]>([]);
     const [loading, setLoading] = useState(false);
+    const [categoryRatings, setCategoryRatings] = useState<{
+        reliability?: number;
+        professionalism?: number;
+        kidsInteraction?: number;
+        cleanliness?: number;
+    }>({});
 
     // Toggle tag selection
     const toggleTag = useCallback((tag: ReviewTag) => {
@@ -84,6 +91,9 @@ const RatingModal: React.FC<RatingModalProps> = ({
             const user = auth.currentUser;
             if (!user) throw new Error('Not logged in');
 
+            // Check if this is a verified review (has real booking)
+            const isVerified = bookingId && !bookingId.startsWith('guest_');
+
             // Create review
             await addDoc(collection(db, 'reviews'), {
                 bookingId: bookingId || null,
@@ -92,6 +102,9 @@ const RatingModal: React.FC<RatingModalProps> = ({
                 rating,
                 text: text.trim() || null,
                 tags: selectedTags.length > 0 ? selectedTags : null,
+                isVerified: isVerified || false,
+                helpfulCount: 0,
+                helpfulBy: [],
                 createdAt: serverTimestamp(),
             });
 
@@ -119,10 +132,10 @@ const RatingModal: React.FC<RatingModalProps> = ({
                         sitterRating: Math.round(newAverage * 10) / 10, // Round to 1 decimal
                         sitterReviewCount: increment(1),
                     });
-                    console.log('✅ Rating updated: new average =', newAverage.toFixed(1));
+                    logger.debug('✅', 'Rating updated: new average =', newAverage.toFixed(1));
                 }
             } catch (ratingError) {
-                console.log('⚠️ Could not update sitter rating:', ratingError);
+                logger.warn('⚠️ Could not update sitter rating:', ratingError);
                 // Don't fail the whole submission if rating update fails
             }
 
@@ -133,7 +146,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
                 [{ text: 'סגור', onPress: () => { onClose(); onSuccess?.(); } }]
             );
         } catch (error) {
-            console.error('Rating error:', error);
+            logger.error('Rating error:', error);
             Alert.alert('שגיאה', 'לא הצלחנו לשמור את הדירוג');
         } finally {
             setLoading(false);
@@ -199,6 +212,45 @@ const RatingModal: React.FC<RatingModalProps> = ({
                             {rating === 5 && 'מעולה! 🤩'}
                         </Text>
                     </View>
+
+                    {/* Category Ratings */}
+                    {rating > 0 && (
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                                דירוג לפי קטגוריות (אופציונלי)
+                            </Text>
+                            {[
+                                { key: 'reliability', label: 'אמינות' },
+                                { key: 'professionalism', label: 'מקצועיות' },
+                                { key: 'kidsInteraction', label: 'יחס לילדים' },
+                                { key: 'cleanliness', label: 'נקיון' },
+                            ].map(({ key, label }) => (
+                                <View key={key} style={styles.categoryRow}>
+                                    <Text style={[styles.categoryLabel, { color: theme.textPrimary }]}>{label}</Text>
+                                    <View style={styles.categoryStars}>
+                                        {[1, 2, 3, 4, 5].map(value => (
+                                            <TouchableOpacity
+                                                key={value}
+                                                onPress={() => {
+                                                    setCategoryRatings(prev => ({
+                                                        ...prev,
+                                                        [key]: value,
+                                                    }));
+                                                }}
+                                                style={styles.categoryStarBtn}
+                                            >
+                                                <Star
+                                                    size={24}
+                                                    color={value <= (categoryRatings[key as keyof typeof categoryRatings] || 0) ? '#FBBF24' : '#E5E7EB'}
+                                                    fill={value <= (categoryRatings[key as keyof typeof categoryRatings] || 0) ? '#FBBF24' : 'transparent'}
+                                                />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    )}
 
                     {/* Quick Tags */}
                     <View style={styles.section}>
@@ -359,6 +411,26 @@ const styles = StyleSheet.create({
     },
     tagTextSelected: {
         color: '#fff',
+    },
+    categoryRow: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingVertical: 8,
+    },
+    categoryLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        flex: 1,
+        textAlign: 'right',
+    },
+    categoryStars: {
+        flexDirection: 'row-reverse',
+        gap: 4,
+    },
+    categoryStarBtn: {
+        padding: 2,
     },
     textInput: {
         borderRadius: 14,

@@ -12,7 +12,7 @@ interface SleepCalculatorModalProps {
 }
 
 export default function SleepCalculatorModal({ visible, onClose }: SleepCalculatorModalProps) {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { activeChild } = useActiveChild();
     const [wakeTime, setWakeTime] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
@@ -65,13 +65,13 @@ export default function SleepCalculatorModal({ visible, onClose }: SleepCalculat
                         />
                     )}
 
-                    <View style={[styles.resultCard, { backgroundColor: '#DBEAFE' }]}>
-                        <Clock size={32} color="#2563EB" />
-                        <Text style={styles.resultLabel}>חלון השינה הבא</Text>
-                        <Text style={styles.resultTime}>
+                    <View style={[styles.resultCard, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE' }]}>
+                        <Clock size={32} color={theme.primary} />
+                        <Text style={[styles.resultLabel, { color: theme.primary }]}>חלון השינה הבא</Text>
+                        <Text style={[styles.resultTime, { color: theme.textPrimary }]}>
                             {format(nextSleepMin, 'HH:mm')} - {format(nextSleepMax, 'HH:mm')}
                         </Text>
-                        <Text style={styles.resultNote}>
+                        <Text style={[styles.resultNote, { color: theme.textSecondary }]}>
                             לפי גיל התינוק, זמן הערות המומלץ הוא בין {window.min / 60}-{window.max / 60} שעות.
                         </Text>
                     </View>
@@ -125,18 +125,16 @@ const styles = StyleSheet.create({
     },
     resultLabel: {
         fontSize: 16,
-        color: '#1E40AF',
         fontWeight: '600',
     },
     resultTime: {
         fontSize: 40,
         fontWeight: '800',
-        color: '#1E3A8A',
     },
     resultNote: {
         textAlign: 'center',
-        color: '#1E40AF',
         opacity: 0.8,
         marginTop: 8,
+        fontSize: 14,
     }
 });

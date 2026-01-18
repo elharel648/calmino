@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, Platform, ActivityIndicator } from 'react-native';
 import { Plus, Camera, X, Check, Edit2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -20,6 +20,7 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
     const [editingMonth, setEditingMonth] = useState<number | null>(null);
     const [noteText, setNoteText] = useState('');
     const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+    const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
 
     const getPhotoData = (month: number): { url?: string; note?: string } => {
         const url = album?.[month];
@@ -79,7 +80,34 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                                 activeOpacity={0.8}
                             >
                                 {hasImage ? (
-                                    <Image source={{ uri: url }} style={styles.monthImage} />
+                                    <View style={styles.imageContainer}>
+                                        {loadingImages.has(month) && (
+                                            <View style={styles.imageLoadingOverlay}>
+                                                <ActivityIndicator size="small" color="#6366F1" />
+                                            </View>
+                                        )}
+                                        <Image 
+                                            source={{ uri: url }} 
+                                            style={[styles.monthImage, { opacity: loadingImages.has(month) ? 0.3 : 1 }]}
+                                            onLoadStart={() => {
+                                                setLoadingImages(prev => new Set(prev).add(month));
+                                            }}
+                                            onLoad={() => {
+                                                setLoadingImages(prev => {
+                                                    const next = new Set(prev);
+                                                    next.delete(month);
+                                                    return next;
+                                                });
+                                            }}
+                                            onError={() => {
+                                                setLoadingImages(prev => {
+                                                    const next = new Set(prev);
+                                                    next.delete(month);
+                                                    return next;
+                                                });
+                                            }}
+                                        />
+                                    </View>
                                 ) : (
                                     <View style={styles.emptyMonth}>
                                         <Plus size={18} color="#D1D5DB" strokeWidth={2} />
@@ -220,6 +248,20 @@ const styles = StyleSheet.create({
     },
     monthTouchable: {
         // wrapper for image/empty
+    },
+    imageContainer: {
+        position: 'relative',
+    },
+    imageLoadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(243, 244, 246, 0.8)',
+        borderRadius: 28,
     },
     monthImage: {
         width: 56,

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, auth } from './firebaseConfig';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { notificationStorageService } from './notificationStorageService';
+import { logger } from '../utils/logger';
 
 // --- Pattern Analysis Types ---
 export interface PatternData {
@@ -76,7 +77,7 @@ class PatternAnalyzer {
             }
 
         } catch (error) {
-            if (__DEV__) console.log('Pattern analysis failed:', error);
+            logger.error('Pattern analysis failed:', error);
         }
 
         return result;
@@ -207,7 +208,7 @@ Notifications.setNotificationHandler({
                     isUrgent: notificationType === 'vaccine_reminder',
                 });
             } catch (error) {
-                if (__DEV__) console.log('Failed to save notification in handler:', error);
+                logger.error('Failed to save notification in handler:', error);
             }
         }
 
@@ -233,7 +234,7 @@ class NotificationService {
             // Request permissions
             const hasPermission = await this.requestPermissions();
             if (!hasPermission) {
-                if (__DEV__) console.log('Notification permissions not granted');
+                logger.warn('Notification permissions not granted');
                 return false;
             }
 
@@ -242,7 +243,7 @@ class NotificationService {
 
             return true;
         } catch (error) {
-            if (__DEV__) console.log('Failed to initialize notifications:', error);
+            logger.error('Failed to initialize notifications:', error);
             return false;
         }
     }
@@ -254,18 +255,18 @@ class NotificationService {
             for (const notification of scheduled) {
                 if (notification.content.data?.type === 'diaper_reminder') {
                     await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-                    if (__DEV__) console.log('🗑️ Cancelled legacy diaper notification');
+                    logger.debug('🗑️', 'Cancelled legacy diaper notification');
                 }
             }
         } catch (error) {
-            if (__DEV__) console.log('Failed to cancel legacy diaper notifications:', error);
+            logger.error('Failed to cancel legacy diaper notifications:', error);
         }
     }
 
     // Request permissions
     async requestPermissions(): Promise<boolean> {
         if (!Device.isDevice) {
-            if (__DEV__) console.log('Notifications only work on physical devices');
+            logger.warn('Notifications only work on physical devices');
             return false;
         }
 
@@ -302,7 +303,7 @@ class NotificationService {
                 this.settings = { ...DEFAULT_NOTIFICATION_SETTINGS, ...JSON.parse(saved) };
             }
         } catch (error) {
-            if (__DEV__) console.log('Failed to load notification settings:', error);
+            logger.error('Failed to load notification settings:', error);
         }
         return this.settings;
     }
@@ -313,7 +314,7 @@ class NotificationService {
             this.settings = { ...this.settings, ...settings };
             await AsyncStorage.setItem('notification_settings', JSON.stringify(this.settings));
         } catch (error) {
-            if (__DEV__) console.log('Failed to save notification settings:', error);
+            logger.error('Failed to save notification settings:', error);
         }
     }
 
@@ -536,7 +537,7 @@ class NotificationService {
                 });
                 this.scheduledNotifications.set('feeding_reminder', id);
 
-                if (__DEV__) console.log(`🔔 Smart feeding reminder scheduled for ${reminderHour}:${reminderMinute}`);
+                logger.debug('🔔', `Smart feeding reminder scheduled for ${reminderHour}:${reminderMinute}`);
             }
 
             // Schedule sleep reminder based on pattern
@@ -568,11 +569,11 @@ class NotificationService {
                 });
                 this.scheduledNotifications.set('sleep_reminder', id);
 
-                if (__DEV__) console.log(`🔔 Smart sleep reminder scheduled for ${reminderHour}:${reminderMinute}`);
+                logger.debug('🔔', `Smart sleep reminder scheduled for ${reminderHour}:${reminderMinute}`);
             }
 
         } catch (error) {
-            if (__DEV__) console.log('Failed to schedule smart reminders:', error);
+            logger.error('Failed to schedule smart reminders:', error);
         }
     }
 }

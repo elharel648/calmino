@@ -3,14 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, M
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { getBabysitterReviews } from '../services/babysitterService';
-
-// Types
-interface Review {
-    user: string;
-    text: string;
-    rating?: number;
-}
+import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats } from '../services/babysitterService';
+import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
+import { auth } from '../services/firebaseConfig';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown } from 'lucide-react-native';
+import { TextInput } from 'react-native';
+import { logger } from '../utils/logger';
+import { calculateSitterBadges } from '../services/babysitterService';
 
 interface SitterData {
     id: string;
@@ -36,6 +35,8 @@ type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Sitt
 const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) => {
     const { sitterData } = route.params || {};
     const [showFullVideo, setShowFullVideo] = useState(false);
+    const [imageError, setImageError] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
 
     // Check if sitter has a real video (not from database yet, so hide video feature for now)
     const hasVideo = false; // TODO: Set to true when sitter.videoUri is available from Firebase
@@ -84,31 +85,98 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     // Fetch reviews from Firebase
     const [reviewsList, setReviewsList] = useState<Review[]>(sitterData.reviewsList || []);
     const [loadingReviews, setLoadingReviews] = useState(true);
+    const [reviewFilter, setReviewFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
+    const [reviewSort, setReviewSort] = useState<'newest' | 'helpful' | 'highest'>('newest');
+    const [reviewStats, setReviewStats] = useState<{ total: number; average: number; distribution: { [rating: number]: number }; verifiedCount: number; withResponseCount: number } | null>(null);
+    const [respondingToReview, setRespondingToReview] = useState<string | null>(null);
+    const [responseText, setResponseText] = useState('');
+    const [badges, setBadges] = useState<SitterBadge[]>([]);
 
     useEffect(() => {
         const fetchReviews = async () => {
             try {
                 const reviews = await getBabysitterReviews(sitterData.id);
-                const formattedReviews: Review[] = reviews.map(r => ({
-                    user: r.parentName || 'הורה',
-                    text: r.text || '',
-                    rating: r.rating,
-                }));
-                setReviewsList(formattedReviews);
+                const stats = await getReviewStats(sitterData.id);
+                setReviewStats(stats);
+                setReviewsList(reviews);
             } catch (error) {
-                console.log('Could not fetch reviews:', error);
+                logger.error('Could not fetch reviews:', error);
             } finally {
                 setLoadingReviews(false);
             }
         };
 
+        const fetchBadges = async () => {
+            try {
+                const calculatedBadges = await calculateSitterBadges(sitterData.id, {
+                    rating: sitterData.rating,
+                    reviewCount: sitterData.reviews,
+                    isAvailable: false, // TODO: Get from sitter data
+                    createdAt: undefined, // TODO: Get from sitter data
+                });
+                setBadges(calculatedBadges);
+            } catch (error) {
+                logger.error('Could not fetch badges:', error);
+            }
+        };
+
         if (sitterData.id && !sitterData.id.startsWith('mock_')) {
             fetchReviews();
+            fetchBadges();
         } else {
             // Mock data - don't fetch
             setLoadingReviews(false);
         }
     }, [sitterData.id]);
+
+    // Filter and sort reviews
+    const filteredAndSortedReviews = reviewsList
+        .filter(review => {
+            if (reviewFilter === 'all') return true;
+            return review.rating === parseInt(reviewFilter);
+        })
+        .sort((a, b) => {
+            if (reviewSort === 'newest') {
+                const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+                const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+                return bTime - aTime;
+            }
+            if (reviewSort === 'helpful') {
+                return (b.helpfulCount || 0) - (a.helpfulCount || 0);
+            }
+            if (reviewSort === 'highest') {
+                return b.rating - a.rating;
+            }
+            return 0;
+        });
+
+    const handleMarkHelpful = async (reviewId: string) => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const success = await markReviewHelpful(reviewId, userId);
+        if (success) {
+            // Refresh reviews
+            const reviews = await getBabysitterReviews(sitterData.id);
+            setReviewsList(reviews);
+        }
+    };
+
+    const handleSubmitResponse = async (reviewId: string) => {
+        if (!responseText.trim()) return;
+
+        const success = await addSitterResponse(reviewId, sitterData.id, responseText);
+        if (success) {
+            setRespondingToReview(null);
+            setResponseText('');
+            // Refresh reviews
+            const reviews = await getBabysitterReviews(sitterData.id);
+            setReviewsList(reviews);
+        }
+    };
+
+    const isCurrentUserSitter = auth.currentUser?.uid === sitterData.id;
+    const currentUserId = auth.currentUser?.uid;
 
     return (
         <View style={styles.container}>
@@ -132,11 +200,29 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             isMuted
                         />
                     ) : (
-                        <Image
-                            source={{ uri: sitterData.image }}
-                            style={styles.heroVideo}
-                            resizeMode="cover"
-                        />
+                        <>
+                            {imageLoading && !imageError && (
+                                <View style={[styles.heroVideo, { backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }]}>
+                                    <ActivityIndicator size="large" color="#6366F1" />
+                                </View>
+                            )}
+                            {!imageError ? (
+                                <Image
+                                    source={{ uri: sitterData.image }}
+                                    style={[styles.heroVideo, { opacity: imageLoading ? 0 : 1 }]}
+                                    resizeMode="cover"
+                                    onLoad={() => setImageLoading(false)}
+                                    onError={() => {
+                                        setImageError(true);
+                                        setImageLoading(false);
+                                    }}
+                                />
+                            ) : (
+                                <View style={[styles.heroVideo, { backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }]}>
+                                    <Ionicons name="person" size={64} color="#9CA3AF" />
+                                </View>
+                            )}
+                        </>
                     )}
                     <View style={styles.heroOverlay} />
 
@@ -152,6 +238,20 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             <Ionicons name="star" size={14} color="#FBBF24" />
                             <Text style={styles.ratingText}>{sitterData.rating} ({sitterData.reviews} ביקורות)</Text>
                         </View>
+                        {/* Badges */}
+                        {badges.length > 0 && (
+                            <View style={styles.badgesContainer}>
+                                {badges.map((badgeType) => {
+                                    const badge = BADGE_INFO[badgeType];
+                                    return (
+                                        <View key={badgeType} style={[styles.badge, { backgroundColor: badge.bgColor }]}>
+                                            <Text style={styles.badgeIcon}>{badge.icon}</Text>
+                                            <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
                     </View>
 
                     {hasVideo && (
@@ -197,24 +297,267 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
                 {/* Reviews */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>מה ההורים אומרים</Text>
+                    <View style={styles.reviewsHeader}>
+                        <Text style={styles.sectionTitle}>מה ההורים אומרים</Text>
+                        {reviewStats && (
+                            <View style={styles.reviewStatsContainer}>
+                                <Text style={styles.reviewStatsText}>
+                                    {reviewStats.average.toFixed(1)} ⭐ ({reviewStats.total} ביקורות)
+                                </Text>
+                                {reviewStats.verifiedCount > 0 && (
+                                    <Text style={styles.verifiedCountText}>
+                                        {reviewStats.verifiedCount} מאומתות
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Rating Distribution */}
+                    {reviewStats && reviewStats.total > 0 && (
+                        <View style={styles.ratingDistribution}>
+                            {[5, 4, 3, 2, 1].reverse().map(rating => {
+                                const count = reviewStats.distribution[rating] || 0;
+                                const percentage = reviewStats.total > 0 ? (count / reviewStats.total) * 100 : 0;
+                                return (
+                                    <View key={rating} style={styles.ratingBarRow}>
+                                        <Text style={styles.ratingBarLabel}>{rating} ⭐</Text>
+                                        <View style={styles.ratingBarContainer}>
+                                            <View style={[styles.ratingBar, { width: `${percentage}%` }]} />
+                                        </View>
+                                        <Text style={styles.ratingBarCount}>{count}</Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    )}
+
+                    {/* Filter and Sort */}
+                    {reviewsList.length > 0 && (
+                        <View style={styles.reviewControls}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                                <TouchableOpacity
+                                    style={[styles.filterChip, reviewFilter === 'all' && styles.filterChipActive]}
+                                    onPress={() => setReviewFilter('all')}
+                                >
+                                    <Text style={[styles.filterChipText, reviewFilter === 'all' && styles.filterChipTextActive]}>הכל</Text>
+                                </TouchableOpacity>
+                                {[5, 4, 3, 2, 1].map(rating => (
+                                    <TouchableOpacity
+                                        key={rating}
+                                        style={[styles.filterChip, reviewFilter === String(rating) && styles.filterChipActive]}
+                                        onPress={() => setReviewFilter(String(rating) as any)}
+                                    >
+                                        <Text style={[styles.filterChipText, reviewFilter === String(rating) && styles.filterChipTextActive]}>
+                                            {rating} ⭐
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                            <TouchableOpacity
+                                style={styles.sortButton}
+                                onPress={() => {
+                                    const options = ['newest', 'helpful', 'highest'];
+                                    const currentIndex = options.indexOf(reviewSort);
+                                    setReviewSort(options[(currentIndex + 1) % options.length] as any);
+                                }}
+                            >
+                                <ArrowUpDown size={16} color="#6366F1" />
+                                <Text style={styles.sortButtonText}>
+                                    {reviewSort === 'newest' ? 'חדשות' : reviewSort === 'helpful' ? 'מועילות' : 'גבוהות'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
                     {loadingReviews ? (
                         <View style={styles.emptyReviews}>
                             <ActivityIndicator size="small" color="#6366F1" />
                         </View>
-                    ) : reviewsList.length > 0 ? (
-                        reviewsList.map((review, i) => (
-                            <View key={i} style={styles.reviewCard}>
+                    ) : filteredAndSortedReviews.length > 0 ? (
+                        filteredAndSortedReviews.map((review) => (
+                            <View key={review.id} style={styles.reviewCard}>
                                 <View style={styles.reviewHeader}>
-                                    <Text style={styles.reviewerName}>{review.user}</Text>
-                                    {review.rating && (
+                                    <View style={styles.reviewHeaderLeft}>
+                                        <Text style={styles.reviewerName}>{review.parentName || 'הורה'}</Text>
+                                        {review.isVerified && (
+                                            <View style={styles.verifiedBadgeSmall}>
+                                                <CheckCircle size={12} color="#10B981" />
+                                                <Text style={styles.verifiedText}>מאומת</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.reviewHeaderRight}>
                                         <View style={styles.reviewRating}>
-                                            <Ionicons name="star" size={12} color="#FBBF24" />
-                                            <Text style={styles.reviewRatingText}>{review.rating}</Text>
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <Ionicons
+                                                    key={star}
+                                                    name={star <= review.rating ? "star" : "star-outline"}
+                                                    size={14}
+                                                    color="#FBBF24"
+                                                />
+                                            ))}
                                         </View>
-                                    )}
+                                        <Text style={styles.reviewDate}>
+                                            {review.createdAt?.toDate?.()?.toLocaleDateString('he-IL') || ''}
+                                        </Text>
+                                    </View>
                                 </View>
+
                                 {review.text && <Text style={styles.reviewBody}>"{review.text}"</Text>}
+
+                                {/* Category Ratings */}
+                                {review.categoryRatings && (
+                                    <View style={styles.categoryRatingsContainer}>
+                                        {review.categoryRatings.reliability && (
+                                            <View style={styles.categoryRatingItem}>
+                                                <Text style={styles.categoryRatingLabel}>אמינות:</Text>
+                                                <View style={styles.categoryRatingStars}>
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <Ionicons
+                                                            key={star}
+                                                            name={star <= review.categoryRatings!.reliability! ? "star" : "star-outline"}
+                                                            size={12}
+                                                            color="#FBBF24"
+                                                        />
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        )}
+                                        {review.categoryRatings.professionalism && (
+                                            <View style={styles.categoryRatingItem}>
+                                                <Text style={styles.categoryRatingLabel}>מקצועיות:</Text>
+                                                <View style={styles.categoryRatingStars}>
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <Ionicons
+                                                            key={star}
+                                                            name={star <= review.categoryRatings!.professionalism! ? "star" : "star-outline"}
+                                                            size={12}
+                                                            color="#FBBF24"
+                                                        />
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        )}
+                                        {review.categoryRatings.kidsInteraction && (
+                                            <View style={styles.categoryRatingItem}>
+                                                <Text style={styles.categoryRatingLabel}>יחס לילדים:</Text>
+                                                <View style={styles.categoryRatingStars}>
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <Ionicons
+                                                            key={star}
+                                                            name={star <= review.categoryRatings!.kidsInteraction! ? "star" : "star-outline"}
+                                                            size={12}
+                                                            color="#FBBF24"
+                                                        />
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        )}
+                                        {review.categoryRatings.cleanliness && (
+                                            <View style={styles.categoryRatingItem}>
+                                                <Text style={styles.categoryRatingLabel}>נקיון:</Text>
+                                                <View style={styles.categoryRatingStars}>
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <Ionicons
+                                                            key={star}
+                                                            name={star <= review.categoryRatings!.cleanliness! ? "star" : "star-outline"}
+                                                            size={12}
+                                                            color="#FBBF24"
+                                                        />
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+
+                                {/* Tags */}
+                                {review.tags && review.tags.length > 0 && (
+                                    <View style={styles.reviewTags}>
+                                        {review.tags.map((tag, idx) => (
+                                            <View key={idx} style={styles.reviewTag}>
+                                                <Text style={styles.reviewTagText}>{REVIEW_TAG_LABELS[tag] || tag}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+
+                                {/* Review Actions */}
+                                <View style={styles.reviewActions}>
+                                    <TouchableOpacity
+                                        style={styles.helpfulButton}
+                                        onPress={() => handleMarkHelpful(review.id)}
+                                    >
+                                        <ThumbsUp
+                                            size={14}
+                                            color={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : "#9CA3AF"}
+                                            fill={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : "none"}
+                                        />
+                                        <Text style={[
+                                            styles.helpfulText,
+                                            currentUserId && review.helpfulBy?.includes(currentUserId) && styles.helpfulTextActive
+                                        ]}>
+                                            מועיל
+                                        </Text>
+                                        {review.helpfulCount && review.helpfulCount > 0 && (
+                                            <Text style={styles.helpfulCount}>({review.helpfulCount})</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* Sitter Response */}
+                                {review.sitterResponse && (
+                                    <View style={styles.sitterResponse}>
+                                        <View style={styles.sitterResponseHeader}>
+                                            <Text style={styles.sitterResponseTitle}>תגובת הסיטר:</Text>
+                                        </View>
+                                        <Text style={styles.sitterResponseText}>{review.sitterResponse.text}</Text>
+                                    </View>
+                                )}
+
+                                {/* Add Response (only for sitter) */}
+                                {isCurrentUserSitter && !review.sitterResponse && (
+                                    <View style={styles.addResponseSection}>
+                                        {respondingToReview === review.id ? (
+                                            <View>
+                                                <TextInput
+                                                    style={styles.responseInput}
+                                                    placeholder="הגב על הביקורת..."
+                                                    value={responseText}
+                                                    onChangeText={setResponseText}
+                                                    multiline
+                                                    textAlign="right"
+                                                />
+                                                <View style={styles.responseActions}>
+                                                    <TouchableOpacity
+                                                        style={styles.cancelResponseButton}
+                                                        onPress={() => {
+                                                            setRespondingToReview(null);
+                                                            setResponseText('');
+                                                        }}
+                                                    >
+                                                        <Text style={styles.cancelResponseText}>ביטול</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={styles.submitResponseButton}
+                                                        onPress={() => handleSubmitResponse(review.id)}
+                                                    >
+                                                        <Text style={styles.submitResponseText}>שלח</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                        ) : (
+                                            <TouchableOpacity
+                                                style={styles.addResponseButton}
+                                                onPress={() => setRespondingToReview(review.id)}
+                                            >
+                                                <MessageSquare size={14} color="#6366F1" />
+                                                <Text style={styles.addResponseText}>הגב על הביקורת</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                )}
                             </View>
                         ))
                     ) : (
@@ -464,6 +807,269 @@ const styles = StyleSheet.create({
         marginTop: 8,
         fontSize: 14,
     },
+    reviewsHeader: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    reviewStatsContainer: {
+        alignItems: 'flex-end',
+        gap: 4,
+    },
+    reviewStatsText: {
+        fontSize: 14,
+        color: '#6B7280',
+        fontWeight: '600',
+    },
+    verifiedCountText: {
+        fontSize: 11,
+        color: '#10B981',
+        fontWeight: '500',
+    },
+    ratingDistribution: {
+        marginTop: 12,
+        marginBottom: 16,
+        padding: 12,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        gap: 8,
+    },
+    ratingBarRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+    },
+    ratingBarLabel: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+        width: 40,
+    },
+    ratingBarContainer: {
+        flex: 1,
+        height: 8,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    ratingBar: {
+        height: '100%',
+        backgroundColor: '#FBBF24',
+        borderRadius: 4,
+    },
+    ratingBarCount: {
+        fontSize: 12,
+        color: '#9CA3AF',
+        fontWeight: '500',
+        width: 30,
+        textAlign: 'left',
+    },
+    reviewControls: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 12,
+    },
+    filterScroll: {
+        flex: 1,
+    },
+    filterChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: '#F3F4F6',
+        marginLeft: 8,
+    },
+    filterChipActive: {
+        backgroundColor: '#6366F1',
+    },
+    filterChipText: {
+        fontSize: 13,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    filterChipTextActive: {
+        color: '#fff',
+    },
+    sortButton: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        backgroundColor: '#EEF2FF',
+    },
+    sortButtonText: {
+        fontSize: 13,
+        color: '#6366F1',
+        fontWeight: '600',
+    },
+    reviewHeaderLeft: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+    },
+    reviewHeaderRight: {
+        alignItems: 'flex-end',
+        gap: 4,
+    },
+    verifiedBadgeSmall: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#D1FAE5',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    verifiedText: {
+        fontSize: 10,
+        color: '#10B981',
+        fontWeight: '600',
+    },
+    reviewDate: {
+        fontSize: 11,
+        color: '#9CA3AF',
+    },
+    reviewTags: {
+        flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginTop: 8,
+    },
+    reviewTag: {
+        backgroundColor: '#EEF2FF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    reviewTagText: {
+        fontSize: 11,
+        color: '#6366F1',
+        fontWeight: '500',
+    },
+    reviewActions: {
+        flexDirection: 'row-reverse',
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+    },
+    helpfulButton: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 4,
+    },
+    helpfulText: {
+        fontSize: 13,
+        color: '#9CA3AF',
+        fontWeight: '500',
+    },
+    helpfulTextActive: {
+        color: '#10B981',
+    },
+    helpfulCount: {
+        fontSize: 12,
+        color: '#9CA3AF',
+    },
+    sitterResponse: {
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: '#F0FDF4',
+        borderRadius: 12,
+        borderRightWidth: 3,
+        borderRightColor: '#10B981',
+    },
+    sitterResponseHeader: {
+        marginBottom: 6,
+    },
+    sitterResponseTitle: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#10B981',
+    },
+    sitterResponseText: {
+        fontSize: 14,
+        color: '#1F2937',
+        lineHeight: 20,
+        textAlign: 'right',
+    },
+    addResponseSection: {
+        marginTop: 12,
+    },
+    addResponseButton: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 8,
+    },
+    addResponseText: {
+        fontSize: 13,
+        color: '#6366F1',
+        fontWeight: '500',
+    },
+    responseInput: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 14,
+        color: '#1F2937',
+        minHeight: 80,
+        textAlignVertical: 'top',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    responseActions: {
+        flexDirection: 'row-reverse',
+        gap: 8,
+        marginTop: 8,
+    },
+    cancelResponseButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+    },
+    cancelResponseText: {
+        fontSize: 14,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    submitResponseButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        backgroundColor: '#6366F1',
+    },
+    submitResponseText: {
+        fontSize: 14,
+        color: '#fff',
+        fontWeight: '600',
+    },
+    categoryRatingsContainer: {
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        gap: 8,
+    },
+    categoryRatingItem: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    categoryRatingLabel: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    categoryRatingStars: {
+        flexDirection: 'row-reverse',
+        gap: 2,
+    },
 
     // Footer
     stickyFooter: {
@@ -539,6 +1145,29 @@ const styles = StyleSheet.create({
     fullVideo: {
         width: '100%',
         height: 400,
+    },
+
+    // Badge styles
+    badgesContainer: {
+        flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 8,
+    },
+    badge: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+    },
+    badgeIcon: {
+        fontSize: 14,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
 });
 

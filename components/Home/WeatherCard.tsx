@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { WeatherData } from '../../types/home';
+import { useTheme } from '../../context/ThemeContext';
 
 interface WeatherCardProps {
     weather: WeatherData;
@@ -10,16 +11,18 @@ interface WeatherCardProps {
  * Weather card with skeleton loading state
  */
 const WeatherCard = memo<WeatherCardProps>(({ weather }) => {
+    const { theme, isDarkMode } = useTheme();
+    
     if (weather.loading) {
         // Skeleton loading state
         return (
-            <View style={styles.weatherCard}>
-                <View style={styles.weatherIcon}>
-                    <View style={styles.skeletonTemp} />
+            <View style={[styles.weatherCard, { backgroundColor: theme.card }]}>
+                <View style={[styles.weatherIcon, { borderLeftColor: theme.border }]}>
+                    <View style={[styles.skeletonTemp, { backgroundColor: theme.inputBackground }]} />
                 </View>
                 <View style={styles.weatherInfo}>
-                    <View style={styles.skeletonCity} />
-                    <View style={styles.skeletonRec} />
+                    <View style={[styles.skeletonCity, { backgroundColor: theme.inputBackground }]} />
+                    <View style={[styles.skeletonRec, { backgroundColor: theme.inputBackground }]} />
                 </View>
             </View>
         );
@@ -27,15 +30,15 @@ const WeatherCard = memo<WeatherCardProps>(({ weather }) => {
 
     return (
         <View
-            style={styles.weatherCard}
+            style={[styles.weatherCard, { backgroundColor: theme.card }]}
             accessibilityLabel={`מזג אוויר ב${weather.city}: ${weather.temp} מעלות. ${weather.recommendation}`}
         >
-            <View style={styles.weatherIcon}>
-                <Text style={styles.weatherTemp}>{weather.temp}°</Text>
+            <View style={[styles.weatherIcon, { borderLeftColor: theme.border }]}>
+                <Text style={[styles.weatherTemp, { color: theme.textPrimary }]}>{weather.temp}°</Text>
             </View>
             <View style={styles.weatherInfo}>
-                <Text style={styles.weatherTitle}>{weather.city}</Text>
-                <Text style={styles.weatherRec}>{weather.recommendation}</Text>
+                <Text style={[styles.weatherTitle, { color: theme.textSecondary }]}>{weather.city}</Text>
+                <Text style={[styles.weatherRec, { color: theme.textPrimary }]}>{weather.recommendation}</Text>
             </View>
         </View>
     );
@@ -46,7 +49,6 @@ WeatherCard.displayName = 'WeatherCard';
 const styles = StyleSheet.create({
     weatherCard: {
         flexDirection: 'row-reverse',
-        backgroundColor: '#fff',
         borderRadius: 20,
         padding: 16,
         marginBottom: 20,
@@ -60,15 +62,14 @@ const styles = StyleSheet.create({
     weatherIcon: {
         alignItems: 'center',
         paddingLeft: 16,
-        borderLeftWidth: 1,
-        borderLeftColor: '#f3f4f6',
+        borderLeftWidth: StyleSheet.hairlineWidth,
         minWidth: 60,
     },
     weatherTemp: {
         fontSize: 22,
-        fontWeight: 'bold',
-        color: '#111827',
+        fontWeight: '700',
         marginTop: 4,
+        letterSpacing: -0.5,
     },
     weatherInfo: {
         flex: 1,
@@ -76,27 +77,25 @@ const styles = StyleSheet.create({
     },
     weatherTitle: {
         fontSize: 14,
-        color: '#6b7280',
         marginBottom: 4,
         textAlign: 'right',
+        letterSpacing: -0.2,
     },
     weatherRec: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#111827',
         textAlign: 'right',
+        letterSpacing: -0.3,
     },
     // Skeleton styles
     skeletonTemp: {
         width: 40,
         height: 28,
-        backgroundColor: '#E5E7EB',
         borderRadius: 6,
     },
     skeletonCity: {
         width: 60,
         height: 14,
-        backgroundColor: '#E5E7EB',
         borderRadius: 4,
         marginBottom: 8,
         alignSelf: 'flex-end',
@@ -104,7 +103,6 @@ const styles = StyleSheet.create({
     skeletonRec: {
         width: 120,
         height: 18,
-        backgroundColor: '#E5E7EB',
         borderRadius: 4,
         alignSelf: 'flex-end',
     },

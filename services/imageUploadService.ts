@@ -6,13 +6,14 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db, storage } from './firebaseConfig';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { logger } from '../utils/logger';
 
 /**
  * Compress image before upload
  */
 async function compressImage(uri: string): Promise<string> {
     try {
-        console.log('📸 Compressing image...');
+        logger.debug('📸', 'Compressing image...');
 
         const manipResult = await ImageManipulator.manipulateAsync(
             uri,
@@ -23,10 +24,10 @@ async function compressImage(uri: string): Promise<string> {
             }
         );
 
-        console.log('📸 Compressed to:', manipResult.uri.substring(0, 50));
+        logger.debug('📸', 'Compressed to:', manipResult.uri.substring(0, 50));
         return manipResult.uri;
     } catch (error) {
-        console.error('Compression failed, using original:', error);
+        logger.error('Compression failed, using original:', error);
         return uri;
     }
 }
@@ -35,8 +36,16 @@ async function compressImage(uri: string): Promise<string> {
  * Convert local URI to blob for upload
  */
 async function uriToBlob(uri: string): Promise<Blob> {
-    const response = await fetch(uri);
-    return await response.blob();
+    try {
+        const response = await fetch(uri);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        }
+        return await response.blob();
+    } catch (error) {
+        logger.error('❌ uriToBlob failed:', error);
+        throw new Error(`Image conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 }
 
 /**
@@ -47,34 +56,34 @@ async function uriToBlob(uri: string): Promise<Blob> {
  */
 export async function uploadImage(uri: string, path: string): Promise<string> {
     try {
-        console.log('📸 Starting upload to Storage...');
+        logger.debug('📸', 'Starting upload to Storage...');
 
         // Compress first
         const compressedUri = await compressImage(uri);
 
         // Convert to blob
         const blob = await uriToBlob(compressedUri);
-        console.log('📸 Blob size:', blob.size, 'bytes');
+        logger.debug('📸', 'Blob size:', blob.size, 'bytes');
 
         // Create storage reference
         const storageRef = ref(storage, path);
 
         // Upload
-        console.log('📸 Uploading to:', path);
+        logger.debug('📸', 'Uploading to:', path);
         const snapshot = await uploadBytes(storageRef, blob, {
             contentType: 'image/jpeg',
         });
 
         // Get download URL
         const downloadURL = await getDownloadURL(snapshot.ref);
-        console.log('✅ Upload complete:', downloadURL.substring(0, 60));
+        logger.debug('✅', 'Upload complete:', downloadURL.substring(0, 60));
 
         return downloadURL;
     } catch (error: any) {
-        console.error('❌ Storage upload failed:', error.code, error.message);
+        logger.error('❌ Storage upload failed:', error.code, error.message);
 
         // Fallback to Base64 if Storage fails
-        console.log('⚠️ Falling back to Base64...');
+        logger.debug('⚠️', 'Falling back to Base64...');
         return await uploadImageAsBase64(uri);
     }
 }
@@ -120,7 +129,7 @@ export async function uploadSitterPhoto(uri: string): Promise<string> {
         // Sitter doc may not exist yet
     }
 
-    console.log('✅ Sitter photo saved');
+    logger.debug('✅', 'Sitter photo saved');
     return downloadURL;
 }
 
@@ -137,7 +146,7 @@ export async function uploadChildPhoto(childId: string, uri: string): Promise<st
     const babyRef = doc(db, 'babies', childId);
     await updateDoc(babyRef, { photoUrl: downloadURL });
 
-    console.log('✅ Child photo saved');
+    logger.debug('✅', 'Child photo saved');
     return downloadURL;
 }
 
@@ -154,6 +163,6 @@ export async function uploadUserPhoto(uri: string): Promise<string> {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, { photoUrl: downloadURL });
 
-    console.log('✅ User photo saved');
+    logger.debug('✅', 'User photo saved');
     return downloadURL;
 }

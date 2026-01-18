@@ -13,7 +13,7 @@ interface ShareStatusButtonProps {
  * Minimalist Share Button - Simple inline design
  */
 const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handlePress = useCallback(async () => {
@@ -44,15 +44,15 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
 
     return (
         <TouchableOpacity
-            style={styles.container}
+            style={[styles.container, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }]}
             onPress={handlePress}
             activeOpacity={0.6}
         >
-            <Share2 size={16} color="#9CA3AF" strokeWidth={2} />
+            <Share2 size={16} color={theme.textTertiary} strokeWidth={2} />
             <Text style={[styles.text, { color: theme.textSecondary }]}>
                 {showSuccess ? 'נשלח!' : 'שתף סיכום יומי'}
             </Text>
-            {showSuccess && <Check size={14} color="#10B981" strokeWidth={2.5} />}
+            {showSuccess && <Check size={14} color={theme.success} strokeWidth={2.5} />}
         </TouchableOpacity>
     );
 });
@@ -70,7 +70,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 16,
-        backgroundColor: 'rgba(0, 0, 0, 0.02)',
     },
     text: {
         fontSize: 14,

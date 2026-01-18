@@ -30,6 +30,9 @@ export interface Sitter {
     languages: string[];
     certifications: string[];
     mutualFriends?: MutualFriend[]; // Facebook mutual friends
+    badges?: string[]; // Sitter badges
+    isAvailable?: boolean; // Currently available
+    createdAt?: Date | any; // Account creation date
     // Location fields for city + GPS search
     city?: string; // City name (e.g., "תל אביב")
     location?: {

@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { createGuestInvite, createFamily, getActiveGuestInvites, cancelGuestInvite, GuestInvite } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Props {
     visible: boolean;
@@ -31,6 +32,7 @@ type Step = 'select' | 'code';
 const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
     const { theme } = useTheme();
     const { allChildren } = useActiveChild();
+    const { t } = useLanguage();
 
     const [step, setStep] = useState<Step>('select');
     const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
@@ -87,8 +89,8 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
     // Handle cancel invite
     const handleCancelInvite = async (code: string) => {
         Alert.alert(
-            'ביטול הזמנה',
-            'האם לבטל את ההזמנה? האורח לא יוכל להשתמש בקוד זה.',
+            t('guestInvite.cancelInvite'),
+            t('guestInvite.cancelConfirm'),
             [
                 { text: 'ביטול', style: 'cancel' },
                 {
@@ -102,11 +104,11 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                 setActiveInvites(prev => prev.filter(inv => inv.code !== code));
                             } else {
-                                Alert.alert('שגיאה', 'לא הצלחנו לבטל את ההזמנה');
+                                Alert.alert(t('common.error'), t('guestInvite.cancelFailed'));
                             }
                         } catch (error) {
                             if (__DEV__) console.log('Cancel invite error:', error);
-                            Alert.alert('שגיאה', 'משהו השתבש');
+                            Alert.alert(t('common.error'), t('guestInvite.somethingWentWrong'));
                         } finally {
                             setCancelingCode(null);
                         }
@@ -118,7 +120,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
 
     const handleCreateInvite = async () => {
         if (selectedChildren.length === 0) {
-            Alert.alert('שגיאה', 'יש לבחור לפחות ילד אחד');
+            Alert.alert(t('common.error'), t('guestInvite.selectAtLeastOne'));
             return;
         }
 
@@ -130,12 +132,12 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
             if (!targetFamilyId) {
                 const firstChild = allChildren.find(c => selectedChildren.includes(c.childId)) || allChildren[0];
                 if (!firstChild) {
-                    Alert.alert('שגיאה', 'לא נמצא ילד');
+                    Alert.alert(t('common.error'), t('guestInvite.childNotFound'));
                     return;
                 }
                 const newFamily = await createFamily(firstChild.childId, firstChild.childName);
                 if (!newFamily) {
-                    Alert.alert('שגיאה', 'לא הצלחנו ליצור משפחה');
+                    Alert.alert(t('common.error'), t('guestInvite.familyCreateFailed'));
                     return;
                 }
                 targetFamilyId = newFamily.id;
@@ -152,11 +154,11 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                 // Refresh active invites after creating new one
                 loadActiveInvites();
             } else {
-                Alert.alert('שגיאה', 'לא הצלחנו ליצור קוד הזמנה');
+                Alert.alert(t('common.error'), t('guestInvite.inviteCreateFailed'));
             }
         } catch (error) {
             if (__DEV__) console.log('Guest invite error:', error);
-            Alert.alert('שגיאה', 'משהו השתבש');
+            Alert.alert(t('common.error'), t('guestInvite.somethingWentWrong'));
         } finally {
             setIsLoading(false);
         }
@@ -178,7 +180,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
             .join(', ');
         try {
             await Share.share({
-                message: `הוזמנת לצפות ב${childNames}! 👶\n\nקוד ההזמנה שלך: ${inviteCode}\n\nהורד את האפליקציה והזן את הקוד.`,
+                message: `${t('guestInvite.invitedToView', { names: childNames })}\n\n${t('guestInvite.inviteCode', { code: inviteCode })}\n\n${t('guestInvite.downloadApp')}`,
             });
         } catch (error) {
             if (__DEV__) console.log('Share error:', error);

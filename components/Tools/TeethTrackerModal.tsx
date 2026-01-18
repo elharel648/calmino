@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { X, Check } from 'lucide-react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image, Platform } from 'react-native';
+import { X, Check, Sparkles } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { db } from '../../services/firebaseConfig';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface TeethTrackerModalProps {
     visible: boolean;
@@ -126,7 +128,6 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
     };
 
     const handleDateChange = async (event: any, selectedDate?: Date) => {
-        setShowDatePicker(false);
         if (selectedDate && selectedTooth && activeChild?.childId) {
             const newDate = selectedDate;
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -144,6 +145,8 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                 console.error('Failed to save tooth', e);
             }
         }
+        setShowDatePicker(false);
+        setSelectedTooth(null);
     };
 
     // Toggle logic: If user cancels date picker but wants to remove tooth?
@@ -187,20 +190,35 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-            <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }]}>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
                 {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9' }]}>
-                        <X size={24} color={theme.textPrimary} />
+                <Animated.View 
+                    entering={FadeInDown.duration(400).springify().damping(15)}
+                    style={[styles.header, { borderBottomColor: theme.border }]}
+                >
+                    <TouchableOpacity 
+                        onPress={onClose} 
+                        style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}
+                        activeOpacity={0.7}
+                    >
+                        <X size={22} color={theme.textSecondary} strokeWidth={2.5} />
                     </TouchableOpacity>
-                    <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
+                    <View style={styles.headerContent}>
+                        <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                            <Sparkles size={20} color="#8B5CF6" strokeWidth={2.5} />
+                        </View>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
+                    </View>
                     <View style={{ width: 40 }} />
-                </View>
+                </Animated.View>
 
-                <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                     {/* Main Oval Chart */}
-                    <View style={styles.chartContainer}>
+                    <Animated.View 
+                        entering={FadeInDown.duration(400).delay(100).springify().damping(15)}
+                        style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    >
                         {/* Center Labels */}
                         <View style={styles.centerLabels}>
                             <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>שיניים עליונות</Text>
@@ -211,12 +229,15 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                         {TEETH_CONFIG.map(renderTooth)}
 
                         {/* Side Labels */}
-                        <Text style={[styles.sideLabel, { left: 10, top: '50%' }]}>שמאל</Text>
-                        <Text style={[styles.sideLabel, { right: 10, top: '50%' }]}>ימין</Text>
-                    </View>
+                        <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>שמאל</Text>
+                        <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>ימין</Text>
+                    </Animated.View>
 
                     {/* Stats / Legend Card */}
-                    <View style={[styles.legendCard, { backgroundColor: theme.card }]}>
+                    <Animated.View 
+                        entering={FadeInDown.duration(400).delay(200).springify().damping(15)}
+                        style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    >
                         <View style={styles.legendRow}>
                             <View style={[styles.legendDot, { backgroundColor: '#F87171' }]} />
                             <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת מרכזית</Text>
@@ -237,25 +258,102 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                             <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
                             <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת שנייה</Text>
                         </View>
-                    </View>
+                    </Animated.View>
 
-                    <View style={[styles.statsRow, { marginTop: 20 }]}>
-                        <Text style={[styles.statsText, { color: theme.textPrimary }]}>
-                            סה"כ שיניים שבקעו: {Object.keys(teethData).length} / 20
-                        </Text>
-                    </View>
+                    <Animated.View 
+                        entering={FadeInDown.duration(400).delay(300).springify().damping(15)}
+                        style={styles.statsRow}
+                    >
+                        <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
+                            <Text style={[styles.statsText, { color: theme.textPrimary }]}>
+                                סה"כ שיניים שבקעו: {Object.keys(teethData).length} / 20
+                            </Text>
+                            {Object.keys(teethData).length === 20 && (
+                                <View style={styles.completeBadge}>
+                                    <Sparkles size={16} color={theme.primary} strokeWidth={2} />
+                                    <Text style={[styles.completeText, { color: theme.primary }]}>כל השיניים בקעו! 🎉</Text>
+                                </View>
+                            )}
+                        </View>
+                    </Animated.View>
 
                 </ScrollView>
 
+                {/* Custom Date Picker Modal */}
                 {showDatePicker && (
-                    <DateTimePicker
-                        value={currentDate}
-                        mode="date"
-                        display="spinner"
-                        onChange={handleDateChange}
-                        maximumDate={new Date()}
-                        textColor={theme.textPrimary} // Fix for dark mode
-                    />
+                    <Modal transparent visible={showDatePicker} animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
+                        <View style={styles.datePickerOverlay}>
+                            {Platform.OS === 'ios' && (
+                                <BlurView
+                                    intensity={20}
+                                    tint={isDarkMode ? 'dark' : 'light'}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            )}
+                            <TouchableOpacity 
+                                style={StyleSheet.absoluteFill}
+                                activeOpacity={1}
+                                onPress={() => setShowDatePicker(false)}
+                            />
+                            <Animated.View 
+                                entering={FadeInDown.duration(300).springify().damping(15)}
+                                style={[styles.datePickerModal, { backgroundColor: theme.card }]}
+                            >
+                                <View style={[styles.datePickerHeader, { borderBottomColor: theme.border }]}>
+                                    <Text style={[styles.datePickerTitle, { color: theme.textPrimary }]}>
+                                        מתי בקעה השן?
+                                    </Text>
+                                    <TouchableOpacity 
+                                        onPress={() => setShowDatePicker(false)}
+                                        style={[styles.datePickerCloseBtn, { backgroundColor: theme.inputBackground }]}
+                                        activeOpacity={0.7}
+                                    >
+                                        <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
+                                    </TouchableOpacity>
+                                </View>
+                                
+                                <View style={styles.datePickerContent}>
+                                    <DateTimePicker
+                                        value={currentDate}
+                                        mode="date"
+                                        display="spinner"
+                                        onChange={(event, date) => {
+                                            if (date) {
+                                                setCurrentDate(date);
+                                            }
+                                        }}
+                                        maximumDate={new Date()}
+                                        textColor={theme.textPrimary}
+                                        locale="he-IL"
+                                    />
+                                </View>
+
+                                <View style={[styles.datePickerActions, { borderTopColor: theme.border }]}>
+                                    <TouchableOpacity
+                                        style={[styles.datePickerCancelBtn, { backgroundColor: theme.cardSecondary }]}
+                                        onPress={() => {
+                                            setShowDatePicker(false);
+                                            setSelectedTooth(null);
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.datePickerBtnText, { color: theme.textSecondary }]}>ביטול</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.datePickerConfirmBtn, { backgroundColor: theme.primary }]}
+                                        onPress={() => {
+                                            if (selectedTooth && activeChild?.childId) {
+                                                handleDateChange({} as any, currentDate);
+                                            }
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={[styles.datePickerBtnText, { color: theme.card }]}>אישור</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </Animated.View>
+                        </View>
+                    </Modal>
                 )}
             </View>
         </Modal>
@@ -270,17 +368,33 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
-        paddingTop: 24,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    headerContent: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 10,
+    },
+    iconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     closeBtn: {
-        padding: 8,
-        backgroundColor: '#F3F4F6',
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     title: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 22,
+        fontWeight: '700',
+        letterSpacing: -0.5,
     },
     content: {
         padding: 20,
@@ -291,10 +405,15 @@ const styles = StyleSheet.create({
         width: 350,
         height: 420,
         position: 'relative',
-        // backgroundColor: '#111', // Debug
-        borderRadius: 20,
+        borderRadius: 24,
         marginTop: 20,
         marginBottom: 20,
+        borderWidth: StyleSheet.hairlineWidth,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
     },
     centerLabels: {
         position: 'absolute',
@@ -325,19 +444,25 @@ const styles = StyleSheet.create({
     },
     sideLabel: {
         position: 'absolute',
-        color: '#64748B',
-        fontSize: 14,
+        fontSize: 13,
+        fontWeight: '600',
     },
 
     // Legend
     legendCard: {
         width: '100%',
-        padding: 16,
-        borderRadius: 16,
+        padding: 20,
+        borderRadius: 20,
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'center',
-        gap: 12,
+        gap: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     legendRow: {
         flexDirection: 'row-reverse',
@@ -351,14 +476,112 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     legendText: {
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
+        fontWeight: '600',
+        letterSpacing: -0.2,
     },
     statsRow: {
         alignItems: 'center',
+        marginTop: 20,
+        width: '100%',
+    },
+    statsCard: {
+        width: '100%',
+        padding: 20,
+        borderRadius: 20,
+        alignItems: 'center',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'transparent',
     },
     statsText: {
         fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    completeBadge: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 16,
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    },
+    completeText: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    // Date Picker Modal
+    datePickerOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    datePickerModal: {
+        width: '100%',
+        maxWidth: 340,
+        borderRadius: 24,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.25,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    datePickerHeader: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    datePickerTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    datePickerCloseBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    datePickerContent: {
+        paddingVertical: 20,
+        minHeight: 200,
+    },
+    datePickerActions: {
+        flexDirection: 'row-reverse',
+        gap: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    datePickerCancelBtn: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    datePickerConfirmBtn: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    datePickerBtnText: {
+        fontSize: 16,
         fontWeight: '700',
     }
 });

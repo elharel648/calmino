@@ -33,6 +33,7 @@ import SitterProfileScreen from './pages/SitterProfileScreen';
 import SitterRegistrationScreen from './pages/SitterRegistrationScreen';
 import SitterDashboardScreen from './pages/SitterDashboardScreen';
 import ChatScreen from './pages/ChatScreen';
+import ParentBookingsScreen from './pages/ParentBookingsScreen';
 
 import { checkIfBabyExists } from './services/babyService';
 import { SleepTimerProvider, useSleepTimer } from './context/SleepTimerContext';
@@ -61,19 +62,22 @@ const BabysitterStack = createNativeStackNavigator();
 
 // Removed LoaderScreen - using native splash instead
 
-const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => (
-  <View style={styles.loaderContainer}>
-    <View style={styles.lockIconContainer}>
-      <Lock size={50} color="#4f46e5" />
-    </View>
-    <Text style={styles.lockTitle}>האפליקציה נעולה</Text>
-    <Text style={styles.lockSubtitle}>נדרש אימות ביומטרי לכניסה</Text>
+const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
+  const { theme, isDarkMode } = useTheme();
+  return (
+    <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+      <View style={[styles.lockIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF' }]}>
+        <Lock size={50} color={theme.primary} />
+      </View>
+      <Text style={[styles.lockTitle, { color: theme.textPrimary }]}>האפליקציה נעולה</Text>
+      <Text style={[styles.lockSubtitle, { color: theme.textSecondary }]}>נדרש אימות ביומטרי לכניסה</Text>
 
-    <TouchableOpacity style={styles.unlockButton} onPress={onUnlock}>
-      <Text style={styles.unlockButtonText}>לחץ לאימות</Text>
-    </TouchableOpacity>
-  </View>
-);
+      <TouchableOpacity style={[styles.unlockButton, { backgroundColor: theme.primary }]} onPress={onUnlock}>
+        <Text style={[styles.unlockButtonText, { color: theme.card }]}>לחץ לאימות</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
   return (
@@ -204,6 +208,7 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="SitterRegistration" component={SitterRegistrationScreen} />
       <BabysitterStack.Screen name="SitterDashboard" component={SitterDashboardScreen} />
       <BabysitterStack.Screen name="ChatScreen" component={ChatScreen} />
+      <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
     </BabysitterStack.Navigator>
   );
 }
@@ -485,11 +490,11 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff' },
-  loaderText: { marginTop: 10, fontSize: 16, color: '#4f46e5', fontWeight: '600' },
-  lockIconContainer: { marginBottom: 20, padding: 20, backgroundColor: '#EEF2FF', borderRadius: 50 },
-  lockTitle: { fontSize: 24, fontWeight: 'bold', color: '#1f2937', marginBottom: 8 },
-  lockSubtitle: { fontSize: 16, color: '#6b7280', marginBottom: 30 },
-  unlockButton: { backgroundColor: '#4f46e5', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 25 },
-  unlockButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loaderText: { marginTop: 10, fontSize: 16, fontWeight: '600' },
+  lockIconContainer: { marginBottom: 20, padding: 20, borderRadius: 50 },
+  lockTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  lockSubtitle: { fontSize: 16, marginBottom: 30 },
+  unlockButton: { paddingVertical: 12, paddingHorizontal: 30, borderRadius: 25 },
+  unlockButtonText: { fontSize: 16, fontWeight: 'bold' }
 });

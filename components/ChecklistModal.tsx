@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Animated, Dimensions, Platform } from 'react-native';
 import { X, CheckCircle, Baby, Heart, Thermometer, Hand, BedDouble, Ear, Sparkles, ListChecks } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../context/ThemeContext';
+import Reanimated, { FadeInDown } from 'react-native-reanimated';
 
 interface ChecklistModalProps {
     visible: boolean;
@@ -9,6 +12,7 @@ interface ChecklistModalProps {
 }
 
 export default function ChecklistModal({ visible, onClose }: ChecklistModalProps) {
+    const { theme, isDarkMode } = useTheme();
     const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
 
     // Animations
@@ -66,27 +70,57 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
     const progress = checkedItems.size / checklistItems.length;
 
     return (
-        <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-            <View style={styles.overlay}>
+        <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
+            <Animated.View style={[styles.overlay, { opacity: fadeAnim, backgroundColor: theme.modalOverlay }]}>
+                {Platform.OS === 'ios' && (
+                    <BlurView
+                        intensity={20}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
+                    />
+                )}
+                <TouchableOpacity 
+                    style={StyleSheet.absoluteFill}
+                    activeOpacity={1}
+                    onPress={onClose}
+                />
                 <Animated.View
                     style={[
                         styles.container,
-                        { transform: [{ translateY: slideAnim }], opacity: fadeAnim }
+                        { 
+                            backgroundColor: theme.card,
+                            transform: [{ translateY: slideAnim }], 
+                            opacity: fadeAnim 
+                        }
                     ]}
                 >
+                    {/* Drag Handle */}
+                    <View style={styles.dragHandle}>
+                        <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+                    </View>
+
                     {/* Header */}
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <X size={20} color="#6B7280" strokeWidth={2} />
+                    <Reanimated.View 
+                        entering={FadeInDown.duration(400).springify().damping(15)}
+                        style={[styles.header, { borderBottomColor: theme.border }]}
+                    >
+                        <TouchableOpacity 
+                            onPress={onClose} 
+                            style={[styles.closeButton, { backgroundColor: theme.inputBackground }]}
+                            activeOpacity={0.7}
+                        >
+                            <X size={20} color={theme.textSecondary} strokeWidth={2} />
                         </TouchableOpacity>
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={styles.mainTitle}>צ'קליסט הרגעה</Text>
-                            <ListChecks size={20} color="#1F2937" strokeWidth={2} />
+                            <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>צ'קליסט הרגעה</Text>
+                            <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                                <ListChecks size={18} color="#8B5CF6" strokeWidth={2} />
+                            </View>
                         </View>
 
                         <View style={{ width: 36 }} />
-                    </View>
+                    </Reanimated.View>
 
                     {/* Content */}
                     <ScrollView
@@ -95,50 +129,70 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Progress - Minimal */}
-                        <View style={styles.progressContainer}>
-                            <View style={styles.progressBar}>
-                                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+                        <Reanimated.View 
+                            entering={FadeInDown.duration(400).delay(50).springify().damping(15)}
+                            style={styles.progressContainer}
+                        >
+                            <View style={[styles.progressBar, { backgroundColor: theme.cardSecondary }]}>
+                                <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: theme.primary }]} />
                             </View>
-                            <Text style={styles.progressText}>{checkedItems.size}/{checklistItems.length}</Text>
-                        </View>
+                            <Text style={[styles.progressText, { color: theme.textSecondary }]}>{checkedItems.size}/{checklistItems.length}</Text>
+                        </Reanimated.View>
 
                         {/* Checklist - Ultra Clean */}
                         {checklistItems.map((item, index) => {
                             const isChecked = checkedItems.has(index);
                             const { Icon } = item;
                             return (
-                                <TouchableOpacity
+                                <Reanimated.View
                                     key={index}
-                                    style={[styles.checkItem, isChecked && styles.checkItemChecked]}
-                                    onPress={() => toggleCheckItem(index)}
-                                    activeOpacity={0.7}
+                                    entering={FadeInDown.duration(400).delay(100 + index * 50).springify().damping(15)}
                                 >
-                                    <View style={[styles.checkCircle, isChecked && styles.checkCircleChecked]}>
-                                        {isChecked && <CheckCircle size={16} color="#fff" />}
-                                    </View>
-                                    <View style={styles.checkIconWrapper}>
-                                        <Icon size={18} color={isChecked ? '#9CA3AF' : '#6B7280'} strokeWidth={1.5} />
-                                    </View>
-                                    <Text style={[styles.checkText, isChecked && styles.checkTextDone]}>
-                                        {item.text}
-                                    </Text>
-                                </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.checkItem, { borderBottomColor: theme.border }, isChecked && styles.checkItemChecked]}
+                                        onPress={() => toggleCheckItem(index)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[
+                                            styles.checkCircle, 
+                                            { borderColor: theme.border },
+                                            isChecked && [styles.checkCircleChecked, { backgroundColor: theme.primary, borderColor: theme.primary }]
+                                        ]}>
+                                            {isChecked && <CheckCircle size={16} color={theme.card} />}
+                                        </View>
+                                        <View style={styles.checkIconWrapper}>
+                                            <Icon size={18} color={isChecked ? theme.textTertiary : theme.textSecondary} strokeWidth={1.5} />
+                                        </View>
+                                        <Text style={[
+                                            styles.checkText, 
+                                            { color: theme.textPrimary },
+                                            isChecked && [styles.checkTextDone, { color: theme.textTertiary }]
+                                        ]}>
+                                            {item.text}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </Reanimated.View>
                             );
                         })}
 
                         {/* All Checked - Subtle */}
                         {checkedItems.size === checklistItems.length && (
-                            <View style={styles.allCheckedCard}>
-                                <Sparkles size={24} color="#6B7280" strokeWidth={1.5} />
-                                <Text style={styles.allCheckedTitle}>בדקת הכל</Text>
-                                <Text style={styles.allCheckedText}>
+                            <Reanimated.View 
+                                entering={FadeInDown.duration(400).delay(400).springify().damping(15)}
+                                style={[styles.allCheckedCard, { backgroundColor: theme.cardSecondary }]}
+                            >
+                                <View style={[styles.sparklesIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                                    <Sparkles size={24} color={theme.primary} strokeWidth={1.5} />
+                                </View>
+                                <Text style={[styles.allCheckedTitle, { color: theme.textPrimary }]}>בדקת הכל</Text>
+                                <Text style={[styles.allCheckedText, { color: theme.textSecondary }]}>
                                     לפעמים תינוקות פשוט צריכים לבכות.{'\n'}נשום עמוק, אתה הורה מדהים.
                                 </Text>
-                            </View>
+                            </Reanimated.View>
                         )}
                     </ScrollView>
                 </Animated.View>
-            </View>
+            </Animated.View>
         </Modal>
     );
 }
@@ -146,40 +200,56 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'flex-end',
     },
     container: {
-        backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        maxHeight: '90%',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        maxHeight: '92%',
         minHeight: '60%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
     },
-
+    dragHandle: {
+        alignItems: 'center',
+        paddingTop: 12,
+        paddingBottom: 8,
+    },
+    dragHandleBar: {
+        width: 36,
+        height: 5,
+        borderRadius: 3,
+    },
     // Header - Minimal
     header: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 16,
         paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     closeButton: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#F9FAFB',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    iconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
     mainTitle: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#1F2937',
+        fontSize: 20,
+        fontWeight: '700',
         letterSpacing: -0.3,
     },
 
@@ -196,51 +266,44 @@ const styles = StyleSheet.create({
     progressContainer: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 24,
         gap: 12,
     },
     progressBar: {
         flex: 1,
-        height: 4,
-        backgroundColor: '#F3F4F6',
-        borderRadius: 2,
+        height: 6,
+        borderRadius: 3,
         overflow: 'hidden',
     },
     progressFill: {
         height: '100%',
-        backgroundColor: '#1F2937',
-        borderRadius: 2,
+        borderRadius: 3,
     },
     progressText: {
         fontSize: 13,
-        fontWeight: '500',
-        color: '#9CA3AF',
+        fontWeight: '600',
     },
 
     // Checklist - Ultra Clean
     checkItem: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         gap: 12,
     },
     checkItemChecked: {
-        opacity: 0.5,
+        opacity: 0.6,
     },
     checkCircle: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        borderWidth: 1.5,
-        borderColor: '#D1D5DB',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
     },
     checkCircleChecked: {
-        backgroundColor: '#1F2937',
-        borderColor: '#1F2937',
     },
     checkIconWrapper: {
         width: 28,
@@ -248,35 +311,41 @@ const styles = StyleSheet.create({
     },
     checkText: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '500',
-        color: '#374151',
         textAlign: 'right',
+        letterSpacing: -0.2,
     },
     checkTextDone: {
         textDecorationLine: 'line-through',
-        color: '#9CA3AF',
     },
 
     // All Checked - Subtle
     allCheckedCard: {
-        backgroundColor: '#F9FAFB',
         padding: 24,
-        borderRadius: 16,
+        borderRadius: 20,
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 24,
+    },
+    sparklesIcon: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
     },
     allCheckedTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1F2937',
-        marginTop: 12,
+        fontSize: 18,
+        fontWeight: '700',
+        marginTop: 4,
+        letterSpacing: -0.3,
     },
     allCheckedText: {
-        fontSize: 13,
-        color: '#6B7280',
+        fontSize: 14,
         textAlign: 'center',
-        marginTop: 6,
-        lineHeight: 20,
+        marginTop: 8,
+        lineHeight: 22,
+        letterSpacing: -0.2,
     },
 });

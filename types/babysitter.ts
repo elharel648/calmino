@@ -61,6 +61,8 @@ export interface BabysitterBooking {
 
     // Meta
     notes?: string;
+    rated?: boolean; // Has parent rated this booking?
+    ratedAt?: Timestamp; // When was it rated?
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
@@ -114,6 +116,21 @@ export interface Review {
     rating: number; // 1-5
     text?: string;
     tags?: ReviewTag[];
+
+    // New features
+    helpfulCount?: number; // How many found this helpful
+    helpfulBy?: string[]; // User IDs who marked as helpful
+    sitterResponse?: {
+        text: string;
+        createdAt: Timestamp;
+    };
+    isVerified?: boolean; // Verified booking review
+    categoryRatings?: {
+        reliability?: number; // 1-5
+        professionalism?: number; // 1-5
+        kidsInteraction?: number; // 1-5
+        cleanliness?: number; // 1-5
+    };
 
     createdAt: Timestamp;
 }
@@ -180,4 +197,61 @@ export const REVIEW_TAG_LABELS: Record<ReviewTag, string> = {
     clean_organized: 'מסודרת ונקייה',
     flexible: 'גמישה',
     professional: 'מקצועית',
+};
+
+// ===================
+// BADGES
+// ===================
+
+export type SitterBadge = 
+    | 'top_sitter'        // ⭐ סיטר מוביל - מעל 4.8 עם 20+ ביקורות
+    | 'highly_recommended' // 🏆 מומלץ ביותר - מעל 95% המלצות (4-5 כוכבים)
+    | 'vip_sitter'        // 💎 סיטר VIP - מעל 50 ביקורות
+    | 'rising_star'       // ✨ חדש ומומלץ - סיטר חדש עם ביקורות מעולות
+    | 'available_now';    // ⚡ זמין עכשיו - זמין כרגע
+
+export interface BadgeInfo {
+    type: SitterBadge;
+    label: string;
+    icon: string;
+    color: string;
+    bgColor: string;
+}
+
+export const BADGE_INFO: Record<SitterBadge, BadgeInfo> = {
+    top_sitter: {
+        type: 'top_sitter',
+        label: 'סיטר מוביל',
+        icon: '⭐',
+        color: '#FBBF24',
+        bgColor: '#FEF3C7',
+    },
+    highly_recommended: {
+        type: 'highly_recommended',
+        label: 'מומלץ ביותר',
+        icon: '🏆',
+        color: '#F59E0B',
+        bgColor: '#FEF3C7',
+    },
+    vip_sitter: {
+        type: 'vip_sitter',
+        label: 'סיטר VIP',
+        icon: '💎',
+        color: '#8B5CF6',
+        bgColor: '#EDE9FE',
+    },
+    rising_star: {
+        type: 'rising_star',
+        label: 'חדש ומומלץ',
+        icon: '✨',
+        color: '#10B981',
+        bgColor: '#D1FAE5',
+    },
+    available_now: {
+        type: 'available_now',
+        label: 'זמין עכשיו',
+        icon: '⚡',
+        color: '#3B82F6',
+        bgColor: '#DBEAFE',
+    },
 };

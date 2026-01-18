@@ -16,6 +16,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
     const { theme } = useTheme();
     const { allChildren, activeChild, setActiveChild } = useActiveChild();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
     // Don't show if no children at all
     if (allChildren.length === 0) {
@@ -54,8 +55,14 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                 >
                     {/* Avatar */}
                     <View style={[styles.triggerAvatar, { borderColor: theme.primary }]}>
-                        {activeChild?.photoUrl ? (
-                            <Image source={{ uri: activeChild.photoUrl }} style={styles.triggerAvatarImage} />
+                        {activeChild?.photoUrl && !imageErrors.has(activeChild.childId) ? (
+                            <Image 
+                                source={{ uri: activeChild.photoUrl }} 
+                                style={styles.triggerAvatarImage}
+                                onError={() => {
+                                    setImageErrors(prev => new Set(prev).add(activeChild.childId));
+                                }}
+                            />
                         ) : (
                             <View style={[styles.triggerAvatarPlaceholder, { backgroundColor: theme.primary }]}>
                                 <Text style={styles.triggerInitials}>
@@ -134,8 +141,14 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                                 styles.rowAvatarWrapper,
                                                 isActive && styles.rowAvatarWrapperActive
                                             ]}>
-                                                {child.photoUrl ? (
-                                                    <Image source={{ uri: child.photoUrl }} style={styles.rowAvatar} />
+                                                {child.photoUrl && !imageErrors.has(child.childId) ? (
+                                                    <Image 
+                                                        source={{ uri: child.photoUrl }} 
+                                                        style={styles.rowAvatar}
+                                                        onError={() => {
+                                                            setImageErrors(prev => new Set(prev).add(child.childId));
+                                                        }}
+                                                    />
                                                 ) : (
                                                     <View style={[
                                                         styles.rowAvatarPlaceholder,
@@ -260,8 +273,14 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                             onPress={() => handleSelect(child)}
                             activeOpacity={0.8}
                         >
-                            {child.photoUrl ? (
-                                <Image source={{ uri: child.photoUrl }} style={styles.avatar} />
+                            {child.photoUrl && !imageErrors.has(child.childId) ? (
+                                <Image 
+                                    source={{ uri: child.photoUrl }} 
+                                    style={styles.avatar}
+                                    onError={() => {
+                                        setImageErrors(prev => new Set(prev).add(child.childId));
+                                    }}
+                                />
                             ) : (
                                 <View style={[
                                     styles.avatarPlaceholder,

@@ -160,6 +160,31 @@ service cloud.firestore {
     }
 
     // ===================
+    // REVIEWS COLLECTION
+    // ===================
+    match /reviews/{reviewId} {
+      // Read: any authenticated user (reviews are public for all sitters)
+      allow read: if isAuthenticated();
+      
+      // Create: any authenticated user (parent can create review)
+      allow create: if isAuthenticated() && request.resource.data.parentId == request.auth.uid;
+      
+      // Update: 
+      // - Parent can update their own review
+      // - Sitter can add response to their review (only sitterResponse field)
+      // - Anyone can update helpfulCount/helpfulBy (for marking as helpful)
+      allow update: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        (resource.data.babysitterId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sitterResponse'])) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount', 'helpfulBy'])
+      );
+      
+      // Delete: only parent who created the review
+      allow delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+    }
+
+    // ===================
     // NOTIFICATIONS COLLECTION
     // ===================
     match /notifications/{notificationId} {

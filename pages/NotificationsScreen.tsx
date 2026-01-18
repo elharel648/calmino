@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 
 export default function NotificationsScreen() {
     const navigation = useNavigation();
-    const { isDarkMode } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const [refreshing, setRefreshing] = useState(false);
     const [notifications, setNotifications] = useState<StoredNotification[]>([]);
     const [loading, setLoading] = useState(true);
@@ -133,22 +133,22 @@ export default function NotificationsScreen() {
     };
 
     return (
-        <SafeAreaView style={[styles.container, isDarkMode && styles.containerDark]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <ChevronRight size={24} color={isDarkMode ? '#fff' : '#1C1C1E'} />
+                    <ChevronRight size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, isDarkMode && styles.textDark]}>התראות</Text>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>התראות</Text>
                 <View style={styles.headerActions}>
                     {unreadCount > 0 && (
                         <TouchableOpacity onPress={markAllAsRead} style={styles.markAllBtn}>
-                            <Text style={styles.markAllText}>סמן הכל</Text>
+                            <Text style={[styles.markAllText, { color: theme.primary }]}>סמן הכל</Text>
                         </TouchableOpacity>
                     )}
                     {notifications.length > 0 && (
                         <TouchableOpacity onPress={clearAllNotifications} style={styles.clearBtn}>
-                            <Trash2 size={18} color="#EF4444" />
+                            <Trash2 size={18} color={theme.danger} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -164,14 +164,14 @@ export default function NotificationsScreen() {
             >
                 {notifications.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <Bell size={48} color={isDarkMode ? '#4B5563' : '#D1D5DB'} strokeWidth={1.5} />
-                        <Text style={[styles.emptyTitle, isDarkMode && styles.textDark]}>אין התראות</Text>
-                        <Text style={[styles.emptySubtitle, isDarkMode && styles.textSecondaryDark]}>
+                        <Bell size={48} color={theme.textTertiary} strokeWidth={1.5} />
+                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין התראות</Text>
+                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                             כאן יופיעו התראות ותזכורות
                         </Text>
                     </View>
                 ) : (
-                    <View style={[styles.listContainer, isDarkMode && { backgroundColor: '#2C2C2E' }]}>
+                    <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
                         {notifications.map((notification, index) => {
                             const Icon = getIcon(notification.type);
                             const iconColor = getIconColor(notification.type);
@@ -183,7 +183,7 @@ export default function NotificationsScreen() {
                                             styles.notificationCard,
                                             !notification.isRead && styles.notificationUnread,
                                             notification.isUrgent && styles.notificationUrgent,
-                                            isDarkMode && styles.cardDark,
+                                            { backgroundColor: theme.card, borderBottomColor: theme.border },
                                             index === 0 && { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
                                             index === notifications.length - 1 && { borderBottomLeftRadius: 20, borderBottomRightRadius: 20, borderBottomWidth: 0 },
                                         ]}
@@ -207,18 +207,18 @@ export default function NotificationsScreen() {
                                                     {!notification.isRead && (
                                                         <View style={[styles.unreadDot, { backgroundColor: iconColor }]} />
                                                     )}
-                                                    <Text style={[styles.notificationTitle, isDarkMode && styles.textDark]}>
+                                                    <Text style={[styles.notificationTitle, { color: theme.textPrimary }]}>
                                                         {notification.title}
                                                     </Text>
                                                 </View>
-                                                <Text style={[styles.notificationMessage, isDarkMode && styles.textSecondaryDark]}>
+                                                <Text style={[styles.notificationMessage, { color: theme.textSecondary }]}>
                                                     {notification.message}
                                                 </Text>
                                                 <View style={styles.notificationMeta}>
-                                                    <Text style={[styles.notificationTime, isDarkMode && styles.textTertiaryDark]}>
+                                                    <Text style={[styles.notificationTime, { color: theme.textTertiary }]}>
                                                         {formatTime(notification.timestamp)}
                                                     </Text>
-                                                    <Clock size={12} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                                                    <Clock size={12} color={theme.textTertiary} />
                                                 </View>
                                             </View>
                                         </TouchableOpacity>
@@ -234,7 +234,7 @@ export default function NotificationsScreen() {
                                             }}
                                             activeOpacity={0.7}
                                         >
-                                            <X size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                                            <X size={18} color={theme.textTertiary} />
                                         </TouchableOpacity>
                                     </Animated.View>
                                 </React.Fragment>
@@ -250,10 +250,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9FAFB',
-    },
-    containerDark: {
-        backgroundColor: '#1C1C1E',
     },
     header: {
         flexDirection: 'row-reverse',
@@ -262,7 +258,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E5E7EB',
     },
     backBtn: {
         padding: 4,
@@ -271,17 +266,12 @@ const styles = StyleSheet.create({
         fontSize: 34,
         fontWeight: '700',
         letterSpacing: 0.37,
-        color: '#1C1C1E',
-    },
-    textDark: {
-        color: '#FFFFFF',
     },
     markAllBtn: {
         padding: 4,
     },
     markAllText: {
         fontSize: 15,
-        color: '#6366F1',
         fontWeight: '400',
         letterSpacing: -0.24,
     },
@@ -304,7 +294,6 @@ const styles = StyleSheet.create({
     listContainer: {
         borderRadius: 20,
         overflow: 'hidden',
-        backgroundColor: '#FFFFFF',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,
@@ -320,25 +309,21 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '400',
         letterSpacing: -0.41,
-        color: '#6B7280',
         marginTop: 16,
     },
     emptySubtitle: {
         fontSize: 13,
         fontWeight: '400',
         letterSpacing: -0.08,
-        color: '#9CA3AF',
         marginTop: 4,
     },
     notificationCard: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         marginBottom: 0,
-        backgroundColor: '#FFFFFF',
         borderRadius: 0,
         borderWidth: 0,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E5E7EB',
         shadowColor: 'transparent',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0,
@@ -361,10 +346,6 @@ const styles = StyleSheet.create({
         borderRightWidth: 3,
         borderRightColor: '#EF4444',
         borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-    cardDark: {
-        backgroundColor: '#2C2C2E',
-        borderBottomColor: '#3A3A3C',
     },
     iconContainer: {
         width: 32,
@@ -396,11 +377,9 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '400',
         letterSpacing: -0.41,
-        color: '#1C1C1E',
     },
     notificationMessage: {
         fontSize: 13,
-        color: '#6B7280',
         lineHeight: 18,
         marginBottom: 4,
         letterSpacing: -0.08,
@@ -412,7 +391,6 @@ const styles = StyleSheet.create({
     },
     notificationTime: {
         fontSize: 13,
-        color: '#9CA3AF',
         fontWeight: '400',
         letterSpacing: -0.08,
     },
@@ -420,13 +398,6 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#3B82F6',
-    },
-    textSecondaryDark: {
-        color: '#9CA3AF',
-    },
-    textTertiaryDark: {
-        color: '#6B7280',
     },
     emptyIconContainer: {
         position: 'relative',

@@ -20,6 +20,9 @@ const translations: Record<Language, Record<string, string>> = {
     'common.retry': 'נסה שוב',
     'common.back': 'חזרה',
     'common.sortBy': 'מיון לפי',
+    'common.savedSuccess': 'נשמר בהצלחה',
+    'common.undo': 'בטל',
+    'common.undone': 'בוטל',
 
     // Home Screen
     'home.greeting.morning': 'בוקר טוב',
@@ -173,6 +176,12 @@ const translations: Record<Language, Record<string, string>> = {
     'tracking.both': 'שניהם',
     'tracking.saveError': 'לא ניתן לשמור את הנתונים. אנא נסה שנית.',
 
+    // Errors
+    'errors.loginRequired': 'נדרש להתחבר כדי לשמור',
+    'errors.noChildProfile': 'לא נמצא פרופיל ילד',
+    'errors.cannotUndo': 'לא ניתן לבטל את הפעולה',
+    'errors.saveError': 'שגיאה בשמירה. נסה שוב.',
+
     // Account/Settings
     'account.editFamilyName': 'ערוך שם משפחה',
     'account.enterNewFamilyName': 'הזן שם חדש למשפחה',
@@ -254,6 +263,34 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.sendMessage': 'שלח הודעה',
     'settings.hours': 'שעות',
 
+    // Sitter Settings
+    'sitter.settings': 'הגדרות סיטר',
+    'sitter.saveSettings': 'שמור הגדרות',
+    'sitter.editProfile': 'ערוך פרופיל סיטר',
+    'sitter.deleteAccount': 'מחק חשבון סיטר',
+    'sitter.city': 'עיר',
+    'sitter.cityHint': 'הורים יוכלו למצוא אותך לפי עיר זו',
+    'sitter.cityPlaceholder': 'תל אביב, ירושלים, חיפה...',
+    'sitter.contactPhone': 'טלפון ליצירת קשר',
+    'sitter.pricePerHour': 'מחיר לשעה',
+    'sitter.notifications': 'התראות',
+    'sitter.availableForBookings': 'זמין להזמנות',
+    'sitter.changePhoto': 'שנה תמונה',
+    'sitter.uploading': 'מעלה...',
+
+    // Guest Invite Modal
+    'guestInvite.cancelInvite': 'ביטול הזמנה',
+    'guestInvite.cancelConfirm': 'האם לבטל את ההזמנה? האורח לא יוכל להשתמש בקוד זה.',
+    'guestInvite.cancelFailed': 'לא הצלחנו לבטל את ההזמנה',
+    'guestInvite.selectAtLeastOne': 'יש לבחור לפחות ילד אחד',
+    'guestInvite.childNotFound': 'לא נמצא ילד',
+    'guestInvite.familyCreateFailed': 'לא הצלחנו ליצור משפחה',
+    'guestInvite.inviteCreateFailed': 'לא הצלחנו ליצור קוד הזמנה',
+    'guestInvite.somethingWentWrong': 'משהו השתבש',
+    'guestInvite.invitedToView': 'הוזמנת לצפות ב{names}! 👶',
+    'guestInvite.inviteCode': 'קוד ההזמנה שלך: {code}',
+    'guestInvite.downloadApp': 'הורד את האפליקציה והזן את הקוד.',
+
     // Alerts
     'alerts.notAvailable': 'לא זמין',
     'alerts.biometricNotSupported': 'המכשיר לא תומך ב-Face ID/Touch ID או שלא הוגדר קוד גישה.',
@@ -305,6 +342,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Timeline
     'timeline.title': 'סדר היום',
     'timeline.noRecordsToday': 'אין תיעודים להיום',
+    'timeline.emptyHint': 'הוסף אירועים דרך הכפתורים למעלה',
     'timeline.showLess': 'הצג פחות',
     'timeline.showMore': 'הצג {count} נוספים',
     'timeline.yesterday': 'אתמול',
@@ -364,6 +402,9 @@ const translations: Record<Language, Record<string, string>> = {
     'common.error': 'Error',
     'common.retry': 'Retry',
     'common.back': 'Back',
+    'common.savedSuccess': 'Saved successfully',
+    'common.undo': 'Undo',
+    'common.undone': 'Undone',
     'common.sortBy': 'Sort by',
 
     // Home Screen
@@ -516,6 +557,12 @@ const translations: Record<Language, Record<string, string>> = {
     'tracking.both': 'Both',
     'tracking.saveError': 'Could not save data. Please try again.',
 
+    // Errors
+    'errors.loginRequired': 'Login required to save',
+    'errors.noChildProfile': 'No child profile found',
+    'errors.cannotUndo': 'Cannot undo action',
+    'errors.saveError': 'Error saving. Please try again.',
+
     // Account/Settings
     'account.editFamilyName': 'Edit Family Name',
     'account.enterNewFamilyName': 'Enter new family name',
@@ -648,6 +695,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Timeline
     'timeline.title': 'Daily Timeline',
     'timeline.noRecordsToday': 'No records for today',
+    'timeline.emptyHint': 'Add events using the buttons above',
     'timeline.showLess': 'Show Less',
     'timeline.showMore': 'Show {count} More',
     'timeline.yesterday': 'Yesterday',
@@ -695,6 +743,34 @@ const translations: Record<Language, Record<string, string>> = {
     'babysitter.openDashboard': 'Open Dashboard →',
     'babysitter.rating': 'Rating',
     'babysitter.price': 'Price',
+
+    // Sitter Settings
+    'sitter.settings': 'Sitter Settings',
+    'sitter.saveSettings': 'Save Settings',
+    'sitter.editProfile': 'Edit Sitter Profile',
+    'sitter.deleteAccount': 'Delete Sitter Account',
+    'sitter.city': 'City',
+    'sitter.cityHint': 'Parents will be able to find you by this city',
+    'sitter.cityPlaceholder': 'Tel Aviv, Jerusalem, Haifa...',
+    'sitter.contactPhone': 'Contact Phone',
+    'sitter.pricePerHour': 'Price Per Hour',
+    'sitter.notifications': 'Notifications',
+    'sitter.availableForBookings': 'Available for Bookings',
+    'sitter.changePhoto': 'Change Photo',
+    'sitter.uploading': 'Uploading...',
+
+    // Guest Invite Modal
+    'guestInvite.cancelInvite': 'Cancel Invite',
+    'guestInvite.cancelConfirm': 'Are you sure you want to cancel this invite? The guest will not be able to use this code.',
+    'guestInvite.cancelFailed': 'Failed to cancel invite',
+    'guestInvite.selectAtLeastOne': 'Please select at least one child',
+    'guestInvite.childNotFound': 'Child not found',
+    'guestInvite.familyCreateFailed': 'Failed to create family',
+    'guestInvite.inviteCreateFailed': 'Failed to create invite code',
+    'guestInvite.somethingWentWrong': 'Something went wrong',
+    'guestInvite.invitedToView': 'You have been invited to view {names}! 👶',
+    'guestInvite.inviteCode': 'Your invite code: {code}',
+    'guestInvite.downloadApp': 'Download the app and enter the code.',
 
     // Time Labels
     'time.every': 'Every',

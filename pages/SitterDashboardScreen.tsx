@@ -27,6 +27,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useActiveChild } from '../context/ActiveChildContext';
+import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -87,6 +88,7 @@ const formatRelativeTime = (date: Date): string => {
 const SitterDashboardScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
     const { activeChild } = useActiveChild();
+    const { t } = useLanguage();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -409,29 +411,29 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         style={[styles.declineBtn, { backgroundColor: theme.cardSecondary }]}
                         onPress={() => handleDeclineBooking(booking.id)}
                     >
-                        <XCircle size={16} color="#9CA3AF" strokeWidth={1.5} />
-                        <Text style={styles.declineBtnText}>דחה</Text>
+                        <XCircle size={16} color={theme.textSecondary} strokeWidth={1.5} />
+                        <Text style={[styles.declineBtnText, { color: theme.textSecondary }]}>דחה</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={styles.acceptBtn}
+                        style={[styles.acceptBtn, { backgroundColor: theme.primary }]}
                         onPress={() => handleAcceptBooking(booking.id)}
                     >
-                        <CheckCircle size={16} color="#fff" strokeWidth={1.5} />
-                        <Text style={styles.acceptBtnText}>אשר</Text>
+                        <CheckCircle size={16} color={theme.card} strokeWidth={1.5} />
+                        <Text style={[styles.acceptBtnText, { color: theme.card }]}>אשר</Text>
                     </TouchableOpacity>
                 </View>
             )}
 
             {booking.status === 'accepted' && (
-                <View style={[styles.statusBadge, { backgroundColor: '#DBEAFE' }]}>
-                    <Text style={[styles.statusText, { color: '#2563EB' }]}>מאושר</Text>
+                <View style={[styles.statusBadge, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE' }]}>
+                    <Text style={[styles.statusText, { color: isDarkMode ? '#60A5FA' : '#2563EB' }]}>מאושר</Text>
                 </View>
             )}
 
             {booking.status === 'completed' && (
-                <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
-                    <CheckCircle size={14} color="#059669" strokeWidth={1.5} />
-                    <Text style={[styles.statusText, { color: '#059669' }]}>הושלם</Text>
+                <View style={[styles.statusBadge, { backgroundColor: isDarkMode ? 'rgba(48, 209, 88, 0.2)' : '#D1FAE5' }]}>
+                    <CheckCircle size={14} color={theme.success} strokeWidth={1.5} />
+                    <Text style={[styles.statusText, { color: theme.success }]}>הושלם</Text>
                 </View>
             )}
         </View>
@@ -440,7 +442,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color="#6366F1" />
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
@@ -449,7 +451,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Background Gradient - Apple Style */}
             <LinearGradient
-                colors={['#FAFAFA', '#F5F5F5', '#FAFAFA']}
+                colors={isDarkMode 
+                    ? [theme.background, theme.cardSecondary, theme.background]
+                    : ['#FAFAFA', '#F5F5F5', '#FAFAFA']
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
@@ -458,7 +463,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                 }
                 contentContainerStyle={styles.scrollContent}
             >
@@ -489,7 +494,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </Text>
                             {sitterProfile?.rating ? (
                                 <View style={styles.ratingRow}>
-                                    <Star size={14} color="#FBBF24" fill="#FBBF24" />
+                                    <Star size={14} color={theme.warning} fill={theme.warning} />
                                     <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
                                         {sitterProfile.rating.toFixed(1)} ({sitterProfile.reviewCount})
                                     </Text>
@@ -498,7 +503,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         </View>
                         {sitterProfile?.isVerified && (
                             <View style={styles.verifiedBadge}>
-                                <CheckCircle size={16} color="#10B981" fill="#D1FAE5" />
+                                <CheckCircle size={16} color={theme.success} fill={isDarkMode ? 'rgba(48, 209, 88, 0.2)' : '#D1FAE5'} />
                             </View>
                         )}
                     </View>
@@ -533,8 +538,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         <View>
                             <MessageSquare size={20} color={theme.textSecondary} strokeWidth={1.5} />
                             {chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length > 0 && (
-                                <View style={styles.unreadBadge}>
-                                    <Text style={styles.unreadBadgeText}>{chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length}</Text>
+                                <View style={[styles.unreadBadge, { backgroundColor: theme.danger }]}>
+                                    <Text style={[styles.unreadBadgeText, { color: theme.card }]}>{chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length}</Text>
                                 </View>
                             )}
                         </View>
@@ -596,7 +601,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         {/* Header */}
                         <View style={styles.settingsHeader}>
                             <View style={{ width: 24 }} />
-                            <Text style={[styles.settingsTitle, { color: theme.textPrimary }]}>הגדרות סיטר</Text>
+                            <Text style={[styles.settingsTitle, { color: theme.textPrimary }]}>{t('sitter.settings')}</Text>
                             <TouchableOpacity onPress={() => setSettingsVisible(false)}>
                                 <X size={22} color={theme.textSecondary} />
                             </TouchableOpacity>
@@ -605,7 +610,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContent}>
                             {/* Profile Photo */}
                             <TouchableOpacity
-                                style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', alignItems: 'center', paddingVertical: 20 }]}
+                                style={[styles.settingsSection, { backgroundColor: theme.card, borderColor: theme.border, alignItems: 'center', paddingVertical: 20 }]}
                                 onPress={handleChangePhoto}
                                 disabled={uploadingPhoto}
                             >
@@ -613,11 +618,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {profilePhoto ? (
                                         <Image
                                             source={{ uri: profilePhoto }}
-                                            style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6' }}
+                                            style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: theme.cardSecondary }}
                                         />
                                     ) : (
-                                        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
-                                            <User size={36} color="#9CA3AF" />
+                                        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' }}>
+                                            <User size={36} color={theme.textSecondary} />
                                         </View>
                                     )}
                                     <View style={{
@@ -627,56 +632,56 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         width: 28,
                                         height: 28,
                                         borderRadius: 14,
-                                        backgroundColor: '#6366F1',
+                                        backgroundColor: theme.primary,
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         borderWidth: 2,
-                                        borderColor: '#FFFFFF',
+                                        borderColor: theme.card,
                                     }}>
                                         {uploadingPhoto ? (
-                                            <ActivityIndicator size="small" color="#fff" />
+                                            <ActivityIndicator size="small" color={theme.card} />
                                         ) : (
-                                            <Camera size={14} color="#fff" />
+                                            <Camera size={14} color={theme.card} />
                                         )}
                                     </View>
                                 </View>
-                                <Text style={{ fontSize: 14, color: '#6366F1', marginTop: 10, fontWeight: '500' }}>
-                                    {uploadingPhoto ? 'מעלה...' : 'שנה תמונה'}
-                                </Text>
+                                    <Text style={{ fontSize: 14, color: theme.primary, marginTop: 10, fontWeight: '500' }}>
+                                        {uploadingPhoto ? t('sitter.uploading') : t('sitter.changePhoto')}
+                                    </Text>
                             </TouchableOpacity>
 
                             {/* City - used for search */}
-                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
-                                    <MapPin size={18} color="#6366F1" />
-                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>עיר</Text>
+                                    <MapPin size={18} color={theme.primary} />
+                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>{t('sitter.city')}</Text>
                                 </View>
                                 <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginBottom: 8 }}>
-                                    הורים יוכלו למצוא אותך לפי עיר זו
+                                    {t('sitter.cityHint')}
                                 </Text>
                                 <TextInput
                                     style={[
                                         styles.settingsInput,
-                                        { backgroundColor: '#F9FAFB', color: theme.textPrimary, borderColor: '#E5E7EB' }
+                                        { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.border }
                                     ]}
                                     value={sitterCity}
                                     onChangeText={setSitterCity}
-                                    placeholder="תל אביב, ירושלים, חיפה..."
+                                    placeholder={t('sitter.cityPlaceholder')}
                                     placeholderTextColor={theme.textSecondary}
                                     textAlign="right"
                                 />
                             </View>
 
                             {/* Phone */}
-                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
-                                    <Phone size={18} color="#10B981" />
-                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>טלפון ליצירת קשר</Text>
+                                    <Phone size={18} color={theme.success} />
+                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>{t('sitter.contactPhone')}</Text>
                                 </View>
                                 <TextInput
                                     style={[
                                         styles.settingsInput,
-                                        { backgroundColor: '#F9FAFB', color: theme.textPrimary, borderColor: '#E5E7EB' }
+                                        { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.border }
                                     ]}
                                     value={phoneNumber}
                                     onChangeText={setPhoneNumber}
@@ -688,64 +693,64 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </View>
 
                             {/* Hourly Rate */}
-                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <View style={styles.settingRow}>
-                                    <DollarSign size={18} color="#F59E0B" />
-                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>מחיר לשעה</Text>
+                                    <DollarSign size={18} color={theme.warning} />
+                                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>{t('sitter.pricePerHour')}</Text>
                                 </View>
                                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 }}>
                                     <TouchableOpacity
-                                        style={[styles.priceBtn, { backgroundColor: '#FEE2E2' }]}
+                                        style={[styles.priceBtn, { backgroundColor: isDarkMode ? 'rgba(255, 69, 58, 0.2)' : '#FEE2E2' }]}
                                         onPress={() => setHourlyRate(Math.max(30, hourlyRate - 5))}
                                     >
-                                        <Text style={{ fontSize: 18, color: '#EF4444', fontWeight: '600' }}>-</Text>
+                                        <Text style={{ fontSize: 18, color: theme.danger, fontWeight: '600' }}>-</Text>
                                     </TouchableOpacity>
                                     <Text style={{ fontSize: 28, fontWeight: '700', color: theme.textPrimary }}>
                                         ₪{hourlyRate}
                                     </Text>
                                     <TouchableOpacity
-                                        style={[styles.priceBtn, { backgroundColor: '#D1FAE5' }]}
+                                        style={[styles.priceBtn, { backgroundColor: isDarkMode ? 'rgba(48, 209, 88, 0.2)' : '#D1FAE5' }]}
                                         onPress={() => setHourlyRate(Math.min(200, hourlyRate + 5))}
                                     >
-                                        <Text style={{ fontSize: 18, color: '#10B981', fontWeight: '600' }}>+</Text>
+                                        <Text style={{ fontSize: 18, color: theme.success, fontWeight: '600' }}>+</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             {/* Toggle Settings */}
-                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <View style={styles.settingToggleRow}>
                                     <View style={styles.settingRow}>
-                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>התראות</Text>
-                                        <Bell size={18} color="#6366F1" />
+                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>{t('sitter.notifications')}</Text>
+                                        <Bell size={18} color={theme.primary} />
                                     </View>
                                     <Switch
                                         value={notificationsEnabled}
                                         onValueChange={setNotificationsEnabled}
-                                        trackColor={{ false: '#D1D5DB', true: '#A5B4FC' }}
-                                        thumbColor={notificationsEnabled ? '#6366F1' : '#9CA3AF'}
+                                        trackColor={{ false: theme.divider, true: theme.primaryLight }}
+                                        thumbColor={notificationsEnabled ? theme.primary : theme.textTertiary}
                                     />
                                 </View>
                             </View>
 
-                            <View style={[styles.settingsSection, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
+                            <View style={[styles.settingsSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <View style={styles.settingToggleRow}>
                                     <View style={styles.settingRow}>
-                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>זמין להזמנות</Text>
-                                        <Calendar size={18} color="#10B981" />
+                                        <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>{t('sitter.availableForBookings')}</Text>
+                                        <Calendar size={18} color={theme.success} />
                                     </View>
                                     <Switch
                                         value={availableForBookings}
                                         onValueChange={setAvailableForBookings}
-                                        trackColor={{ false: '#D1D5DB', true: '#86EFAC' }}
-                                        thumbColor={availableForBookings ? '#10B981' : '#9CA3AF'}
+                                        trackColor={{ false: theme.divider, true: isDarkMode ? 'rgba(48, 209, 88, 0.3)' : '#86EFAC' }}
+                                        thumbColor={availableForBookings ? theme.success : theme.textTertiary}
                                     />
                                 </View>
                             </View>
 
                             {/* Save Button */}
                             <TouchableOpacity
-                                style={styles.saveSettingsBtn}
+                                style={[styles.saveSettingsBtn, { backgroundColor: theme.primary }]}
                                 onPress={async () => {
                                     const userId = auth.currentUser?.uid;
                                     if (!userId) {
@@ -778,9 +783,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 disabled={savingSettings}
                             >
                                 {savingSettings ? (
-                                    <ActivityIndicator size="small" color="#fff" />
+                                    <ActivityIndicator size="small" color={theme.card} />
                                 ) : (
-                                    <Text style={styles.saveSettingsBtnText}>שמור הגדרות</Text>
+                                    <Text style={[styles.saveSettingsBtnText, { color: theme.card }]}>{t('sitter.saveSettings')}</Text>
                                 )}
                             </TouchableOpacity>
 
@@ -793,8 +798,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     navigation.navigate('SitterRegistration');
                                 }}
                             >
-                                <Edit3 size={14} color="#6B7280" strokeWidth={1.5} />
-                                <Text style={styles.editProfileBtnText}>ערוך פרופיל סיטר</Text>
+                                <Edit3 size={14} color={theme.textSecondary} strokeWidth={1.5} />
+                                <Text style={[styles.editProfileBtnText, { color: theme.textSecondary }]}>{t('sitter.editProfile')}</Text>
                             </TouchableOpacity>
 
                             {/* Delete Account */}
@@ -833,7 +838,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 }}
                             >
                                 <Trash2 size={13} color="#9CA3AF" strokeWidth={1.5} />
-                                <Text style={styles.deleteAccountBtnText}>מחק חשבון סיטר</Text>
+                                <Text style={styles.deleteAccountBtnText}>{t('sitter.deleteAccount')}</Text>
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
@@ -891,10 +896,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Text style={[styles.dayLabel, { color: theme.textPrimary }]}>{day.label}</Text>
                                     <View style={[
                                         styles.dayCheckbox,
-                                        { backgroundColor: availableDays.includes(day.key) ? '#10B981' : '#E5E7EB' }
+                                        { backgroundColor: availableDays.includes(day.key) ? theme.success : theme.border }
                                     ]}>
                                         {availableDays.includes(day.key) && (
-                                            <CheckCircle size={16} color="#fff" strokeWidth={2} />
+                                            <CheckCircle size={16} color={theme.card} strokeWidth={2} />
                                         )}
                                     </View>
                                 </TouchableOpacity>
@@ -902,14 +907,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                             {/* Save Button */}
                             <TouchableOpacity
-                                style={styles.saveSettingsBtn}
+                                style={[styles.saveSettingsBtn, { backgroundColor: theme.primary }]}
                                 onPress={() => {
                                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                     setAvailabilityModalVisible(false);
                                     Alert.alert('נשמר!', `הזמינות עודכנה ל-${availableDays.length} ימים בשבוע`);
                                 }}
                             >
-                                <Text style={styles.saveSettingsBtnText}>שמור זמינות</Text>
+                                <Text style={[styles.saveSettingsBtnText, { color: theme.card }]}>שמור זמינות</Text>
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
@@ -986,7 +991,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 {chat.lastMessage || 'התחל שיחה...'}
                                             </Text>
                                         </View>
-                                        {((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) && <View style={styles.unreadDot} />}
+                                        {((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) && <View style={[styles.unreadDot, { backgroundColor: theme.success }]} />}
                                     </TouchableOpacity>
                                 ))
                             )}
@@ -1209,7 +1214,6 @@ const styles = StyleSheet.create({
     declineBtnText: {
         fontSize: 13,
         fontWeight: '500',
-        color: '#9CA3AF',
     },
     acceptBtn: {
         flex: 2,
@@ -1219,12 +1223,10 @@ const styles = StyleSheet.create({
         gap: 6,
         paddingVertical: 10,
         borderRadius: 10,
-        backgroundColor: '#374151',
     },
     acceptBtnText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#fff',
     },
     statusBadge: {
         flexDirection: 'row',
@@ -1311,7 +1313,6 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     saveSettingsBtn: {
-        backgroundColor: '#111827',
         borderRadius: 12,
         paddingVertical: 14,
         alignItems: 'center',
@@ -1319,7 +1320,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     saveSettingsBtnText: {
-        color: '#fff',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -1332,7 +1332,6 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     editProfileBtnText: {
-        color: '#6B7280',
         fontSize: 14,
         fontWeight: '500',
     },
@@ -1382,7 +1381,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -4,
         right: -4,
-        backgroundColor: '#EF4444',
         width: 16,
         height: 16,
         borderRadius: 8,
@@ -1390,7 +1388,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     unreadBadgeText: {
-        color: '#fff',
         fontSize: 10,
         fontWeight: '700',
     },
@@ -1441,7 +1438,6 @@ const styles = StyleSheet.create({
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: '#10B981',
     },
 
     // Chat Modal Styles
@@ -1532,7 +1528,6 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: 21,
-        backgroundColor: '#10B981',
         alignItems: 'center',
         justifyContent: 'center',
     },
