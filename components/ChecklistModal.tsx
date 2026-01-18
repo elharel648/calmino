@@ -4,7 +4,8 @@ import { X, CheckCircle, Baby, Heart, Thermometer, Hand, BedDouble, Ear, Sparkle
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
-import Reanimated, { FadeInDown } from 'react-native-reanimated';
+import Reanimated from 'react-native-reanimated';
+import { ANIMATIONS } from '../utils/designSystem';
 
 interface ChecklistModalProps {
     visible: boolean;
@@ -101,7 +102,7 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
 
                     {/* Header */}
                     <Reanimated.View 
-                        entering={FadeInDown.duration(400).springify().damping(15)}
+                        entering={ANIMATIONS.fadeInDown(0)}
                         style={[styles.header, { borderBottomColor: theme.border }]}
                     >
                         <TouchableOpacity 
@@ -115,7 +116,7 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>צ'קליסט הרגעה</Text>
                             <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                                <ListChecks size={18} color="#8B5CF6" strokeWidth={2} />
+                                <ListChecks size={18} color={theme.primary} strokeWidth={2} />
                             </View>
                         </View>
 
@@ -130,7 +131,7 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
                     >
                         {/* Progress - Minimal */}
                         <Reanimated.View 
-                            entering={FadeInDown.duration(400).delay(50).springify().damping(15)}
+                            entering={ANIMATIONS.fadeInDown(50)}
                             style={styles.progressContainer}
                         >
                             <View style={[styles.progressBar, { backgroundColor: theme.cardSecondary }]}>
@@ -146,7 +147,7 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
                             return (
                                 <Reanimated.View
                                     key={index}
-                                    entering={FadeInDown.duration(400).delay(100 + index * 50).springify().damping(15)}
+                                    entering={ANIMATIONS.fadeInDown(100 + ANIMATIONS.stagger(index, 50))}
                                 >
                                     <TouchableOpacity
                                         style={[styles.checkItem, { borderBottomColor: theme.border }, isChecked && styles.checkItemChecked]}
@@ -178,7 +179,7 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
                         {/* All Checked - Subtle */}
                         {checkedItems.size === checklistItems.length && (
                             <Reanimated.View 
-                                entering={FadeInDown.duration(400).delay(400).springify().damping(15)}
+                                entering={ANIMATIONS.fadeInDown(400)}
                                 style={[styles.allCheckedCard, { backgroundColor: theme.cardSecondary }]}
                             >
                                 <View style={[styles.sparklesIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>

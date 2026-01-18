@@ -128,9 +128,9 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                             <View style={styles.header}>
                                 <View style={[
                                     styles.iconCircle,
-                                    { backgroundColor: isDarkMode ? 'rgba(14,165,233,0.15)' : '#E0F2FE' }
+                                    { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : theme.primaryLight }
                                 ]}>
-                                    <Pill size={20} color="#0EA5E9" strokeWidth={2} />
+                                    <Pill size={20} color={theme.primary} strokeWidth={2} />
                                 </View>
                                 <Text style={[styles.title, { color: theme.textPrimary }]}>
                                     תוספים יומיים
@@ -142,7 +142,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
 
                             {/* Celebration badge */}
                             {allDone && (
-                                <Animated.View style={[styles.celebrationBadge, celebrationStyle]}>
+                                <Animated.View style={[styles.celebrationBadge, { backgroundColor: theme.success }, celebrationStyle]}>
                                     <Sparkles size={16} color="#fff" strokeWidth={2} />
                                     <Text style={styles.celebrationText}>כל הכבוד! 🎉</Text>
                                 </Animated.View>
@@ -164,7 +164,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                         <View style={styles.medIconWrapper}>
                                             {meds.vitaminD ? (
                                                 <LinearGradient
-                                                    colors={['#22C55E', '#16A34A']}
+                                                    colors={[theme.success, theme.success]}
                                                     style={styles.medIconGradient}
                                                 >
                                                     <Check size={24} color="#fff" strokeWidth={2.5} />
@@ -180,14 +180,13 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                         </View>
                                         <Text style={[
                                             styles.medText,
-                                            { color: theme.textPrimary },
-                                            meds.vitaminD && styles.medTextDone
+                                            { color: meds.vitaminD ? theme.success : theme.textPrimary }
                                         ]}>
                                             ויטמין D
                                         </Text>
                                         <Text style={[
                                             styles.medStatus,
-                                            { color: meds.vitaminD ? '#16A34A' : theme.textSecondary }
+                                            { color: meds.vitaminD ? theme.success : theme.textSecondary }
                                         ]}>
                                             {meds.vitaminD ? 'ניתן ✓' : 'לא ניתן'}
                                         </Text>
@@ -208,7 +207,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                         <View style={styles.medIconWrapper}>
                                             {meds.iron ? (
                                                 <LinearGradient
-                                                    colors={['#22C55E', '#16A34A']}
+                                                    colors={[theme.success, theme.success]}
                                                     style={styles.medIconGradient}
                                                 >
                                                     <Check size={24} color="#fff" strokeWidth={2.5} />
@@ -224,14 +223,13 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                         </View>
                                         <Text style={[
                                             styles.medText,
-                                            { color: theme.textPrimary },
-                                            meds.iron && styles.medTextDone
+                                            { color: meds.iron ? theme.success : theme.textPrimary }
                                         ]}>
                                             ברזל
                                         </Text>
                                         <Text style={[
                                             styles.medStatus,
-                                            { color: meds.iron ? '#16A34A' : theme.textSecondary }
+                                            { color: meds.iron ? theme.success : theme.textSecondary }
                                         ]}>
                                             {meds.iron ? 'ניתן ✓' : 'לא ניתן'}
                                         </Text>
@@ -243,10 +241,10 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                             <View style={styles.progressContainer}>
                                 <View style={[
                                     styles.progressTrack,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB' }
+                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : theme.border }
                                 ]}>
                                     <LinearGradient
-                                        colors={['#22C55E', '#16A34A']}
+                                        colors={[theme.success, theme.success]}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 0 }}
                                         style={[
@@ -315,7 +313,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#22C55E',
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
@@ -370,9 +367,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         letterSpacing: -0.3,
-    },
-    medTextDone: {
-        color: '#16A34A',
     },
     medStatus: {
         fontSize: 12,

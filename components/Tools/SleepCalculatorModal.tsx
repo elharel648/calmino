@@ -65,7 +65,7 @@ export default function SleepCalculatorModal({ visible, onClose }: SleepCalculat
                         />
                     )}
 
-                    <View style={[styles.resultCard, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE' }]}>
+                    <View style={[styles.resultCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : theme.primaryLight }]}>
                         <Clock size={32} color={theme.primary} />
                         <Text style={[styles.resultLabel, { color: theme.primary }]}>חלון השינה הבא</Text>
                         <Text style={[styles.resultTime, { color: theme.textPrimary }]}>

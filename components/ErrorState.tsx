@@ -2,25 +2,21 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Inbox, Plus } from 'lucide-react-native';
+import { AlertCircle, RefreshCw } from 'lucide-react-native';
 
-interface EmptyStateProps {
-  icon?: React.ComponentType<any>;
-  title?: string;
+interface ErrorStateProps {
   message?: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  onRetry?: () => void;
+  retryLabel?: string;
   fullScreen?: boolean;
 }
 
-export default function EmptyState({ 
-  icon: Icon = Inbox,
-  title,
+export default function ErrorState({ 
   message,
-  actionLabel,
-  onAction,
+  onRetry,
+  retryLabel,
   fullScreen = false 
-}: EmptyStateProps) {
+}: ErrorStateProps) {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
 
@@ -30,15 +26,13 @@ export default function EmptyState({
 
   return (
     <View style={containerStyle}>
-      <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-        <Icon size={48} color={theme.primary} strokeWidth={2} />
+      <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)' }]}>
+        <AlertCircle size={48} color={theme.danger} strokeWidth={2} />
       </View>
       
-      {title && (
-        <Text style={[styles.title, { color: theme.textPrimary }]}>
-          {title}
-        </Text>
-      )}
+      <Text style={[styles.title, { color: theme.textPrimary }]}>
+        {t('errors.somethingWentWrong') || 'משהו השתבש'}
+      </Text>
       
       {message && (
         <Text style={[styles.message, { color: theme.textSecondary }]}>
@@ -46,15 +40,15 @@ export default function EmptyState({
         </Text>
       )}
       
-      {onAction && (
+      {onRetry && (
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.primary }]}
-          onPress={onAction}
+          style={[styles.retryButton, { backgroundColor: theme.primary }]}
+          onPress={onRetry}
           activeOpacity={0.8}
         >
-          <Plus size={18} color="#fff" strokeWidth={2.5} />
-          <Text style={styles.actionButtonText}>
-            {actionLabel || t('common.add') || 'הוסף'}
+          <RefreshCw size={18} color="#fff" strokeWidth={2.5} />
+          <Text style={styles.retryButtonText}>
+            {retryLabel || t('common.retry') || 'נסה שוב'}
           </Text>
         </TouchableOpacity>
       )}
@@ -97,7 +91,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 20,
   },
-  actionButton: {
+  retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
@@ -105,9 +99,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
   },
-  actionButtonText: {
+  retryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
 });
+

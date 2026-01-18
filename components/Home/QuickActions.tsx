@@ -5,7 +5,6 @@ import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import Animated, { 
-    FadeInUp, 
     useSharedValue, 
     useAnimatedStyle, 
     withSpring, 
@@ -16,6 +15,7 @@ import Animated, {
     runOnJS,
     Easing,
 } from 'react-native-reanimated';
+import { ANIMATIONS } from '../../utils/designSystem';
 import { useSleepTimer } from '../../context/SleepTimerContext';
 import { useFoodTimer } from '../../context/FoodTimerContext';
 import { MedicationsState } from '../../types/home';
@@ -386,7 +386,7 @@ const QuickActions = memo<QuickActionsProps>(({
 
         return (
             <Animated.View
-                entering={!hasQuickActionsAnimated ? FadeInUp.duration(400).delay(index * 50).springify() : undefined}
+                entering={!hasQuickActionsAnimated ? ANIMATIONS.fadeInUp(ANIMATIONS.stagger(index, 50)) : undefined}
                 style={[styles.actionButtonWrapper, containerStyle]}
             >
                 <TouchableOpacity

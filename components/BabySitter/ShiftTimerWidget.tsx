@@ -38,7 +38,7 @@ interface ShiftTimerWidgetProps {
 }
 
 const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [isPaused, setIsPaused] = useState(shift.isPaused);
     const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
@@ -164,12 +164,34 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
     };
 
     return (
-        <Animated.View style={[styles.container, { backgroundColor: theme.card }, pulseStyle]}>
+        <Animated.View style={[
+            styles.container, 
+            { 
+                backgroundColor: theme.card,
+                shadowColor: theme.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+                elevation: 8,
+            }, 
+            pulseStyle
+        ]}>
             {/* Header */}
             <View style={styles.header}>
-                <View style={[styles.liveBadge, isPaused && styles.liveBadgePaused]}>
-                    <View style={[styles.liveDot, isPaused && styles.liveDotPaused]} />
-                    <Text style={styles.liveText}>{isPaused ? 'מושהה' : 'פעיל'}</Text>
+                <View style={[
+                    styles.liveBadge, 
+                    { backgroundColor: isPaused ? (isDarkMode ? 'rgba(255, 214, 10, 0.2)' : '#FEF3C7') : (isDarkMode ? 'rgba(48, 209, 88, 0.2)' : '#DCFCE7') }
+                ]}>
+                    <View style={[
+                        styles.liveDot, 
+                        { backgroundColor: isPaused ? theme.warning : theme.success }
+                    ]} />
+                    <Text style={[
+                        styles.liveText,
+                        { color: isPaused ? theme.warning : theme.success }
+                    ]}>
+                        {isPaused ? 'מושהה' : 'פעיל'}
+                    </Text>
                 </View>
                 <Text style={[styles.babysitterName, { color: theme.textPrimary }]}>
                     👩 {shift.babysitterName || 'הבייביסיטר'} נמצאת אצלכם
@@ -178,7 +200,7 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
 
             {/* Timer Display */}
             <View style={styles.timerSection}>
-                <Clock size={24} color="#6366F1" />
+                <Clock size={24} color={theme.primary} />
                 <Text style={[styles.timerText, { color: theme.textPrimary }]}>
                     {formatTime(elapsedSeconds)}
                 </Text>
@@ -186,15 +208,15 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
 
             {/* Payment */}
             <View style={styles.paymentSection}>
-                <Text style={styles.paymentLabel}>לתשלום</Text>
-                <Text style={styles.paymentAmount}>₪{calculatePayment().toFixed(2)}</Text>
-                <Text style={styles.paymentRate}>(₪{shift.hourlyRate}/שעה)</Text>
+                <Text style={[styles.paymentLabel, { color: theme.textSecondary }]}>לתשלום</Text>
+                <Text style={[styles.paymentAmount, { color: theme.success }]}>₪{calculatePayment().toFixed(2)}</Text>
+                <Text style={[styles.paymentRate, { color: theme.textTertiary }]}>(₪{shift.hourlyRate}/שעה)</Text>
             </View>
 
             {/* Controls */}
             <View style={styles.controls}>
                 <TouchableOpacity
-                    style={[styles.controlBtn, isPaused ? styles.playBtn : styles.pauseBtn]}
+                    style={[styles.controlBtn, isPaused ? { backgroundColor: theme.success } : { backgroundColor: theme.warning }]}
                     onPress={handleTogglePause}
                 >
                     {isPaused ? (
@@ -208,7 +230,7 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={styles.endBtn}
+                    style={[styles.endBtn, { backgroundColor: theme.primary }]}
                     onPress={handleEndShift}
                 >
                     <CheckCircle size={20} color="#fff" />
@@ -224,11 +246,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         marginBottom: 16,
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
     },
     header: {
         flexDirection: 'row-reverse',
@@ -244,27 +261,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: '#DCFCE7',
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 12,
     },
     liveBadgePaused: {
-        backgroundColor: '#FEF3C7',
+        // Will be set dynamically
     },
     liveDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#10B981',
     },
     liveDotPaused: {
-        backgroundColor: '#F59E0B',
+        // Will be set dynamically
     },
     liveText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#059669',
     },
     timerSection: {
         flexDirection: 'row',
@@ -287,16 +301,13 @@ const styles = StyleSheet.create({
     },
     paymentLabel: {
         fontSize: 14,
-        color: '#6B7280',
     },
     paymentAmount: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#10B981',
     },
     paymentRate: {
         fontSize: 12,
-        color: '#9CA3AF',
     },
     controls: {
         flexDirection: 'row',
@@ -312,10 +323,10 @@ const styles = StyleSheet.create({
         borderRadius: 14,
     },
     playBtn: {
-        backgroundColor: '#10B981',
+        // Will be set dynamically
     },
     pauseBtn: {
-        backgroundColor: '#F59E0B',
+        // Will be set dynamically
     },
     endBtn: {
         flex: 1,
@@ -325,7 +336,6 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingVertical: 14,
         borderRadius: 14,
-        backgroundColor: '#6366F1',
     },
     controlBtnText: {
         color: '#fff',

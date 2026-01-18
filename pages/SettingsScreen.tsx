@@ -3,7 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut } from 'lucide-react-native';
+import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+import Animated from 'react-native-reanimated';
+import { ANIMATIONS } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -259,23 +262,23 @@ export default function SettingsScreen() {
         bounces={true}
       >
         {/* Profile Section - Centered, Minimal */}
-        <View style={styles.profileSection}>
+        <Animated.View entering={ANIMATIONS.fadeInDown(100)} style={styles.profileSection}>
           <TouchableOpacity
             onPress={handleEditUserPhoto}
             style={styles.avatarContainer}
             activeOpacity={0.8}
           >
-            <View style={styles.avatarGlow}>
+            <View style={[styles.avatarGlow, { borderColor: isDarkMode ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)' }]}>
               {userPhotoURL ? (
                 <Image source={{ uri: userPhotoURL }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? '#2D2D3A' : '#EEF2FF' }]}>
-                  <User size={48} color="#6366F1" strokeWidth={1.5} />
+                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? theme.card : '#EEF2FF' }]}>
+                  <User size={48} color={theme.primary} strokeWidth={1.5} />
                 </View>
               )}
             </View>
-            <View style={[styles.cameraBadge, { backgroundColor: theme.primary }]}>
-              <Camera size={14} color="#fff" strokeWidth={2.5} />
+            <View style={[styles.cameraBadge, { backgroundColor: theme.primary, borderColor: isDarkMode ? theme.background : '#fff' }]}>
+              <Camera size={15} color="#fff" strokeWidth={2.5} />
             </View>
           </TouchableOpacity>
 
@@ -293,9 +296,9 @@ export default function SettingsScreen() {
           {user?.email && (
             <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user.email}</Text>
           )}
-        </View>
+        </Animated.View>
         {/* Premium Card - Apple Style with Subtle Gradient */}
-        <View style={styles.section}>
+        <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.section}>
           <TouchableOpacity
             style={styles.premiumCard}
             onPress={() => {
@@ -305,36 +308,38 @@ export default function SettingsScreen() {
             activeOpacity={0.92}
           >
             <LinearGradient
-              colors={['#FF6B35', '#F7931E']}
+              colors={['#FF6B35', '#F7931E', '#FF8C42']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.premiumGradient}
             >
               <View style={styles.premiumContent}>
                 <View style={styles.premiumIconContainer}>
-                  <Crown size={22} color="#fff" strokeWidth={2} />
+                  <Crown size={22} color="#fff" strokeWidth={2.5} />
                 </View>
                 <View style={styles.premiumTextContainer}>
                   <Text style={styles.premiumTitle}>{t('account.upgradePremium')}</Text>
                   <Text style={styles.premiumSubtitle}>{t('account.premiumSubtitle')}</Text>
                 </View>
               </View>
-              <Sparkles size={18} color="rgba(255,255,255,0.5)" />
+              <View style={styles.sparklesContainer}>
+                <Sparkles size={18} color="rgba(255,255,255,0.75)" />
+              </View>
             </LinearGradient>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Family Section - Unified, Clean Design */}
-        <View style={styles.section}>
+        <Animated.View entering={ANIMATIONS.fadeInDown(300)} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('account.family')}</Text>
 
           {/* Family Info Card - Only if in a family */}
           {family && (
-            <View style={[styles.familyInfoCard, { backgroundColor: theme.card }]}>
+            <Animated.View entering={ANIMATIONS.fadeInDown(400)} style={[styles.familyInfoCard, { backgroundColor: theme.card }]}>
               <View style={styles.familyInfoHeader}>
                 <View style={styles.familyInfoLeft}>
-                  <View style={[styles.familyInfoAvatar, { backgroundColor: '#6366F1' }]}>
-                    <Users size={18} color="#fff" strokeWidth={2} />
+                  <View style={[styles.familyInfoAvatar, { backgroundColor: theme.primary }]}>
+                    <Users size={20} color="#fff" strokeWidth={2} />
                   </View>
                   <View style={styles.familyInfoText}>
                     <Text style={[styles.familyInfoName, { color: theme.textPrimary }]}>
@@ -358,7 +363,7 @@ export default function SettingsScreen() {
               </View>
 
               {/* Members List */}
-              <View style={styles.membersList}>
+              <View style={[styles.membersList, { borderTopColor: theme.divider }]}>
                 {members.map((member, index) => {
                   const isMe = member.id === auth.currentUser?.uid;
                   const roleConfig = {
@@ -369,7 +374,7 @@ export default function SettingsScreen() {
                   }[member.role] || { label: 'חבר', color: '#6366F1' };
 
                   return (
-                    <View key={member.id || index} style={[styles.memberRow, { borderTopColor: theme.divider }]}>
+                    <View key={member.id || index} style={[styles.memberRow, index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.divider }]}>
                       {/* Remove button - only for admin, not for self */}
                       {isAdmin && !isMe && member.id && (
                         <TouchableOpacity
@@ -380,7 +385,7 @@ export default function SettingsScreen() {
                           <Trash2 size={16} color="#EF4444" strokeWidth={2} />
                         </TouchableOpacity>
                       )}
-                      <View style={[styles.memberBadge, { backgroundColor: roleConfig.color + '20' }]}>
+                      <View style={[styles.memberBadge, { backgroundColor: isDarkMode ? roleConfig.color + '25' : roleConfig.color + '20' }]}>
                         <Text style={[styles.memberBadgeText, { color: roleConfig.color }]}>{roleConfig.label}</Text>
                       </View>
                       <View style={styles.memberInfo}>
@@ -391,7 +396,7 @@ export default function SettingsScreen() {
                           <Text style={[styles.memberEmail, { color: theme.textSecondary }]}>{member.email}</Text>
                         )}
                       </View>
-                      <View style={[styles.memberAvatar, { backgroundColor: roleConfig.color + '20' }]}>
+                      <View style={[styles.memberAvatar, { backgroundColor: isDarkMode ? roleConfig.color + '25' : roleConfig.color + '20' }]}>
                         <Text style={[styles.memberInitial, { color: roleConfig.color }]}>
                           {(member.name || 'מ').charAt(0).toUpperCase()}
                         </Text>
@@ -400,30 +405,31 @@ export default function SettingsScreen() {
                   );
                 })}
               </View>
-            </View>
+            </Animated.View>
           )}
 
           {/* Family Actions - Premium Design with Visual Hierarchy */}
 
           {/* PRIMARY: Create/Invite Family - Premium Gradient Card */}
           {(isAdmin || !family) && (
-            <TouchableOpacity
-              style={styles.primaryFamilyAction}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setInviteModalVisible(true);
-              }}
-              activeOpacity={0.85}
-            >
+            <Animated.View entering={ANIMATIONS.fadeInDown(500)}>
+              <TouchableOpacity
+                style={styles.primaryFamilyAction}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setInviteModalVisible(true);
+                }}
+                activeOpacity={0.85}
+              >
               <LinearGradient
-                colors={['#6366F1', '#8B5CF6']}
+                colors={['#6366F1', '#8B5CF6', '#A78BFA']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryFamilyGradient}
               >
                 <View style={styles.primaryFamilyContent}>
                   <View style={styles.primaryFamilyIconContainer}>
-                    <UserPlus size={24} color="#fff" strokeWidth={2} />
+                    <UserPlus size={24} color="#fff" strokeWidth={2.5} />
                   </View>
                   <View style={styles.primaryFamilyTextContainer}>
                     <Text style={styles.primaryFamilyTitle}>
@@ -439,13 +445,14 @@ export default function SettingsScreen() {
                     <Text style={styles.memberCountText}>{members.length}</Text>
                   </View>
                 )}
-                <ChevronLeft size={20} color="rgba(255,255,255,0.7)" strokeWidth={2} />
+                <ChevronLeft size={18} color="rgba(255,255,255,0.8)" strokeWidth={2.5} />
               </LinearGradient>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </Animated.View>
           )}
 
           {/* SECONDARY: Guest & Join Actions */}
-          <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
+          <Animated.View entering={ANIMATIONS.fadeInDown(600)} style={[styles.listContainer, { backgroundColor: theme.card }]}>
             {/* Guest invite */}
             <TouchableOpacity
               style={[styles.listItem, styles.listItemFirst]}
@@ -456,13 +463,13 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#ECFDF5' }]}>
-                  <Users size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.25)' : '#ECFDF5' }]}>
+                  <Users size={22} color="#10B981" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <View style={styles.listItemTitleRow}>
                     <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                    <View style={[styles.timeBadge, { backgroundColor: '#ECFDF5' }]}>
+                    <View style={[styles.timeBadge, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.3)' : '#D1FAE5' }]}>
                       <Text style={[styles.timeBadgeText, { color: '#10B981' }]}>24h</Text>
                     </View>
                   </View>
@@ -485,13 +492,13 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FFF7ED' }]}>
-                  <LinkIcon size={18} color="#F59E0B" strokeWidth={2.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.25)' : '#FFF7ED' }]}>
+                  <LinkIcon size={22} color="#F59E0B" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <View style={styles.listItemTitleRow}>
                     <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                    <View style={[styles.autoDetectBadge, { backgroundColor: '#FFF7ED' }]}>
+                    <View style={[styles.autoDetectBadge, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.3)' : '#FEF3C7' }]}>
                       <Text style={[styles.autoDetectText, { color: '#F59E0B' }]}>אוטומטי</Text>
                     </View>
                   </View>
@@ -502,19 +509,19 @@ export default function SettingsScreen() {
               </View>
               <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
-          </View>
+          </Animated.View>
 
           {/* Leave Family - for non-admin members only */}
           {family && !isAdmin && (
-            <View style={[styles.listContainer, { backgroundColor: theme.card, marginTop: 16 }]}>
+            <Animated.View entering={ANIMATIONS.fadeInDown(700)} style={[styles.listContainer, { backgroundColor: theme.card, marginTop: 16 }]}>
               <TouchableOpacity
                 style={[styles.listItem, styles.listItemFirst, styles.listItemLast]}
                 onPress={handleLeaveFamily}
                 activeOpacity={0.6}
               >
                 <View style={styles.listItemContent}>
-                  <View style={[styles.listItemIcon, { backgroundColor: '#FEE2E2' }]}>
-                    <LogOut size={18} color="#EF4444" strokeWidth={2.5} />
+                  <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.2)' : '#FEE2E2' }]}>
+                    <LogOut size={20} color="#EF4444" strokeWidth={2.5} />
                   </View>
                   <View style={styles.listItemTextContainer}>
                     <Text style={[styles.listItemText, { color: '#EF4444' }]}>עזוב משפחה</Text>
@@ -525,9 +532,9 @@ export default function SettingsScreen() {
                 </View>
                 <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Bottom Spacing */}
         <View style={{ height: 40 }} />
@@ -575,9 +582,19 @@ export default function SettingsScreen() {
         onRequestClose={() => setIsPremiumModalOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: theme.card }]}>
+          {Platform.OS === 'ios' && (
+            <BlurView
+              intensity={20}
+              tint={isDarkMode ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <Animated.View 
+            entering={ANIMATIONS.fadeInDown(0, 400)}
+            style={[styles.modalContainer, { backgroundColor: theme.card }]}
+          >
             {/* Header */}
-            <View style={styles.modalHeader}>
+            <Animated.View entering={ANIMATIONS.fadeInDown(100)} style={styles.modalHeader}>
               <LinearGradient
                 colors={['#FF6B35', '#F7931E']}
                 style={styles.modalIconContainer}
@@ -590,27 +607,29 @@ export default function SettingsScreen() {
               <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
                 גישה מלאה לכל התכונות המתקדמות
               </Text>
-            </View>
+            </Animated.View>
 
             {/* Plans */}
-            <View style={styles.plansContainer}>
+            <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.plansContainer}>
               {/* Monthly */}
               <TouchableOpacity
                 style={[
                   styles.planCard,
                   {
                     borderColor: selectedPlan === 'monthly' ? theme.primary : theme.divider,
-                    backgroundColor: selectedPlan === 'monthly' ? theme.primaryLight : theme.background,
+                    backgroundColor: selectedPlan === 'monthly' 
+                      ? (isDarkMode ? 'rgba(99,102,241,0.15)' : theme.primaryLight) 
+                      : (isDarkMode ? theme.card : theme.background),
                   },
                 ]}
                 onPress={() => {
                   setSelectedPlan('monthly');
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
               >
                 <Text style={[styles.planDuration, { color: theme.textPrimary }]}>{t('account.monthly')}</Text>
-                <Text style={[styles.planPrice, { color: theme.textPrimary }]}>₪19.90</Text>
+                <Text style={[styles.planPrice, { color: theme.primary }]}>₪19.90</Text>
                 <Text style={[styles.planPer, { color: theme.textSecondary }]}>{t('account.perMonth')}</Text>
               </TouchableOpacity>
 
@@ -620,89 +639,120 @@ export default function SettingsScreen() {
                   styles.planCard,
                   {
                     borderColor: selectedPlan === 'yearly' ? theme.primary : theme.divider,
-                    backgroundColor: selectedPlan === 'yearly' ? theme.primaryLight : theme.background,
+                    backgroundColor: selectedPlan === 'yearly' 
+                      ? (isDarkMode ? 'rgba(99,102,241,0.15)' : theme.primaryLight) 
+                      : (isDarkMode ? theme.card : theme.background),
                   },
                 ]}
                 onPress={() => {
                   setSelectedPlan('yearly');
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
               >
                 <View style={styles.planBadge}>
                   <Text style={styles.planBadgeText}>{t('account.save40')}</Text>
                 </View>
                 <Text style={[styles.planDuration, { color: theme.textPrimary }]}>{t('account.yearly')}</Text>
-                <Text style={[styles.planPrice, { color: theme.textPrimary }]}>₪139</Text>
+                <Text style={[styles.planPrice, { color: theme.primary }]}>₪139</Text>
                 <Text style={[styles.planPer, { color: theme.textSecondary }]}>{t('account.perYear')}</Text>
               </TouchableOpacity>
-            </View>
+            </Animated.View>
 
             {/* Features */}
-            <View style={styles.featuresContainer}>
-              <View style={styles.featureRow}>
-                <Check size={18} color="#10B981" strokeWidth={2.5} />
+            <Animated.View entering={ANIMATIONS.fadeInDown(300)} style={styles.featuresContainer}>
+              <Animated.View entering={ANIMATIONS.fadeInDown(400)} style={styles.featureRow}>
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
+                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.detailedReports')}
                 </Text>
-              </View>
-              <View style={styles.featureRow}>
-                <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.2)' }]}>
+                  <Sparkles size={18} color="#6366F1" strokeWidth={2} />
+                </View>
+              </Animated.View>
+              <Animated.View entering={ANIMATIONS.fadeInDown(450)} style={styles.featureRow}>
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
+                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.exportData')}
                 </Text>
-              </View>
-              <View style={styles.featureRow}>
-                <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.2)' }]}>
+                  <Download size={18} color="#10B981" strokeWidth={2} />
+                </View>
+              </Animated.View>
+              <Animated.View entering={ANIMATIONS.fadeInDown(500)} style={styles.featureRow}>
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
+                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.unlimitedSharing')}
                 </Text>
-              </View>
-              <View style={styles.featureRow}>
-                <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.2)' }]}>
+                  <Users size={18} color="#F59E0B" strokeWidth={2} />
+                </View>
+              </Animated.View>
+              <Animated.View entering={ANIMATIONS.fadeInDown(550)} style={styles.featureRow}>
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
+                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.autoBackup')}
                 </Text>
-              </View>
-              <View style={styles.featureRow}>
-                <Star size={18} color="#FF6B35" strokeWidth={2.5} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.25)' : 'rgba(139,92,246,0.2)' }]}>
+                  <Shield size={18} color="#8B5CF6" strokeWidth={2} />
+                </View>
+              </Animated.View>
+              <Animated.View entering={ANIMATIONS.fadeInDown(600)} style={styles.featureRow}>
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255,107,53,0.15)' : 'rgba(255,107,53,0.1)' }]}>
+                  <Star size={18} color="#FF6B35" strokeWidth={2.5} />
+                </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.noAds')}
                 </Text>
-              </View>
-            </View>
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255,107,53,0.25)' : 'rgba(255,107,53,0.2)' }]}>
+                  <Star size={18} color="#FF6B35" strokeWidth={2} />
+                </View>
+              </Animated.View>
+            </Animated.View>
 
             {/* Subscribe Button */}
-            <TouchableOpacity
-              style={styles.subscribeButton}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert(t('premium.comingSoon'), t('premium.comingSoonMessage'));
-                setIsPremiumModalOpen(false);
-              }}
-              activeOpacity={0.9}
-            >
-              <LinearGradient
-                colors={['#6366F1', '#8B5CF6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.subscribeButtonGradient}
+            <Animated.View entering={ANIMATIONS.fadeInDown(700)}>
+              <TouchableOpacity
+                style={styles.subscribeButton}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  Alert.alert(t('premium.comingSoon'), t('premium.comingSoonMessage'));
+                  setIsPremiumModalOpen(false);
+                }}
+                activeOpacity={0.9}
               >
-                <Text style={styles.subscribeButtonText}>
-                  {selectedPlan === 'yearly' ? t('premium.subscribeYearly') : t('premium.subscribeMonthly')}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={['#6366F1', '#8B5CF6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.subscribeButtonGradient}
+                >
+                  <Text style={styles.subscribeButtonText}>
+                    {selectedPlan === 'yearly' ? t('premium.subscribeYearly') : t('premium.subscribeMonthly')}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
 
             {/* Close */}
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setIsPremiumModalOpen(false)}
-              activeOpacity={0.6}
-            >
-              <Text style={[styles.closeButtonText, { color: theme.textSecondary }]}>{t('account.maybeLater')}</Text>
-            </TouchableOpacity>
-          </View>
+            <Animated.View entering={ANIMATIONS.fadeInDown(800)}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsPremiumModalOpen(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.closeButtonText, { color: theme.textSecondary }]}>{t('account.maybeLater')}</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -751,15 +801,14 @@ const styles = StyleSheet.create({
     borderRadius: 55,
   },
   avatarGlow: {
-    borderWidth: 3,
-    borderColor: 'rgba(99, 102, 241, 0.2)',
+    borderWidth: 3.5,
     borderRadius: 60,
-    padding: 2,
+    padding: 2.5,
     shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   avatarPlaceholder: {
     width: 110,
@@ -772,23 +821,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 4,
     right: 4,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    borderWidth: 3.5,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
   },
   nameRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     marginBottom: 8,
   },
   userName: {
@@ -804,16 +852,16 @@ const styles = StyleSheet.create({
   premiumCard: {
     marginTop: 16,
     marginBottom: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
   },
   premiumGradient: {
-    padding: 20,
+    padding: 18,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -821,60 +869,69 @@ const styles = StyleSheet.create({
   premiumContent: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     flex: 1,
   },
   premiumIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  sparklesContainer: {
+    padding: 4,
   },
   premiumTextContainer: {
     flex: 1,
     alignItems: 'flex-end',
   },
   premiumTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
     color: '#fff',
     marginBottom: 3,
-    letterSpacing: 0.38,
+    letterSpacing: -0.3,
   },
   policySubtitle: {
     fontSize: 16,
     fontWeight: '700',
   },
   premiumSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.85)',
-    letterSpacing: -0.15,
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: -0.2,
+    lineHeight: 18,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 36,
     paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginBottom: 16,
     textAlign: 'right',
     textTransform: 'uppercase',
-    opacity: 0.6,
+    opacity: 0.65,
   },
   familyInfoCard: {
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   familyInfoHeader: {
     flexDirection: 'row-reverse',
@@ -915,10 +972,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   membersList: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
+    marginTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 16,
   },
   memberRow: {
     flexDirection: 'row-reverse',
@@ -964,26 +1020,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   listContainer: {
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   listItem: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    minHeight: 64,
+    minHeight: 68,
   },
   listItemFirst: {
-    paddingTop: 18,
+    paddingTop: 20,
   },
   listItemLast: {
-    paddingBottom: 18,
+    paddingBottom: 20,
   },
   listDivider: {
     height: StyleSheet.hairlineWidth,
@@ -996,115 +1052,144 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listItemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   listItemTextContainer: {
     flex: 1,
     alignItems: 'flex-end',
   },
   listItemText: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.3,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.35,
     textAlign: 'right',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   listItemSubtext: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '400',
-    letterSpacing: -0.2,
+    letterSpacing: -0.25,
     textAlign: 'right',
-    opacity: 0.7,
+    lineHeight: 20,
   },
   listItemTitleRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 10,
-    marginBottom: 2,
+    gap: 12,
+    marginBottom: 3,
   },
   // Premium Family Action Card
   primaryFamilyAction: {
-    marginBottom: 16,
-    borderRadius: 20,
+    marginBottom: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
   },
   primaryFamilyGradient: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    padding: 20,
+    padding: 18,
   },
   primaryFamilyContent: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     flex: 1,
-    gap: 14,
+    gap: 12,
   },
   primaryFamilyIconContainer: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   primaryFamilyTextContainer: {
     flex: 1,
     alignItems: 'flex-end',
   },
   primaryFamilyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: 3,
     letterSpacing: -0.3,
   },
   primaryFamilySubtitle: {
     fontSize: 13,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.9)',
     letterSpacing: -0.2,
+    lineHeight: 18,
   },
   // Badges
   memberCountBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 8,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginLeft: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   memberCountText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   timeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   timeBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: -0.1,
   },
   autoDetectBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   autoDetectText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: -0.1,
   },
   modalOverlay: {
     flex: 1,
@@ -1178,10 +1263,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
   },
   planPrice: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
     marginBottom: 4,
-    letterSpacing: 0.36,
+    letterSpacing: -0.5,
   },
   planPer: {
     fontSize: 13,
@@ -1195,13 +1280,29 @@ const styles = StyleSheet.create({
   featureRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+    paddingVertical: 4,
+  },
+  checkContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   featureText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '400',
-    letterSpacing: -0.32,
+    fontWeight: '500',
+    letterSpacing: -0.2,
+    textAlign: 'right',
   },
   subscribeButton: {
     borderRadius: 18,

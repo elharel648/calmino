@@ -26,6 +26,8 @@ export const COLORS = {
         inputBackground: '#F5F3FF',
         modalOverlay: 'rgba(0,0,0,0.5)',
         shadow: '#000000',
+        // Shadow colors for dynamic shadows
+        shadowColor: '#000000',
     },
     dark: {
         background: '#0F0F0F',
@@ -49,6 +51,8 @@ export const COLORS = {
         inputBackground: '#2C2C2E',
         modalOverlay: 'rgba(0,0,0,0.7)',
         shadow: '#000000',
+        // Shadow colors for dynamic shadows
+        shadowColor: '#000000',
     }
 };
 

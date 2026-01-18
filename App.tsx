@@ -45,6 +45,7 @@ import { QuickActionsProvider } from './context/QuickActionsContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ScrollTrackingProvider } from './context/ScrollTrackingContext';
 import { ToastProvider } from './context/ToastContext';
+import { PremiumProvider } from './context/PremiumContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import { navigationRef } from './services/navigationService';
@@ -437,45 +438,47 @@ export default function App() {
                         setChildrenReady(true);
                         SplashScreen.hideAsync();
                       }}>
-                        <LiveActivityURLHandler />
-                        <SafeAreaProvider>
-                          <NavigationContainer
-                            ref={navigationRef}
-                            linking={{
-                              prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
-                              config: {
-                                screens: {
-                                  בית: 'home',
-                                  סטטיסטיקות: 'reports',
-                                  חשבון: 'account',
-                                  בייביסיטר: 'babysitter',
-                                  Home: {
-                                    screens: {
-                                      Home: 'home',
-                                      CreateBaby: 'create-baby',
-                                      Notifications: 'notifications',
+                        <PremiumProvider>
+                          <LiveActivityURLHandler />
+                          <SafeAreaProvider>
+                            <NavigationContainer
+                              ref={navigationRef}
+                              linking={{
+                                prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
+                                config: {
+                                  screens: {
+                                    בית: 'home',
+                                    סטטיסטיקות: 'reports',
+                                    חשבון: 'account',
+                                    בייביסיטר: 'babysitter',
+                                    Home: {
+                                      screens: {
+                                        Home: 'home',
+                                        CreateBaby: 'create-baby',
+                                        Notifications: 'notifications',
+                                      },
                                     },
-                                  },
-                                  Account: {
-                                    screens: {
-                                      Account: 'account',
-                                      FullSettings: 'settings',
+                                    Account: {
+                                      screens: {
+                                        Account: 'account',
+                                        FullSettings: 'settings',
+                                      },
                                     },
-                                  },
-                                  Babysitter: {
-                                    screens: {
-                                      SitterList: 'babysitter',
-                                      SitterProfile: 'babysitter/:sitterId',
-                                      SitterDashboard: 'babysitter/dashboard',
+                                    Babysitter: {
+                                      screens: {
+                                        SitterList: 'babysitter',
+                                        SitterProfile: 'babysitter/:sitterId',
+                                        SitterDashboard: 'babysitter/dashboard',
+                                      },
                                     },
                                   },
                                 },
-                              },
-                            }}
-                          >
-                            <MainAppNavigator />
-                          </NavigationContainer>
-                        </SafeAreaProvider>
+                              }}
+                            >
+                              <MainAppNavigator />
+                            </NavigationContainer>
+                          </SafeAreaProvider>
+                        </PremiumProvider>
                       </ActiveChildProvider>
                     </ToastProvider>
                   </ThemeProvider>

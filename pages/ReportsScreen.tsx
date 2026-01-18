@@ -17,7 +17,8 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { ANIMATIONS } from '../utils/designSystem';
 import { X, TrendingUp, TrendingDown, ChevronRight, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby } from 'lucide-react-native';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -800,7 +801,7 @@ ${comparisonText}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <Animated.View
-        entering={FadeInUp.duration(500).delay(100).springify().damping(15)}
+        entering={ANIMATIONS.fadeInUp(100, 500)}
         style={[styles.statsGrid, { position: 'relative' }]}
       >
         {statsOrder.map((key) => {
@@ -872,7 +873,7 @@ ${comparisonText}
 
       {/* Weekly Comparison - Enhanced */}
       <Animated.View
-        entering={FadeInUp.duration(500).delay(200).springify().damping(15)}
+        entering={ANIMATIONS.fadeInUp(200, 500)}
         style={[styles.comparisonSection, { backgroundColor: theme.card }]}
       >
         <View style={styles.goalsSectionHeader}>
@@ -910,7 +911,7 @@ ${comparisonText}
 
       {/* Weekly Goals & Streaks - Enhanced */}
       <Animated.View
-        entering={FadeInUp.duration(500).delay(300).springify().damping(15)}
+        entering={ANIMATIONS.fadeInUp(300, 500)}
         style={[styles.goalsSection, { backgroundColor: theme.card }]}
       >
         <View style={styles.goalsSectionHeader}>
@@ -1204,7 +1205,7 @@ ${comparisonText}
 
       {/* Header - Enhanced */}
       <Animated.View
-        entering={FadeInDown.duration(400).springify().damping(15)}
+        entering={ANIMATIONS.fadeInDown(0, 400)}
         style={[styles.header, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)', borderBottomColor: theme.border }]}
       >
         <View style={styles.headerTop}>

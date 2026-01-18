@@ -380,7 +380,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         style={styles.datePickerBtn}
         onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
       >
-        <Calendar size={16} color="#6366F1" strokeWidth={1.5} />
+        <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
         <Text style={styles.datePickerBtnText}>
           {selectedDate.toDateString() === new Date().toDateString()
             ? t('tracking.today')
@@ -486,7 +486,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Minus size={20} color="#374151" strokeWidth={1.5} />
+              <Minus size={20} color={theme.textPrimary} strokeWidth={1.5} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.amountDisplay}
@@ -525,7 +525,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Plus size={20} color="#374151" strokeWidth={1.5} />
+              <Plus size={20} color={theme.textPrimary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
         </View>
@@ -544,7 +544,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               <Text style={styles.breastTimeLabel}>{t('tracking.left')}</Text>
               <Text style={[styles.breastTimeValue, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
               <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
-                {activeSide === 'left' ? <Pause size={14} color="#fff" /> : <Play size={14} color="#6366F1" />}
+                {activeSide === 'left' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
               </View>
             </TouchableOpacity>
 
@@ -559,7 +559,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               <Text style={styles.breastTimeLabel}>{t('tracking.right')}</Text>
               <Text style={[styles.breastTimeValue, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
               <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
-                {activeSide === 'right' ? <Pause size={14} color="#fff" /> : <Play size={14} color="#6366F1" />}
+                {activeSide === 'right' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
               </View>
             </TouchableOpacity>
           </View>
@@ -583,7 +583,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               {formatTime(pumpingTimer)}
             </Text>
             <View style={[styles.pumpingTimerIconSmall, isPumpingActive && styles.pumpingTimerIconActive]}>
-              {isPumpingActive ? <Pause size={12} color="#fff" /> : <Play size={12} color="#6366F1" />}
+              {isPumpingActive ? <Pause size={12} color="#fff" /> : <Play size={12} color={theme.primary} />}
             </View>
           </TouchableOpacity>
 
@@ -599,7 +599,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Minus size={22} color="#6366F1" strokeWidth={2} />
+                <Minus size={22} color={theme.primary} strokeWidth={2} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.pumpingAmountDisplayLarge}
@@ -638,7 +638,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Plus size={22} color="#6366F1" strokeWidth={2} />
+                <Plus size={22} color={theme.primary} strokeWidth={2} />
               </TouchableOpacity>
             </View>
           </View>
@@ -661,13 +661,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       {/* Free Text Note - Available for all food types */}
       <View style={styles.sleepNoteContainer}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <MessageSquare size={14} color="#9CA3AF" strokeWidth={2} />
+          <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
           <Text style={styles.sleepNoteLabel}>{t('tracking.note')}</Text>
         </View>
         <TextInput
           style={styles.sleepNoteInput}
           placeholder={`${t('tracking.example')}: ...`}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={theme.textTertiary}
           value={foodNote}
           onChangeText={setFoodNote}
           textAlign="right"
@@ -703,21 +703,21 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           style={[styles.sleepModeBtn, sleepMode === 'timerange' && styles.sleepModeBtnActive]}
           onPress={() => { setSleepMode('timerange'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
-          <Clock size={20} color={sleepMode === 'timerange' ? '#fff' : '#9CA3AF'} strokeWidth={2} />
+          <Clock size={20} color={sleepMode === 'timerange' ? '#fff' : theme.textTertiary} strokeWidth={2} />
           <Text style={[styles.sleepModeText, sleepMode === 'timerange' && styles.sleepModeTextActive]}>{t('tracking.hours')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.sleepModeBtn, sleepMode === 'duration' && styles.sleepModeBtnActive]}
           onPress={() => { setSleepMode('duration'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
-          <Hourglass size={20} color={sleepMode === 'duration' ? '#fff' : '#9CA3AF'} strokeWidth={2} />
+          <Hourglass size={20} color={sleepMode === 'duration' ? '#fff' : theme.textTertiary} strokeWidth={2} />
           <Text style={[styles.sleepModeText, sleepMode === 'duration' && styles.sleepModeTextActive]}>{t('tracking.duration')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.sleepModeBtn, sleepMode === 'timer' && styles.sleepModeBtnActive]}
           onPress={() => { setSleepMode('timer'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
-          <Timer size={20} color={sleepMode === 'timer' ? '#fff' : '#9CA3AF'} strokeWidth={2} />
+          <Timer size={20} color={sleepMode === 'timer' ? '#fff' : theme.textTertiary} strokeWidth={2} />
           <Text style={[styles.sleepModeText, sleepMode === 'timer' && styles.sleepModeTextActive]}>{t('tracking.timer')}</Text>
         </TouchableOpacity>
       </View>
@@ -744,7 +744,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
             </Text>
             <View style={[styles.sleepTimerPlayBtn, sleepContext.isRunning && styles.sleepTimerPlayBtnActive]}>
-              {sleepContext.isRunning ? <Pause size={16} color="#fff" /> : <Play size={16} color="#6366F1" />}
+              {sleepContext.isRunning ? <Pause size={16} color="#fff" /> : <Play size={16} color={theme.primary} />}
             </View>
           </TouchableOpacity>
           <Text style={styles.sleepTimerHint}>
@@ -876,13 +876,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       {/* Free Text Note */}
       <View style={styles.sleepNoteContainer}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <MessageSquare size={14} color="#9CA3AF" strokeWidth={2} />
+          <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
           <Text style={styles.sleepNoteLabel}>{t('tracking.note')}</Text>
         </View>
         <TextInput
           style={styles.sleepNoteInput}
           placeholder="לדוגמה: ישן עמוק, התעורר פעם אחת..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={theme.textTertiary}
           value={sleepNote}
           onChangeText={setSleepNote}
           multiline
@@ -1285,7 +1285,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   activeFoodTab: {
-    backgroundColor: '#fff',
+    // backgroundColor will be set inline using theme.card
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,

@@ -17,7 +17,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import AlbumCarousel from '../Profile/AlbumCarousel';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { ANIMATIONS } from '../../utils/designSystem';
 
 interface MagicMomentsModalProps {
     visible: boolean;
@@ -125,13 +126,13 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                 >
                     {/* Premium Header */}
                     <Animated.View 
-                        entering={FadeInDown.duration(400).springify().damping(15)}
+                        entering={ANIMATIONS.fadeInDown(0)}
                         style={styles.header}
                     >
                         <View style={{ width: 40 }} />
                         <View style={styles.headerContent}>
                             <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.2)' : 'rgba(167, 139, 250, 0.15)' }]}>
-                                <Sparkles size={20} color="#A78BFA" strokeWidth={2.5} />
+                                <Sparkles size={20} color={theme.accent} strokeWidth={2.5} />
                             </View>
                             <Text style={[styles.title, { color: theme.textPrimary }]}>רגעים קסומים</Text>
                         </View>
@@ -145,7 +146,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                     </Animated.View>
 
                     {/* Premium Description */}
-                    <Animated.View entering={FadeInDown.duration(400).delay(50).springify().damping(15)}>
+                    <Animated.View entering={ANIMATIONS.fadeInDown(50)}>
                         <Text style={[styles.description, { color: theme.textSecondary }]}>
                             לחצו על חודש כדי להוסיף תמונה מהרגע הקסום
                         </Text>
@@ -153,7 +154,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
 
                     {/* Album Carousel */}
                     <Animated.View 
-                        entering={FadeInDown.duration(400).delay(100).springify().damping(15)}
+                        entering={ANIMATIONS.fadeInDown(100)}
                         style={styles.carouselContainer}
                     >
                         <AlbumCarousel
@@ -168,7 +169,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                     {/* Baby Name with Camera Icon - Premium */}
                     {baby?.name && (
                         <Animated.View 
-                            entering={FadeInDown.duration(400).delay(150).springify().damping(15)}
+                            entering={ANIMATIONS.fadeInDown(150)}
                             style={[styles.babyNameRow, { borderTopColor: theme.border }]}
                         >
                             <View style={[styles.cameraIconWrapper, { backgroundColor: theme.cardSecondary }]}>

@@ -864,13 +864,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 paddingHorizontal: 16,
                                 paddingVertical: 8,
                                 borderRadius: 20,
-                                backgroundColor: historyFilter === tab.key ? '#0EA5E9' : '#F3F4F6',
+                                backgroundColor: historyFilter === tab.key ? theme.primary : theme.cardSecondary,
                             }}
                         >
                             <Text style={{
                                 fontSize: 14,
                                 fontWeight: '600',
-                                color: historyFilter === tab.key ? '#fff' : '#6B7280',
+                                color: historyFilter === tab.key ? theme.card : theme.textSecondary,
                             }}>
                                 {tab.label}
                             </Text>
@@ -882,18 +882,18 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
                     {loadingHistory ? (
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
-                            <ActivityIndicator size="large" color="#0EA5E9" />
-                            <Text style={{ color: '#6B7280', marginTop: 12 }}>טוען...</Text>
+                            <ActivityIndicator size="large" color={theme.primary} />
+                            <Text style={{ color: theme.textSecondary, marginTop: 12 }}>טוען...</Text>
                         </View>
                     ) : filteredLogs.length === 0 ? (
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
                             <View style={{
                                 width: 80, height: 80, borderRadius: 40,
-                                backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center'
+                                backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <ClipboardList size={36} color="#9CA3AF" />
+                                <ClipboardList size={36} color={theme.textTertiary} />
                             </View>
-                            <Text style={{ fontSize: 16, color: '#1F2937', fontWeight: '600', marginTop: 16 }}>
+                            <Text style={{ fontSize: 16, color: theme.textPrimary, fontWeight: '600', marginTop: 16 }}>
                                 {historyFilter === 'all' ? 'אין שמירות עדיין' : 'אין שמירות בקטגוריה זו'}
                             </Text>
                         </View>
@@ -903,7 +903,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             const Icon = config.icon;
                             return (
                                 <View key={index} style={{
-                                    backgroundColor: '#fff',
+                                    backgroundColor: theme.card,
                                     borderRadius: 16,
                                     padding: 16,
                                     marginBottom: 12,

@@ -8,7 +8,8 @@ import { useActiveChild } from '../../context/ActiveChildContext';
 import { db } from '../../services/firebaseConfig';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { ANIMATIONS } from '../../utils/designSystem';
 
 interface TeethTrackerModalProps {
     visible: boolean;
@@ -193,7 +194,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
             <View style={[styles.container, { backgroundColor: theme.background }]}>
                 {/* Header */}
                 <Animated.View 
-                    entering={FadeInDown.duration(400).springify().damping(15)}
+                    entering={ANIMATIONS.fadeInDown(0)}
                     style={[styles.header, { borderBottomColor: theme.border }]}
                 >
                     <TouchableOpacity 
@@ -216,7 +217,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
 
                     {/* Main Oval Chart */}
                     <Animated.View 
-                        entering={FadeInDown.duration(400).delay(100).springify().damping(15)}
+                        entering={ANIMATIONS.fadeInDown(100)}
                         style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
                     >
                         {/* Center Labels */}
@@ -235,7 +236,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
 
                     {/* Stats / Legend Card */}
                     <Animated.View 
-                        entering={FadeInDown.duration(400).delay(200).springify().damping(15)}
+                        entering={ANIMATIONS.fadeInDown(200)}
                         style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
                     >
                         <View style={styles.legendRow}>
@@ -261,7 +262,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                     </Animated.View>
 
                     <Animated.View 
-                        entering={FadeInDown.duration(400).delay(300).springify().damping(15)}
+                        entering={ANIMATIONS.fadeInDown(300)}
                         style={styles.statsRow}
                     >
                         <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
@@ -296,7 +297,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                 onPress={() => setShowDatePicker(false)}
                             />
                             <Animated.View 
-                                entering={FadeInDown.duration(300).springify().damping(15)}
+                                entering={ANIMATIONS.fadeInDown(0, 300)}
                                 style={[styles.datePickerModal, { backgroundColor: theme.card }]}
                             >
                                 <View style={[styles.datePickerHeader, { borderBottomColor: theme.border }]}>

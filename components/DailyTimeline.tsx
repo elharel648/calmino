@@ -5,7 +5,8 @@ import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
-import Animated, { FadeInRight, FadeIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { ANIMATIONS } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { auth } from '../services/firebaseConfig';
@@ -265,7 +266,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           </View>
         </View>
         <View style={[styles.errorContainer, { backgroundColor: theme.card }]}>
-          <AlertCircle size={24} color="#EF4444" />
+          <AlertCircle size={24} color={theme.danger} />
           <Text style={[styles.errorText, { color: theme.textSecondary }]}>{error}</Text>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: theme.primary }]}
@@ -339,7 +340,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           return (
             <Animated.View
               key={event.id}
-              entering={FadeInRight.duration(300).delay(index * 80).springify()}
+              entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 80), 300)}
             >
               <SwipeableRow
                 onDelete={() => handleDelete(event.id)}
@@ -404,7 +405,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
       {/* Expand */}
       {hasMore && (
-        <Animated.View entering={FadeIn.duration(300).delay(visibleEvents.length * 80)}>
+        <Animated.View entering={ANIMATIONS.fadeIn(ANIMATIONS.stagger(visibleEvents.length, 80), 300)}>
           <TouchableOpacity
             style={[styles.expandButton, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
             onPress={() => {

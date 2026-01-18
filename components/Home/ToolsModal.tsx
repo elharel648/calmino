@@ -66,8 +66,8 @@ export default function ToolsModal({
             title: 'מחשבון שינה',
             subtitle: 'מתי להשכיב לישון?',
             icon: Clock,
-            color: '#60A5FA',
-            bg: '#DBEAFE',
+            color: '#0EA5E9',
+            bg: isDarkMode ? 'rgba(14,165,233,0.15)' : '#E0F2FE',
             action: onNextNapPress,
         },
         {
@@ -75,8 +75,8 @@ export default function ToolsModal({
             title: 'צ\'קליסט הרגעה',
             subtitle: 'תינוק בוכה? בוא נבדוק',
             icon: ListChecks,
-            color: '#8B5CF6',
-            bg: '#EDE9FE',
+            color: theme.primary,
+            bg: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : theme.primaryLight,
             action: onChecklistPress,
         },
     ];

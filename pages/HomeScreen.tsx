@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBa
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
-    FadeInDown,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
@@ -13,6 +12,7 @@ import Animated, {
     Extrapolation,
     Easing,
 } from 'react-native-reanimated';
+import { ANIMATIONS } from '../utils/designSystem';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import { useAnimatedScrollHandler } from 'react-native-reanimated';
@@ -416,7 +416,7 @@ export default function HomeScreen({ navigation }: any) {
                         <>
                             {/* Staggered Entry Header - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? FadeInDown.duration(500).delay(0).springify().damping(15) : undefined}
+                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(0, 500) : undefined}
                                 collapsable={false}
                             >
                                 <HeaderSection
@@ -442,7 +442,7 @@ export default function HomeScreen({ navigation }: any) {
                             {/* Active Babysitter Shift Timer */}
                             {activeShift && (
                                 <Animated.View
-                                    entering={FadeInDown.duration(400).springify()}
+                                    entering={ANIMATIONS.fadeInDown(0, 400)}
                                     style={{ marginBottom: 16 }}
                                 >
                                     <ShiftTimerWidget
@@ -454,7 +454,7 @@ export default function HomeScreen({ navigation }: any) {
 
                             {/* Staggered Entry Quick Actions - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? FadeInDown.duration(500).delay(100).springify().damping(15) : undefined}
+                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(100, 500) : undefined}
                                 collapsable={false}
                             >
                                 <QuickActions
@@ -514,7 +514,7 @@ export default function HomeScreen({ navigation }: any) {
 
                             {/* Staggered Entry Timeline - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? FadeInDown.duration(500).delay(200).springify().damping(15) : undefined}
+                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(200, 500) : undefined}
                                 collapsable={false}
                             >
                                 <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} />
@@ -522,7 +522,7 @@ export default function HomeScreen({ navigation }: any) {
 
                             {/* Share Button - Enhanced Animation */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? FadeInDown.duration(500).delay(300).springify().damping(15) : undefined}
+                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(300, 500) : undefined}
                             >
                                 <ShareStatusButton onShare={shareStatus} message={shareMessage} />
                             </Animated.View>

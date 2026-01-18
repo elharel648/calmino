@@ -223,7 +223,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
             cards.push({
                 type: 'vitamin_reminder',
                 icon: Pill,
-                color: '#8B5CF6',
+                color: theme.primary,
                 bgColor: '#F3E8FF',
                 title: t('notifications.vitaminD'),
                 subtitle: t('notifications.notYetToday'),
@@ -237,7 +237,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
             cards.push({
                 type: 'iron_reminder',
                 icon: Pill,
-                color: '#EF4444',
+                color: theme.danger,
                 bgColor: '#FEE2E2',
                 title: t('notifications.iron'),
                 subtitle: t('notifications.notYetToday'),
@@ -254,7 +254,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 cards.push({
                     type: 'feed_reminder',
                     icon: Utensils,
-                    color: isOverdue ? '#EF4444' : '#F59E0B',
+                    color: isOverdue ? theme.danger : theme.warning,
                     bgColor: isOverdue ? '#FEE2E2' : '#FEF3C7',
                     title: isOverdue ? t('notifications.feedReminder') : t('notifications.lastFeed'),
                     subtitle: feedTime.hours > 0
@@ -267,7 +267,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 cards.push({
                     type: 'feed_reminder',
                     icon: Utensils,
-                    color: '#F59E0B',
+                    color: theme.warning,
                     bgColor: '#FEF3C7',
                     title: t('notifications.firstFeed'),
                     subtitle: t('notifications.notYetToday'),
@@ -432,7 +432,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             <View style={[
                                 styles.bellContainer, 
                                 { backgroundColor: theme.inputBackground },
-                                unreadCount > 0 && [styles.bellContainerActive, { backgroundColor: isDarkMode ? 'rgba(59,130,246,0.2)' : '#EFF6FF' }]
+                                unreadCount > 0 && [styles.bellContainerActive, { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.2)' : theme.primaryLight }]
                             ]}>
                                 <Bell 
                                     size={22} 
@@ -500,11 +500,11 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         ) : (
                                             <View style={[
                                                 styles.childAvatarPlaceholder,
-                                                { backgroundColor: isActive ? '#374151' : '#E5E7EB' }
+                                                { backgroundColor: isActive ? theme.textPrimary : theme.border }
                                             ]}>
                                                 <Text style={[
                                                     styles.childInitial,
-                                                    { color: isActive ? '#fff' : '#6B7280' }
+                                                    { color: isActive ? theme.card : theme.textSecondary }
                                                 ]}>
                                                     {getInitials(child.childName)}
                                                 </Text>
@@ -537,7 +537,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     onPress={handlePlusPress}
                     activeOpacity={0.7}
                 >
-                    <Plus size={16} color="#9CA3AF" />
+                    <Plus size={16} color={theme.textTertiary} />
                     <Text style={styles.singleChildAddText}>{t('header.addChild')}</Text>
                 </TouchableOpacity>
             )}
@@ -594,7 +594,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             onPress={handleAddNewChild}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.2)' : '#EEF2FF' }]}>
+                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.2)' : theme.primaryLight }]}>
                                 <UserPlus size={24} color={theme.primary} />
                             </View>
                             <View style={styles.modalOptionText}>
@@ -609,7 +609,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             onPress={handleJoinWithCode}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#D1FAE5' }]}>
+                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(48,209,88,0.2)' : (isDarkMode ? theme.success + '20' : '#D1FAE5') }]}>
                                 <Link2 size={24} color={theme.success} />
                             </View>
                             <View style={styles.modalOptionText}>
