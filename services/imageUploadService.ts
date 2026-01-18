@@ -1,65 +1,101 @@
-// services/imageUploadService.ts - Base64 Image Upload with Compression
-// TODO: MIGRATE TO FIREBASE STORAGE WHEN BUCKET IS READY!
-// MVP: Using Base64 with careful size management
+// services/imageUploadService.ts - Firebase Storage Image Upload
+// UPDATED: Using Firebase Storage instead of Base64
 
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
-import { auth, db } from './firebaseConfig';
+import { auth, db, storage } from './firebaseConfig';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 /**
- * Compress and convert image to Base64
- * Firestore limit: 1MB per field
- * @param uri - Local image URI
- * @returns Base64 data URI (compressed)
+ * Compress image before upload
  */
-async function compressAndConvertToBase64(uri: string): Promise<string> {
+async function compressImage(uri: string): Promise<string> {
     try {
         console.log('📸 Compressing image...');
 
-        // Compress image to fit Firestore 1MB limit
         const manipResult = await ImageManipulator.manipulateAsync(
             uri,
-            [{ resize: { width: 800 } }], // Max width 800px
+            [{ resize: { width: 1024 } }], // Max 1024px
             {
-                compress: 0.7, // 70% quality
+                compress: 0.8, // 80% quality
                 format: ImageManipulator.SaveFormat.JPEG,
             }
         );
 
-        console.log('📸 Compressed URI:', manipResult.uri.substring(0, 60));
-
-        // Convert to Base64
-        const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
-
-        const dataUri = `data:image/jpeg;base64,${base64}`;
-        const sizeKB = Math.round(dataUri.length / 1024);
-
-        console.log('✅ Base64 created:', sizeKB, 'KB');
-
-        // Check if still too large (Firestore limit is ~1MB)
-        if (dataUri.length > 1000000) {
-            console.warn('⚠️ Image still large after compression:', sizeKB, 'KB');
-            throw new Error('התמונה גדולה מדי. נסה תמונה קטנה יותר (מתחת ל-500KB)');
-        }
-
-        return dataUri;
-    } catch (error: any) {
-        console.error('❌ Compression error:', error.message);
-        throw error;
+        console.log('📸 Compressed to:', manipResult.uri.substring(0, 50));
+        return manipResult.uri;
+    } catch (error) {
+        console.error('Compression failed, using original:', error);
+        return uri;
     }
 }
 
 /**
- * Upload image (Base64 to Firestore)
+ * Convert local URI to blob for upload
+ */
+async function uriToBlob(uri: string): Promise<Blob> {
+    const response = await fetch(uri);
+    return await response.blob();
+}
+
+/**
+ * Upload image to Firebase Storage
  * @param uri - Local image URI
- * @param path - Not used in Base64 mode (kept for compatibility)
- * @returns Base64 data URI
+ * @param path - Storage path (e.g., "sitterPhotos/userId/photo.jpg")
+ * @returns Download URL
  */
 export async function uploadImage(uri: string, path: string): Promise<string> {
-    return compressAndConvertToBase64(uri);
+    try {
+        console.log('📸 Starting upload to Storage...');
+
+        // Compress first
+        const compressedUri = await compressImage(uri);
+
+        // Convert to blob
+        const blob = await uriToBlob(compressedUri);
+        console.log('📸 Blob size:', blob.size, 'bytes');
+
+        // Create storage reference
+        const storageRef = ref(storage, path);
+
+        // Upload
+        console.log('📸 Uploading to:', path);
+        const snapshot = await uploadBytes(storageRef, blob, {
+            contentType: 'image/jpeg',
+        });
+
+        // Get download URL
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        console.log('✅ Upload complete:', downloadURL.substring(0, 60));
+
+        return downloadURL;
+    } catch (error: any) {
+        console.error('❌ Storage upload failed:', error.code, error.message);
+
+        // Fallback to Base64 if Storage fails
+        console.log('⚠️ Falling back to Base64...');
+        return await uploadImageAsBase64(uri);
+    }
+}
+
+/**
+ * Fallback: Upload as Base64 (if Storage fails)
+ */
+async function uploadImageAsBase64(uri: string): Promise<string> {
+    const compressedUri = await compressImage(uri);
+
+    const manipResult = await ImageManipulator.manipulateAsync(
+        compressedUri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+    );
+
+    const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+    });
+
+    return `data:image/jpeg;base64,${base64}`;
 }
 
 /**
@@ -69,15 +105,23 @@ export async function uploadSitterPhoto(uri: string): Promise<string> {
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error('Not authenticated');
 
-    const base64Uri = await compressAndConvertToBase64(uri);
+    const path = `sitterPhotos/${userId}/profile_${Date.now()}.jpg`;
+    const downloadURL = await uploadImage(uri, path);
 
+    // Update Firestore
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-        photoUrl: base64Uri,
-    });
+    await updateDoc(userRef, { photoUrl: downloadURL });
+
+    // Also update sitters collection if exists
+    try {
+        const sitterRef = doc(db, 'sitters', userId);
+        await updateDoc(sitterRef, { image: downloadURL });
+    } catch (e) {
+        // Sitter doc may not exist yet
+    }
 
     console.log('✅ Sitter photo saved');
-    return base64Uri;
+    return downloadURL;
 }
 
 /**
@@ -87,15 +131,14 @@ export async function uploadChildPhoto(childId: string, uri: string): Promise<st
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error('Not authenticated');
 
-    const base64Uri = await compressAndConvertToBase64(uri);
+    const path = `childPhotos/${userId}/${childId}/photo_${Date.now()}.jpg`;
+    const downloadURL = await uploadImage(uri, path);
 
     const babyRef = doc(db, 'babies', childId);
-    await updateDoc(babyRef, {
-        photoUrl: base64Uri,
-    });
+    await updateDoc(babyRef, { photoUrl: downloadURL });
 
     console.log('✅ Child photo saved');
-    return base64Uri;
+    return downloadURL;
 }
 
 /**
@@ -105,13 +148,12 @@ export async function uploadUserPhoto(uri: string): Promise<string> {
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error('Not authenticated');
 
-    const base64Uri = await compressAndConvertToBase64(uri);
+    const path = `userPhotos/${userId}/profile_${Date.now()}.jpg`;
+    const downloadURL = await uploadImage(uri, path);
 
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-        photoUrl: base64Uri,
-    });
+    await updateDoc(userRef, { photoUrl: downloadURL });
 
     console.log('✅ User photo saved');
-    return base64Uri;
+    return downloadURL;
 }
