@@ -172,7 +172,7 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
                     <Text style={styles.liveText}>{isPaused ? 'מושהה' : 'פעיל'}</Text>
                 </View>
                 <Text style={[styles.babysitterName, { color: theme.textPrimary }]}>
-                    👩 {shift.babysitterName} נמצאת אצלכם
+                    👩 {shift.babysitterName || 'הבייביסיטר'} נמצאת אצלכם
                 </Text>
             </View>
 

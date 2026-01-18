@@ -1022,9 +1022,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   listItemTitleRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'flex-start',
+    gap: 10,
     marginBottom: 2,
   },
   // Premium Family Action Card

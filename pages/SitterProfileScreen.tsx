@@ -10,6 +10,8 @@ import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown } from 'lucid
 import { TextInput } from 'react-native';
 import { logger } from '../utils/logger';
 import { calculateSitterBadges } from '../services/babysitterService';
+import BookingModal from '../components/BabySitter/BookingModal';
+import { auth as firebaseAuth } from '../services/firebaseConfig';
 
 interface SitterData {
     id: string;
@@ -23,6 +25,7 @@ interface SitterData {
     distance: number;
     phone?: string;
     bio?: string;
+    videoUri?: string;
 }
 
 type RootStackParamList = {
@@ -37,18 +40,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [showFullVideo, setShowFullVideo] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
+    const [bookingModalVisible, setBookingModalVisible] = useState(false);
 
     // Check if sitter has a real video (not from database yet, so hide video feature for now)
     const hasVideo = false; // TODO: Set to true when sitter.videoUri is available from Firebase
-
-    // Extended data (in reality would come from database)
-    const extendedData = {
-        ...sitterData,
-        responseRate: '100%',
-        repeatHires: 12,
-        gallery: [], // No mock photos in production
-        videoUri: null, // Only show video if sitter uploaded one
-    };
 
     if (!sitterData) return null;
 
@@ -95,11 +90,15 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     useEffect(() => {
         const fetchReviews = async () => {
             try {
+                console.log('🔍 Fetching reviews for sitter:', sitterData.id);
                 const reviews = await getBabysitterReviews(sitterData.id);
+                console.log('📊 Found reviews:', reviews.length, reviews);
                 const stats = await getReviewStats(sitterData.id);
+                console.log('📈 Review stats:', stats);
                 setReviewStats(stats);
                 setReviewsList(reviews);
             } catch (error) {
+                console.error('❌ Could not fetch reviews:', error);
                 logger.error('Could not fetch reviews:', error);
             } finally {
                 setLoadingReviews(false);
@@ -190,10 +189,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Hero Section - Static image or video */}
                 <View style={styles.heroContainer}>
-                    {hasVideo && extendedData.videoUri ? (
+                    {hasVideo && sitterData.videoUri ? (
                         <Video
                             style={styles.heroVideo}
-                            source={{ uri: extendedData.videoUri }}
+                            source={{ uri: sitterData.videoUri }}
                             resizeMode={ResizeMode.COVER}
                             isLooping
                             shouldPlay
@@ -233,10 +232,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 <MaterialIcons name="verified" size={20} color="#6366F1" />
                             </View>
                         </View>
-                        <Text style={styles.heroName}>{sitterData.name}, {sitterData.age}</Text>
+                        <Text style={styles.heroName}>{sitterData.name || 'סיטר'}, {sitterData.age ?? ''}</Text>
                         <View style={styles.ratingTag}>
                             <Ionicons name="star" size={14} color="#FBBF24" />
-                            <Text style={styles.ratingText}>{sitterData.rating} ({sitterData.reviews} ביקורות)</Text>
+                            <Text style={styles.ratingText}>{sitterData.rating ?? 0} ({sitterData.reviews ?? 0} ביקורות)</Text>
                         </View>
                         {/* Badges */}
                         {badges.length > 0 && (
@@ -262,38 +261,30 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     )}
                 </View>
 
-                {/* Stats Row */}
+                {/* Stats Row - Distance only (real data) */}
                 <View style={styles.trustRow}>
                     <View style={styles.trustItem}>
-                        <Text style={styles.trustValue}>{extendedData.repeatHires}+</Text>
-                        <Text style={styles.trustLabel}>הזמנות חוזרות</Text>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.trustItem}>
-                        <Text style={styles.trustValue}>{sitterData.distance} ק"מ</Text>
+                        <Text style={styles.trustValue}>{sitterData.distance ?? 0} ק"מ</Text>
                         <Text style={styles.trustLabel}>מרחק ממך</Text>
                     </View>
-                    <View style={styles.divider} />
-                    <View style={styles.trustItem}>
-                        <Text style={styles.trustValue}>{extendedData.responseRate}</Text>
-                        <Text style={styles.trustLabel}>אחוז תגובה</Text>
-                    </View>
-                </View>
-
-                {/* About & Gallery */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>קצת עליי</Text>
-                    <Text style={styles.bioText}>
-                        {sitterData.bio || "היי! אני סטודנטית לחינוך, יש לי ניסיון של 4 שנים. אני מביאה איתי תיק הפעלות ואוהבת יצירה."}
-                    </Text>
-                    {extendedData.gallery.length > 0 && (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.galleryScroll}>
-                            {extendedData.gallery.map((img, index) => (
-                                <Image key={index} source={{ uri: img }} style={styles.galleryImg} />
-                            ))}
-                        </ScrollView>
+                    {(sitterData.reviews ?? 0) > 0 && (
+                        <>
+                            <View style={styles.divider} />
+                            <View style={styles.trustItem}>
+                                <Text style={styles.trustValue}>{sitterData.reviews ?? 0}</Text>
+                                <Text style={styles.trustLabel}>ביקורות</Text>
+                            </View>
+                        </>
                     )}
                 </View>
+
+                {/* About - only if bio exists */}
+                {sitterData.bio && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>קצת עליי</Text>
+                        <Text style={styles.bioText}>{sitterData.bio}</Text>
+                    </View>
+                )}
 
                 {/* Reviews */}
                 <View style={styles.section}>
@@ -500,9 +491,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                         ]}>
                                             מועיל
                                         </Text>
-                                        {review.helpfulCount && review.helpfulCount > 0 && (
+                                        {review.helpfulCount != null && review.helpfulCount > 0 ? (
                                             <Text style={styles.helpfulCount}>({review.helpfulCount})</Text>
-                                        )}
+                                        ) : null}
                                     </TouchableOpacity>
                                 </View>
 
@@ -585,9 +576,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         <Ionicons name="chatbubble-ellipses" size={20} color="#6366F1" />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.whatsappBtn} onPress={handleWhatsApp}>
-                        <FontAwesome5 name="whatsapp" size={18} color="#fff" />
-                        <Text style={styles.whatsappText}>וואצאפ</Text>
+                    <TouchableOpacity
+                        style={styles.bookBtn}
+                        onPress={() => setBookingModalVisible(true)}
+                    >
+                        <Ionicons name="calendar" size={18} color="#fff" />
+                        <Text style={styles.bookBtnText}>הזמן עכשיו</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -598,15 +592,29 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     <TouchableOpacity style={styles.closeVideoBtn} onPress={() => setShowFullVideo(false)}>
                         <Ionicons name="close-circle" size={44} color="#fff" />
                     </TouchableOpacity>
-                    <Video
-                        style={styles.fullVideo}
-                        source={{ uri: extendedData.videoUri }}
-                        useNativeControls
-                        resizeMode={ResizeMode.CONTAIN}
-                        shouldPlay={showFullVideo}
-                    />
+                    {sitterData.videoUri && (
+                        <Video
+                            style={styles.fullVideo}
+                            source={{ uri: sitterData.videoUri }}
+                            useNativeControls
+                            resizeMode={ResizeMode.CONTAIN}
+                            shouldPlay={showFullVideo}
+                        />
+                    )}
                 </View>
             </Modal>
+
+            {/* Booking Modal */}
+            <BookingModal
+                visible={bookingModalVisible}
+                onClose={() => setBookingModalVisible(false)}
+                sitter={{
+                    id: sitterData.id,
+                    name: sitterData.name,
+                    hourlyRate: sitterData.price,
+                    image: sitterData.image,
+                }}
+            />
         </View>
     );
 };
@@ -1128,6 +1136,22 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '700',
         fontSize: 14
+    },
+    bookBtn: {
+        flexDirection: 'row',
+        backgroundColor: '#6366F1',
+        paddingHorizontal: 20,
+        height: 48,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        flex: 1,
+    },
+    bookBtnText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 15
     },
 
     // Video Modal

@@ -342,7 +342,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Timeline
     'timeline.title': 'סדר היום',
     'timeline.noRecordsToday': 'אין תיעודים להיום',
-    'timeline.emptyHint': 'הוסף אירועים דרך הכפתורים למעלה',
+    'timeline.emptyHint': 'הוסף אירועים דרך פעולות מהירות',
     'timeline.showLess': 'הצג פחות',
     'timeline.showMore': 'הצג {count} נוספים',
     'timeline.yesterday': 'אתמול',
@@ -695,7 +695,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Timeline
     'timeline.title': 'Daily Timeline',
     'timeline.noRecordsToday': 'No records for today',
-    'timeline.emptyHint': 'Add events using the buttons above',
+    'timeline.emptyHint': 'Add events through quick actions',
     'timeline.showLess': 'Show Less',
     'timeline.showMore': 'Show {count} More',
     'timeline.yesterday': 'Yesterday',

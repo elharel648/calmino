@@ -359,15 +359,18 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     }
                   }}
                   disabled={loading}
+                  accessibilityLabel="בדוק אם האימייל אומת"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: loading }}
                 >
                   <LinearGradient
-                    colors={['#10B981', '#059669']}
+                    colors={[theme.success, theme.successLight]}
                     style={styles.gradientBtn}
                   >
                     {loading ? (
-                      <ActivityIndicator color="white" />
+                      <ActivityIndicator color={theme.card} />
                     ) : (
-                      <Text style={styles.mainButtonText}>אימתתי! בדוק עכשיו ✓</Text>
+                      <Text style={[styles.mainButtonText, { color: theme.card }]}>אימתתי! בדוק עכשיו ✓</Text>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -385,8 +388,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       Alert.alert('שגיאה', 'נסה שוב בעוד דקה');
                     }
                   }}
+                  accessibilityLabel="שלח מייל אימות מחדש"
+                  accessibilityRole="button"
                 >
-                  <Text style={styles.resendText}>שלח מייל אימות מחדש</Text>
+                  <Text style={[styles.resendText, { color: theme.primary }]}>שלח מייל אימות מחדש</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -397,24 +402,30 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     setPassword('');
                   }}
                   style={{ marginTop: 20 }}
+                  accessibilityLabel="חזרה למסך התחברות"
+                  accessibilityRole="button"
                 >
-                  <Text style={styles.backToLogin}>חזרה למסך התחברות</Text>
+                  <Text style={[styles.backToLogin, { color: theme.textSecondary }]}>חזרה למסך התחברות</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={styles.formTitle}>{isLogin ? 'ברוכים השבים' : 'יצירת חשבון'}</Text>
-                <Text style={styles.formSubtitle}>{isLogin ? 'הכנס פרטים כדי להמשיך' : 'הצטרפו לקהילת ההורים הרגועים'}</Text>
+                <Text style={[styles.formTitle, { color: theme.textPrimary }]}>{isLogin ? 'ברוכים השבים' : 'יצירת חשבון'}</Text>
+                <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>{isLogin ? 'הכנס פרטים כדי להמשיך' : 'הצטרפו לקהילת ההורים הרגועים'}</Text>
 
                 {/* Email Input */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>אימייל</Text>
-                  <View style={[styles.inputWrapper, emailError && styles.inputError]}>
-                    <Mail size={20} color={emailError ? '#EF4444' : '#9ca3af'} style={{ marginLeft: 10 }} />
+                  <Text style={[styles.label, { color: theme.textPrimary }]}>אימייל</Text>
+                  <View style={[
+                    styles.inputWrapper, 
+                    { backgroundColor: theme.inputBackground, borderColor: theme.border },
+                    emailError && [styles.inputError, { borderColor: theme.danger, backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }]
+                  ]}>
+                    <Mail size={20} color={emailError ? theme.danger : theme.textTertiary} style={{ marginLeft: 10 }} />
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: theme.textPrimary }]}
                       placeholder="your@email.com"
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={theme.textTertiary}
                       value={email}
                       onChangeText={(text) => { setEmail(text); setEmailError(''); }}
                       keyboardType="email-address"
@@ -422,34 +433,42 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       autoCorrect={false}
                       returnKeyType="next"
                       onSubmitEditing={() => passwordRef.current?.focus()}
+                      accessibilityLabel="שדה אימייל"
+                      accessibilityHint="הזן את כתובת האימייל שלך"
                     />
                     {email.length > 0 && validateEmail(email) && (
-                      <Check size={18} color="#10B981" style={{ marginRight: 12 }} />
+                      <Check size={18} color={theme.success} style={{ marginRight: 12 }} />
                     )}
                   </View>
                   {emailError ? (
                     <View style={styles.errorRow}>
-                      <AlertCircle size={14} color="#EF4444" />
-                      <Text style={styles.errorText}>{emailError}</Text>
+                      <AlertCircle size={14} color={theme.danger} />
+                      <Text style={[styles.errorText, { color: theme.danger }]}>{emailError}</Text>
                     </View>
                   ) : null}
                 </View>
 
                 {/* Password Input */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>סיסמה</Text>
-                  <View style={[styles.inputWrapper, passwordError && styles.inputError]}>
-                    <Lock size={20} color={passwordError ? '#EF4444' : '#9ca3af'} style={{ marginLeft: 10 }} />
+                  <Text style={[styles.label, { color: theme.textPrimary }]}>סיסמה</Text>
+                  <View style={[
+                    styles.inputWrapper, 
+                    { backgroundColor: theme.inputBackground, borderColor: theme.border },
+                    passwordError && [styles.inputError, { borderColor: theme.danger, backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }]
+                  ]}>
+                    <Lock size={20} color={passwordError ? theme.danger : theme.textTertiary} style={{ marginLeft: 10 }} />
                     <TextInput
                       ref={passwordRef}
-                      style={styles.input}
+                      style={[styles.input, { color: theme.textPrimary }]}
                       placeholder="הזן סיסמה"
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={theme.textTertiary}
                       value={password}
                       onChangeText={(text) => { setPassword(text); setPasswordError(''); }}
                       secureTextEntry={!showPassword}
                       returnKeyType="done"
                       onSubmitEditing={handleAuth}
+                      accessibilityLabel="שדה סיסמה"
+                      accessibilityHint="הזן את הסיסמה שלך"
                     />
                     <TouchableOpacity
                       onPress={() => {
@@ -457,8 +476,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       }}
                       style={styles.eyeBtn}
+                      accessibilityLabel={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
+                      accessibilityRole="button"
                     >
-                      {showPassword ? <EyeOff size={20} color="#9ca3af" /> : <Eye size={20} color="#9ca3af" />}
+                      {showPassword ? <EyeOff size={20} color={theme.textTertiary} /> : <Eye size={20} color={theme.textTertiary} />}
                     </TouchableOpacity>
                   </View>
 
@@ -474,16 +495,21 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
                   {passwordError ? (
                     <View style={styles.errorRow}>
-                      <AlertCircle size={14} color="#EF4444" />
-                      <Text style={styles.errorText}>{passwordError}</Text>
+                      <AlertCircle size={14} color={theme.danger} />
+                      <Text style={[styles.errorText, { color: theme.danger }]}>{passwordError}</Text>
                     </View>
                   ) : null}
                 </View>
 
                 {/* Forgot password link */}
                 {isLogin && (
-                  <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotBtn}>
-                    <Text style={styles.forgotText}>שכחת סיסמה?</Text>
+                  <TouchableOpacity 
+                    onPress={handleForgotPassword} 
+                    style={styles.forgotBtn}
+                    accessibilityLabel="שכחת סיסמה"
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.forgotText, { color: theme.primary }]}>שכחת סיסמה?</Text>
                   </TouchableOpacity>
                 )}
 
@@ -527,24 +553,27 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onPress={handleAuth}
                   disabled={loading || !isFormValid}
                   activeOpacity={0.8}
+                  accessibilityLabel={isLogin ? 'כפתור התחברות' : 'כפתור הרשמה'}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: loading || !isFormValid }}
                 >
                   <LinearGradient
-                    colors={isFormValid ? ['#4f46e5', '#4338ca'] : ['#9ca3af', '#9ca3af']}
+                    colors={isFormValid ? [theme.primary, theme.primaryLight] : [theme.textTertiary, theme.textTertiary]}
                     style={styles.gradientBtn}
                   >
                     {loading ? (
-                      <ActivityIndicator color="white" />
+                      <ActivityIndicator color={theme.card} />
                     ) : (
-                      <Text style={styles.mainButtonText}>{isLogin ? 'התחברות' : 'הרשמה'}</Text>
+                      <Text style={[styles.mainButtonText, { color: theme.card }]}>{isLogin ? 'התחברות' : 'הרשמה'}</Text>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
 
                 {/* Divider */}
                 <View style={styles.divider}>
-                  <View style={styles.line} />
-                  <Text style={styles.orText}>או באמצעות</Text>
-                  <View style={styles.line} />
+                  <View style={[styles.line, { backgroundColor: theme.border }]} />
+                  <Text style={[styles.orText, { color: theme.textTertiary }]}>או באמצעות</Text>
+                  <View style={[styles.line, { backgroundColor: theme.border }]} />
                 </View>
 
                 {/* Social buttons */}
@@ -562,6 +591,9 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       }
                     }}
                     disabled={!request}
+                    accessibilityLabel="התחברות עם Google"
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: !request }}
                   >
                     <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} style={styles.socialIcon} />
                     <Text style={[styles.socialText, { color: theme.textPrimary }]}>Google</Text>
@@ -569,6 +601,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
                   <TouchableOpacity
                     style={[styles.socialBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    accessibilityLabel="התחברות עם Apple"
+                    accessibilityRole="button"
                     onPress={async () => {
                       try {
                         if (__DEV__) console.log('🍎 Apple Sign-In - Starting...');
@@ -622,15 +656,20 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 </View>
 
                 {/* Switch mode */}
-                <TouchableOpacity onPress={() => {
-                  setIsLogin(!isLogin);
-                  setEmailError('');
-                  setPasswordError('');
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }} style={styles.switchMode}>
-                  <Text style={styles.switchText}>
+                <TouchableOpacity 
+                  onPress={() => {
+                    setIsLogin(!isLogin);
+                    setEmailError('');
+                    setPasswordError('');
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }} 
+                  style={styles.switchMode}
+                  accessibilityLabel={isLogin ? 'מעבר למסך הרשמה' : 'מעבר למסך התחברות'}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.switchText, { color: theme.textSecondary }]}>
                     {isLogin ? 'עדיין אין לך חשבון? ' : 'כבר יש לך חשבון? '}
-                    <Text style={styles.linkText}>{isLogin ? 'הרשם עכשיו' : 'התחבר'}</Text>
+                    <Text style={[styles.linkText, { color: theme.primary }]}>{isLogin ? 'הרשם עכשיו' : 'התחבר'}</Text>
                   </Text>
                 </TouchableOpacity>
 
@@ -644,18 +683,31 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     </View>
 
                     <TouchableOpacity
-                      style={[styles.joinCodeBtn, pendingInviteCode.length === 6 && styles.joinCodeBtnActive]}
+                      style={[
+                        styles.joinCodeBtn, 
+                        { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.1)' : '#F5F3FF', borderColor: isDarkMode ? 'rgba(139,92,246,0.3)' : '#C4B5FD' },
+                        pendingInviteCode.length === 6 && [
+                          styles.joinCodeBtnActive,
+                          { borderColor: theme.success, backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5', borderStyle: 'solid' }
+                        ]
+                      ]}
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         setShowJoinCodeModal(true);
                       }}
+                      accessibilityLabel="הזן קוד הזמנה למשפחה"
+                      accessibilityRole="button"
                     >
-                      <Users size={24} color={pendingInviteCode.length === 6 ? '#10B981' : '#6366F1'} />
+                      <Users size={24} color={pendingInviteCode.length === 6 ? theme.success : theme.primary} />
                       <View style={{ marginRight: 12 }}>
-                        <Text style={[styles.joinCodeTitle, pendingInviteCode.length === 6 && { color: '#10B981' }]}>
+                        <Text style={[
+                          styles.joinCodeTitle, 
+                          { color: theme.textPrimary },
+                          pendingInviteCode.length === 6 && { color: theme.success }
+                        ]}>
                           {pendingInviteCode.length === 6 ? `קוד הזמנה: ${pendingInviteCode}` : 'קיבלתי קוד הזמנה'}
                         </Text>
-                        <Text style={styles.joinCodeSubtitle}>
+                        <Text style={[styles.joinCodeSubtitle, { color: theme.textSecondary }]}>
                           {pendingInviteCode.length === 6 ? 'הקוד יופעל בסיום ההרשמה ✓' : 'בן/בת זוג שלחו לי קוד'}
                         </Text>
                       </View>
@@ -676,37 +728,51 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             <TouchableOpacity
               style={styles.joinModalClose}
               onPress={() => setShowJoinCodeModal(false)}
+              accessibilityLabel="סגור חלון"
+              accessibilityRole="button"
             >
-              <X size={24} color="#6B7280" />
+              <X size={24} color={theme.textSecondary} />
             </TouchableOpacity>
 
-            <Users size={48} color="#6366F1" />
-            <Text style={styles.joinModalTitle}>הזן קוד הזמנה</Text>
-            <Text style={styles.joinModalSubtitle}>
+            <Users size={48} color={theme.primary} />
+            <Text style={[styles.joinModalTitle, { color: theme.textPrimary }]}>הזן קוד הזמנה</Text>
+            <Text style={[styles.joinModalSubtitle, { color: theme.textSecondary }]}>
               קיבלת קוד 6 ספרות מבן/בת הזוג?
             </Text>
 
             <TextInput
-              style={styles.joinModalInput}
+              style={[
+                styles.joinModalInput, 
+                { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.textPrimary }
+              ]}
               placeholder="הזן קוד 6 ספרות"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.textTertiary}
               value={pendingInviteCode}
               onChangeText={(text) => setPendingInviteCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
               maxLength={6}
               autoCapitalize="characters"
               textAlign="center"
+              accessibilityLabel="שדה קוד הזמנה"
+              accessibilityHint="הזן קוד 6 ספרות"
             />
 
             <TouchableOpacity
-              style={[styles.joinModalBtn, pendingInviteCode.length !== 6 && styles.joinModalBtnDisabled]}
+              style={[
+                styles.joinModalBtn, 
+                { backgroundColor: pendingInviteCode.length === 6 ? theme.primary : theme.inputBackground },
+                pendingInviteCode.length !== 6 && styles.joinModalBtnDisabled
+              ]}
               disabled={pendingInviteCode.length !== 6}
               onPress={() => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 setShowJoinCodeModal(false);
                 Alert.alert('מעולה! 🎉', 'הקוד נשמר! המשך להרשמה והקוד יופעל אוטומטית.');
               }}
+              accessibilityLabel="שמור קוד הזמנה"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: pendingInviteCode.length !== 6 }}
             >
-              <Text style={[styles.joinModalBtnText, { color: theme.card }]}>שמור קוד</Text>
+              <Text style={[styles.joinModalBtnText, { color: pendingInviteCode.length === 6 ? theme.card : theme.textTertiary }]}>שמור קוד</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -716,7 +782,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1 },
 
   // Header
   header: {
@@ -773,24 +839,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  formTitle: { fontSize: 24, fontWeight: '800', color: '#1f2937', textAlign: 'center', marginBottom: 8 },
-  formSubtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginBottom: 28 },
+  formTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  formSubtitle: { fontSize: 14, textAlign: 'center', marginBottom: 28, letterSpacing: -0.2 },
 
   // Inputs
   inputGroup: { marginBottom: 18 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, textAlign: 'right' },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8, textAlign: 'right', letterSpacing: -0.2 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
     height: 54
   },
   inputError: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
   },
   input: {
     flex: 1,
@@ -798,7 +860,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     paddingHorizontal: 12,
     fontSize: 15,
-    color: '#111827'
   },
   eyeBtn: {
     padding: 12,
@@ -814,8 +875,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: '#EF4444',
     fontWeight: '500',
+    letterSpacing: -0.2,
   },
 
   // Password strength
@@ -842,8 +903,8 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    color: '#6366F1',
     fontWeight: '600',
+    letterSpacing: -0.2,
   },
 
   // Main button
@@ -867,12 +928,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10
   },
-  mainButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  mainButtonText: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
 
   // Divider
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
-  line: { flex: 1, height: 1, backgroundColor: '#e5e7eb' },
-  orText: { marginHorizontal: 12, color: '#9ca3af', fontSize: 12, fontWeight: '600' },
+  line: { flex: 1, height: StyleSheet.hairlineWidth },
+  orText: { marginHorizontal: 12, fontSize: 12, fontWeight: '600', letterSpacing: -0.2 },
 
   // Social buttons
   socialRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
@@ -891,8 +952,8 @@ const styles = StyleSheet.create({
 
   // Switch mode
   switchMode: { alignItems: 'center', marginTop: 8 },
-  switchText: { fontSize: 14, color: '#6b7280' },
-  linkText: { color: '#4f46e5', fontWeight: 'bold' },
+  switchText: { fontSize: 14, letterSpacing: -0.2 },
+  linkText: { fontWeight: '700' },
 
   // Join Code Section
   joinCodeSection: {
@@ -906,23 +967,20 @@ const styles = StyleSheet.create({
   },
   joinCodeLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
+    height: StyleSheet.hairlineWidth,
   },
   joinCodeOrText: {
     marginHorizontal: 12,
     fontSize: 12,
-    color: '#9CA3AF',
+    letterSpacing: -0.2,
   },
   joinCodeBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#F5F3FF',
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#C4B5FD',
     borderStyle: 'dashed',
   },
   joinCodeIcon: {
@@ -931,34 +989,34 @@ const styles = StyleSheet.create({
   joinCodeTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#4F46E5',
     textAlign: 'right',
+    letterSpacing: -0.3,
   },
   joinCodeSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
     textAlign: 'right',
     marginTop: 2,
+    letterSpacing: -0.2,
   },
   joinCodeBtnActive: {
-    borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
-    borderStyle: 'solid',
   },
 
   // Join Modal styles
   joinModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   joinModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 28,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
     alignItems: 'center',
   },
   joinModalClose: {
@@ -969,40 +1027,39 @@ const styles = StyleSheet.create({
   joinModalTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1F2937',
     marginTop: 16,
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   joinModalSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
     textAlign: 'center',
     marginBottom: 24,
+    letterSpacing: -0.2,
   },
   joinModalInput: {
     width: '100%',
     height: 56,
-    backgroundColor: '#F3F4F6',
     borderRadius: 14,
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
     letterSpacing: 8,
+    borderWidth: 1.5,
+    textAlign: 'center',
   },
   joinModalBtn: {
     width: '100%',
-    backgroundColor: '#6366F1',
     paddingVertical: 16,
     borderRadius: 14,
     marginTop: 20,
   },
   joinModalBtnDisabled: {
-    backgroundColor: '#D1D5DB',
   },
   joinModalBtnText: {
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
 
   // Verification Waiting Screen Styles
@@ -1017,18 +1074,17 @@ const styles = StyleSheet.create({
   verificationTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#1F2937',
     marginBottom: 12,
+    letterSpacing: -0.5,
   },
   verificationSubtitle: {
     fontSize: 15,
-    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
+    letterSpacing: -0.2,
   },
   spamNote: {
-    color: '#EF4444',
     fontWeight: '600',
   },
   checkVerificationBtn: {
@@ -1042,12 +1098,12 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
-    color: '#4F46E5',
     fontWeight: '600',
+    letterSpacing: -0.2,
   },
   backToLogin: {
     fontSize: 14,
-    color: '#9CA3AF',
+    letterSpacing: -0.2,
   },
 
   // Babysitter Registration Styles

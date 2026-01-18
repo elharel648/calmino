@@ -149,14 +149,41 @@ service cloud.firestore {
     match /bookings/{bookingId} {
       allow read: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
-        resource.data.sitterId == request.auth.uid
+        resource.data.babysitterId == request.auth.uid
       );
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
-        resource.data.sitterId == request.auth.uid
+        resource.data.babysitterId == request.auth.uid
       );
       allow delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+    }
+
+    // ===================
+    // ACTIVE SHIFTS COLLECTION
+    // ===================
+    match /activeShifts/{shiftId} {
+      // Read: parent or babysitter involved in the shift
+      allow read: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        resource.data.babysitterId == request.auth.uid
+      );
+      
+      // Create: babysitter can start a shift
+      allow create: if isAuthenticated() && 
+        request.resource.data.babysitterId == request.auth.uid;
+      
+      // Update: babysitter or parent can update (pause, etc)
+      allow update: if isAuthenticated() && (
+        resource.data.babysitterId == request.auth.uid ||
+        resource.data.parentId == request.auth.uid
+      );
+      
+      // Delete: babysitter or parent can end shift
+      allow delete: if isAuthenticated() && (
+        resource.data.babysitterId == request.auth.uid ||
+        resource.data.parentId == request.auth.uid
+      );
     }
 
     // ===================

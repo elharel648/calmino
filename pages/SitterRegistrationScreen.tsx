@@ -371,7 +371,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 </View>
             </View>
         </View>
-    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, theme]);
+    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, experienceYears, theme]);
 
     // Step 2: Photo - memoized
     const PhotoStep = useMemo(() => (

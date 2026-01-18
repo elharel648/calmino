@@ -32,10 +32,13 @@ import { auth, db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import { uploadSitterPhoto } from '../services/imageUploadService';
 import { Camera } from 'lucide-react-native';
 import { useChats } from '../hooks/useChats';
 import { useBookings } from '../hooks/useBookings';
+import { startShift } from '../services/babysitterService';
+import { Play } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -176,18 +179,22 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
+        console.log('🔍 Fetching bookings for sitter:', userId);
+
         try {
             const q = query(
                 collection(db, 'bookings'),
-                where('sitterId', '==', userId),
+                where('babysitterId', '==', userId),
                 orderBy('date', 'desc')
             );
 
             const snapshot = await getDocs(q);
+            console.log('📊 Found bookings:', snapshot.docs.length);
             const fetchedBookings: Booking[] = [];
 
             for (const docSnap of snapshot.docs) {
                 const data = docSnap.data();
+                console.log('📋 Booking data:', docSnap.id, data);
 
                 // Get parent info
                 let parentName = 'הורה';
@@ -220,7 +227,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             }
 
             return fetchedBookings;
-        } catch {
+        } catch (error) {
+            console.error('❌ Error fetching bookings:', error);
             return [];
         }
     };
@@ -350,6 +358,34 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         }
     };
 
+    // Start shift for accepted booking
+    const handleStartShift = async (booking: Booking) => {
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        try {
+            await startShift(
+                {
+                    id: booking.id,
+                    parentId: booking.parentId,
+                    babysitterId: auth.currentUser?.uid || '',
+                    date: FirestoreTimestamp.fromDate(booking.date),
+                    startTime: booking.startTime,
+                    endTime: booking.endTime,
+                    hourlyRate: sitterProfile?.pricePerHour || 50,
+                    status: 'confirmed',
+                    createdAt: FirestoreTimestamp.now(),
+                    updatedAt: FirestoreTimestamp.now(),
+                },
+                sitterProfile?.name || 'סיטר'
+            );
+            Alert.alert('✅ משמרת התחילה!', 'הטיימר רץ כעת. ההורה יכול לראות את הזמן.');
+            loadData();
+        } catch (error) {
+            console.error('Start shift error:', error);
+            Alert.alert('שגיאה', 'לא הצלחנו להתחיל את המשמרת');
+        }
+    };
+
     // Filter bookings by tab
     const filteredBookings = bookings.filter(b =>
         activeTab === 'pending'
@@ -425,9 +461,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             )}
 
             {booking.status === 'accepted' && (
-                <View style={[styles.statusBadge, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE' }]}>
-                    <Text style={[styles.statusText, { color: isDarkMode ? '#60A5FA' : '#2563EB' }]}>מאושר</Text>
-                </View>
+                <TouchableOpacity
+                    style={styles.startShiftBtn}
+                    onPress={() => handleStartShift(booking)}
+                >
+                    <Play size={18} color="#fff" fill="#fff" />
+                    <Text style={styles.startShiftText}>התחל משמרת</Text>
+                </TouchableOpacity>
             )}
 
             {booking.status === 'completed' && (
@@ -451,7 +491,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Background Gradient - Apple Style */}
             <LinearGradient
-                colors={isDarkMode 
+                colors={isDarkMode
                     ? [theme.background, theme.cardSecondary, theme.background]
                     : ['#FAFAFA', '#F5F5F5', '#FAFAFA']
                 }
@@ -645,9 +685,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         )}
                                     </View>
                                 </View>
-                                    <Text style={{ fontSize: 14, color: theme.primary, marginTop: 10, fontWeight: '500' }}>
-                                        {uploadingPhoto ? t('sitter.uploading') : t('sitter.changePhoto')}
-                                    </Text>
+                                <Text style={{ fontSize: 14, color: theme.primary, marginTop: 10, fontWeight: '500' }}>
+                                    {uploadingPhoto ? t('sitter.uploading') : t('sitter.changePhoto')}
+                                </Text>
                             </TouchableOpacity>
 
                             {/* City - used for search */}
@@ -1239,6 +1279,20 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 12,
         fontWeight: '600',
+    },
+    startShiftBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#10B981',
+        paddingVertical: 12,
+        borderRadius: 12,
+    },
+    startShiftText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '700',
     },
 
     // Empty State

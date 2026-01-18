@@ -2,7 +2,7 @@
 // UPDATED: Using Firebase Storage instead of Base64
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { auth, db, storage } from './firebaseConfig';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -84,7 +84,12 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 
         // Fallback to Base64 if Storage fails
         logger.debug('⚠️', 'Falling back to Base64...');
-        return await uploadImageAsBase64(uri);
+        try {
+            return await uploadImageAsBase64(uri);
+        } catch (fallbackError) {
+            logger.error('❌ Base64 fallback also failed:', fallbackError);
+            throw new Error('Image upload failed');
+        }
     }
 }
 
@@ -117,14 +122,14 @@ export async function uploadSitterPhoto(uri: string): Promise<string> {
     const path = `sitterPhotos/${userId}/profile_${Date.now()}.jpg`;
     const downloadURL = await uploadImage(uri, path);
 
-    // Update Firestore
+    // Update Firestore - use setDoc with merge to handle if doc doesn't exist
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, { photoUrl: downloadURL });
+    await setDoc(userRef, { photoUrl: downloadURL }, { merge: true });
 
     // Also update sitters collection if exists
     try {
         const sitterRef = doc(db, 'sitters', userId);
-        await updateDoc(sitterRef, { image: downloadURL });
+        await setDoc(sitterRef, { image: downloadURL }, { merge: true });
     } catch (e) {
         // Sitter doc may not exist yet
     }

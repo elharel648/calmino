@@ -51,6 +51,7 @@ import AddCustomActionModal, { CustomAction } from '../components/Home/AddCustom
 import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import MagicMomentsModal from '../components/Home/MagicMomentsModal';
 import { EditBasicInfoModal } from '../components/Profile';
+import ShiftTimerWidget from '../components/BabySitter/ShiftTimerWidget';
 
 // Services
 import { auth, db } from '../services/firebaseConfig';
@@ -58,6 +59,8 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { saveEventToFirebase, formatTimeFromTimestamp } from '../services/firebaseService';
 import { useToast } from '../context/ToastContext';
 import { undoService } from '../services/undoService';
+import { subscribeToActiveShift } from '../services/babysitterService';
+import { ActiveShift } from '../types/babysitter';
 
 // Types
 import { TrackingType, DynamicStyles } from '../types/home';
@@ -134,6 +137,7 @@ export default function HomeScreen({ navigation }: any) {
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [editingChild, setEditingChild] = useState<any>(null);
     const [isEditChildModalOpen, setIsEditChildModalOpen] = useState(false);
+    const [activeShift, setActiveShift] = useState<ActiveShift | null>(null);
 
     const user = auth.currentUser;
 
@@ -145,6 +149,15 @@ export default function HomeScreen({ navigation }: any) {
             setTimelineRefresh(prev => prev + 1);
         }
     }, [activeChild?.childId]);
+
+    // Subscribe to active babysitter shift
+    useEffect(() => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const unsubscribe = subscribeToActiveShift(userId, setActiveShift);
+        return () => unsubscribe();
+    }, []);
 
     // --- Dynamic Styles (now from global theme) ---
     const dynamicStyles: DynamicStyles = useMemo(() => ({
@@ -425,6 +438,19 @@ export default function HomeScreen({ navigation }: any) {
                                     }}
                                 />
                             </Animated.View>
+
+                            {/* Active Babysitter Shift Timer */}
+                            {activeShift && (
+                                <Animated.View
+                                    entering={FadeInDown.duration(400).springify()}
+                                    style={{ marginBottom: 16 }}
+                                >
+                                    <ShiftTimerWidget
+                                        shift={activeShift}
+                                        onShiftEnd={() => setActiveShift(null)}
+                                    />
+                                </Animated.View>
+                            )}
 
                             {/* Staggered Entry Quick Actions - Enhanced */}
                             <Animated.View

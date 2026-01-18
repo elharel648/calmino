@@ -79,7 +79,7 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "sitterId",
+                    "fieldPath": "babysitterId",
                     "order": "ASCENDING"
                 },
                 {
