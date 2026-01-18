@@ -16,6 +16,7 @@ import {
     increment,
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
+import { getUserPushToken, sendPushNotification } from './pushNotificationService';
 
 export interface Message {
     id: string;
@@ -126,6 +127,23 @@ export async function sendMessage(chatId: string, text: string): Promise<void> {
         lastMessageTime: serverTimestamp(),
         [`unreadCount.${otherUserId}`]: increment(1),
     });
+
+    // Send push notification to other user
+    if (otherUserId) {
+        const otherUserToken = await getUserPushToken(otherUserId);
+        if (otherUserToken) {
+            const senderName = chatData.parentId === userId
+                ? chatData.parentName
+                : chatData.sitterName;
+
+            await sendPushNotification(
+                otherUserToken,
+                `הודעה חדשה מ${senderName}`,
+                text.trim().length > 50 ? text.trim().substring(0, 50) + '...' : text.trim(),
+                { type: 'chat_message', chatId }
+            );
+        }
+    }
 }
 
 /**

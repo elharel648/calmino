@@ -14,6 +14,7 @@ import {
     getDoc,
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
+import { getUserPushToken, sendPushNotification } from './pushNotificationService';
 
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
@@ -82,6 +83,17 @@ export async function createBooking(
         createdAt: serverTimestamp(),
     });
 
+    // Send push notification to sitter
+    const sitterToken = await getUserPushToken(sitterId);
+    if (sitterToken) {
+        await sendPushNotification(
+            sitterToken,
+            '📅 הזמנה חדשה!',
+            `${userData?.name || 'הורה'} רוצה להזמין אותך ל-${startTime}-${endTime}`,
+            { type: 'booking_update', bookingId: bookingRef.id }
+        );
+    }
+
     return bookingRef.id;
 }
 
@@ -99,6 +111,35 @@ export async function updateBookingStatus(
     }
 
     await updateDoc(doc(db, 'bookings', bookingId), updateData);
+
+    // Send push notification
+    const bookingDoc = await getDoc(doc(db, 'bookings', bookingId));
+    if (bookingDoc.exists()) {
+        const booking = bookingDoc.data();
+        const currentUserId = auth.currentUser?.uid;
+
+        // Determine who to notify
+        const notifyUserId = currentUserId === booking.sitterId
+            ? booking.parentId
+            : booking.sitterId;
+
+        const notifyToken = await getUserPushToken(notifyUserId);
+        if (notifyToken) {
+            const statusMessages: Record<BookingStatus, string> = {
+                pending: 'ההזמנה נוצרה',
+                confirmed: '✅ ההזמנה אושרה!',
+                completed: '🎉 ההזמנה הסתיימה',
+                cancelled: '❌ ההזמנה בוטלה',
+            };
+
+            await sendPushNotification(
+                notifyToken,
+                statusMessages[status],
+                `הזמנה ב-${booking.date.toDate().toLocaleDateString('he-IL')} ב-${booking.startTime}`,
+                { type: 'booking_update', bookingId }
+            );
+        }
+    }
 }
 
 /**

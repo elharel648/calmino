@@ -47,6 +47,7 @@ import { ToastProvider } from './context/ToastContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import { navigationRef } from './services/navigationService';
+import { registerForPushNotifications } from './services/pushNotificationService';
 
 
 
@@ -329,6 +330,11 @@ export default function App() {
       if (currentUser) {
         setUser(currentUser);
         await checkBiometricSettingsAndProfile(currentUser.uid);
+
+        // Register for push notifications
+        registerForPushNotifications().catch((err) => {
+          if (__DEV__) console.log('Push registration:', err);
+        });
       } else {
         setUser(null);
         setHasBabyProfile(false);
