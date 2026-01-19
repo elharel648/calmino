@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth } from '../services/firebaseConfig';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star } from 'lucide-react-native';
 import { TextInput } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { logger } from '../utils/logger';
 import { calculateSitterBadges } from '../services/babysitterService';
 import BookingModal from '../components/BabySitter/BookingModal';
 import { auth as firebaseAuth } from '../services/firebaseConfig';
+import { useTheme } from '../context/ThemeContext';
 
 interface SitterData {
     id: string;
@@ -37,6 +40,7 @@ type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Sitt
 
 const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) => {
     const { sitterData } = route.params || {};
+    const { theme, isDarkMode } = useTheme();
     const [showFullVideo, setShowFullVideo] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
@@ -223,29 +227,78 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             )}
                         </>
                     )}
+                    {/* Premium Gradient Overlay */}
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.6)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                    />
                     <View style={styles.heroOverlay} />
 
                     <View style={styles.heroContent}>
                         <View style={styles.avatarContainer}>
-                            <Image source={{ uri: sitterData.image }} style={styles.profileAvatar} />
+                            <View style={styles.avatarWrapper}>
+                                <Image source={{ uri: sitterData.image }} style={styles.profileAvatar} />
+                                <LinearGradient
+                                    colors={['transparent', 'rgba(0,0,0,0.1)']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 0, y: 1 }}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            </View>
                             <View style={styles.verifiedBadge}>
-                                <MaterialIcons name="verified" size={20} color="#6366F1" />
+                                <LinearGradient
+                                    colors={['#6366F1', '#8B5CF6']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                                <MaterialIcons name="verified" size={18} color="#fff" />
                             </View>
                         </View>
                         <Text style={styles.heroName}>{sitterData.name || 'סיטר'}, {sitterData.age ?? ''}</Text>
                         <View style={styles.ratingTag}>
-                            <Ionicons name="star" size={14} color="#FBBF24" />
+                            {Platform.OS === 'ios' && (
+                                <BlurView
+                                    intensity={20}
+                                    tint="dark"
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            )}
+                            <LinearGradient
+                                colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.6)']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />
+                            <Star size={16} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
                             <Text style={styles.ratingText}>{sitterData.rating ?? 0} ({sitterData.reviews ?? 0} ביקורות)</Text>
                         </View>
-                        {/* Badges */}
+                        {/* Badges - Premium Design */}
                         {badges.length > 0 && (
                             <View style={styles.badgesContainer}>
                                 {badges.map((badgeType) => {
                                     const badge = BADGE_INFO[badgeType];
                                     return (
-                                        <View key={badgeType} style={[styles.badge, { backgroundColor: badge.bgColor }]}>
-                                            <Text style={styles.badgeIcon}>{badge.icon}</Text>
-                                            <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
+                                        <View key={badgeType} style={styles.badgeWrapper}>
+                                            {Platform.OS === 'ios' && (
+                                                <BlurView
+                                                    intensity={30}
+                                                    tint="dark"
+                                                    style={StyleSheet.absoluteFill}
+                                                />
+                                            )}
+                                            <LinearGradient
+                                                colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.15)']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                                style={StyleSheet.absoluteFill}
+                                            />
+                                            <View style={[styles.badge, { backgroundColor: badge.bgColor + 'CC' }]}>
+                                                <Text style={styles.badgeIcon}>{badge.icon}</Text>
+                                                <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
+                                            </View>
                                         </View>
                                     );
                                 })}
@@ -261,18 +314,37 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     )}
                 </View>
 
-                {/* Stats Row - Distance only (real data) */}
-                <View style={styles.trustRow}>
-                    <View style={styles.trustItem}>
-                        <Text style={styles.trustValue}>{sitterData.distance ?? 0} ק"מ</Text>
-                        <Text style={styles.trustLabel}>מרחק ממך</Text>
+                {/* Stats Row - Premium Design */}
+                <View style={[styles.trustRow, { 
+                    backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
+                    borderBottomColor: theme.border 
+                }]}>
+                    {Platform.OS === 'ios' && (
+                        <BlurView
+                            intensity={20}
+                            tint={isDarkMode ? 'dark' : 'light'}
+                            style={StyleSheet.absoluteFill}
+                        />
+                    )}
+                    <LinearGradient
+                        colors={isDarkMode 
+                            ? [theme.card + 'CC', theme.card + '99']
+                            : ['#FFFFFF', '#FAFAFA']
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                    />
+                    <View style={[styles.trustItem, { zIndex: 1 }]}>
+                        <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.distance ?? 0} ק"מ</Text>
+                        <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>מרחק ממך</Text>
                     </View>
                     {(sitterData.reviews ?? 0) > 0 && (
                         <>
-                            <View style={styles.divider} />
-                            <View style={styles.trustItem}>
-                                <Text style={styles.trustValue}>{sitterData.reviews ?? 0}</Text>
-                                <Text style={styles.trustLabel}>ביקורות</Text>
+                            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                            <View style={[styles.trustItem, { zIndex: 1 }]}>
+                                <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.reviews ?? 0}</Text>
+                                <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>ביקורות</Text>
                             </View>
                         </>
                     )}
@@ -289,34 +361,93 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {/* Reviews */}
                 <View style={styles.section}>
                     <View style={styles.reviewsHeader}>
-                        <Text style={styles.sectionTitle}>מה ההורים אומרים</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>מה ההורים אומרים</Text>
                         {reviewStats && (
-                            <View style={styles.reviewStatsContainer}>
-                                <Text style={styles.reviewStatsText}>
-                                    {reviewStats.average.toFixed(1)} ⭐ ({reviewStats.total} ביקורות)
-                                </Text>
-                                {reviewStats.verifiedCount > 0 && (
-                                    <Text style={styles.verifiedCountText}>
-                                        {reviewStats.verifiedCount} מאומתות
-                                    </Text>
+                            <View style={[styles.reviewStatsContainer, { 
+                                backgroundColor: isDarkMode ? theme.card : '#F9FAFB',
+                                borderColor: theme.border 
+                            }]}>
+                                {Platform.OS === 'ios' && (
+                                    <BlurView
+                                        intensity={20}
+                                        tint={isDarkMode ? 'dark' : 'light'}
+                                        style={StyleSheet.absoluteFill}
+                                    />
                                 )}
+                                <LinearGradient
+                                    colors={isDarkMode 
+                                        ? [theme.card + 'CC', theme.card + '99']
+                                        : ['#FFFFFF', '#F9FAFB']
+                                    }
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                                <View style={{ zIndex: 1 }}>
+                                    <View style={styles.reviewStatsRow}>
+                                        <Star size={20} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
+                                        <Text style={[styles.reviewStatsText, { color: theme.textPrimary }]}>
+                                            {reviewStats.average.toFixed(1)}
+                                        </Text>
+                                        <Text style={[styles.reviewStatsSubtext, { color: theme.textSecondary }]}>
+                                            ({reviewStats.total} ביקורות)
+                                        </Text>
+                                    </View>
+                                    {reviewStats.verifiedCount > 0 && (
+                                        <View style={styles.verifiedBadgeContainer}>
+                                            <CheckCircle size={12} color="#10B981" strokeWidth={2.5} />
+                                            <Text style={styles.verifiedCountText}>
+                                                {reviewStats.verifiedCount} מאומתות
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
                             </View>
                         )}
                     </View>
 
-                    {/* Rating Distribution */}
+                    {/* Rating Distribution - Premium Design */}
                     {reviewStats && reviewStats.total > 0 && (
-                        <View style={styles.ratingDistribution}>
+                        <View style={[styles.ratingDistribution, { 
+                            backgroundColor: isDarkMode ? theme.card : '#F9FAFB',
+                            borderColor: theme.border 
+                        }]}>
+                            {Platform.OS === 'ios' && (
+                                <BlurView
+                                    intensity={15}
+                                    tint={isDarkMode ? 'dark' : 'light'}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            )}
+                            <LinearGradient
+                                colors={isDarkMode 
+                                    ? [theme.card + 'CC', theme.card + '99']
+                                    : ['#FFFFFF', '#F9FAFB']
+                                }
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />
                             {[5, 4, 3, 2, 1].reverse().map(rating => {
                                 const count = reviewStats.distribution[rating] || 0;
                                 const percentage = reviewStats.total > 0 ? (count / reviewStats.total) * 100 : 0;
                                 return (
-                                    <View key={rating} style={styles.ratingBarRow}>
-                                        <Text style={styles.ratingBarLabel}>{rating} ⭐</Text>
-                                        <View style={styles.ratingBarContainer}>
-                                            <View style={[styles.ratingBar, { width: `${percentage}%` }]} />
+                                    <View key={rating} style={[styles.ratingBarRow, { zIndex: 1 }]}>
+                                        <View style={styles.ratingBarLabelContainer}>
+                                            <Star size={14} color="#FBBF24" fill={count > 0 ? "#FBBF24" : "transparent"} strokeWidth={1.5} />
+                                            <Text style={[styles.ratingBarLabel, { color: theme.textPrimary }]}>{rating}</Text>
                                         </View>
-                                        <Text style={styles.ratingBarCount}>{count}</Text>
+                                        <View style={[styles.ratingBarContainer, { backgroundColor: isDarkMode ? theme.border : '#E5E7EB' }]}>
+                                            {percentage > 0 && (
+                                                <LinearGradient
+                                                    colors={['#FBBF24', '#F59E0B']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={[styles.ratingBar, { width: `${percentage}%` }]}
+                                                />
+                                            )}
+                                        </View>
+                                        <Text style={[styles.ratingBarCount, { color: theme.textSecondary }]}>{count}</Text>
                                     </View>
                                 );
                             })}
@@ -330,7 +461,16 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 <TouchableOpacity
                                     style={[styles.filterChip, reviewFilter === 'all' && styles.filterChipActive]}
                                     onPress={() => setReviewFilter('all')}
+                                    activeOpacity={0.7}
                                 >
+                                    {reviewFilter === 'all' && (
+                                        <LinearGradient
+                                            colors={['#6366F1', '#8B5CF6']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={StyleSheet.absoluteFill}
+                                        />
+                                    )}
                                     <Text style={[styles.filterChipText, reviewFilter === 'all' && styles.filterChipTextActive]}>הכל</Text>
                                 </TouchableOpacity>
                                 {[5, 4, 3, 2, 1].map(rating => (
@@ -338,15 +478,31 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                         key={rating}
                                         style={[styles.filterChip, reviewFilter === String(rating) && styles.filterChipActive]}
                                         onPress={() => setReviewFilter(String(rating) as any)}
+                                        activeOpacity={0.7}
                                     >
-                                        <Text style={[styles.filterChipText, reviewFilter === String(rating) && styles.filterChipTextActive]}>
-                                            {rating} ⭐
-                                        </Text>
+                                        {reviewFilter === String(rating) && (
+                                            <LinearGradient
+                                                colors={['#6366F1', '#8B5CF6']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                                style={StyleSheet.absoluteFill}
+                                            />
+                                        )}
+                                        <View style={styles.filterChipContent}>
+                                            <Star size={14} color={reviewFilter === String(rating) ? '#fff' : '#6B7280'} fill={reviewFilter === String(rating) ? '#fff' : 'transparent'} strokeWidth={1.5} />
+                                            <Text style={[styles.filterChipText, reviewFilter === String(rating) && styles.filterChipTextActive]}>
+                                                {rating}
+                                            </Text>
+                                        </View>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
                             <TouchableOpacity
-                                style={styles.sortButton}
+                                style={[styles.sortButton, { 
+                                    backgroundColor: isDarkMode ? theme.card : '#EEF2FF',
+                                    borderColor: isDarkMode ? theme.border : '#C7D2FE'
+                                }]}
+                                activeOpacity={0.7}
                                 onPress={() => {
                                     const options = ['newest', 'helpful', 'highest'];
                                     const currentIndex = options.indexOf(reviewSort);
@@ -367,13 +523,39 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         </View>
                     ) : filteredAndSortedReviews.length > 0 ? (
                         filteredAndSortedReviews.map((review) => (
-                            <View key={review.id} style={styles.reviewCard}>
-                                <View style={styles.reviewHeader}>
+                            <View key={review.id} style={[styles.reviewCard, { 
+                                backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
+                                borderColor: theme.border 
+                            }]}>
+                                {Platform.OS === 'ios' && (
+                                    <BlurView
+                                        intensity={15}
+                                        tint={isDarkMode ? 'dark' : 'light'}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                )}
+                                <LinearGradient
+                                    colors={isDarkMode 
+                                        ? [theme.card + 'CC', theme.card + '99']
+                                        : ['#FFFFFF', '#FAFAFA']
+                                    }
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                                
+                                <View style={[styles.reviewHeader, { zIndex: 1 }]}>
                                     <View style={styles.reviewHeaderLeft}>
-                                        <Text style={styles.reviewerName}>{review.parentName || 'הורה'}</Text>
+                                        <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.parentName || 'הורה'}</Text>
                                         {review.isVerified && (
                                             <View style={styles.verifiedBadgeSmall}>
-                                                <CheckCircle size={12} color="#10B981" />
+                                                <LinearGradient
+                                                    colors={['#10B981', '#059669']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 1 }}
+                                                    style={StyleSheet.absoluteFill}
+                                                />
+                                                <CheckCircle size={12} color="#fff" strokeWidth={2.5} />
                                                 <Text style={styles.verifiedText}>מאומת</Text>
                                             </View>
                                         )}
@@ -381,21 +563,24 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     <View style={styles.reviewHeaderRight}>
                                         <View style={styles.reviewRating}>
                                             {[1, 2, 3, 4, 5].map(star => (
-                                                <Ionicons
+                                                <Star
                                                     key={star}
-                                                    name={star <= review.rating ? "star" : "star-outline"}
-                                                    size={16}
+                                                    size={18}
                                                     color="#FBBF24"
+                                                    fill={star <= review.rating ? "#FBBF24" : "transparent"}
+                                                    strokeWidth={1.5}
                                                 />
                                             ))}
                                         </View>
-                                        <Text style={styles.reviewDate}>
+                                        <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>
                                             {review.createdAt?.toDate?.()?.toLocaleDateString('he-IL') || ''}
                                         </Text>
                                     </View>
                                 </View>
 
-                                {review.text && <Text style={styles.reviewBody}>"{review.text}"</Text>}
+                                {review.text && (
+                                    <Text style={[styles.reviewBody, { color: theme.textPrimary }]}>"{review.text}"</Text>
+                                )}
 
                                 {/* Category Ratings */}
                                 {review.categoryRatings && (
@@ -463,47 +648,82 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     </View>
                                 )}
 
-                                {/* Tags */}
+                                {/* Tags - Premium Design */}
                                 {review.tags && review.tags.length > 0 && (
-                                    <View style={styles.reviewTags}>
+                                    <View style={[styles.reviewTags, { zIndex: 1 }]}>
                                         {review.tags.map((tag, idx) => (
                                             <View key={idx} style={styles.reviewTag}>
-                                                <Text style={styles.reviewTagText}>{REVIEW_TAG_LABELS[tag] || tag}</Text>
+                                                <LinearGradient
+                                                    colors={['#EEF2FF', '#E0E7FF']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 1 }}
+                                                    style={StyleSheet.absoluteFill}
+                                                />
+                                                <Text style={[styles.reviewTagText, { color: '#6366F1' }]}>{REVIEW_TAG_LABELS[tag] || tag}</Text>
                                             </View>
                                         ))}
                                     </View>
                                 )}
 
-                                {/* Review Actions */}
-                                <View style={styles.reviewActions}>
+                                {/* Review Actions - Premium Design */}
+                                <View style={[styles.reviewActions, { 
+                                    borderTopColor: theme.border,
+                                    zIndex: 1 
+                                }]}>
                                     <TouchableOpacity
                                         style={styles.helpfulButton}
                                         onPress={() => handleMarkHelpful(review.id)}
+                                        activeOpacity={0.7}
                                     >
                                         <ThumbsUp
-                                            size={14}
-                                            color={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : "#9CA3AF"}
+                                            size={16}
+                                            color={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : theme.textSecondary}
                                             fill={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : "none"}
+                                            strokeWidth={2}
                                         />
                                         <Text style={[
                                             styles.helpfulText,
+                                            { color: currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : theme.textSecondary },
                                             currentUserId && review.helpfulBy?.includes(currentUserId) && styles.helpfulTextActive
                                         ]}>
                                             מועיל
                                         </Text>
                                         {review.helpfulCount != null && review.helpfulCount > 0 ? (
-                                            <Text style={styles.helpfulCount}>({review.helpfulCount})</Text>
+                                            <Text style={[styles.helpfulCount, { color: theme.textSecondary }]}>({review.helpfulCount})</Text>
                                         ) : null}
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* Sitter Response */}
+                                {/* Sitter Response - Premium Design */}
                                 {review.sitterResponse && (
-                                    <View style={styles.sitterResponse}>
+                                    <View style={[styles.sitterResponse, { 
+                                        backgroundColor: isDarkMode ? theme.success + '20' : '#F0FDF4',
+                                        borderRightColor: theme.success,
+                                        zIndex: 1 
+                                    }]}>
+                                        {Platform.OS === 'ios' && (
+                                            <BlurView
+                                                intensity={10}
+                                                tint={isDarkMode ? 'dark' : 'light'}
+                                                style={StyleSheet.absoluteFill}
+                                            />
+                                        )}
+                                        <LinearGradient
+                                            colors={isDarkMode 
+                                                ? [theme.success + '30', theme.success + '15']
+                                                : ['#F0FDF4', '#ECFDF5']
+                                            }
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={StyleSheet.absoluteFill}
+                                        />
                                         <View style={styles.sitterResponseHeader}>
-                                            <Text style={styles.sitterResponseTitle}>תגובת הסיטר:</Text>
+                                            <View style={styles.sitterResponseTitleContainer}>
+                                                <CheckCircle size={14} color={theme.success} strokeWidth={2.5} />
+                                                <Text style={[styles.sitterResponseTitle, { color: theme.success }]}>תגובת הסיטר:</Text>
+                                            </View>
                                         </View>
-                                        <Text style={styles.sitterResponseText}>{review.sitterResponse.text}</Text>
+                                        <Text style={[styles.sitterResponseText, { color: theme.textPrimary }]}>{review.sitterResponse.text}</Text>
                                     </View>
                                 )}
 
@@ -646,61 +866,90 @@ const styles = StyleSheet.create({
 
     // Hero
     heroContainer: {
-        height: 340,
+        height: 360,
         width: '100%',
         position: 'relative',
         justifyContent: 'flex-end',
-        alignItems: 'center'
+        alignItems: 'center',
+        overflow: 'hidden',
     },
     heroVideo: {
         ...StyleSheet.absoluteFillObject
     },
     heroOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.35)'
+        backgroundColor: 'rgba(0,0,0,0.3)'
     },
     heroContent: {
         alignItems: 'center',
-        marginBottom: 24
+        marginBottom: 28,
+        zIndex: 10,
     },
     avatarContainer: {
         position: 'relative',
+        marginBottom: 4,
+    },
+    avatarWrapper: {
+        borderRadius: 50,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
     },
     profileAvatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 3,
-        borderColor: '#fff'
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        borderWidth: 4,
+        borderColor: '#fff',
     },
     verifiedBadge: {
         position: 'absolute',
-        bottom: 0,
-        right: -4,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 2,
+        bottom: 2,
+        right: -2,
+        borderRadius: 14,
+        padding: 4,
+        overflow: 'hidden',
+        shadowColor: '#6366F1',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 6,
     },
     heroName: {
-        fontSize: 26,
+        fontSize: 28,
         fontWeight: '800',
         color: '#fff',
-        marginTop: 12
+        marginTop: 14,
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 8,
+        letterSpacing: -0.5,
     },
     ratingTag: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
-        marginTop: 8,
-        gap: 4
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 24,
+        marginTop: 10,
+        gap: 6,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     ratingText: {
         color: '#fff',
-        fontWeight: '600',
-        fontSize: 13
+        fontWeight: '700',
+        fontSize: 14,
+        textShadowColor: 'rgba(0,0,0,0.3)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
     },
     playFullBtn: {
         position: 'absolute',
@@ -714,31 +963,36 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 
-    // Stats
+    // Stats - Premium Design
     trustRow: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-evenly',
-        paddingVertical: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6'
+        paddingVertical: 24,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
     },
     trustItem: {
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: 4,
     },
     trustValue: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: '800',
-        color: '#1F2937'
+        letterSpacing: -0.5,
     },
     trustLabel: {
-        fontSize: 12,
-        color: '#6B7280',
+        fontSize: 13,
+        fontWeight: '500',
         marginTop: 2,
     },
     divider: {
-        width: 1,
-        height: 32,
-        backgroundColor: '#E5E7EB'
+        width: StyleSheet.hairlineWidth,
+        height: 40,
     },
 
     // Sections
@@ -774,17 +1028,16 @@ const styles = StyleSheet.create({
 
     // Reviews
     reviewCard: {
-        backgroundColor: '#FFFFFF',
-        padding: 18,
-        borderRadius: 18,
-        marginBottom: 14,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        padding: 20,
+        borderRadius: 20,
+        marginBottom: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
     },
     reviewHeader: {
         flexDirection: 'row-reverse',
@@ -832,76 +1085,96 @@ const styles = StyleSheet.create({
     },
     reviewStatsContainer: {
         alignItems: 'flex-end',
+        gap: 8,
+        paddingHorizontal: 18,
+        paddingVertical: 14,
+        borderRadius: 20,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    reviewStatsRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
         gap: 6,
-        backgroundColor: '#F9FAFB',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
     },
     reviewStatsText: {
-        fontSize: 16,
-        color: '#1F2937',
+        fontSize: 20,
         fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    reviewStatsSubtext: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    verifiedBadgeContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 4,
     },
     verifiedCountText: {
         fontSize: 12,
         color: '#10B981',
-        fontWeight: '600',
+        fontWeight: '700',
         backgroundColor: '#D1FAE5',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+        overflow: 'hidden',
     },
     ratingDistribution: {
         marginTop: 12,
         marginBottom: 20,
-        padding: 16,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 16,
-        gap: 10,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        padding: 18,
+        borderRadius: 20,
+        gap: 12,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
     },
     ratingBarRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 10,
+        gap: 12,
+    },
+    ratingBarLabelContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        width: 50,
     },
     ratingBarLabel: {
-        fontSize: 13,
-        color: '#1F2937',
+        fontSize: 14,
         fontWeight: '600',
-        width: 44,
     },
     ratingBarContainer: {
         flex: 1,
-        height: 10,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 5,
+        height: 12,
+        borderRadius: 6,
         overflow: 'hidden',
     },
     ratingBar: {
         height: '100%',
-        backgroundColor: '#FBBF24',
-        borderRadius: 5,
+        borderRadius: 6,
         shadowColor: '#FBBF24',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.3,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
+        elevation: 3,
     },
     ratingBarCount: {
-        fontSize: 13,
-        color: '#4B5563',
+        fontSize: 14,
         fontWeight: '600',
-        width: 32,
+        width: 36,
         textAlign: 'left',
     },
     reviewControls: {
@@ -915,22 +1188,33 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     filterChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 18,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: 20,
         backgroundColor: '#F3F4F6',
         marginLeft: 10,
-        borderWidth: 1.5,
+        borderWidth: StyleSheet.hairlineWidth,
         borderColor: 'transparent',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 2,
+        elevation: 1,
     },
     filterChipActive: {
-        backgroundColor: '#6366F1',
         borderColor: '#6366F1',
         shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    filterChipContent: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        zIndex: 1,
     },
     filterChipText: {
         fontSize: 14,
@@ -945,12 +1229,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 14,
-        backgroundColor: '#EEF2FF',
-        borderWidth: 1.5,
-        borderColor: '#C7D2FE',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 18,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 2,
     },
     sortButtonText: {
         fontSize: 14,
@@ -970,17 +1258,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: '#D1FAE5',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#A7F3D0',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        borderWidth: 0,
+        overflow: 'hidden',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2,
     },
     verifiedText: {
         fontSize: 11,
-        color: '#10B981',
+        color: '#fff',
         fontWeight: '700',
+        letterSpacing: 0.3,
     },
     reviewDate: {
         fontSize: 12,
@@ -994,66 +1287,76 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     reviewTag: {
-        backgroundColor: '#EEF2FF',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        overflow: 'hidden',
+        shadowColor: '#6366F1',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 1,
     },
     reviewTagText: {
-        fontSize: 11,
-        color: '#6366F1',
-        fontWeight: '500',
+        fontSize: 12,
+        fontWeight: '600',
+        zIndex: 1,
     },
     reviewActions: {
         flexDirection: 'row-reverse',
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
+        marginTop: 14,
+        paddingTop: 14,
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
     helpfulButton: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 8,
-        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        borderRadius: 12,
     },
     helpfulText: {
-        fontSize: 13,
-        color: '#9CA3AF',
+        fontSize: 14,
         fontWeight: '600',
     },
     helpfulTextActive: {
-        color: '#10B981',
         fontWeight: '700',
     },
     helpfulCount: {
         fontSize: 12,
-        color: '#9CA3AF',
         fontWeight: '600',
     },
     sitterResponse: {
-        marginTop: 12,
-        padding: 12,
-        backgroundColor: '#F0FDF4',
-        borderRadius: 12,
-        borderRightWidth: 3,
-        borderRightColor: '#10B981',
+        marginTop: 14,
+        padding: 16,
+        borderRadius: 16,
+        borderRightWidth: 4,
+        overflow: 'hidden',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 2,
     },
     sitterResponseHeader: {
-        marginBottom: 6,
+        marginBottom: 8,
+    },
+    sitterResponseTitleContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
     },
     sitterResponseTitle: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '700',
-        color: '#10B981',
+        letterSpacing: 0.2,
     },
     sitterResponseText: {
-        fontSize: 14,
-        color: '#1F2937',
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 22,
         textAlign: 'right',
+        fontWeight: '400',
     },
     addResponseSection: {
         marginTop: 12,
@@ -1222,25 +1525,37 @@ const styles = StyleSheet.create({
 
     // Badge styles
     badgesContainer: {
-        flexDirection: 'row-reverse',
+        flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
-        marginTop: 8,
+        justifyContent: 'center',
+        gap: 10,
+        marginTop: 14,
+    },
+    badgeWrapper: {
+        borderRadius: 18,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
     },
     badge: {
-        flexDirection: 'row-reverse',
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 12,
+        gap: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 18,
+        zIndex: 1,
     },
     badgeIcon: {
-        fontSize: 14,
+        fontSize: 15,
     },
     badgeText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 13,
+        fontWeight: '700',
+        letterSpacing: 0.2,
     },
 });
 

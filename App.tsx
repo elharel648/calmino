@@ -16,6 +16,7 @@ import { Canvas, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import LiquidGlassTabBar from './components/LiquidGlassTabBar';
 import { auth, db } from './services/firebaseConfig';
+import { useLanguage } from './context/LanguageContext';
 
 // ייבוא המסכים הקיימים
 import HomeScreen from './pages/HomeScreen';
@@ -48,8 +49,10 @@ import { ToastProvider } from './context/ToastContext';
 import { PremiumProvider } from './context/PremiumContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
-import { navigationRef } from './services/navigationService';
+import { navigationRef, navigateFromNotification } from './services/navigationService';
 import { registerForPushNotifications } from './services/pushNotificationService';
+import * as Notifications from 'expo-notifications';
+import { notificationStorageService } from './services/notificationStorageService';
 
 
 
@@ -65,16 +68,17 @@ const BabysitterStack = createNativeStackNavigator();
 
 const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   return (
     <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
       <View style={[styles.lockIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF' }]}>
         <Lock size={50} color={theme.primary} />
       </View>
-      <Text style={[styles.lockTitle, { color: theme.textPrimary }]}>האפליקציה נעולה</Text>
-      <Text style={[styles.lockSubtitle, { color: theme.textSecondary }]}>נדרש אימות ביומטרי לכניסה</Text>
+      <Text style={[styles.lockTitle, { color: theme.textPrimary }]}>{t('biometric.appLocked')}</Text>
+      <Text style={[styles.lockSubtitle, { color: theme.textSecondary }]}>{t('biometric.biometricRequired')}</Text>
 
       <TouchableOpacity style={[styles.unlockButton, { backgroundColor: theme.primary }]} onPress={onUnlock}>
-        <Text style={[styles.unlockButtonText, { color: theme.card }]}>לחץ לאימות</Text>
+        <Text style={[styles.unlockButtonText, { color: theme.card }]}>{t('biometric.clickToAuthenticate')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -102,12 +106,18 @@ const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
 // --- Main App Navigator (uses theme and role-based permissions) ---
 function MainAppNavigator() {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const { canAccessProfile, canAccessReports, canAccessBabysitter } = useActiveChild();
+
+  const homeTabName = t('navigation.home');
+  const accountTabName = t('navigation.account');
+  const reportsTabName = t('navigation.reports');
+  const babysitterTabName = t('navigation.babysitter');
 
   return (
     <Tab.Navigator
       id="MainTabs"
-      initialRouteName="בית"
+      initialRouteName={homeTabName}
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -132,29 +142,29 @@ function MainAppNavigator() {
       }}
     >
       {/* Account - always visible (renamed from Settings) */}
-      <Tab.Screen name="חשבון" component={AccountStackScreen} options={{
-        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={User} label="חשבון" />
+      <Tab.Screen name={accountTabName} component={AccountStackScreen} options={{
+        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={User} label={t('navigation.account')} />
       }} />
 
 
 
       {/* Reports - only for parents */}
       {canAccessReports && (
-        <Tab.Screen name="סטטיסטיקות" component={ReportsScreen} options={{
-          tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={BarChart2} label="סטטיסטיקות" />
+        <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
+          tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={BarChart2} label={t('navigation.reports')} />
         }} />
       )}
 
       {/* Babysitter - only for parents */}
       {canAccessBabysitter && (
-        <Tab.Screen name="בייביסיטר" component={BabysitterStackScreen} options={{
-          tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label="בייביסיטר" />
+        <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
+          tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label={t('navigation.babysitter')} />
         }} />
       )}
 
       {/* Home - always visible */}
-      <Tab.Screen name="בית" component={HomeStackScreen} options={{
-        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={Home} label="בית" />
+      <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
+        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={Home} label={t('navigation.home')} />
       }} />
 
     </Tab.Navigator>
@@ -324,6 +334,79 @@ export default function App() {
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
 
+  // Configure notification handler on app start
+  useEffect(() => {
+    // Set notification handler for when app is in foreground/background
+    // This handler is called for ALL notifications (local + push)
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        // Always show notification
+        const shouldShow = {
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        };
+
+        // Try to save to Firebase (but don't block notification if it fails)
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+          // Use setTimeout to not block the notification handler
+          setTimeout(async () => {
+            try {
+              const notificationType = notification.request.content.data?.type || 'reminder';
+              const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+                'feeding_reminder': 'feed',
+                'sleep_reminder': 'sleep',
+                'supplement_reminder': 'medication',
+                'vaccine_reminder': 'medication',
+                'daily_summary': 'reminder',
+                'booking_new': 'reminder',
+                'booking_update': 'reminder',
+                'booking_cancelled': 'reminder',
+                'chat_message': 'reminder',
+              };
+
+              // Save notification to Firebase
+              await notificationStorageService.saveNotification({
+                userId,
+                type: typeMap[notificationType] || 'reminder',
+                title: notification.request.content.title || 'התראה',
+                message: notification.request.content.body || '',
+                timestamp: new Date(),
+                isRead: false,
+                isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
+              });
+            } catch (error) {
+              console.error('Failed to save notification:', error);
+              // Don't throw - notification should still show
+            }
+          }, 0);
+        }
+
+        return shouldShow;
+      },
+    });
+
+    // Handle notification taps (when user taps on notification)
+    // This listener is set here in App.tsx to ensure it works globally
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const type = response.notification.request.content.data?.type as string;
+      const data = response.notification.request.content.data;
+      
+      // Navigate based on notification type
+      if (type) {
+        // Small delay to ensure navigation is ready
+        setTimeout(() => {
+          navigateFromNotification(type, data);
+        }, 100);
+      }
+    });
+
+    return () => {
+      responseSubscription.remove();
+    };
+  }, []);
+
   // Hide splash when app is FULLY ready (auth + children loaded)
   const onLayoutRootView = useCallback(async () => {
     if (!isAppLoading && childrenReady) {
@@ -447,10 +530,16 @@ export default function App() {
                                 prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
                                 config: {
                                   screens: {
-                                    בית: 'home',
-                                    סטטיסטיקות: 'reports',
-                                    חשבון: 'account',
-                                    בייביסיטר: 'babysitter',
+                                    // Hebrew routes (for deep linking)
+                                    'בית': 'home',
+                                    'סטטיסטיקות': 'reports',
+                                    'חשבון': 'account',
+                                    'בייביסיטר': 'babysitter',
+                                    // English routes (for deep linking)
+                                    'Home': 'home',
+                                    'Statistics': 'reports',
+                                    'Account': 'account',
+                                    'Babysitter': 'babysitter',
                                     Home: {
                                       screens: {
                                         Home: 'home',

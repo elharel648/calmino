@@ -23,25 +23,35 @@ export function navigate(name: string, params?: object) {
     }
 }
 
+// Import language context - we'll need to get translations dynamically
+let getTranslation: ((key: string) => string) | null = null;
+
+export function setTranslationFunction(translator: (key: string) => string) {
+    getTranslation = translator;
+}
+
 /**
  * Navigate to Home tab
  */
 export function navigateToHome() {
-    navigate('בית');
+    const homeTab = getTranslation ? getTranslation('navigation.home') : 'בית';
+    navigate(homeTab);
 }
 
 /**
  * Navigate to Reports tab
  */
 export function navigateToReports() {
-    navigate('סטטיסטיקות');
+    const reportsTab = getTranslation ? getTranslation('navigation.reports') : 'סטטיסטיקות';
+    navigate(reportsTab);
 }
 
 /**
  * Navigate to Babysitter tab
  */
 export function navigateToBabysitter() {
-    navigate('בייביסיטר');
+    const babysitterTab = getTranslation ? getTranslation('navigation.babysitter') : 'בייביסיטר';
+    navigate(babysitterTab);
 }
 
 /**
@@ -49,9 +59,10 @@ export function navigateToBabysitter() {
  */
 export function navigateToNotifications() {
     if (navigationRef.isReady()) {
+        const homeTab = getTranslation ? getTranslation('navigation.home') : 'בית';
         navigationRef.dispatch(
             CommonActions.navigate({
-                name: 'בית',
+                name: homeTab,
                 params: {
                     screen: 'Notifications',
                 },
@@ -87,7 +98,8 @@ export function navigateFromNotification(type: string, data?: any) {
         case 'chat_message':
             // Go to chat
             if (data?.chatId) {
-                navigate('בייביסיטר', {
+                const babysitterTab = getTranslation ? getTranslation('navigation.babysitter') : 'בייביסיטר';
+                navigate(babysitterTab, {
                     screen: 'ChatScreen',
                     params: { chatId: data.chatId },
                 });
@@ -96,9 +108,22 @@ export function navigateFromNotification(type: string, data?: any) {
             }
             break;
 
+        case 'booking_new':
         case 'booking_update':
-            // Go to sitter dashboard or babysitter tab
-            navigateToBabysitter();
+        case 'booking_cancelled':
+            // Go to bookings screen
+            if (navigationRef.isReady()) {
+                navigationRef.dispatch(
+                    CommonActions.navigate({
+                        name: getTranslation ? getTranslation('navigation.babysitter') : 'בייביסיטר',
+                        params: {
+                            screen: 'ParentBookings',
+                        },
+                    })
+                );
+            } else {
+                navigateToBabysitter();
+            }
             break;
 
         default:

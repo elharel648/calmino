@@ -43,26 +43,16 @@ export const useNotifications = (): UseNotificationsReturn => {
 
         init();
 
-        // Listeners for when app is open
+        // Listeners for when app is open (for logging/debugging)
+        // Note: The main handler is in App.tsx to ensure it works globally
         notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
             if (__DEV__) console.log('🔔 Notification received:', notification);
-            // Note: Saving to Firebase is handled in setNotificationHandler (works even when app is closed)
+            // Note: Saving to Firebase is handled in setNotificationHandler in App.tsx
+            // This listener is just for logging/debugging
         });
 
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(async (response) => {
-            if (__DEV__) console.log('🔔 Notification tapped:', response);
-
-            // Mark as read when tapped
-            // Note: We can't mark by notification ID since we don't have it here
-            // The user will mark it as read when they see it in the notifications screen
-
-            // Handle navigation based on notification type
-            const type = response.notification.request.content.data?.type as string;
-            const data = response.notification.request.content.data;
-
-            // Import and navigate
-            navigateFromNotification(type, data);
-        });
+        // Note: Notification tap handler is in App.tsx to ensure global navigation
+        // We don't need a duplicate listener here
 
         return () => {
             if (notificationListener.current) {

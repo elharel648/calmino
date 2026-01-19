@@ -144,7 +144,14 @@ export async function sendPushNotification(
         sound: 'default',
         title,
         body,
-        data: data || {},
+        data: {
+            ...data,
+            // Ensure type is included for navigation
+            type: (data as any)?.type || 'reminder',
+        },
+        // Android specific
+        channelId: (data as any)?.channelId || 'default',
+        priority: 'high' as const,
     };
 
     try {
@@ -159,7 +166,14 @@ export async function sendPushNotification(
         });
 
         const result = await response.json();
-        console.log('📤 Push sent:', result);
+        
+        // Check if there are any errors
+        if (result.data && result.data.status === 'error') {
+            console.error('📤 Push error:', result.data.message);
+            return false;
+        }
+        
+        console.log('📤 Push sent successfully:', result);
         return true;
     } catch (error) {
         console.error('Error sending push:', error);

@@ -61,108 +61,108 @@ const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: stri
 // Action button configuration
 const ACTIONS: Record<string, {
     icon: any;
-    label: string;
-    activeLabel: string;
+    labelKey: string;
+    activeLabelKey: string;
     color: string;
     lightColor: string;
     hasBorder?: boolean;
 }> = {
     food: {
         icon: Utensils,
-        label: 'אוכל',
-        activeLabel: 'מאכילה',
+        labelKey: 'actions.food',
+        activeLabelKey: 'actions.active.food',
         color: '#F59E0B',
         lightColor: '#FEF3C7',
     },
     sleep: {
         icon: Moon,
-        label: 'שינה',
-        activeLabel: 'ישנ/ה',
+        labelKey: 'actions.sleep',
+        activeLabelKey: 'actions.active.sleep',
         color: '#6366F1',
         lightColor: '#EEF2FF',
     },
     diaper: {
         icon: Droplets,
-        label: 'החתלה',
-        activeLabel: 'החתלה',
+        labelKey: 'actions.diaper',
+        activeLabelKey: 'actions.diaper',
         color: '#10B981',
         lightColor: '#D1FAE5',
     },
     supplements: {
         icon: Pill,
-        label: 'תוספים',
-        activeLabel: 'תוספים',
+        labelKey: 'actions.supplements',
+        activeLabelKey: 'actions.supplements',
         color: '#0EA5E9',
         lightColor: '#E0F2FE',
     },
     whiteNoise: {
         icon: Music,
-        label: 'רעש לבן',
-        activeLabel: 'רעש לבן',
+        labelKey: 'actions.whiteNoise',
+        activeLabelKey: 'actions.whiteNoise',
         color: '#8B5CF6',
         lightColor: '#F3E8FF',
     },
     sos: {
         icon: Heart,
-        label: 'SOS',
-        activeLabel: 'SOS',
+        labelKey: 'actions.sos',
+        activeLabelKey: 'actions.sos',
         color: '#EF4444',
         lightColor: '#FEE2E2',
     },
     custom: {
         icon: Plus,
-        label: 'הוספה',
-        activeLabel: 'הוספה',
+        labelKey: 'actions.custom',
+        activeLabelKey: 'actions.custom',
         color: '#6B7280',
         lightColor: '#FFFFFF',
         hasBorder: true,
     },
     health: {
         icon: HeartPulse,
-        label: 'בריאות',
-        activeLabel: 'בריאות',
+        labelKey: 'actions.health',
+        activeLabelKey: 'actions.health',
         color: '#14B8A6',
         lightColor: '#CCFBF1',
     },
     growth: {
         icon: TrendingUp,
-        label: 'מעקב גדילה',
-        activeLabel: 'מעקב גדילה',
+        labelKey: 'actions.growth',
+        activeLabelKey: 'actions.growth',
         color: '#10B981',
         lightColor: '#D1FAE5',
     },
     milestones: {
         icon: Award,
-        label: 'אבני דרך',
-        activeLabel: 'אבני דרך',
+        labelKey: 'actions.milestones',
+        activeLabelKey: 'actions.milestones',
         color: '#F59E0B',
         lightColor: '#FEF3C7',
     },
     magicMoments: {
         icon: Sparkles,
-        label: 'רגעים קסומים',
-        activeLabel: 'רגעים קסומים',
+        labelKey: 'actions.magicMoments',
+        activeLabelKey: 'actions.magicMoments',
         color: '#A78BFA',
         lightColor: '#EDE9FE',
     },
     tools: {
         icon: LayoutGrid,
-        label: 'כלים',
-        activeLabel: 'כלים',
+        labelKey: 'actions.tools',
+        activeLabelKey: 'actions.tools',
         color: '#8B5CF6',
         lightColor: '#F3E8FF',
     },
     teeth: {
         icon: TeethIcon,
-        label: 'שיניים',
-        activeLabel: 'שיניים',
+        labelKey: 'actions.teeth',
+        activeLabelKey: 'actions.teeth',
         color: '#EC4899',
         lightColor: '#FDF2F8',
     },
     nightLight: {
         icon: Lightbulb,
-        label: 'פנס לילה',
-        activeLabel: 'פנס לילה',
+        labelKey: 'actions.nightLight',
+        activeLabelKey: 'actions.nightLight',
         color: '#F59E0B',
         lightColor: '#FEF3C7',
     },
@@ -202,11 +202,12 @@ const QuickActions = memo<QuickActionsProps>(({
     
     // Get translated labels
     const getActionLabel = (key: string, isActive: boolean) => {
-        const actionKey = `actions.${key}`;
-        if (isActive && (key === 'food' || key === 'sleep')) {
-            return t(`actions.active.${key}`);
+        const config = ACTIONS[key];
+        if (!config) return '';
+        if (isActive && config.activeLabelKey) {
+            return t(config.activeLabelKey);
         }
-        return t(actionKey);
+        return t(config.labelKey);
     };
 
     const { isRunning: sleepIsRunning, elapsedSeconds: sleepElapsed, formatTime: sleepFormatTime } = sleepTimer;

@@ -59,8 +59,8 @@ import { TimePicker } from '../components/Settings/TimePicker';
 import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
 
 const LANGUAGES = [
-  { key: 'he', label: 'עברית', flag: '🇮🇱' },
-  { key: 'en', label: 'English', flag: '🇺🇸' },
+  { key: 'he', labelKey: 'settings.hebrew', flag: '🇮🇱' },
+  { key: 'en', labelKey: 'settings.english', flag: '🇺🇸' },
 ];
 
 export default function SettingsScreen() {
@@ -358,12 +358,12 @@ export default function SettingsScreen() {
                       setLoading(false);
                       if (e?.code === 'auth/requires-recent-login') {
                         Alert.alert(
-                          'נדרשת התחברות מחדש',
-                          'מטעמי אבטחה, יש להתנתק ולהתחבר מחדש לפני מחיקת החשבון.',
+                          t('account.reauthRequired'),
+                          t('account.reauthRequiredMessage'),
                           [
-                            { text: 'ביטול', style: 'cancel' },
+                            { text: t('common.cancel'), style: 'cancel' },
                             {
-                              text: 'התנתק עכשיו',
+                              text: t('account.logoutNow'),
                               style: 'destructive',
                               onPress: () => signOut(auth)
                             }
@@ -371,7 +371,7 @@ export default function SettingsScreen() {
                         );
                       } else {
                         console.error('Delete account error:', e);
-                        Alert.alert('שגיאה', 'אירעה שגיאה במחיקת החשבון. נסה שוב מאוחר יותר.');
+                        Alert.alert(t('common.error'), t('alerts.deleteAccountError'));
                       }
                     }
                   }
@@ -687,7 +687,7 @@ export default function SettingsScreen() {
                 >
                   <View style={styles.languageContent}>
                     <Text style={styles.languageFlag}>{lang.flag}</Text>
-                    <Text style={[styles.languageLabel, { color: theme.textPrimary }]}>{lang.label}</Text>
+                    <Text style={[styles.languageLabel, { color: theme.textPrimary }]}>{t(lang.labelKey)}</Text>
                   </View>
                   {selectedLanguage === lang.key && (
                     <Check size={20} color={theme.primary} strokeWidth={2.5} />
@@ -716,7 +716,7 @@ export default function SettingsScreen() {
 
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
               <Text style={[styles.policyText, { color: theme.textPrimary }]}>
-                <Text style={styles.policyTitle}>{t('alerts.lastUpdated')}{'\n\n'}</Text>
+                <Text style={styles.policyTitle}>עודכן לאחרונה: 20 בינואר 2026{'\n\n'}</Text>
 
                 <Text style={styles.policySubtitle}>{t('privacy.intro')}{'\n'}</Text>
                 ברוכים הבאים לאפליקציית CalmParent. אנו מחויבים להגן על פרטיותכם ולשמור על המידע האישי שלכם בצורה מאובטחת. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים ומגנים על המידע שלכם.{'\n\n'}
@@ -739,10 +739,34 @@ export default function SettingsScreen() {
                 אנו משתמשים בטכנולוגיות אבטחה מתקדמות כולל הצפנת נתונים, אחסון מאובטח בענן (Firebase), וגיבוי אוטומטי. המידע שלכם מאוחסן בשרתים מאובטחים וזמין רק לכם ולמי שתבחרו לשתף עמו.{'\n\n'}
 
                 <Text style={styles.policySubtitle}>{t('privacy.sharing')}{'\n'}</Text>
-                אנו לא מוכרים או משתפים את המידע האישי שלכם עם צדדים שלישיים למטרות שיווק. המידע עשוי להיות משותף רק עם בני משפחה שהוזמנו על ידכם לאפליקציה.{'\n\n'}
+                אנו לא מוכרים או משתפים את המידע האישי שלכם עם צדדים שלישיים למטרות שיווק. המידע עשוי להיות משותף רק עם בני משפחה שהוזמנו על ידכם לאפליקציה. אנו משתמשים בשירותי ענן (Firebase/Google) לאחסון הנתונים, אשר כפופים למדיניות הפרטיות שלהם.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>7. זכויות המשתמש{'\n'}</Text>
+                יש לכם זכות:{'\n'}
+                • לגשת למידע האישי שלכם{'\n'}
+                • לבקש תיקון או עדכון של מידע לא מדויק{'\n'}
+                • לבקש מחיקה של המידע האישי שלכם{'\n'}
+                • לבקש העתק של המידע שלכם{'\n'}
+                • להתנגד לעיבוד המידע שלכם{'\n'}
+                • לבטל את הסכמתכם בכל עת{'\n\n'}
+
+                <Text style={styles.policySubtitle}>8. שמירת נתונים{'\n'}</Text>
+                אנו שומרים את המידע שלכם כל עוד החשבון פעיל. לאחר מחיקת החשבון, המידע יימחק תוך 30 יום, למעט מידע שנדרש לשמירה על פי דין.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>9. קטינים{'\n'}</Text>
+                האפליקציה מיועדת להורים ומטפלים. אנו לא אוספים מידע ישירות מקטינים. כל המידע על ילדים נאסף על ידי הורים או מטפלים מורשים בלבד.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>10. שימוש בנתונים אנונימיים{'\n'}</Text>
+                אנו רשאים להשתמש בנתונים אנונימיים ומוסווים (ללא זיהוי אישי) למטרות סטטיסטיקה, מחקר ושיפור השירות.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>11. העברת נתונים{'\n'}</Text>
+                הנתונים מאוחסנים בשרתי Google Cloud/Firebase אשר עשויים להיות ממוקמים מחוץ לישראל. אנו נוקטים באמצעים מתאימים להבטיח הגנה על המידע בהתאם לתקנות הגנת הפרטיות.{'\n\n'}
 
                 <Text style={styles.policySubtitle}>{t('privacy.contact')}{'\n'}</Text>
-                לשאלות בנוגע למדיניות הפרטיות, אנא פנו אלינו בכתובת: Calmperent@Gmail.com
+                לשאלות, בקשות או תלונות בנוגע למדיניות הפרטיות או למימוש זכויותיכם, אנא פנו אלינו בכתובת: Calmperent@Gmail.com{'\n\n'}
+
+                <Text style={styles.policySubtitle}>12. שינויים במדיניות{'\n'}</Text>
+                אנו שומרים לעצמנו את הזכות לעדכן מדיניות זו מעת לעת. שינויים משמעותיים יפורסמו באפליקציה. המשך השימוש באפליקציה לאחר שינוי מהווה הסכמה למדיניות המעודכנת.
               </Text>
             </ScrollView>
           </View>
@@ -766,7 +790,7 @@ export default function SettingsScreen() {
 
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
               <Text style={[styles.policyText, { color: theme.textPrimary }]}>
-                <Text style={styles.policyTitle}>{t('alerts.lastUpdated')}{'\n\n'}</Text>
+                <Text style={styles.policyTitle}>עודכן לאחרונה: 20 בינואר 2026{'\n\n'}</Text>
 
                 <Text style={styles.policySubtitle}>{t('terms.agreement')}{'\n'}</Text>
                 בשימוש באפליקציית CalmParent, הנכם מסכימים לתנאי שימוש אלה. אם אינכם מסכימים לתנאים, אנא הימנעו משימוש באפליקציה.{'\n\n'}
@@ -783,16 +807,37 @@ export default function SettingsScreen() {
                 האפליקציה מיועדת לשימוש אישי ומשפחתי בלבד. אסור להשתמש באפליקציה לכל מטרה בלתי חוקית או לא מורשית.{'\n\n'}
 
                 <Text style={styles.policySubtitle}>{t('terms.liability')}{'\n'}</Text>
-                האפליקציה מסופקת "כמות שהיא". אנו לא נושאים באחריות לכל נזק ישיר או עקיף הנובע משימוש באפליקציה. האפליקציה אינה מהווה תחליף לייעוץ רפואי מקצועי.{'\n\n'}
+                האפליקציה מסופקת "כמות שהיא" (AS IS) וללא כל אחריות מפורשת או משתמעת. אנו לא נושאים באחריות לכל נזק ישיר, עקיף, מקרי, מיוחד או תוצאתי הנובע משימוש או אי יכולת להשתמש באפליקציה, כולל אך לא רק: אובדן נתונים, אובדן רווחים, הפרעה לעסקים או נזק אחר. האפליקציה אינה מהווה תחליף לייעוץ רפואי, אבחון או טיפול מקצועי. יש להתייעץ תמיד עם רופא או איש מקצוע רפואי מוסמך לפני קבלת החלטות רפואיות.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>6. שירותים של צד שלישי{'\n'}</Text>
+                האפליקציה משתמשת בשירותים של צדדים שלישיים (כגון Firebase, Google Cloud) לאחסון ועיבוד נתונים. אנו לא נושאים באחריות לזמינות, ביצועים או אבטחה של שירותים אלה. השימוש בשירותים אלה כפוף לתנאי השימוש ומדיניות הפרטיות שלהם.{'\n\n'}
 
                 <Text style={styles.policySubtitle}>{t('terms.intellectualProperty')}{'\n'}</Text>
-                כל הזכויות באפליקציה, כולל עיצוב, קוד ותוכן, שייכות ל-CalmParent. אין לשכפל, להפיץ או ליצור יצירות נגזרות ללא אישור מפורש.{'\n\n'}
+                כל הזכויות באפליקציה, כולל אך לא רק: עיצוב, קוד, לוגו, סימני מסחר, תמונות ותוכן, שייכות ל-CalmParent או לבעליהם החוקיים. אין לשכפל, להפיץ, לשנות, ליצור יצירות נגזרות, להציג בפומבי או להשתמש מסחרית בתוכן ללא אישור מפורש בכתב מאתנו. כל הפרה של זכויות יוצרים או קניין רוחני תוביל לפעולה משפטית.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>7. תוכן המשתמש{'\n'}</Text>
+                אתם אחראים לכל התוכן שאתם מעלים לאפליקציה (תמונות, הערות, נתונים). אתם מתחייבים שהתוכן אינו מפר זכויות של צדדים שלישיים, אינו בלתי חוקי, פוגעני או מפר כל חוק או תקנה. אנו שומרים לעצמנו את הזכות להסיר תוכן מפר או לא הולם ללא התראה מוקדמת.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>8. ביטול והשעיה{'\n'}</Text>
+                אנו שומרים לעצמנו את הזכות לבטל, להשעות או להגביל את הגישה לחשבון שלכם בכל עת, ללא התראה מוקדמת, אם נדע או נחשוד שהפרתם תנאים אלה, או מסיבות אחרות לפי שיקול דעתנו הבלעדי. ביטול החשבון יוביל למחיקת כל הנתונים הקשורים לחשבון.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>9. שינויים בשירות{'\n'}</Text>
+                אנו שומרים לעצמנו את הזכות לשנות, להפסיק או להשהות את השירות או חלקים ממנו בכל עת, ללא התראה מוקדמת. אנו לא נהיה אחראים כלפיכם או כלפי צד שלישי כלשהו על כל שינוי, השעיה או הפסקה של השירות.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>10. פיצוי{'\n'}</Text>
+                אתם מסכימים לפצות ולהגן על CalmParent, עובדיה, מנהליה ושותפיה מפני כל תביעה, נזק, אחריות, הוצאה או אובדן (כולל שכר טרחה משפטי) הנובעים משימוש שלכם באפליקציה, הפרת תנאים אלה, או הפרת זכויות של צד שלישי.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>11. חוק ישראלי ובוררות{'\n'}</Text>
+                תנאים אלה כפופים לחוקי מדינת ישראל. כל סכסוך הנובע מתנאים אלה או קשור אליהם ייפתר בבית המשפט המוסמך בתל אביב-יפו בלבד. במקרה של סכסוך, הצדדים יפעלו תחילה לפתרון בדרכי שלום באמצעות מגעים ישירים.{'\n\n'}
+
+                <Text style={styles.policySubtitle}>12. היפרדות{'\n'}</Text>
+                אם סעיף כלשהו בתנאים אלה יימצא כבלתי תקף או לא ניתן לאכיפה, הסעיף ייפרד מתנאים אלה והשאר יישארו בתוקף מלא.{'\n\n'}
 
                 <Text style={styles.policySubtitle}>{t('terms.changes')}{'\n'}</Text>
-                אנו שומרים לעצמנו את הזכות לעדכן תנאים אלה בכל עת. שימוש מתמשך באפליקציה לאחר עדכון מהווה הסכמה לתנאים המעודכנים.{'\n\n'}
+                אנו שומרים לעצמנו את הזכות לעדכן תנאים אלה בכל עת. שינויים משמעותיים יפורסמו באפליקציה. שימוש מתמשך באפליקציה לאחר עדכון מהווה הסכמה לתנאים המעודכנים. אם אינכם מסכימים לתנאים המעודכנים, עליכם להפסיק את השימוש באפליקציה ולמחוק את החשבון.{'\n\n'}
 
                 <Text style={styles.policySubtitle}>{t('terms.contact')}{'\n'}</Text>
-                לשאלות בנוגע לתנאי השימוש, אנא פנו אלינו בכתובת: Calmperent@Gmail.com
+                לשאלות, תלונות או בקשות בנוגע לתנאי השימוש, אנא פנו אלינו בכתובת: Calmperent@Gmail.com
               </Text>
             </ScrollView>
           </View>

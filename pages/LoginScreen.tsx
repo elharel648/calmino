@@ -36,9 +36,11 @@ import {
   OAuthProvider,
 } from 'firebase/auth';
 
-import { auth } from '../services/firebaseConfig';
+import { auth, db } from '../services/firebaseConfig';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { joinFamily } from '../services/familyService';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -52,11 +54,11 @@ const validateEmail = (email: string): boolean => {
   return regex.test(email);
 };
 
-const validatePassword = (password: string): { valid: boolean; message: string } => {
-  if (password.length < 6) return { valid: false, message: 'לפחות 6 תווים' };
-  if (password.length < 8) return { valid: true, message: 'סיסמה בינונית' };
-  if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) return { valid: true, message: 'סיסמה טובה' };
-  return { valid: true, message: 'סיסמה חזקה 💪' };
+const validatePassword = (password: string, t: (key: string) => string): { valid: boolean; message: string } => {
+  if (password.length < 6) return { valid: false, message: t('login.errors.passwordMinLength') };
+  if (password.length < 8) return { valid: true, message: t('login.passwordStrength.medium') };
+  if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) return { valid: true, message: t('login.passwordStrength.good') };
+  return { valid: true, message: t('login.passwordStrength.strong') };
 };
 
 const getPasswordStrengthColor = (password: string): string => {
@@ -68,6 +70,7 @@ const getPasswordStrengthColor = (password: string): string => {
 
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +89,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
   // Babysitter registration
   const [registerAsBabysitter, setRegisterAsBabysitter] = useState(false);
+
+  // Terms and Privacy Agreement
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
   // Animation refs
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -128,8 +135,30 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
       setLoading(true);
       signInWithCredential(auth, credential)
-        .then(() => {
+        .then(async (userCredential) => {
           if (__DEV__) console.log('✅ Google Sign-In Success!');
+          
+          // Check if this is a new user and save agreement
+          const userRef = doc(db, 'users', userCredential.user.uid);
+          const userSnap = await getDoc(userRef);
+          if (!userSnap.exists()) {
+            // New user - save agreement
+            await setDoc(userRef, {
+              agreements: {
+                termsOfService: {
+                  agreed: true,
+                  agreedAt: serverTimestamp(),
+                  version: '2026-01-20',
+                },
+                privacyPolicy: {
+                  agreed: true,
+                  agreedAt: serverTimestamp(),
+                  version: '2026-01-20',
+                },
+              },
+            }, { merge: true });
+          }
+          
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           onLoginSuccess();
         })
@@ -161,21 +190,21 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   // --- Forgot password ---
   const handleForgotPassword = async () => {
     if (!email) {
-      Alert.alert('שגיאה', 'אנא הזן את כתובת האימייל שלך');
+      Alert.alert(t('common.error'), t('login.errors.enterEmail'));
       return;
     }
     if (!validateEmail(email)) {
-      Alert.alert('שגיאה', 'כתובת אימייל לא תקינה');
+      Alert.alert(t('common.error'), t('login.errors.invalidEmail'));
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, email);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('נשלח! ✉️', 'מייל לאיפוס סיסמה נשלח אליך. בדוק גם בספאם.');
+      Alert.alert(t('login.passwordReset.sent'), t('login.passwordReset.sentMessage'));
     } catch (error) {
       if (__DEV__) console.log('Password reset error:', error);
-      Alert.alert('שגיאה', 'לא הצלחנו לשלוח מייל איפוס');
+      Alert.alert(t('common.error'), t('alerts.couldNotSendEmail'));
     }
   };
 
@@ -188,30 +217,30 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     // Check lockout
     if (lockoutTime && Date.now() < lockoutTime) {
       const remaining = Math.ceil((lockoutTime - Date.now()) / 1000);
-      Alert.alert('נחסמת זמנית', `נסה שוב בעוד ${remaining} שניות`);
+      Alert.alert(t('login.lockout.title'), t('login.lockout.message').replace('30', String(remaining)));
       return;
     }
 
     // Validate email
     if (!email) {
-      setEmailError('נא להזין אימייל');
+      setEmailError(t('login.errors.enterPassword'));
       triggerShake();
       return;
     }
     if (!validateEmail(email)) {
-      setEmailError('כתובת אימייל לא תקינה');
+      setEmailError(t('login.errors.invalidEmail'));
       triggerShake();
       return;
     }
 
     // Validate password
     if (!password) {
-      setPasswordError('נא להזין סיסמה');
+      setPasswordError(t('login.errors.enterPassword'));
       triggerShake();
       return;
     }
     if (!isLogin && password.length < 6) {
-      setPasswordError('הסיסמה חייבת להכיל לפחות 6 תווים');
+      setPasswordError(t('login.errors.passwordMinLength'));
       triggerShake();
       return;
     }
@@ -225,8 +254,32 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         setAttempts(0);
         onLoginSuccess();
       } else {
+        // Check if user agreed to terms and privacy
+        if (!agreedToTerms || !agreedToPrivacy) {
+          Alert.alert(t('login.errors.agreementRequired'), t('login.errors.agreeTerms'));
+          setLoading(false);
+          return;
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(userCredential.user);
+
+        // Save user agreement to Firestore
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        await setDoc(userRef, {
+          agreements: {
+            termsOfService: {
+              agreed: true,
+              agreedAt: serverTimestamp(),
+              version: '2026-01-20', // Update this date when terms change
+            },
+            privacyPolicy: {
+              agreed: true,
+              agreedAt: serverTimestamp(),
+              version: '2026-01-20', // Update this date when privacy policy changes
+            },
+          },
+        }, { merge: true });
 
         // If user has a pending invite code, join the family
         if (pendingInviteCode.trim().length === 6) {
@@ -251,7 +304,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       if (newAttempts >= 5) {
         setLockoutTime(Date.now() + 30000); // 30 seconds
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('יותר מדי ניסיונות', 'נחסמת ל-30 שניות מסיבות אבטחה');
+        Alert.alert(t('login.lockout.title'), t('login.lockout.message'));
         setLoading(false);
         return;
       }
@@ -259,38 +312,38 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       triggerShake();
 
       // Error messages
-      let msg = 'שגיאה בהתחברות';
+      let msg = t('login.errors.loginError');
       switch (error.code) {
         case 'auth/invalid-credential':
         case 'auth/wrong-password':
         case 'auth/user-not-found':
-          msg = 'אימייל או סיסמה שגויים';
+          msg = t('login.errors.wrongCredentials');
           break;
         case 'auth/email-already-in-use':
-          msg = 'כתובת האימייל כבר רשומה במערכת';
+          msg = t('login.errors.emailInUse');
           break;
         case 'auth/invalid-email':
-          msg = 'כתובת אימייל לא תקינה';
+          msg = t('login.errors.invalidEmail');
           break;
         case 'auth/weak-password':
-          msg = 'הסיסמה חלשה מדי - נסה סיסמה חזקה יותר';
+          msg = t('login.errors.weakPassword');
           break;
         case 'auth/too-many-requests':
-          msg = 'יותר מדי ניסיונות. נסה שוב בעוד כמה דקות';
+          msg = t('login.errors.tooManyAttempts');
           break;
         case 'auth/network-request-failed':
-          msg = 'בעיית חיבור לאינטרנט';
+          msg = t('login.errors.networkError');
           break;
       }
 
-      Alert.alert('שגיאה', msg);
+      Alert.alert(t('common.error'), msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const isFormValid = email.length > 0 && password.length >= 6;
-  const passwordStrength = validatePassword(password);
+  const isFormValid = email.length > 0 && password.length >= 6 && (isLogin || (agreedToTerms && agreedToPrivacy));
+  const passwordStrength = validatePassword(password, t);
 
   return (
     <View style={styles.container}>
@@ -303,8 +356,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           <View style={[styles.iconCircle, { backgroundColor: theme.card }]}>
             <Baby size={40} color={theme.primary} />
           </View>
-          <Text style={styles.appTitle}>הורה רגוע</Text>
-          <Text style={styles.appSubtitle}>ניהול חכם ושקט להורים טריים</Text>
+          <Text style={styles.appTitle}>{t('login.appName')}</Text>
+          <Text style={styles.appSubtitle}>{t('login.appSubtitle')}</Text>
         </View>
         <View style={[styles.blob, { top: -50, left: -50, backgroundColor: '#6366f1' }]} />
         <View style={[styles.blob, { top: 50, right: -20, backgroundColor: '#a855f7' }]} />
@@ -324,17 +377,17 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             {/* Security badge */}
             <View style={styles.securityBadge}>
               <Shield size={14} color="#10B981" />
-              <Text style={styles.securityText}>חיבור מאובטח</Text>
+              <Text style={styles.securityText}>{t('login.security')}</Text>
             </View>
 
             {/* Verification Waiting Screen */}
             {awaitingVerification ? (
               <View style={styles.verificationContainer}>
                 <Text style={styles.verificationEmoji}>📧</Text>
-                <Text style={styles.verificationTitle}>בדוק את המייל שלך</Text>
+                <Text style={styles.verificationTitle}>{t('login.verification.checkEmail')}</Text>
                 <Text style={styles.verificationSubtitle}>
-                  שלחנו לינק אימות ל-{email}{'\n'}
-                  <Text style={styles.spamNote}>(בדוק גם בתיקיית הספאם!)</Text>
+                  {t('login.verification.sentTo').replace('{email}', email)}{'\n'}
+                  <Text style={styles.spamNote}>{t('login.verification.checkSpam')}</Text>
                 </Text>
 
                 <TouchableOpacity
@@ -345,21 +398,21 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       await auth.currentUser?.reload();
                       if (auth.currentUser?.emailVerified) {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        Alert.alert('מעולה! 🎉', 'האימייל אומת בהצלחה!', [
-                          { text: 'המשך', onPress: () => onLoginSuccess() }
+                        Alert.alert(t('login.verification.verified'), t('login.verification.success'), [
+                          { text: t('login.verification.continue'), onPress: () => onLoginSuccess() }
                         ]);
                       } else {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                        Alert.alert('עוד לא אימתת', 'לחץ על הלינק במייל שנשלח אליך ונסה שוב');
+                        Alert.alert(t('login.verification.notVerified'), t('login.verification.checkLink'));
                       }
                     } catch (e) {
-                      Alert.alert('שגיאה', 'נסה שוב');
+                      Alert.alert(t('common.error'), t('common.retry'));
                     } finally {
                       setLoading(false);
                     }
                   }}
                   disabled={loading}
-                  accessibilityLabel="בדוק אם האימייל אומת"
+                  accessibilityLabel={t('login.checkVerification')}
                   accessibilityRole="button"
                   accessibilityState={{ disabled: loading }}
                 >
@@ -370,7 +423,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     {loading ? (
                       <ActivityIndicator color={theme.card} />
                     ) : (
-                      <Text style={[styles.mainButtonText, { color: theme.card }]}>אימתתי! בדוק עכשיו ✓</Text>
+                      <Text style={[styles.mainButtonText, { color: theme.card }]}>{t('login.verification.checkButton')}</Text>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -382,16 +435,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       if (auth.currentUser) {
                         await sendEmailVerification(auth.currentUser);
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        Alert.alert('נשלח!', 'מייל אימות חדש נשלח אליך');
+                        Alert.alert(t('login.verification.resendSent'), t('login.verification.resendMessage'));
                       }
                     } catch (e) {
-                      Alert.alert('שגיאה', 'נסה שוב בעוד דקה');
+                      Alert.alert(t('login.verification.resendError'), t('login.verification.resendErrorMsg'));
                     }
                   }}
-                  accessibilityLabel="שלח מייל אימות מחדש"
+                  accessibilityLabel={t('login.resendVerification')}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.resendText, { color: theme.primary }]}>שלח מייל אימות מחדש</Text>
+                  <Text style={[styles.resendText, { color: theme.primary }]}>{t('login.verification.resend')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -402,20 +455,20 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     setPassword('');
                   }}
                   style={{ marginTop: 20 }}
-                  accessibilityLabel="חזרה למסך התחברות"
+                  accessibilityLabel={t('login.verification.backToLogin')}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.backToLogin, { color: theme.textSecondary }]}>חזרה למסך התחברות</Text>
+                  <Text style={[styles.backToLogin, { color: theme.textSecondary }]}>{t('login.verification.backToLogin')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={[styles.formTitle, { color: theme.textPrimary }]}>{isLogin ? 'ברוכים השבים' : 'יצירת חשבון'}</Text>
-                <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>{isLogin ? 'הכנס פרטים כדי להמשיך' : 'הצטרפו לקהילת ההורים הרגועים'}</Text>
+                <Text style={[styles.formTitle, { color: theme.textPrimary }]}>{isLogin ? t('login.welcomeBack') : t('login.createAccount')}</Text>
+                <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>{isLogin ? t('login.enterDetails') : t('login.joinCommunity')}</Text>
 
                 {/* Email Input */}
                 <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: theme.textPrimary }]}>אימייל</Text>
+                  <Text style={[styles.label, { color: theme.textPrimary }]}>{t('login.email')}</Text>
                   <View style={[
                     styles.inputWrapper, 
                     { backgroundColor: theme.inputBackground, borderColor: theme.border },
@@ -433,8 +486,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       autoCorrect={false}
                       returnKeyType="next"
                       onSubmitEditing={() => passwordRef.current?.focus()}
-                      accessibilityLabel="שדה אימייל"
-                      accessibilityHint="הזן את כתובת האימייל שלך"
+                      accessibilityLabel={t('login.emailField')}
+                      accessibilityHint={t('login.emailHint')}
                     />
                     {email.length > 0 && validateEmail(email) && (
                       <Check size={18} color={theme.success} style={{ marginRight: 12 }} />
@@ -450,7 +503,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
                 {/* Password Input */}
                 <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: theme.textPrimary }]}>סיסמה</Text>
+                  <Text style={[styles.label, { color: theme.textPrimary }]}>{t('login.password')}</Text>
                   <View style={[
                     styles.inputWrapper, 
                     { backgroundColor: theme.inputBackground, borderColor: theme.border },
@@ -460,15 +513,15 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     <TextInput
                       ref={passwordRef}
                       style={[styles.input, { color: theme.textPrimary }]}
-                      placeholder="הזן סיסמה"
+                      placeholder={t('login.password')}
                       placeholderTextColor={theme.textTertiary}
                       value={password}
                       onChangeText={(text) => { setPassword(text); setPasswordError(''); }}
                       secureTextEntry={!showPassword}
                       returnKeyType="done"
                       onSubmitEditing={handleAuth}
-                      accessibilityLabel="שדה סיסמה"
-                      accessibilityHint="הזן את הסיסמה שלך"
+                      accessibilityLabel={t('login.passwordField')}
+                      accessibilityHint={t('login.passwordHint')}
                     />
                     <TouchableOpacity
                       onPress={() => {
@@ -476,7 +529,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       }}
                       style={styles.eyeBtn}
-                      accessibilityLabel={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
+                      accessibilityLabel={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                       accessibilityRole="button"
                     >
                       {showPassword ? <EyeOff size={20} color={theme.textTertiary} /> : <Eye size={20} color={theme.textTertiary} />}
@@ -506,10 +559,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   <TouchableOpacity 
                     onPress={handleForgotPassword} 
                     style={styles.forgotBtn}
-                    accessibilityLabel="שכחת סיסמה"
+                    accessibilityLabel={t('login.forgotPassword')}
                     accessibilityRole="button"
                   >
-                    <Text style={[styles.forgotText, { color: theme.primary }]}>שכחת סיסמה?</Text>
+                    <Text style={[styles.forgotText, { color: theme.primary }]}>{t('login.forgotPassword')}</Text>
                   </TouchableOpacity>
                 )}
 
@@ -535,16 +588,63 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     </View>
                     <View style={styles.babysitterTextSection}>
                       <Text style={[styles.babysitterTitle, { color: theme.textPrimary }, registerAsBabysitter && { color: theme.warning }]}>
-                        {registerAsBabysitter ? '✓ נרשם/ת כבייביסיטר' : 'רוצה לעבוד כבייביסיטר?'}
+                        {registerAsBabysitter ? t('login.babysitter.registered') : t('login.babysitter.title')}
                       </Text>
                       <Text style={[styles.babysitterSubtitle, { color: theme.textSecondary }]}>
-                        {registerAsBabysitter ? 'תוכל/י לקבל הזמנות משפחות' : 'הצטרפ/י לרשת הבייביסיטרים שלנו'}
+                        {registerAsBabysitter ? t('login.babysitter.registeredSubtitle') : t('login.babysitter.subtitle')}
                       </Text>
                     </View>
                     <View style={[styles.babysitterCheckbox, registerAsBabysitter && styles.babysitterCheckboxActive]}>
                       {registerAsBabysitter && <Check size={14} color={theme.card} />}
                     </View>
                   </TouchableOpacity>
+                )}
+
+                {/* Terms and Privacy Agreement - Only in signup mode */}
+                {!isLogin && (
+                  <View style={styles.agreementContainer}>
+                    <TouchableOpacity
+                      style={styles.agreementRow}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setAgreedToTerms(!agreedToTerms);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[
+                        styles.agreementCheckbox,
+                        { borderColor: agreedToTerms ? theme.primary : theme.border },
+                        agreedToTerms && { backgroundColor: theme.primary }
+                      ]}>
+                        {agreedToTerms && <Check size={14} color={theme.card} strokeWidth={3} />}
+                      </View>
+                      <Text style={[styles.agreementText, { color: theme.textSecondary }]}>
+                        {t('login.agreement.terms')}
+                        <Text style={[styles.agreementLink, { color: theme.primary }]}>{t('login.agreement.termsLink')}</Text>
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.agreementRow}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setAgreedToPrivacy(!agreedToPrivacy);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[
+                        styles.agreementCheckbox,
+                        { borderColor: agreedToPrivacy ? theme.primary : theme.border },
+                        agreedToPrivacy && { backgroundColor: theme.primary }
+                      ]}>
+                        {agreedToPrivacy && <Check size={14} color={theme.card} strokeWidth={3} />}
+                      </View>
+                      <Text style={[styles.agreementText, { color: theme.textSecondary }]}>
+                        אני מסכים/ה ל
+                        <Text style={[styles.agreementLink, { color: theme.primary }]}> מדיניות הפרטיות</Text>
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
 
                 {/* Submit button */}
@@ -635,15 +735,37 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
                         setLoading(true);
                         if (__DEV__) console.log('🍎 Apple Sign-In - Signing in to Firebase...');
-                        await signInWithCredential(auth, firebaseCredential);
+                        const userCredential = await signInWithCredential(auth, firebaseCredential);
                         if (__DEV__) console.log('✅ Apple Sign-In Success!');
+                        
+                        // Check if this is a new user and save agreement
+                        const userRef = doc(db, 'users', userCredential.user.uid);
+                        const userSnap = await getDoc(userRef);
+                        if (!userSnap.exists()) {
+                          // New user - save agreement
+                          await setDoc(userRef, {
+                            agreements: {
+                              termsOfService: {
+                                agreed: true,
+                                agreedAt: serverTimestamp(),
+                                version: '2026-01-20',
+                              },
+                              privacyPolicy: {
+                                agreed: true,
+                                agreedAt: serverTimestamp(),
+                                version: '2026-01-20',
+                              },
+                            },
+                          }, { merge: true });
+                        }
+                        
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         onLoginSuccess();
                       } catch (e: any) {
                         if (__DEV__) console.error('❌ Apple Sign-In Error:', e.code, e.message);
                         if (e.code !== 'ERR_REQUEST_CANCELED') {
                           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                          Alert.alert('שגיאת Apple', `${e.code}: ${e.message}`);
+                          Alert.alert(t('login.errors.appleError'), `${e.code}: ${e.message}`);
                         }
                       } finally {
                         setLoading(false);
@@ -664,12 +786,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }} 
                   style={styles.switchMode}
-                  accessibilityLabel={isLogin ? 'מעבר למסך הרשמה' : 'מעבר למסך התחברות'}
+                  accessibilityLabel={isLogin ? t('login.switchToSignup') : t('login.switchToLogin')}
                   accessibilityRole="button"
                 >
                   <Text style={[styles.switchText, { color: theme.textSecondary }]}>
-                    {isLogin ? 'עדיין אין לך חשבון? ' : 'כבר יש לך חשבון? '}
-                    <Text style={[styles.linkText, { color: theme.primary }]}>{isLogin ? 'הרשם עכשיו' : 'התחבר'}</Text>
+                    {isLogin ? t('login.noAccount') : t('login.hasAccount')}
+                    <Text style={[styles.linkText, { color: theme.primary }]}>{isLogin ? t('login.signupNow') : t('login.loginNow')}</Text>
                   </Text>
                 </TouchableOpacity>
 
@@ -678,7 +800,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   <View style={styles.joinCodeSection}>
                     <View style={styles.joinCodeDivider}>
                       <View style={styles.joinCodeLine} />
-                      <Text style={styles.joinCodeOrText}>או</Text>
+                      <Text style={styles.joinCodeOrText}>{t('common.or')}</Text>
                       <View style={styles.joinCodeLine} />
                     </View>
 
@@ -695,7 +817,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         setShowJoinCodeModal(true);
                       }}
-                      accessibilityLabel="הזן קוד הזמנה למשפחה"
+                      accessibilityLabel={t('login.enterInviteCodeLabel')}
                       accessibilityRole="button"
                     >
                       <Users size={24} color={pendingInviteCode.length === 6 ? theme.success : theme.primary} />
@@ -705,10 +827,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                           { color: theme.textPrimary },
                           pendingInviteCode.length === 6 && { color: theme.success }
                         ]}>
-                          {pendingInviteCode.length === 6 ? `קוד הזמנה: ${pendingInviteCode}` : 'קיבלתי קוד הזמנה'}
+                          {pendingInviteCode.length === 6 ? `${t('login.enterInviteCode')}: ${pendingInviteCode}` : t('login.receivedCode')}
                         </Text>
                         <Text style={[styles.joinCodeSubtitle, { color: theme.textSecondary }]}>
-                          {pendingInviteCode.length === 6 ? 'הקוד יופעל בסיום ההרשמה ✓' : 'בן/בת זוג שלחו לי קוד'}
+                          {pendingInviteCode.length === 6 ? t('login.codeSaved') : t('login.partnerSentCode')}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -728,16 +850,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             <TouchableOpacity
               style={styles.joinModalClose}
               onPress={() => setShowJoinCodeModal(false)}
-              accessibilityLabel="סגור חלון"
+              accessibilityLabel={t('login.closeWindow')}
               accessibilityRole="button"
             >
               <X size={24} color={theme.textSecondary} />
             </TouchableOpacity>
 
             <Users size={48} color={theme.primary} />
-            <Text style={[styles.joinModalTitle, { color: theme.textPrimary }]}>הזן קוד הזמנה</Text>
+            <Text style={[styles.joinModalTitle, { color: theme.textPrimary }]}>{t('login.enterInviteCode')}</Text>
             <Text style={[styles.joinModalSubtitle, { color: theme.textSecondary }]}>
-              קיבלת קוד 6 ספרות מבן/בת הזוג?
+              {t('login.receivedCode')}
             </Text>
 
             <TextInput
@@ -745,15 +867,15 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 styles.joinModalInput, 
                 { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.textPrimary }
               ]}
-              placeholder="הזן קוד 6 ספרות"
+              placeholder={t('login.codePlaceholder')}
               placeholderTextColor={theme.textTertiary}
               value={pendingInviteCode}
               onChangeText={(text) => setPendingInviteCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
               maxLength={6}
               autoCapitalize="characters"
               textAlign="center"
-              accessibilityLabel="שדה קוד הזמנה"
-              accessibilityHint="הזן קוד 6 ספרות"
+              accessibilityLabel={t('login.enterInviteCodeLabel')}
+              accessibilityHint={t('login.codePlaceholder')}
             />
 
             <TouchableOpacity
@@ -766,13 +888,13 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               onPress={() => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 setShowJoinCodeModal(false);
-                Alert.alert('מעולה! 🎉', 'הקוד נשמר! המשך להרשמה והקוד יופעל אוטומטית.');
+                Alert.alert(t('login.codeSavedSuccess'), t('login.codeSavedMessage'));
               }}
-              accessibilityLabel="שמור קוד הזמנה"
+              accessibilityLabel={t('login.saveInviteCode')}
               accessibilityRole="button"
               accessibilityState={{ disabled: pendingInviteCode.length !== 6 }}
             >
-              <Text style={[styles.joinModalBtnText, { color: pendingInviteCode.length === 6 ? theme.card : theme.textTertiary }]}>שמור קוד</Text>
+              <Text style={[styles.joinModalBtnText, { color: pendingInviteCode.length === 6 ? theme.card : theme.textTertiary }]}>{t('login.saveInviteCode')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1160,5 +1282,32 @@ const styles = StyleSheet.create({
   babysitterCheckboxActive: {
     backgroundColor: '#F59E0B',
     borderColor: '#F59E0B',
+  },
+  agreementContainer: {
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 12,
+  },
+  agreementRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+  },
+  agreementCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  agreementText: {
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
+  },
+  agreementLink: {
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

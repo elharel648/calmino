@@ -161,11 +161,11 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
 
 const NOTIFICATION_CONTENT = {
     feeding_reminder: {
-        title: '🍼 זמן לארוחה',
+        title: '🍴 זמן לארוחה',
         body: 'עברו {hours} שעות מהאכלה האחרונה',
     },
     sleep_reminder: {
-        title: '😴 הגיע זמן לישון',
+        title: '🌙 הגיע זמן לישון',
         body: 'שעת השינה המומלצת',
     },
     supplement_reminder: {
@@ -183,42 +183,8 @@ const NOTIFICATION_CONTENT = {
 };
 
 // --- Configure Notifications ---
-Notifications.setNotificationHandler({
-    handleNotification: async (notification) => {
-        // Save notification to Firebase even when app is closed/background
-        const userId = auth.currentUser?.uid;
-        if (userId) {
-            try {
-                const notificationType = notification.request.content.data?.type || 'reminder';
-                const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
-                    'feeding_reminder': 'feed',
-                    'sleep_reminder': 'sleep',
-                    'supplement_reminder': 'medication',
-                    'vaccine_reminder': 'medication',
-                    'daily_summary': 'reminder',
-                };
-                
-                await notificationStorageService.saveNotification({
-                    userId,
-                    type: typeMap[notificationType] || 'reminder',
-                    title: notification.request.content.title || 'התראה',
-                    message: notification.request.content.body || '',
-                    timestamp: new Date(),
-                    isRead: false,
-                    isUrgent: notificationType === 'vaccine_reminder',
-                });
-            } catch (error) {
-                logger.error('Failed to save notification in handler:', error);
-            }
-        }
-
-        return {
-            shouldShowAlert: true,
-            shouldPlaySound: true,
-            shouldSetBadge: true,
-        };
-    },
-});
+// Note: setNotificationHandler is now configured in App.tsx to ensure it's set before app starts
+// This allows proper handling of push notifications from external sources
 
 // --- Service Class ---
 class NotificationService {
@@ -327,26 +293,37 @@ class NotificationService {
 
     // Schedule feeding reminder
     async scheduleFeedingReminder(lastFeedingTime: Date): Promise<void> {
-        if (!this.settings.enabled || !this.settings.feedingReminder) return;
+        if (!this.settings.enabled || !this.settings.feedingReminder) {
+            logger.debug('🔔 Feeding reminder disabled, skipping');
+            return;
+        }
 
-        // Cancel existing
-        await this.cancelNotification('feeding_reminder');
+        try {
+            // Cancel existing
+            await this.cancelNotification('feeding_reminder');
 
-        const triggerTime = new Date(lastFeedingTime);
-        triggerTime.setHours(triggerTime.getHours() + this.settings.feedingIntervalHours);
+            const triggerTime = new Date(lastFeedingTime);
+            triggerTime.setHours(triggerTime.getHours() + this.settings.feedingIntervalHours);
 
-        // Only schedule if in the future
-        if (triggerTime > new Date()) {
-            const id = await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: NOTIFICATION_CONTENT.feeding_reminder.title,
-                    body: NOTIFICATION_CONTENT.feeding_reminder.body.replace('{hours}', String(this.settings.feedingIntervalHours)),
-                    data: { type: 'feeding_reminder' },
-                },
-                trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
-            });
+            // Only schedule if in the future
+            if (triggerTime > new Date()) {
+                const id = await Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: NOTIFICATION_CONTENT.feeding_reminder.title,
+                        body: NOTIFICATION_CONTENT.feeding_reminder.body.replace('{hours}', String(this.settings.feedingIntervalHours)),
+                        data: { type: 'feeding_reminder' },
+                        sound: 'default',
+                    },
+                    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
+                });
 
-            this.scheduledNotifications.set('feeding_reminder', id);
+                this.scheduledNotifications.set('feeding_reminder', id);
+                logger.debug('🔔 Feeding reminder scheduled for', triggerTime.toLocaleString('he-IL'));
+            } else {
+                logger.debug('🔔 Feeding reminder time is in the past, skipping');
+            }
+        } catch (error) {
+            logger.error('Failed to schedule feeding reminder:', error);
         }
     }
 
@@ -483,8 +460,15 @@ class NotificationService {
     async cancelNotification(type: NotificationType): Promise<void> {
         const id = this.scheduledNotifications.get(type);
         if (id) {
-            await Notifications.cancelScheduledNotificationAsync(id);
-            this.scheduledNotifications.delete(type);
+            try {
+                await Notifications.cancelScheduledNotificationAsync(id);
+                this.scheduledNotifications.delete(type);
+                logger.debug('🔔 Cancelled notification:', type);
+            } catch (error) {
+                logger.warn('Failed to cancel notification:', type, error);
+                // Still remove from map even if cancel fails
+                this.scheduledNotifications.delete(type);
+            }
         }
     }
 
@@ -500,6 +484,8 @@ class NotificationService {
     }
 
     // Schedule smart reminders based on patterns
+    // NOTE: Smart reminders are only scheduled if user hasn't set manual times
+    // This prevents conflicts with manual reminders
     async scheduleSmartReminders(childId: string): Promise<void> {
         if (!this.settings.enabled) return;
         if (!childId) return;
@@ -508,8 +494,28 @@ class NotificationService {
             // Analyze user patterns
             const patterns = await patternAnalyzer.analyzePatterns(childId);
 
-            // Schedule feeding reminder based on pattern
-            if (this.settings.feedingReminder && patterns.avgFeedingHour !== null) {
+            // Only schedule smart feeding reminder if:
+            // 1. User has feeding reminder enabled
+            // 2. We have enough data (at least 3 feedings in last 7 days)
+            // 3. User hasn't manually set a feeding schedule (we check if there's already a scheduled one-time reminder)
+            if (this.settings.feedingReminder && patterns.avgFeedingHour !== null && patterns.feedingCount >= 3) {
+                // Check if there's already a one-time reminder scheduled
+                // If yes, don't override it with smart reminder
+                const existingId = this.scheduledNotifications.get('feeding_reminder');
+                if (existingId) {
+                    try {
+                        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+                        const existing = scheduled.find(n => n.identifier === existingId);
+                        // If existing reminder is a DATE trigger (one-time), don't override with DAILY
+                        if (existing && existing.trigger && 'date' in existing.trigger) {
+                            logger.debug('🔔 Smart feeding reminder skipped - one-time reminder already scheduled');
+                            return;
+                        }
+                    } catch (error) {
+                        // If check fails, proceed with smart reminder
+                    }
+                }
+
                 await this.cancelNotification('feeding_reminder');
 
                 // 30 minutes before average feeding time
@@ -525,7 +531,7 @@ class NotificationService {
 
                 const id = await Notifications.scheduleNotificationAsync({
                     content: {
-                        title: '🍼 הכנה לארוחה',
+                        title: '🍴 הכנה לארוחה',
                         body: `בדרך כלל את/ה מאכיל/ה בסביבות ${patterns.avgFeedingHour}:00`,
                         data: { type: 'feeding_reminder' },
                     },
@@ -540,36 +546,61 @@ class NotificationService {
                 logger.debug('🔔', `Smart feeding reminder scheduled for ${reminderHour}:${reminderMinute}`);
             }
 
-            // Schedule sleep reminder based on pattern
-            if (this.settings.sleepReminder && patterns.avgSleepHour !== null) {
-                await this.cancelNotification('sleep_reminder');
-
-                // 30 minutes before average sleep time
-                let reminderHour = patterns.avgSleepHour;
-                let reminderMinute = 30;
-                if (reminderHour === 0) {
-                    reminderHour = 23;
-                    reminderMinute = 30;
-                } else {
-                    reminderHour -= 1;
-                    reminderMinute = 30;
+            // Only schedule smart sleep reminder if:
+            // 1. User has sleep reminder enabled
+            // 2. We have enough data (at least 3 sleeps in last 7 days)
+            // 3. User hasn't manually set a sleep time (we check if there's already a scheduled reminder)
+            if (this.settings.sleepReminder && patterns.avgSleepHour !== null && patterns.sleepCount >= 3) {
+                // Check if there's already a manual reminder scheduled
+                // If user has set a manual sleep time, don't override with smart reminder
+                // (Manual reminders are scheduled via scheduleSleepReminder which uses settings.sleepTime)
+                const existingId = this.scheduledNotifications.get('sleep_reminder');
+                let shouldSkipSleepReminder = false;
+                
+                if (existingId) {
+                    try {
+                        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+                        const existing = scheduled.find(n => n.identifier === existingId);
+                        // If existing reminder uses manual time, don't override
+                        if (existing) {
+                            logger.debug('🔔 Smart sleep reminder skipped - manual reminder already scheduled');
+                            shouldSkipSleepReminder = true;
+                        }
+                    } catch (error) {
+                        // If check fails, proceed with smart reminder
+                    }
                 }
+                
+                if (!shouldSkipSleepReminder) {
+                    await this.cancelNotification('sleep_reminder');
 
-                const id = await Notifications.scheduleNotificationAsync({
-                    content: {
-                        title: '😴 הכנה לשינה',
-                        body: `בדרך כלל התינוק/ת נרדם/ת בסביבות ${patterns.avgSleepHour}:00`,
-                        data: { type: 'sleep_reminder' },
-                    },
-                    trigger: {
-                        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-                        hour: reminderHour,
-                        minute: reminderMinute,
-                    },
-                });
-                this.scheduledNotifications.set('sleep_reminder', id);
+                    // 30 minutes before average sleep time
+                    let reminderHour = patterns.avgSleepHour;
+                    let reminderMinute = 30;
+                    if (reminderHour === 0) {
+                        reminderHour = 23;
+                        reminderMinute = 30;
+                    } else {
+                        reminderHour -= 1;
+                        reminderMinute = 30;
+                    }
 
-                logger.debug('🔔', `Smart sleep reminder scheduled for ${reminderHour}:${reminderMinute}`);
+                    const id = await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: '🌙 הכנה לשינה',
+                            body: `בדרך כלל התינוק/ת נרדם/ת בסביבות ${patterns.avgSleepHour}:00`,
+                            data: { type: 'sleep_reminder' },
+                        },
+                        trigger: {
+                            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                            hour: reminderHour,
+                            minute: reminderMinute,
+                        },
+                    });
+                    this.scheduledNotifications.set('sleep_reminder', id);
+
+                    logger.debug('🔔', `Smart sleep reminder scheduled for ${reminderHour}:${reminderMinute}`);
+                }
             }
 
         } catch (error) {

@@ -21,6 +21,7 @@ import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withS
 import { saveBabyProfile } from '../services/babyService';
 import { LiquidGlassBackground } from '../components/LiquidGlass';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,6 +33,7 @@ type BabyProfileScreenProps = {
 
 export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: BabyProfileScreenProps) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState(new Date());
   const [gender, setGender] = useState<'boy' | 'girl'>('boy');
@@ -56,7 +58,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const handleSave = async () => {
     if (!name.trim()) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('אופס...', 'שכחת לכתוב את השם 😊');
+      Alert.alert(t('baby.nameRequired'), t('baby.nameRequiredMessage'));
       return;
     }
 
@@ -66,12 +68,12 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     try {
       await saveBabyProfile(name, birthDate, gender);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('איזה כיף! 🎉', `ברוכים הבאים ${name} למשפחת CalmParent!`, [
-        { text: 'בואו נתחיל!', onPress: onProfileSaved }
+      Alert.alert(t('baby.welcome'), t('baby.welcomeMessage').replace('{name}', name), [
+        { text: t('baby.letsStart'), onPress: onProfileSaved }
       ]);
     } catch (error) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('שגיאה', 'משהו השתבש, נסה שוב');
+      Alert.alert(t('common.error'), t('errors.saveError'));
     } finally {
       setLoading(false);
     }

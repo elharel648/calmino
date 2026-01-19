@@ -297,35 +297,30 @@ export default function SettingsScreen() {
             <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user.email}</Text>
           )}
         </Animated.View>
-        {/* Premium Card - Apple Style with Subtle Gradient */}
+        {/* Premium Card - Highlighted Premium Design */}
         <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.section}>
           <TouchableOpacity
-            style={styles.premiumCard}
+            style={[styles.premiumCardMinimal, { 
+              backgroundColor: isDarkMode ? 'rgba(255,107,53,0.08)' : '#FFF7ED',
+              borderColor: isDarkMode ? 'rgba(255,107,53,0.2)' : '#FFE4CC',
+              borderWidth: 1,
+            }]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setIsPremiumModalOpen(true);
             }}
-            activeOpacity={0.92}
+            activeOpacity={0.7}
           >
-            <LinearGradient
-              colors={['#FF6B35', '#F7931E', '#FF8C42']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.premiumGradient}
-            >
-              <View style={styles.premiumContent}>
-                <View style={styles.premiumIconContainer}>
-                  <Crown size={22} color="#fff" strokeWidth={2.5} />
-                </View>
-                <View style={styles.premiumTextContainer}>
-                  <Text style={styles.premiumTitle}>{t('account.upgradePremium')}</Text>
-                  <Text style={styles.premiumSubtitle}>{t('account.premiumSubtitle')}</Text>
-                </View>
+            <View style={styles.premiumContentMinimal}>
+              <View style={[styles.premiumIconMinimal, { backgroundColor: isDarkMode ? 'rgba(255,107,53,0.25)' : '#FFE4CC' }]}>
+                <Crown size={20} color="#FF6B35" strokeWidth={2.5} />
               </View>
-              <View style={styles.sparklesContainer}>
-                <Sparkles size={18} color="rgba(255,255,255,0.75)" />
+              <View style={styles.premiumTextMinimal}>
+                <Text style={[styles.premiumTitleMinimal, { color: theme.textPrimary, fontWeight: '700' }]}>{t('account.upgradePremium')}</Text>
+                <Text style={[styles.premiumSubtitleMinimal, { color: theme.textSecondary }]}>{t('account.premiumSubtitle')}</Text>
               </View>
-            </LinearGradient>
+            </View>
+            <ChevronLeft size={18} color="#FF6B35" strokeWidth={2.5} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -410,99 +405,86 @@ export default function SettingsScreen() {
 
           {/* Family Actions - Premium Design with Visual Hierarchy */}
 
-          {/* PRIMARY: Create/Invite Family - Premium Gradient Card */}
+          {/* PRIMARY: Create/Invite Family - Minimalist Design */}
           {(isAdmin || !family) && (
             <Animated.View entering={ANIMATIONS.fadeInDown(500)}>
               <TouchableOpacity
-                style={styles.primaryFamilyAction}
+                style={[styles.familyActionMinimal, { backgroundColor: theme.card, borderColor: theme.divider }]}
                 onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setInviteModalVisible(true);
                 }}
-                activeOpacity={0.85}
+                activeOpacity={0.7}
               >
-              <LinearGradient
-                colors={['#6366F1', '#8B5CF6', '#A78BFA']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.primaryFamilyGradient}
-              >
-                <View style={styles.primaryFamilyContent}>
-                  <View style={styles.primaryFamilyIconContainer}>
-                    <UserPlus size={24} color="#fff" strokeWidth={2.5} />
+                <View style={styles.familyActionContent}>
+                  <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
+                    <UserPlus size={18} color="#6366F1" strokeWidth={2} />
                   </View>
-                  <View style={styles.primaryFamilyTextContainer}>
-                    <Text style={styles.primaryFamilyTitle}>
+                  <View style={styles.familyActionText}>
+                    <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
                       {family ? t('account.inviteFamily') : t('account.createFamily')}
                     </Text>
-                    <Text style={styles.primaryFamilySubtitle}>
+                    <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
                       {family ? t('account.inviteFamily.subtitle') : t('account.createFamily.subtitle')}
                     </Text>
                   </View>
                 </View>
-                {family && members.length > 0 && (
-                  <View style={styles.memberCountBadge}>
-                    <Text style={styles.memberCountText}>{members.length}</Text>
-                  </View>
-                )}
-                <ChevronLeft size={18} color="rgba(255,255,255,0.8)" strokeWidth={2.5} />
-              </LinearGradient>
+                <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
               </TouchableOpacity>
             </Animated.View>
           )}
 
-          {/* SECONDARY: Guest & Join Actions */}
-          <Animated.View entering={ANIMATIONS.fadeInDown(600)} style={[styles.listContainer, { backgroundColor: theme.card }]}>
+          {/* SECONDARY: Guest & Join Actions - Minimalist */}
+          <Animated.View entering={ANIMATIONS.fadeInDown(600)} style={styles.familyActionsMinimal}>
             {/* Guest invite */}
             <TouchableOpacity
-              style={[styles.listItem, styles.listItemFirst]}
+              style={[styles.familyActionMinimal, styles.familyActionFirst, { backgroundColor: theme.card, borderColor: theme.divider }]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setIsGuestInviteOpen(true);
               }}
-              activeOpacity={0.6}
+              activeOpacity={0.7}
             >
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.25)' : '#ECFDF5' }]}>
-                  <Users size={22} color="#10B981" strokeWidth={2.5} />
+              <View style={styles.familyActionContent}>
+                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
+                  <Users size={18} color="#10B981" strokeWidth={2} />
                 </View>
-                <View style={styles.listItemTextContainer}>
-                  <View style={styles.listItemTitleRow}>
-                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                    <View style={[styles.timeBadge, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.3)' : '#D1FAE5' }]}>
-                      <Text style={[styles.timeBadgeText, { color: '#10B981' }]}>24h</Text>
+                <View style={styles.familyActionText}>
+                  <View style={styles.familyActionTitleRow}>
+                    <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
+                    <View style={[styles.badgeMinimal, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#D1FAE5' }]}>
+                      <Text style={[styles.badgeTextMinimal, { color: '#10B981' }]}>24h</Text>
                     </View>
                   </View>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
+                  <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
                     {t('account.inviteGuest.subtitle')}
                   </Text>
                 </View>
               </View>
               <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
 
             {/* Join with code */}
             <TouchableOpacity
-              style={[styles.listItem, styles.listItemLast]}
+              style={[styles.familyActionMinimal, styles.familyActionLast, { backgroundColor: theme.card, borderColor: theme.divider }]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setJoinModalVisible(true);
               }}
-              activeOpacity={0.6}
+              activeOpacity={0.7}
             >
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.25)' : '#FFF7ED' }]}>
-                  <LinkIcon size={22} color="#F59E0B" strokeWidth={2.5} />
+              <View style={styles.familyActionContent}>
+                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FFF7ED' }]}>
+                  <LinkIcon size={18} color="#F59E0B" strokeWidth={2} />
                 </View>
-                <View style={styles.listItemTextContainer}>
-                  <View style={styles.listItemTitleRow}>
-                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                    <View style={[styles.autoDetectBadge, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.3)' : '#FEF3C7' }]}>
-                      <Text style={[styles.autoDetectText, { color: '#F59E0B' }]}>אוטומטי</Text>
+                <View style={styles.familyActionText}>
+                  <View style={styles.familyActionTitleRow}>
+                    <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
+                    <View style={[styles.badgeMinimal, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.2)' : '#FEF3C7' }]}>
+                      <Text style={[styles.badgeTextMinimal, { color: '#F59E0B' }]}>אוטומטי</Text>
                     </View>
                   </View>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
+                  <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
                     {t('account.joinWithCode.subtitle')}
                   </Text>
                 </View>
@@ -849,6 +831,51 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     letterSpacing: -0.24,
   },
+  // Minimalist Premium Card - Highlighted
+  premiumCardMinimal: {
+    marginTop: 16,
+    marginBottom: 0,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  premiumContentMinimal: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  premiumIconMinimal: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumTextMinimal: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  premiumTitleMinimal: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+    letterSpacing: -0.2,
+  },
+  premiumSubtitleMinimal: {
+    fontSize: 13,
+    fontWeight: '400',
+    letterSpacing: -0.1,
+    lineHeight: 18,
+  },
+  // Legacy styles (keeping for compatibility)
   premiumCard: {
     marginTop: 16,
     marginBottom: 8,
@@ -911,7 +938,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   section: {
-    marginBottom: 36,
+    marginBottom: 24,
     paddingHorizontal: 20,
   },
   sectionTitle: {
@@ -1089,7 +1116,68 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 3,
   },
-  // Premium Family Action Card
+  // Minimalist Family Actions
+  familyActionsMinimal: {
+    gap: 12,
+  },
+  familyActionMinimal: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  familyActionFirst: {
+    marginTop: 0,
+  },
+  familyActionLast: {
+    marginBottom: 0,
+  },
+  familyActionContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  familyActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  familyActionText: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  familyActionTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  familyActionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  familyActionSubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    letterSpacing: -0.1,
+    lineHeight: 18,
+  },
+  badgeMinimal: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeTextMinimal: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  // Legacy styles (keeping for compatibility)
   primaryFamilyAction: {
     marginBottom: 20,
     borderRadius: 22,

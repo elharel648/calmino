@@ -29,9 +29,30 @@ class NotificationStorageService {
 
     /**
      * Save a new notification to Firebase
+     * Prevents duplicates by checking if same notification was saved in last 5 seconds
      */
     async saveNotification(notification: Omit<StoredNotification, 'id'>): Promise<string | null> {
         try {
+            // Prevent duplicate notifications (same title + message within 5 seconds)
+            const fiveSecondsAgo = new Date();
+            fiveSecondsAgo.setSeconds(fiveSecondsAgo.getSeconds() - 5);
+
+            const duplicateCheck = query(
+                collection(db, this.collectionName),
+                where('userId', '==', notification.userId),
+                where('title', '==', notification.title),
+                where('message', '==', notification.message),
+                where('timestamp', '>=', Timestamp.fromDate(fiveSecondsAgo)),
+                orderBy('timestamp', 'desc')
+            );
+
+            const duplicateSnapshot = await getDocs(duplicateCheck);
+            if (!duplicateSnapshot.empty) {
+                // Duplicate found - don't save again
+                if (__DEV__) console.log('🔔 Duplicate notification prevented:', notification.title);
+                return null;
+            }
+
             const docRef = await addDoc(collection(db, this.collectionName), {
                 ...notification,
                 timestamp: Timestamp.fromDate(notification.timestamp),

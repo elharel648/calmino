@@ -19,12 +19,13 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { auth, db } from '../../services/firebaseConfig';
-import { collection, addDoc, serverTimestamp, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, Timestamp, getDoc, doc } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
 import { getBabysitterBookings } from '../../services/babysitterService';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { getUserPushToken, sendPushNotification } from '../../services/pushNotificationService';
 
 interface BookingModalProps {
     visible: boolean;
@@ -180,8 +181,45 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     // Submit booking
     const handleSubmit = async () => {
+        // Validation checks
         if (duration <= 0) {
             Alert.alert('שגיאה', 'שעת סיום חייבת להיות אחרי שעת התחלה');
+            return;
+        }
+
+        // Check if date is in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selectedDateOnly = new Date(selectedDate);
+        selectedDateOnly.setHours(0, 0, 0, 0);
+        
+        if (selectedDateOnly < today) {
+            Alert.alert('שגיאה', 'לא ניתן להזמין לתאריך בעבר');
+            return;
+        }
+
+        // Check availability before submitting
+        const dateStr = selectedDate.toDateString();
+        const [startH] = startTime.split(':').map(Number);
+        const [endH] = endTime.split(':').map(Number);
+        
+        const hasConflict = sitterBookings.some(booking => {
+            const bookingDate = booking.date?.toDate?.() || new Date(booking.date);
+            if (bookingDate.toDateString() !== dateStr) return false;
+            
+            const [bookingStart] = booking.startTime.split(':').map(Number);
+            const [bookingEnd] = booking.endTime.split(':').map(Number);
+            
+            // Check if time ranges overlap
+            return (startH < bookingEnd && endH > bookingStart);
+        });
+
+        if (hasConflict) {
+            Alert.alert(
+                'לא זמין',
+                'הבייביסיטר תפוס בשעות האלה. אנא בחר/י תאריך או שעות אחרות.',
+                [{ text: 'אוקיי' }]
+            );
             return;
         }
 
@@ -192,19 +230,43 @@ const BookingModal: React.FC<BookingModalProps> = ({
             const user = auth.currentUser;
             if (!user) throw new Error('Not logged in');
 
-            await addDoc(collection(db, 'bookings'), {
+            // Convert Date to Timestamp for Firestore
+            const bookingRef = await addDoc(collection(db, 'bookings'), {
                 parentId: user.uid,
                 babysitterId: sitter.id,
                 status: 'pending',
-                date: selectedDate,
+                date: Timestamp.fromDate(selectedDate), // Fixed: Convert Date to Timestamp
                 startTime,
                 endTime,
                 hourlyRate: sitter.hourlyRate,
-                estimatedAmount: totalPrice,
-                notes: notes.trim(),
+                notes: notes.trim() || null,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
+
+            // Send push notification to sitter
+            try {
+                const sitterToken = await getUserPushToken(sitter.id);
+                if (sitterToken) {
+                    const parentDoc = await getDoc(doc(db, 'users', user.uid));
+                    const parentName = parentDoc.data()?.displayName || 'הורה';
+                    
+                    const formattedDate = formatDate(selectedDate);
+                    await sendPushNotification(
+                        sitterToken,
+                        '📅 הזמנה חדשה!',
+                        `${parentName} רוצה להזמין אותך ל-${formattedDate.date} בשעה ${startTime}-${endTime}`,
+                        { 
+                            type: 'booking_new', 
+                            bookingId: bookingRef.id,
+                            channelId: 'booking'
+                        }
+                    );
+                }
+            } catch (pushError) {
+                console.warn('Failed to send push notification:', pushError);
+                // Don't fail the booking if push fails
+            }
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert(

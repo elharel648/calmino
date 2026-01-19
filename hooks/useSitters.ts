@@ -1,7 +1,11 @@
-// hooks/useSitters.ts - Production Firebase Sitters Hook
-import { useState, useEffect, useCallback } from 'react';
+// hooks/useSitters.ts - Production Firebase Sitters Hook with Caching
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CACHE_KEY = '@sitters_cache';
+const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface MutualFriend {
     id: string;
@@ -49,11 +53,63 @@ const useSitters = () => {
     const [sitters, setSitters] = useState<Sitter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const lastFetchRef = useRef<number>(0);
 
-    const fetchSitters = useCallback(async () => {
-        console.log('🔧 useSitters: fetchSitters START');
+    // Load from cache
+    const loadFromCache = useCallback(async (): Promise<Sitter[] | null> => {
+        try {
+            const cached = await AsyncStorage.getItem(CACHE_KEY);
+            if (!cached) return null;
+
+            const { data, timestamp } = JSON.parse(cached);
+            const now = Date.now();
+
+            // Check if cache is still valid
+            if (now - timestamp < CACHE_EXPIRY_MS) {
+                console.log('📦 useSitters: Loading from cache');
+                return data;
+            }
+
+            // Cache expired, remove it
+            await AsyncStorage.removeItem(CACHE_KEY);
+            return null;
+        } catch (error) {
+            console.warn('useSitters: Error loading cache:', error);
+            return null;
+        }
+    }, []);
+
+    // Save to cache
+    const saveToCache = useCallback(async (data: Sitter[]) => {
+        try {
+            await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({
+                data,
+                timestamp: Date.now(),
+            }));
+            console.log('💾 useSitters: Saved to cache');
+        } catch (error) {
+            console.warn('useSitters: Error saving cache:', error);
+        }
+    }, []);
+
+    const fetchSitters = useCallback(async (forceRefresh = false) => {
+        console.log('🔧 useSitters: fetchSitters START', { forceRefresh });
+        
+        // Try to load from cache first (unless force refresh)
+        if (!forceRefresh) {
+            const cachedSitters = await loadFromCache();
+            if (cachedSitters && cachedSitters.length > 0) {
+                setSitters(cachedSitters);
+                setIsLoading(false);
+                // Fetch in background to update cache
+                fetchSitters(true).catch(() => {});
+                return;
+            }
+        }
+
         setIsLoading(true);
         setError(null);
+        lastFetchRef.current = Date.now();
 
         // 🔧 Always fetch real sitters from Firebase (even in DEV mode)
         // Mock data will be used as fallback only when no real sitters found
@@ -134,7 +190,14 @@ const useSitters = () => {
                 const ratingB = typeof b.rating === 'number' && !isNaN(b.rating) ? b.rating : 0;
                 return ratingB - ratingA;
             });
-            setSitters(fetchedSitters);
+            
+            // Save to cache
+            await saveToCache(fetchedSitters);
+            
+            // Only update state if this is the latest fetch
+            if (Date.now() - lastFetchRef.current < 1000) {
+                setSitters(fetchedSitters);
+            }
 
         } catch (err) {
             // Silent fail - just show empty state (user needs to update Firebase rules)
@@ -144,7 +207,7 @@ const useSitters = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [loadFromCache, saveToCache]);
 
     useEffect(() => {
         fetchSitters();
@@ -154,7 +217,7 @@ const useSitters = () => {
         sitters,
         isLoading,
         error,
-        refetch: fetchSitters,
+        refetch: () => fetchSitters(true), // Force refresh
     };
 };
 

@@ -25,6 +25,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { uploadSitterPhoto } from '../services/imageUploadService';
@@ -36,6 +37,7 @@ const DAYS_HEB = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
 const SitterRegistrationScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const progressAnim = useRef(new Animated.Value(0.33)).current;
 
     // Current step (3 steps: Personal Info, Photo, Pricing)
@@ -100,13 +102,13 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         switch (currentStep) {
             case 1:
                 if (!name.trim() || !age || !phone.trim()) {
-                    Alert.alert('שדות חובה', 'יש למלא שם, גיל וטלפון');
+                    Alert.alert(t('sitter.registration.requiredFields'), t('sitter.registration.fillRequiredFields'));
                     return false;
                 }
                 return true;
             case 2:
                 if (!profilePhoto) {
-                    Alert.alert('תמונה נדרשת', 'יש להעלות תמונת פרופיל');
+                    Alert.alert(t('sitter.registration.photoRequired'), t('sitter.registration.uploadPhoto'));
                     return false;
                 }
                 return true;
@@ -145,7 +147,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('הרשאה נדרשת', 'יש לאשר גישה למיקום כדי שהורים יוכלו למצוא אותך');
+                Alert.alert(t('sitter.locationPermissionRequired'), t('sitter.locationPermissionMessage'));
                 setIsLoadingLocation(false);
                 return;
             }
@@ -162,7 +164,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (error) {
             if (__DEV__) console.error('Location error:', error);
-            Alert.alert('שגיאה', 'לא ניתן לקבל מיקום');
+            Alert.alert(t('common.error'), t('sitter.registration.locationError'));
         } finally {
             setIsLoadingLocation(false);
         }
@@ -172,13 +174,13 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     const handleSubmit = async () => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
-            Alert.alert('שגיאה', 'יש להתחבר קודם');
+            Alert.alert(t('common.error'), t('sitter.registration.loginRequired'));
             return;
         }
 
         // Validate city
         if (!city) {
-            Alert.alert('שדה חובה', 'יש לבחור עיר');
+            Alert.alert(t('sitter.registration.cityRequired'), t('sitter.registration.selectCity'));
             return;
         }
 
@@ -222,7 +224,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             // Navigate directly to dashboard
             navigation.replace('SitterDashboard');
         } catch (error) {
-            Alert.alert('שגיאה', 'לא ניתן לשמור, נסה שוב');
+            Alert.alert(t('common.error'), t('sitter.registration.saveError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -531,7 +533,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 </View>
                 <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>תמונת פרופיל</Text>
                 <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                    העלה תמונה שתראה להורים
+                    {t('sitter.registration.uploadPhotoHint')}
                 </Text>
             </View>
 
@@ -645,7 +647,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <ChevronRight size={24} color={theme.textSecondary} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>הרשמה כסיטר</Text>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('sitter.registration.title')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -708,7 +710,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         {isSubmitting ? (
                             <ActivityIndicator size="small" color={theme.card} />
                         ) : (
-                            <Text style={[styles.primaryBtnText, { color: theme.card }]}>סיים הרשמה</Text>
+                            <Text style={[styles.primaryBtnText, { color: theme.card }]}>{t('sitter.registration.complete')}</Text>
                         )}
                     </TouchableOpacity>
                 )}
