@@ -17,31 +17,25 @@ import {
 } from 'react-native';
 import {
     User, Camera, Clock, MapPin,
-    ChevronLeft, ChevronRight, Check, Plus, Minus,
+    ChevronLeft, ChevronRight, Check, Plus, Minus, Search,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { uploadSitterPhoto } from '../services/imageUploadService';
-
-// Israeli cities for picker
-const ISRAELI_CITIES = [
-    'תל אביב', 'ירושלים', 'חיפה', 'באר שבע', 'ראשון לציון',
-    'פתח תקווה', 'אשדוד', 'נתניה', 'חולון', 'בני ברק',
-    'רמת גן', 'אשקלון', 'בת ים', 'הרצליה', 'כפר סבא',
-    'רעננה', 'מודיעין', 'רחובות', 'לוד', 'רמלה',
-    'נצרת', 'עכו', 'טבריה', 'אילת', 'קריית גת',
-];
+import { ISRAELI_CITIES } from '../constants/israeliCities';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const DAYS_HEB = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
 const SitterRegistrationScreen = ({ navigation }: any) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const progressAnim = useRef(new Animated.Value(0.33)).current;
 
     // Current step (3 steps: Personal Info, Photo, Pricing)
@@ -59,6 +53,9 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     const [city, setCity] = useState('');
     const [gpsLocation, setGpsLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+    const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+    const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+    const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Step 3: Media
     const [profilePhoto, setProfilePhoto] = useState<string | null>(auth.currentUser?.photoURL || null);
@@ -88,6 +85,15 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     };
 
     const prevStep = () => goToStep(currentStep - 1);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (autocompleteTimeoutRef.current) {
+                clearTimeout(autocompleteTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Validation
     const validateCurrentStep = () => {
@@ -240,14 +246,27 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             <View style={styles.inputsContainer}>
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>שם מלא *</Text>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="השם שלך"
-                        placeholderTextColor={theme.textSecondary}
-                        textAlign="right"
-                    />
+                    <View style={styles.inputWrapper}>
+                        {Platform.OS === 'ios' && (
+                            <BlurView
+                                intensity={15}
+                                tint={isDarkMode ? 'dark' : 'light'}
+                                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                            />
+                        )}
+                        <TextInput
+                            style={[styles.input, { 
+                                backgroundColor: Platform.OS === 'ios' ? 'transparent' : theme.card, 
+                                color: theme.textPrimary, 
+                                borderColor: theme.border 
+                            }]}
+                            value={name}
+                            onChangeText={setName}
+                            placeholder="השם שלך"
+                            placeholderTextColor={theme.textSecondary}
+                            textAlign="right"
+                        />
+                    </View>
                 </View>
 
                 <View style={styles.inputRow}>
@@ -291,65 +310,195 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     />
                 </View>
 
-                {/* City Picker */}
+                {/* City Picker - Premium Autocomplete */}
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>עיר *</Text>
-
-                    {/* Text input for custom city */}
-                    <TextInput
-                        style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border, marginBottom: 8 }]}
-                        value={city}
-                        onChangeText={setCity}
-                        placeholder="הקלד עיר או בחר מהרשימה"
-                        placeholderTextColor={theme.textSecondary}
-                        textAlign="right"
-                    />
-
-                    {/* Popular cities chips */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.cityPickerScroll}
-                        contentContainerStyle={styles.cityPickerContent}
-                    >
-                        {ISRAELI_CITIES.map((cityName) => (
-                            <TouchableOpacity
-                                key={cityName}
-                                style={[
-                                    styles.cityChip,
-                                    {
-                                        backgroundColor: city === cityName ? theme.textPrimary : theme.card,
-                                        borderColor: city === cityName ? theme.textPrimary : theme.border,
-                                    }
-                                ]}
-                                onPress={() => {
-                                    setCity(cityName);
-                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                }}
+                    
+                    <View style={styles.cityInputContainer}>
+                        <View style={[styles.cityInputWrapper, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            {/* Premium Glass Effect */}
+                            {Platform.OS === 'ios' && (
+                                <BlurView
+                                    intensity={20}
+                                    tint={isDarkMode ? 'dark' : 'light'}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            )}
+                            
+                            {/* Search Icon with Gradient */}
+                            <LinearGradient
+                                colors={[theme.primary + '20', theme.primary + '10']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.cityIconContainer}
                             >
-                                <Text style={[
-                                    styles.cityChipText,
-                                    { color: city === cityName ? '#fff' : theme.textPrimary }
-                                ]}>
-                                    {cityName}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                                <MapPin size={15} color={theme.primary} strokeWidth={2} />
+                            </LinearGradient>
+                            
+                            {/* Input Field */}
+                            <TextInput
+                                style={[styles.cityInput, { color: theme.textPrimary }]}
+                                value={city}
+                                onChangeText={(text) => {
+                                    setCity(text);
+                                    if (autocompleteTimeoutRef.current) {
+                                        clearTimeout(autocompleteTimeoutRef.current);
+                                    }
+                                    
+                                    if (text.length > 0) {
+                                        autocompleteTimeoutRef.current = setTimeout(() => {
+                                            const filtered = ISRAELI_CITIES.filter(cityName => 
+                                                cityName.toLowerCase().startsWith(text.toLowerCase().trim())
+                                            );
+                                            setCitySuggestions(filtered.slice(0, 5));
+                                            setShowCitySuggestions(filtered.length > 0);
+                                        }, 150);
+                                    } else {
+                                        setShowCitySuggestions(false);
+                                        setCitySuggestions([]);
+                                    }
+                                }}
+                                onFocus={() => {
+                                    if (city.length > 0) {
+                                        const filtered = ISRAELI_CITIES.filter(cityName => 
+                                            cityName.toLowerCase().startsWith(city.toLowerCase())
+                                        );
+                                        setCitySuggestions(filtered.slice(0, 5));
+                                        setShowCitySuggestions(filtered.length > 0);
+                                    } else {
+                                        const filtered = ISRAELI_CITIES.slice(0, 5);
+                                        setCitySuggestions(filtered);
+                                        setShowCitySuggestions(true);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    if (autocompleteTimeoutRef.current) {
+                                        clearTimeout(autocompleteTimeoutRef.current);
+                                    }
+                                    setTimeout(() => setShowCitySuggestions(false), 200);
+                                }}
+                                placeholder="הקלד עיר או בחר מהרשימה"
+                                placeholderTextColor={theme.textSecondary}
+                                textAlign="right"
+                            />
+                            
+                            {/* Clear Button with Gradient */}
+                            {city.length > 0 && (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        if (autocompleteTimeoutRef.current) {
+                                            clearTimeout(autocompleteTimeoutRef.current);
+                                        }
+                                        setCity('');
+                                        setShowCitySuggestions(false);
+                                        setCitySuggestions([]);
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <LinearGradient
+                                        colors={[theme.primary + '20', theme.primary + '10']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={styles.cityClearButton}
+                                    >
+                                        <Text style={{ color: theme.textSecondary, fontSize: 20, fontWeight: '200', lineHeight: 20 }}>×</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        
+                        {/* City Autocomplete Suggestions - Premium Glass Effect */}
+                        {showCitySuggestions && citySuggestions.length > 0 && (
+                            <View style={[styles.citySuggestionsContainer, { 
+                                borderColor: theme.border,
+                                shadowColor: '#000',
+                            }]}>
+                                {Platform.OS === 'ios' && (
+                                    <BlurView
+                                        intensity={60}
+                                        tint={isDarkMode ? 'dark' : 'light'}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                )}
+                                <View style={[StyleSheet.absoluteFill, { 
+                                    backgroundColor: Platform.OS === 'android' ? theme.card : 'transparent',
+                                    borderRadius: 16,
+                                }]} />
+                                {citySuggestions.map((cityName, index) => (
+                                    <TouchableOpacity
+                                        key={cityName}
+                                        style={[
+                                            styles.citySuggestionItem,
+                                            { 
+                                                borderBottomColor: theme.border,
+                                                borderBottomWidth: index < citySuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
+                                            }
+                                        ]}
+                                        onPress={() => {
+                                            if (autocompleteTimeoutRef.current) {
+                                                clearTimeout(autocompleteTimeoutRef.current);
+                                            }
+                                            setCity(cityName);
+                                            setShowCitySuggestions(false);
+                                            setCitySuggestions([]);
+                                            if (Platform.OS !== 'web') {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.citySuggestionText, { color: theme.textPrimary }]}>
+                                            {cityName}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
                 </View>
 
-                {/* GPS Location Button */}
+                {/* GPS Location Button - Premium Design with Gradient */}
                 <TouchableOpacity
-                    style={[styles.locationBtn, { backgroundColor: gpsLocation ? '#E8F5E9' : theme.card, borderColor: gpsLocation ? '#4CAF50' : theme.border }]}
+                    style={[styles.locationBtn, { 
+                        borderColor: gpsLocation ? theme.success : theme.border,
+                        overflow: 'hidden',
+                    }]}
                     onPress={getLocation}
                     disabled={isLoadingLocation}
+                    activeOpacity={0.7}
                 >
+                    {Platform.OS === 'ios' && (
+                        <BlurView
+                            intensity={20}
+                            tint={isDarkMode ? 'dark' : 'light'}
+                            style={StyleSheet.absoluteFill}
+                        />
+                    )}
+                    <LinearGradient
+                        colors={gpsLocation 
+                            ? [theme.success + '20', theme.success + '10']
+                            : [theme.card, theme.card]
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                    />
                     {isLoadingLocation ? (
-                        <ActivityIndicator size="small" color={theme.textPrimary} />
+                        <ActivityIndicator size="small" color={theme.primary} />
                     ) : (
                         <>
-                            <MapPin size={20} color={gpsLocation ? '#4CAF50' : theme.textSecondary} />
-                            <Text style={[styles.locationBtnText, { color: gpsLocation ? '#4CAF50' : theme.textPrimary }]}>
+                            <LinearGradient
+                                colors={gpsLocation 
+                                    ? [theme.success + '30', theme.success + '20']
+                                    : [theme.primary + '20', theme.primary + '10']
+                                }
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.locationIconWrapper}
+                            >
+                                <MapPin size={16} color={gpsLocation ? theme.success : theme.primary} strokeWidth={2} />
+                            </LinearGradient>
+                            <Text style={[styles.locationBtnText, { color: gpsLocation ? theme.success : theme.textPrimary }]}>
                                 {gpsLocation ? 'מיקום נשמר ✓' : 'שתף מיקום GPS (מומלץ)'}
                             </Text>
                         </>
@@ -480,6 +629,17 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
+            {/* Premium Gradient Background */}
+            <LinearGradient
+                colors={isDarkMode
+                    ? [theme.background, theme.cardSecondary + '40', theme.background]
+                    : ['#FAFAFA', '#F5F5F5', '#FAFAFA']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+            
             {/* Header */}
             <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -686,12 +846,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textAlign: 'right',
     },
+    inputWrapper: {
+        borderRadius: 16,
+        borderWidth: 1,
+        overflow: 'hidden',
+    },
     input: {
         fontSize: 15,
         paddingVertical: 12,
         paddingHorizontal: 14,
-        borderRadius: 10,
-        borderWidth: 1,
+        borderRadius: 16,
+        borderWidth: 0,
+        minHeight: 48,
     },
     textArea: {
         minHeight: 100,
@@ -847,40 +1013,102 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    // City Picker styles
-    cityPickerScroll: {
-        marginTop: 8,
+    // City Input - Premium Autocomplete
+    cityInputContainer: {
+        position: 'relative',
+        zIndex: 10,
     },
-    cityPickerContent: {
+    cityInputWrapper: {
         flexDirection: 'row-reverse',
-        paddingHorizontal: 4,
-        gap: 8,
-    },
-    cityChip: {
+        alignItems: 'center',
+        paddingVertical: 12,
         paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 1,
+        borderRadius: 18,
+        borderWidth: StyleSheet.hairlineWidth,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 1,
+        gap: 10,
     },
-    cityChipText: {
-        fontSize: 14,
+    cityIconContainer: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    cityInput: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '400',
+        paddingHorizontal: 6,
+        paddingVertical: 0,
+        minHeight: 20,
+    },
+    cityClearButton: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    citySuggestionsContainer: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        marginTop: 4,
+        borderRadius: 16,
+        borderWidth: 1,
+        maxHeight: 200,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 8,
+        overflow: 'hidden',
+    },
+    citySuggestionItem: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    citySuggestionText: {
+        fontSize: 15,
         fontWeight: '500',
+        textAlign: 'right',
     },
 
-    // Location button styles
+    // Location button styles - Premium Design
     locationBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 14,
-        borderRadius: 12,
-        borderWidth: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 18,
+        borderWidth: StyleSheet.hairlineWidth,
         marginTop: 12,
-        gap: 8,
+        gap: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 1,
+    },
+    locationIconWrapper: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
     },
     locationBtnText: {
-        fontSize: 14,
-        fontWeight: '500',
+        fontSize: 15,
+        fontWeight: '400',
     },
 });
 

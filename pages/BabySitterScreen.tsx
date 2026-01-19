@@ -27,6 +27,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import useSitters, { Sitter } from '../hooks/useSitters';
 import { calculateSitterBadges } from '../services/babysitterService';
 import { BADGE_INFO, SitterBadge } from '../types/babysitter';
+import { ISRAELI_CITIES } from '../constants/israeliCities';
 
 const BabySitterScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -47,42 +48,81 @@ const BabySitterScreen = ({ navigation }: any) => {
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
     const [checkingStatus, setCheckingStatus] = useState(false);
     const [filterCity, setFilterCity] = useState<string>(''); // Manual city filter
+    const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+    const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+    const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // User location state
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [userCity, setUserCity] = useState<string | null>(null);
 
-    // Get user photo from Auth or Firestore
+    // Get user photo from Auth or Firestore (prioritize sitter photo if user is a sitter)
     const [userPhoto, setUserPhoto] = useState<string | null>(auth.currentUser?.photoURL || null);
 
-    // Load user photo from Firestore if not in Auth
-    useEffect(() => {
-        const loadUserPhoto = async () => {
-            const userId = auth.currentUser?.uid;
-            if (!userId) return;
+    // Load user photo from Firestore - prioritize sitter photo if user is a sitter
+    const loadUserPhoto = useCallback(async () => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
 
-            // If already have photo from auth, use it
+        try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                
+                // If user is a sitter, prioritize sitter photo (photoUrl)
+                // Otherwise use regular user photo
+                if (data.isSitter === true && data.photoUrl) {
+                    // User is a sitter - use their sitter profile photo
+                    setUserPhoto(data.photoUrl);
+                } else if (data.photoUrl) {
+                    // Regular user - use their photo
+                    setUserPhoto(data.photoUrl);
+                } else if (auth.currentUser?.photoURL) {
+                    // Fallback to Auth photo
+                    setUserPhoto(auth.currentUser.photoURL);
+                } else {
+                    // No photo available
+                    setUserPhoto(null);
+                }
+            } else {
+                // No Firestore doc - use Auth photo if available
+                if (auth.currentUser?.photoURL) {
+                    setUserPhoto(auth.currentUser.photoURL);
+                }
+            }
+        } catch (error) {
+            // Silent fail - fallback to Auth photo
             if (auth.currentUser?.photoURL) {
                 setUserPhoto(auth.currentUser.photoURL);
-                return;
             }
-
-            // Try to get from Firestore
-            try {
-                const userDoc = await getDoc(doc(db, 'users', userId));
-                if (userDoc.exists() && userDoc.data().photoUrl) {
-                    setUserPhoto(userDoc.data().photoUrl);
-                }
-            } catch (error) {
-                // Silent fail
-            }
-        };
-
-        loadUserPhoto();
+        }
     }, []);
+
+    // Load photo on mount
+    useEffect(() => {
+        loadUserPhoto();
+    }, [loadUserPhoto]);
+
+    // Reload photo when screen is focused (in case user updated their photo)
+    useFocusEffect(
+        useCallback(() => {
+            loadUserPhoto();
+        }, [loadUserPhoto])
+    );
 
     // Calculate distance between two GPS coordinates (Haversine formula)
     const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        // Validate inputs
+        if (
+            typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
+            typeof lat2 !== 'number' || typeof lon2 !== 'number' ||
+            isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) ||
+            lat1 < -90 || lat1 > 90 || lat2 < -90 || lat2 > 90 ||
+            lon1 < -180 || lon1 > 180 || lon2 < -180 || lon2 > 180
+        ) {
+            return 999; // Return max distance for invalid coordinates
+        }
+
         const R = 6371; // Earth's radius in km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -90,11 +130,20 @@ const BabySitterScreen = ({ navigation }: any) => {
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return Math.round(R * c * 10) / 10; // Round to 1 decimal
+        const distance = R * c;
+        
+        // Validate result
+        if (isNaN(distance) || !isFinite(distance)) {
+            return 999;
+        }
+        
+        return Math.round(distance * 10) / 10; // Round to 1 decimal
     }, []);
 
     // Fetch user's location on mount
     useEffect(() => {
+        let isMounted = true;
+        
         const fetchUserLocation = async () => {
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
@@ -105,34 +154,62 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                 const location = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.Balanced,
+                    timeout: 10000, // 10 second timeout
                 });
 
-                setUserLocation({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                });
+                // Validate coordinates
+                if (!location?.coords || 
+                    typeof location.coords.latitude !== 'number' ||
+                    typeof location.coords.longitude !== 'number' ||
+                    isNaN(location.coords.latitude) ||
+                    isNaN(location.coords.longitude) ||
+                    location.coords.latitude < -90 || location.coords.latitude > 90 ||
+                    location.coords.longitude < -180 || location.coords.longitude > 180) {
+                    if (__DEV__) console.warn('Invalid location coordinates');
+                    return;
+                }
+
+                if (isMounted) {
+                    setUserLocation({
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    });
+                }
 
                 // Get city name from coordinates (reverse geocoding)
-                const [address] = await Location.reverseGeocodeAsync({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                });
+                try {
+                    const addresses = await Location.reverseGeocodeAsync({
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    });
 
-                if (address?.city) {
-                    setUserCity(address.city);
-                } else {
-                    // Fallback to other address fields
-                    const cityFallback = address?.subregion || address?.region;
-                    if (cityFallback) {
-                        setUserCity(cityFallback);
+                    if (isMounted && addresses && addresses.length > 0) {
+                        const address = addresses[0];
+                        if (address?.city && typeof address.city === 'string') {
+                            setUserCity(address.city);
+                        } else {
+                            // Fallback to other address fields
+                            const cityFallback = address?.subregion || address?.region;
+                            if (cityFallback && typeof cityFallback === 'string') {
+                                setUserCity(cityFallback);
+                            }
+                        }
                     }
+                } catch (geocodeError) {
+                    // Silent fail for geocoding - location still works
+                    if (__DEV__) console.warn('Geocoding error:', geocodeError);
                 }
             } catch (error) {
                 if (__DEV__) console.error('Location fetch error:', error);
+                // Don't set error state - app works fine without location
             }
         };
 
         fetchUserLocation();
+        
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     // Check if user is registered as sitter
@@ -158,6 +235,22 @@ const BabySitterScreen = ({ navigation }: any) => {
             setCheckingStatus(false);
         }
     };
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (autocompleteTimeoutRef.current) {
+                clearTimeout(autocompleteTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Reload user photo when sitter status changes
+    useEffect(() => {
+        if (isSitterRegistered !== null) {
+            loadUserPhoto();
+        }
+    }, [isSitterRegistered, loadUserPhoto]); // Reload when sitter status changes
 
     // Check sitter status on every screen focus
     useFocusEffect(
@@ -197,13 +290,19 @@ const BabySitterScreen = ({ navigation }: any) => {
     // Process sitters: add distance, filter by city match (memoized for performance)
     const processedSitters = useMemo(() => {
         return sitters.map(sitter => {
-            let distance = 0;
+            let distance = 999; // Default to max distance
 
             // Calculate real distance if both user and sitter have GPS (with validation)
             if (userLocation &&
                 sitter.location &&
                 typeof sitter.location.latitude === 'number' &&
-                typeof sitter.location.longitude === 'number') {
+                typeof sitter.location.longitude === 'number' &&
+                typeof userLocation.latitude === 'number' &&
+                typeof userLocation.longitude === 'number' &&
+                !isNaN(sitter.location.latitude) &&
+                !isNaN(sitter.location.longitude) &&
+                !isNaN(userLocation.latitude) &&
+                !isNaN(userLocation.longitude)) {
                 distance = calculateDistance(
                     userLocation.latitude,
                     userLocation.longitude,
@@ -216,50 +315,170 @@ const BabySitterScreen = ({ navigation }: any) => {
         });
     }, [sitters, userLocation, calculateDistance]);
 
-    // Determine which city to filter by: manual filter takes priority over auto-detected
-    const activeCity = filterCity.trim() || userCity;
+    // Handle city input change with autocomplete (debounced for performance)
+    const handleCityInputChange = useCallback((text: string) => {
+        setFilterCity(text);
+        
+        // Clear previous timeout
+        if (autocompleteTimeoutRef.current) {
+            clearTimeout(autocompleteTimeoutRef.current);
+        }
+        
+        if (text.length > 0) {
+            // Debounce autocomplete for better performance
+            autocompleteTimeoutRef.current = setTimeout(() => {
+                // Filter cities that start with the input
+                const filtered = ISRAELI_CITIES.filter(city => 
+                    city.toLowerCase().startsWith(text.toLowerCase().trim())
+                );
+                setCitySuggestions(filtered.slice(0, 5)); // Show max 5 suggestions
+                setShowCitySuggestions(filtered.length > 0);
+            }, 150); // 150ms debounce
+        } else {
+            setShowCitySuggestions(false);
+            setCitySuggestions([]);
+        }
+    }, []);
 
-    // Filter: Show sitters from selected/detected city, or all if no city set (memoized)
+    // Handle city selection from suggestions
+    const handleCitySelect = useCallback((city: string) => {
+        if (!city || typeof city !== 'string') return;
+        if (autocompleteTimeoutRef.current) {
+            clearTimeout(autocompleteTimeoutRef.current);
+        }
+        setFilterCity(city.trim());
+        setShowCitySuggestions(false);
+        setCitySuggestions([]);
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    }, []);
+
+    // Determine which city to filter by: only manual filter (user explicitly chose a city)
+    const activeCity = useMemo(() => {
+        if (!filterCity || typeof filterCity !== 'string') return '';
+        return filterCity.trim();
+    }, [filterCity]);
+
+    // Filter: Show all sitters by default, or filter by manually selected city (memoized)
     const sittersToShow = useMemo(() => {
-        const citySitters = activeCity
-            ? processedSitters.filter(s => s.city?.toLowerCase().includes(activeCity.toLowerCase()))
-            : processedSitters;
-
-        // If no sitters in selected city, show all
-        return citySitters.length > 0 ? citySitters : processedSitters;
+        // Only filter if user manually selected a city
+        if (activeCity && activeCity.length > 0) {
+            const searchCity = activeCity.toLowerCase().trim();
+            if (searchCity.length === 0) return processedSitters;
+            
+            const citySitters = processedSitters.filter(s => {
+                if (!s.city || typeof s.city !== 'string') return false;
+                const sitterCity = s.city.toLowerCase().trim();
+                if (sitterCity.length === 0) return false;
+                // Exact match or starts with (for better matching)
+                return sitterCity === searchCity || sitterCity.startsWith(searchCity) || sitterCity.includes(searchCity);
+            });
+            // If no sitters in selected city, show all (don't hide results)
+            return citySitters.length > 0 ? citySitters : processedSitters;
+        }
+        // Default: show all sitters
+        return processedSitters;
     }, [processedSitters, activeCity]);
 
-    // Sort sitters (memoized for performance)
+    // Sort sitters intelligently: prioritize nearby sitters, then by selected sort (memoized)
     const sortedSitters = useMemo(() => {
-        return [...sittersToShow].sort((a, b) => {
+        const sitters = [...sittersToShow];
+        
+        // If user has location and no manual city filter, prioritize nearby sitters
+        if (userLocation && !activeCity && sortBy === 'rating') {
+            // Split into nearby (within 50km) and far
+            const nearby = sitters.filter(s => {
+                const dist = typeof s.distance === 'number' && !isNaN(s.distance) ? s.distance : 999;
+                return dist <= 50;
+            });
+            const far = sitters.filter(s => {
+                const dist = typeof s.distance === 'number' && !isNaN(s.distance) ? s.distance : 999;
+                return dist > 50;
+            });
+            
+            // Sort each group by rating (with validation)
+            nearby.sort((a, b) => {
+                const ratingA = typeof a.rating === 'number' && !isNaN(a.rating) ? a.rating : 0;
+                const ratingB = typeof b.rating === 'number' && !isNaN(b.rating) ? b.rating : 0;
+                return ratingB - ratingA;
+            });
+            far.sort((a, b) => {
+                const ratingA = typeof a.rating === 'number' && !isNaN(a.rating) ? a.rating : 0;
+                const ratingB = typeof b.rating === 'number' && !isNaN(b.rating) ? b.rating : 0;
+                return ratingB - ratingA;
+            });
+            
+            // Return nearby first, then far
+            return [...nearby, ...far];
+        }
+        
+        // Otherwise, use the selected sort method
+        return sitters.sort((a, b) => {
             switch (sortBy) {
-                case 'rating': return b.rating - a.rating;
-                case 'price': return a.pricePerHour - b.pricePerHour;
-                case 'distance': return (a.distance || 999) - (b.distance || 999);
+                case 'rating': {
+                    const ratingA = typeof a.rating === 'number' && !isNaN(a.rating) ? a.rating : 0;
+                    const ratingB = typeof b.rating === 'number' && !isNaN(b.rating) ? b.rating : 0;
+                    return ratingB - ratingA;
+                }
+                case 'price': {
+                    const priceA = typeof a.pricePerHour === 'number' && !isNaN(a.pricePerHour) ? a.pricePerHour : Infinity;
+                    const priceB = typeof b.pricePerHour === 'number' && !isNaN(b.pricePerHour) ? b.pricePerHour : Infinity;
+                    return priceA - priceB;
+                }
+                case 'distance': {
+                    const distA = typeof a.distance === 'number' && !isNaN(a.distance) ? a.distance : 999;
+                    const distB = typeof b.distance === 'number' && !isNaN(b.distance) ? b.distance : 999;
+                    return distA - distB;
+                }
                 default: return 0;
             }
         });
-    }, [sittersToShow, sortBy]);
+    }, [sittersToShow, sortBy, userLocation, activeCity]);
 
     // Handle sitter press
-    const handleSitterPress = (sitter: Sitter) => {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const handleSitterPress = useCallback((sitter: Sitter) => {
+        if (!sitter || !sitter.id) return; // Safety check
+        
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        
+        // Validate and sanitize data before navigation
+        const rating = typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating >= 0
+            ? Math.max(0, Math.min(5, sitter.rating))
+            : 0;
+        const price = typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) && sitter.pricePerHour > 0
+            ? Math.max(0, sitter.pricePerHour)
+            : 50;
+        const reviews = typeof sitter.reviewCount === 'number' && !isNaN(sitter.reviewCount) && sitter.reviewCount >= 0
+            ? Math.max(0, sitter.reviewCount)
+            : 0;
+        const distance = typeof sitter.distance === 'number' && !isNaN(sitter.distance) && sitter.distance >= 0
+            ? sitter.distance
+            : 0;
+        
         // Map Sitter type to SitterData format expected by SitterProfileScreen
         const sitterData = {
             id: sitter.id,
-            name: sitter.name,
-            age: sitter.age,
-            image: sitter.photoUrl || 'https://i.pravatar.cc/200',
-            rating: sitter.rating,
-            reviews: sitter.reviewCount,
-            price: sitter.pricePerHour,
-            distance: sitter.distance || 0,
-            phone: sitter.phone || undefined, // Use actual phone from Firebase
-            bio: sitter.bio,
+            name: (sitter.name && typeof sitter.name === 'string') ? sitter.name : 'סיטר',
+            age: typeof sitter.age === 'number' && !isNaN(sitter.age) && sitter.age > 0 ? sitter.age : 0,
+            image: (sitter.photoUrl && typeof sitter.photoUrl === 'string') ? sitter.photoUrl : 'https://i.pravatar.cc/200',
+            rating,
+            reviews,
+            price,
+            distance,
+            phone: (sitter.phone && typeof sitter.phone === 'string') ? sitter.phone : undefined,
+            bio: (sitter.bio && typeof sitter.bio === 'string') ? sitter.bio : '',
             reviewsList: [], // TODO: Fetch reviews from Firebase if needed
         };
-        navigation.navigate('SitterProfile', { sitterData });
-    };
+        
+        try {
+            navigation.navigate('SitterProfile', { sitterData });
+        } catch (error) {
+            console.error('Navigation error:', error);
+        }
+    }, [navigation]);
 
     // ========== COMPONENTS ==========
 
@@ -296,7 +515,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 onPress={() => handleSitterPress(sitter)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`${sitter.name}, ${t('babysitter.rating')} ${sitter.rating.toFixed(1)}, ${t('babysitter.price')} ${sitter.pricePerHour} ${t('babysitter.perHour')}`}
+                accessibilityLabel={`${sitter.name || 'סיטר'}, ${t('babysitter.rating')} ${(typeof sitter.rating === 'number' && !isNaN(sitter.rating) ? Math.max(0, Math.min(5, sitter.rating)) : 0).toFixed(1)}, ${t('babysitter.price')} ${typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) ? Math.max(0, sitter.pricePerHour) : 50} ${t('babysitter.perHour')}`}
             >
                 <View style={styles.sitterCardContent}>
                     {sitter.photoUrl && !imageError ? (
@@ -332,10 +551,12 @@ const BabySitterScreen = ({ navigation }: any) => {
                             </View>
                         )}
                         <View style={styles.sitterMeta}>
-                            {sitter.rating > 0 && (
+                            {typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating > 0 && (
                                 <View style={styles.ratingBadge}>
                                     <Star size={12} color={theme.warning} fill={theme.warning} />
-                                    <Text style={[styles.ratingText, { color: theme.textPrimary }]}>{sitter.rating.toFixed(1)}</Text>
+                                    <Text style={[styles.ratingText, { color: theme.textPrimary }]}>
+                                        {Math.max(0, Math.min(5, sitter.rating)).toFixed(1)}
+                                    </Text>
                                 </View>
                             )}
                             {sitter.experience && (
@@ -371,7 +592,9 @@ const BabySitterScreen = ({ navigation }: any) => {
                         )}
                     </View>
                     <View style={styles.priceSection}>
-                        <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>₪{sitter.pricePerHour}</Text>
+                        <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>
+                            ₪{typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) ? Math.max(0, sitter.pricePerHour) : 50}
+                        </Text>
                         <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>{t('babysitter.perHour')}</Text>
                     </View>
                 </View>
@@ -530,41 +753,99 @@ const BabySitterScreen = ({ navigation }: any) => {
             {/* Parent Mode Content */}
             {userMode === 'parent' && (
                 <>
-                    {/* Location Filter - Premium Design */}
+                    {/* Location Filter - Premium Minimalist Design */}
                     <View style={styles.locationSection}>
-                        <TouchableOpacity
-                            style={[styles.locationButton, { backgroundColor: theme.card, borderColor: theme.border }]}
-                            onPress={() => {
-                                // Could open location picker modal
-                            }}
-                            activeOpacity={0.8}
-                        >
-                            <View style={[styles.locationIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                                <MapPin size={18} color={theme.primary} />
+                        <View style={[styles.locationButton, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            {/* Search Icon - Left */}
+                            <View style={[styles.locationIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}>
+                                <Search size={15} color={theme.primary} strokeWidth={2} />
                             </View>
+                            
+                            {/* Input Field - Center */}
                             <TextInput
                                 style={[styles.locationInput, { color: theme.textPrimary }]}
                                 value={filterCity}
-                                onChangeText={setFilterCity}
-                                placeholder={userCity ? `${userCity} ${t('babysitter.automatic')}` : t('babysitter.enterCity')}
+                                onChangeText={handleCityInputChange}
+                                onFocus={() => {
+                                    if (filterCity.length > 0) {
+                                        const filtered = ISRAELI_CITIES.filter(city => 
+                                            city.toLowerCase().startsWith(filterCity.toLowerCase())
+                                        );
+                                        setCitySuggestions(filtered.slice(0, 5));
+                                        setShowCitySuggestions(filtered.length > 0);
+                                    } else {
+                                        // Show suggestions when focusing empty field
+                                        const filtered = ISRAELI_CITIES.slice(0, 5);
+                                        setCitySuggestions(filtered);
+                                        setShowCitySuggestions(true);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    // Delay hiding to allow selection
+                                    if (autocompleteTimeoutRef.current) {
+                                        clearTimeout(autocompleteTimeoutRef.current);
+                                    }
+                                    autocompleteTimeoutRef.current = setTimeout(() => {
+                                        setShowCitySuggestions(false);
+                                    }, 200);
+                                }}
+                                placeholder={userCity && ISRAELI_CITIES.includes(userCity) ? `${userCity} (אוטומטי)` : 'חפש לפי עיר...'}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
-                                accessibilityLabel={t('babysitter.enterCity')}
-                                accessibilityHint="Search for sitters in a specific city"
+                                accessibilityLabel="חפש לפי עיר"
+                                accessibilityHint="הקלד שם עיר כדי למצוא ביביסטרים באזור"
                             />
+                            
+                            {/* Right Side - Clear or Location Icon */}
                             {filterCity.length > 0 ? (
                                 <TouchableOpacity
-                                    onPress={() => setFilterCity('')}
-                                    style={[styles.clearButton, { backgroundColor: theme.cardSecondary }]}
+                                    onPress={() => {
+                                        if (autocompleteTimeoutRef.current) {
+                                            clearTimeout(autocompleteTimeoutRef.current);
+                                        }
+                                        setFilterCity('');
+                                        setShowCitySuggestions(false);
+                                        setCitySuggestions([]);
+                                    }}
+                                    style={[styles.clearButton, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}
+                                    activeOpacity={0.7}
                                 >
-                                    <Text style={{ color: theme.textSecondary, fontSize: 16, fontWeight: '600' }}>×</Text>
+                                    <Text style={{ color: theme.textSecondary, fontSize: 20, fontWeight: '200', lineHeight: 20 }}>×</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <View style={[styles.locationBadge, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)' }]}>
-                                    <Search size={14} color={theme.primary} />
+                                <View style={[styles.locationBadge, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}>
+                                    <MapPin size={15} color={theme.primary} strokeWidth={2} />
                                 </View>
                             )}
-                        </TouchableOpacity>
+                        </View>
+                        
+                        {/* City Autocomplete Suggestions */}
+                        {showCitySuggestions && citySuggestions.length > 0 && (
+                            <View style={[styles.citySuggestionsContainer, { 
+                                backgroundColor: isDarkMode ? theme.card : '#fff',
+                                borderColor: theme.border,
+                                shadowColor: '#000',
+                            }]}>
+                                {citySuggestions.map((city, index) => (
+                                    <TouchableOpacity
+                                        key={city}
+                                        style={[
+                                            styles.citySuggestionItem,
+                                            { 
+                                                borderBottomColor: theme.border,
+                                                borderBottomWidth: index < citySuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
+                                            }
+                                        ]}
+                                        onPress={() => handleCitySelect(city)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.citySuggestionText, { color: theme.textPrimary }]}>
+                                            {city}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </View>
 
                     {/* Sort & Count */}
@@ -936,42 +1217,71 @@ const styles = StyleSheet.create({
     locationSection: {
         paddingHorizontal: 20,
         marginBottom: 16,
+        position: 'relative',
+        zIndex: 10,
     },
     locationButton: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         paddingVertical: 12,
         paddingHorizontal: 16,
-        borderRadius: 16,
+        borderRadius: 18,
         borderWidth: StyleSheet.hairlineWidth,
-        ...SHADOWS.medium,
+        ...SHADOWS.subtle,
+        gap: 10,
     },
     locationIconContainer: {
-        width: 36,
-        height: 36,
-        borderRadius: 12,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: 12,
     },
     locationInput: {
         flex: 1,
         fontSize: 15,
-        fontWeight: '500',
+        fontWeight: '400',
+        paddingHorizontal: 6,
+        paddingVertical: 0,
+        minHeight: 20,
     },
     clearButton: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
     },
     locationBadge: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    citySuggestionsContainer: {
+        position: 'absolute',
+        top: '100%',
+        left: 20,
+        right: 20,
+        marginTop: 4,
+        borderRadius: 16,
+        borderWidth: 1,
+        maxHeight: 200,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
+    },
+    citySuggestionItem: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    citySuggestionText: {
+        fontSize: 15,
+        fontWeight: '500',
+        textAlign: 'right',
     },
 
     // Legacy city filter (kept for reference)

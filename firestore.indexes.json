@@ -89,6 +89,20 @@
             ]
         },
         {
+            "collectionGroup": "bookings",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "babysitterId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
             "collectionGroup": "growthMeasurements",
             "queryScope": "COLLECTION",
             "fields": [

@@ -2,7 +2,7 @@
  * BookingModal - מודל הזמנת בייביסיטר - Premium Minimalist Design
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -19,10 +19,12 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { auth, db } from '../../services/firebaseConfig';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
+import { getBabysitterBookings } from '../../services/babysitterService';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface BookingModalProps {
     visible: boolean;
@@ -54,6 +56,72 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const [endTime, setEndTime] = useState<string>('22:00');
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
+    const [sitterBookings, setSitterBookings] = useState<any[]>([]);
+    const [loadingAvailability, setLoadingAvailability] = useState(true);
+    const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+    const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
+    // Convert HH:MM string to Date object
+    const getDateFromTime = (timeString: string): Date => {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+    };
+
+    // Convert Date to HH:MM string
+    const getTimeFromDate = (date: Date): string => {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
+    // Fetch sitter bookings to check availability
+    useEffect(() => {
+        const fetchSitterBookings = async () => {
+            if (!sitter.id) return;
+            setLoadingAvailability(true);
+            try {
+                // Query only confirmed bookings (these block availability)
+                const confirmedQuery = query(
+                    collection(db, 'bookings'),
+                    where('babysitterId', '==', sitter.id),
+                    where('status', '==', 'confirmed')
+                );
+                
+                // Query only active bookings
+                const activeQuery = query(
+                    collection(db, 'bookings'),
+                    where('babysitterId', '==', sitter.id),
+                    where('status', '==', 'active')
+                );
+                
+                // Execute both queries in parallel
+                const [confirmedSnapshot, activeSnapshot] = await Promise.all([
+                    getDocs(confirmedQuery).catch(() => ({ docs: [] })),
+                    getDocs(activeQuery).catch(() => ({ docs: [] }))
+                ]);
+                
+                // Combine results
+                const allBookings = [
+                    ...confirmedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    ...activeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                ];
+                
+                setSitterBookings(allBookings);
+            } catch (error) {
+                console.error('Error fetching sitter bookings:', error);
+                // If query fails, set empty array (availability check will be disabled)
+                setSitterBookings([]);
+            } finally {
+                setLoadingAvailability(false);
+            }
+        };
+        
+        if (visible) {
+            fetchSitterBookings();
+        }
+    }, [sitter.id, visible]);
 
     // Generate next 14 days
     const dates = Array.from({ length: 14 }, (_, i) => {
@@ -61,6 +129,32 @@ const BookingModal: React.FC<BookingModalProps> = ({
         date.setDate(date.getDate() + i);
         return date;
     });
+
+    // Check if a date has any bookings
+    const isDateBooked = (date: Date): boolean => {
+        const dateStr = date.toDateString();
+        return sitterBookings.some(booking => {
+            const bookingDate = booking.date?.toDate?.() || new Date(booking.date);
+            return bookingDate.toDateString() === dateStr;
+        });
+    };
+
+    // Check if a time slot conflicts with existing bookings
+    const isTimeSlotAvailable = (time: string, date: Date): boolean => {
+        const dateStr = date.toDateString();
+        const [hour] = time.split(':').map(Number);
+        
+        return !sitterBookings.some(booking => {
+            const bookingDate = booking.date?.toDate?.() || new Date(booking.date);
+            if (bookingDate.toDateString() !== dateStr) return false;
+            
+            const [bookingStart] = booking.startTime.split(':').map(Number);
+            const [bookingEnd] = booking.endTime.split(':').map(Number);
+            
+            // Check if time overlaps with booking
+            return hour >= bookingStart && hour < bookingEnd;
+        });
+    };
 
     // Format date for display
     const formatDate = (date: Date) => {
@@ -130,207 +224,166 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const renderContent = () => {
         return (
             <>
-                {/* Premium Header */}
+                {/* Ultra Minimalist Header */}
                 <Animated.View 
                     entering={ANIMATIONS.fadeInDown(0)}
-                    style={[styles.header, { borderBottomColor: theme.border }]}
+                    style={styles.minimalHeader}
                 >
                     <TouchableOpacity 
                         onPress={onClose} 
-                        style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
-                        activeOpacity={0.7}
+                        style={styles.minimalCloseBtn}
+                        activeOpacity={0.6}
                     >
-                        <X size={20} color={theme.textPrimary} strokeWidth={2.5} />
+                        <X size={22} color={theme.textPrimary} strokeWidth={2} />
                     </TouchableOpacity>
-                    <View style={styles.headerCenter}>
-                        <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                            <Calendar size={20} color={theme.primary} strokeWidth={2.5} />
-                        </View>
-                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                            הזמנת {sitter.name}
-                        </Text>
-                    </View>
-                    <View style={{ width: 40 }} />
+                    <Text style={[styles.minimalHeaderTitle, { color: theme.textPrimary }]}>
+                        הזמנת {sitter.name}
+                    </Text>
+                    <View style={{ width: 34 }} />
                 </Animated.View>
 
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                    {/* Date Selection - Premium */}
+                <ScrollView style={styles.minimalContent} showsVerticalScrollIndicator={false}>
+                    {/* Ultra Minimalist Date Selection */}
                     <Animated.View 
                         entering={ANIMATIONS.fadeInDown(100)}
-                        style={styles.section}
+                        style={styles.minimalSection}
                     >
-                        <View style={styles.sectionHeader}>
-                            <View style={[styles.sectionIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                                <Calendar size={18} color={theme.primary} strokeWidth={2} />
-                            </View>
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                בחר תאריך
-                            </Text>
-                        </View>
+                        <Text style={[styles.minimalLabel, { color: theme.textSecondary }]}>
+                            תאריך
+                        </Text>
                         <ScrollView 
                             horizontal 
                             showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.datesScrollContent}
+                            contentContainerStyle={styles.minimalDatesScroll}
                         >
                             {dates.map((date, i) => {
                                 const formatted = formatDate(date);
                                 const isSelected = selectedDate.toDateString() === date.toDateString();
                                 const isToday = i === 0;
+                                const isBooked = isDateBooked(date);
                                 return (
                                     <TouchableOpacity
                                         key={i}
                                         style={[
-                                            styles.dateCard,
+                                            styles.minimalDateCard,
                                             { 
                                                 backgroundColor: isSelected 
                                                     ? theme.primary 
-                                                    : (isDarkMode ? theme.cardSecondary : theme.inputBackground),
-                                                borderColor: isSelected ? theme.primary : theme.border,
+                                                    : isBooked
+                                                    ? (isDarkMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)')
+                                                    : 'transparent',
+                                                borderColor: isSelected 
+                                                    ? theme.primary 
+                                                    : isBooked 
+                                                    ? 'rgba(239, 68, 68, 0.3)' 
+                                                    : theme.border,
+                                                opacity: isBooked && !isSelected ? 0.5 : 1,
                                             }
                                         ]}
                                         onPress={() => {
+                                            if (isBooked) {
+                                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                                                Alert.alert('תאריך תפוס', 'המטפל לא זמין בתאריך זה');
+                                                return;
+                                            }
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                             setSelectedDate(date);
                                         }}
                                         activeOpacity={0.7}
+                                        disabled={isBooked}
                                     >
                                         <Text style={[
-                                            styles.dateDay,
+                                            styles.minimalDateDay,
                                             { color: isSelected ? '#fff' : theme.textSecondary }
                                         ]}>
                                             {isToday ? 'היום' : formatted.day}
                                         </Text>
                                         <Text style={[
-                                            styles.dateNum,
+                                            styles.minimalDateNum,
                                             { color: isSelected ? '#fff' : theme.textPrimary }
                                         ]}>
                                             {formatted.date}
                                         </Text>
+                                        {isBooked && !isSelected && (
+                                            <Text style={[styles.minimalDateBooked, { color: 'rgba(239, 68, 68, 0.6)' }]}>
+                                                תפוס
+                                            </Text>
+                                        )}
                                     </TouchableOpacity>
                                 );
                             })}
                         </ScrollView>
                     </Animated.View>
 
-                    {/* Time Selection - Premium Range Picker */}
+                    {/* Ultra Minimalist Time Selection */}
                     <Animated.View 
                         entering={ANIMATIONS.fadeInDown(200)}
-                        style={styles.section}
+                        style={styles.minimalSection}
                     >
-                        <View style={styles.sectionHeader}>
-                            <View style={[styles.sectionIcon, { backgroundColor: isDarkMode ? 'rgba(48, 209, 88, 0.2)' : 'rgba(48, 209, 88, 0.1)' }]}>
-                                <Clock size={18} color={theme.success} strokeWidth={2} />
-                            </View>
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                שעות
-                            </Text>
-                        </View>
+                        <Text style={[styles.minimalLabel, { color: theme.textSecondary }]}>
+                            שעות
+                        </Text>
                         
-                        {/* Time Range Display */}
-                        <View style={[styles.timeRangeDisplay, { backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground, borderColor: theme.border }]}>
-                            <View style={styles.timeRangeItem}>
-                                <Text style={[styles.timeRangeLabel, { color: theme.textSecondary }]}>מ-</Text>
-                                <View style={[styles.timeRangeValue, { backgroundColor: theme.primary }]}>
-                                    <Text style={styles.timeRangeValueText}>{startTime}</Text>
-                                </View>
-                            </View>
-                            <View style={[styles.timeRangeArrow, { backgroundColor: theme.border }]} />
-                            <View style={styles.timeRangeItem}>
-                                <Text style={[styles.timeRangeLabel, { color: theme.textSecondary }]}>עד-</Text>
-                                <View style={[styles.timeRangeValue, { backgroundColor: theme.success }]}>
-                                    <Text style={styles.timeRangeValueText}>{endTime}</Text>
-                                </View>
-                            </View>
+                        {/* iOS Style Time Picker Buttons */}
+                        <View style={styles.minimalTimeRow}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.minimalTimeButton,
+                                    { 
+                                        backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground,
+                                        borderColor: theme.border,
+                                    }
+                                ]}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setShowStartTimePicker(true);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.minimalTimeLabel, { color: theme.textSecondary }]}>מ-</Text>
+                                <Text style={[styles.minimalTimeValue, { color: theme.textPrimary }]}>{startTime}</Text>
+                            </TouchableOpacity>
+                            
+                            <View style={[styles.minimalTimeDivider, { backgroundColor: theme.border }]} />
+                            
+                            <TouchableOpacity
+                                style={[
+                                    styles.minimalTimeButton,
+                                    { 
+                                        backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground,
+                                        borderColor: theme.border,
+                                    }
+                                ]}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setShowEndTimePicker(true);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.minimalTimeLabel, { color: theme.textSecondary }]}>עד-</Text>
+                                <Text style={[styles.minimalTimeValue, { color: theme.textPrimary }]}>{endTime}</Text>
+                            </TouchableOpacity>
                         </View>
-
-                        {/* All Hours Scrollable */}
-                        <ScrollView 
-                            horizontal 
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.hoursScrollContent}
-                        >
-                            {TIME_SLOTS.map(time => {
-                                const [startH] = startTime.split(':').map(Number);
-                                const [endH] = endTime.split(':').map(Number);
-                                const [currentH] = time.split(':').map(Number);
-                                const isInRange = currentH >= startH && currentH <= endH;
-                                const isStart = time === startTime;
-                                const isEnd = time === endTime;
-                                
-                                return (
-                                    <TouchableOpacity
-                                        key={time}
-                                        style={[
-                                            styles.hourChip,
-                                            {
-                                                backgroundColor: isStart || isEnd
-                                                    ? theme.success
-                                                    : isInRange
-                                                    ? (isDarkMode ? 'rgba(48, 209, 88, 0.2)' : 'rgba(48, 209, 88, 0.15)')
-                                                    : (isDarkMode ? theme.cardSecondary : theme.inputBackground),
-                                                borderColor: isStart || isEnd ? theme.success : theme.border,
-                                                borderWidth: isStart || isEnd ? 2 : 1.5,
-                                            }
-                                        ]}
-                                        onPress={() => {
-                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            // If clicking before start time, set as new start
-                                            if (currentH < startH || (currentH === startH && time < startTime)) {
-                                                setStartTime(time);
-                                            } 
-                                            // If clicking after end time, set as new end
-                                            else if (currentH > endH || (currentH === endH && time > endTime)) {
-                                                setEndTime(time);
-                                            }
-                                            // If clicking between, toggle start/end logic
-                                            else {
-                                                // If closer to start, update start
-                                                if (Math.abs(currentH - startH) < Math.abs(currentH - endH)) {
-                                                    setStartTime(time);
-                                                } else {
-                                                    setEndTime(time);
-                                                }
-                                            }
-                                        }}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={[
-                                            styles.hourChipText,
-                                            { 
-                                                color: isStart || isEnd 
-                                                    ? '#fff' 
-                                                    : isInRange 
-                                                    ? theme.success 
-                                                    : theme.textPrimary,
-                                                fontWeight: isStart || isEnd ? '700' : '600',
-                                            }
-                                        ]}>
-                                            {time}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
                     </Animated.View>
 
-                    {/* Notes - Premium */}
+                    {/* Ultra Minimalist Notes */}
                     <Animated.View 
                         entering={ANIMATIONS.fadeInDown(300)}
-                        style={styles.section}
+                        style={styles.minimalSection}
                     >
-                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                        <Text style={[styles.minimalLabel, { color: theme.textSecondary }]}>
                             הערות (אופציונלי)
                         </Text>
                         <TextInput
                             style={[
-                                styles.notesInput, 
+                                styles.minimalNotesInput, 
                                 { 
                                     backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground,
                                     color: theme.textPrimary,
                                     borderColor: theme.border,
                                 }
                             ]}
-                            placeholder="פרטים נוספים לבייביסיטר..."
+                            placeholder="פרטים נוספים..."
                             placeholderTextColor={theme.textTertiary}
                             value={notes}
                             onChangeText={setNotes}
@@ -339,60 +392,173 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         />
                     </Animated.View>
 
-                    {/* Summary - Premium Card */}
+                    {/* Ultra Minimalist Summary */}
                     <Animated.View 
                         entering={ANIMATIONS.fadeInDown(400)}
-                        style={styles.section}
+                        style={styles.minimalSection}
                     >
-                        <View style={[
-                            styles.summaryCard, 
-                            { 
-                                backgroundColor: isDarkMode ? 'rgba(48, 209, 88, 0.15)' : 'rgba(48, 209, 88, 0.08)',
-                                borderColor: isDarkMode ? 'rgba(48, 209, 88, 0.3)' : 'rgba(48, 209, 88, 0.2)',
-                            }
-                        ]}>
-                            <View style={styles.summaryRow}>
-                                <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>משך משמרת</Text>
-                                <Text style={[styles.summaryValue, { color: theme.textPrimary }]}>
+                        <View style={styles.minimalSummary}>
+                            <View style={styles.minimalSummaryRow}>
+                                <Text style={[styles.minimalSummaryLabel, { color: theme.textSecondary }]}>משך</Text>
+                                <Text style={[styles.minimalSummaryValue, { color: theme.textPrimary }]}>
                                     {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')} שעות
                                 </Text>
                             </View>
-                            <View style={styles.summaryRow}>
-                                <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>מחיר לשעה</Text>
-                                <Text style={[styles.summaryValue, { color: theme.textPrimary }]}>₪{sitter.hourlyRate}</Text>
+                            <View style={[styles.minimalSummaryDivider, { backgroundColor: theme.border }]} />
+                            <View style={styles.minimalSummaryRow}>
+                                <Text style={[styles.minimalSummaryLabel, { color: theme.textSecondary }]}>מחיר לשעה</Text>
+                                <Text style={[styles.minimalSummaryValue, { color: theme.textPrimary }]}>₪{sitter.hourlyRate}</Text>
                             </View>
-                            <View style={[styles.summaryRow, styles.summaryTotal, { borderTopColor: isDarkMode ? 'rgba(48, 209, 88, 0.3)' : 'rgba(48, 209, 88, 0.2)' }]}>
-                                <Text style={[styles.totalLabel, { color: theme.success }]}>סה"כ משוער</Text>
-                                <Text style={[styles.totalValue, { color: theme.success }]}>₪{totalPrice}</Text>
+                            <View style={[styles.minimalSummaryDivider, { backgroundColor: theme.border }]} />
+                            <View style={styles.minimalSummaryRow}>
+                                <Text style={[styles.minimalSummaryTotalLabel, { color: theme.textPrimary }]}>סה"כ</Text>
+                                <Text style={[styles.minimalSummaryTotalValue, { color: theme.primary }]}>₪{totalPrice}</Text>
                             </View>
                         </View>
                     </Animated.View>
                 </ScrollView>
 
-                {/* Submit Button - Premium */}
+                {/* Ultra Minimalist Submit Button */}
                 <Animated.View 
                     entering={ANIMATIONS.fadeInDown(500)}
-                    style={[styles.footer, { borderTopColor: theme.border }]}
+                    style={styles.minimalFooter}
                 >
                     <TouchableOpacity
-                        style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+                        style={[
+                            styles.minimalSubmitBtn,
+                            { backgroundColor: theme.primary },
+                            loading && styles.minimalSubmitBtnDisabled
+                        ]}
                         onPress={handleSubmit}
                         disabled={loading}
-                        activeOpacity={0.85}
+                        activeOpacity={0.8}
                     >
-                        <LinearGradient
-                            colors={[theme.primary, theme.accent]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.submitBtnGradient}
-                        >
-                            {!loading && <Send size={20} color="#fff" strokeWidth={2.5} />}
-                            <Text style={styles.submitBtnText}>
-                                {loading ? 'שולח...' : 'שלח בקשה'}
-                            </Text>
-                        </LinearGradient>
+                        <Text style={styles.minimalSubmitBtnText}>
+                            {loading ? 'שולח...' : 'שלח בקשה'}
+                        </Text>
                     </TouchableOpacity>
                 </Animated.View>
+
+                {/* iOS Time Picker Modals */}
+                {Platform.OS === 'ios' && (
+                    <>
+                        {/* Start Time Picker */}
+                        <Modal
+                            visible={showStartTimePicker}
+                            transparent={true}
+                            animationType="fade"
+                            onRequestClose={() => setShowStartTimePicker(false)}
+                        >
+                            <View style={styles.timePickerOverlay}>
+                                <View style={[styles.timePickerContainer, { backgroundColor: isDarkMode ? theme.card : '#fff' }]}>
+                                    <View style={styles.timePickerDragHandle}>
+                                        <View style={[styles.timePickerDragBar, { backgroundColor: theme.border }]} />
+                                    </View>
+                                    <View style={[styles.timePickerHeader, { borderBottomColor: theme.border }]}>
+                                        <TouchableOpacity onPress={() => setShowStartTimePicker(false)} style={styles.timePickerCancelBtn}>
+                                            <Text style={[styles.timePickerCancelText, { color: theme.textSecondary }]}>ביטול</Text>
+                                        </TouchableOpacity>
+                                        <Text style={[styles.timePickerTitle, { color: theme.textPrimary }]}>שעת התחלה</Text>
+                                        <TouchableOpacity onPress={() => setShowStartTimePicker(false)} style={styles.timePickerDoneBtn}>
+                                            <Text style={[styles.timePickerDoneText, { color: theme.primary }]}>אישור</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <DateTimePicker
+                                        value={getDateFromTime(startTime)}
+                                        mode="time"
+                                        is24Hour={true}
+                                        display="spinner"
+                                        onChange={(event, date) => {
+                                            if (date && event.type !== 'dismissed') {
+                                                const newTime = getTimeFromDate(date);
+                                                setStartTime(newTime);
+                                            }
+                                        }}
+                                        locale="he-IL"
+                                        textColor={theme.textPrimary}
+                                        style={styles.timePicker}
+                                    />
+                                </View>
+                            </View>
+                        </Modal>
+
+                        {/* End Time Picker */}
+                        <Modal
+                            visible={showEndTimePicker}
+                            transparent={true}
+                            animationType="fade"
+                            onRequestClose={() => setShowEndTimePicker(false)}
+                        >
+                            <View style={styles.timePickerOverlay}>
+                                <View style={[styles.timePickerContainer, { backgroundColor: isDarkMode ? theme.card : '#fff' }]}>
+                                    <View style={styles.timePickerDragHandle}>
+                                        <View style={[styles.timePickerDragBar, { backgroundColor: theme.border }]} />
+                                    </View>
+                                    <View style={[styles.timePickerHeader, { borderBottomColor: theme.border }]}>
+                                        <TouchableOpacity onPress={() => setShowEndTimePicker(false)} style={styles.timePickerCancelBtn}>
+                                            <Text style={[styles.timePickerCancelText, { color: theme.textSecondary }]}>ביטול</Text>
+                                        </TouchableOpacity>
+                                        <Text style={[styles.timePickerTitle, { color: theme.textPrimary }]}>שעת סיום</Text>
+                                        <TouchableOpacity onPress={() => setShowEndTimePicker(false)} style={styles.timePickerDoneBtn}>
+                                            <Text style={[styles.timePickerDoneText, { color: theme.primary }]}>אישור</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <DateTimePicker
+                                        value={getDateFromTime(endTime)}
+                                        mode="time"
+                                        is24Hour={true}
+                                        display="spinner"
+                                        onChange={(event, date) => {
+                                            if (date && event.type !== 'dismissed') {
+                                                const newTime = getTimeFromDate(date);
+                                                setEndTime(newTime);
+                                            }
+                                        }}
+                                        locale="he-IL"
+                                        textColor={theme.textPrimary}
+                                        style={styles.timePicker}
+                                    />
+                                </View>
+                            </View>
+                        </Modal>
+                    </>
+                )}
+
+                {/* Android Time Pickers */}
+                {Platform.OS === 'android' && (
+                    <>
+                        {showStartTimePicker && (
+                            <DateTimePicker
+                                value={getDateFromTime(startTime)}
+                                mode="time"
+                                is24Hour={true}
+                                display="default"
+                                onChange={(event, date) => {
+                                    setShowStartTimePicker(false);
+                                    if (date && event.type !== 'dismissed') {
+                                        const newTime = getTimeFromDate(date);
+                                        setStartTime(newTime);
+                                    }
+                                }}
+                            />
+                        )}
+                        {showEndTimePicker && (
+                            <DateTimePicker
+                                value={getDateFromTime(endTime)}
+                                mode="time"
+                                is24Hour={true}
+                                display="default"
+                                onChange={(event, date) => {
+                                    setShowEndTimePicker(false);
+                                    if (date && event.type !== 'dismissed') {
+                                        const newTime = getTimeFromDate(date);
+                                        setEndTime(newTime);
+                                    }
+                                }}
+                            />
+                        )}
+                    </>
+                )}
             </>
         );
     };
@@ -458,7 +624,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     section: {
-        marginBottom: 32,
+        marginBottom: 28,
     },
     sectionHeader: {
         flexDirection: 'row-reverse',
@@ -474,9 +640,19 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sectionTitle: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '700',
         letterSpacing: -0.3,
+    },
+    timeSelectionHeader: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    selectedTimeRange: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     datesScrollContent: {
         flexDirection: 'row-reverse',
@@ -484,17 +660,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 2,
     },
     dateCard: {
-        width: 72,
-        paddingVertical: 16,
-        paddingHorizontal: 10,
-        borderRadius: 16,
+        width: 76,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 14,
         alignItems: 'center',
         borderWidth: 1.5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     dateDay: {
         fontSize: 11,
@@ -562,18 +733,13 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     hourChip: {
-        paddingHorizontal: 18,
-        paddingVertical: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 14,
         borderRadius: 14,
-        minWidth: 76,
+        minWidth: 80,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
     },
     hourChipText: {
         fontSize: 15,
@@ -660,6 +826,234 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         letterSpacing: -0.3,
+    },
+    // Ultra Minimalist Premium Styles
+    minimalHeader: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        paddingTop: Platform.OS === 'ios' ? 60 : 20,
+        paddingBottom: 24,
+    },
+    minimalCloseBtn: {
+        width: 34,
+        height: 34,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    minimalHeaderTitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+    },
+    minimalContent: {
+        flex: 1,
+        paddingHorizontal: 24,
+    },
+    minimalSection: {
+        marginBottom: 40,
+    },
+    minimalLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        marginBottom: 12,
+        textTransform: 'uppercase',
+        textAlign: 'right',
+    },
+    minimalDatesScroll: {
+        flexDirection: 'row-reverse',
+        gap: 12,
+        paddingHorizontal: 2,
+    },
+    minimalDateCard: {
+        width: 80,
+        paddingVertical: 20,
+        paddingHorizontal: 16,
+        borderRadius: 16,
+        alignItems: 'center',
+        borderWidth: 2,
+    },
+    minimalDateDay: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.3,
+        marginBottom: 6,
+    },
+    minimalDateNum: {
+        fontSize: 20,
+        fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    minimalDateBooked: {
+        fontSize: 10,
+        fontWeight: '600',
+        marginTop: 4,
+        letterSpacing: 0.3,
+    },
+    minimalTimeRow: {
+        flexDirection: 'row-reverse',
+        gap: 16,
+        marginBottom: 20,
+    },
+    minimalTimeButton: {
+        flex: 1,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        borderRadius: 16,
+        borderWidth: 2,
+    },
+    minimalTimeLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        letterSpacing: 0.3,
+    },
+    minimalTimeValue: {
+        fontSize: 24,
+        fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    minimalTimeDivider: {
+        width: 1,
+        alignSelf: 'stretch',
+    },
+    minimalHoursScroll: {
+        flexDirection: 'row-reverse',
+        gap: 8,
+        paddingHorizontal: 2,
+    },
+    minimalHourChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        minWidth: 64,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+    },
+    minimalHourChipText: {
+        fontSize: 14,
+        letterSpacing: -0.2,
+    },
+    minimalNotesInput: {
+        borderRadius: 16,
+        padding: 20,
+        fontSize: 16,
+        minHeight: 120,
+        textAlign: 'right',
+        textAlignVertical: 'top',
+        borderWidth: 2,
+        lineHeight: 24,
+    },
+    minimalSummary: {
+        borderRadius: 20,
+        padding: 24,
+        borderWidth: 2,
+    },
+    minimalSummaryRow: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 16,
+    },
+    minimalSummaryDivider: {
+        height: 1,
+        width: '100%',
+    },
+    minimalSummaryLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        letterSpacing: -0.2,
+    },
+    minimalSummaryValue: {
+        fontSize: 16,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    minimalSummaryTotalLabel: {
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    minimalSummaryTotalValue: {
+        fontSize: 28,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+    },
+    minimalFooter: {
+        padding: 24,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    },
+    minimalSubmitBtn: {
+        borderRadius: 16,
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    minimalSubmitBtnDisabled: {
+        opacity: 0.5,
+    },
+    minimalSubmitBtnText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    // Time Picker Modal Styles
+    timePickerOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    timePickerContainer: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    },
+    timePickerDragHandle: {
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    timePickerDragBar: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+    },
+    timePickerHeader: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    timePickerCancelBtn: {
+        minWidth: 60,
+    },
+    timePickerCancelText: {
+        fontSize: 16,
+        textAlign: 'right',
+    },
+    timePickerTitle: {
+        fontSize: 17,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    timePickerDoneBtn: {
+        minWidth: 60,
+    },
+    timePickerDoneText: {
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'left',
+    },
+    timePicker: {
+        height: 200,
+        width: '100%',
     },
 });
 

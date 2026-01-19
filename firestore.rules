@@ -147,10 +147,17 @@ service cloud.firestore {
     // BOOKINGS COLLECTION
     // ===================
     match /bookings/{bookingId} {
+      // Read: 
+      // - Parent or babysitter involved in the booking (any status)
+      // - OR any authenticated user can read confirmed/active bookings (for availability checks)
+      // Note: This allows parents to check sitter availability by reading their confirmed/active bookings
       allow read: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
-        resource.data.babysitterId == request.auth.uid
+        resource.data.babysitterId == request.auth.uid ||
+        // Allow any authenticated user to read confirmed/active bookings for availability
+        (resource.data.status == 'confirmed' || resource.data.status == 'active')
       );
+      
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
