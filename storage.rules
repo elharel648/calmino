@@ -9,31 +9,37 @@ service firebase.storage {
       return request.auth != null;
     }
     
+    // Helper function for file validation
+    function isValidImage() {
+      return request.resource.size < 10 * 1024 * 1024 // 10MB
+          && request.resource.contentType.matches('image/.*');
+    }
+    
     // Sitter Photos
     match /sitterPhotos/{userId}/{filename} {
       // Allow authenticated users to upload their own photos
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
     
     // Child Photos
     match /childPhotos/{userId}/{childId}/{filename} {
       // Allow authenticated users to upload their children's photos
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
     
     // User Photos
     match /userPhotos/{userId}/{filename} {
       // Allow authenticated users to upload their own photos
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
     
     // Baby Photos (legacy path compatibility)
     match /babyPhotos/{userId}/{babyId}/{filename} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
     
     // Default: deny all

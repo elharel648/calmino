@@ -33,19 +33,31 @@ async function compressImage(uri: string): Promise<string> {
 }
 
 /**
- * Convert local URI to blob for upload
+ * Convert URI to Blob for upload
+ * React Native requires this conversion to work with Firebase Storage
+ * Using XMLHttpRequest for better local file support
  */
 async function uriToBlob(uri: string): Promise<Blob> {
-    try {
-        const response = await fetch(uri);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-        }
-        return await response.blob();
-    } catch (error) {
-        logger.error('❌ uriToBlob failed:', error);
-        throw new Error(`Image conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                resolve(xhr.response as Blob);
+            } else {
+                reject(new Error(`Failed to fetch image: ${xhr.status} ${xhr.statusText}`));
+            }
+        };
+
+        xhr.onerror = function () {
+            logger.error('❌ uriToBlob XMLHttpRequest error');
+            reject(new Error('Image conversion failed: Network error'));
+        };
+
+        xhr.responseType = 'blob';
+        xhr.open('GET', uri, true);
+        xhr.send(null);
+    });
 }
 
 /**
@@ -80,15 +92,29 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 
         return downloadURL;
     } catch (error: any) {
+        // Log detailed error for debugging
         logger.error('❌ Storage upload failed:', error.code, error.message);
 
+        // Provide user-friendly error messages
+        let errorMessage = 'Image upload failed';
+        if (error.code === 'storage/unauthorized') {
+            errorMessage = 'Permission denied. Please check your account settings.';
+        } else if (error.code === 'storage/quota-exceeded') {
+            errorMessage = 'Storage quota exceeded. Please contact support.';
+        } else if (error.code === 'storage/unknown') {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message?.includes('conversion failed')) {
+            errorMessage = 'Failed to process image. Please try a different photo.';
+        }
+
+        logger.debug('⚠️', errorMessage, '- Falling back to Base64...');
+
         // Fallback to Base64 if Storage fails
-        logger.debug('⚠️', 'Falling back to Base64...');
         try {
             return await uploadImageAsBase64(uri);
         } catch (fallbackError) {
             logger.error('❌ Base64 fallback also failed:', fallbackError);
-            throw new Error('Image upload failed');
+            throw new Error(errorMessage);
         }
     }
 }
