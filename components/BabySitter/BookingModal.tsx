@@ -33,7 +33,7 @@ interface BookingModalProps {
     sitter: {
         id: string;
         name: string;
-        hourlyRate: number;
+        verified: boolean;
         image?: string;
     };
     onSuccess?: () => void;
@@ -89,26 +89,26 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     where('babysitterId', '==', sitter.id),
                     where('status', '==', 'confirmed')
                 );
-                
+
                 // Query only active bookings
                 const activeQuery = query(
                     collection(db, 'bookings'),
                     where('babysitterId', '==', sitter.id),
                     where('status', '==', 'active')
                 );
-                
+
                 // Execute both queries in parallel
                 const [confirmedSnapshot, activeSnapshot] = await Promise.all([
                     getDocs(confirmedQuery).catch(() => ({ docs: [] })),
                     getDocs(activeQuery).catch(() => ({ docs: [] }))
                 ]);
-                
+
                 // Combine results
                 const allBookings = [
                     ...confirmedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     ...activeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                 ];
-                
+
                 setSitterBookings(allBookings);
             } catch (error) {
                 console.error('Error fetching sitter bookings:', error);
@@ -118,7 +118,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 setLoadingAvailability(false);
             }
         };
-        
+
         if (visible) {
             fetchSitterBookings();
         }
@@ -144,14 +144,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const isTimeSlotAvailable = (time: string, date: Date): boolean => {
         const dateStr = date.toDateString();
         const [hour] = time.split(':').map(Number);
-        
+
         return !sitterBookings.some(booking => {
             const bookingDate = booking.date?.toDate?.() || new Date(booking.date);
             if (bookingDate.toDateString() !== dateStr) return false;
-            
+
             const [bookingStart] = booking.startTime.split(':').map(Number);
             const [bookingEnd] = booking.endTime.split(':').map(Number);
-            
+
             // Check if time overlaps with booking
             return hour >= bookingStart && hour < bookingEnd;
         });
@@ -177,7 +177,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }, [startTime, endTime]);
 
     const duration = calculateDuration();
-    const totalPrice = Math.round((duration / 60) * sitter.hourlyRate);
 
     // Submit booking
     const handleSubmit = async () => {
@@ -192,7 +191,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         today.setHours(0, 0, 0, 0);
         const selectedDateOnly = new Date(selectedDate);
         selectedDateOnly.setHours(0, 0, 0, 0);
-        
+
         if (selectedDateOnly < today) {
             Alert.alert('שגיאה', 'לא ניתן להזמין לתאריך בעבר');
             return;
@@ -202,14 +201,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
         const dateStr = selectedDate.toDateString();
         const [startH] = startTime.split(':').map(Number);
         const [endH] = endTime.split(':').map(Number);
-        
+
         const hasConflict = sitterBookings.some(booking => {
             const bookingDate = booking.date?.toDate?.() || new Date(booking.date);
             if (bookingDate.toDateString() !== dateStr) return false;
-            
+
             const [bookingStart] = booking.startTime.split(':').map(Number);
             const [bookingEnd] = booking.endTime.split(':').map(Number);
-            
+
             // Check if time ranges overlap
             return (startH < bookingEnd && endH > bookingStart);
         });
@@ -238,7 +237,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 date: Timestamp.fromDate(selectedDate), // Fixed: Convert Date to Timestamp
                 startTime,
                 endTime,
-                hourlyRate: sitter.hourlyRate,
                 notes: notes.trim() || null,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
@@ -250,14 +248,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 if (sitterToken) {
                     const parentDoc = await getDoc(doc(db, 'users', user.uid));
                     const parentName = parentDoc.data()?.displayName || 'הורה';
-                    
+
                     const formattedDate = formatDate(selectedDate);
                     await sendPushNotification(
                         sitterToken,
                         '📅 הזמנה חדשה!',
                         `${parentName} רוצה להזמין אותך ל-${formattedDate.date} בשעה ${startTime}-${endTime}`,
-                        { 
-                            type: 'booking_new', 
+                        {
+                            type: 'booking_new',
                             bookingId: bookingRef.id,
                             channelId: 'booking'
                         }
@@ -287,12 +285,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
         return (
             <>
                 {/* Ultra Minimalist Header */}
-                <Animated.View 
+                <Animated.View
                     entering={ANIMATIONS.fadeInDown(0)}
                     style={styles.minimalHeader}
                 >
-                    <TouchableOpacity 
-                        onPress={onClose} 
+                    <TouchableOpacity
+                        onPress={onClose}
                         style={styles.minimalCloseBtn}
                         activeOpacity={0.6}
                     >
@@ -306,15 +304,15 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                 <ScrollView style={styles.minimalContent} showsVerticalScrollIndicator={false}>
                     {/* Ultra Minimalist Date Selection */}
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(100)}
                         style={styles.minimalSection}
                     >
                         <Text style={[styles.minimalLabel, { color: theme.textSecondary }]}>
                             תאריך
                         </Text>
-                        <ScrollView 
-                            horizontal 
+                        <ScrollView
+                            horizontal
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.minimalDatesScroll}
                         >
@@ -328,17 +326,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                         key={i}
                                         style={[
                                             styles.minimalDateCard,
-                                            { 
-                                                backgroundColor: isSelected 
-                                                    ? theme.primary 
+                                            {
+                                                backgroundColor: isSelected
+                                                    ? theme.primary
                                                     : isBooked
-                                                    ? (isDarkMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)')
-                                                    : 'transparent',
-                                                borderColor: isSelected 
-                                                    ? theme.primary 
-                                                    : isBooked 
-                                                    ? 'rgba(239, 68, 68, 0.3)' 
-                                                    : theme.border,
+                                                        ? (isDarkMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)')
+                                                        : 'transparent',
+                                                borderColor: isSelected
+                                                    ? theme.primary
+                                                    : isBooked
+                                                        ? 'rgba(239, 68, 68, 0.3)'
+                                                        : theme.border,
                                                 opacity: isBooked && !isSelected ? 0.5 : 1,
                                             }
                                         ]}
@@ -378,20 +376,20 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </Animated.View>
 
                     {/* Ultra Minimalist Time Selection */}
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(200)}
                         style={styles.minimalSection}
                     >
                         <Text style={[styles.minimalLabel, { color: theme.textSecondary }]}>
                             שעות
                         </Text>
-                        
+
                         {/* iOS Style Time Picker Buttons */}
                         <View style={styles.minimalTimeRow}>
                             <TouchableOpacity
                                 style={[
                                     styles.minimalTimeButton,
-                                    { 
+                                    {
                                         backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground,
                                         borderColor: theme.border,
                                     }
@@ -405,13 +403,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 <Text style={[styles.minimalTimeLabel, { color: theme.textSecondary }]}>מ-</Text>
                                 <Text style={[styles.minimalTimeValue, { color: theme.textPrimary }]}>{startTime}</Text>
                             </TouchableOpacity>
-                            
+
                             <View style={[styles.minimalTimeDivider, { backgroundColor: theme.border }]} />
-                            
+
                             <TouchableOpacity
                                 style={[
                                     styles.minimalTimeButton,
-                                    { 
+                                    {
                                         backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground,
                                         borderColor: theme.border,
                                     }
@@ -429,7 +427,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </Animated.View>
 
                     {/* Ultra Minimalist Notes */}
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(300)}
                         style={styles.minimalSection}
                     >
@@ -438,8 +436,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         </Text>
                         <TextInput
                             style={[
-                                styles.minimalNotesInput, 
-                                { 
+                                styles.minimalNotesInput,
+                                {
                                     backgroundColor: isDarkMode ? theme.cardSecondary : theme.inputBackground,
                                     color: theme.textPrimary,
                                     borderColor: theme.border,
@@ -455,7 +453,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </Animated.View>
 
                     {/* Ultra Minimalist Summary */}
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(400)}
                         style={styles.minimalSection}
                     >
@@ -467,21 +465,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 </Text>
                             </View>
                             <View style={[styles.minimalSummaryDivider, { backgroundColor: theme.border }]} />
-                            <View style={styles.minimalSummaryRow}>
-                                <Text style={[styles.minimalSummaryLabel, { color: theme.textSecondary }]}>מחיר לשעה</Text>
-                                <Text style={[styles.minimalSummaryValue, { color: theme.textPrimary }]}>₪{sitter.hourlyRate}</Text>
-                            </View>
-                            <View style={[styles.minimalSummaryDivider, { backgroundColor: theme.border }]} />
-                            <View style={styles.minimalSummaryRow}>
-                                <Text style={[styles.minimalSummaryTotalLabel, { color: theme.textPrimary }]}>סה"כ</Text>
-                                <Text style={[styles.minimalSummaryTotalValue, { color: theme.primary }]}>₪{totalPrice}</Text>
-                            </View>
                         </View>
                     </Animated.View>
                 </ScrollView>
 
                 {/* Ultra Minimalist Submit Button */}
-                <Animated.View 
+                <Animated.View
                     entering={ANIMATIONS.fadeInDown(500)}
                     style={styles.minimalFooter}
                 >

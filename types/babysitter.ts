@@ -54,11 +54,6 @@ export interface BabysitterBooking {
     actualEnd?: Timestamp;
     pausedMinutes?: number; // total paused time
 
-    // Payment
-    hourlyRate: number;
-    totalMinutes?: number;
-    totalAmount?: number;
-
     // Meta
     notes?: string;
     rated?: boolean; // Has parent rated this booking?
@@ -203,7 +198,7 @@ export const REVIEW_TAG_LABELS: Record<ReviewTag, string> = {
 // BADGES
 // ===================
 
-export type SitterBadge = 
+export type SitterBadge =
     | 'top_sitter'        // ⭐ סיטר מוביל - מעל 4.8 עם 20+ ביקורות
     | 'highly_recommended' // 🏆 מומלץ ביותר - מעל 95% המלצות (4-5 כוכבים)
     | 'vip_sitter'        // 💎 סיטר VIP - מעל 50 ביקורות

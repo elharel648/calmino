@@ -35,7 +35,6 @@ export async function createBooking(bookingData: {
     date: Date;
     startTime: string;
     endTime: string;
-    hourlyRate: number;
     notes?: string;
 }): Promise<string> {
     const bookingRef = await addDoc(collection(db, 'bookings'), {
@@ -45,7 +44,6 @@ export async function createBooking(bookingData: {
         date: Timestamp.fromDate(bookingData.date),
         startTime: bookingData.startTime,
         endTime: bookingData.endTime,
-        hourlyRate: bookingData.hourlyRate,
         notes: bookingData.notes || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -177,7 +175,6 @@ export async function startShift(booking: BabysitterBooking, babysitterName: str
         startedAt: serverTimestamp(),
         isPaused: false,
         totalPausedSeconds: 0,
-        hourlyRate: booking.hourlyRate,
         isActive: true,
     });
 
@@ -298,7 +295,7 @@ export async function markReviewHelpful(reviewId: string, userId: string): Promi
     try {
         const reviewRef = doc(db, 'reviews', reviewId);
         const reviewDoc = await getDoc(reviewRef);
-        
+
         if (!reviewDoc.exists()) {
             return false;
         }
@@ -335,7 +332,7 @@ export async function addSitterResponse(reviewId: string, sitterId: string, resp
     try {
         const reviewRef = doc(db, 'reviews', reviewId);
         const reviewDoc = await getDoc(reviewRef);
-        
+
         if (!reviewDoc.exists()) {
             return false;
         }
@@ -383,7 +380,7 @@ export async function getReviewStats(babysitterId: string): Promise<{
 
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
     const distribution: { [rating: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    
+
     reviews.forEach(review => {
         distribution[review.rating] = (distribution[review.rating] || 0) + 1;
     });
@@ -419,7 +416,7 @@ export async function calculateSitterBadges(
 
             const data = sitterDoc.data();
             const reviewStats = await getReviewStats(babysitterId);
-            
+
             stats = {
                 rating: reviewStats.average || data.sitterRating || 0,
                 reviewCount: reviewStats.total || data.sitterReviewCount || 0,
@@ -463,7 +460,7 @@ export async function calculateSitterBadges(
         const createdDate = createdAt instanceof Date ? createdAt : createdAt.toDate?.() || new Date(createdAt);
         const threeMonthsAgo = new Date();
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-        
+
         if (createdDate > threeMonthsAgo && rating >= 4.5 && reviewCount >= 5) {
             badges.push('rising_star');
         }

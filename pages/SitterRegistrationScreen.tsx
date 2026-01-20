@@ -40,7 +40,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     const { t } = useLanguage();
     const progressAnim = useRef(new Animated.Value(0.33)).current;
 
-    // Current step (3 steps: Personal Info, Photo, Pricing)
+    // Current step (2 steps: Personal Info, Photo)
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,20 +62,19 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     // Step 3: Media
     const [profilePhoto, setProfilePhoto] = useState<string | null>(auth.currentUser?.photoURL || null);
 
-    // Step 4: Pricing & Availability
-    const [pricePerHour, setPricePerHour] = useState(50);
+    // Availability (keeping for future use)
     const [availability, setAvailability] = useState<{ [key: number]: boolean }>({
         0: false, 1: true, 2: true, 3: true, 4: true, 5: false, 6: false
     });
 
     // Navigate between steps
     const goToStep = (step: number) => {
-        if (step < 1 || step > 3) return;
+        if (step < 1 || step > 2) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setCurrentStep(step);
 
         Animated.spring(progressAnim, {
-            toValue: step / 3,
+            toValue: step / 2,
             useNativeDriver: false,
         }).start();
     };
@@ -204,7 +203,6 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             await updateDoc(doc(db, 'users', userId), {
                 isSitter: true,
                 sitterActive: true,
-                sitterPrice: pricePerHour,
                 sitterBio: bio,
                 sitterExperience: experienceYears ? `${experienceYears} שנות ניסיון` : null,
                 sitterAvailability: Object.entries(availability)
@@ -257,10 +255,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                             />
                         )}
                         <TextInput
-                            style={[styles.input, { 
-                                backgroundColor: Platform.OS === 'ios' ? 'transparent' : theme.card, 
-                                color: theme.textPrimary, 
-                                borderColor: theme.border 
+                            style={[styles.input, {
+                                backgroundColor: Platform.OS === 'ios' ? 'transparent' : theme.card,
+                                color: theme.textPrimary,
+                                borderColor: theme.border
                             }]}
                             value={name}
                             onChangeText={setName}
@@ -315,7 +313,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 {/* City Picker - Premium Autocomplete */}
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>עיר *</Text>
-                    
+
                     <View style={styles.cityInputContainer}>
                         <View style={[styles.cityInputWrapper, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             {/* Premium Glass Effect */}
@@ -326,7 +324,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                     style={StyleSheet.absoluteFill}
                                 />
                             )}
-                            
+
                             {/* Search Icon with Gradient */}
                             <LinearGradient
                                 colors={[theme.primary + '20', theme.primary + '10']}
@@ -336,7 +334,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                             >
                                 <MapPin size={15} color={theme.primary} strokeWidth={2} />
                             </LinearGradient>
-                            
+
                             {/* Input Field */}
                             <TextInput
                                 style={[styles.cityInput, { color: theme.textPrimary }]}
@@ -346,10 +344,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                     if (autocompleteTimeoutRef.current) {
                                         clearTimeout(autocompleteTimeoutRef.current);
                                     }
-                                    
+
                                     if (text.length > 0) {
                                         autocompleteTimeoutRef.current = setTimeout(() => {
-                                            const filtered = ISRAELI_CITIES.filter(cityName => 
+                                            const filtered = ISRAELI_CITIES.filter(cityName =>
                                                 cityName.toLowerCase().startsWith(text.toLowerCase().trim())
                                             );
                                             setCitySuggestions(filtered.slice(0, 5));
@@ -362,7 +360,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                 }}
                                 onFocus={() => {
                                     if (city.length > 0) {
-                                        const filtered = ISRAELI_CITIES.filter(cityName => 
+                                        const filtered = ISRAELI_CITIES.filter(cityName =>
                                             cityName.toLowerCase().startsWith(city.toLowerCase())
                                         );
                                         setCitySuggestions(filtered.slice(0, 5));
@@ -383,7 +381,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
                             />
-                            
+
                             {/* Clear Button with Gradient */}
                             {city.length > 0 && (
                                 <TouchableOpacity
@@ -408,10 +406,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                 </TouchableOpacity>
                             )}
                         </View>
-                        
+
                         {/* City Autocomplete Suggestions - Premium Glass Effect */}
                         {showCitySuggestions && citySuggestions.length > 0 && (
-                            <View style={[styles.citySuggestionsContainer, { 
+                            <View style={[styles.citySuggestionsContainer, {
                                 borderColor: theme.border,
                                 shadowColor: '#000',
                             }]}>
@@ -422,7 +420,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                         style={StyleSheet.absoluteFill}
                                     />
                                 )}
-                                <View style={[StyleSheet.absoluteFill, { 
+                                <View style={[StyleSheet.absoluteFill, {
                                     backgroundColor: Platform.OS === 'android' ? theme.card : 'transparent',
                                     borderRadius: 16,
                                 }]} />
@@ -431,7 +429,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                         key={cityName}
                                         style={[
                                             styles.citySuggestionItem,
-                                            { 
+                                            {
                                                 borderBottomColor: theme.border,
                                                 borderBottomWidth: index < citySuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
                                             }
@@ -461,7 +459,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
                 {/* GPS Location Button - Premium Design with Gradient */}
                 <TouchableOpacity
-                    style={[styles.locationBtn, { 
+                    style={[styles.locationBtn, {
                         borderColor: gpsLocation ? theme.success : theme.border,
                         overflow: 'hidden',
                     }]}
@@ -477,7 +475,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         />
                     )}
                     <LinearGradient
-                        colors={gpsLocation 
+                        colors={gpsLocation
                             ? [theme.success + '20', theme.success + '10']
                             : [theme.card, theme.card]
                         }
@@ -490,7 +488,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     ) : (
                         <>
                             <LinearGradient
-                                colors={gpsLocation 
+                                colors={gpsLocation
                                     ? [theme.success + '30', theme.success + '20']
                                     : [theme.primary + '20', theme.primary + '10']
                                 }
@@ -555,77 +553,6 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         </View>
     ), [profilePhoto, pickImage, theme]);
 
-    // Step 3: Pricing - memoized
-    const PricingStep = useMemo(() => (
-        <View style={styles.stepContent}>
-            <View style={styles.stepHeader}>
-                <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
-                    <Clock size={28} color={theme.textSecondary} strokeWidth={1.5} />
-                </View>
-                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>מחיר וזמינות</Text>
-                <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                    קבע את המחיר לשעה ואת הימים הפנויים
-                </Text>
-            </View>
-
-            {/* Price */}
-            <View style={[styles.priceCard, { backgroundColor: theme.card }]}>
-                <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>מחיר לשעה</Text>
-                <View style={styles.priceRow}>
-                    <TouchableOpacity
-                        style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
-                        onPress={() => setPricePerHour(Math.max(30, pricePerHour - 5))}
-                    >
-                        <Minus size={20} color={theme.textSecondary} />
-                    </TouchableOpacity>
-                    <Text style={[styles.priceValue, { color: theme.textPrimary }]}>₪{pricePerHour}</Text>
-                    <TouchableOpacity
-                        style={[styles.priceBtn, { backgroundColor: theme.cardSecondary }]}
-                        onPress={() => setPricePerHour(pricePerHour + 5)}
-                    >
-                        <Plus size={20} color={theme.textSecondary} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Availability */}
-            <View style={[styles.availabilityCard, { backgroundColor: theme.card }]}>
-                <Text style={[styles.availabilityLabel, { color: theme.textSecondary }]}>ימים פנויים</Text>
-                <View style={styles.daysRow}>
-                    {DAYS_HEB.map((day, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.dayBtn,
-                                { backgroundColor: availability[index] ? theme.textPrimary : theme.cardSecondary }
-                            ]}
-                            onPress={() => toggleDay(index)}
-                        >
-                            <Text style={[
-                                styles.dayBtnText,
-                                { color: availability[index] ? theme.card : theme.textSecondary }
-                            ]}>
-                                {day}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-
-            {/* Summary */}
-            <View style={[styles.summaryCard, { backgroundColor: theme.cardSecondary }]}>
-                <Text style={[styles.summaryTitle, { color: theme.textPrimary }]}>סיכום</Text>
-                <View style={styles.summaryRow}>
-                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>שם:</Text>
-                    <Text style={[styles.summaryValue, { color: theme.textPrimary }]}>{name}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>מחיר:</Text>
-                    <Text style={[styles.summaryValue, { color: theme.textPrimary }]}>₪{pricePerHour}/שעה</Text>
-                </View>
-            </View>
-        </View>
-    ), [name, pricePerHour, availability, theme]);
 
     // Steps are now memoized and won't cause input lag
 
@@ -641,7 +568,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
             />
-            
+
             {/* Header */}
             <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -677,7 +604,6 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                     {currentStep === 1 && PersonalInfoStep}
                     {currentStep === 2 && PhotoStep}
-                    {currentStep === 3 && PricingStep}
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -693,7 +619,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
                 )}
 
-                {currentStep < 3 ? (
+                {currentStep < 2 ? (
                     <TouchableOpacity
                         style={[styles.primaryBtn, { backgroundColor: theme.textPrimary }]}
                         onPress={nextStep}

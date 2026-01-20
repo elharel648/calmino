@@ -24,7 +24,6 @@ export interface Sitter {
     photoUrl: string | null;
     rating: number;
     reviewCount: number;
-    pricePerHour: number;
     isVerified: boolean;
     experience: string;
     bio: string;
@@ -94,7 +93,7 @@ const useSitters = () => {
 
     const fetchSitters = useCallback(async (forceRefresh = false) => {
         console.log('🔧 useSitters: fetchSitters START', { forceRefresh });
-        
+
         // Try to load from cache first (unless force refresh)
         if (!forceRefresh) {
             const cachedSitters = await loadFromCache();
@@ -102,7 +101,7 @@ const useSitters = () => {
                 setSitters(cachedSitters);
                 setIsLoading(false);
                 // Fetch in background to update cache
-                fetchSitters(true).catch(() => {});
+                fetchSitters(true).catch(() => { });
                 return;
             }
         }
@@ -128,21 +127,18 @@ const useSitters = () => {
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                
+
                 // Validate and sanitize numeric values
-                const rating = typeof data.sitterRating === 'number' && !isNaN(data.sitterRating) && data.sitterRating >= 0 
+                const rating = typeof data.sitterRating === 'number' && !isNaN(data.sitterRating) && data.sitterRating >= 0
                     ? Math.max(0, Math.min(5, data.sitterRating)) // Clamp between 0-5
                     : 0;
-                const pricePerHour = typeof data.sitterPrice === 'number' && !isNaN(data.sitterPrice) && data.sitterPrice > 0
-                    ? Math.max(0, data.sitterPrice)
-                    : 50;
                 const reviewCount = typeof data.sitterReviewCount === 'number' && !isNaN(data.sitterReviewCount) && data.sitterReviewCount >= 0
                     ? Math.max(0, data.sitterReviewCount)
                     : 0;
                 const age = typeof data.age === 'number' && !isNaN(data.age) && data.age > 0
                     ? Math.max(0, Math.min(120, data.age)) // Clamp between 0-120
                     : 0;
-                
+
                 fetchedSitters.push({
                     id: doc.id,
                     name: (data.displayName && typeof data.displayName === 'string') ? data.displayName : 'סיטר',
@@ -150,7 +146,6 @@ const useSitters = () => {
                     photoUrl: (data.photoUrl && typeof data.photoUrl === 'string') ? data.photoUrl : null,
                     rating,
                     reviewCount,
-                    pricePerHour,
                     isVerified: Boolean(data.sitterVerified),
                     experience: (data.sitterExperience && typeof data.sitterExperience === 'string') ? data.sitterExperience : '',
                     bio: (data.sitterBio && typeof data.sitterBio === 'string') ? data.sitterBio : '',
@@ -161,14 +156,14 @@ const useSitters = () => {
                     certifications: Array.isArray(data.sitterCertifications) ? data.sitterCertifications : [],
                     // Location fields
                     city: (data.sitterCity && typeof data.sitterCity === 'string') ? data.sitterCity : undefined,
-                    location: (data.sitterLocation && 
-                               typeof data.sitterLocation === 'object' &&
-                               typeof data.sitterLocation.latitude === 'number' &&
-                               typeof data.sitterLocation.longitude === 'number' &&
-                               !isNaN(data.sitterLocation.latitude) &&
-                               !isNaN(data.sitterLocation.longitude) &&
-                               data.sitterLocation.latitude >= -90 && data.sitterLocation.latitude <= 90 &&
-                               data.sitterLocation.longitude >= -180 && data.sitterLocation.longitude <= 180)
+                    location: (data.sitterLocation &&
+                        typeof data.sitterLocation === 'object' &&
+                        typeof data.sitterLocation.latitude === 'number' &&
+                        typeof data.sitterLocation.longitude === 'number' &&
+                        !isNaN(data.sitterLocation.latitude) &&
+                        !isNaN(data.sitterLocation.longitude) &&
+                        data.sitterLocation.latitude >= -90 && data.sitterLocation.latitude <= 90 &&
+                        data.sitterLocation.longitude >= -180 && data.sitterLocation.longitude <= 180)
                         ? data.sitterLocation
                         : undefined,
                 });
@@ -190,10 +185,10 @@ const useSitters = () => {
                 const ratingB = typeof b.rating === 'number' && !isNaN(b.rating) ? b.rating : 0;
                 return ratingB - ratingA;
             });
-            
+
             // Save to cache
             await saveToCache(fetchedSitters);
-            
+
             // Only update state if this is the latest fetch
             if (Date.now() - lastFetchRef.current < 1000) {
                 setSitters(fetchedSitters);

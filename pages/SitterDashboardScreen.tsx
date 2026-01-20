@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import {
     Calendar, Clock, Users, CheckCircle,
-    XCircle, ChevronRight, Star, MessageSquare, Settings,
+    XCircle, ChevronRight, ChevronLeft, Star, MessageSquare, Settings,
     User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send, DollarSign
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -48,7 +48,6 @@ interface SitterProfile {
     photoUrl: string | null;
     rating: number;
     reviewCount: number;
-    pricePerHour: number;
     isVerified: boolean;
 }
 
@@ -61,16 +60,13 @@ interface Booking {
     startTime: string;
     endTime: string;
     childrenCount: number;
-    totalPrice: number;
     status: 'pending' | 'accepted' | 'completed' | 'cancelled';
     childId?: string;
 }
 
 interface Stats {
-    monthlyEarnings: number;
     completedBookings: number;
     pendingBookings: number;
-    totalHours: number;
 }
 
 // Helper function to format relative time in Hebrew
@@ -122,10 +118,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [sitterProfile, setSitterProfile] = useState<SitterProfile | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [stats, setStats] = useState<Stats>({
-        monthlyEarnings: 0,
         completedBookings: 0,
         pendingBookings: 0,
-        totalHours: 0,
     });
 
     // Fetch sitter profile
@@ -154,7 +148,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     photoUrl: data.photoUrl || auth.currentUser?.photoURL || null,
                     rating: data.sitterRating || 0,
                     reviewCount: data.sitterReviewCount || 0,
-                    pricePerHour: data.sitterPrice || 50,
                     isVerified: data.sitterVerified || false,
                 };
             }
@@ -169,7 +162,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             photoUrl: auth.currentUser?.photoURL || null,
             rating: 0,
             reviewCount: 0,
-            pricePerHour: 50,
             isVerified: false,
         };
     };
@@ -220,7 +212,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     startTime: data.startTime || '--:--',
                     endTime: data.endTime || '--:--',
                     childrenCount: data.childrenCount || 1,
-                    totalPrice: data.totalPrice || 0,
                     status: data.status || 'pending',
                     childId: data.childId,
                 });
@@ -280,30 +271,20 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
     // Calculate stats
     const calculateStats = (bookingsList: Booking[]): Stats => {
-        const now = new Date();
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
-
-        let monthlyEarnings = 0;
         let completedBookings = 0;
         let pendingBookings = 0;
 
         bookingsList.forEach(booking => {
             if (booking.status === 'completed') {
                 completedBookings++;
-                if (booking.date >= monthStart && booking.date <= monthEnd) {
-                    monthlyEarnings += booking.totalPrice;
-                }
             } else if (booking.status === 'pending') {
                 pendingBookings++;
             }
         });
 
         return {
-            monthlyEarnings,
             completedBookings,
             pendingBookings,
-            totalHours: 0,
         };
     };
 
@@ -371,7 +352,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     date: FirestoreTimestamp.fromDate(booking.date),
                     startTime: booking.startTime,
                     endTime: booking.endTime,
-                    hourlyRate: sitterProfile?.pricePerHour || 50,
                     status: 'confirmed',
                     createdAt: FirestoreTimestamp.now(),
                     updatedAt: FirestoreTimestamp.now(),
@@ -428,9 +408,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>
                         {format(booking.date, 'd/M/yy', { locale: he })} • {booking.startTime}-{booking.endTime}
                     </Text>
-                </View>
-                <View style={styles.bookingPrice}>
-                    <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>₪{booking.totalPrice}</Text>
                 </View>
             </View>
 
@@ -551,7 +528,37 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
-                    <StatCard icon="shekel" value={`₪${stats.monthlyEarnings}`} label="החודש" />
+                    <TouchableOpacity
+                        style={[styles.reviewsCard, { backgroundColor: theme.card }]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            if (sitterProfile) {
+                                navigation.navigate('SitterProfile', {
+                                    sitter: {
+                                        id: sitterProfile.id,
+                                        name: sitterProfile.name,
+                                        image: sitterProfile.photoUrl,
+                                        rating: sitterProfile.rating,
+                                        reviews: sitterProfile.reviewCount,
+                                        hourlyRate: 0,
+                                        distance: 0,
+                                        verified: sitterProfile.isVerified,
+                                        bio: '',
+                                        completedBookings: stats.completedBookings,
+                                    }
+                                });
+                            }
+                        }}
+                    >
+                        <Star size={20} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
+                        <View style={{ flex: 1, marginHorizontal: 8 }}>
+                            <Text style={[styles.reviewsLabel, { color: theme.textSecondary }]}>הביקורות שלי</Text>
+                            <Text style={[styles.reviewsValue, { color: theme.textPrimary }]}>
+                                {sitterProfile?.rating.toFixed(1) || '0.0'} ★ ({sitterProfile?.reviewCount || 0})
+                            </Text>
+                        </View>
+                        <ChevronLeft size={18} color={theme.textSecondary} />
+                    </TouchableOpacity>
                     <StatCard icon={CheckCircle} value={stats.completedBookings} label="הושלמו" />
                     <StatCard icon={Clock} value={stats.pendingBookings} label="ממתינות" />
                 </View>
@@ -1132,6 +1139,24 @@ const styles = StyleSheet.create({
     statLabel: {
         fontSize: 11,
         fontWeight: '500',
+        marginTop: 2,
+    },
+
+    // Reviews Card
+    reviewsCard: {
+        flex: 1.5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 14,
+        borderRadius: 14,
+    },
+    reviewsLabel: {
+        fontSize: 11,
+        fontWeight: '500',
+    },
+    reviewsValue: {
+        fontSize: 15,
+        fontWeight: '700',
         marginTop: 2,
     },
 
