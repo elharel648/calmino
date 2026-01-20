@@ -552,7 +552,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     >
                         <Star
                             size={20}
-                            color={sitterProfile?.reviewCount > 0 ? "#FBBF24" : theme.textSecondary}
+                            color="#FBBF24"
                             fill={sitterProfile?.reviewCount > 0 ? "#FBBF24" : "none"}
                             strokeWidth={1.5}
                         />
@@ -563,8 +563,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {sitterProfile.rating.toFixed(1)} ★ ({sitterProfile.reviewCount})
                                 </Text>
                             ) : (
-                                <Text style={[styles.reviewsEmpty, { color: theme.textSecondary }]}>
-                                    עדיין אין ביקורות
+                                <Text style={[styles.reviewsValue, { color: theme.textSecondary }]}>
+                                    אין ביקורות עדיין
                                 </Text>
                             )}
                         </View>
@@ -1169,12 +1169,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
         marginTop: 2,
-    },
-    reviewsEmpty: {
-        fontSize: 13,
-        fontWeight: '500',
-        marginTop: 2,
-        fontStyle: 'italic',
     },
 
     // Quick Actions
