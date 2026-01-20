@@ -550,12 +550,23 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             }
                         }}
                     >
-                        <Star size={20} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
+                        <Star
+                            size={20}
+                            color={sitterProfile?.reviewCount > 0 ? "#FBBF24" : theme.textSecondary}
+                            fill={sitterProfile?.reviewCount > 0 ? "#FBBF24" : "none"}
+                            strokeWidth={1.5}
+                        />
                         <View style={{ flex: 1, marginHorizontal: 8 }}>
                             <Text style={[styles.reviewsLabel, { color: theme.textSecondary }]}>הביקורות שלי</Text>
-                            <Text style={[styles.reviewsValue, { color: theme.textPrimary }]}>
-                                {sitterProfile?.rating.toFixed(1) || '0.0'} ★ ({sitterProfile?.reviewCount || 0})
-                            </Text>
+                            {sitterProfile?.reviewCount > 0 ? (
+                                <Text style={[styles.reviewsValue, { color: theme.textPrimary }]}>
+                                    {sitterProfile.rating.toFixed(1)} ★ ({sitterProfile.reviewCount})
+                                </Text>
+                            ) : (
+                                <Text style={[styles.reviewsEmpty, { color: theme.textSecondary }]}>
+                                    עדיין אין ביקורות
+                                </Text>
+                            )}
                         </View>
                         <ChevronLeft size={18} color={theme.textSecondary} />
                     </TouchableOpacity>
@@ -1158,6 +1169,12 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
         marginTop: 2,
+    },
+    reviewsEmpty: {
+        fontSize: 13,
+        fontWeight: '500',
+        marginTop: 2,
+        fontStyle: 'italic',
     },
 
     // Quick Actions
