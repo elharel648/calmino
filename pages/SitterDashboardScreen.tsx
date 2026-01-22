@@ -104,6 +104,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [chatInput, setChatInput] = useState('');
     const [availableDays, setAvailableDays] = useState<string[]>(['0', '1', '2', '3', '4']); // Sun-Thu
+    const [availableHours, setAvailableHours] = useState({ start: '09:00', end: '18:00' }); // Work hours
     const [savingSettings, setSavingSettings] = useState(false);
     const [sitterCity, setSitterCity] = useState(''); // City for location search
     const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
@@ -532,22 +533,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         style={[styles.reviewsCard, { backgroundColor: theme.card }]}
                         onPress={() => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            if (sitterProfile) {
-                                navigation.navigate('SitterProfile', {
-                                    sitter: {
-                                        id: sitterProfile.id,
-                                        name: sitterProfile.name,
-                                        image: sitterProfile.photoUrl,
-                                        rating: sitterProfile.rating,
-                                        reviews: sitterProfile.reviewCount,
-                                        hourlyRate: 0,
-                                        distance: 0,
-                                        verified: sitterProfile.isVerified,
-                                        bio: '',
-                                        completedBookings: stats.completedBookings,
-                                    }
-                                });
-                            }
+                            navigation.navigate('MyReviews');
                         }}
                     >
                         <Star
@@ -585,7 +571,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         <View style={{ alignItems: 'center' }}>
                             <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>זמינות</Text>
                             <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
-                                {availableDays.length} ימים
+                                {availableDays.length} ימים • {availableHours.start}-{availableHours.end}
                             </Text>
                         </View>
                     </TouchableOpacity>
@@ -1174,6 +1160,8 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         marginTop: 2,
+        writingDirection: 'rtl',
+        textAlign: 'right',
     },
 
     // Quick Actions

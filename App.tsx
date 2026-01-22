@@ -33,6 +33,7 @@ import BabySitterScreen from './pages/BabySitterScreen';
 import SitterProfileScreen from './pages/SitterProfileScreen';
 import SitterRegistrationScreen from './pages/SitterRegistrationScreen';
 import SitterDashboardScreen from './pages/SitterDashboardScreen';
+import MyReviewsScreen from './pages/MyReviewsScreen';
 import ChatScreen from './pages/ChatScreen';
 import ParentBookingsScreen from './pages/ParentBookingsScreen';
 
@@ -218,6 +219,7 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="SitterProfile" component={SitterProfileScreen} />
       <BabysitterStack.Screen name="SitterRegistration" component={SitterRegistrationScreen} />
       <BabysitterStack.Screen name="SitterDashboard" component={SitterDashboardScreen} />
+      <BabysitterStack.Screen name="MyReviews" component={MyReviewsScreen} />
       <BabysitterStack.Screen name="ChatScreen" component={ChatScreen} />
       <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
     </BabysitterStack.Navigator>
@@ -392,7 +394,7 @@ export default function App() {
     const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const type = response.notification.request.content.data?.type as string;
       const data = response.notification.request.content.data;
-      
+
       // Navigate based on notification type
       if (type) {
         // Small delay to ensure navigation is ready
