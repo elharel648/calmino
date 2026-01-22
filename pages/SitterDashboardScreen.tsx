@@ -953,6 +953,34 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </TouchableOpacity>
                             ))}
 
+                            {/* Hours Section */}
+                            <Text style={[styles.availabilityInfo, { color: theme.textSecondary, marginTop: 24 }]}>
+                                שעות עבודה:
+                            </Text>
+                            <View style={styles.hoursRow}>
+                                <View style={[styles.hourInput, { backgroundColor: theme.cardSecondary }]}>
+                                    <Text style={[styles.hourLabel, { color: theme.textSecondary }]}>מ-</Text>
+                                    <TextInput
+                                        style={[styles.hourText, { color: theme.textPrimary }]}
+                                        value={availableHours.start}
+                                        onChangeText={(text) => setAvailableHours(prev => ({ ...prev, start: text }))}
+                                        placeholder="09:00"
+                                        placeholderTextColor={theme.textSecondary}
+                                    />
+                                </View>
+                                <Text style={[styles.hourDivider, { color: theme.textSecondary }]}>עד</Text>
+                                <View style={[styles.hourInput, { backgroundColor: theme.cardSecondary }]}>
+                                    <Text style={[styles.hourLabel, { color: theme.textSecondary }]}>עד-</Text>
+                                    <TextInput
+                                        style={[styles.hourText, { color: theme.textPrimary }]}
+                                        value={availableHours.end}
+                                        onChangeText={(text) => setAvailableHours(prev => ({ ...prev, end: text }))}
+                                        placeholder="18:00"
+                                        placeholderTextColor={theme.textSecondary}
+                                    />
+                                </View>
+                            </View>
+
                             {/* Save Button */}
                             <TouchableOpacity
                                 style={[styles.saveSettingsBtn, { backgroundColor: theme.primary }]}
@@ -1463,6 +1491,35 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    hoursRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 24,
+    },
+    hourInput: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 12,
+        gap: 8,
+    },
+    hourLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    hourText: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    hourDivider: {
+        fontSize: 14,
+        fontWeight: '500',
     },
 
     // Messages Modal Styles
