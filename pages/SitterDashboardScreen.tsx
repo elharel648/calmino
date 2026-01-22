@@ -551,10 +551,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         }}
                     >
                         <Star
-                            size={20}
+                            size={28}
                             color="#FBBF24"
                             fill={sitterProfile?.reviewCount > 0 ? "#FBBF24" : "none"}
-                            strokeWidth={1.5}
+                            strokeWidth={2}
                         />
                         <View style={{ flex: 1, marginHorizontal: 8 }}>
                             <Text style={[styles.reviewsLabel, { color: theme.textSecondary }]}>הביקורות שלי</Text>
@@ -568,10 +568,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </Text>
                             )}
                         </View>
-                        <ChevronLeft size={18} color={theme.textSecondary} />
+                        <ChevronLeft size={22} color={theme.textSecondary} />
                     </TouchableOpacity>
-                    <StatCard icon={CheckCircle} value={stats.completedBookings} label="הושלמו" />
-                    <StatCard icon={Clock} value={stats.pendingBookings} label="ממתינות" />
                 </View>
 
                 {/* Quick Actions */}
@@ -584,7 +582,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         }}
                     >
                         <Calendar size={20} color={theme.textSecondary} strokeWidth={1.5} />
-                        <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>זמינות</Text>
+                        <View style={{ alignItems: 'center' }}>
+                            <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>זמינות</Text>
+                            <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
+                                {availableDays.length} ימים
+                            </Text>
+                        </View>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.quickActionBtn, { backgroundColor: theme.card }]}
@@ -1155,18 +1158,20 @@ const styles = StyleSheet.create({
 
     // Reviews Card
     reviewsCard: {
-        flex: 1.5,
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 14,
-        borderRadius: 14,
+        padding: 18,
+        borderRadius: 16,
+        minHeight: 80,
     },
     reviewsLabel: {
-        fontSize: 11,
-        fontWeight: '500',
+        fontSize: 12,
+        fontWeight: '600',
+        marginBottom: 4,
     },
     reviewsValue: {
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: '700',
         marginTop: 2,
     },
@@ -1188,6 +1193,11 @@ const styles = StyleSheet.create({
     quickActionText: {
         fontSize: 12,
         fontWeight: '500',
+    },
+    quickActionSubtext: {
+        fontSize: 10,
+        fontWeight: '400',
+        marginTop: 2,
     },
 
     // Bookings Section
