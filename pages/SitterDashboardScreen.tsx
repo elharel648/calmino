@@ -815,6 +815,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             sitterCity: sitterCity.trim() || null,
                                             sitterPrice: hourlyRate,
                                             sitterAvailableDays: availableDays,
+                                            sitterAvailableHours: availableHours,
                                         });
 
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
