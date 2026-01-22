@@ -104,7 +104,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [chatInput, setChatInput] = useState('');
     const [availableDays, setAvailableDays] = useState<string[]>(['0', '1', '2', '3', '4']); // Sun-Thu
-    const [availableHours, setAvailableHours] = useState({ start: '09:00', end: '18:00' }); // Work hours
+    const [availableHours, setAvailableHours] = useState<Record<string, { start: string; end: string }>>({
+        '0': { start: '09:00', end: '18:00' }, '1': { start: '09:00', end: '18:00' },
+        '2': { start: '09:00', end: '18:00' }, '3': { start: '09:00', end: '18:00' },
+        '4': { start: '09:00', end: '18:00' }, '5': { start: '09:00', end: '18:00' },
+        '6': { start: '09:00', end: '18:00' },
+    });
     const [savingSettings, setSavingSettings] = useState(false);
     const [sitterCity, setSitterCity] = useState(''); // City for location search
     const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
