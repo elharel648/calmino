@@ -327,6 +327,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 6,
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     reviewStars: {
         flexDirection: 'row',
@@ -347,6 +349,8 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
         marginBottom: 8,
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     reviewDate: {
         fontSize: 12,

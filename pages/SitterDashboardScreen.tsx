@@ -39,6 +39,7 @@ import { useChats } from '../hooks/useChats';
 import { useBookings } from '../hooks/useBookings';
 import { startShift } from '../services/babysitterService';
 import { Play } from 'lucide-react-native';
+import DayHoursEditor from '../components/BabySitter/DayHoursEditor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -576,7 +577,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         <View style={{ alignItems: 'center' }}>
                             <Text style={[styles.quickActionText, { color: theme.textPrimary }]}>זמינות</Text>
                             <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
-                                {availableDays.length} ימים • {availableHours.start}-{availableHours.end}
+                                {availableDays.length} ימים • {availableHours[availableDays[0]]?.start || '09:00'}-{availableHours[availableDays[0]]?.end || '18:00'}
                             </Text>
                         </View>
                     </TouchableOpacity>
@@ -958,33 +959,27 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </TouchableOpacity>
                             ))}
 
-                            {/* Hours Section */}
+                            {/* Hours per Day */}
                             <Text style={[styles.availabilityInfo, { color: theme.textSecondary, marginTop: 24 }]}>
-                                שעות עבודה:
+                                הגדר שעות עבודה לכל יום:
                             </Text>
-                            <View style={styles.hoursRow}>
-                                <View style={[styles.hourInput, { backgroundColor: theme.cardSecondary }]}>
-                                    <Text style={[styles.hourLabel, { color: theme.textSecondary }]}>מ-</Text>
-                                    <TextInput
-                                        style={[styles.hourText, { color: theme.textPrimary }]}
-                                        value={availableHours.start}
-                                        onChangeText={(text) => setAvailableHours(prev => ({ ...prev, start: text }))}
-                                        placeholder="09:00"
-                                        placeholderTextColor={theme.textSecondary}
-                                    />
-                                </View>
-                                <Text style={[styles.hourDivider, { color: theme.textSecondary }]}>עד</Text>
-                                <View style={[styles.hourInput, { backgroundColor: theme.cardSecondary }]}>
-                                    <Text style={[styles.hourLabel, { color: theme.textSecondary }]}>עד-</Text>
-                                    <TextInput
-                                        style={[styles.hourText, { color: theme.textPrimary }]}
-                                        value={availableHours.end}
-                                        onChangeText={(text) => setAvailableHours(prev => ({ ...prev, end: text }))}
-                                        placeholder="18:00"
-                                        placeholderTextColor={theme.textSecondary}
-                                    />
-                                </View>
-                            </View>
+                            {[
+                                { key: '0', label: 'ראשון' },
+                                { key: '1', label: 'שני' },
+                                { key: '2', label: 'שלישי' },
+                                { key: '3', label: 'רביעי' },
+                                { key: '4', label: 'חמישי' },
+                                { key: '5', label: 'שישי' },
+                                { key: '6', label: 'שבת' },
+                            ].filter(day => availableDays.includes(day.key)).map((day) => (
+                                <DayHoursEditor
+                                    key={day.key}
+                                    dayKey={day.key}
+                                    dayLabel={day.label}
+                                    hours={availableHours[day.key] || { start: '09:00', end: '18:00' }}
+                                    onHoursChange={(key, hours) => setAvailableHours(prev => ({ ...prev, [key]: hours }))}
+                                />
+                            ))}
 
                             {/* Save Button */}
                             <TouchableOpacity
