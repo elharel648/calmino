@@ -11,6 +11,7 @@ import {
   arrayUnion,
   arrayRemove,
   getDoc,
+  getDocFromCache,
   deleteDoc
 } from 'firebase/firestore';
 
@@ -90,12 +91,36 @@ export const getBabyData = async (): Promise<BabyData | null> => {
 // Get baby data by specific child ID
 export const getBabyDataById = async (childId: string): Promise<BabyData | null> => {
   try {
+    // Try to get from server first
     const babyDoc = await getDoc(doc(db, 'babies', childId));
     if (babyDoc.exists()) {
       return { id: babyDoc.id, ...babyDoc.data() } as BabyData;
     }
     return null;
-  } catch (e) {
+  } catch (e: any) {
+    // Check if this is an offline error - don't log these
+    const isOfflineError =
+      e?.code === 'unavailable' ||
+      e?.code === 'failed-precondition' ||
+      e?.message?.includes('offline') ||
+      e?.message?.includes('client is offline') ||
+      (e?.name === 'FirebaseError' && e?.message?.includes('offline'));
+
+    if (isOfflineError) {
+      // Try to get from cache silently
+      try {
+        const cachedDoc = await getDocFromCache(doc(db, 'babies', childId));
+        if (cachedDoc.exists()) {
+          return { id: cachedDoc.id, ...cachedDoc.data() } as BabyData;
+        }
+      } catch (cacheError) {
+        // Cache miss is expected, don't log
+      }
+      // Silent return for offline - don't spam console
+      return null;
+    }
+
+    // Only log unexpected errors
     if (__DEV__) console.error('Error fetching baby data by ID:', e);
     return null;
   }

@@ -69,6 +69,7 @@ const BabysitterStack = createNativeStackNavigator();
 
 const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
   const { theme, isDarkMode } = useTheme();
+  // Ensure we have language context, or fallback safely if used outside (though we will fix the wrap)
   const { t } = useLanguage();
   return (
     <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
@@ -484,28 +485,40 @@ export default function App() {
 
   // Don't hide splash yet - we'll hide it when children are loaded via onReady callback
 
-  if (isLocked) return <BiometricLockScreen onUnlock={authenticateUser} />;
+  if (isLocked) {
+    return (
+      <LanguageProvider>
+        <ThemeProvider>
+          <BiometricLockScreen onUnlock={authenticateUser} />
+        </ThemeProvider>
+      </LanguageProvider>
+    );
+  }
 
   if (!user) {
     return (
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <LoginScreen onLoginSuccess={() => setIsAppLoading(true)} />
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <SafeAreaProvider>
+            <LoginScreen onLoginSuccess={() => setIsAppLoading(true)} />
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     );
   }
 
   if (user && !hasBabyProfile) {
     return (
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <BabyProfileScreen
-            onProfileSaved={() => setHasBabyProfile(true)}
-            onSkip={() => setHasBabyProfile(true)}
-          />
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <SafeAreaProvider>
+            <BabyProfileScreen
+              onProfileSaved={() => setHasBabyProfile(true)}
+              onSkip={() => setHasBabyProfile(true)}
+            />
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     );
   }
 

@@ -1,6 +1,7 @@
 import React, { memo, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, TouchableWithoutFeedback } from 'react-native';
-import { Sun, Droplet, Check, X, Pill, Sparkles } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Sun, Droplet, Check, Pill, Sparkles } from 'lucide-react-native';
+import { SwipeableModal } from '../SwipeableModal';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -109,36 +110,25 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
     const allDone = meds.vitaminD && meds.iron;
 
     return (
-        <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-            <TouchableWithoutFeedback onPress={onClose}>
-                <View style={[styles.overlay, { backgroundColor: theme.modalOverlay }]}>
-                    {Platform.OS === 'ios' && (
-                        <BlurView
-                            intensity={20}
-                            tint={isDarkMode ? 'dark' : 'light'}
-                            style={StyleSheet.absoluteFill}
-                        />
-                    )}
-                    <TouchableWithoutFeedback>
-                        <View style={[
-                            styles.modalContent,
-                            { backgroundColor: theme.card }
-                        ]}>
-                            {/* Header */}
-                            <View style={styles.header}>
-                                <View style={[
-                                    styles.iconCircle,
-                                    { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : theme.primaryLight }
-                                ]}>
-                                    <Pill size={20} color={theme.primary} strokeWidth={2} />
-                                </View>
-                                <Text style={[styles.title, { color: theme.textPrimary }]}>
-                                    תוספים יומיים
-                                </Text>
-                                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                                    <X size={18} color={theme.textSecondary} strokeWidth={2} />
-                                </TouchableOpacity>
-                            </View>
+        <SwipeableModal
+            visible={visible}
+            onClose={onClose}
+            backgroundColor={theme.card}
+        >
+            <View style={styles.modalContent}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <View style={[
+                        styles.iconCircle,
+                        { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : theme.primaryLight }
+                    ]}>
+                        <Pill size={20} color={theme.primary} strokeWidth={2} />
+                    </View>
+                    <Text style={[styles.title, { color: theme.textPrimary }]}>
+                        תוספים יומיים
+                    </Text>
+                    <View style={{ width: 40 }} />
+                </View>
 
                             {/* Celebration badge */}
                             {allDone && (
@@ -257,11 +247,8 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                     {(meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)}/2 ניתנו היום
                                 </Text>
                             </View>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
-        </Modal>
+            </View>
+        </SwipeableModal>
     );
 });
 

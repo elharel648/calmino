@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder, Dimensions } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,6 +9,7 @@ import { useFoodTimer } from '../context/FoodTimerContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
 interface TrackingModalProps {
@@ -80,53 +81,115 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const slideAnim = useRef(new RNAnimated.Value(400)).current;
   const backdropAnim = useRef(new RNAnimated.Value(0)).current;
 
-  // Swipe down to dismiss
+  // Track if we're dragging and scroll position
+  const isDragging = useRef(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollOffsetY = useRef(0);
+  const dragStartY = useRef(0);
+
+  // Swipe down to dismiss - Improved for simulator and ScrollView
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_, gestureState) => {
-      // Only respond to downward swipes
-      return gestureState.dy > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+    onStartShouldSetPanResponder: (evt, gestureState) => {
+      // Always allow starting from drag handle area (top 300px)
+      const startY = evt.nativeEvent.pageY;
+      dragStartY.current = startY;
+      
+      // Check if touch is in the top area - be more lenient
+      if (startY < 300) {
+        // Disable scroll when starting drag
+        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+        return true; // Return true to start the gesture
+      }
+      return false;
+    },
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // If already dragging, always continue
+      if (isDragging.current) return true;
+      
+      // Check if we're in the top area and dragging down
+      const currentY = evt.nativeEvent.pageY;
+      const isTopArea = currentY < 300;
+      const isDraggingDown = gestureState.dy > 5;
+      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+      
+      // Also check if scroll is at top
+      const isScrollAtTop = scrollOffsetY.current <= 5;
+      
+      if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
+        isDragging.current = true;
+        dragStartY.current = currentY;
+        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        return true;
+      }
+      return false;
+    },
+    onPanResponderGrant: () => {
+      isDragging.current = true;
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      // Scroll already disabled in onStartShouldSetPanResponder
     },
     onPanResponderMove: (_, gestureState) => {
       // Only allow dragging down (positive dy)
       if (gestureState.dy > 0) {
         slideAnim.setValue(gestureState.dy);
         // Fade backdrop as we drag
-        backdropAnim.setValue(1 - Math.min(gestureState.dy / 300, 0.5));
+        const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+        backdropAnim.setValue(opacity);
       }
     },
     onPanResponderRelease: (_, gestureState) => {
-      if (gestureState.dy > 150 || gestureState.vy > 0.5) {
+      isDragging.current = false;
+      // Re-enable scroll
+      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+      
+      const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
+      if (shouldDismiss) {
         // Dismiss if dragged far enough or fast enough
         if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
         RNAnimated.parallel([
-          RNAnimated.timing(slideAnim, {
-            toValue: 500,
-            duration: 200,
+          RNAnimated.spring(slideAnim, {
+            toValue: SCREEN_HEIGHT,
             useNativeDriver: true,
+            tension: 65,
+            friction: 11,
           }),
           RNAnimated.timing(backdropAnim, {
             toValue: 0,
             duration: 200,
             useNativeDriver: true,
           }),
-        ]).start(() => onClose());
+        ]).start(() => {
+          onClose();
+          slideAnim.setValue(SCREEN_HEIGHT);
+          backdropAnim.setValue(0);
+        });
       } else {
-        // Snap back
-        RNAnimated.spring(slideAnim, {
-          toValue: 0,
-          damping: 20,
-          stiffness: 200,
-          useNativeDriver: true,
-        }).start();
-        RNAnimated.timing(backdropAnim, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }).start();
+        // Snap back with smooth spring
+        RNAnimated.parallel([
+          RNAnimated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }),
+          RNAnimated.timing(backdropAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
+    },
+    onPanResponderTerminate: () => {
+      isDragging.current = false;
+      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
     },
   }), [slideAnim, backdropAnim, onClose]);
 
@@ -144,6 +207,10 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       setSleepNote('');
       setDiaperNote('');
 
+      // Reset animation values before starting animation
+      slideAnim.setValue(SCREEN_HEIGHT);
+      backdropAnim.setValue(0);
+
       // Apple-style sheet animation
       RNAnimated.parallel([
         RNAnimated.timing(backdropAnim, {
@@ -154,9 +221,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         RNAnimated.spring(slideAnim, {
           toValue: 0,
           useNativeDriver: true,
-          damping: 20,
-          stiffness: 200,
-          mass: 0.8,
+          tension: 65,
+          friction: 11,
         }),
       ]).start();
     }
@@ -957,20 +1023,15 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 transform: [{ translateY: slideAnim }],
               },
             ]}
+            {...panResponder.panHandlers}
           >
             {/* Drag Handle - iOS Sheet Style - Swipeable */}
             <View style={styles.dragHandle} {...panResponder.panHandlers}>
               <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
             </View>
 
-            {/* Close Button */}
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={24} color={theme.textSecondary} />
-            </TouchableOpacity>
-
-
-            {/* Header - Clean Solid Background */}
-            <View style={[styles.header, { backgroundColor: theme.card }]}>
+            {/* Header - Clean Solid Background - Also swipeable */}
+            <View style={[styles.header, { backgroundColor: theme.card }]} {...panResponder.panHandlers}>
               <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
                 {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
               </View>
@@ -979,11 +1040,29 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
             {/* Content - Wrapped in ScrollView */}
             <ScrollView
+              ref={scrollViewRef}
               style={{ width: '100%' }}
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
+              scrollEnabled={true}
+              onScroll={(e) => {
+                scrollOffsetY.current = e.nativeEvent.contentOffset.y;
+              }}
+              scrollEventThrottle={16}
+              onScrollBeginDrag={(e) => {
+                // If trying to scroll down from top, disable scroll
+                if (scrollOffsetY.current <= 0) {
+                  const scrollY = e.nativeEvent.contentOffset.y;
+                  if (scrollY < 0) {
+                    scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+                    setTimeout(() => {
+                      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+                    }, 100);
+                  }
+                }
+              }}
             >
               {renderContent()}
             </ScrollView>
@@ -1210,13 +1289,14 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 20,
     paddingHorizontal: 50,
+    zIndex: 10,
+    minHeight: 60, // Larger touch area for easier swiping
   },
   dragHandleBar: {
     width: 36,
     height: 5,
     borderRadius: 3,
   },
-  closeBtn: { position: 'absolute', top: 24, right: 20, zIndex: 10, padding: 8 },
   header: {
     alignItems: 'center',
     paddingTop: 8,

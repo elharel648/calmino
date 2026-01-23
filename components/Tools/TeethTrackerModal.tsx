@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image, Platform } from 'react-native';
-import { X, Check, Sparkles } from 'lucide-react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform, PanResponder, Dimensions, Animated as RNAnimated, Modal } from 'react-native';
+import { Check, Sparkles, X } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,6 +10,9 @@ import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
+import { SwipeableModal } from '../SwipeableModal';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface TeethTrackerModalProps {
     visible: boolean;
@@ -27,33 +30,33 @@ interface TeethTrackerModalProps {
 const TEETH_CONFIG = [
     // --- Upper Arch (Left to Right) ---
     // Upper Left (Outer to Center)
-    { id: 'start_upper_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 100, left: 40 }, // Purple
-    { id: 'start_upper_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 60, left: 50 }, // Blue
-    { id: 'start_upper_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 35, left: 75 }, // Green
-    { id: 'start_upper_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 15, left: 105 }, // Lime
-    { id: 'start_upper_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 10, left: 135 }, // Red
+    { id: 'start_upper_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 80, left: 40 },
+    { id: 'start_upper_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 45, left: 50 },
+    { id: 'start_upper_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 25, left: 75 },
+    { id: 'start_upper_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 10, left: 105 },
+    { id: 'start_upper_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 135 },
 
     // Upper Right (Center to Outer)
-    { id: 'start_upper_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 10, left: 175 },
-    { id: 'start_upper_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 15, left: 205 },
-    { id: 'start_upper_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 35, left: 235 },
-    { id: 'start_upper_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 60, left: 260 },
-    { id: 'start_upper_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 100, left: 270 },
+    { id: 'start_upper_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 175 },
+    { id: 'start_upper_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 10, left: 205 },
+    { id: 'start_upper_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 25, left: 235 },
+    { id: 'start_upper_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 45, left: 260 },
+    { id: 'start_upper_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 80, left: 270 },
 
     // --- Lower Arch (Left to Right) ---
     // Lower Left (Outer to Center)
-    { id: 'start_lower_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 280, left: 40 },
-    { id: 'start_lower_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 320, left: 50 },
-    { id: 'start_lower_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 345, left: 75 },
-    { id: 'start_lower_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 365, left: 105 },
-    { id: 'start_lower_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 370, left: 135 },
+    { id: 'start_lower_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 240, left: 40 },
+    { id: 'start_lower_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 275, left: 50 },
+    { id: 'start_lower_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 295, left: 75 },
+    { id: 'start_lower_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 310, left: 105 },
+    { id: 'start_lower_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 135 },
 
     // Lower Right (Center to Outer)
-    { id: 'start_lower_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 370, left: 175 },
-    { id: 'start_lower_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 365, left: 205 },
-    { id: 'start_lower_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 345, left: 235 },
-    { id: 'start_lower_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 320, left: 260 },
-    { id: 'start_lower_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 280, left: 270 },
+    { id: 'start_lower_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 175 },
+    { id: 'start_lower_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 310, left: 205 },
+    { id: 'start_lower_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 295, left: 235 },
+    { id: 'start_lower_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 275, left: 260 },
+    { id: 'start_lower_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 240, left: 270 },
 ];
 
 // Helper to get organic "stone" shapes
@@ -190,20 +193,18 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
     };
 
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+        <SwipeableModal
+            visible={visible}
+            onClose={onClose}
+            backgroundColor={theme.background}
+        >
             <View style={[styles.container, { backgroundColor: theme.background }]}>
                 {/* Header */}
-                <Animated.View 
+                <Animated.View
                     entering={ANIMATIONS.fadeInDown(0)}
                     style={[styles.header, { borderBottomColor: theme.border }]}
                 >
-                    <TouchableOpacity 
-                        onPress={onClose} 
-                        style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}
-                        activeOpacity={0.7}
-                    >
-                        <X size={22} color={theme.textSecondary} strokeWidth={2.5} />
-                    </TouchableOpacity>
+                    <View style={{ width: 40 }} />
                     <View style={styles.headerContent}>
                         <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
                             <Sparkles size={20} color="#8B5CF6" strokeWidth={2.5} />
@@ -216,7 +217,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                     {/* Main Oval Chart */}
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(100)}
                         style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
                     >
@@ -235,7 +236,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                     </Animated.View>
 
                     {/* Stats / Legend Card */}
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(200)}
                         style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
                     >
@@ -261,7 +262,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                         </View>
                     </Animated.View>
 
-                    <Animated.View 
+                    <Animated.View
                         entering={ANIMATIONS.fadeInDown(300)}
                         style={styles.statsRow}
                     >
@@ -291,12 +292,12 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                     style={StyleSheet.absoluteFill}
                                 />
                             )}
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={StyleSheet.absoluteFill}
                                 activeOpacity={1}
                                 onPress={() => setShowDatePicker(false)}
                             />
-                            <Animated.View 
+                            <Animated.View
                                 entering={ANIMATIONS.fadeInDown(0, 300)}
                                 style={[styles.datePickerModal, { backgroundColor: theme.card }]}
                             >
@@ -304,7 +305,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                     <Text style={[styles.datePickerTitle, { color: theme.textPrimary }]}>
                                         מתי בקעה השן?
                                     </Text>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={() => setShowDatePicker(false)}
                                         style={[styles.datePickerCloseBtn, { backgroundColor: theme.inputBackground }]}
                                         activeOpacity={0.7}
@@ -312,7 +313,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                         <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
                                     </TouchableOpacity>
                                 </View>
-                                
+
                                 <View style={styles.datePickerContent}>
                                     <DateTimePicker
                                         value={currentDate}
@@ -357,7 +358,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                     </Modal>
                 )}
             </View>
-        </Modal>
+        </SwipeableModal>
     );
 }
 
@@ -403,12 +404,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     chartContainer: {
-        width: 350,
-        height: 420,
+        width: 340,
+        height: 400,
         position: 'relative',
         borderRadius: 24,
         marginTop: 20,
         marginBottom: 20,
+        paddingHorizontal: 10,
         borderWidth: StyleSheet.hairlineWidth,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },

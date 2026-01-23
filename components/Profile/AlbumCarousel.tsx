@@ -1,12 +1,142 @@
-import React, { memo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, Platform, ActivityIndicator } from 'react-native';
-import { Plus, Camera, X, Check, Edit2 } from 'lucide-react-native';
+import React, { memo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, Platform, ActivityIndicator, Dimensions } from 'react-native';
+import { Plus, X, Check, Edit3, Sparkles } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+    withSpring,
+    withDelay,
+} from 'react-native-reanimated';
+import { useTheme } from '../../context/ThemeContext';
 
-interface AlbumPhoto {
-    url: string;
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+// Minimal color - just one accent
+const ACCENT = '#8B5CF6';
+
+// Clean Month Card Component
+const MonthCard = memo(({
+    month,
+    url,
+    note,
+    index,
+    onPress,
+    onEditNote,
+    isLoading,
+    setLoading,
+    isDarkMode,
+    theme,
+}: {
+    month: number;
+    url?: string;
     note?: string;
-}
+    index: number;
+    onPress: () => void;
+    onEditNote: () => void;
+    isLoading: boolean;
+    setLoading: (loading: boolean) => void;
+    isDarkMode: boolean;
+    theme: any;
+}) => {
+    const scale = useSharedValue(1);
+    const hasImage = !!url;
+
+    const handlePressIn = () => {
+        scale.value = withSpring(0.95, { damping: 15 });
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
+
+    const handlePressOut = () => {
+        scale.value = withSpring(1, { damping: 15 });
+    };
+
+    const containerStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    // Staggered entrance
+    const entranceOpacity = useSharedValue(0);
+    const entranceTranslate = useSharedValue(20);
+
+    useEffect(() => {
+        entranceOpacity.value = withDelay(index * 50, withTiming(1, { duration: 300 }));
+        entranceTranslate.value = withDelay(index * 50, withSpring(0, { damping: 15 }));
+    }, []);
+
+    const entranceStyle = useAnimatedStyle(() => ({
+        opacity: entranceOpacity.value,
+        transform: [{ translateY: entranceTranslate.value }],
+    }));
+
+    return (
+        <Animated.View style={[styles.monthCardWrapper, entranceStyle]}>
+            <AnimatedTouchable
+                style={[styles.monthCard, containerStyle]}
+                onPress={onPress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={1}
+            >
+                <View style={[
+                    styles.cardInner,
+                    {
+                        backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                        borderColor: hasImage ? ACCENT + '30' : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                    }
+                ]}>
+                    {hasImage ? (
+                        <>
+                            {isLoading && (
+                                <View style={styles.loadingOverlay}>
+                                    <ActivityIndicator size="small" color={ACCENT} />
+                                </View>
+                            )}
+                            <Image
+                                source={{ uri: url }}
+                                style={[styles.cardImage, { opacity: isLoading ? 0.4 : 1 }]}
+                                onLoadStart={() => setLoading(true)}
+                                onLoad={() => setLoading(false)}
+                                onError={() => setLoading(false)}
+                            />
+                            {/* Month number badge */}
+                            <View style={styles.monthBadge}>
+                                <Text style={styles.monthBadgeText}>{month}</Text>
+                            </View>
+                        </>
+                    ) : (
+                        <View style={styles.emptyCardContent}>
+                            <Plus size={20} color={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} strokeWidth={1.5} />
+                            <Text style={[styles.emptyMonthNumber, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }]}>
+                                {month}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            </AnimatedTouchable>
+
+            {/* Note indicator */}
+            {hasImage && (
+                <TouchableOpacity
+                    style={styles.noteButton}
+                    onPress={onEditNote}
+                    activeOpacity={0.7}
+                >
+                    {note ? (
+                        <Text style={[styles.noteText, { color: ACCENT }]} numberOfLines={1}>
+                            {note.length > 8 ? note.substring(0, 8) + '...' : note}
+                        </Text>
+                    ) : (
+                        <Edit3 size={12} color={theme.textTertiary} strokeWidth={1.5} />
+                    )}
+                </TouchableOpacity>
+            )}
+        </Animated.View>
+    );
+});
 
 interface AlbumCarouselProps {
     album?: { [month: number]: string };
@@ -17,6 +147,7 @@ interface AlbumCarouselProps {
 }
 
 const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto, onNoteUpdate }: AlbumCarouselProps) => {
+    const { theme, isDarkMode } = useTheme();
     const [editingMonth, setEditingMonth] = useState<number | null>(null);
     const [noteText, setNoteText] = useState('');
     const [monthPickerOpen, setMonthPickerOpen] = useState(false);
@@ -44,22 +175,27 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     };
 
-    // Get all months that should be shown (1-12 + any with photos above 12)
     const getVisibleMonths = (): number[] => {
         const baseMonths = Array.from({ length: 12 }, (_, i) => i + 1);
         const extraMonths: number[] = [];
-
-        // Check for months 13-36 that have photos
         if (album) {
             for (let m = 13; m <= 36; m++) {
                 if (album[m]) extraMonths.push(m);
             }
         }
-
         return [...baseMonths, ...extraMonths];
     };
 
     const visibleMonths = getVisibleMonths();
+
+    const setImageLoading = (month: number, loading: boolean) => {
+        setLoadingImages(prev => {
+            const next = new Set(prev);
+            if (loading) next.add(month);
+            else next.delete(month);
+            return next;
+        });
+    };
 
     return (
         <>
@@ -67,112 +203,67 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                decelerationRate="fast"
             >
-                {visibleMonths.map((month) => {
+                {visibleMonths.map((month, index) => {
                     const { url, note } = getPhotoData(month);
-                    const hasImage = !!url;
-
                     return (
-                        <View key={month} style={styles.monthItem}>
-                            <TouchableOpacity
-                                style={styles.monthTouchable}
-                                onPress={() => onMonthPress(month)}
-                                activeOpacity={0.8}
-                            >
-                                {hasImage ? (
-                                    <View style={styles.imageContainer}>
-                                        {loadingImages.has(month) && (
-                                            <View style={styles.imageLoadingOverlay}>
-                                                <ActivityIndicator size="small" color="#6366F1" />
-                                            </View>
-                                        )}
-                                        <Image 
-                                            source={{ uri: url }} 
-                                            style={[styles.monthImage, { opacity: loadingImages.has(month) ? 0.3 : 1 }]}
-                                            onLoadStart={() => {
-                                                setLoadingImages(prev => new Set(prev).add(month));
-                                            }}
-                                            onLoad={() => {
-                                                setLoadingImages(prev => {
-                                                    const next = new Set(prev);
-                                                    next.delete(month);
-                                                    return next;
-                                                });
-                                            }}
-                                            onError={() => {
-                                                setLoadingImages(prev => {
-                                                    const next = new Set(prev);
-                                                    next.delete(month);
-                                                    return next;
-                                                });
-                                            }}
-                                        />
-                                    </View>
-                                ) : (
-                                    <View style={styles.emptyMonth}>
-                                        <Plus size={18} color="#D1D5DB" strokeWidth={2} />
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-
-                            <Text style={[styles.monthLabel, hasImage && styles.monthLabelActive]}>
-                                {month}
-                            </Text>
-
-                            {/* Note display - shows note text or edit button */}
-                            {hasImage && (
-                                <TouchableOpacity
-                                    style={[styles.noteBtn, note && styles.noteBtnWithNote]}
-                                    onPress={() => handleEditNote(month)}
-                                >
-                                    {note ? (
-                                        <Text style={styles.noteText} numberOfLines={1}>
-                                            {note.length > 8 ? note.substring(0, 8) + '...' : note}
-                                        </Text>
-                                    ) : (
-                                        <Edit2 size={10} color="#9CA3AF" />
-                                    )}
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                        <MonthCard
+                            key={month}
+                            month={month}
+                            url={url}
+                            note={note}
+                            index={index}
+                            onPress={() => onMonthPress(month)}
+                            onEditNote={() => handleEditNote(month)}
+                            isLoading={loadingImages.has(month)}
+                            setLoading={(loading) => setImageLoading(month, loading)}
+                            isDarkMode={isDarkMode}
+                            theme={theme}
+                        />
                     );
                 })}
 
-                {/* Add custom photo button at the end */}
+                {/* Add custom photo button */}
                 {onAddCustomPhoto && (
                     <TouchableOpacity
-                        style={styles.addCustomBtn}
+                        style={styles.addCustomButton}
                         onPress={() => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             setMonthPickerOpen(true);
                         }}
                         activeOpacity={0.7}
                     >
-                        <View style={styles.addCustomCircle}>
-                            <Plus size={20} color="#6366F1" strokeWidth={2.5} />
+                        <View style={[styles.addCustomCircle, { borderColor: ACCENT }]}>
+                            <Plus size={20} color={ACCENT} strokeWidth={1.5} />
                         </View>
-                        <Text style={styles.addCustomLabel}>הוסף</Text>
+                        <Text style={[styles.addCustomLabel, { color: ACCENT }]}>הוסף</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>
 
-            {/* Month Picker Modal (13-36) */}
+            {/* Month Picker Modal - Clean */}
             <Modal
                 visible={monthPickerOpen}
                 transparent
-                animationType="slide"
+                animationType="fade"
                 onRequestClose={() => setMonthPickerOpen(false)}
             >
-                <View style={styles.noteModalOverlay}>
-                    <View style={styles.monthPickerContent}>
-                        <View style={styles.noteModalHeader}>
+                <View style={styles.modalOverlay}>
+                    {Platform.OS === 'ios' && (
+                        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+                    )}
+                    <View style={[styles.modalContent, { backgroundColor: isDarkMode ? '#1C1C1E' : '#fff' }]}>
+                        <View style={styles.modalHeader}>
                             <TouchableOpacity onPress={() => setMonthPickerOpen(false)}>
-                                <X size={20} color="#6B7280" />
+                                <X size={20} color={theme.textSecondary} strokeWidth={1.5} />
                             </TouchableOpacity>
-                            <Text style={styles.monthPickerTitle}>בחר חודש</Text>
+                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>בחר חודש</Text>
                             <View style={{ width: 20 }} />
                         </View>
-                        <Text style={styles.monthPickerSubtitle}>גלול ובחר חודש (13-36)</Text>
+                        <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+                            הוסיפו תמונה לחודש 13-36
+                        </Text>
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}
@@ -189,8 +280,8 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                                     }}
                                     activeOpacity={0.7}
                                 >
-                                    <View style={styles.monthPickerCircle}>
-                                        <Text style={styles.monthPickerNumber}>{month}</Text>
+                                    <View style={[styles.monthPickerCircle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                                        <Text style={[styles.monthPickerNumber, { color: ACCENT }]}>{month}</Text>
                                     </View>
                                 </TouchableOpacity>
                             ))}
@@ -199,28 +290,39 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                 </View>
             </Modal>
 
-            {/* Note Edit Modal */}
+            {/* Note Edit Modal - Clean */}
             <Modal
                 visible={editingMonth !== null}
                 transparent
                 animationType="fade"
                 onRequestClose={() => setEditingMonth(null)}
             >
-                <View style={styles.noteModalOverlay}>
-                    <View style={styles.noteModalContent}>
-                        <View style={styles.noteModalHeader}>
+                <View style={styles.modalOverlay}>
+                    {Platform.OS === 'ios' && (
+                        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+                    )}
+                    <View style={[styles.noteModalContent, { backgroundColor: isDarkMode ? '#1C1C1E' : '#fff' }]}>
+                        <View style={styles.modalHeader}>
                             <TouchableOpacity onPress={() => setEditingMonth(null)}>
-                                <X size={20} color="#6B7280" />
+                                <X size={20} color={theme.textSecondary} strokeWidth={1.5} />
                             </TouchableOpacity>
-                            <Text style={styles.noteModalTitle}>הערה לחודש {editingMonth}</Text>
+                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
+                                הערה לחודש {editingMonth}
+                            </Text>
                             <TouchableOpacity onPress={handleSaveNote}>
-                                <Check size={20} color="#10B981" />
+                                <Check size={20} color={ACCENT} strokeWidth={2} />
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            style={styles.noteInput}
+                            style={[
+                                styles.noteInput,
+                                {
+                                    color: theme.textPrimary,
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                }
+                            ]}
                             placeholder="הוסף הערה או תיאור לתמונה..."
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={theme.textTertiary}
                             value={noteText}
                             onChangeText={setNoteText}
                             multiline
@@ -239,142 +341,125 @@ AlbumCarousel.displayName = 'AlbumCarousel';
 const styles = StyleSheet.create({
     scrollContent: {
         gap: 12,
-        paddingVertical: 4,
-        paddingRight: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 2,
     },
-    monthItem: {
+    monthCardWrapper: {
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
     },
-    monthTouchable: {
-        // wrapper for image/empty
-    },
-    imageContainer: {
+    monthCard: {
         position: 'relative',
     },
-    imageLoadingOverlay: {
+    cardInner: {
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    cardImage: {
+        width: '100%',
+        height: '100%',
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        zIndex: 1,
+    },
+    monthBadge: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(243, 244, 246, 0.8)',
-        borderRadius: 28,
-    },
-    monthImage: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#F3F4F6',
-    },
-    emptyMonth: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#F9FAFB',
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        borderStyle: 'dashed',
+        bottom: 4,
+        right: 4,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: ACCENT,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    monthLabel: {
+    monthBadgeText: {
+        color: '#fff',
         fontSize: 11,
-        fontWeight: '600',
-        color: '#9CA3AF',
+        fontWeight: '700',
     },
-    monthLabelActive: {
-        color: '#6366F1',
-    },
-    noteBtn: {
-        padding: 2,
-        minWidth: 40,
+    emptyCardContent: {
+        flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
     },
-    noteBtnWithNote: {
-        backgroundColor: '#EEF2FF',
-        borderRadius: 8,
-        paddingHorizontal: 6,
+    emptyMonthNumber: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    noteButton: {
+        paddingHorizontal: 8,
         paddingVertical: 2,
+        minWidth: 30,
+        alignItems: 'center',
     },
     noteText: {
-        fontSize: 9,
-        color: '#6366F1',
+        fontSize: 10,
         fontWeight: '500',
     },
-    addCustomBtn: {
+    addCustomButton: {
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
         marginLeft: 4,
     },
     addCustomCircle: {
         width: 56,
         height: 56,
-        borderRadius: 28,
-        backgroundColor: '#EEF2FF',
-        borderWidth: 2,
-        borderColor: '#6366F1',
+        borderRadius: 18,
+        borderWidth: 1.5,
         borderStyle: 'dashed',
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: 'transparent',
     },
     addCustomLabel: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#6366F1',
+        fontSize: 12,
+        fontWeight: '500',
     },
-    noteModalOverlay: {
+    modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
     },
+    modalContent: {
+        width: '100%',
+        maxWidth: 360,
+        borderRadius: 20,
+        padding: 20,
+    },
     noteModalContent: {
         width: '100%',
         maxWidth: 320,
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 20,
+        padding: 20,
     },
-    noteModalHeader: {
+    modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
-    noteModalTitle: {
-        fontSize: 16,
+    modalTitle: {
+        fontSize: 17,
         fontWeight: '600',
-        color: '#1F2937',
     },
-    noteInput: {
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        padding: 12,
-        minHeight: 80,
-        fontSize: 14,
-        color: '#1F2937',
-        textAlign: 'right',
-        textAlignVertical: 'top',
-    },
-    monthPickerContent: {
-        width: '100%',
-        maxWidth: 360,
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        padding: 16,
-    },
-    monthPickerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1F2937',
-    },
-    monthPickerSubtitle: {
+    modalSubtitle: {
         fontSize: 13,
-        color: '#6B7280',
         textAlign: 'center',
         marginBottom: 16,
     },
@@ -386,19 +471,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     monthPickerCircle: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: '#EEF2FF',
-        borderWidth: 2,
-        borderColor: '#6366F1',
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
     monthPickerNumber: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#6366F1',
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    noteInput: {
+        borderRadius: 14,
+        padding: 14,
+        minHeight: 90,
+        fontSize: 15,
+        textAlign: 'right',
+        textAlignVertical: 'top',
     },
 });
 

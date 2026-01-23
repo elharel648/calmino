@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, PanResponder, Animated as RNAnimated, Platform, TouchableWithoutFeedback, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { X, Sun, Moon } from 'lucide-react-native';
+import { Sun, Moon, Sparkles, Zap } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withRepeat, interpolate } from 'react-native-reanimated';
 
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-
-const { width, height } = Dimensions.get('window');
+const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
 interface NightLightModalProps {
     visible: boolean;
@@ -14,97 +16,358 @@ interface NightLightModalProps {
 }
 
 export default function NightLightModal({ visible, onClose }: NightLightModalProps) {
-
-
     const [colorTemp, setColorTemp] = useState<'warm' | 'white' | 'red'>('warm');
     const [brightness, setBrightness] = useState(0.3);
     const [controlsVisible, setControlsVisible] = useState(true);
 
     const controlsOpacity = useSharedValue(1);
+    const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
+    const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+    // Pulse animation for active color
+    const pulseAnim = useSharedValue(0);
+    const glowAnim = useSharedValue(0);
+
+    useEffect(() => {
+        if (visible) {
+            slideAnim.setValue(SCREEN_HEIGHT);
+            backdropAnim.setValue(0);
+            RNAnimated.parallel([
+                RNAnimated.spring(slideAnim, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 65,
+                    friction: 11,
+                }),
+                RNAnimated.timing(backdropAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+
+            // Start pulse animation
+            pulseAnim.value = withRepeat(
+                withTiming(1, { duration: 2000 }),
+                -1,
+                true
+            );
+            glowAnim.value = withRepeat(
+                withTiming(1, { duration: 3000 }),
+                -1,
+                true
+            );
+        } else {
+            slideAnim.setValue(SCREEN_HEIGHT);
+            backdropAnim.setValue(0);
+        }
+    }, [visible]);
 
     useEffect(() => {
         controlsOpacity.value = withTiming(controlsVisible ? 1 : 0, { duration: 300 });
     }, [controlsVisible]);
+
+    // Swipe down to dismiss - Improved
+    const isDragging = useRef(false);
+    const panResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: (evt) => {
+            const startY = evt.nativeEvent.pageY;
+            if (startY < 200) {
+                isDragging.current = true;
+                if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                return true;
+            }
+            return false;
+        },
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+            if (isDragging.current) return true;
+            const currentY = evt.nativeEvent.pageY;
+            const isTopArea = currentY < 250;
+            const isDraggingDown = gestureState.dy > 8;
+            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.3;
+
+            if (isTopArea && isDraggingDown && isVerticalSwipe) {
+                isDragging.current = true;
+                if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                return true;
+            }
+            return false;
+        },
+        onPanResponderGrant: () => {
+            isDragging.current = true;
+        },
+        onPanResponderMove: (_, gestureState) => {
+            if (gestureState.dy > 0) {
+                slideAnim.setValue(gestureState.dy);
+                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                backdropAnim.setValue(opacity);
+            }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+            isDragging.current = false;
+            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
+            if (shouldDismiss) {
+                if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                RNAnimated.parallel([
+                    RNAnimated.spring(slideAnim, {
+                        toValue: SCREEN_HEIGHT,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }),
+                    RNAnimated.timing(backdropAnim, {
+                        toValue: 0,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }),
+                ]).start(() => {
+                    onClose();
+                    slideAnim.setValue(SCREEN_HEIGHT);
+                    backdropAnim.setValue(0);
+                });
+            } else {
+                RNAnimated.parallel([
+                    RNAnimated.spring(slideAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }),
+                    RNAnimated.timing(backdropAnim, {
+                        toValue: 1,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+            }
+        },
+        onPanResponderTerminate: () => {
+            isDragging.current = false;
+        },
+    }), [onClose, slideAnim, backdropAnim]);
 
     const animatedControlsStyle = useAnimatedStyle(() => ({
         opacity: controlsOpacity.value,
     }));
 
     const getBackgroundColor = () => {
-        const opacity = Math.max(0.1, brightness); // Minimum visibility
+        const opacity = Math.max(0.15, brightness);
         switch (colorTemp) {
-            case 'warm': return `rgba(255, 149, 0, ${opacity})`; // Orange/Warm
-            case 'white': return `rgba(255, 255, 255, ${opacity})`; // White
-            case 'red': return `rgba(255, 0, 0, ${opacity})`; // Red (Sleep friendly)
+            case 'warm': return `rgba(255, 149, 0, ${opacity})`;
+            case 'white': return `rgba(255, 255, 255, ${opacity})`;
+            case 'red': return `rgba(255, 59, 48, ${opacity})`;
         }
     };
 
     const getTextColor = () => {
-        return brightness > 0.6 ? '#000' : '#fff'; // Contrast text
+        return brightness > 0.5 ? '#000' : '#fff';
     };
+
+    const handleColorChange = (color: 'warm' | 'white' | 'red') => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        setColorTemp(color);
+    };
+
+    const handleBrightnessChange = (value: number) => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        setBrightness(value);
+    };
+
+    // Animated styles for color buttons
+    const warmPulseStyle = useAnimatedStyle(() => {
+        if (colorTemp !== 'warm') return {};
+        const scale = interpolate(pulseAnim.value, [0, 1], [1, 1.08]);
+        const opacity = interpolate(pulseAnim.value, [0, 1], [0.3, 0.6]);
+        return {
+            transform: [{ scale }],
+            opacity,
+        };
+    });
+
+    const whitePulseStyle = useAnimatedStyle(() => {
+        if (colorTemp !== 'white') return {};
+        const scale = interpolate(pulseAnim.value, [0, 1], [1, 1.08]);
+        const opacity = interpolate(pulseAnim.value, [0, 1], [0.3, 0.6]);
+        return {
+            transform: [{ scale }],
+            opacity,
+        };
+    });
+
+    const redPulseStyle = useAnimatedStyle(() => {
+        if (colorTemp !== 'red') return {};
+        const scale = interpolate(pulseAnim.value, [0, 1], [1, 1.08]);
+        const opacity = interpolate(pulseAnim.value, [0, 1], [0.3, 0.6]);
+        return {
+            transform: [{ scale }],
+            opacity,
+        };
+    });
 
     if (!visible) return null;
 
     return (
-        <Modal visible={visible} animationType="fade" transparent={false}>
-            <TouchableOpacity
-                style={[styles.container, { backgroundColor: getBackgroundColor() }]}
-                activeOpacity={1}
-                onPress={() => setControlsVisible(!controlsVisible)}
+        <Modal visible={visible} animationType="none" transparent={false}>
+            <RNAnimatedView
+                style={[
+                    styles.container,
+                    {
+                        backgroundColor: getBackgroundColor(),
+                        transform: [{ translateY: slideAnim }],
+                    }
+                ]}
             >
-                {/* Close Button - Always visible but follows controls visibility logic roughly or fixed? 
-                    Better to hide it with controls for full immersion */}
-                <Animated.View style={[styles.controlsOverlay, animatedControlsStyle]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
-                    <TouchableOpacity
-                        style={styles.closeBtn}
-                        onPress={onClose}
-                    >
-                        <X size={28} color={getTextColor()} />
-                    </TouchableOpacity>
+                {/* Drag Handle */}
+                <View style={styles.dragHandle} {...panResponder.panHandlers}>
+                    <View style={[styles.dragHandleBar, { backgroundColor: getTextColor() + '40' }]} />
+                </View>
 
-                    <View style={styles.centerControls}>
-                        <Text style={[styles.title, { color: getTextColor() }]}>פנס לילה</Text>
-                        <Text style={[styles.subtitle, { color: getTextColor() }]}>לחץ על המסך להסתרת הפקדים</Text>
-
-                        {/* Color Selection */}
-                        <View style={styles.colorRow}>
-                            <TouchableOpacity
-                                style={[styles.colorBtn, colorTemp === 'warm' && styles.colorBtnActive, { backgroundColor: '#FFDCA8' }]}
-                                onPress={() => setColorTemp('warm')}
+                <TouchableWithoutFeedback onPress={() => setControlsVisible(!controlsVisible)}>
+                    <View style={StyleSheet.absoluteFill}>
+                        <Animated.View style={[styles.controlsOverlay, animatedControlsStyle]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
+                            <ScrollView
+                                contentContainerStyle={styles.scrollContent}
+                                showsVerticalScrollIndicator={false}
+                                bounces={true}
                             >
-                                {colorTemp === 'warm' && <View style={styles.activeDot} />}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.colorBtn, colorTemp === 'white' && styles.colorBtnActive, { backgroundColor: '#FFFFFF' }]}
-                                onPress={() => setColorTemp('white')}
-                            >
-                                {colorTemp === 'white' && <View style={styles.activeDot} />}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.colorBtn, colorTemp === 'red' && styles.colorBtnActive, { backgroundColor: '#FFD1D1' }]}
-                                onPress={() => setColorTemp('red')}
-                            >
-                                {colorTemp === 'red' && <View style={styles.activeDot} />}
-                            </TouchableOpacity>
-                        </View>
+                                <View style={styles.centerControls}>
+                                    {/* Premium Title with Icon */}
+                                    <View style={styles.titleContainer}>
+                                        <View style={[styles.iconCircle, { backgroundColor: getTextColor() + '15' }]}>
+                                            <Zap size={28} color={getTextColor()} strokeWidth={2} />
+                                        </View>
+                                        <Text style={[styles.title, { color: getTextColor() }]}>פנס לילה</Text>
+                                    </View>
 
-                        {/* Brightness Slider Mock (using buttons for simplicity if Slider not avail, but we can try simple implementation) */}
-                        <View style={styles.brightnessRow}>
-                            <TouchableOpacity onPress={() => setBrightness(Math.max(0.1, brightness - 0.1))}>
-                                <Moon size={24} color={getTextColor()} />
-                            </TouchableOpacity>
+                                    <Text style={[styles.subtitle, { color: getTextColor() }]}>לחץ על המסך להסתרת הפקדים</Text>
 
-                            <View style={styles.brightnessBar}>
-                                <View style={[styles.brightnessFill, { width: `${brightness * 100}%`, backgroundColor: getTextColor() }]} />
-                            </View>
+                                    {/* Premium Color Selection with Glow */}
+                                    <View style={styles.colorSection}>
+                                        <Text style={[styles.sectionLabel, { color: getTextColor() }]}>צבע</Text>
+                                        <View style={styles.colorRow}>
+                                            <TouchableOpacity
+                                                style={styles.colorBtnWrapper}
+                                                onPress={() => handleColorChange('warm')}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Animated.View style={warmPulseStyle}>
+                                                    <LinearGradient
+                                                        colors={['#FFDCA8', '#FFB84D']}
+                                                        style={[styles.colorBtn, colorTemp === 'warm' && styles.colorBtnActive]}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                    >
+                                                        {colorTemp === 'warm' && (
+                                                            <View style={styles.activeIndicator}>
+                                                                <View style={[styles.activeDot, { backgroundColor: '#fff' }]} />
+                                                            </View>
+                                                        )}
+                                                    </LinearGradient>
+                                                </Animated.View>
+                                            </TouchableOpacity>
 
-                            <TouchableOpacity onPress={() => setBrightness(Math.min(1, brightness + 0.1))}>
-                                <Sun size={24} color={getTextColor()} />
-                            </TouchableOpacity>
-                        </View>
+                                            <TouchableOpacity
+                                                style={styles.colorBtnWrapper}
+                                                onPress={() => handleColorChange('white')}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Animated.View style={whitePulseStyle}>
+                                                    <LinearGradient
+                                                        colors={['#FFFFFF', '#F5F5F5']}
+                                                        style={[styles.colorBtn, colorTemp === 'white' && styles.colorBtnActive]}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                    >
+                                                        {colorTemp === 'white' && (
+                                                            <View style={styles.activeIndicator}>
+                                                                <View style={[styles.activeDot, { backgroundColor: '#000' }]} />
+                                                            </View>
+                                                        )}
+                                                    </LinearGradient>
+                                                </Animated.View>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={styles.colorBtnWrapper}
+                                                onPress={() => handleColorChange('red')}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Animated.View style={redPulseStyle}>
+                                                    <LinearGradient
+                                                        colors={['#FF6B6B', '#FF3B30']}
+                                                        style={[styles.colorBtn, colorTemp === 'red' && styles.colorBtnActive]}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                    >
+                                                        {colorTemp === 'red' && (
+                                                            <View style={styles.activeIndicator}>
+                                                                <View style={[styles.activeDot, { backgroundColor: '#fff' }]} />
+                                                            </View>
+                                                        )}
+                                                    </LinearGradient>
+                                                </Animated.View>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+
+                                    {/* Premium Brightness Slider */}
+                                    <View style={styles.brightnessSection}>
+                                        <Text style={[styles.sectionLabel, { color: getTextColor() }]}>בהירות</Text>
+                                        <View style={styles.brightnessRow}>
+                                            <TouchableOpacity
+                                                onPress={() => handleBrightnessChange(Math.max(0.1, brightness - 0.1))}
+                                                style={[styles.iconButton, { backgroundColor: getTextColor() + '15' }]}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Moon size={22} color={getTextColor()} strokeWidth={2} />
+                                            </TouchableOpacity>
+
+                                            <View style={styles.sliderContainer}>
+                                                {Platform.OS === 'ios' && (
+                                                    <BlurView intensity={20} tint="light" style={styles.sliderBlur}>
+                                                        <LinearGradient
+                                                            colors={[getTextColor() + '20', getTextColor() + '10']}
+                                                            style={StyleSheet.absoluteFill}
+                                                        />
+                                                    </BlurView>
+                                                )}
+                                                <Slider
+                                                    style={styles.slider}
+                                                    minimumValue={0.1}
+                                                    maximumValue={1}
+                                                    value={brightness}
+                                                    onValueChange={handleBrightnessChange}
+                                                    minimumTrackTintColor={getTextColor()}
+                                                    maximumTrackTintColor={getTextColor() + '30'}
+                                                    thumbTintColor={getTextColor()}
+                                                />
+                                            </View>
+
+                                            <TouchableOpacity
+                                                onPress={() => handleBrightnessChange(Math.min(1, brightness + 0.1))}
+                                                style={[styles.iconButton, { backgroundColor: getTextColor() + '15' }]}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Sun size={22} color={getTextColor()} strokeWidth={2} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                            </ScrollView>
+                        </Animated.View>
                     </View>
-                </Animated.View>
-            </TouchableOpacity>
+                </TouchableWithoutFeedback>
+            </RNAnimatedView>
         </Modal>
     );
 }
@@ -115,74 +378,154 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    dragHandle: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        paddingTop: 12,
+        paddingBottom: 8,
+        zIndex: 10,
+        minHeight: 50,
+    },
+    dragHandleBar: {
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+    },
     controlsOverlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 40,
     },
-    closeBtn: {
-        position: 'absolute',
-        top: 60,
-        right: 30,
-        padding: 10,
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 60,
     },
     centerControls: {
         alignItems: 'center',
         width: '100%',
-        gap: 40,
+        gap: 32,
     },
-    title: {
-        fontSize: 32,
-        fontWeight: '300',
+    titleContainer: {
+        alignItems: 'center',
+        gap: 12,
         marginBottom: 8,
     },
+    iconCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    title: {
+        fontSize: 36,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
     subtitle: {
-        fontSize: 14,
+        fontSize: 15,
         opacity: 0.7,
-        marginBottom: 20,
+        fontWeight: '400',
+    },
+    colorSection: {
+        width: '100%',
+        alignItems: 'center',
+        gap: 16,
+    },
+    sectionLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        opacity: 0.9,
     },
     colorRow: {
         flexDirection: 'row',
-        gap: 20,
+        gap: 24,
+        justifyContent: 'center',
+    },
+    colorBtnWrapper: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 8,
     },
     colorBtn: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        borderWidth: 3,
+        borderColor: 'transparent',
     },
     colorBtnActive: {
-        transform: [{ scale: 1.1 }],
-        borderWidth: 2,
-        borderColor: 'rgba(0,0,0,0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.6)',
+        shadowColor: '#fff',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 20,
+        elevation: 12,
+    },
+    activeIndicator: {
+        position: 'absolute',
+        bottom: 8,
+        width: '100%',
+        alignItems: 'center',
     },
     activeDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    brightnessSection: {
+        width: '100%',
+        alignItems: 'center',
+        gap: 16,
+        paddingHorizontal: 20,
     },
     brightnessRow: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        gap: 20,
+        gap: 16,
     },
-    brightnessBar: {
+    iconButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    sliderContainer: {
         flex: 1,
-        height: 4,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        borderRadius: 2,
+        height: 40,
+        justifyContent: 'center',
+        borderRadius: 20,
         overflow: 'hidden',
+        position: 'relative',
     },
-    brightnessFill: {
-        height: '100%',
+    sliderBlur: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 20,
+    },
+    slider: {
+        width: '100%',
+        height: 40,
     },
 });

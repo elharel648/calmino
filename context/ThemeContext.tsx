@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 // --- צבעים ---
 export const COLORS = {
     light: {
-        background: '#FAF5FF',
+        background: '#FFFFFF',
         card: '#FFFFFF',
         cardSecondary: '#F5F3FF',
         textPrimary: '#000000',

@@ -17,6 +17,7 @@ export const PREMIUM_ENTITLEMENT_ID = 'premium';
 
 // Check if running in Expo Go (RevenueCat doesn't work there)
 const isExpoGo = Constants.appOwnership === 'expo';
+let isInitialized = false;
 
 /**
  * Initialize RevenueCat SDK
@@ -28,12 +29,19 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
         return;
     }
 
-    try {
-        const apiKey = Platform.OS === 'ios'
-            ? REVENUECAT_API_KEY_IOS
-            : REVENUECAT_API_KEY_ANDROID;
+    const apiKey = Platform.OS === 'ios'
+        ? REVENUECAT_API_KEY_IOS
+        : REVENUECAT_API_KEY_ANDROID;
 
+    // Skip if API key is not configured (still a placeholder)
+    if (!apiKey || apiKey.startsWith('YOUR_') || apiKey.length < 10) {
+        logger.debug('⚠️', 'RevenueCat skipped - API key not configured');
+        return;
+    }
+
+    try {
         Purchases.configure({ apiKey });
+        isInitialized = true;
 
         // Identify user if logged in
         if (userId) {
@@ -43,7 +51,11 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
             logger.debug('🔑', 'RevenueCat initialized (anonymous)');
         }
     } catch (error) {
-        logger.error('❌ RevenueCat init failed:', error);
+        // Silently handle errors when API key is invalid
+        if (__DEV__) {
+            logger.error('❌ RevenueCat init failed:', error);
+        }
+        isInitialized = false;
     }
 }
 
@@ -51,7 +63,7 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
  * Get current offerings (available packages)
  */
 export async function getOfferings(): Promise<PurchasesOfferings | null> {
-    if (isExpoGo) return null;
+    if (isExpoGo || !isInitialized) return null;
 
     try {
         const offerings = await Purchases.getOfferings();
@@ -67,7 +79,7 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
  * Purchase a package
  */
 export async function purchasePackage(pkg: PurchasesPackage): Promise<CustomerInfo | null> {
-    if (isExpoGo) return null;
+    if (isExpoGo || !isInitialized) return null;
 
     try {
         const { customerInfo } = await Purchases.purchasePackage(pkg);
@@ -87,7 +99,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<CustomerIn
  * Restore purchases
  */
 export async function restorePurchases(): Promise<CustomerInfo | null> {
-    if (isExpoGo) return null;
+    if (isExpoGo || !isInitialized) return null;
 
     try {
         const customerInfo = await Purchases.restorePurchases();
@@ -103,7 +115,7 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
  * Get current customer info
  */
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
-    if (isExpoGo) return null;
+    if (isExpoGo || !isInitialized) return null;
 
     try {
         const customerInfo = await Purchases.getCustomerInfo();
@@ -126,7 +138,7 @@ export function isPremiumUser(customerInfo: CustomerInfo | null): boolean {
  * Identify user (call after login)
  */
 export async function identifyUser(userId: string): Promise<void> {
-    if (isExpoGo) return;
+    if (isExpoGo || !isInitialized) return;
 
     try {
         await Purchases.logIn(userId);
@@ -140,7 +152,7 @@ export async function identifyUser(userId: string): Promise<void> {
  * Logout (call on sign out)
  */
 export async function logoutRevenueCat(): Promise<void> {
-    if (isExpoGo) return;
+    if (isExpoGo || !isInitialized) return;
 
     try {
         await Purchases.logOut();

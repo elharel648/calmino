@@ -1,5 +1,5 @@
-import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator } from 'react-native';
+import React, { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -13,7 +13,7 @@ import { VACCINE_SCHEDULE, CustomVaccine } from '../../types/profile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface HealthCardProps {
     dynamicStyles: { text: string };
@@ -56,6 +56,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
+    
+    // Swipe down animations
+    const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+    const backdropAnim = useRef(new Animated.Value(0)).current;
 
     // Vaccine state
     const [vaccines, setVaccines] = useState<Record<string, boolean>>({});
@@ -318,12 +322,124 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         onClose?.();
     };
 
+    // Track if we're dragging
+    const isDragging = useRef(false);
+
+    // Swipe down to dismiss - Liquid glass animation
+    const panResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: (evt, gestureState) => {
+            // Always allow starting from drag handle area
+            const startY = evt.nativeEvent.pageY;
+            if (startY < 150) {
+                isDragging.current = true;
+                return true;
+            }
+            return false;
+        },
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+            // If already dragging, continue
+            if (isDragging.current) return true;
+            
+            // Check if we're in the top area and dragging down
+            const currentY = evt.nativeEvent.pageY;
+            const isTopArea = currentY < 200;
+            const isDraggingDown = gestureState.dy > 10;
+            
+            if (isTopArea && isDraggingDown && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5) {
+                isDragging.current = true;
+                return true;
+            }
+            return false;
+        },
+        onPanResponderGrant: () => {
+            isDragging.current = true;
+            if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+        },
+        onPanResponderMove: (_, gestureState) => {
+            if (gestureState.dy > 0) {
+                slideAnim.setValue(gestureState.dy);
+                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                backdropAnim.setValue(opacity);
+            }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+            isDragging.current = false;
+            
+            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
+            if (shouldDismiss) {
+                if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                Animated.parallel([
+                    Animated.spring(slideAnim, {
+                        toValue: SCREEN_HEIGHT,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }),
+                    Animated.timing(backdropAnim, {
+                        toValue: 0,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }),
+                ]).start(() => {
+                    closeModal();
+                    slideAnim.setValue(SCREEN_HEIGHT);
+                    backdropAnim.setValue(0);
+                });
+            } else {
+                Animated.parallel([
+                    Animated.spring(slideAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }),
+                    Animated.timing(backdropAnim, {
+                        toValue: 1,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+            }
+        },
+        onPanResponderTerminate: () => {
+            isDragging.current = false;
+        },
+    }), [slideAnim, backdropAnim, closeModal]);
+
     // Sync with external visible prop
     useEffect(() => {
         if (visible !== undefined) {
             setIsModalOpen(visible);
         }
     }, [visible]);
+
+    // Animate modal in/out
+    useEffect(() => {
+        if (isModalOpen) {
+            slideAnim.setValue(SCREEN_HEIGHT);
+            backdropAnim.setValue(0);
+            Animated.parallel([
+                Animated.timing(backdropAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(slideAnim, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 65,
+                    friction: 11,
+                }),
+            ]).start();
+        } else {
+            slideAnim.setValue(SCREEN_HEIGHT);
+            backdropAnim.setValue(0);
+        }
+    }, [isModalOpen, slideAnim, backdropAnim]);
 
     const resetForms = () => {
         setTemperature(37.0);
@@ -1016,23 +1132,37 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     };
 
     return (
-        <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={closeModal}>
-            <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
-                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-                    {/* Minimal Header */}
-                    <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-                        {currentScreen !== 'menu' ? (
-                            <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
-                                <ChevronRight size={22} color={theme.textPrimary} />
-                            </TouchableOpacity>
-                        ) : (
-                            <TouchableOpacity onPress={closeModal} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
-                                <X size={22} color={theme.textPrimary} />
-                            </TouchableOpacity>
-                        )}
-                        <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
-                        <View style={{ width: 40 }} />
-                    </View>
+        <Modal visible={isModalOpen} transparent animationType="none" onRequestClose={closeModal}>
+            <TouchableWithoutFeedback onPress={closeModal}>
+                <Animated.View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay, opacity: backdropAnim }]}>
+                    <TouchableWithoutFeedback>
+                        <Animated.View
+                            style={[
+                                styles.modalContent,
+                                {
+                                    backgroundColor: theme.card,
+                                    transform: [{ translateY: slideAnim }],
+                                }
+                            ]}
+                            {...panResponder.panHandlers}
+                        >
+                            {/* Drag Handle */}
+                            <View style={styles.dragHandle} {...panResponder.panHandlers}>
+                                <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+                            </View>
+
+                            {/* Minimal Header */}
+                            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+                                {currentScreen !== 'menu' ? (
+                                    <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
+                                        <ChevronRight size={22} color={theme.textPrimary} />
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View style={{ width: 40 }} />
+                                )}
+                                <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
+                                <View style={{ width: 40 }} />
+                            </View>
 
                     <View style={[styles.modalBody, { backgroundColor: theme.background }]}>
                         {currentScreen === 'menu' && renderMenu()}
@@ -1043,8 +1173,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         {currentScreen === 'medications' && renderMedications()}
                         {currentScreen === 'history' && renderHistory()}
                     </View>
-                </View>
-            </View>
+                        </Animated.View>
+                    </TouchableWithoutFeedback>
+                </Animated.View>
+            </TouchableWithoutFeedback>
         </Modal>
     );
 });
@@ -1078,7 +1210,9 @@ const styles = StyleSheet.create({
     cardArrow: { opacity: 0.6 },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '90%', overflow: 'hidden' },
+    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '90%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 12 },
+    dragHandle: { alignItems: 'center', paddingTop: 14, paddingBottom: 12, zIndex: 10 },
+    dragHandleBar: { width: 36, height: 5, borderRadius: 3 },
     modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
     headerBtn: { padding: 8, backgroundColor: '#F3F4F6', borderRadius: 10 },
     modalTitle: { fontSize: 17, fontWeight: '600', color: '#1F2937' },

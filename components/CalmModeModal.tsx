@@ -1,10 +1,12 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated } from 'react-native';
-import { X, Phone, Siren, Shield, Skull, AlertTriangle } from 'lucide-react-native';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated, PanResponder, Dimensions } from 'react-native';
+import { Phone, Siren, Shield, Skull, AlertTriangle } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CalmModeModalProps {
   visible: boolean;
@@ -15,30 +17,118 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
   const { theme, isDarkMode } = useTheme();
 
   // Animations
-  const slideAnim = useRef(new Animated.Value(400)).current;
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (visible) {
+      slideAnim.setValue(SCREEN_HEIGHT);
+      fadeAnim.setValue(0);
+      backdropAnim.setValue(0);
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
           useNativeDriver: true,
-          damping: 20,
-          stiffness: 180,
-          mass: 0.8,
+          tension: 65,
+          friction: 11,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 250,
           useNativeDriver: true,
         }),
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
       ]).start();
+
+      // Start pulse animation for icon
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.15,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     } else {
-      slideAnim.setValue(400);
+      slideAnim.setValue(SCREEN_HEIGHT);
       fadeAnim.setValue(0);
+      backdropAnim.setValue(0);
+      pulseAnim.setValue(1);
     }
   }, [visible]);
+
+  // Swipe down to dismiss - Liquid glass animation
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: (evt, gestureState) => {
+      return gestureState.dy > 0 || evt.nativeEvent.pageY < 100;
+    },
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+    },
+    onPanResponderGrant: () => {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    },
+    onPanResponderMove: (_, gestureState) => {
+      if (gestureState.dy > 0) {
+        slideAnim.setValue(gestureState.dy);
+        const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+        backdropAnim.setValue(opacity);
+      }
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
+      if (shouldDismiss) {
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: SCREEN_HEIGHT,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }),
+          Animated.timing(backdropAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          onClose();
+          slideAnim.setValue(SCREEN_HEIGHT);
+          backdropAnim.setValue(0);
+        });
+      } else {
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }),
+          Animated.timing(backdropAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    },
+  }), [onClose, slideAnim, backdropAnim]);
 
   const makeCall = async (phoneNumber: string, name: string) => {
     if (Platform.OS !== 'web') {
@@ -73,8 +163,8 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
   ];
 
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
+      <Animated.View style={[styles.overlay, { opacity: backdropAnim }]}>
         <Animated.View
           style={[
             styles.container,
@@ -85,16 +175,16 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
             }
           ]}
         >
-          {/* Drag Handle */}
-          <View style={styles.dragHandle}>
+          {/* Drag Handle - Only this area handles swipe to dismiss */}
+          <View style={styles.dragHandle} {...panResponder.panHandlers}>
             <View style={[
               styles.dragHandleBar,
               { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }
             ]} />
           </View>
 
-          {/* Glass Header */}
-          <View style={styles.header}>
+          {/* Premium Header - Centered Icon with Title Below */}
+          <View style={styles.header} {...panResponder.panHandlers}>
             {Platform.OS === 'ios' && (
               <BlurView
                 intensity={60}
@@ -106,18 +196,10 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
               styles.headerContent,
               { backgroundColor: isDarkMode ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.85)' }
             ]}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <X size={20} color={theme.textSecondary} strokeWidth={2} />
-              </TouchableOpacity>
-
-              <View style={styles.titleContainer}>
-                <View style={styles.titleIcon}>
-                  <AlertTriangle size={18} color="#EF4444" strokeWidth={2} />
-                </View>
-                <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>מצב חירום</Text>
-              </View>
-
-              <View style={{ width: 36 }} />
+              <Animated.View style={[styles.titleIcon, { transform: [{ scale: pulseAnim }] }]}>
+                <AlertTriangle size={36} color="#EF4444" strokeWidth={2.5} />
+              </Animated.View>
+              <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>מצב חירום</Text>
             </View>
           </View>
 
@@ -194,7 +276,7 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
             </View>
           </ScrollView>
         </Animated.View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -208,8 +290,8 @@ const styles = StyleSheet.create({
   container: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    maxHeight: '92%',
-    minHeight: '60%',
+    maxHeight: '95%',
+    minHeight: '75%',
     // Premium shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
@@ -230,7 +312,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
-  // Glass Header
+  // Glass Header - Centered
   header: {
     marginHorizontal: -24,
     borderTopLeftRadius: 28,
@@ -238,11 +320,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerContent: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 24,
+    gap: 12,
   },
   closeButton: {
     width: 36,
@@ -253,22 +334,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   titleContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   mainTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
 
   // Content
