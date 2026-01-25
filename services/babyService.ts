@@ -30,6 +30,7 @@ export type BabyData = {
   teeth?: Record<string, any>;
   album?: { [key: number]: string };
   albumNotes?: { [key: number]: string };
+  albumDates?: { [key: number]: Timestamp };
   milestones?: { title: string; date: any }[];
   vaccines?: { [key: string]: boolean };
   customVaccines?: { id: string; name: string; isDone: boolean }[];
@@ -253,11 +254,13 @@ export const getReportData = async (range: 'week' | 'month' | 'day', reportType:
 
 
 // --- פונקציות קיימות (שומרות על מבנה) ---
-export const saveAlbumImage = async (babyId: string, month: number, base64Image: string) => {
+// NOTE: This function now accepts a Storage URL instead of base64
+// Use uploadAlbumPhoto from imageUploadService.ts to upload the image first
+export const saveAlbumImage = async (babyId: string, month: number, imageUrl: string) => {
   if (!babyId) return;
   const babyRef = doc(db, 'babies', babyId);
   await updateDoc(babyRef, {
-    [`album.${month}`]: base64Image
+    [`album.${month}`]: imageUrl
   });
 };
 

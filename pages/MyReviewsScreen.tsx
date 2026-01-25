@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     tipCard: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         padding: 16,
         borderRadius: 12,
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     reviewHeader: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: 8,

@@ -42,6 +42,7 @@ export interface Sitter {
         latitude: number;
         longitude: number;
     };
+    pricePerHour?: number; // Added to match usage in BabySitterScreen
 }
 
 /**
@@ -138,6 +139,10 @@ const useSitters = () => {
                 const age = typeof data.age === 'number' && !isNaN(data.age) && data.age > 0
                     ? Math.max(0, Math.min(120, data.age)) // Clamp between 0-120
                     : 0;
+                // Default to 50 if not found, since registration doesn't seem to save it yet
+                const pricePerHour = typeof data.sitterPrice === 'number' && !isNaN(data.sitterPrice)
+                    ? data.sitterPrice
+                    : 50;
 
                 fetchedSitters.push({
                     id: doc.id,
@@ -166,6 +171,7 @@ const useSitters = () => {
                         data.sitterLocation.longitude >= -180 && data.sitterLocation.longitude <= 180)
                         ? data.sitterLocation
                         : undefined,
+                    pricePerHour,
                 });
             });
 

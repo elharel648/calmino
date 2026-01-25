@@ -2,12 +2,24 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { liveActivityService } from '../services/liveActivityService';
+import { useActiveChild } from '../context/ActiveChildContext';
 
-interface SleepTimerContextType {
+interface SleepTimerState {
     isRunning: boolean;
     isPaused: boolean;
     elapsedSeconds: number;
     startTime: Date | null;
+    activityId?: string;
+}
+
+const INITIAL_STATE: SleepTimerState = {
+    isRunning: false,
+    isPaused: false,
+    elapsedSeconds: 0,
+    startTime: null,
+};
+
+interface SleepTimerContextType extends SleepTimerState {
     start: () => void;
     stop: () => void;
     pause: () => void;
@@ -31,113 +43,155 @@ interface SleepTimerProviderProps {
 }
 
 export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
-    const [isRunning, setIsRunning] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
-    const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const [startTime, setStartTime] = useState<Date | null>(null);
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const activityIdRef = useRef<string | undefined>(undefined);
+    const { activeChild } = useActiveChild();
+    const activeChildId = activeChild?.childId;
 
-    // Timer effect - keeps local state in sync
+    // Map of childId -> SleepTimerState
+    const [timers, setTimers] = useState<Record<string, SleepTimerState>>({});
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Get current child state or initial state
+    const currentState = activeChildId && timers[activeChildId] ? timers[activeChildId] : INITIAL_STATE;
+
+    // Global timer effect - iterates all running timers
     useEffect(() => {
-        if (isRunning && !isPaused) {
-            timerRef.current = setInterval(() => {
-                setElapsedSeconds(prev => prev + 1);
-            }, 1000);
-        } else {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-        }
+        timerRef.current = setInterval(() => {
+            setTimers(prevTimers => {
+                const nextTimers = { ...prevTimers };
+                let hasChanges = false;
+
+                Object.keys(nextTimers).forEach(childId => {
+                    const timer = nextTimers[childId];
+                    if (timer.isRunning && !timer.isPaused) {
+                        nextTimers[childId] = {
+                            ...timer,
+                            elapsedSeconds: timer.elapsedSeconds + 1
+                        };
+                        hasChanges = true;
+                    }
+                });
+
+                return hasChanges ? nextTimers : prevTimers;
+            });
+        }, 1000);
 
         return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
+            if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [isRunning, isPaused]);
+    }, []);
+
+    const updateChildState = useCallback((childId: string, updates: Partial<SleepTimerState>) => {
+        setTimers(prev => ({
+            ...prev,
+            [childId]: {
+                ...(prev[childId] || INITIAL_STATE),
+                ...updates
+            }
+        }));
+    }, []);
 
     const start = useCallback(async () => {
+        if (!activeChildId) return;
+
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         }
-        setIsRunning(true);
-        setIsPaused(false);
-        setStartTime(new Date());
-        setElapsedSeconds(0);
 
-        // Start iOS Live Activity for Dynamic Island
+        const newState: Partial<SleepTimerState> = {
+            isRunning: true,
+            isPaused: false,
+            startTime: new Date(),
+            elapsedSeconds: 0
+        };
+
+        // Start iOS Live Activity
         if (Platform.OS === 'ios') {
             try {
-                const activityId = await liveActivityService.startSleepTimer('הורה', 'תינוק');
+                const activityId = await liveActivityService.startSleepTimer('הורה', activeChild?.childName || 'תינוק');
                 if (activityId) {
-                    activityIdRef.current = activityId;
-                    if (__DEV__) console.log('✅ Sleep Live Activity started:', activityId);
+                    newState.activityId = activityId;
+                    if (__DEV__) console.log('✅ Sleep Live Activity started:', activityId, 'for child:', activeChildId);
                 }
             } catch (error) {
                 if (__DEV__) console.warn('⚠️ Sleep Live Activity not supported:', error);
             }
         }
-    }, []);
+
+        updateChildState(activeChildId, newState);
+    }, [activeChildId, activeChild?.childName, updateChildState]);
 
     const stop = useCallback(async () => {
+        if (!activeChildId) return;
+
         if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
-        setIsRunning(false);
-        setIsPaused(false);
+
+        // Get activity ID from current state before clearing
+        const activityId = timers[activeChildId]?.activityId;
+
+        updateChildState(activeChildId, {
+            isRunning: false,
+            isPaused: false,
+            activityId: undefined // Clear activity ID
+        });
 
         // Stop iOS Live Activity
-        if (Platform.OS === 'ios' && activityIdRef.current) {
+        if (Platform.OS === 'ios' && activityId) {
             try {
                 await liveActivityService.stopSleepTimer();
-                activityIdRef.current = undefined;
                 if (__DEV__) console.log('✅ Sleep Live Activity stopped');
             } catch (error) {
                 if (__DEV__) console.warn('⚠️ Error stopping Sleep Live Activity:', error);
             }
         }
-    }, []);
+    }, [activeChildId, updateChildState, timers]);
 
     const pause = useCallback(async () => {
-        if (!isRunning || isPaused) return;
-        
-        setIsPaused(true);
-        
+        if (!activeChildId) return;
+        const timer = timers[activeChildId];
+        if (!timer?.isRunning || timer?.isPaused) return;
+
+        updateChildState(activeChildId, { isPaused: true });
+
         // Pause Live Activity
-        if (Platform.OS === 'ios' && activityIdRef.current) {
+        if (Platform.OS === 'ios' && timer.activityId) {
             try {
                 await liveActivityService.pauseTimer();
-                if (__DEV__) console.log('✅ Sleep Live Activity paused');
             } catch (error) {
                 if (__DEV__) console.warn('⚠️ Error pausing Sleep Live Activity:', error);
             }
         }
-    }, [isRunning, isPaused]);
+    }, [activeChildId, timers, updateChildState]);
 
     const resume = useCallback(async () => {
-        if (!isRunning || !isPaused) return;
-        
-        setIsPaused(false);
-        
+        if (!activeChildId) return;
+        const timer = timers[activeChildId];
+        if (!timer?.isRunning || !timer?.isPaused) return;
+
+        updateChildState(activeChildId, { isPaused: false });
+
         // Resume Live Activity
-        if (Platform.OS === 'ios' && activityIdRef.current) {
+        if (Platform.OS === 'ios' && timer.activityId) {
             try {
                 await liveActivityService.resumeTimer();
-                if (__DEV__) console.log('✅ Sleep Live Activity resumed');
             } catch (error) {
                 if (__DEV__) console.warn('⚠️ Error resuming Sleep Live Activity:', error);
             }
         }
-    }, [isRunning, isPaused]);
+    }, [activeChildId, timers, updateChildState]);
+
+    // Update Live Activity when timer changes
+    useEffect(() => {
+        if (Platform.OS === 'ios' && currentState.isRunning && currentState.activityId) {
+            liveActivityService.updateSleepTimer(currentState.elapsedSeconds).catch(() => {});
+        }
+    }, [currentState.elapsedSeconds, currentState.isRunning, currentState.activityId]);
 
     const reset = useCallback(() => {
-        setIsRunning(false);
-        setIsPaused(false);
-        setElapsedSeconds(0);
-        setStartTime(null);
-    }, []);
+        if (!activeChildId) return;
+        updateChildState(activeChildId, INITIAL_STATE);
+    }, [activeChildId, updateChildState]);
 
     const formatTime = useCallback((seconds: number) => {
         const hrs = Math.floor(seconds / 3600);
@@ -153,10 +207,7 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
     return (
         <SleepTimerContext.Provider
             value={{
-                isRunning,
-                isPaused,
-                elapsedSeconds,
-                startTime,
+                ...currentState,
                 start,
                 stop,
                 pause,

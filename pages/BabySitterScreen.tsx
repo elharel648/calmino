@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronRight,
-    User, Award, UserPlus, MapPin, Calendar
+    User, Award, UserPlus, MapPin, Calendar, Plus, Minus
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -45,6 +45,7 @@ const BabySitterScreen = ({ navigation }: any) => {
     const [userMode, setUserMode] = useState<'parent' | 'sitter'>('parent');
     const [refreshing, setRefreshing] = useState(false);
     const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance'>('rating');
+    const [maxDistance, setMaxDistance] = useState<number | null>(null); // Radius filter
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
     const [checkingStatus, setCheckingStatus] = useState(false);
     const [filterCity, setFilterCity] = useState<string>(''); // Manual city filter
@@ -68,7 +69,7 @@ const BabySitterScreen = ({ navigation }: any) => {
             const userDoc = await getDoc(doc(db, 'users', userId));
             if (userDoc.exists()) {
                 const data = userDoc.data();
-                
+
                 // If user is a sitter, prioritize sitter photo (photoUrl)
                 // Otherwise use regular user photo
                 if (data.isSitter === true && data.photoUrl) {
@@ -131,19 +132,19 @@ const BabySitterScreen = ({ navigation }: any) => {
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distance = R * c;
-        
+
         // Validate result
         if (isNaN(distance) || !isFinite(distance)) {
             return 999;
         }
-        
+
         return Math.round(distance * 10) / 10; // Round to 1 decimal
     }, []);
 
     // Fetch user's location on mount
     useEffect(() => {
         let isMounted = true;
-        
+
         const fetchUserLocation = async () => {
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
@@ -154,11 +155,10 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                 const location = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.Balanced,
-                    timeout: 10000, // 10 second timeout
                 });
 
                 // Validate coordinates
-                if (!location?.coords || 
+                if (!location?.coords ||
                     typeof location.coords.latitude !== 'number' ||
                     typeof location.coords.longitude !== 'number' ||
                     isNaN(location.coords.latitude) ||
@@ -206,7 +206,7 @@ const BabySitterScreen = ({ navigation }: any) => {
         };
 
         fetchUserLocation();
-        
+
         return () => {
             isMounted = false;
         };
@@ -318,17 +318,17 @@ const BabySitterScreen = ({ navigation }: any) => {
     // Handle city input change with autocomplete (debounced for performance)
     const handleCityInputChange = useCallback((text: string) => {
         setFilterCity(text);
-        
+
         // Clear previous timeout
         if (autocompleteTimeoutRef.current) {
             clearTimeout(autocompleteTimeoutRef.current);
         }
-        
+
         if (text.length > 0) {
             // Debounce autocomplete for better performance
             autocompleteTimeoutRef.current = setTimeout(() => {
                 // Filter cities that start with the input
-                const filtered = ISRAELI_CITIES.filter(city => 
+                const filtered = ISRAELI_CITIES.filter(city =>
                     city.toLowerCase().startsWith(text.toLowerCase().trim())
                 );
                 setCitySuggestions(filtered.slice(0, 5)); // Show max 5 suggestions
@@ -362,29 +362,39 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Filter: Show all sitters by default, or filter by manually selected city (memoized)
     const sittersToShow = useMemo(() => {
-        // Only filter if user manually selected a city
+        let filtered = processedSitters;
+
+        // 1. Filter by manual city selection
         if (activeCity && activeCity.length > 0) {
             const searchCity = activeCity.toLowerCase().trim();
-            if (searchCity.length === 0) return processedSitters;
-            
-            const citySitters = processedSitters.filter(s => {
-                if (!s.city || typeof s.city !== 'string') return false;
-                const sitterCity = s.city.toLowerCase().trim();
-                if (sitterCity.length === 0) return false;
-                // Exact match or starts with (for better matching)
-                return sitterCity === searchCity || sitterCity.startsWith(searchCity) || sitterCity.includes(searchCity);
-            });
-            // If no sitters in selected city, show all (don't hide results)
-            return citySitters.length > 0 ? citySitters : processedSitters;
+            if (searchCity.length > 0) {
+                filtered = filtered.filter(s => {
+                    if (!s.city || typeof s.city !== 'string') return false;
+                    const sitterCity = s.city.toLowerCase().trim();
+                    if (sitterCity.length === 0) return false;
+                    return sitterCity === searchCity || sitterCity.startsWith(searchCity) || sitterCity.includes(searchCity);
+                });
+            }
         }
-        // Default: show all sitters
-        return processedSitters;
-    }, [processedSitters, activeCity]);
+
+        // 2. Filter by Radius (Max Distance)
+        if (maxDistance !== null && userLocation) {
+            filtered = filtered.filter(s => {
+                // If sitter has valid distance calculated
+                if (typeof s.distance === 'number' && !isNaN(s.distance)) {
+                    return s.distance <= maxDistance;
+                }
+                return false; // Exclude if distance unknown
+            });
+        }
+
+        return filtered;
+    }, [processedSitters, activeCity, maxDistance, userLocation]);
 
     // Sort sitters intelligently: prioritize nearby sitters, then by selected sort (memoized)
     const sortedSitters = useMemo(() => {
         const sitters = [...sittersToShow];
-        
+
         // If user has location and no manual city filter, prioritize nearby sitters
         if (userLocation && !activeCity && sortBy === 'rating') {
             // Split into nearby (within 50km) and far
@@ -396,7 +406,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 const dist = typeof s.distance === 'number' && !isNaN(s.distance) ? s.distance : 999;
                 return dist > 50;
             });
-            
+
             // Sort each group by rating (with validation)
             nearby.sort((a, b) => {
                 const ratingA = typeof a.rating === 'number' && !isNaN(a.rating) ? a.rating : 0;
@@ -408,11 +418,11 @@ const BabySitterScreen = ({ navigation }: any) => {
                 const ratingB = typeof b.rating === 'number' && !isNaN(b.rating) ? b.rating : 0;
                 return ratingB - ratingA;
             });
-            
+
             // Return nearby first, then far
             return [...nearby, ...far];
         }
-        
+
         // Otherwise, use the selected sort method
         return sitters.sort((a, b) => {
             switch (sortBy) {
@@ -439,11 +449,11 @@ const BabySitterScreen = ({ navigation }: any) => {
     // Handle sitter press
     const handleSitterPress = useCallback((sitter: Sitter) => {
         if (!sitter || !sitter.id) return; // Safety check
-        
+
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        
+
         // Validate and sanitize data before navigation
         const rating = typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating >= 0
             ? Math.max(0, Math.min(5, sitter.rating))
@@ -457,7 +467,7 @@ const BabySitterScreen = ({ navigation }: any) => {
         const distance = typeof sitter.distance === 'number' && !isNaN(sitter.distance) && sitter.distance >= 0
             ? sitter.distance
             : 0;
-        
+
         // Map Sitter type to SitterData format expected by SitterProfileScreen
         const sitterData = {
             id: sitter.id,
@@ -472,7 +482,7 @@ const BabySitterScreen = ({ navigation }: any) => {
             bio: (sitter.bio && typeof sitter.bio === 'string') ? sitter.bio : '',
             reviewsList: [], // TODO: Fetch reviews from Firebase if needed
         };
-        
+
         try {
             navigation.navigate('SitterProfile', { sitterData });
         } catch (error) {
@@ -602,34 +612,92 @@ const BabySitterScreen = ({ navigation }: any) => {
         );
     };
 
+    // Radius Filter Component
+    const RadiusFilter = () => {
+        // Only show if we have user location
+        if (!userLocation) return null;
+
+        const radii = [1, 3, 5, 10, 20, 50];
+
+        return (
+            <View style={styles.radiusRow}>
+                <Text style={[styles.filterLabel, { color: theme.textSecondary }]}>{t('babysitter.distanceFilter')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.radiusScroll}>
+                    {/* "All" option */}
+                    <TouchableOpacity
+                        style={[
+                            styles.radiusPill,
+                            {
+                                backgroundColor: maxDistance === null ? theme.primary : theme.card,
+                                borderColor: maxDistance === null ? theme.primary : theme.border,
+                            }
+                        ]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setMaxDistance(null);
+                        }}
+                    >
+                        <Text style={[styles.radiusPillText, { color: maxDistance === null ? theme.card : theme.textPrimary }]}>
+                            {t('common.all')}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {radii.map((radius) => (
+                        <TouchableOpacity
+                            key={radius}
+                            style={[
+                                styles.radiusPill,
+                                {
+                                    backgroundColor: maxDistance === radius ? theme.primary : theme.card,
+                                    borderColor: maxDistance === radius ? theme.primary : theme.border,
+                                }
+                            ]}
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setMaxDistance(radius);
+                            }}
+                        >
+                            <Text style={[styles.radiusPillText, { color: maxDistance === radius ? theme.card : theme.textPrimary }]}>
+                                {radius} {t('units.km')}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+        );
+    };
+
     // Sort Pills
     const SortPills = () => (
-        <View style={styles.sortRow}>
-            {(['rating', 'price', 'distance'] as const).map((sort) => (
-                <TouchableOpacity
-                    key={sort}
-                    style={[
-                        styles.sortPill,
-                        {
-                            backgroundColor: sortBy === sort ? theme.textPrimary : 'transparent',
-                            borderColor: theme.border,
-                        }
-                    ]}
-                    onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setSortBy(sort);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t('common.sortBy')} ${sort === 'rating' ? t('babysitter.sortByRating') : sort === 'price' ? t('babysitter.sortByPrice') : t('babysitter.sortByDistance')}`}
-                    accessibilityState={{ selected: sortBy === sort }}
-                >
-                    <Text style={[styles.sortPillText, { color: sortBy === sort ? theme.card : theme.textSecondary }]}>
-                        {sort === 'rating' ? t('babysitter.sortByRating') :
-                            sort === 'price' ? t('babysitter.sortByPrice') :
-                                t('babysitter.sortByDistance')}
-                    </Text>
-                </TouchableOpacity>
-            ))}
+        <View style={styles.filtersContainer}>
+            <RadiusFilter />
+            <View style={styles.sortRow}>
+                {(['rating', 'price', 'distance'] as const).map((sort) => (
+                    <TouchableOpacity
+                        key={sort}
+                        style={[
+                            styles.sortPill,
+                            {
+                                backgroundColor: sortBy === sort ? theme.textPrimary : 'transparent',
+                                borderColor: theme.border,
+                            }
+                        ]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setSortBy(sort);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${t('common.sortBy')} ${sort === 'rating' ? t('babysitter.sortByRating') : sort === 'price' ? t('babysitter.sortByPrice') : t('babysitter.sortByDistance')}`}
+                        accessibilityState={{ selected: sortBy === sort }}
+                    >
+                        <Text style={[styles.sortPillText, { color: sortBy === sort ? theme.card : theme.textSecondary }]}>
+                            {sort === 'rating' ? t('babysitter.sortByRating') :
+                                sort === 'price' ? t('babysitter.sortByPrice') :
+                                    t('babysitter.sortByDistance')}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
         </View>
     );
 
@@ -760,7 +828,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                             <View style={[styles.locationIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}>
                                 <Search size={15} color={theme.primary} strokeWidth={2} />
                             </View>
-                            
+
                             {/* Input Field - Center */}
                             <TextInput
                                 style={[styles.locationInput, { color: theme.textPrimary }]}
@@ -768,7 +836,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 onChangeText={handleCityInputChange}
                                 onFocus={() => {
                                     if (filterCity.length > 0) {
-                                        const filtered = ISRAELI_CITIES.filter(city => 
+                                        const filtered = ISRAELI_CITIES.filter(city =>
                                             city.toLowerCase().startsWith(filterCity.toLowerCase())
                                         );
                                         setCitySuggestions(filtered.slice(0, 5));
@@ -795,7 +863,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 accessibilityLabel="חפש לפי עיר"
                                 accessibilityHint="הקלד שם עיר כדי למצוא ביביסטרים באזור"
                             />
-                            
+
                             {/* Right Side - Clear or Location Icon */}
                             {filterCity.length > 0 ? (
                                 <TouchableOpacity
@@ -818,10 +886,10 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 </View>
                             )}
                         </View>
-                        
+
                         {/* City Autocomplete Suggestions */}
                         {showCitySuggestions && citySuggestions.length > 0 && (
-                            <View style={[styles.citySuggestionsContainer, { 
+                            <View style={[styles.citySuggestionsContainer, {
                                 backgroundColor: isDarkMode ? theme.card : '#fff',
                                 borderColor: theme.border,
                                 shadowColor: '#000',
@@ -831,7 +899,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                         key={city}
                                         style={[
                                             styles.citySuggestionItem,
-                                            { 
+                                            {
                                                 borderBottomColor: theme.border,
                                                 borderBottomWidth: index < citySuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
                                             }
@@ -1300,6 +1368,41 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         fontWeight: '500',
+    },
+
+    // Radius Filter Styles
+    filtersContainer: {
+        paddingBottom: 10,
+    },
+    radiusRow: {
+        marginBottom: 14,
+    },
+    filterLabel: {
+        fontSize: 13,
+        fontWeight: '500',
+        marginBottom: 8,
+        paddingHorizontal: 20,
+        textAlign: 'right',
+    },
+    radiusScroll: {
+        paddingHorizontal: 20,
+        gap: 8,
+        flexDirection: 'row-reverse', // RTL
+        paddingBottom: 4,
+    },
+    radiusPill: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        minWidth: 64,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...SHADOWS.subtle,
+    },
+    radiusPillText: {
+        fontSize: 13,
+        fontWeight: '600',
     },
 });
 

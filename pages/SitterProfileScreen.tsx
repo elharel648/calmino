@@ -315,9 +315,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 </View>
 
                 {/* Stats Row - Premium Design */}
-                <View style={[styles.trustRow, { 
+                <View style={[styles.trustRow, {
                     backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
-                    borderBottomColor: theme.border 
+                    borderBottomColor: theme.border
                 }]}>
                     {Platform.OS === 'ios' && (
                         <BlurView
@@ -327,7 +327,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         />
                     )}
                     <LinearGradient
-                        colors={isDarkMode 
+                        colors={isDarkMode
                             ? [theme.card + 'CC', theme.card + '99']
                             : ['#FFFFFF', '#FAFAFA']
                         }
@@ -363,9 +363,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     <View style={styles.reviewsHeader}>
                         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>מה ההורים אומרים</Text>
                         {reviewStats && (
-                            <View style={[styles.reviewStatsContainer, { 
+                            <View style={[styles.reviewStatsContainer, {
                                 backgroundColor: isDarkMode ? theme.card : '#F9FAFB',
-                                borderColor: theme.border 
+                                borderColor: theme.border
                             }]}>
                                 {Platform.OS === 'ios' && (
                                     <BlurView
@@ -375,7 +375,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     />
                                 )}
                                 <LinearGradient
-                                    colors={isDarkMode 
+                                    colors={isDarkMode
                                         ? [theme.card + 'CC', theme.card + '99']
                                         : ['#FFFFFF', '#F9FAFB']
                                     }
@@ -408,9 +408,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
                     {/* Rating Distribution - Premium Design */}
                     {reviewStats && reviewStats.total > 0 && (
-                        <View style={[styles.ratingDistribution, { 
+                        <View style={[styles.ratingDistribution, {
                             backgroundColor: isDarkMode ? theme.card : '#F9FAFB',
-                            borderColor: theme.border 
+                            borderColor: theme.border
                         }]}>
                             {Platform.OS === 'ios' && (
                                 <BlurView
@@ -420,7 +420,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 />
                             )}
                             <LinearGradient
-                                colors={isDarkMode 
+                                colors={isDarkMode
                                     ? [theme.card + 'CC', theme.card + '99']
                                     : ['#FFFFFF', '#F9FAFB']
                                 }
@@ -498,7 +498,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 ))}
                             </ScrollView>
                             <TouchableOpacity
-                                style={[styles.sortButton, { 
+                                style={[styles.sortButton, {
                                     backgroundColor: isDarkMode ? theme.card : '#EEF2FF',
                                     borderColor: isDarkMode ? theme.border : '#C7D2FE'
                                 }]}
@@ -523,9 +523,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         </View>
                     ) : filteredAndSortedReviews.length > 0 ? (
                         filteredAndSortedReviews.map((review) => (
-                            <View key={review.id} style={[styles.reviewCard, { 
+                            <View key={review.id} style={[styles.reviewCard, {
                                 backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
-                                borderColor: theme.border 
+                                borderColor: theme.border
                             }]}>
                                 {Platform.OS === 'ios' && (
                                     <BlurView
@@ -535,7 +535,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     />
                                 )}
                                 <LinearGradient
-                                    colors={isDarkMode 
+                                    colors={isDarkMode
                                         ? [theme.card + 'CC', theme.card + '99']
                                         : ['#FFFFFF', '#FAFAFA']
                                     }
@@ -543,7 +543,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     end={{ x: 1, y: 1 }}
                                     style={StyleSheet.absoluteFill}
                                 />
-                                
+
                                 <View style={[styles.reviewHeader, { zIndex: 1 }]}>
                                     <View style={styles.reviewHeaderLeft}>
                                         <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.parentName || 'הורה'}</Text>
@@ -665,110 +665,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     </View>
                                 )}
 
-                                {/* Review Actions - Premium Design */}
-                                <View style={[styles.reviewActions, { 
-                                    borderTopColor: theme.border,
-                                    zIndex: 1 
-                                }]}>
-                                    <TouchableOpacity
-                                        style={styles.helpfulButton}
-                                        onPress={() => handleMarkHelpful(review.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <ThumbsUp
-                                            size={16}
-                                            color={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : theme.textSecondary}
-                                            fill={currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : "none"}
-                                            strokeWidth={2}
-                                        />
-                                        <Text style={[
-                                            styles.helpfulText,
-                                            { color: currentUserId && review.helpfulBy?.includes(currentUserId) ? "#10B981" : theme.textSecondary },
-                                            currentUserId && review.helpfulBy?.includes(currentUserId) && styles.helpfulTextActive
-                                        ]}>
-                                            מועיל
-                                        </Text>
-                                        {review.helpfulCount != null && review.helpfulCount > 0 ? (
-                                            <Text style={[styles.helpfulCount, { color: theme.textSecondary }]}>({review.helpfulCount})</Text>
-                                        ) : null}
-                                    </TouchableOpacity>
-                                </View>
+                                {/* Review Actions Removed as per user request to avoid "gossip" */}
 
-                                {/* Sitter Response - Premium Design */}
-                                {review.sitterResponse && (
-                                    <View style={[styles.sitterResponse, { 
-                                        backgroundColor: isDarkMode ? theme.success + '20' : '#F0FDF4',
-                                        borderRightColor: theme.success,
-                                        zIndex: 1 
-                                    }]}>
-                                        {Platform.OS === 'ios' && (
-                                            <BlurView
-                                                intensity={10}
-                                                tint={isDarkMode ? 'dark' : 'light'}
-                                                style={StyleSheet.absoluteFill}
-                                            />
-                                        )}
-                                        <LinearGradient
-                                            colors={isDarkMode 
-                                                ? [theme.success + '30', theme.success + '15']
-                                                : ['#F0FDF4', '#ECFDF5']
-                                            }
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 1 }}
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                        <View style={styles.sitterResponseHeader}>
-                                            <View style={styles.sitterResponseTitleContainer}>
-                                                <CheckCircle size={14} color={theme.success} strokeWidth={2.5} />
-                                                <Text style={[styles.sitterResponseTitle, { color: theme.success }]}>תגובת הסיטר:</Text>
-                                            </View>
-                                        </View>
-                                        <Text style={[styles.sitterResponseText, { color: theme.textPrimary }]}>{review.sitterResponse.text}</Text>
-                                    </View>
-                                )}
+                                {/* Sitter Response Removed as per user request */}
 
-                                {/* Add Response (only for sitter) */}
-                                {isCurrentUserSitter && !review.sitterResponse && (
-                                    <View style={styles.addResponseSection}>
-                                        {respondingToReview === review.id ? (
-                                            <View>
-                                                <TextInput
-                                                    style={styles.responseInput}
-                                                    placeholder="הגב על הביקורת..."
-                                                    value={responseText}
-                                                    onChangeText={setResponseText}
-                                                    multiline
-                                                    textAlign="right"
-                                                />
-                                                <View style={styles.responseActions}>
-                                                    <TouchableOpacity
-                                                        style={styles.cancelResponseButton}
-                                                        onPress={() => {
-                                                            setRespondingToReview(null);
-                                                            setResponseText('');
-                                                        }}
-                                                    >
-                                                        <Text style={styles.cancelResponseText}>ביטול</Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity
-                                                        style={styles.submitResponseButton}
-                                                        onPress={() => handleSubmitResponse(review.id)}
-                                                    >
-                                                        <Text style={styles.submitResponseText}>שלח</Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-                                        ) : (
-                                            <TouchableOpacity
-                                                style={styles.addResponseButton}
-                                                onPress={() => setRespondingToReview(review.id)}
-                                            >
-                                                <MessageSquare size={14} color="#6366F1" />
-                                                <Text style={styles.addResponseText}>הגב על הביקורת</Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                )}
+                                {/* Add Response Removed as per user request to disable replies */}
                             </View>
                         ))
                     ) : (

@@ -1,5 +1,6 @@
 import React, { memo, useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert, ScrollView, Modal, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert, ScrollView, Modal, Pressable, Animated as RNAnimated } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Camera, Cloud, Plus, X, Link2, UserPlus, Moon, Utensils, Baby as BabyIcon, Pill, Bell, Award, Heart, TrendingUp } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -71,10 +72,10 @@ const HeaderSection = memo<HeaderSectionProps>(({
     const [showAddModal, setShowAddModal] = useState(false);
     const { weather } = useWeather();
     const [unreadCount, setUnreadCount] = useState(0);
-    const bellScale = useRef(new Animated.Value(1)).current;
-    const pulseAnim = useRef(new Animated.Value(1)).current;
+    const bellScale = useRef(new RNAnimated.Value(1)).current;
+    const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
-    // Calculate age - Better format
+    // Calculate age - Better format with "בן" or "בת"
     const ageText = useMemo(() => {
         if (!profile.birthDate) return '';
         let birth: Date;
@@ -89,31 +90,38 @@ const HeaderSection = memo<HeaderSectionProps>(({
         const diffMs = now.getTime() - birth.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+        // Determine gender prefix
+        const genderPrefix = profile.gender === 'girl' ? 'בת' : profile.gender === 'boy' ? 'בן' : '';
+
         // Special cases
         if (diffDays === 0) {
             return ''; // Don't show anything for day 0
         }
         if (diffDays === 1) {
-            return 'יום אחד';
+            return genderPrefix ? `${genderPrefix} יום אחד` : 'יום אחד';
         }
         if (diffDays < 7) {
-            return `${diffDays} ימים`;
+            return genderPrefix ? `${genderPrefix} ${diffDays} ימים` : `${diffDays} ימים`;
         }
         if (diffDays < 30) {
             const weeks = Math.floor(diffDays / 7);
-            return weeks === 1 ? 'שבוע' : `${weeks} שבועות`;
+            const weekText = weeks === 1 ? 'שבוע' : `${weeks} שבועות`;
+            return genderPrefix ? `${genderPrefix} ${weekText}` : weekText;
         }
         const months = Math.floor(diffDays / 30);
         if (months < 12) {
-            return months === 1 ? 'חודש' : `${months} חודשים`;
+            const monthText = months === 1 ? 'חודש' : `${months} חודשים`;
+            return genderPrefix ? `${genderPrefix} ${monthText}` : monthText;
         }
         const years = Math.floor(months / 12);
         const remainingMonths = months % 12;
         if (remainingMonths > 0) {
-            return `${years} ${years === 1 ? 'שנה' : 'שנים'} ו-${remainingMonths} חודשים`;
+            const yearText = `${years} ${years === 1 ? 'שנה' : 'שנים'} ו-${remainingMonths} חודשים`;
+            return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
         }
-        return `${years} ${years === 1 ? 'שנה' : 'שנים'}`;
-    }, [profile.birthDate]);
+        const yearText = `${years} ${years === 1 ? 'שנה' : 'שנים'}`;
+        return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
+    }, [profile.birthDate, profile.gender]);
 
     // Photo upload handler
     const handlePhotoPress = async () => {
@@ -254,7 +262,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 cards.push({
                     type: 'feed_reminder',
                     icon: Utensils,
-                    color: isOverdue ? theme.danger : theme.warning,
+                    color: '#F59E0B', // Same orange as Quick Actions
                     bgColor: isOverdue ? '#FEE2E2' : '#FEF3C7',
                     title: isOverdue ? t('notifications.feedReminder') : t('notifications.lastFeed'),
                     subtitle: feedTime.hours > 0
@@ -267,7 +275,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 cards.push({
                     type: 'feed_reminder',
                     icon: Utensils,
-                    color: theme.warning,
+                    color: '#F59E0B', // Same orange as Quick Actions
                     bgColor: '#FEF3C7',
                     title: t('notifications.firstFeed'),
                     subtitle: t('notifications.notYetToday'),
@@ -276,7 +284,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
             }
         }
 
-        // Return top priority card (supplements first, then feed)
+        // Return all cards sorted by priority
         const sortedCards = cards.sort((a, b) => {
             // Urgent cards first
             if (a.isUrgent && !b.isUrgent) return -1;
@@ -284,16 +292,67 @@ const HeaderSection = memo<HeaderSectionProps>(({
             // Then by priority
             return a.priority - b.priority;
         });
-        return sortedCards.slice(0, 1);
+        return sortedCards;
     }, [lastFeedTime, meds, dailyStats]);
 
     // Toast notification - show if there are any cards
     const hasNotifications = smartCards.length > 0;
-    const currentNotification = smartCards[0]; // Show top priority card
+    
+    // Rotate between notifications every 4 seconds
+    const [currentNotificationIndex, setCurrentNotificationIndex] = useState(0);
+    const notificationSlideAnim = useRef(new RNAnimated.Value(0)).current;
+    const notificationOpacity = useRef(new RNAnimated.Value(1)).current;
+    
+    useEffect(() => {
+        if (smartCards.length <= 1) {
+            setCurrentNotificationIndex(0);
+            notificationSlideAnim.setValue(0);
+            notificationOpacity.setValue(1);
+            return;
+        }
+        
+        const interval = setInterval(() => {
+            // Slide out down and fade out
+            RNAnimated.parallel([
+                RNAnimated.timing(notificationSlideAnim, {
+                    toValue: 100,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+                RNAnimated.timing(notificationOpacity, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => {
+                // Change notification
+                setCurrentNotificationIndex((prev) => (prev + 1) % smartCards.length);
+                // Reset position (start from bottom)
+                notificationSlideAnim.setValue(-50);
+                // Slide in from bottom and fade in (slow animation)
+                RNAnimated.parallel([
+                    RNAnimated.timing(notificationSlideAnim, {
+                        toValue: 0,
+                        duration: 600,
+                        useNativeDriver: true,
+                    }),
+                    RNAnimated.timing(notificationOpacity, {
+                        toValue: 1,
+                        duration: 600,
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+            });
+        }, 4000); // Change every 4 seconds
+        
+        return () => clearInterval(interval);
+    }, [smartCards.length, notificationSlideAnim, notificationOpacity]);
+    
+    const currentNotification = smartCards[currentNotificationIndex] || smartCards[0];
 
     // Animations for toast slide-up effect
-    const toastTranslateY = useRef(new Animated.Value(hasInitialAnimationRun ? 0 : 30)).current;
-    const toastOpacity = useRef(new Animated.Value(hasInitialAnimationRun ? 1 : 0)).current;
+    const toastTranslateY = useRef(new RNAnimated.Value(hasInitialAnimationRun ? 0 : 30)).current;
+    const toastOpacity = useRef(new RNAnimated.Value(hasInitialAnimationRun ? 1 : 0)).current;
 
     // Smooth slide-up animation for toast notifications
     useEffect(() => {
@@ -306,13 +365,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
         // Only run initial entry animation once (not on every tab switch)
         if (!hasInitialAnimationRun) {
             hasInitialAnimationRun = true;
-            Animated.parallel([
-                Animated.timing(toastTranslateY, {
+            RNAnimated.parallel([
+                RNAnimated.timing(toastTranslateY, {
                     toValue: 0,
                     duration: 350,
                     useNativeDriver: true,
                 }),
-                Animated.timing(toastOpacity, {
+                RNAnimated.timing(toastOpacity, {
                     toValue: 1,
                     duration: 300,
                     useNativeDriver: true,
@@ -320,13 +379,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
             ]).start();
         } else if (hasNotifications) {
             // Show if notification appears
-            Animated.parallel([
-                Animated.timing(toastTranslateY, {
+            RNAnimated.parallel([
+                RNAnimated.timing(toastTranslateY, {
                     toValue: 0,
                     duration: 350,
                     useNativeDriver: true,
                 }),
-                Animated.timing(toastOpacity, {
+                RNAnimated.timing(toastOpacity, {
                     toValue: 1,
                     duration: 300,
                     useNativeDriver: true,
@@ -371,14 +430,14 @@ const HeaderSection = memo<HeaderSectionProps>(({
     // Pulse animation when there are unread notifications
     useEffect(() => {
         if (unreadCount > 0) {
-            const pulse = Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnim, {
+            const pulse = RNAnimated.loop(
+                RNAnimated.sequence([
+                    RNAnimated.timing(pulseAnim, {
                         toValue: 1.15,
                         duration: 1000,
                         useNativeDriver: true,
                     }),
-                    Animated.timing(pulseAnim, {
+                    RNAnimated.timing(pulseAnim, {
                         toValue: 1,
                         duration: 1000,
                         useNativeDriver: true,
@@ -398,8 +457,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
             <View style={styles.topRow}>
                 <View style={styles.greetingSection}>
                     <Text style={[styles.greetingLarge, { color: theme.textPrimary }]}>
-                        {greeting}, {profile.name}{ageText ? ` · ${ageText}` : ''}
+                        {greeting}, {profile.name}
                     </Text>
+                    {ageText ? (
+                        <Text style={[styles.ageText, { color: theme.textSecondary }]}>
+                            {ageText}
+                        </Text>
+                    ) : null}
                 </View>
 
                 {/* Weather + Notification Group */}
@@ -413,13 +477,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             }
                             // Animate bell press
-                            Animated.sequence([
-                                Animated.timing(bellScale, {
+                            RNAnimated.sequence([
+                                RNAnimated.timing(bellScale, {
                                     toValue: 0.9,
                                     duration: 100,
                                     useNativeDriver: true,
                                 }),
-                                Animated.timing(bellScale, {
+                                RNAnimated.timing(bellScale, {
                                     toValue: 1,
                                     duration: 100,
                                     useNativeDriver: true,
@@ -428,7 +492,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             navigation?.navigate('Notifications');
                         }}
                     >
-                        <Animated.View style={{ transform: [{ scale: bellScale }] }}>
+                        <RNAnimated.View style={{ transform: [{ scale: bellScale }] }}>
                             <View style={[
                                 styles.bellContainer, 
                                 { backgroundColor: theme.inputBackground },
@@ -441,10 +505,10 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                     fill={unreadCount > 0 ? (isDarkMode ? 'rgba(59,130,246,0.2)' : '#3B82F620') : "none"}
                                 />
                             </View>
-                        </Animated.View>
+                        </RNAnimated.View>
                         {/* Badge with count */}
                         {unreadCount > 0 && (
-                            <Animated.View 
+                            <RNAnimated.View 
                                 style={[
                                     styles.notificationBadge,
                                     { 
@@ -458,7 +522,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                 <Text style={[styles.badgeText, { color: theme.card }]}>
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </Text>
-                            </Animated.View>
+                            </RNAnimated.View>
                         )}
                     </TouchableOpacity>
 
@@ -542,21 +606,34 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 </TouchableOpacity>
             )}
 
-            {/* Toast-Style Notification - Show top priority card */}
+            {/* Toast-Style Notification - Rotating between cards */}
             {hasNotifications && currentNotification && (
-                <Animated.View
+                <RNAnimated.View
                     style={[
                         styles.toastNotification,
                         {
-                            opacity: toastOpacity,
-                            transform: [{ translateY: toastTranslateY }],
+                            opacity: RNAnimated.multiply(toastOpacity, notificationOpacity),
+                            transform: [
+                                { translateY: RNAnimated.add(toastTranslateY, notificationSlideAnim) }
+                            ],
                             backgroundColor: theme.card,
                             borderColor: theme.border,
                         }
                     ]}
                 >
                     {/* Icon */}
-                    <View style={[styles.toastIcon, { backgroundColor: currentNotification.bgColor }]}>
+                    <View style={[styles.toastIcon, { backgroundColor: currentNotification.bgColor, borderColor: theme.border || '#E5E7EB', borderWidth: 1.5 }]}>
+                        {Platform.OS === 'ios' && (
+                            <BlurView
+                                intensity={60}
+                                tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
+                                style={StyleSheet.absoluteFill}
+                            />
+                        )}
+                        <View style={[
+                            styles.toastIconGlass,
+                            { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)' }
+                        ]} />
                         <NotificationIcon size={16} color={currentNotification.color} strokeWidth={2} />
                     </View>
 
@@ -571,7 +648,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     <Text style={[styles.toastTime, { color: theme.textSecondary }]} numberOfLines={1}>
                         {currentNotification.subtitle}
                     </Text>
-                </Animated.View>
+                </RNAnimated.View>
             )}
 
 
@@ -594,7 +671,25 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             onPress={handleAddNewChild}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.2)' : theme.primaryLight }]}>
+                            <View style={[
+                                styles.modalOptionIcon, 
+                                { 
+                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+                                    borderColor: theme.border || '#E5E7EB',
+                                    borderWidth: 1.5
+                                }
+                            ]}>
+                                {Platform.OS === 'ios' && (
+                                    <BlurView
+                                        intensity={60}
+                                        tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                )}
+                                <View style={[
+                                    styles.modalOptionIconGlass,
+                                    { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)' }
+                                ]} />
                                 <UserPlus size={24} color={theme.primary} />
                             </View>
                             <View style={styles.modalOptionText}>
@@ -609,7 +704,25 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             onPress={handleJoinWithCode}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: isDarkMode ? 'rgba(48,209,88,0.2)' : (isDarkMode ? theme.success + '20' : '#D1FAE5') }]}>
+                            <View style={[
+                                styles.modalOptionIcon, 
+                                { 
+                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+                                    borderColor: theme.border || '#E5E7EB',
+                                    borderWidth: 1.5
+                                }
+                            ]}>
+                                {Platform.OS === 'ios' && (
+                                    <BlurView
+                                        intensity={60}
+                                        tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                )}
+                                <View style={[
+                                    styles.modalOptionIconGlass,
+                                    { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)' }
+                                ]} />
                                 <Link2 size={24} color={theme.success} />
                             </View>
                             <View style={styles.modalOptionText}>
@@ -647,6 +760,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         letterSpacing: -0.3,
         marginBottom: 0,
+    },
+    ageText: {
+        fontSize: 14,
+        fontWeight: '400',
+        letterSpacing: -0.2,
+        marginTop: 2,
     },
     greetingSubtitle: {
         fontSize: 15,
@@ -777,6 +896,17 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    toastIconGlass: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 16,
     },
     toastContent: {
         flex: 1,
@@ -869,6 +999,17 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    modalOptionIconGlass: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 14,
     },
     modalOptionText: {
         flex: 1,

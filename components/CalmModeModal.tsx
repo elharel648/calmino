@@ -22,6 +22,12 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  // Track if we're dragging and scroll position
+  const isDragging = useRef(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollOffsetY = useRef(0);
+  const dragStartY = useRef(0);
+
   useEffect(() => {
     if (visible) {
       slideAnim.setValue(SCREEN_HEIGHT);
@@ -69,18 +75,37 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
     }
   }, [visible]);
 
-  // Swipe down to dismiss - Liquid glass animation
+  // Swipe down to dismiss - Exact same as TrackingModal
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: (evt, gestureState) => {
-      return gestureState.dy > 0 || evt.nativeEvent.pageY < 100;
+      const startY = evt.nativeEvent.pageY;
+      dragStartY.current = startY;
+      if (startY < 300) {
+        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+        return true;
+      }
+      return false;
     },
-    onMoveShouldSetPanResponder: (_, gestureState) => {
-      return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      if (isDragging.current) return true;
+      const currentY = evt.nativeEvent.pageY;
+      const isTopArea = currentY < 300;
+      const isDraggingDown = gestureState.dy > 5;
+      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+      const isScrollAtTop = scrollOffsetY.current <= 5;
+
+      if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
+        isDragging.current = true;
+        dragStartY.current = currentY;
+        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        return true;
+      }
+      return false;
     },
     onPanResponderGrant: () => {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
+      isDragging.current = true;
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     },
     onPanResponderMove: (_, gestureState) => {
       if (gestureState.dy > 0) {
@@ -90,11 +115,12 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
       }
     },
     onPanResponderRelease: (_, gestureState) => {
+      isDragging.current = false;
+      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+
       const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
       if (shouldDismiss) {
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Animated.parallel([
           Animated.spring(slideAnim, {
             toValue: SCREEN_HEIGHT,
@@ -128,7 +154,11 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
         ]).start();
       }
     },
-  }), [onClose, slideAnim, backdropAnim]);
+    onPanResponderTerminate: () => {
+      isDragging.current = false;
+      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+    },
+  }), [slideAnim, backdropAnim, onClose]);
 
   const makeCall = async (phoneNumber: string, name: string) => {
     if (Platform.OS !== 'web') {
@@ -164,7 +194,10 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
 
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, { opacity: backdropAnim }]}>
+      <View style={styles.modalWrapper}>
+        <TouchableOpacity activeOpacity={1} onPress={onClose} style={StyleSheet.absoluteFill}>
+          <Animated.View style={[styles.overlay, { opacity: backdropAnim }]} />
+        </TouchableOpacity>
         <Animated.View
           style={[
             styles.container,
@@ -172,10 +205,12 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
               transform: [{ translateY: slideAnim }],
               opacity: fadeAnim,
               backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+              zIndex: 1000,
             }
           ]}
+          {...panResponder.panHandlers}
         >
-          {/* Drag Handle - Only this area handles swipe to dismiss */}
+          {/* Drag Handle */}
           <View style={styles.dragHandle} {...panResponder.panHandlers}>
             <View style={[
               styles.dragHandleBar,
@@ -205,9 +240,14 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
 
           {/* Content */}
           <ScrollView
+            ref={scrollViewRef}
             style={styles.content}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            onScroll={(e) => {
+              scrollOffsetY.current = e.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
           >
             {/* Emergency - Premium Row */}
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
@@ -231,7 +271,12 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
                     <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
                       {contact.name}
                     </Text>
-                    <Text style={[styles.emergencyNumber, { color: contact.color }]}>
+                    <Text 
+                      style={[styles.emergencyNumber, { color: contact.color }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.8}
+                    >
                       {contact.number}
                     </Text>
                   </TouchableOpacity>
@@ -276,22 +321,27 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
             </View>
           </ScrollView>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  modalWrapper: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
+    zIndex: 999,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 998,
   },
   container: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    maxHeight: '95%',
-    minHeight: '75%',
+    maxHeight: '92%',
+    minHeight: '85%',
     // Premium shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
@@ -357,7 +407,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
-    paddingBottom: 50,
+    paddingBottom: 150,
   },
   sectionTitle: {
     fontSize: 13,
@@ -379,6 +429,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     alignItems: 'center',
+    minHeight: 140,
+    justifyContent: 'flex-start',
   },
   emergencyIcon: {
     width: 52,
@@ -397,6 +449,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 4,
+    textAlign: 'center',
   },
 
   // HMO List - Premium

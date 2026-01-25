@@ -202,13 +202,15 @@ export const SwipeableModal: React.FC<SwipeableModalProps> = ({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
+        width: '100%',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
     },
     content: {
+        width: '100%',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        maxHeight: SCREEN_HEIGHT * 0.95,
+        maxHeight: SCREEN_HEIGHT * 0.98,
         minHeight: 200,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
@@ -230,9 +232,11 @@ const styles = StyleSheet.create({
     },
     contentWrapper: {
         flex: 1,
+        width: '100%',
     },
     keyboardView: {
         flex: 1,
+        width: '100%',
     },
 });
 

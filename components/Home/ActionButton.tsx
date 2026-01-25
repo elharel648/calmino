@@ -52,30 +52,6 @@ const ActionButton = memo(({
     const scale = useSharedValue(1);
     const iconScale = useSharedValue(1);
     const pulseScale = useSharedValue(1);
-    const iconRotation = useSharedValue(0);
-    const iconIdleScale = useSharedValue(1);
-
-    // Subtle idle animation for all icons - runs once on mount
-    useEffect(() => {
-        // Gentle rotation wobble
-        iconRotation.value = withRepeat(
-            withSequence(
-                withTiming(4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-                withTiming(-4, { duration: 1800, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
-        // Subtle scale pulse
-        iconIdleScale.value = withRepeat(
-            withSequence(
-                withTiming(1.06, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
-    }, []);
 
     // Pulse animation for active state
     useEffect(() => {
@@ -116,8 +92,7 @@ const ActionButton = memo(({
 
     const iconContainerStyle = useAnimatedStyle(() => ({
         transform: [
-            { rotate: `${iconRotation.value}deg` },
-            { scale: iconScale.value * iconIdleScale.value * (isActive ? pulseScale.value : 1) },
+            { scale: iconScale.value * (isActive ? pulseScale.value : 1) },
         ],
     }));
 
@@ -138,6 +113,7 @@ const ActionButton = memo(({
                     <View style={[
                         styles.iconCircleContainer,
                         isActive && { backgroundColor: config.color },
+                        !isActive && { borderColor: theme.border || '#E5E7EB', borderWidth: 1.5 },
                         config.hasBorder && styles.iconCircleBorder
                     ]}>
                         {!isActive && (

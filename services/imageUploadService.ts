@@ -6,7 +6,15 @@ import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { auth, db, storage } from './firebaseConfig';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { logger } from '../utils/logger';
+// Simple logger fallback if utils/logger doesn't exist
+const logger = {
+    debug: (...args: any[]) => {
+        if (__DEV__) console.log(...args);
+    },
+    error: (...args: any[]) => {
+        console.error(...args);
+    },
+};
 
 /**
  * Compress image before upload
@@ -34,30 +42,19 @@ async function compressImage(uri: string): Promise<string> {
 
 /**
  * Convert URI to Blob for upload
- * React Native requires this conversion to work with Firebase Storage
- * Using XMLHttpRequest for better local file support
+ * React Native requires XMLHttpRequest to convert local file URIs to blobs
  */
 async function uriToBlob(uri: string): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                resolve(xhr.response as Blob);
-            } else {
-                reject(new Error(`Failed to fetch image: ${xhr.status} ${xhr.statusText}`));
-            }
-        };
-
-        xhr.onerror = function () {
-            logger.error('❌ uriToBlob XMLHttpRequest error');
-            reject(new Error('Image conversion failed: Network error'));
-        };
-
-        xhr.responseType = 'blob';
-        xhr.open('GET', uri, true);
-        xhr.send(null);
-    });
+    try {
+        logger.debug('🔄 Converting URI to Blob using fetch:', uri.substring(0, 50));
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        logger.debug('✅ Blob created, size:', blob.size, 'bytes');
+        return blob;
+    } catch (error) {
+        logger.error('❌ uriToBlob failed:', error);
+        throw new Error('Failed to convert image to blob');
+    }
 }
 
 /**
@@ -121,19 +118,26 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 
 /**
  * Fallback: Upload as Base64 (if Storage fails)
+ * This should be used sparingly as it can cause Firestore size issues
  */
 async function uploadImageAsBase64(uri: string): Promise<string> {
-    const compressedUri = await compressImage(uri);
-
+    // Compress more aggressively for base64 fallback
     const manipResult = await ImageManipulator.manipulateAsync(
-        compressedUri,
-        [{ resize: { width: 800 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        uri,
+        [{ resize: { width: 600 } }], // Smaller size for base64
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG } // Lower quality
     );
 
     const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
         encoding: FileSystem.EncodingType.Base64,
     });
+
+    const base64Size = (base64.length * 3) / 4; // Approximate size in bytes
+    logger.debug('📦 Base64 size:', base64Size, 'bytes');
+
+    if (base64Size > 500000) { // 500KB limit for base64
+        throw new Error('Image too large for base64 fallback. Please try again or use a smaller image.');
+    }
 
     return `data:image/jpeg;base64,${base64}`;
 }
@@ -195,5 +199,19 @@ export async function uploadUserPhoto(uri: string): Promise<string> {
     await updateDoc(userRef, { photoUrl: downloadURL });
 
     logger.debug('✅', 'User photo saved');
+    return downloadURL;
+}
+
+/**
+ * Upload album photo (Magic Moments)
+ */
+export async function uploadAlbumPhoto(childId: string, month: number, uri: string): Promise<string> {
+    const userId = auth.currentUser?.uid;
+    if (!userId) throw new Error('Not authenticated');
+
+    const path = `childPhotos/${userId}/${childId}/album_month_${month}_${Date.now()}.jpg`;
+    const downloadURL = await uploadImage(uri, path);
+
+    logger.debug('✅', 'Album photo saved for month:', month);
     return downloadURL;
 }

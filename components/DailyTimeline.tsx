@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, Share } from 'react-native';
-import { Utensils, Moon, Layers, ChevronDown, ChevronUp, X, FileText, Pill, AlertCircle, RefreshCw } from 'lucide-react-native';
+import { Utensils, Moon, Layers, ChevronDown, ChevronUp, X, FileText, Pill, AlertCircle, RefreshCw, Sparkles } from 'lucide-react-native';
 import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,13 +16,16 @@ import { useToast } from '../context/ToastContext';
 
 interface TimelineEvent {
   id: string;
-  type: 'food' | 'sleep' | 'diaper' | 'supplements' | 'custom';
+  type: 'food' | 'sleep' | 'diaper' | 'supplements' | 'custom' | 'teeth';
   timestamp: Date;
   amount?: string;
   note?: string;
   subType?: string;
   reporterName?: string;
   reporterPhotoUrl?: string;
+  toothId?: string;
+  toothLabel?: string;
+  toothType?: string;
   [key: string]: any;
 }
 
@@ -66,6 +69,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       icon: FileText,
       color: '#8B5CF6',
       label: t('actions.custom'),
+    },
+    teeth: {
+      icon: Sparkles,
+      color: '#8B5CF6',
+      label: 'שיניים',
     },
   };
   const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -165,6 +173,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   // Format event details
   const getEventDetails = (event: TimelineEvent) => {
     if (event.type === 'food') {
+      // Show start and end times if available (timerange mode)
+      if (event.startTime && event.endTime) {
+        return `${event.startTime} → ${event.endTime}`;
+      }
       if (event.subType === 'bottle') {
         return event.amount || t('timeline.bottle');
       } else if (event.subType === 'breast') {
@@ -176,8 +188,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       }
       return event.amount || event.note || t('timeline.food');
     } else if (event.type === 'sleep') {
-      // Extract duration from note or duration field
-      if (event.duration) {
+      // Show start and end times if available (timerange mode)
+      if (event.startTime && event.endTime) {
+        return `${event.startTime} → ${event.endTime}`;
+      }
+      // Extract duration from duration field
+      if (event.duration && event.duration > 0) {
         const h = Math.floor(event.duration / 3600);
         const m = Math.floor((event.duration % 3600) / 60);
         if (h > 0) {
@@ -186,8 +202,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         return `${m} דקות`;
       }
       // Try to extract from note
-      if (event.note && event.note.includes('משך שינה:')) {
-        const match = event.note.match(/משך שינה: (\d+:\d+)/);
+      if (event.note && event.note.includes('משך שינה')) {
+        const match = event.note.match(/משך שינה:? (\d+:\d+)/);
         if (match) return match[1];
       }
       return t('timeline.sleep');
@@ -204,18 +220,56 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       return event.note || t('timeline.supplement');
     } else if (event.type === 'custom') {
       return event.note || 'פעולה מותאמת';
+    } else if (event.type === 'teeth') {
+      return event.toothLabel || event.note || 'בקעה שן';
     }
     return '';
   };
 
   const getEventSubtext = (event: TimelineEvent) => {
     if (event.type === 'food') {
-      if (event.subType === 'bottle') return t('timeline.bottle');
-      if (event.subType === 'breast') return event.note ? event.note.substring(0, 30) : '';
+      // For timerange mode: show total duration in subtext
+      if (event.startTime && event.endTime && event.duration) {
+        const h = Math.floor(event.duration / 3600);
+        const m = Math.floor((event.duration % 3600) / 60);
+        let durationText = '';
+        if (h > 0) {
+          durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+        } else {
+          durationText = `${m} דקות`;
+        }
+        // Add amount/note if exists
+        if (event.amount) {
+          return `${durationText} • ${event.amount}`;
+        }
+        if (event.note && event.note.includes(' | ')) {
+          const parts = event.note.split(' | ');
+          return parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+        }
+        return durationText;
+      }
+      if (event.subType === 'bottle') return event.note || t('timeline.bottle');
+      if (event.subType === 'breast') return event.note || '';
       if (event.subType === 'solids') return t('tracking.solidsFood');
       if (event.subType === 'pumping') return event.note || t('timeline.pumping');
     } else if (event.type === 'sleep') {
-      // Extract user note after pipe separator
+      // For timerange mode: show total duration in subtext
+      if (event.startTime && event.endTime && event.duration) {
+        const h = Math.floor(event.duration / 3600);
+        const m = Math.floor((event.duration % 3600) / 60);
+        let durationText = '';
+        if (h > 0) {
+          durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+        } else {
+          durationText = `${m} דקות`;
+        }
+        // Add user note if exists
+        if (event.note && event.note.includes(' | ')) {
+          const parts = event.note.split(' | ');
+          return parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+        }
+        return durationText;
+      }
       // Extract user note after pipe separator
       if (event.note) {
         if (event.note.includes(' | ')) {
@@ -232,6 +286,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       return event.note || '';
     } else if (event.type === 'custom') {
       return event.subType || '';
+    } else if (event.type === 'teeth') {
+      return event.note || '';
     }
     return event.note || '';
   };

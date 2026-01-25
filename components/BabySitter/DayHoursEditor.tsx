@@ -53,14 +53,14 @@ const styles = StyleSheet.create({
         textAlign: 'right',
     },
     hoursRow: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 12,
     },
     hourInput: {
         flex: 1,
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         padding: 12,
         borderRadius: 12,

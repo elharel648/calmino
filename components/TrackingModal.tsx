@@ -8,6 +8,8 @@ import { useSleepTimer } from '../context/SleepTimerContext';
 import { useFoodTimer } from '../context/FoodTimerContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, interpolate } from 'react-native-reanimated';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -19,12 +21,14 @@ interface TrackingModalProps {
   onSave: (data: any) => Promise<void> | void;
 }
 
-// TYPE_CONFIG will be created inside component to use translations
-
 export default function TrackingModal({ visible, type, onClose, onSave }: TrackingModalProps) {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const foodTimerContext = useFoodTimer();
+
+  // Premium animations
+  const glowAnim = useSharedValue(0);
+  const sparkleAnim = useSharedValue(0);
 
   // Get translated TYPE_CONFIG
   const TYPE_CONFIG = {
@@ -32,43 +36,60 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       title: t('tracking.food.title'),
       icon: Utensils,
       accent: '#E5B85C',
+      gradient: ['#F59E0B', '#FBBF24', '#FCD34D'],
     },
     sleep: {
       title: t('tracking.sleep.title'),
       icon: Moon,
       accent: '#6366F1',
+      gradient: ['#6366F1', '#818CF8', '#A5B4FC'],
     },
     diaper: {
       title: t('tracking.diaper.title'),
       icon: Baby,
       accent: '#10B981',
+      gradient: ['#10B981', '#34D399', '#6EE7B7'],
     },
   };
 
   // --- Food States ---
   const [foodType, setFoodType] = useState<'bottle' | 'breast' | 'pumping' | 'solids'>('bottle');
+  const [foodMode, setFoodMode] = useState<'normal' | 'timerange'>('normal'); // normal = current behavior, timerange = start/end time
   const [bottleAmount, setBottleAmount] = useState('');
   const [pumpingAmount, setPumpingAmount] = useState('');
   const [solidsFoodName, setSolidsFoodName] = useState('');
   const [foodNote, setFoodNote] = useState('');
 
-  // Food Time States - using Date objects for picker
-  const [startTime, setStartTime] = useState(() => new Date());
-  const [endTime, setEndTime] = useState(() => new Date());
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  // Food Time States - using Date objects for picker (for timerange mode)
+  const [foodStartTime, setFoodStartTime] = useState(() => new Date());
+  const [foodEndTime, setFoodEndTime] = useState(() => new Date());
+  const [showFoodStartTimePicker, setShowFoodStartTimePicker] = useState(false);
+  const [showFoodEndTimePicker, setShowFoodEndTimePicker] = useState(false);
 
   // Selected Date for logging past/future entries
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // Breastfeeding now uses FoodTimerContext (leftTimer, rightTimer, activeSide derived below)
-
   // --- Sleep States (Manual entry) ---
+  const [sleepMode, setSleepMode] = useState<'timer' | 'duration' | 'timerange'>('timer');
   const [sleepHours, setSleepHours] = useState(0);
   const [sleepMinutes, setSleepMinutes] = useState(30);
   const [sleepNote, setSleepNote] = useState('');
   const sleepContext = useSleepTimer();
+
+  // Sleep Manual Time Range
+  const getInitialTime = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+  const [sleepStartTime, setSleepStartTime] = useState(getInitialTime());
+  const [sleepEndTime, setSleepEndTime] = useState(getInitialTime());
+  const [sleepStartTimeDate, setSleepStartTimeDate] = useState(new Date());
+  const [sleepEndTimeDate, setSleepEndTimeDate] = useState(new Date());
+  const [showSleepStartPicker, setShowSleepStartPicker] = useState(false);
+  const [showSleepEndPicker, setShowSleepEndPicker] = useState(false);
 
   // --- Diaper States ---
   const [subType, setSubType] = useState<string | null>(null);
@@ -87,72 +108,52 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const scrollOffsetY = useRef(0);
   const dragStartY = useRef(0);
 
-  // Swipe down to dismiss - Improved for simulator and ScrollView
+  // Swipe down to dismiss
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: (evt, gestureState) => {
-      // Always allow starting from drag handle area (top 300px)
       const startY = evt.nativeEvent.pageY;
       dragStartY.current = startY;
-      
-      // Check if touch is in the top area - be more lenient
       if (startY < 300) {
-        // Disable scroll when starting drag
         scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-        return true; // Return true to start the gesture
+        return true;
       }
       return false;
     },
     onMoveShouldSetPanResponder: (evt, gestureState) => {
-      // If already dragging, always continue
       if (isDragging.current) return true;
-      
-      // Check if we're in the top area and dragging down
       const currentY = evt.nativeEvent.pageY;
       const isTopArea = currentY < 300;
       const isDraggingDown = gestureState.dy > 5;
       const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
-      
-      // Also check if scroll is at top
       const isScrollAtTop = scrollOffsetY.current <= 5;
-      
+
       if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
         isDragging.current = true;
         dragStartY.current = currentY;
         scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         return true;
       }
       return false;
     },
     onPanResponderGrant: () => {
       isDragging.current = true;
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      // Scroll already disabled in onStartShouldSetPanResponder
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     },
     onPanResponderMove: (_, gestureState) => {
-      // Only allow dragging down (positive dy)
       if (gestureState.dy > 0) {
         slideAnim.setValue(gestureState.dy);
-        // Fade backdrop as we drag
         const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
         backdropAnim.setValue(opacity);
       }
     },
     onPanResponderRelease: (_, gestureState) => {
       isDragging.current = false;
-      // Re-enable scroll
       scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-      
+
       const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
       if (shouldDismiss) {
-        // Dismiss if dragged far enough or fast enough
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         RNAnimated.parallel([
           RNAnimated.spring(slideAnim, {
             toValue: SCREEN_HEIGHT,
@@ -171,7 +172,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           backdropAnim.setValue(0);
         });
       } else {
-        // Snap back with smooth spring
         RNAnimated.parallel([
           RNAnimated.spring(slideAnim, {
             toValue: 0,
@@ -195,39 +195,94 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   useEffect(() => {
     if (visible) {
-      // Reset local state only (not breastfeeding timer which should persist)
       setSubType(null);
       setBottleAmount('');
       setPumpingAmount('');
       setSolidsFoodName('');
       setFoodNote('');
-      // Note: breastfeeding and pumping timers use global context and should NOT be reset here
       setSleepHours(0);
       setSleepMinutes(30);
       setSleepNote('');
       setDiaperNote('');
+      // Reset logic...
+      setSleepMode('timer');
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      setSleepStartTime(timeStr);
+      setSleepEndTime(timeStr);
+      setSleepStartTimeDate(new Date(now));
+      setSleepEndTimeDate(new Date(now));
+      setShowSleepStartPicker(false);
+      setShowSleepEndPicker(false);
+      setSelectedDate(new Date());
+      setFoodMode('normal');
+      const nowForFood = new Date();
+      setFoodStartTime(new Date(nowForFood));
+      setFoodEndTime(new Date(nowForFood));
+      setShowFoodStartTimePicker(false);
+      setShowFoodEndTimePicker(false);
 
-      // Reset animation values before starting animation
       slideAnim.setValue(SCREEN_HEIGHT);
       backdropAnim.setValue(0);
 
-      // Apple-style sheet animation
+      glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
+      sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
+
       RNAnimated.parallel([
-        RNAnimated.timing(backdropAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        RNAnimated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 65,
-          friction: 11,
-        }),
+        RNAnimated.timing(backdropAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+        RNAnimated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
       ]).start();
+    } else {
+      glowAnim.value = 0;
+      sparkleAnim.value = 0;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, slideAnim, backdropAnim]);
+  }, [visible, slideAnim, backdropAnim, glowAnim, sparkleAnim]);
+
+  // Animated styles
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glowAnim.value, [0, 1], [0.3, 0.6]),
+    transform: [{ scale: interpolate(glowAnim.value, [0, 1], [0.95, 1.05]) }],
+  }));
+
+  const sparkleStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(sparkleAnim.value, [0, 1], [0, 360])}deg` }],
+  }));
+
+  // Calculate duration for Time Range mode (Sleep)
+  const calculatedDuration = useMemo(() => {
+    if (sleepMode !== 'timerange') return null;
+
+    const startH = sleepStartTimeDate.getHours();
+    const startM = sleepStartTimeDate.getMinutes();
+    const endH = sleepEndTimeDate.getHours();
+    const endM = sleepEndTimeDate.getMinutes();
+
+    let diffMins = (endH * 60 + endM) - (startH * 60 + startM);
+    if (diffMins < 0) diffMins += 24 * 60;
+
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+
+    return { hours, minutes };
+  }, [sleepStartTimeDate, sleepEndTimeDate, sleepMode]);
+
+  // Calculate duration for Food Time Range mode
+  const calculatedFoodDuration = useMemo(() => {
+    if (type !== 'food' || foodMode !== 'timerange') return null;
+
+    const startH = foodStartTime.getHours();
+    const startM = foodStartTime.getMinutes();
+    const endH = foodEndTime.getHours();
+    const endM = foodEndTime.getMinutes();
+
+    let diffMins = (endH * 60 + endM) - (startH * 60 + startM);
+    if (diffMins < 0) diffMins += 24 * 60;
+
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+
+    return { hours, minutes };
+  }, [foodStartTime, foodEndTime, foodMode, type]);
 
   // Breastfeeding uses separate timer in FoodTimerContext
   const leftTimer = foodTimerContext.leftBreastTime + (foodTimerContext.breastActiveSide === 'left' && foodTimerContext.breastIsRunning ? foodTimerContext.breastElapsedSeconds : 0);
@@ -236,10 +291,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   const toggleBreastTimer = (side: 'left' | 'right') => {
     if (foodTimerContext.breastIsRunning && foodTimerContext.breastActiveSide === side) {
-      // Stop current side
       foodTimerContext.stopBreast();
     } else {
-      // Start new side (will auto-switch if running)
       foodTimerContext.startBreast(side);
     }
   };
@@ -252,7 +305,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     }
   };
 
-  // Alias for easier access
   const isPumpingActive = foodTimerContext.pumpingIsRunning;
   const pumpingTimer = foodTimerContext.pumpingElapsedSeconds;
 
@@ -264,49 +316,101 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   const handleSave = async () => {
     if (!type) return;
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-
-    let data: any = { type, timestamp: selectedDate };
+    let data: any = { type };
 
     if (type === 'food') {
+      let durationText = '';
+      
+      // Handle timerange mode for food
+      if (foodMode === 'timerange') {
+        const startHours = foodStartTime.getHours();
+        const startMinutes = foodStartTime.getMinutes();
+        const endHours = foodEndTime.getHours();
+        const endMinutes = foodEndTime.getMinutes();
+        
+        const startTimeStr = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
+        const endTimeStr = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+        
+        // Calculate duration in minutes
+        const startMins = startHours * 60 + startMinutes;
+        const endMins = endHours * 60 + endMinutes;
+        let durationMins = endMins - startMins;
+        
+        // Handle overnight (end time is next day)
+        if (durationMins < 0) {
+          durationMins += 24 * 60;
+        }
+        
+        // Save start and end times
+        data.startTime = startTimeStr;
+        data.endTime = endTimeStr;
+        data.duration = durationMins * 60; // Convert to seconds
+        
+        // Set timestamp to start time
+        const startDate = new Date(selectedDate);
+        startDate.setHours(startHours, startMinutes, 0, 0);
+        data.timestamp = startDate;
+        
+        const h = Math.floor(durationMins / 60);
+        const m = durationMins % 60;
+        durationText = `${h}:${String(m).padStart(2, '0')}`;
+      }
+      
       if (foodType === 'bottle') {
         data.amount = bottleAmount ? `${bottleAmount} ${t('tracking.ml')}` : t('tracking.notSpecified');
         data.subType = 'bottle';
+        if (foodMode === 'timerange' && durationText) {
+          data.note = foodNote ? `${durationText} | ${foodNote}` : durationText;
+        } else if (foodNote) {
+          data.note = foodNote;
+        }
       } else if (foodType === 'breast') {
-        data.note = `${t('tracking.leftColon')}: ${formatTime(leftTimer)} | ${t('tracking.rightColon')}: ${formatTime(rightTimer)}`;
+        if (foodMode === 'timerange') {
+          // In timerange mode, use start/end times instead of timer
+          data.note = durationText ? (foodNote ? `${durationText} | ${foodNote}` : durationText) : foodNote;
+        } else {
+          // Normal mode - use timer
+          data.note = `${t('tracking.leftColon')}: ${formatTime(leftTimer)} | ${t('tracking.rightColon')}: ${formatTime(rightTimer)}`;
+          if (foodNote) data.note += ` | ${foodNote}`;
+        }
         data.subType = 'breast';
       } else if (foodType === 'pumping') {
         data.amount = pumpingAmount ? `${pumpingAmount} ${t('tracking.ml')}` : t('tracking.notSpecified');
-        data.note = pumpingTimer > 0 ? `${t('tracking.pumpingTime')}: ${formatTime(pumpingTimer)}` : undefined;
+        if (foodMode === 'timerange') {
+          // In timerange mode, use start/end times instead of timer
+          if (durationText) {
+            data.note = foodNote ? `${durationText} | ${foodNote}` : durationText;
+          } else if (foodNote) {
+            data.note = foodNote;
+          }
+        } else {
+          // Normal mode - use timer
+          data.note = pumpingTimer > 0 ? `${t('tracking.pumpingTime')}: ${formatTime(pumpingTimer)}` : undefined;
+          if (foodNote && data.note) data.note += ` | ${foodNote}`;
+          else if (foodNote) data.note = foodNote;
+        }
         data.subType = 'pumping';
       } else if (foodType === 'solids') {
         data.note = solidsFoodName ? (foodNote ? `${solidsFoodName} | ${foodNote}` : solidsFoodName) : (foodNote || t('tracking.solidsFood'));
+        if (foodMode === 'timerange' && durationText) {
+          data.note = data.note ? `${durationText} | ${data.note}` : durationText;
+        }
         data.subType = 'solids';
       }
-
-      // Append general food note if present and not solids (handled above)
-      if (foodType !== 'solids' && foodNote) {
-        if (data.note) {
-          data.note += ` | ${foodNote}`;
-        } else {
-          data.note = foodNote;
-        }
+      
+      // Set timestamp if not already set (for normal mode)
+      if (!data.timestamp) {
+        data.timestamp = selectedDate;
       }
     } else if (type === 'sleep') {
-      // Handle different sleep modes
       let durationText = '';
-
       if (sleepMode === 'timer' && sleepContext.elapsedSeconds > 0) {
-        // Timer mode - use elapsed seconds
         durationText = `${t('tracking.sleepDuration')}: ${sleepContext.formatTime(sleepContext.elapsedSeconds)}`;
         data.duration = sleepContext.elapsedSeconds;
         if (sleepContext.isRunning) sleepContext.stop();
-
       } else if (sleepMode === 'duration') {
-        // Duration mode - use hours/minutes
         const totalMinutes = (sleepHours * 60) + sleepMinutes;
         if (totalMinutes > 0) {
           const h = Math.floor(totalMinutes / 60);
@@ -314,86 +418,127 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           durationText = `${t('tracking.sleepDuration')}: ${h}:${String(m).padStart(2, '0')}`;
           data.duration = totalMinutes * 60;
         }
+      } else if (sleepMode === 'timerange') {
+        // Always use the Date objects as they are the source of truth
+        const startHours = sleepStartTimeDate.getHours();
+        const startMinutes = sleepStartTimeDate.getMinutes();
+        const endHours = sleepEndTimeDate.getHours();
+        const endMinutes = sleepEndTimeDate.getMinutes();
 
-      } else if (sleepMode === 'timerange' && sleepStartTime && sleepEndTime) {
-        // Time range mode - calculate from start/end times
-        const parseTime = (t: string): { hours: number; minutes: number } | null => {
-          // Handle various formats: "8", "08", "8:00", "08:00", "19:30"
-          const clean = t.replace(/[^\d:]/g, '');
-          if (clean.includes(':')) {
-            const [h, m] = clean.split(':').map(Number);
-            return { hours: h || 0, minutes: m || 0 };
-          } else {
-            return { hours: Number(clean) || 0, minutes: 0 };
-          }
-        };
+        const startTimeStr = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
+        const endTimeStr = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
 
-        const start = parseTime(sleepStartTime);
-        const end = parseTime(sleepEndTime);
+        // Calculate duration in minutes
+        const startMins = startHours * 60 + startMinutes;
+        const endMins = endHours * 60 + endMinutes;
+        let durationMins = endMins - startMins;
 
-        if (start && end) {
-          let startMinutes = start.hours * 60 + start.minutes;
-          let endMinutes = end.hours * 60 + end.minutes;
-
-          // If end is earlier than start, assume next day (e.g., 22:00 → 07:00)
-          if (endMinutes <= startMinutes) {
-            endMinutes += 24 * 60;
-          }
-
-          const totalMinutes = endMinutes - startMinutes;
-          const h = Math.floor(totalMinutes / 60);
-          const m = totalMinutes % 60;
-
-          const formattedStart = `${String(start.hours).padStart(2, '0')}:${String(start.minutes).padStart(2, '0')}`;
-          const formattedEnd = `${String(end.hours).padStart(2, '0')}:${String(end.minutes).padStart(2, '0')}`;
-
-          durationText = `${formattedStart} → ${formattedEnd} (${h}${t('time.hour')} ${m > 0 ? `${m}${t('time.minute')}` : ''})`;
-          data.duration = totalMinutes * 60;
-          data.startTime = formattedStart;
-          data.endTime = formattedEnd;
+        // Handle overnight sleep (end time is next day)
+        if (durationMins < 0) {
+          durationMins += 24 * 60;
         }
+
+        // Always save, even if duration is 0 (user might have same start/end time)
+        data.duration = durationMins * 60; // Convert to seconds
+
+        // Save start and end times
+        data.startTime = startTimeStr;
+        data.endTime = endTimeStr;
+
+        // Set timestamp to start time (use selectedDate as base, then set the time)
+        const startDate = new Date(selectedDate);
+        startDate.setHours(startHours, startMinutes, 0, 0);
+        data.timestamp = startDate;
+
+        const h = Math.floor(durationMins / 60);
+        const m = durationMins % 60;
+        durationText = `${t('tracking.sleepDuration')}: ${h}:${String(m).padStart(2, '0')}`;
       }
 
-      // Combine duration with user note
+      // Add duration to note if available
       if (durationText && sleepNote) {
         data.note = `${durationText} | ${sleepNote}`;
       } else if (durationText) {
         data.note = durationText;
-      } else if (sleepNote) {
-        data.note = sleepNote;
       } else {
-        data.note = t('tracking.newSleep');
+        data.note = sleepNote;
       }
-    } else {
-      data.subType = subType || 'default';
-      if (diaperNote) data.note = diaperNote;
+
+      // Set timestamp if not already set (for timer and duration modes)
+      if (!data.timestamp) {
+        data.timestamp = selectedDate;
+      }
+    } else if (type === 'diaper') {
+      data.subType = subType;
+      data.note = diaperNote;
     }
 
+    // Debug: Log data before saving
+    if (type === 'sleep' && sleepMode === 'timerange') {
+      console.log('🔵 Sleep timerange data to save:', JSON.stringify({
+        type: data.type,
+        duration: data.duration,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        timestamp: data.timestamp?.toISOString(),
+        note: data.note,
+        hasTimestamp: !!data.timestamp,
+        durationMins: data.duration ? Math.floor(data.duration / 60) : 0
+      }, null, 2));
+    }
+
+    // Validate that we have required data for timerange mode
+    if (type === 'sleep' && sleepMode === 'timerange') {
+      if (!data.timestamp) {
+        console.error('❌ Missing timestamp');
+        Alert.alert(t('common.error'), 'שגיאה: חסר timestamp. נא לנסות שוב.');
+        return;
+      }
+      if (data.duration === undefined || data.duration === null) {
+        console.error('❌ Missing duration');
+        Alert.alert(t('common.error'), 'שגיאה: חסר duration. נא לנסות שוב.');
+        return;
+      }
+    }
 
     try {
+      // Always log full data for sleep timerange
+      if (type === 'sleep' && sleepMode === 'timerange') {
+        console.log('🟢 Calling onSave with FULL sleep timerange data:', {
+          type: data.type,
+          duration: data.duration,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          timestamp: data.timestamp?.toISOString(),
+          note: data.note,
+          allData: data
+        });
+      } else {
+        console.log('🟢 Calling onSave with data:', { type: data.type, ...data });
+      }
       await onSave(data);
-
-      // Show checkmark and delay close
+      console.log('✅ onSave completed successfully');
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);
         onClose();
-      }, 800);
+      }, 1500);
     } catch (error) {
-      Alert.alert(t('common.error'), t('tracking.saveError'));
+      console.error('Save failed', error);
+      Alert.alert(t('common.error'), t('common.saveFailed'));
     }
   };
 
-  const config = type ? TYPE_CONFIG[type] : TYPE_CONFIG.food;
-
-  // --- Food Content ---
   const renderFoodContent = () => (
     <View style={{ width: '100%' }}>
-      {/* 4 Food Type Tabs - Segmented Control */}
       <View style={[styles.foodTabs, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
         <TouchableOpacity
           style={[styles.foodTab, foodType === 'breast' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
-          onPress={() => { setFoodType('breast'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          onPress={() => { 
+            setFoodType('breast'); 
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+          }}
         >
           <View style={styles.foodTabIconContainer}>
             {activeSide !== null ? (
@@ -408,7 +553,11 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.foodTab, foodType === 'bottle' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
-          onPress={() => { setFoodType('bottle'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          onPress={() => { 
+            setFoodType('bottle'); 
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+          }}
         >
           <View style={styles.foodTabIconContainer}>
             <Milk size={20} color={foodType === 'bottle' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
@@ -417,7 +566,11 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.foodTab, foodType === 'solids' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
-          onPress={() => { setFoodType('solids'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          onPress={() => { 
+            setFoodType('solids'); 
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+          }}
         >
           <View style={styles.foodTabIconContainer}>
             <Apple size={20} color={foodType === 'solids' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
@@ -426,7 +579,11 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.foodTab, foodType === 'pumping' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
-          onPress={() => { setFoodType('pumping'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          onPress={() => { 
+            setFoodType('pumping'); 
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+          }}
         >
           <View style={styles.foodTabIconContainer}>
             {isPumpingActive ? (
@@ -454,276 +611,266 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </Text>
       </TouchableOpacity>
 
-      {/* Premium Time Picker - Scroll Wheel */}
-      <View style={styles.premiumTimeRow}>
-        <View style={styles.premiumTimeCard}>
-          <Text style={styles.premiumTimeLabel}>סיום</Text>
-          <TouchableOpacity
-            style={styles.premiumTimeDisplay}
-            onPress={() => { setShowEndTimePicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-          >
-            <Text style={styles.premiumTimeDigit}>
-              {endTime.getHours().toString().padStart(2, '0')}:{endTime.getMinutes().toString().padStart(2, '0')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.premiumTimeArrowContainer}>
-          <Text style={styles.premiumTimeArrow}>→</Text>
-        </View>
-
-        <View style={styles.premiumTimeCard}>
-          <Text style={styles.premiumTimeLabel}>התחלה</Text>
-          <TouchableOpacity
-            style={styles.premiumTimeDisplay}
-            onPress={() => { setShowStartTimePicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-          >
-            <Text style={styles.premiumTimeDigit}>
-              {startTime.getHours().toString().padStart(2, '0')}:{startTime.getMinutes().toString().padStart(2, '0')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+      {/* Food Mode Toggle - Normal vs Timerange */}
+      <View style={styles.modeToggleContainer}>
+        <TouchableOpacity
+          style={[styles.modeToggleBtn, foodMode === 'normal' && [styles.modeToggleBtnActive, { backgroundColor: theme.primary }]]}
+          onPress={() => { setFoodMode('normal'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Text style={[styles.modeToggleText, foodMode === 'normal' && styles.modeToggleTextActive]}>
+            {foodType === 'breast' ? t('tracking.timer') : foodType === 'pumping' ? t('tracking.timer') : foodType === 'bottle' ? t('tracking.now') : t('tracking.now')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeToggleBtn, foodMode === 'timerange' && [styles.modeToggleBtnActive, { backgroundColor: theme.primary }]]}
+          onPress={() => { setFoodMode('timerange'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Clock size={16} color={foodMode === 'timerange' ? '#fff' : theme.textSecondary} strokeWidth={2} />
+          <Text style={[styles.modeToggleText, foodMode === 'timerange' && styles.modeToggleTextActive]}>
+            {t('tracking.hours')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Start Time Picker Modal */}
-      {showStartTimePicker && (
-        <View style={styles.timePickerOverlay}>
-          <View style={styles.timePickerContainer}>
-            <DateTimePicker
-              value={startTime}
-              mode="time"
-              is24Hour={true}
-              display="spinner"
-              onChange={(event, date) => {
-                if (Platform.OS === 'android') setShowStartTimePicker(false);
-                if (date) setStartTime(date);
-              }}
-              locale="he-IL"
-            />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={styles.timePickerDoneBtn}
-                onPress={() => setShowStartTimePicker(false)}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
-              </TouchableOpacity>
-            )}
+      {/* Food Time Range Picker - Only show when timerange mode */}
+      {foodMode === 'timerange' && (
+        <View style={styles.premiumTimeRow}>
+          <View style={styles.premiumTimeCard}>
+            <Text style={styles.premiumTimeLabel}>{t('tracking.end')}</Text>
+            <TouchableOpacity
+              style={styles.premiumTimeDisplay}
+              onPress={() => { setShowFoodEndTimePicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Text style={styles.premiumTimeDigit}>
+                {foodEndTime.getHours().toString().padStart(2, '0')}:{foodEndTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.premiumTimeArrowContainer}>
+            <Text style={styles.premiumTimeArrow}>→</Text>
+          </View>
+
+          <View style={styles.premiumTimeCard}>
+            <Text style={styles.premiumTimeLabel}>{t('tracking.start')}</Text>
+            <TouchableOpacity
+              style={styles.premiumTimeDisplay}
+              onPress={() => { setShowFoodStartTimePicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Text style={styles.premiumTimeDigit}>
+                {foodStartTime.getHours().toString().padStart(2, '0')}:{foodStartTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* End Time Picker Modal */}
-      {showEndTimePicker && (
-        <View style={styles.timePickerOverlay}>
-          <View style={styles.timePickerContainer}>
-            <DateTimePicker
-              value={endTime}
-              mode="time"
-              is24Hour={true}
-              display="spinner"
-              onChange={(event, date) => {
-                if (Platform.OS === 'android') setShowEndTimePicker(false);
-                if (date) setEndTime(date);
-              }}
-              locale="he-IL"
-            />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={styles.timePickerDoneBtn}
-                onPress={() => setShowEndTimePicker(false)}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
-              </TouchableOpacity>
-            )}
+      {/* Duration Display for Food Timerange */}
+      {calculatedFoodDuration && (
+        <View style={styles.durationContainer}>
+          <View style={[styles.durationPill, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: isDarkMode ? '#F59E0B' : '#FCD34D' }]}>
+            <Clock size={16} color={theme.primary} strokeWidth={2} />
+            <Text style={[styles.durationText, { color: theme.primary }]}>
+              {t('tracking.total')}: {calculatedFoodDuration.hours > 0 ? `${calculatedFoodDuration.hours} ${t('tracking.hours')}` : ''} {calculatedFoodDuration.minutes > 0 ? `${calculatedFoodDuration.minutes} ${t('tracking.minutes')}` : ''}
+              {calculatedFoodDuration.hours === 0 && calculatedFoodDuration.minutes === 0 ? `0 ${t('tracking.minutes')}` : ''}
+            </Text>
           </View>
         </View>
       )}
 
       {/* Bottle Content */}
-      {foodType === 'bottle' && (
-        <View style={styles.bottleContainer}>
-          <Text style={styles.label}>{t('tracking.howMuch')}</Text>
-          <View style={styles.amountRow}>
-            <TouchableOpacity
-              style={styles.amountBtn}
-              onPress={() => {
-                const current = parseInt(bottleAmount) || 0;
-                if (current >= 5) setBottleAmount((current - 5).toString());
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            >
-              <Minus size={20} color={theme.textPrimary} strokeWidth={1.5} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.amountDisplay}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                if (Platform.OS === 'ios') {
-                  const Alert = require('react-native').Alert;
-                  Alert.prompt(
-                    t('tracking.enterAmount'),
-                    t('tracking.howMuch'),
-                    [
-                      { text: t('common.cancel'), style: 'cancel' },
-                      {
-                        text: t('tracking.done'), onPress: (value: string) => {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num >= 0) setBottleAmount(num.toString());
-                        }
-                      },
-                    ],
-                    'plain-text',
-                    bottleAmount || '0',
-                    'number-pad'
-                  );
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.amountValue}>{bottleAmount || '0'}</Text>
-              <Text style={styles.amountUnit}>{t('tracking.ml')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.amountBtn}
-              onPress={() => {
-                const current = parseInt(bottleAmount) || 0;
-                setBottleAmount((current + 5).toString());
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            >
-              <Plus size={20} color={theme.textPrimary} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Breast Content - Minimalist Style like Sleep */}
-      {foodType === 'breast' && (
-        <View style={styles.breastContainer}>
-          {/* Two time cards side by side */}
-          <View style={styles.breastTimeRow}>
-            {/* Left Breast Card */}
-            <TouchableOpacity
-              style={[styles.breastTimeCard, activeSide === 'left' && styles.breastTimeCardActive]}
-              onPress={() => { toggleBreastTimer('left'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-            >
-              <Text style={styles.breastTimeLabel}>{t('tracking.left')}</Text>
-              <Text style={[styles.breastTimeValue, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
-              <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
-                {activeSide === 'left' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
-              </View>
-            </TouchableOpacity>
-
-            {/* Arrow indicator */}
-            <Text style={styles.breastArrow}>←</Text>
-
-            {/* Right Breast Card */}
-            <TouchableOpacity
-              style={[styles.breastTimeCard, activeSide === 'right' && styles.breastTimeCardActive]}
-              onPress={() => { toggleBreastTimer('right'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-            >
-              <Text style={styles.breastTimeLabel}>{t('tracking.right')}</Text>
-              <Text style={[styles.breastTimeValue, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
-              <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
-                {activeSide === 'right' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Total time display */}
-          <Text style={styles.breastTotalLabel}>{t('tracking.total')}: {formatTime(leftTimer + rightTimer)}</Text>
-        </View>
-      )}
-
-      {/* Pumping Content - Timer + Amount Side by Side */}
-      {foodType === 'pumping' && (
-        <View style={styles.pumpingRowContainer}>
-          {/* Timer Section - Small (Left in visual, appears right in RTL) */}
-          <TouchableOpacity
-            style={[styles.pumpingTimerCardSmall, isPumpingActive && styles.pumpingTimerCardActive]}
-            onPress={() => { togglePumpingTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.pumpingTimerLabelSmall, isPumpingActive && styles.pumpingTimerLabelActive]}>{t('tracking.pumping')}</Text>
-            <Text style={[styles.pumpingTimerValueSmall, isPumpingActive && styles.pumpingTimerValueActive]}>
-              {formatTime(pumpingTimer)}
-            </Text>
-            <View style={[styles.pumpingTimerIconSmall, isPumpingActive && styles.pumpingTimerIconActive]}>
-              {isPumpingActive ? <Pause size={12} color="#fff" /> : <Play size={12} color={theme.primary} />}
-            </View>
-          </TouchableOpacity>
-
-          {/* Amount Section - Large (Right in visual, appears left in RTL) */}
-          <View style={styles.pumpingAmountSectionLarge}>
-            <Text style={styles.pumpingAmountLabelLarge}>{t('tracking.pumpingAmount')}</Text>
-            <View style={styles.pumpingAmountRowLarge}>
+      {
+        foodType === 'bottle' && foodMode === 'normal' && (
+          <View style={styles.bottleContainer}>
+            <Text style={styles.label}>{t('tracking.howMuch')}</Text>
+            <View style={styles.amountRow}>
               <TouchableOpacity
-                style={styles.pumpingAmountBtnLarge}
+                style={styles.amountBtn}
                 onPress={() => {
-                  const current = parseInt(pumpingAmount) || 0;
-                  if (current >= 5) setPumpingAmount((current - 5).toString());
+                  const current = parseInt(bottleAmount) || 0;
+                  if (current >= 5) setBottleAmount((current - 5).toString());
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Minus size={22} color={theme.primary} strokeWidth={2} />
+                <Minus size={20} color={theme.textPrimary} strokeWidth={1.5} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.pumpingAmountDisplayLarge}
+                style={styles.amountDisplay}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   if (Platform.OS === 'ios') {
                     const Alert = require('react-native').Alert;
                     Alert.prompt(
                       t('tracking.enterAmount'),
-                      t('tracking.pumpingAmount'),
+                      t('tracking.howMuch'),
                       [
                         { text: t('common.cancel'), style: 'cancel' },
                         {
                           text: t('tracking.done'), onPress: (value: string) => {
                             const num = parseInt(value);
-                            if (!isNaN(num) && num >= 0) setPumpingAmount(num.toString());
+                            if (!isNaN(num) && num >= 0) setBottleAmount(num.toString());
                           }
                         },
                       ],
                       'plain-text',
-                      pumpingAmount || '0',
+                      bottleAmount || '0',
                       'number-pad'
                     );
                   }
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pumpingAmountValueLarge}>{pumpingAmount || '0'}</Text>
-                <Text style={styles.pumpingAmountUnitLarge}>{t('tracking.ml')}</Text>
+                <Text style={styles.amountValue}>{bottleAmount || '0'}</Text>
+                <Text style={styles.amountUnit}>{t('tracking.ml')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.pumpingAmountBtnLarge}
+                style={styles.amountBtn}
                 onPress={() => {
-                  const current = parseInt(pumpingAmount) || 0;
-                  setPumpingAmount((current + 5).toString());
+                  const current = parseInt(bottleAmount) || 0;
+                  setBottleAmount((current + 5).toString());
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Plus size={22} color={theme.primary} strokeWidth={2} />
+                <Plus size={20} color={theme.textPrimary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
+        )
+      }
+
+      {/* Breast Content - Minimalist Style like Sleep */}
+      {
+        foodType === 'breast' && foodMode === 'normal' && (
+          <View style={styles.breastContainer}>
+            {/* Two time cards side by side */}
+            <View style={styles.breastTimeRow}>
+              {/* Left Breast Card */}
+              <TouchableOpacity
+                style={[styles.breastTimeCard, activeSide === 'left' && styles.breastTimeCardActive]}
+                onPress={() => { toggleBreastTimer('left'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+              >
+                <Text style={styles.breastTimeLabel}>{t('tracking.left')}</Text>
+                <Text style={[styles.breastTimeValue, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
+                <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
+                  {activeSide === 'left' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
+                </View>
+              </TouchableOpacity>
+
+              {/* Arrow indicator */}
+              <Text style={styles.breastArrow}>←</Text>
+
+              {/* Right Breast Card */}
+              <TouchableOpacity
+                style={[styles.breastTimeCard, activeSide === 'right' && styles.breastTimeCardActive]}
+                onPress={() => { toggleBreastTimer('right'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+              >
+                <Text style={styles.breastTimeLabel}>{t('tracking.right')}</Text>
+                <Text style={[styles.breastTimeValue, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
+                <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
+                  {activeSide === 'right' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Total time display */}
+            <Text style={styles.breastTotalLabel}>{t('tracking.total')}: {formatTime(leftTimer + rightTimer)}</Text>
+          </View>
+        )
+      }
+
+      {/* Pumping Content - Timer + Amount Side by Side */}
+      {
+        foodType === 'pumping' && foodMode === 'normal' && (
+          <View style={styles.pumpingRowContainer}>
+            {/* Timer Section - Small (Left in visual, appears right in RTL) */}
+            <TouchableOpacity
+              style={[styles.pumpingTimerCardSmall, isPumpingActive && styles.pumpingTimerCardActive]}
+              onPress={() => { togglePumpingTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.pumpingTimerLabelSmall, isPumpingActive && styles.pumpingTimerLabelActive]}>{t('tracking.pumping')}</Text>
+              <Text style={[styles.pumpingTimerValueSmall, isPumpingActive && styles.pumpingTimerValueActive]}>
+                {formatTime(pumpingTimer)}
+              </Text>
+              <View style={[styles.pumpingTimerIconSmall, isPumpingActive && styles.pumpingTimerIconActive]}>
+                {isPumpingActive ? <Pause size={12} color="#fff" /> : <Play size={12} color={theme.primary} />}
+              </View>
+            </TouchableOpacity>
+
+            {/* Amount Section - Large (Right in visual, appears left in RTL) */}
+            <View style={styles.pumpingAmountSectionLarge}>
+              <Text style={styles.pumpingAmountLabelLarge}>{t('tracking.pumpingAmount')}</Text>
+              <View style={styles.pumpingAmountRowLarge}>
+                <TouchableOpacity
+                  style={styles.pumpingAmountBtnLarge}
+                  onPress={() => {
+                    const current = parseInt(pumpingAmount) || 0;
+                    if (current >= 5) setPumpingAmount((current - 5).toString());
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Minus size={22} color={theme.primary} strokeWidth={2} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.pumpingAmountDisplayLarge}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (Platform.OS === 'ios') {
+                      const Alert = require('react-native').Alert;
+                      Alert.prompt(
+                        t('tracking.enterAmount'),
+                        t('tracking.pumpingAmount'),
+                        [
+                          { text: t('common.cancel'), style: 'cancel' },
+                          {
+                            text: t('tracking.done'), onPress: (value: string) => {
+                              const num = parseInt(value);
+                              if (!isNaN(num) && num >= 0) setPumpingAmount(num.toString());
+                            }
+                          },
+                        ],
+                        'plain-text',
+                        pumpingAmount || '0',
+                        'number-pad'
+                      );
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.pumpingAmountValueLarge}>{pumpingAmount || '0'}</Text>
+                  <Text style={styles.pumpingAmountUnitLarge}>{t('tracking.ml')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.pumpingAmountBtnLarge}
+                  onPress={() => {
+                    const current = parseInt(pumpingAmount) || 0;
+                    setPumpingAmount((current + 5).toString());
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Plus size={22} color={theme.primary} strokeWidth={2} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )
+      }
 
       {/* Solids Content */}
-      {foodType === 'solids' && (
-        <View style={styles.solidsContainer}>
-          <Text style={styles.label}>{t('tracking.whatAte')}</Text>
-          <TextInput
-            style={styles.solidsInput}
-            placeholder={`${t('tracking.forExample')}: ...`}
-            value={solidsFoodName}
-            onChangeText={setSolidsFoodName}
-            textAlign="right"
-          />
-        </View>
-      )}
+      {
+        foodType === 'solids' && foodMode === 'normal' && (
+          <View style={styles.solidsContainer}>
+            <Text style={styles.label}>{t('tracking.whatAte')}</Text>
+            <TextInput
+              style={styles.solidsInput}
+              placeholder={`${t('tracking.forExample')}: ...`}
+              value={solidsFoodName}
+              onChangeText={setSolidsFoodName}
+              textAlign="right"
+            />
+          </View>
+        )
+      }
       {/* Free Text Note - Available for all food types */}
       <View style={styles.sleepNoteContainer}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -740,26 +887,69 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           multiline
         />
       </View>
-    </View>
+
+      {/* Food Start Time Picker Modal */}
+      {showFoodStartTimePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={foodStartTime}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedTime) => {
+                if (Platform.OS === 'android') {
+                  setShowFoodStartTimePicker(false);
+                }
+                if (selectedTime) {
+                  setFoodStartTime(selectedTime);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => setShowFoodStartTimePicker(false)}
+              >
+                <Text style={styles.timePickerDoneText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Food End Time Picker Modal */}
+      {showFoodEndTimePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={foodEndTime}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedTime) => {
+                if (Platform.OS === 'android') {
+                  setShowFoodEndTimePicker(false);
+                }
+                if (selectedTime) {
+                  setFoodEndTime(selectedTime);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => setShowFoodEndTimePicker(false)}
+              >
+                <Text style={styles.timePickerDoneText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+    </View >
   );
 
-  // Sleep input mode: 'timer' | 'duration' | 'timerange'
-  const [sleepMode, setSleepMode] = React.useState<'timer' | 'duration' | 'timerange'>('duration');
-  const [sleepStartTimeDate, setSleepStartTimeDate] = React.useState(() => {
-    const d = new Date();
-    d.setHours(19, 0, 0, 0);
-    return d;
-  });
-  const [sleepEndTimeDate, setSleepEndTimeDate] = React.useState(() => {
-    const d = new Date();
-    d.setHours(8, 0, 0, 0);
-    return d;
-  });
-  const [showSleepStartPicker, setShowSleepStartPicker] = React.useState(false);
-  const [showSleepEndPicker, setShowSleepEndPicker] = React.useState(false);
-  // Keep string versions for backward compatibility with save logic
-  const sleepStartTime = `${sleepStartTimeDate.getHours().toString().padStart(2, '0')}:${sleepStartTimeDate.getMinutes().toString().padStart(2, '0')}`;
-  const sleepEndTime = `${sleepEndTimeDate.getHours().toString().padStart(2, '0')}:${sleepEndTimeDate.getMinutes().toString().padStart(2, '0')}`;
 
   const renderSleepContent = () => (
     <View style={{ width: '100%' }}>
@@ -883,6 +1073,19 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             </View>
           </View>
 
+          {/* Duration Display */}
+          {calculatedDuration && (
+            <View style={styles.durationContainer}>
+              <View style={[styles.durationPill, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF', borderColor: isDarkMode ? '#6366F1' : '#C7D2FE' }]}>
+                <Clock size={16} color={theme.primary} strokeWidth={2} />
+                <Text style={[styles.durationText, { color: theme.primary }]}>
+                  {t('tracking.total')}: {calculatedDuration.hours > 0 ? `${calculatedDuration.hours} ${t('tracking.hours')}` : ''} {calculatedDuration.minutes > 0 ? `${calculatedDuration.minutes} ${t('tracking.minutes')}` : ''}
+                  {calculatedDuration.hours === 0 && calculatedDuration.minutes === 0 ? `0 ${t('tracking.minutes')}` : ''}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Sleep Start Time Picker Modal */}
           {showSleepStartPicker && (
             <View style={styles.timePickerOverlay}>
@@ -894,14 +1097,24 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   display="spinner"
                   onChange={(event, date) => {
                     if (Platform.OS === 'android') setShowSleepStartPicker(false);
-                    if (date) setSleepStartTimeDate(date);
+                    if (date) {
+                      setSleepStartTimeDate(date);
+                      const hours = date.getHours().toString().padStart(2, '0');
+                      const minutes = date.getMinutes().toString().padStart(2, '0');
+                      setSleepStartTime(`${hours}:${minutes}`);
+                    }
                   }}
                   locale="he-IL"
                 />
                 {Platform.OS === 'ios' && (
                   <TouchableOpacity
                     style={styles.timePickerDoneBtn}
-                    onPress={() => setShowSleepStartPicker(false)}
+                    onPress={() => {
+                      const hours = sleepStartTimeDate.getHours().toString().padStart(2, '0');
+                      const minutes = sleepStartTimeDate.getMinutes().toString().padStart(2, '0');
+                      setSleepStartTime(`${hours}:${minutes}`);
+                      setShowSleepStartPicker(false);
+                    }}
                   >
                     <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
                   </TouchableOpacity>
@@ -921,14 +1134,24 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   display="spinner"
                   onChange={(event, date) => {
                     if (Platform.OS === 'android') setShowSleepEndPicker(false);
-                    if (date) setSleepEndTimeDate(date);
+                    if (date) {
+                      setSleepEndTimeDate(date);
+                      const hours = date.getHours().toString().padStart(2, '0');
+                      const minutes = date.getMinutes().toString().padStart(2, '0');
+                      setSleepEndTime(`${hours}:${minutes}`);
+                    }
                   }}
                   locale="he-IL"
                 />
                 {Platform.OS === 'ios' && (
                   <TouchableOpacity
                     style={styles.timePickerDoneBtn}
-                    onPress={() => setShowSleepEndPicker(false)}
+                    onPress={() => {
+                      const hours = sleepEndTimeDate.getHours().toString().padStart(2, '0');
+                      const minutes = sleepEndTimeDate.getMinutes().toString().padStart(2, '0');
+                      setSleepEndTime(`${hours}:${minutes}`);
+                      setShowSleepEndPicker(false);
+                    }}
                   >
                     <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
                   </TouchableOpacity>
@@ -1002,6 +1225,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   };
 
   if (!visible || !type) return null;
+
+  const config = TYPE_CONFIG[type];
 
   return (
     <>
@@ -1239,7 +1464,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                       disabled={isFuture}
                     >
                       <Text style={[
-                        styles.calendarDayText, 
+                        styles.calendarDayText,
                         { color: theme.textPrimary },
                         isSelected && [styles.calendarDaySelectedText, { color: theme.card }]
                       ]}>{d}</Text>
@@ -1269,6 +1494,160 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 }
 
 const styles = StyleSheet.create({
+  // Header & Container
+  container: { flex: 1 },
+  modalCard: { flex: 1, backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
+  dragHandleBar: { width: 40, height: 4, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 2, alignSelf: 'center', marginTop: 12 },
+  header: { alignItems: 'center', paddingTop: 12, paddingBottom: 24, paddingHorizontal: 24, borderRadius: 0, overflow: 'visible', position: 'relative', gap: 12 },
+  premiumIconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 8, position: 'relative', marginBottom: 4 },
+  title: { fontSize: 28, fontWeight: '800', textAlign: 'center', letterSpacing: -0.5 },
+
+  // Food Tabs
+  foodTabs: { flexDirection: 'row', padding: 4, borderRadius: 16, marginHorizontal: 24, marginBottom: 24 },
+  foodTab: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, gap: 6 },
+  activeFoodTab: { backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  foodTabIconContainer: { height: 24, justifyContent: 'center', alignItems: 'center' },
+  foodTabText: { fontSize: 13, fontWeight: '600' },
+  activeFoodTabText: { fontWeight: '700' },
+
+  // Bottle
+  bottleContainer: { alignItems: 'center', paddingHorizontal: 24 },
+  label: { fontSize: 16, fontWeight: '600', marginBottom: 16, alignSelf: 'center' },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 24 },
+  amountBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  amountDisplay: { alignItems: 'center', minWidth: 100 },
+  amountValue: { fontSize: 48, fontWeight: '300', letterSpacing: -2 },
+  amountUnit: { fontSize: 16, fontWeight: '600', color: '#9CA3AF', marginTop: -4 },
+
+  // Breast
+  breastContainer: { paddingHorizontal: 24 },
+  breastTimeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  breastTimeCard: { flex: 1, backgroundColor: '#F9FAFB', padding: 16, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6' },
+  breastTimeCardActive: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
+  breastTimeLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, color: '#6B7280' },
+  breastTimeValue: { fontSize: 24, fontWeight: '700', marginBottom: 12, color: '#1F2937' },
+  breastTimeValueActive: { color: '#6366F1' },
+  breastPlayBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
+  breastPlayBtnActive: { backgroundColor: '#6366F1' },
+  breastArrow: { fontSize: 24, color: '#D1D5DB', marginHorizontal: 12 },
+  breastTotalLabel: { textAlign: 'center', fontSize: 15, fontWeight: '500', color: '#9CA3AF' },
+
+  // Pumping
+  pumpingRowContainer: { flexDirection: 'row', paddingHorizontal: 24, gap: 16 },
+  pumpingTimerCardSmall: { flex: 1, backgroundColor: '#F9FAFB', borderRadius: 20, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F3F4F6' },
+  pumpingTimerCardActive: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
+  pumpingTimerLabelSmall: { fontSize: 11, fontWeight: '600', color: '#9CA3AF', marginBottom: 4 },
+  pumpingTimerValueSmall: { fontSize: 22, fontWeight: '700', color: '#1F2937', marginBottom: 8 },
+  pumpingTimerIconSmall: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
+  pumpingTimerIconActive: { backgroundColor: '#6366F1' },
+  pumpingAmountSectionLarge: { flex: 1.5, alignItems: 'center' },
+  pumpingAmountLabelLarge: { fontSize: 14, fontWeight: '600', marginBottom: 16, color: '#6B7280' },
+  pumpingAmountRowLarge: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  pumpingAmountBtnLarge: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  pumpingAmountDisplayLarge: { alignItems: 'center', minWidth: 80 },
+  pumpingAmountValueLarge: { fontSize: 40, fontWeight: '300', letterSpacing: -1 },
+  pumpingAmountUnitLarge: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
+
+  // Solids
+  solidsContainer: { paddingHorizontal: 24 },
+  solidsInput: { backgroundColor: '#F9FAFB', padding: 20, borderRadius: 20, fontSize: 18, textAlign: 'right', borderWidth: 1, borderColor: '#F3F4F6' },
+
+  // Notes
+  sleepNoteContainer: { marginHorizontal: 24, marginTop: 24 },
+  sleepNoteLabel: { fontSize: 14, fontWeight: '600', color: '#4B5563' },
+  sleepNoteInput: { backgroundColor: '#F9FAFB', borderRadius: 20, padding: 20, minHeight: 100, textAlignVertical: 'top', marginTop: 12, borderWidth: 1, borderColor: '#F3F4F6', fontSize: 16 },
+
+  // Time Picker & Date Picker
+  timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
+  timePickerContainer: { backgroundColor: '#fff', borderRadius: 32, padding: 24, width: 340, alignItems: 'center' },
+  timePickerDoneBtn: { marginTop: 20, backgroundColor: '#6366F1', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 16 },
+  timePickerDoneBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, marginBottom: 24, backgroundColor: 'rgba(0,0,0,0.03)', alignSelf: 'center', paddingHorizontal: 20, borderRadius: 24 },
+  datePickerBtnText: { fontSize: 15, fontWeight: '600', color: '#4B5563' },
+
+  // Premium Time Row
+  premiumTimeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16, marginBottom: 24 },
+  premiumTimeCard: { alignItems: 'center' },
+  premiumTimeLabel: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', marginBottom: 8 },
+  premiumTimeDisplay: { backgroundColor: '#F9FAFB', paddingVertical: 16, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: '#F3F4F6', minWidth: 100, alignItems: 'center' },
+  premiumTimeDigit: { fontSize: 28, fontWeight: '700', color: '#1F2937', fontVariant: ['tabular-nums'] },
+  premiumTimeArrowContainer: { justifyContent: 'center', paddingTop: 20 },
+  premiumTimeArrow: { fontSize: 24, color: '#E5E7EB' },
+
+  // Sleep Mode Row
+  sleepModeRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 32, marginHorizontal: 24, backgroundColor: '#F9FAFB', padding: 4, borderRadius: 16 },
+  sleepModeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12 },
+  sleepModeBtnActive: { backgroundColor: '#6366F1', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  sleepModeText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
+  sleepModeTextActive: { color: '#fff' },
+
+  // Sleep Timer
+  sleepTimerSection: { alignItems: 'center', paddingHorizontal: 24 },
+  sleepTimerCard: { width: 200, height: 200, borderRadius: 100, backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#F3F4F6', marginBottom: 24, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 },
+  sleepTimerCardActive: { backgroundColor: '#fff', borderColor: '#6366F1' },
+  sleepTimerValue: { fontSize: 48, fontWeight: '200', color: '#1F2937', fontVariant: ['tabular-nums'], marginBottom: 12 },
+  sleepTimerValueActive: { color: '#6366F1' },
+  sleepTimerPlayBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
+  sleepTimerPlayBtnActive: { backgroundColor: '#6366F1' },
+  sleepTimerHint: { fontSize: 16, color: '#9CA3AF', fontWeight: '500' },
+
+  // Sleep Duration
+  sleepDurationSection: { paddingHorizontal: 24 },
+  sleepDurationRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16 },
+  sleepDurationItem: { alignItems: 'center' },
+  sleepDurationLabel: { fontSize: 16, fontWeight: '600', color: '#4B5563', marginBottom: 16 },
+  sleepSlider: { alignItems: 'center', backgroundColor: '#F9FAFB', padding: 12, borderRadius: 24, borderWidth: 1, borderColor: '#F3F4F6' },
+  sleepSliderBtn: { width: 48, height: 48, backgroundColor: '#fff', borderRadius: 24, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  sleepSliderBtnText: { fontSize: 24, fontWeight: '400', color: '#4B5563' },
+  sleepSliderValue: { fontSize: 32, fontWeight: '600', color: '#1F2937', marginVertical: 16, width: 60, textAlign: 'center' },
+  sleepDurationSeparator: { fontSize: 40, fontWeight: '300', color: '#E5E7EB', marginTop: 30 },
+
+  // Duration Display
+  durationContainer: { alignItems: 'center', marginBottom: 24, marginTop: -12 },
+  durationPill: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  durationText: { fontSize: 15, fontWeight: '600' },
+
+  // Mode Toggle (for food timerange)
+  modeToggleContainer: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  modeToggleBtn: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  modeToggleBtnActive: {
+    borderColor: 'transparent',
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  modeToggleTextActive: {
+    color: '#fff',
+  },
+
+
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   modalCard: {
@@ -1343,7 +1722,7 @@ const styles = StyleSheet.create({
   calendarDayText: { fontSize: 14, fontWeight: '500' },
   calendarDayToday: { borderRadius: 20 },
   calendarDaySelected: { borderRadius: 20 },
-  calendarDaySelectedText: { },
+  calendarDaySelectedText: {},
   calendarDayDisabled: { opacity: 0.3 },
 
   // Food Tabs - Segmented Control Style

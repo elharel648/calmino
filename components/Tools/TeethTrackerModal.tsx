@@ -1,57 +1,43 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform, PanResponder, Dimensions, Animated as RNAnimated, Modal } from 'react-native';
-import { Check, Sparkles, X } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions } from 'react-native';
+import { Check, Sparkles, X, Calendar, TrendingUp, Award, Clock } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild } from '../../context/ActiveChildContext';
-import { db } from '../../services/firebaseConfig';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { db, auth } from '../../services/firebaseConfig';
+import { doc, getDoc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
+import { saveEventToFirebase } from '../../services/firebaseService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
-import { SwipeableModal } from '../SwipeableModal';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface TeethTrackerModalProps {
     visible: boolean;
     onClose: () => void;
 }
 
-// Teeth Layout Configuration matching the "Oval" design
-// We'll arrange them in a continuous loop or two arcs that meet.
-// IDs must match standard naming we used before to preserve data.
-// 20 Primary Teeth.
-// Numbering/Types for visual reference:
-// Central Incisor (1), Lateral Incisor (2), Canine (3), First Molar (4), Second Molar (5)
-// Quadrants: Upper Right (UR), Upper Left (UL), Lower Left (LL), Lower Right (LR)
-
+// Teeth Layout Configuration
 const TEETH_CONFIG = [
-    // --- Upper Arch (Left to Right) ---
-    // Upper Left (Outer to Center)
+    // Upper Arch (Left to Right)
     { id: 'start_upper_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 80, left: 40 },
     { id: 'start_upper_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 45, left: 50 },
     { id: 'start_upper_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 25, left: 75 },
     { id: 'start_upper_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 10, left: 105 },
     { id: 'start_upper_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 135 },
-
-    // Upper Right (Center to Outer)
     { id: 'start_upper_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 175 },
     { id: 'start_upper_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 10, left: 205 },
     { id: 'start_upper_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 25, left: 235 },
     { id: 'start_upper_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 45, left: 260 },
     { id: 'start_upper_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 80, left: 270 },
-
-    // --- Lower Arch (Left to Right) ---
-    // Lower Left (Outer to Center)
+    // Lower Arch (Left to Right)
     { id: 'start_lower_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 240, left: 40 },
     { id: 'start_lower_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 275, left: 50 },
     { id: 'start_lower_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 295, left: 75 },
     { id: 'start_lower_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 310, left: 105 },
     { id: 'start_lower_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 135 },
-
-    // Lower Right (Center to Outer)
     { id: 'start_lower_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 175 },
     { id: 'start_lower_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 310, left: 205 },
     { id: 'start_lower_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 295, left: 235 },
@@ -59,14 +45,13 @@ const TEETH_CONFIG = [
     { id: 'start_lower_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 240, left: 270 },
 ];
 
-// Helper to get organic "stone" shapes
 const getToothShapeStyle = (type: string) => {
     switch (type) {
         case 'incisor_cen': return { width: 28, height: 32, borderRadius: 10, borderTopLeftRadius: 14, borderTopRightRadius: 14 };
         case 'incisor_lat': return { width: 26, height: 30, borderRadius: 12, borderBottomLeftRadius: 18 };
-        case 'canine': return { width: 28, height: 28, borderRadius: 14, borderTopLeftRadius: 4 }; // Pointy
-        case 'molar_1': return { width: 34, height: 34, borderRadius: 12, borderTopRightRadius: 16, borderBottomLeftRadius: 16 }; // Irregular square
-        case 'molar_2': return { width: 38, height: 36, borderRadius: 14, borderTopLeftRadius: 18, borderBottomRightRadius: 18 }; // Big irregular
+        case 'canine': return { width: 28, height: 28, borderRadius: 14, borderTopLeftRadius: 4 };
+        case 'molar_1': return { width: 34, height: 34, borderRadius: 12, borderTopRightRadius: 16, borderBottomLeftRadius: 16 };
+        case 'molar_2': return { width: 38, height: 36, borderRadius: 14, borderTopLeftRadius: 18, borderBottomRightRadius: 18 };
         default: return { width: 30, height: 30, borderRadius: 15 };
     }
 };
@@ -78,10 +63,20 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
     const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
+    const slideAnim = React.useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
+    const backdropAnim = React.useRef(new RNAnimated.Value(0)).current;
 
     useEffect(() => {
         if (visible && activeChild?.childId) {
             loadTeethData();
+            // Animate in
+            RNAnimated.parallel([
+                RNAnimated.timing(backdropAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+                RNAnimated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
+            ]).start();
+        } else {
+            slideAnim.setValue(SCREEN_HEIGHT);
+            backdropAnim.setValue(0);
         }
     }, [visible, activeChild?.childId]);
 
@@ -94,7 +89,6 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                 const data = snap.data();
                 const rawTeeth = data.teeth || {};
                 const parsed: Record<string, Date | null> = {};
-
                 Object.keys(rawTeeth).forEach(key => {
                     const val = rawTeeth[key];
                     if (val) {
@@ -120,31 +114,69 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
 
     const handleToothPress = (id: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
+        // If tooth is already erupted, allow editing date or removing
+        if (teethData[id]) {
+            // Show date picker with option to edit or remove
+            setSelectedTooth(id);
+            setCurrentDate(teethData[id] || new Date());
+            setShowDatePicker(true);
+            return;
+        }
+        
+        // New tooth - show date picker
         setSelectedTooth(id);
-        const existingDate = teethData[id];
-        // If exists, default to that date. If not, default to today.
-        setCurrentDate(existingDate || new Date());
-
-        // If it already exists, toggle off? Or just edit date?
-        // Let's assume press opens date picker to confirm/change or Remove.
-        // For now: Always open date picker.
+        setCurrentDate(new Date());
         setShowDatePicker(true);
+    };
+
+    const handleRemoveTooth = async (id: string) => {
+        if (!activeChild?.childId) return;
+        
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        
+        // Remove from state
+        setTeethData(prev => {
+            const updated = { ...prev };
+            delete updated[id];
+            return updated;
+        });
+        
+        // Remove from Firebase
+        try {
+            const docRef = doc(db, 'babies', activeChild.childId);
+            await updateDoc(docRef, {
+                [`teeth.${id}`]: deleteField()
+            });
+        } catch (e) {
+            console.error('Failed to remove tooth', e);
+        }
     };
 
     const handleDateChange = async (event: any, selectedDate?: Date) => {
         if (selectedDate && selectedTooth && activeChild?.childId) {
             const newDate = selectedDate;
+            const isNewTooth = !teethData[selectedTooth];
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-            // Optimistic
             setTeethData(prev => ({ ...prev, [selectedTooth]: newDate }));
-
-            // Save
             try {
                 const docRef = doc(db, 'babies', activeChild.childId);
                 await updateDoc(docRef, {
                     [`teeth.${selectedTooth}`]: Timestamp.fromDate(newDate)
                 });
+                
+                // Save to timeline if it's a new tooth
+                if (isNewTooth && auth.currentUser) {
+                    const toothConfig = TEETH_CONFIG.find(t => t.id === selectedTooth);
+                    await saveEventToFirebase(auth.currentUser.uid, activeChild.childId, {
+                        type: 'teeth',
+                        toothId: selectedTooth,
+                        toothLabel: toothConfig?.label || 'שן',
+                        toothType: toothConfig?.type || '',
+                        timestamp: newDate,
+                        note: `בקעה ${toothConfig?.label || 'שן'}`
+                    });
+                }
             } catch (e) {
                 console.error('Failed to save tooth', e);
             }
@@ -153,17 +185,75 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
         setSelectedTooth(null);
     };
 
-    // Toggle logic: If user cancels date picker but wants to remove tooth?
-    // We can add a "Remove" button in a separate Alert or customized logic.
-    // For now, let's keep it simple: Click -> Date Picker -> Set.
+    const handleClose = () => {
+        RNAnimated.parallel([
+            RNAnimated.timing(slideAnim, { toValue: SCREEN_HEIGHT, duration: 300, useNativeDriver: true }),
+            RNAnimated.timing(backdropAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]).start(() => {
+            onClose();
+        });
+    };
+
+    const formatToothDate = (date: Date | null): string => {
+        if (!date) return '';
+        return date.toLocaleDateString('he-IL', {
+            day: 'numeric',
+            month: 'short',
+            year: '2-digit',
+        });
+    };
+
+    const formatToothDateFull = (date: Date | null): string => {
+        if (!date) return '';
+        return date.toLocaleDateString('he-IL', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
+    };
+
+    // Get chronological list of teeth
+    const getChronologicalTeeth = () => {
+        return Object.entries(teethData)
+            .filter(([_, date]) => date !== null)
+            .map(([id, date]) => {
+                const toothConfig = TEETH_CONFIG.find(t => t.id === id);
+                return {
+                    id,
+                    date: date!,
+                    label: toothConfig?.label || 'שן',
+                    type: toothConfig?.type || '',
+                    color: toothConfig?.color || '#8B5CF6'
+                };
+            })
+            .sort((a, b) => a.date.getTime() - b.date.getTime());
+    };
+
+    // Get statistics
+    const getStatistics = () => {
+        const chronological = getChronologicalTeeth();
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const thisMonth = chronological.filter(t => {
+            const d = t.date;
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        });
+
+        return {
+            total: chronological.length,
+            thisMonth: thisMonth.length,
+            first: chronological[0] || null,
+            last: chronological[chronological.length - 1] || null,
+        };
+    };
 
     const renderTooth = (tooth: typeof TEETH_CONFIG[0]) => {
         const isErupted = !!teethData[tooth.id];
         const shapeStyle = getToothShapeStyle(tooth.type);
-
-        // For inactive: Outline only with theme color or gray
-        // For active: Filled with specific color
-
+        
         return (
             <TouchableOpacity
                 key={tooth.id}
@@ -182,189 +272,333 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                     styles.toothShape,
                     shapeStyle,
                     isErupted
-                        ? { backgroundColor: tooth.color, borderColor: tooth.color } // Filled
-                        : { backgroundColor: 'transparent', borderColor: isDarkMode ? '#475569' : '#CBD5E1', borderWidth: 1.5 } // Outline
+                        ? { backgroundColor: tooth.color, borderColor: tooth.color, borderWidth: 2 }
+                        : { backgroundColor: 'transparent', borderColor: isDarkMode ? '#475569' : '#CBD5E1', borderWidth: 1.5 }
                 ]}>
-                    {/* Show number/icon only if erupted? Or maybe just shape. Screenshot shows plain shapes or numbers. Let's keep it clean shapes for now. */}
                     {isErupted && <Check size={14} color="#fff" strokeWidth={3} />}
                 </View>
             </TouchableOpacity>
         );
     };
 
+    if (!visible) return null;
+
     return (
-        <SwipeableModal
+        <Modal
             visible={visible}
-            onClose={onClose}
-            backgroundColor={theme.background}
+            transparent
+            animationType="none"
+            onRequestClose={handleClose}
+            statusBarTranslucent
         >
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                {/* Header */}
-                <Animated.View
-                    entering={ANIMATIONS.fadeInDown(0)}
-                    style={[styles.header, { borderBottomColor: theme.border }]}
+            <RNAnimated.View style={[styles.overlay, { opacity: backdropAnim }]}>
+                <TouchableOpacity
+                    style={StyleSheet.absoluteFill}
+                    activeOpacity={1}
+                    onPress={handleClose}
+                />
+                <RNAnimated.View
+                    style={[
+                        styles.modalContent,
+                        {
+                            backgroundColor: theme.background,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
                 >
-                    <View style={{ width: 40 }} />
-                    <View style={styles.headerContent}>
-                        <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                            <Sparkles size={20} color="#8B5CF6" strokeWidth={2.5} />
+                    {/* Header */}
+                    <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                        <TouchableOpacity
+                            style={styles.closeBtn}
+                            onPress={handleClose}
+                            activeOpacity={0.7}
+                        >
+                            <X size={24} color={theme.textSecondary} strokeWidth={2.5} />
+                        </TouchableOpacity>
+                        <View style={styles.headerContent}>
+                            <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                                <Sparkles size={28} color="#8B5CF6" strokeWidth={2.5} />
+                            </View>
+                            <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
                         </View>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
+                        <View style={{ width: 40 }} />
                     </View>
-                    <View style={{ width: 40 }} />
-                </Animated.View>
 
-                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-                    {/* Main Oval Chart */}
-                    <Animated.View
-                        entering={ANIMATIONS.fadeInDown(100)}
-                        style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    {/* Scrollable Content */}
+                    <ScrollView
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
                     >
-                        {/* Center Labels */}
-                        <View style={styles.centerLabels}>
-                            <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>שיניים עליונות</Text>
-                            <Text style={[styles.jawLabel, { color: theme.textSecondary }]}>שיניים תחתונות</Text>
-                        </View>
+                        {/* Main Chart */}
+                        <Animated.View
+                            entering={ANIMATIONS.fadeInDown(100)}
+                            style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
+                        >
+                            <View style={styles.centerLabels}>
+                                <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>שיניים עליונות</Text>
+                                <Text style={[styles.jawLabel, { color: theme.textSecondary }]}>שיניים תחתונות</Text>
+                            </View>
+                            {TEETH_CONFIG.map(renderTooth)}
+                            <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>שמאל</Text>
+                            <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>ימין</Text>
+                        </Animated.View>
 
-                        {/* Render All Teeth */}
-                        {TEETH_CONFIG.map(renderTooth)}
+                        {/* Legend */}
+                        <Animated.View
+                            entering={ANIMATIONS.fadeInDown(200)}
+                            style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                        >
+                            <View style={styles.legendRow}>
+                                <View style={[styles.legendDot, { backgroundColor: '#F87171' }]} />
+                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת מרכזית</Text>
+                            </View>
+                            <View style={styles.legendRow}>
+                                <View style={[styles.legendDot, { backgroundColor: '#A3E635' }]} />
+                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת צידית</Text>
+                            </View>
+                            <View style={styles.legendRow}>
+                                <View style={[styles.legendDot, { backgroundColor: '#34D399' }]} />
+                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>ניב</Text>
+                            </View>
+                            <View style={styles.legendRow}>
+                                <View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} />
+                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת ראשונה</Text>
+                            </View>
+                            <View style={styles.legendRow}>
+                                <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
+                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת שנייה</Text>
+                            </View>
+                        </Animated.View>
 
-                        {/* Side Labels */}
-                        <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>שמאל</Text>
-                        <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>ימין</Text>
-                    </Animated.View>
+                        {/* Advanced Stats */}
+                        {(() => {
+                            const stats = getStatistics();
+                            return (
+                                <Animated.View
+                                    entering={ANIMATIONS.fadeInDown(300)}
+                                    style={styles.statsRow}
+                                >
+                                    <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
+                                        <Text style={[styles.statsText, { color: theme.textPrimary, marginBottom: 16 }]}>
+                                            סה"כ שיניים שבקעו: {stats.total} / 20
+                                        </Text>
+                                        
+                                        {/* Advanced Statistics */}
+                                        <View style={styles.advancedStats}>
+                                            <View style={[styles.statItem, { backgroundColor: theme.card }]}>
+                                                <Calendar size={18} color={theme.primary} strokeWidth={2} />
+                                                <View style={styles.statItemContent}>
+                                                    <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>החודש</Text>
+                                                    <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.thisMonth}</Text>
+                                                </View>
+                                            </View>
+                                            
+                                            {stats.first && (
+                                                <View style={[styles.statItem, { backgroundColor: theme.card }]}>
+                                                    <Award size={18} color="#F87171" strokeWidth={2} />
+                                                    <View style={styles.statItemContent}>
+                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>ראשונה</Text>
+                                                        <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.first.label}</Text>
+                                                        <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
+                                                            {formatToothDate(stats.first.date)}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            )}
+                                            
+                                            {stats.last && (
+                                                <View style={[styles.statItem, { backgroundColor: theme.card }]}>
+                                                    <Clock size={18} color="#34D399" strokeWidth={2} />
+                                                    <View style={styles.statItemContent}>
+                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>אחרונה</Text>
+                                                        <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.last.label}</Text>
+                                                        <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
+                                                            {formatToothDate(stats.last.date)}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </View>
+                                        
+                                        {stats.total === 20 && (
+                                            <View style={styles.completeBadge}>
+                                                <Sparkles size={16} color={theme.primary} strokeWidth={2} />
+                                                <Text style={[styles.completeText, { color: theme.primary }]}>כל השיניים בקעו! 🎉</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </Animated.View>
+                            );
+                        })()}
 
-                    {/* Stats / Legend Card */}
-                    <Animated.View
-                        entering={ANIMATIONS.fadeInDown(200)}
-                        style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-                    >
-                        <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#F87171' }]} />
-                            <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת מרכזית</Text>
-                        </View>
-                        <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#A3E635' }]} />
-                            <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת צידית</Text>
-                        </View>
-                        <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#34D399' }]} />
-                            <Text style={[styles.legendText, { color: theme.textPrimary }]}>ניב</Text>
-                        </View>
-                        <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} />
-                            <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת ראשונה</Text>
-                        </View>
-                        <View style={styles.legendRow}>
-                            <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
-                            <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת שנייה</Text>
-                        </View>
-                    </Animated.View>
+                        {/* Chronological History */}
+                        {(() => {
+                            const chronological = getChronologicalTeeth();
+                            if (chronological.length === 0) return null;
+                            
+                            return (
+                                <Animated.View
+                                    entering={ANIMATIONS.fadeInDown(400)}
+                                    style={styles.historySection}
+                                >
+                                    <View style={[styles.historyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                        <View style={[styles.historyHeader, { borderBottomColor: theme.border }]}>
+                                            <TrendingUp size={20} color={theme.primary} strokeWidth={2} />
+                                            <Text style={[styles.historyTitle, { color: theme.textPrimary }]}>
+                                                היסטוריה כרונולוגית
+                                            </Text>
+                                        </View>
+                                        <ScrollView 
+                                            style={styles.historyList}
+                                            showsVerticalScrollIndicator={false}
+                                            nestedScrollEnabled
+                                        >
+                                            {chronological.map((tooth, index) => (
+                                                <View 
+                                                    key={tooth.id} 
+                                                    style={[styles.historyItem, { borderBottomColor: theme.border }]}
+                                                >
+                                                    <View style={[styles.historyItemLeft, { backgroundColor: tooth.color + '20' }]}>
+                                                        <View style={[styles.historyItemDot, { backgroundColor: tooth.color }]} />
+                                                        <Text style={[styles.historyItemNumber, { color: theme.textSecondary }]}>
+                                                            #{index + 1}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.historyItemContent}>
+                                                        <Text style={[styles.historyItemLabel, { color: theme.textPrimary }]}>
+                                                            {tooth.label}
+                                                        </Text>
+                                                        <Text style={[styles.historyItemDate, { color: theme.textSecondary }]}>
+                                                            {formatToothDate(tooth.date)}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                </Animated.View>
+                            );
+                        })()}
+                    </ScrollView>
 
-                    <Animated.View
-                        entering={ANIMATIONS.fadeInDown(300)}
-                        style={styles.statsRow}
-                    >
-                        <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
-                            <Text style={[styles.statsText, { color: theme.textPrimary }]}>
-                                סה"כ שיניים שבקעו: {Object.keys(teethData).length} / 20
-                            </Text>
-                            {Object.keys(teethData).length === 20 && (
-                                <View style={styles.completeBadge}>
-                                    <Sparkles size={16} color={theme.primary} strokeWidth={2} />
-                                    <Text style={[styles.completeText, { color: theme.primary }]}>כל השיניים בקעו! 🎉</Text>
-                                </View>
-                            )}
-                        </View>
-                    </Animated.View>
-
-                </ScrollView>
-
-                {/* Custom Date Picker Modal */}
-                {showDatePicker && (
-                    <Modal transparent visible={showDatePicker} animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-                        <View style={styles.datePickerOverlay}>
-                            {Platform.OS === 'ios' && (
-                                <BlurView
-                                    intensity={20}
-                                    tint={isDarkMode ? 'dark' : 'light'}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                            )}
-                            <TouchableOpacity
-                                style={StyleSheet.absoluteFill}
-                                activeOpacity={1}
-                                onPress={() => setShowDatePicker(false)}
-                            />
-                            <Animated.View
-                                entering={ANIMATIONS.fadeInDown(0, 300)}
-                                style={[styles.datePickerModal, { backgroundColor: theme.card }]}
-                            >
-                                <View style={[styles.datePickerHeader, { borderBottomColor: theme.border }]}>
-                                    <Text style={[styles.datePickerTitle, { color: theme.textPrimary }]}>
-                                        מתי בקעה השן?
-                                    </Text>
-                                    <TouchableOpacity
-                                        onPress={() => setShowDatePicker(false)}
-                                        style={[styles.datePickerCloseBtn, { backgroundColor: theme.inputBackground }]}
-                                        activeOpacity={0.7}
-                                    >
-                                        <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                                    </TouchableOpacity>
-                                </View>
-
-                                <View style={styles.datePickerContent}>
-                                    <DateTimePicker
-                                        value={currentDate}
-                                        mode="date"
-                                        display="spinner"
-                                        onChange={(event, date) => {
-                                            if (date) {
-                                                setCurrentDate(date);
-                                            }
-                                        }}
-                                        maximumDate={new Date()}
-                                        textColor={theme.textPrimary}
-                                        locale="he-IL"
+                    {/* Date Picker Modal */}
+                    {showDatePicker && (
+                        <Modal transparent visible={showDatePicker} animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
+                            <View style={styles.datePickerOverlay}>
+                                {Platform.OS === 'ios' && (
+                                    <BlurView
+                                        intensity={20}
+                                        tint={isDarkMode ? 'dark' : 'light'}
+                                        style={StyleSheet.absoluteFill}
                                     />
-                                </View>
-
-                                <View style={[styles.datePickerActions, { borderTopColor: theme.border }]}>
-                                    <TouchableOpacity
-                                        style={[styles.datePickerCancelBtn, { backgroundColor: theme.cardSecondary }]}
-                                        onPress={() => {
-                                            setShowDatePicker(false);
-                                            setSelectedTooth(null);
-                                        }}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={[styles.datePickerBtnText, { color: theme.textSecondary }]}>ביטול</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.datePickerConfirmBtn, { backgroundColor: theme.primary }]}
-                                        onPress={() => {
-                                            if (selectedTooth && activeChild?.childId) {
-                                                handleDateChange({} as any, currentDate);
-                                            }
-                                        }}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text style={[styles.datePickerBtnText, { color: theme.card }]}>אישור</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </Animated.View>
-                        </View>
-                    </Modal>
-                )}
-            </View>
-        </SwipeableModal>
+                                )}
+                                <TouchableOpacity
+                                    style={StyleSheet.absoluteFill}
+                                    activeOpacity={1}
+                                    onPress={() => setShowDatePicker(false)}
+                                />
+                                <Animated.View
+                                    entering={ANIMATIONS.fadeInDown(0, 300)}
+                                    style={[styles.datePickerModal, { backgroundColor: theme.card }]}
+                                >
+                                    <View style={[styles.datePickerHeader, { borderBottomColor: theme.border }]}>
+                                        <Text style={[styles.datePickerTitle, { color: theme.textPrimary }]}>
+                                            {selectedTooth && teethData[selectedTooth] 
+                                                ? 'ערוך תאריך בקעת השן' 
+                                                : 'מתי בקעה השן?'}
+                                        </Text>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setShowDatePicker(false);
+                                                setSelectedTooth(null);
+                                            }}
+                                            style={[styles.datePickerCloseBtn, { backgroundColor: theme.inputBackground }]}
+                                            activeOpacity={0.7}
+                                        >
+                                            <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
+                                        </TouchableOpacity>
+                                    </View>
+                                    <View style={styles.datePickerContent}>
+                                        <DateTimePicker
+                                            value={currentDate}
+                                            mode="date"
+                                            display="spinner"
+                                            onChange={(event, date) => {
+                                                if (date) {
+                                                    setCurrentDate(date);
+                                                }
+                                            }}
+                                            maximumDate={new Date()}
+                                            textColor={theme.textPrimary}
+                                            locale="he-IL"
+                                        />
+                                    </View>
+                                    <View style={[styles.datePickerActions, { borderTopColor: theme.border }]}>
+                                        {selectedTooth && teethData[selectedTooth] && (
+                                            <TouchableOpacity
+                                                style={[styles.datePickerRemoveBtn, { backgroundColor: theme.danger + '15', borderColor: theme.danger + '40' }]}
+                                                onPress={() => {
+                                                    if (selectedTooth) {
+                                                        handleRemoveTooth(selectedTooth);
+                                                        setShowDatePicker(false);
+                                                        setSelectedTooth(null);
+                                                    }
+                                                }}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={[styles.datePickerBtnText, { color: theme.danger }]}>הסר שן</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                        <TouchableOpacity
+                                            style={[styles.datePickerCancelBtn, { backgroundColor: theme.cardSecondary }]}
+                                            onPress={() => {
+                                                setShowDatePicker(false);
+                                                setSelectedTooth(null);
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={[styles.datePickerBtnText, { color: theme.textSecondary }]}>ביטול</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.datePickerConfirmBtn, { backgroundColor: theme.primary }]}
+                                            onPress={() => {
+                                                if (selectedTooth && activeChild?.childId) {
+                                                    handleDateChange({} as any, currentDate);
+                                                }
+                                            }}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={[styles.datePickerBtnText, { color: theme.card }]}>אישור</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </Animated.View>
+                            </View>
+                        </Modal>
+                    )}
+                </RNAnimated.View>
+            </RNAnimated.View>
+        </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    overlay: {
         flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        width: '100%',
+        height: SCREEN_HEIGHT * 0.9,
+        maxHeight: SCREEN_HEIGHT * 0.95,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        elevation: 10,
     },
     header: {
         flexDirection: 'row-reverse',
@@ -375,21 +609,22 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     headerContent: {
-        flexDirection: 'row-reverse',
+        flex: 1,
         alignItems: 'center',
-        gap: 10,
+        justifyContent: 'center',
+        gap: 8,
     },
     iconCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
     },
     closeBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -397,20 +632,180 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: '700',
         letterSpacing: -0.5,
+        textAlign: 'center',
     },
-    content: {
-        padding: 20,
-        paddingBottom: 60,
+    toothDateBadge: {
+        position: 'absolute',
+        top: -28,
+        left: '50%',
+        marginLeft: -50,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        minWidth: 100,
+        maxWidth: 120,
         alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 20,
+        borderWidth: 1,
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 5,
+    },
+    toothDateText: {
+        fontSize: 11,
+        fontWeight: '700',
+        textAlign: 'center',
+        letterSpacing: 0.3,
+    },
+    toothDateTooltip: {
+        position: 'absolute',
+        top: -50,
+        left: '50%',
+        marginLeft: -80,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        minWidth: 160,
+        alignItems: 'center',
+        zIndex: 25,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    toothDateTooltipText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+        letterSpacing: 0.3,
+    },
+    advancedStats: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginTop: 12,
+    },
+    statItem: {
+        flex: 1,
+        minWidth: '45%',
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 10,
+        padding: 12,
+        borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'transparent',
+    },
+    statItemContent: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
+    statItemLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    statItemValue: {
+        fontSize: 15,
+        fontWeight: '700',
+        marginBottom: 2,
+    },
+    statItemDate: {
+        fontSize: 10,
+        fontWeight: '500',
+    },
+    historySection: {
+        width: '100%',
+        marginTop: 20,
+    },
+    historyCard: {
+        width: '100%',
+        borderRadius: 20,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    historyHeader: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 10,
+        padding: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    historyTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    historyList: {
+        maxHeight: 200,
+    },
+    historyItem: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        padding: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    historyItemLeft: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        marginLeft: 12,
+    },
+    historyItemDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    historyItemNumber: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    historyItemContent: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
+    historyItemLabel: {
+        fontSize: 15,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    historyItemDate: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    scrollView: {
+        flex: 1,
+        width: '100%',
+    },
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 100,
+        alignItems: 'center',
+        minHeight: '100%',
     },
     chartContainer: {
         width: 340,
-        height: 400,
+        height: 380,
         position: 'relative',
         borderRadius: 24,
         marginTop: 20,
         marginBottom: 20,
         paddingHorizontal: 10,
+        paddingTop: 10,
+        paddingBottom: 20,
         borderWidth: StyleSheet.hairlineWidth,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -426,6 +821,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1,
     },
     toothAbsolute: {
         position: 'absolute',
@@ -449,9 +845,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         fontSize: 13,
         fontWeight: '600',
+        zIndex: 5,
     },
-
-    // Legend
     legendCard: {
         width: '100%',
         padding: 20,
@@ -515,7 +910,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
     },
-    // Date Picker Modal
     datePickerOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -563,6 +957,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 16,
         borderTopWidth: StyleSheet.hairlineWidth,
+        flexWrap: 'wrap',
+    },
+    datePickerRemoveBtn: {
+        width: '100%',
+        paddingVertical: 12,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        marginBottom: 8,
     },
     datePickerCancelBtn: {
         flex: 1,
@@ -586,5 +990,5 @@ const styles = StyleSheet.create({
     datePickerBtnText: {
         fontSize: 16,
         fontWeight: '700',
-    }
+    },
 });

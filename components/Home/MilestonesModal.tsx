@@ -83,7 +83,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                     useNativeDriver: true,
                 }),
             ]).start();
-            
+
             // Start premium animations
             glowAnim.value = withRepeat(
                 withTiming(1, { duration: 2000 }),
@@ -121,7 +121,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
             const isDraggingDown = gestureState.dy > 8;
             const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.3;
             const isScrollAtTop = scrollOffsetY.current <= 5;
-            
+
             if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
                 isDragging.current = true;
                 dragStartY.current = currentY;
@@ -149,7 +149,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
         onPanResponderRelease: (_, gestureState) => {
             isDragging.current = false;
             scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-            
+
             const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
             if (shouldDismiss) {
                 if (Platform.OS !== 'web') {
@@ -344,15 +344,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                         {Platform.OS === 'ios' && (
                             <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                         )}
-                        <LinearGradient
-                            colors={isDarkMode 
-                                ? ['rgba(245, 158, 11, 0.1)', 'rgba(245, 158, 11, 0.05)']
-                                : ['rgba(245, 158, 11, 0.08)', 'rgba(245, 158, 11, 0.03)']
-                            }
-                            style={StyleSheet.absoluteFill}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        />
+
                         <View style={styles.headerContent}>
                             <Animated.View style={glowStyle}>
                                 <LinearGradient
@@ -446,7 +438,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             <BlurView intensity={15} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                                         )}
                                         <LinearGradient
-                                            colors={isDarkMode 
+                                            colors={isDarkMode
                                                 ? ['rgba(44, 44, 46, 0.8)', 'rgba(44, 44, 46, 0.6)']
                                                 : ['rgba(245, 245, 245, 0.9)', 'rgba(245, 245, 245, 0.7)']
                                             }
@@ -480,7 +472,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             <BlurView intensity={15} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                                         )}
                                         <LinearGradient
-                                            colors={isDarkMode 
+                                            colors={isDarkMode
                                                 ? ['rgba(44, 44, 46, 0.8)', 'rgba(44, 44, 46, 0.6)']
                                                 : ['rgba(245, 245, 245, 0.9)', 'rgba(245, 245, 245, 0.7)']
                                             }
@@ -503,7 +495,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             <BlurView intensity={15} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                                         )}
                                         <LinearGradient
-                                            colors={isDarkMode 
+                                            colors={isDarkMode
                                                 ? ['rgba(44, 44, 46, 0.8)', 'rgba(44, 44, 46, 0.6)']
                                                 : ['rgba(245, 245, 245, 0.9)', 'rgba(245, 245, 245, 0.7)']
                                             }
@@ -556,7 +548,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                                         )}
                                         <LinearGradient
-                                            colors={isDarkMode 
+                                            colors={isDarkMode
                                                 ? ['rgba(254, 243, 199, 0.1)', 'rgba(254, 243, 199, 0.05)']
                                                 : ['rgba(254, 243, 199, 0.3)', 'rgba(254, 243, 199, 0.1)']
                                             }
@@ -586,7 +578,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                                         <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                                                     )}
                                                     <LinearGradient
-                                                        colors={isDarkMode 
+                                                        colors={isDarkMode
                                                             ? ['rgba(44, 44, 46, 0.9)', 'rgba(44, 44, 46, 0.7)']
                                                             : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)']
                                                         }

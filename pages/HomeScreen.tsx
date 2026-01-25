@@ -61,6 +61,8 @@ import { useToast } from '../context/ToastContext';
 import { undoService } from '../services/undoService';
 import { subscribeToActiveShift } from '../services/babysitterService';
 import { ActiveShift } from '../types/babysitter';
+import { getBabyDataById } from '../services/babyService';
+import { Timestamp } from 'firebase/firestore';
 
 // Types
 import { TrackingType, DynamicStyles } from '../types/home';
@@ -80,20 +82,80 @@ export default function HomeScreen({ navigation }: any) {
     // --- Active Child from Context ---
     const { activeChild, allChildren } = useActiveChild();
 
+    // State for birth date and gender
+    const [birthDate, setBirthDate] = useState<Date | null>(null);
+    const [gender, setGender] = useState<'boy' | 'girl' | 'other' | undefined>(undefined);
+
+    // Fetch birth date and gender when active child changes
+    useEffect(() => {
+        const fetchBabyData = async () => {
+            if (!activeChild?.childId) {
+                setBirthDate(null);
+                setGender(undefined);
+                return;
+            }
+            try {
+                const babyData = await getBabyDataById(activeChild.childId);
+                if (babyData?.birthDate) {
+                    // Handle Firebase Timestamp or Date
+                    let date: Date;
+                    if (babyData.birthDate instanceof Timestamp) {
+                        date = babyData.birthDate.toDate();
+                    } else if (babyData.birthDate?.seconds) {
+                        date = new Date(babyData.birthDate.seconds * 1000);
+                    } else if (babyData.birthDate instanceof Date) {
+                        date = babyData.birthDate;
+                    } else {
+                        date = new Date(babyData.birthDate);
+                    }
+                    setBirthDate(date);
+                } else {
+                    setBirthDate(null);
+                }
+                
+                // Set gender
+                if (babyData?.gender) {
+                    setGender(babyData.gender);
+                } else {
+                    setGender(undefined);
+                }
+            } catch (error) {
+                if (__DEV__) console.error('Error fetching baby data:', error);
+                setBirthDate(null);
+                setGender(undefined);
+            }
+        };
+        fetchBabyData();
+    }, [activeChild?.childId]);
+
     // Derive profile from active child
     const profile = useMemo(() => {
         if (!activeChild) {
             return { id: '', name: 'הבייבי שלי', birthDate: new Date(), ageMonths: 0, photoUrl: undefined, parentId: '' };
         }
+        
+        // Calculate age in months if we have birth date
+        let ageMonths = 0;
+        if (birthDate) {
+            const now = new Date();
+            ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + 
+                       (now.getMonth() - birthDate.getMonth());
+            if (now.getDate() < birthDate.getDate()) {
+                ageMonths--;
+            }
+            ageMonths = Math.max(0, ageMonths);
+        }
+
         return {
             id: activeChild.childId,
             name: activeChild.childName,
-            birthDate: new Date(), // Will be fetched separately if needed
-            ageMonths: 0,
+            birthDate: birthDate || new Date(),
+            ageMonths,
             photoUrl: activeChild.photoUrl,
             parentId: auth.currentUser?.uid || '',
+            gender,
         };
-    }, [activeChild]);
+    }, [activeChild, birthDate]);
 
     // Calculate greeting
     const greeting = useMemo(() => {
@@ -205,18 +267,24 @@ export default function HomeScreen({ navigation }: any) {
     // --- Handlers ---
     const { showToast, showSuccess, showError } = useToast();
     const handleSaveTracking = useCallback(async (data: any) => {
+        console.log('📥 handleSaveTracking called with:', JSON.stringify(data, null, 2));
+        
         if (!user) {
+            console.error('❌ No user found');
             showError(t('errors.loginRequired'));
             return;
         }
 
         if (!profile.id) {
+            console.error('❌ No profile.id found');
             showError(t('errors.noChildProfile'));
             return;
         }
 
         try {
+            console.log('💾 Saving to Firebase:', { userId: user.uid, childId: profile.id, dataType: data.type });
             const eventId = await saveEventToFirebase(user.uid, profile.id, data);
+            console.log('✅ Saved successfully, eventId:', eventId);
 
             // Store for undo
             undoService.setLastAction({
@@ -395,7 +463,10 @@ export default function HomeScreen({ navigation }: any) {
                 <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
                 <Animated.ScrollView
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        !profile.id && !contextLoading && styles.scrollContentCentered
+                    ]}
                     showsVerticalScrollIndicator={false}
                     onScroll={scrollHandler}
                     scrollEventThrottle={16}
@@ -654,5 +725,11 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 20,
         paddingBottom: 100,
+    },
+    scrollContentCentered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100%',
     },
 });

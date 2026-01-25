@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { Timestamp } from 'firebase/firestore';
 import { getBabyData, updateBabyData, saveAlbumImage, BabyData, getBabyDataById } from '../services/babyService';
+import { uploadAlbumPhoto } from '../services/imageUploadService';
 import { GrowthStats } from '../types/profile';
 
 interface UseBabyProfileReturn {
@@ -20,6 +21,7 @@ interface UseBabyProfileReturn {
     updateAllStats: (stats: { weight?: string; height?: string; headCircumference?: string }) => Promise<void>;
     updateBasicInfo: (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date }) => Promise<void>;
     updateAlbumNote: (month: number, note: string) => Promise<void>;
+    updateAlbumDate: (month: number, date: Date) => Promise<void>;
 }
 
 export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
@@ -166,21 +168,29 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
     }, [openSettings]);
 
     const pickImageFromLibrary = useCallback(async (type: 'profile' | 'album', monthIndex?: number) => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            handlePermissionDenied('gallery');
-            return;
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                handlePermissionDenied('gallery');
+                return null;
+            }
+
+            console.log('📸 Opening image library...');
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: type === 'profile' ? [1, 1] : [3, 4],
+                quality: type === 'album' ? 0.7 : 0.3, // Higher quality for album photos
+                base64: type === 'profile', // Only need base64 for profile (small), not for album (will use Storage)
+            });
+
+            console.log('📸 Image picker result:', result.canceled ? 'CANCELED' : 'SELECTED');
+            return result;
+        } catch (error) {
+            console.error('❌ Error in pickImageFromLibrary:', error);
+            Alert.alert('שגיאה', 'לא הצלחנו לפתוח את הגלריה');
+            return null;
         }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: type === 'profile' ? [1, 1] : [3, 4],
-            quality: 0.3,
-            base64: true,
-        });
-
-        return result;
     }, [handlePermissionDenied]);
 
     const takePhotoWithCamera = useCallback(async (type: 'profile' | 'album') => {
@@ -193,40 +203,117 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         const result = await ImagePicker.launchCameraAsync({
             allowsEditing: true,
             aspect: type === 'profile' ? [1, 1] : [3, 4],
-            quality: 0.3,
-            base64: true,
+            quality: type === 'album' ? 0.7 : 0.3, // Higher quality for album photos
+            base64: type === 'profile', // Only need base64 for profile (small), not for album (will use Storage)
         });
 
         return result;
     }, [handlePermissionDenied]);
 
-    const processImage = useCallback(async (result: ImagePicker.ImagePickerResult, type: 'profile' | 'album', monthIndex?: number) => {
-        if (!result.canceled && result.assets[0].base64 && baby?.id) {
-            setSavingImage(true);
-            const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+    const processImage = useCallback(async (result: ImagePicker.ImagePickerResult | null, type: 'profile' | 'album', monthIndex?: number) => {
+        if (!result) {
+            console.log('⚠️ processImage: No result provided');
+            return;
+        }
 
-            try {
-                if (type === 'profile') {
+        if (result.canceled) {
+            console.log('⚠️ processImage: User canceled');
+            return;
+        }
+
+        if (!result.assets || !result.assets[0]) {
+            console.error('❌ processImage: No asset in result');
+            Alert.alert('שגיאה', 'לא הצלחנו לטעון את התמונה');
+            return;
+        }
+
+        if (!baby?.id) {
+            console.error('❌ processImage: No baby.id');
+            Alert.alert('שגיאה', 'לא נמצא פרופיל תינוק');
+            return;
+        }
+
+        console.log('💾 Processing image...', { type, monthIndex });
+        setSavingImage(true);
+
+        try {
+            if (type === 'profile') {
+                // For profile, we can still use base64 or upload to Storage
+                // Using base64 for profile to keep it simple
+                if (result.assets[0].base64) {
+                    const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
                     await updateBabyData(baby.id, { photoUrl: base64Img });
                     setBaby(prev => prev ? { ...prev, photoUrl: base64Img } : null);
-                } else if (type === 'album' && monthIndex !== undefined) {
-                    await saveAlbumImage(baby.id, monthIndex, base64Img);
-                    setBaby(prev => {
-                        if (!prev) return null;
-                        return { ...prev, album: { ...prev.album, [monthIndex]: base64Img } };
-                    });
+                    console.log('✅ Profile photo saved');
+                } else if (result.assets[0].uri) {
+                    // Fallback to URI if base64 not available
+                    await updateBabyData(baby.id, { photoUrl: result.assets[0].uri });
+                    setBaby(prev => prev ? { ...prev, photoUrl: result.assets[0].uri } : null);
+                    console.log('✅ Profile photo saved (URI)');
+                }
+            } else if (type === 'album' && monthIndex !== undefined) {
+                console.log('💾 Saving album image for month:', monthIndex);
+                
+                // Upload to Firebase Storage instead of saving base64
+                if (!result.assets[0].uri) {
+                    throw new Error('No image URI available');
                 }
 
-                if (Platform.OS !== 'web') {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                let downloadURL: string;
+                try {
+                    downloadURL = await uploadAlbumPhoto(baby.id, monthIndex, result.assets[0].uri);
+                    console.log('✅ Album photo uploaded to Storage:', downloadURL.substring(0, 50));
+                } catch (storageError) {
+                    console.error('❌ Storage upload failed, trying fallback...', storageError);
+                    // If Storage fails, try to use base64 but compress it more
+                    if (result.assets[0].base64) {
+                        // Compress base64 more aggressively
+                        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+                        downloadURL = base64Img;
+                        console.log('⚠️ Using base64 fallback (compressed)');
+                    } else {
+                        throw new Error('Storage upload failed and no base64 available');
+                    }
                 }
-            } catch (e) {
-                Alert.alert('שגיאה בשמירה');
-            } finally {
-                setSavingImage(false);
+                
+                // Save the Storage URL (or compressed base64) to Firestore
+                await saveAlbumImage(baby.id, monthIndex, downloadURL);
+                
+                // Auto-set date to today when adding a photo
+                const today = Timestamp.now();
+                const currentDates = baby.albumDates || {};
+                const updatedDates = { ...currentDates, [monthIndex]: today };
+                
+                setBaby(prev => {
+                    if (!prev) return null;
+                    const updatedAlbum = { ...prev.album, [monthIndex]: downloadURL };
+                    console.log('✅ Album photo saved, date set to:', today);
+                    return { 
+                        ...prev, 
+                        album: updatedAlbum,
+                        albumDates: updatedDates
+                    };
+                });
+                
+                // Also save the date to Firebase
+                try {
+                    await updateBabyData(baby.id, { albumDates: updatedDates });
+                    console.log('✅ Album date saved to Firebase');
+                } catch (e) {
+                    console.error('❌ Error auto-saving date:', e);
+                }
             }
+
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        } catch (e) {
+            console.error('❌ Error saving image:', e);
+            Alert.alert('שגיאה', 'לא הצלחנו לשמור את התמונה. נסה שוב.');
+        } finally {
+            setSavingImage(false);
         }
-    }, [baby?.id]);
+    }, [baby?.id, baby?.albumDates]);
 
     const updatePhoto = useCallback(async (type: 'profile' | 'album', monthIndex?: number) => {
         if (Platform.OS === 'ios') {
@@ -237,14 +324,25 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                     title: 'בחר מקור תמונה',
                 },
                 async (buttonIndex) => {
+                    console.log('📱 Action sheet button pressed:', buttonIndex);
                     if (buttonIndex === 1) {
                         // Camera
+                        console.log('📷 User selected camera');
                         const result = await takePhotoWithCamera(type);
-                        if (result) await processImage(result, type, monthIndex);
+                        if (result && !result.canceled) {
+                            await processImage(result, type, monthIndex);
+                        } else {
+                            console.log('⚠️ Camera canceled or failed');
+                        }
                     } else if (buttonIndex === 2) {
                         // Gallery
+                        console.log('📸 User selected gallery');
                         const result = await pickImageFromLibrary(type, monthIndex);
-                        if (result) await processImage(result, type, monthIndex);
+                        if (result && !result.canceled) {
+                            await processImage(result, type, monthIndex);
+                        } else {
+                            console.log('⚠️ Gallery canceled or failed');
+                        }
                     }
                 }
             );
@@ -258,15 +356,25 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                     {
                         text: 'צלם תמונה',
                         onPress: async () => {
+                            console.log('📷 User selected camera (Android)');
                             const result = await takePhotoWithCamera(type);
-                            if (result) await processImage(result, type, monthIndex);
+                            if (result && !result.canceled) {
+                                await processImage(result, type, monthIndex);
+                            } else {
+                                console.log('⚠️ Camera canceled or failed');
+                            }
                         }
                     },
                     {
                         text: 'בחר מהגלריה',
                         onPress: async () => {
+                            console.log('📸 User selected gallery (Android)');
                             const result = await pickImageFromLibrary(type, monthIndex);
-                            if (result) await processImage(result, type, monthIndex);
+                            if (result && !result.canceled) {
+                                await processImage(result, type, monthIndex);
+                            } else {
+                                console.log('⚠️ Gallery canceled or failed');
+                            }
                         }
                     },
                 ]
@@ -297,6 +405,26 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         }
     }, [baby?.id, baby?.albumNotes]);
 
+    const updateAlbumDate = useCallback(async (month: number, date: Date) => {
+        if (!baby?.id) return;
+
+        try {
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+
+            const timestamp = Timestamp.fromDate(date);
+            const currentDates = baby.albumDates || {};
+            const updatedDates = { ...currentDates, [month]: timestamp };
+
+            await updateBabyData(baby.id, { albumDates: updatedDates });
+            setBaby(prev => prev ? { ...prev, albumDates: updatedDates } : null);
+        } catch (e) {
+            console.error('Error saving album date:', e);
+            Alert.alert('שגיאה', 'לא הצלחנו לשמור את התאריך');
+        }
+    }, [baby?.id, baby?.albumDates]);
+
     return {
         baby,
         loading,
@@ -310,6 +438,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         updateAllStats,
         updateBasicInfo,
         updateAlbumNote,
+        updateAlbumDate,
     };
 };
 

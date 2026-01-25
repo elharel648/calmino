@@ -128,7 +128,6 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
 const styles = StyleSheet.create({
     container: {
         marginHorizontal: 20,
-        marginVertical: 20,
         borderRadius: 20,
         padding: 30,
     },

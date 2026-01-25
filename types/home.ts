@@ -9,6 +9,7 @@ export interface ChildProfile {
     ageMonths: number;
     photoUrl?: string;
     parentId?: string;
+    gender?: 'boy' | 'girl' | 'other';
 }
 
 export interface WeatherData {

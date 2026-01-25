@@ -103,8 +103,17 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async updateSleepTimer(elapsedSeconds: number): Promise<boolean> {
-        // Timer auto-updates via SwiftUI - no action needed
-        return true;
+        if (!this.isSupported || !ActivityKitManager || !this.activityId) {
+            return false;
+        }
+        
+        try {
+            await ActivityKitManager.updateSleepTimer(elapsedSeconds);
+            return true;
+        } catch (error: any) {
+            if (__DEV__) console.error('Failed to update Sleep Live Activity:', error);
+            return false;
+        }
     }
 
     async stopSleepTimer(): Promise<boolean> {
@@ -137,6 +146,23 @@ class LiveActivityServiceClass implements LiveActivityService {
         } catch (error: any) {
             if (__DEV__) console.error('Failed to start Breastfeeding Live Activity:', error);
             throw error;
+        }
+    }
+    
+    async updateBreastfeedingTimer(elapsedSeconds: number, side?: 'left' | 'right'): Promise<boolean> {
+        // For breastfeeding, we can use the same update mechanism
+        // The Swift code will handle the side display
+        if (!this.isSupported || !ActivityKitManager || !this.activityId) {
+            return false;
+        }
+        
+        try {
+            // Use updatePumpingTimer as a generic update method
+            await ActivityKitManager.updatePumpingTimer(elapsedSeconds);
+            return true;
+        } catch (error: any) {
+            if (__DEV__) console.error('Failed to update Breastfeeding Live Activity:', error);
+            return false;
         }
     }
 

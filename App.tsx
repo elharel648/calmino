@@ -412,14 +412,31 @@ export default function App() {
 
   // Hide splash when app is FULLY ready (auth + children loaded)
   const onLayoutRootView = useCallback(async () => {
-    if (!isAppLoading && childrenReady) {
+    // Determine if we are ready to hide splash
+    const shouldHide = !isAppLoading && (
+      !user || // Login screen ready
+      (user && !hasBabyProfile) || // Baby profile creation ready
+      (user && hasBabyProfile && childrenReady) // Main app ready
+    );
+
+    if (shouldHide) {
       await SplashScreen.hideAsync();
     }
-  }, [isAppLoading, childrenReady]);
+  }, [isAppLoading, childrenReady, user, hasBabyProfile]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      // Reload user to ensure we have the latest emailVerified status
       if (currentUser) {
+        try {
+          await currentUser.reload();
+        } catch (e) {
+          // If reload fails (e.g. network), we continue with cached value
+          if (__DEV__) console.log('User reload failed:', e);
+        }
+      }
+
+      if (currentUser && currentUser.emailVerified) {
         setUser(currentUser);
         await checkBiometricSettingsAndProfile(currentUser.uid);
 
@@ -487,55 +504,71 @@ export default function App() {
 
   if (isLocked) {
     return (
-      <LanguageProvider>
-        <ThemeProvider>
-          <BiometricLockScreen onUnlock={authenticateUser} />
-        </ThemeProvider>
-      </LanguageProvider>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <LanguageProvider>
+          <ThemeProvider>
+            <BiometricLockScreen onUnlock={authenticateUser} />
+          </ThemeProvider>
+        </LanguageProvider>
+      </View>
     );
   }
 
   if (!user) {
     return (
-      <LanguageProvider>
-        <ThemeProvider>
-          <SafeAreaProvider>
-            <LoginScreen onLoginSuccess={() => setIsAppLoading(true)} />
-          </SafeAreaProvider>
-        </ThemeProvider>
-      </LanguageProvider>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <LanguageProvider>
+          <ThemeProvider>
+            <SafeAreaProvider>
+              <LoginScreen onLoginSuccess={() => {
+                // Trigger auth state check - onAuthStateChanged will handle the rest
+                setIsAppLoading(true);
+              }} />
+            </SafeAreaProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </View>
     );
   }
 
-  if (user && !hasBabyProfile) {
+  // Show loading while checking baby profile
+  if (hasBabyProfile === null) {
+    return null; // Keep splash visible
+  }
+
+
+
+  if (user && hasBabyProfile === false) {
     return (
-      <LanguageProvider>
-        <ThemeProvider>
-          <SafeAreaProvider>
-            <BabyProfileScreen
-              onProfileSaved={() => setHasBabyProfile(true)}
-              onSkip={() => setHasBabyProfile(true)}
-            />
-          </SafeAreaProvider>
-        </ThemeProvider>
-      </LanguageProvider>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <LanguageProvider>
+          <ThemeProvider>
+            <SafeAreaProvider>
+              <BabyProfileScreen
+                onProfileSaved={() => setHasBabyProfile(true)}
+                onSkip={() => setHasBabyProfile(true)}
+              />
+            </SafeAreaProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </View>
     );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <ErrorBoundary>
         <ScrollTrackingProvider>
-          <SleepTimerProvider>
-            <FoodTimerProvider>
-              <QuickActionsProvider>
-                <LanguageProvider>
-                  <ThemeProvider>
-                    <ToastProvider>
-                      <ActiveChildProvider onReady={() => {
-                        setChildrenReady(true);
-                        SplashScreen.hideAsync();
-                      }}>
+          <LanguageProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <ActiveChildProvider onReady={() => {
+                  setChildrenReady(true);
+                  SplashScreen.hideAsync();
+                }}>
+                  <QuickActionsProvider>
+                    <SleepTimerProvider>
+                      <FoodTimerProvider>
                         <PremiumProvider>
                           <LiveActivityURLHandler />
                           <SafeAreaProvider>
@@ -551,10 +584,7 @@ export default function App() {
                                     'חשבון': 'account',
                                     'בייביסיטר': 'babysitter',
                                     // English routes (for deep linking)
-                                    'Home': 'home',
                                     'Statistics': 'reports',
-                                    'Account': 'account',
-                                    'Babysitter': 'babysitter',
                                     Home: {
                                       screens: {
                                         Home: 'home',
@@ -583,13 +613,13 @@ export default function App() {
                             </NavigationContainer>
                           </SafeAreaProvider>
                         </PremiumProvider>
-                      </ActiveChildProvider>
-                    </ToastProvider>
-                  </ThemeProvider>
-                </LanguageProvider>
-              </QuickActionsProvider>
-            </FoodTimerProvider>
-          </SleepTimerProvider>
+                      </FoodTimerProvider>
+                    </SleepTimerProvider>
+                  </QuickActionsProvider>
+                </ActiveChildProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </ScrollTrackingProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>

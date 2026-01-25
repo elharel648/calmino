@@ -1,7 +1,7 @@
 import React, { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList } from 'lucide-react-native';
+import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -324,38 +324,41 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     // Track if we're dragging
     const isDragging = useRef(false);
+    const scrollViewRef = useRef<ScrollView>(null);
+    const scrollOffsetY = useRef(0);
+    const dragStartY = useRef(0);
 
-    // Swipe down to dismiss - Liquid glass animation
+    // Swipe down to dismiss - Exact same as TrackingModal
     const panResponder = useMemo(() => PanResponder.create({
         onStartShouldSetPanResponder: (evt, gestureState) => {
-            // Always allow starting from drag handle area
             const startY = evt.nativeEvent.pageY;
-            if (startY < 150) {
-                isDragging.current = true;
+            dragStartY.current = startY;
+            if (startY < 300) {
+                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
                 return true;
             }
             return false;
         },
         onMoveShouldSetPanResponder: (evt, gestureState) => {
-            // If already dragging, continue
             if (isDragging.current) return true;
-            
-            // Check if we're in the top area and dragging down
             const currentY = evt.nativeEvent.pageY;
-            const isTopArea = currentY < 200;
-            const isDraggingDown = gestureState.dy > 10;
-            
-            if (isTopArea && isDraggingDown && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5) {
+            const isTopArea = currentY < 300;
+            const isDraggingDown = gestureState.dy > 5;
+            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+            const isScrollAtTop = scrollOffsetY.current <= 5;
+
+            if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
                 isDragging.current = true;
+                dragStartY.current = currentY;
+                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 return true;
             }
             return false;
         },
         onPanResponderGrant: () => {
             isDragging.current = true;
-            if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
@@ -366,12 +369,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         },
         onPanResponderRelease: (_, gestureState) => {
             isDragging.current = false;
-            
+            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+
             const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
             if (shouldDismiss) {
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 Animated.parallel([
                     Animated.spring(slideAnim, {
                         toValue: SCREEN_HEIGHT,
@@ -407,6 +409,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         },
         onPanResponderTerminate: () => {
             isDragging.current = false;
+            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
         },
     }), [slideAnim, backdropAnim, closeModal]);
 
@@ -528,7 +531,15 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     // Menu - Minimal Premium Style
     const renderMenu = () => (
-        <ScrollView contentContainerStyle={styles.menuContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+            ref={scrollViewRef}
+            contentContainerStyle={styles.menuContainer} 
+            showsVerticalScrollIndicator={false}
+            onScroll={(e) => {
+                scrollOffsetY.current = e.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
+        >
             <View style={styles.optionsList}>
                 {HEALTH_OPTIONS.map((option, index) => {
                     const Icon = option.icon;
@@ -581,6 +592,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         onChangeText={setNewVaccineName}
                         placeholder="שם החיסון"
                         placeholderTextColor="#9CA3AF"
+                        textAlign="right"
+                        textAlignVertical="center"
                     />
                     <TouchableOpacity style={styles.addVaccineSubmit} onPress={addCustomVaccine}>
                         <Check size={20} color="#fff" />
@@ -596,7 +609,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     </View>
                     {customVaccines.map(vaccine => (
                         <View key={vaccine.id} style={styles.vaccineRowDone}>
-                            <Text style={styles.vaccineNameDone}>{vaccine.name}</Text>
+                            <Text style={[styles.vaccineNameDone, { textAlign: 'right', writingDirection: 'rtl' }]}>{vaccine.name}</Text>
                             <TouchableOpacity onPress={() => deleteCustomVaccine(vaccine.id)}>
                                 <Trash2 size={18} color="#EF4444" />
                             </TouchableOpacity>
@@ -1134,25 +1147,25 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     return (
         <Modal visible={isModalOpen} transparent animationType="none" onRequestClose={closeModal}>
             <TouchableWithoutFeedback onPress={closeModal}>
-                <Animated.View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay, opacity: backdropAnim }]}>
-                    <TouchableWithoutFeedback>
-                        <Animated.View
-                            style={[
-                                styles.modalContent,
-                                {
-                                    backgroundColor: theme.card,
-                                    transform: [{ translateY: slideAnim }],
-                                }
-                            ]}
-                            {...panResponder.panHandlers}
-                        >
+                <Animated.View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay, opacity: backdropAnim }]} />
+            </TouchableWithoutFeedback>
+            <Animated.View
+                style={[
+                    styles.modalContent,
+                    {
+                        backgroundColor: theme.card,
+                        transform: [{ translateY: slideAnim }],
+                    }
+                ]}
+                {...panResponder.panHandlers}
+            >
                             {/* Drag Handle */}
                             <View style={styles.dragHandle} {...panResponder.panHandlers}>
                                 <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
                             </View>
 
                             {/* Minimal Header */}
-                            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+                            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
                                 {currentScreen !== 'menu' ? (
                                     <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
                                         <ChevronRight size={22} color={theme.textPrimary} />
@@ -1160,7 +1173,16 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 ) : (
                                     <View style={{ width: 40 }} />
                                 )}
-                                <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
+                                <View style={styles.headerTitleContainer}>
+                                    {currentScreen === 'menu' && (
+                                        <View style={styles.headerIconWrapper}>
+                                            <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB' }]}>
+                                                <HeartPulse size={20} color="#14B8A6" strokeWidth={2} />
+                                            </View>
+                                        </View>
+                                    )}
+                                    <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
+                                </View>
                                 <View style={{ width: 40 }} />
                             </View>
 
@@ -1173,10 +1195,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         {currentScreen === 'medications' && renderMedications()}
                         {currentScreen === 'history' && renderHistory()}
                     </View>
-                        </Animated.View>
-                    </TouchableWithoutFeedback>
-                </Animated.View>
-            </TouchableWithoutFeedback>
+            </Animated.View>
         </Modal>
     );
 });
@@ -1215,6 +1234,22 @@ const styles = StyleSheet.create({
     dragHandleBar: { width: 36, height: 5, borderRadius: 3 },
     modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
     headerBtn: { padding: 8, backgroundColor: '#F3F4F6', borderRadius: 10 },
+    headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'column' },
+    headerIconWrapper: { marginBottom: 8, alignItems: 'center' },
+    headerIconCircle: { 
+        width: 56, 
+        height: 56, 
+        borderRadius: 28, 
+        backgroundColor: '#FFFFFF', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
     modalTitle: { fontSize: 17, fontWeight: '600', color: '#1F2937' },
     modalBody: { flex: 1, backgroundColor: '#FFFFFF' },
 
@@ -1251,18 +1286,18 @@ const styles = StyleSheet.create({
     // Vaccine styles
     addVaccineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EEF2FF', padding: 14, borderRadius: 14, marginBottom: 20 },
     addVaccineBtnText: { fontSize: 15, fontWeight: '600', color: '#6366F1' },
-    addVaccineForm: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-    addVaccineInput: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 15, textAlign: 'right', borderWidth: 1, borderColor: '#E5E7EB' },
+    addVaccineForm: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
+    addVaccineInput: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 15, textAlign: 'right', textAlignVertical: 'center', borderWidth: 1, borderColor: '#E5E7EB', writingDirection: 'rtl' },
     addVaccineSubmit: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#6366F1', alignItems: 'center', justifyContent: 'center' },
     vaccineGroup: { marginBottom: 20 },
     ageBadge: { alignSelf: 'flex-end', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 12 },
     ageBadgeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
     ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
     ageBadgeTextMinimal: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
-    vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
-    vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#10B981' },
-    vaccineName: { fontSize: 15, color: '#1F2937', fontWeight: '500' },
-    vaccineNameDone: { fontSize: 15, color: '#10B981', fontWeight: '600', textDecorationLine: 'line-through' },
+    vaccineRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+    vaccineRowDone: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#10B981' },
+    vaccineName: { fontSize: 15, color: '#1F2937', fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
+    vaccineNameDone: { fontSize: 15, color: '#10B981', fontWeight: '600', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
     checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
     checkboxChecked: { backgroundColor: '#10B981', borderColor: '#10B981' },
 

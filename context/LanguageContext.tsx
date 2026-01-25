@@ -11,6 +11,7 @@ const translations: Record<Language, Record<string, string>> = {
   he: {
     // Common
     'common.save': 'שמור',
+    'common.all': 'הכל',
     'common.cancel': 'ביטול',
     'common.delete': 'מחק',
     'common.edit': 'ערוך',
@@ -71,6 +72,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Time
     'time.now': 'עכשיו',
     'time.minutesAgo': 'לפני {count} דקות',
+    'time.hourAgo': 'לפני שעה',
     'time.hoursAgo': 'לפני {count} שעות',
     'time.daysAgo': 'לפני {count} ימים',
     'time.yesterday': 'אתמול',
@@ -278,8 +280,8 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.deleteCurrentChild': 'מחיקת ילד נוכחי',
     'settings.logout': 'התנתקות',
     'settings.sendMessage': 'שלח הודעה',
-    'settings.hours': 'שעות',
-
+    'babysitter.distanceFilter': 'טווח חיפוש',
+    'units.km': 'ק"מ',
     // Sitter Settings
     'sitter.settings': 'הגדרות סיטר',
     'sitter.saveSettings': 'שמור הגדרות',
@@ -407,7 +409,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.lockout.title': 'יותר מדי ניסיונות',
     'login.lockout.message': 'נחסמת ל-30 שניות מסיבות אבטחה',
     'login.appName': 'הורה רגוע',
-    'login.appSubtitle': 'ניהול חכם ושקט להורים טריים',
+    'login.appSubtitle': 'ניהול חכם ושקט להורים',
 
     // Alerts
     'alerts.notAvailable': 'לא זמין',
@@ -508,10 +510,15 @@ const translations: Record<Language, Record<string, string>> = {
     'babysitter.openDashboard': 'עבור לדשבורד →',
     'babysitter.rating': 'דירוג',
     'babysitter.price': 'מחיר',
+    'babysitter.distanceFilter': 'טווח חיפוש',
+    'units.km': 'ק"מ',
+
   },
   en: {
     // Common
     'common.save': 'Save',
+    'common.all': 'All', // Added consistent key
+    'units.km': 'km', // Added consistent key
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
     'common.edit': 'Edit',
@@ -566,6 +573,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Time
     'time.now': 'Now',
     'time.minutesAgo': '{count} minutes ago',
+    'time.hourAgo': '1 hour ago',
     'time.hoursAgo': '{count} hours ago',
     'time.daysAgo': '{count} days ago',
     'time.yesterday': 'Yesterday',
@@ -956,6 +964,7 @@ const translations: Record<Language, Record<string, string>> = {
     'babysitter.openDashboard': 'Open Dashboard →',
     'babysitter.rating': 'Rating',
     'babysitter.price': 'Price',
+    'babysitter.distanceFilter': 'Distance Radius',
 
     // Sitter Settings
     'sitter.settings': 'Sitter Settings',

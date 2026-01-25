@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { liveActivityService } from '../services/liveActivityService';
+import { useActiveChild } from '../context/ActiveChildContext';
 
 interface FoodTimerContextType {
     // Pumping Timer
@@ -46,238 +47,233 @@ interface FoodTimerProviderProps {
 }
 
 export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
-    // === PUMPING TIMER ===
-    const [pumpingIsRunning, setPumpingIsRunning] = useState(false);
-    const [pumpingIsPaused, setPumpingIsPaused] = useState(false);
-    const [pumpingElapsedSeconds, setPumpingElapsedSeconds] = useState(0);
-    const pumpingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const pumpingActivityIdRef = useRef<string | undefined>(undefined);
+    const { activeChild } = useActiveChild();
+    const activeChildId = activeChild?.childId;
 
-    // Pumping timer effect with Live Activity updates
-    useEffect(() => {
-        if (pumpingIsRunning && !pumpingIsPaused) {
-            pumpingTimerRef.current = setInterval(() => {
-                setPumpingElapsedSeconds(prev => {
-                    const newSeconds = prev + 1;
-                    // Update Live Activity every second
-                    if (Platform.OS === 'ios' && pumpingActivityIdRef.current) {
-                        liveActivityService.updatePumpingTimer(newSeconds).catch(() => {
-                            // Silently fail if update doesn't work
-                        });
-                    }
-                    return newSeconds;
-                });
-            }, 1000);
-        } else {
-            if (pumpingTimerRef.current) {
-                clearInterval(pumpingTimerRef.current);
-                pumpingTimerRef.current = null;
-            }
-        }
-        return () => {
-            if (pumpingTimerRef.current) clearInterval(pumpingTimerRef.current);
+    // --- State Management Per Child ---
+    interface FoodTimerState {
+        pumping: {
+            isRunning: boolean;
+            isPaused: boolean;
+            elapsedSeconds: number;
+            activityId?: string;
         };
-    }, [pumpingIsRunning, pumpingIsPaused]);
+        breast: {
+            isRunning: boolean;
+            isPaused: boolean;
+            activeSide: 'left' | 'right' | null;
+            elapsedSeconds: number;
+            leftBreastTime: number;
+            rightBreastTime: number;
+            activityId?: string;
+        };
+    }
 
+    const INITIAL_STATE: FoodTimerState = {
+        pumping: { isRunning: false, isPaused: false, elapsedSeconds: 0 },
+        breast: { isRunning: false, isPaused: false, activeSide: null, elapsedSeconds: 0, leftBreastTime: 0, rightBreastTime: 0 }
+    };
+
+    const [timers, setTimers] = useState<Record<string, FoodTimerState>>({});
+    const pumpingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const breastTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Get active child state
+    const currentState = activeChildId && timers[activeChildId] ? timers[activeChildId] : INITIAL_STATE;
+
+    const updateChildState = useCallback((childId: string, updates: Partial<FoodTimerState>) => {
+        setTimers(prev => ({
+            ...prev,
+            [childId]: {
+                ...(prev[childId] || INITIAL_STATE),
+                ...updates
+            }
+        }));
+    }, []);
+
+    const updateNestedState = useCallback((childId: string, type: 'pumping' | 'breast', updates: any) => {
+        setTimers(prev => {
+            const childState = prev[childId] || INITIAL_STATE;
+            return {
+                ...prev,
+                [childId]: {
+                    ...childState,
+                    [type]: {
+                        ...childState[type],
+                        ...updates
+                    }
+                }
+            };
+        });
+    }, []);
+
+    // --- Global Interval for Pumping ---
+    useEffect(() => {
+        pumpingTimerRef.current = setInterval(() => {
+            setTimers(prev => {
+                const next = { ...prev };
+                let changes = false;
+                Object.keys(next).forEach(id => {
+                    if (next[id].pumping.isRunning && !next[id].pumping.isPaused) {
+                        next[id] = {
+                            ...next[id],
+                            pumping: {
+                                ...next[id].pumping,
+                                elapsedSeconds: next[id].pumping.elapsedSeconds + 1
+                            }
+                        };
+                        changes = true;
+
+                        // Update Live Activity (only if this child has one running)
+                        if (Platform.OS === 'ios' && next[id].pumping.activityId) {
+                            liveActivityService.updatePumpingTimer(next[id].pumping.elapsedSeconds).catch(() => { });
+                        }
+                    }
+                });
+                return changes ? next : prev;
+            });
+        }, 1000);
+        return () => { if (pumpingTimerRef.current) clearInterval(pumpingTimerRef.current); };
+    }, []);
+
+    // --- Global Interval for Breastfeeding ---
+    useEffect(() => {
+        breastTimerRef.current = setInterval(() => {
+            setTimers(prev => {
+                const next = { ...prev };
+                let changes = false;
+                Object.keys(next).forEach(id => {
+                    if (next[id].breast.isRunning && !next[id].breast.isPaused) {
+                        next[id] = {
+                            ...next[id],
+                            breast: {
+                                ...next[id].breast,
+                                elapsedSeconds: next[id].breast.elapsedSeconds + 1
+                            }
+                        };
+                        changes = true;
+                    }
+                });
+                return changes ? next : prev;
+            });
+        }, 1000);
+        return () => { if (breastTimerRef.current) clearInterval(breastTimerRef.current); };
+    }, []);
+
+
+    // === PUMPING ACTIONS ===
     const startPumping = useCallback(async () => {
+        if (!activeChildId) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setPumpingIsRunning(true);
-        setPumpingIsPaused(false);
-        setPumpingElapsedSeconds(0);
 
-        // Start iOS Live Activity (ActivityKit)
+        const newState = { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined };
+
+        // Start iOS Live Activity
         if (Platform.OS === 'ios') {
             try {
                 const activityId = await liveActivityService.startPumpingTimer();
-                if (activityId) {
-                    pumpingActivityIdRef.current = activityId;
-                    if (__DEV__) console.log('✅ Live Activity started:', activityId);
-                }
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Live Activity not supported:', error);
-            }
+                if (activityId) newState.activityId = activityId;
+            } catch (error) { if (__DEV__) console.warn(error); }
         }
-    }, []);
+
+        updateNestedState(activeChildId, 'pumping', newState);
+    }, [activeChildId, updateNestedState]);
 
     const stopPumping = useCallback(async () => {
+        if (!activeChildId) return;
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setPumpingIsRunning(false);
-        setPumpingIsPaused(false);
 
-        // Stop iOS Live Activity (ActivityKit)
-        if (Platform.OS === 'ios' && pumpingActivityIdRef.current) {
-            try {
-                await liveActivityService.stopPumpingTimer();
-                pumpingActivityIdRef.current = undefined;
-                if (__DEV__) console.log('✅ Live Activity stopped');
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error stopping Live Activity:', error);
-            }
+        const activityId = currentState.pumping.activityId;
+        updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, activityId: undefined });
+
+        if (Platform.OS === 'ios' && activityId) {
+            try { await liveActivityService.stopPumpingTimer(); } catch (e) { }
         }
-    }, []);
+    }, [activeChildId, currentState.pumping.activityId, updateNestedState]);
 
     const pausePumping = useCallback(async () => {
-        if (!pumpingIsRunning || pumpingIsPaused) return;
-        
-        setPumpingIsPaused(true);
-        
-        // Pause Live Activity
-        if (Platform.OS === 'ios' && pumpingActivityIdRef.current) {
-            try {
-                await liveActivityService.pauseTimer();
-                if (__DEV__) console.log('✅ Pumping Live Activity paused');
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error pausing Pumping Live Activity:', error);
-            }
-        }
-    }, [pumpingIsRunning, pumpingIsPaused]);
+        if (!activeChildId || !currentState.pumping.isRunning || currentState.pumping.isPaused) return;
+        updateNestedState(activeChildId, 'pumping', { isPaused: true });
+        if (Platform.OS === 'ios' && currentState.pumping.activityId) await liveActivityService.pauseTimer();
+    }, [activeChildId, currentState.pumping, updateNestedState]);
 
     const resumePumping = useCallback(async () => {
-        if (!pumpingIsRunning || !pumpingIsPaused) return;
-        
-        setPumpingIsPaused(false);
-        
-        // Resume Live Activity
-        if (Platform.OS === 'ios' && pumpingActivityIdRef.current) {
-            try {
-                await liveActivityService.resumeTimer();
-                if (__DEV__) console.log('✅ Pumping Live Activity resumed');
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error resuming Pumping Live Activity:', error);
-            }
-        }
-    }, [pumpingIsRunning, pumpingIsPaused]);
+        if (!activeChildId || !currentState.pumping.isRunning || !currentState.pumping.isPaused) return;
+        updateNestedState(activeChildId, 'pumping', { isPaused: false });
+        if (Platform.OS === 'ios' && currentState.pumping.activityId) await liveActivityService.resumeTimer();
+    }, [activeChildId, currentState.pumping, updateNestedState]);
 
     const resetPumping = useCallback(() => {
-        setPumpingIsRunning(false);
-        setPumpingIsPaused(false);
-        setPumpingElapsedSeconds(0);
-    }, []);
+        if (!activeChildId) return;
+        updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, elapsedSeconds: 0 });
+    }, [activeChildId, updateNestedState]);
 
-    // === BREASTFEEDING TIMER ===
-    const [breastIsRunning, setBreastIsRunning] = useState(false);
-    const [breastIsPaused, setBreastIsPaused] = useState(false);
-    const [breastActiveSide, setBreastActiveSide] = useState<'left' | 'right' | null>(null);
-    const [breastElapsedSeconds, setBreastElapsedSeconds] = useState(0);
-    const [leftBreastTime, setLeftBreastTime] = useState(0);
-    const [rightBreastTime, setRightBreastTime] = useState(0);
-    const breastTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const breastActivityIdRef = useRef<string | undefined>(undefined);
 
-    // Breast timer effect
-    useEffect(() => {
-        if (breastIsRunning && breastActiveSide && !breastIsPaused) {
-            breastTimerRef.current = setInterval(() => {
-                setBreastElapsedSeconds(prev => prev + 1);
-            }, 1000);
-        } else {
-            if (breastTimerRef.current) {
-                clearInterval(breastTimerRef.current);
-                breastTimerRef.current = null;
-            }
-        }
-        return () => {
-            if (breastTimerRef.current) clearInterval(breastTimerRef.current);
-        };
-    }, [breastIsRunning, breastActiveSide, breastIsPaused]);
-
+    // === BREASTFEEDING ACTIONS ===
     const startBreast = useCallback(async (side: 'left' | 'right') => {
+        if (!activeChildId) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        // If switching sides, accumulate current time first
-        if (breastIsRunning && breastActiveSide && breastActiveSide !== side) {
-            if (breastActiveSide === 'left') {
-                setLeftBreastTime(prev => prev + breastElapsedSeconds);
+        const currentBreast = currentState.breast;
+        let updates: any = { activeSide: side, isRunning: true, isPaused: false, elapsedSeconds: 0 };
+
+        // Accumulate previous side time if switching
+        if (currentBreast.isRunning && currentBreast.activeSide && currentBreast.activeSide !== side) {
+            if (currentBreast.activeSide === 'left') {
+                updates.leftBreastTime = currentBreast.leftBreastTime + currentBreast.elapsedSeconds;
             } else {
-                setRightBreastTime(prev => prev + breastElapsedSeconds);
+                updates.rightBreastTime = currentBreast.rightBreastTime + currentBreast.elapsedSeconds;
             }
         }
 
-        setBreastActiveSide(side);
-        setBreastIsRunning(true);
-        setBreastIsPaused(false);
-        setBreastElapsedSeconds(0);
-
-        // Start iOS Live Activity for Dynamic Island (with side indication)
         if (Platform.OS === 'ios') {
             try {
-                const activityId = await liveActivityService.startBreastfeedingTimer('הורה', 'תינוק', side);
-                if (activityId) {
-                    breastActivityIdRef.current = activityId;
-                    if (__DEV__) console.log('✅ Breastfeeding Live Activity started:', activityId, 'side:', side);
-                }
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Breastfeeding Live Activity not supported:', error);
-            }
+                const activityId = await liveActivityService.startBreastfeedingTimer('הורה', activeChild?.childName || 'תינוק', side);
+                if (activityId) updates.activityId = activityId;
+            } catch (e) { }
         }
-    }, [breastIsRunning, breastActiveSide, breastElapsedSeconds]);
+
+        updateNestedState(activeChildId, 'breast', updates);
+    }, [activeChildId, currentState.breast, updateNestedState, activeChild?.childName]);
 
     const stopBreast = useCallback(async () => {
+        if (!activeChildId) return;
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Accumulate time before stopping
-        if (breastActiveSide === 'left') {
-            setLeftBreastTime(prev => prev + breastElapsedSeconds);
-        } else if (breastActiveSide === 'right') {
-            setRightBreastTime(prev => prev + breastElapsedSeconds);
+        const currentBreast = currentState.breast;
+        let updates: any = { isRunning: false, isPaused: false, elapsedSeconds: 0, activityId: undefined };
+
+        if (currentBreast.activeSide === 'left') {
+            updates.leftBreastTime = currentBreast.leftBreastTime + currentBreast.elapsedSeconds;
+        } else if (currentBreast.activeSide === 'right') {
+            updates.rightBreastTime = currentBreast.rightBreastTime + currentBreast.elapsedSeconds;
         }
 
-        setBreastIsRunning(false);
-        setBreastIsPaused(false);
-        setBreastElapsedSeconds(0);
+        updateNestedState(activeChildId, 'breast', updates);
 
-        // Stop iOS Live Activity
-        if (Platform.OS === 'ios' && breastActivityIdRef.current) {
-            try {
-                await liveActivityService.stopBreastfeedingTimer();
-                breastActivityIdRef.current = undefined;
-                if (__DEV__) console.log('✅ Breastfeeding Live Activity stopped');
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error stopping Breastfeeding Live Activity:', error);
-            }
+        if (Platform.OS === 'ios' && currentBreast.activityId) {
+            try { await liveActivityService.stopBreastfeedingTimer(); } catch (e) { }
         }
-    }, [breastActiveSide, breastElapsedSeconds]);
+    }, [activeChildId, currentState.breast, updateNestedState]);
 
     const pauseBreast = useCallback(async () => {
-        if (!breastIsRunning || breastIsPaused) return;
-        
-        setBreastIsPaused(true);
-        
-        // Pause Live Activity
-        if (Platform.OS === 'ios' && breastActivityIdRef.current) {
-            try {
-                await liveActivityService.pauseTimer();
-                if (__DEV__) console.log('✅ Breastfeeding Live Activity paused');
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error pausing Breastfeeding Live Activity:', error);
-            }
-        }
-    }, [breastIsRunning, breastIsPaused]);
+        if (!activeChildId || !currentState.breast.isRunning || currentState.breast.isPaused) return;
+        updateNestedState(activeChildId, 'breast', { isPaused: true });
+        if (Platform.OS === 'ios' && currentState.breast.activityId) await liveActivityService.pauseTimer();
+    }, [activeChildId, currentState.breast, updateNestedState]);
 
     const resumeBreast = useCallback(async () => {
-        if (!breastIsRunning || !breastIsPaused) return;
-        
-        setBreastIsPaused(false);
-        
-        // Resume Live Activity
-        if (Platform.OS === 'ios' && breastActivityIdRef.current) {
-            try {
-                await liveActivityService.resumeTimer();
-                if (__DEV__) console.log('✅ Breastfeeding Live Activity resumed');
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error resuming Breastfeeding Live Activity:', error);
-            }
-        }
-    }, [breastIsRunning, breastIsPaused]);
+        if (!activeChildId || !currentState.breast.isRunning || !currentState.breast.isPaused) return;
+        updateNestedState(activeChildId, 'breast', { isPaused: false });
+        if (Platform.OS === 'ios' && currentState.breast.activityId) await liveActivityService.resumeTimer();
+    }, [activeChildId, currentState.breast, updateNestedState]);
 
     const resetBreast = useCallback(() => {
-        setBreastIsRunning(false);
-        setBreastIsPaused(false);
-        setBreastActiveSide(null);
-        setBreastElapsedSeconds(0);
-        setLeftBreastTime(0);
-        setRightBreastTime(0);
-    }, []);
+        if (!activeChildId) return;
+        updateNestedState(activeChildId, 'breast', {
+            isRunning: false, isPaused: false, activeSide: null, elapsedSeconds: 0, leftBreastTime: 0, rightBreastTime: 0
+        });
+    }, [activeChildId, updateNestedState]);
 
     // === UTILITY ===
     const formatTime = useCallback((seconds: number) => {
@@ -290,21 +286,21 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         <FoodTimerContext.Provider
             value={{
                 // Pumping
-                pumpingIsRunning,
-                pumpingIsPaused,
-                pumpingElapsedSeconds,
+                pumpingIsRunning: currentState.pumping.isRunning,
+                pumpingIsPaused: currentState.pumping.isPaused,
+                pumpingElapsedSeconds: currentState.pumping.elapsedSeconds,
                 startPumping,
                 stopPumping,
                 pausePumping,
                 resumePumping,
                 resetPumping,
                 // Breastfeeding
-                breastIsRunning,
-                breastIsPaused,
-                breastActiveSide,
-                breastElapsedSeconds,
-                leftBreastTime,
-                rightBreastTime,
+                breastIsRunning: currentState.breast.isRunning,
+                breastIsPaused: currentState.breast.isPaused,
+                breastActiveSide: currentState.breast.activeSide,
+                breastElapsedSeconds: currentState.breast.elapsedSeconds,
+                leftBreastTime: currentState.breast.leftBreastTime,
+                rightBreastTime: currentState.breast.rightBreastTime,
                 startBreast,
                 stopBreast,
                 pauseBreast,

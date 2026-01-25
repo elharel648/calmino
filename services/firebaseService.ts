@@ -109,6 +109,7 @@ export const getChildProfile = async (userId: string): Promise<ChildProfile | nu
 // 💡 נוסף childId
 export const saveEventToFirebase = async (userId: string, childId: string, data: any) => {
   try {
+    console.log('🔥 saveEventToFirebase called:', { userId, childId, dataType: data.type });
     const eventsRef = collection(db, EVENTS_COLLECTION);
 
     // Handle timestamp conversion carefully
@@ -144,9 +145,22 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       timestamp
     };
 
+    console.log('🔥 Saving eventData to Firestore:', JSON.stringify({
+      type: eventData.type,
+      duration: eventData.duration,
+      startTime: eventData.startTime,
+      endTime: eventData.endTime,
+      timestamp: timestamp.toDate().toISOString(),
+      note: eventData.note,
+      childId: eventData.childId
+    }, null, 2));
+
     const docRef = await addDoc(eventsRef, eventData);
+    console.log('✅ Event saved successfully with ID:', docRef.id);
     return docRef.id; // Return event ID for undo functionality
   } catch (error: any) {
+    console.error('❌ saveEventToFirebase error:', error?.code, error?.message);
+    console.error('❌ Full error:', error);
     if (__DEV__) {
       console.log('saveEventToFirebase error:', error?.code);
       console.log('saveEventToFirebase error message:', error?.message);

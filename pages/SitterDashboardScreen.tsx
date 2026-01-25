@@ -549,11 +549,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             strokeWidth={2}
                         />
                         <View style={{ flex: 1, marginHorizontal: 8 }}>
-                            <Text style={[styles.reviewsLabel, { color: theme.textSecondary }]}>הביקורות שלי</Text>
                             {sitterProfile?.reviewCount > 0 ? (
-                                <Text style={[styles.reviewsValue, { color: theme.textPrimary }]}>
-                                    {sitterProfile.rating.toFixed(1)} ★ ({sitterProfile.reviewCount})
-                                </Text>
+                                <>
+                                    <Text style={[styles.reviewsLabel, { color: theme.textSecondary }]}>הביקורות שלי</Text>
+                                    <Text style={[styles.reviewsValue, { color: theme.textPrimary }]}>
+                                        {sitterProfile.rating.toFixed(1)} ★ ({sitterProfile.reviewCount})
+                                    </Text>
+                                </>
                             ) : (
                                 <Text style={[styles.reviewsValue, { color: theme.textSecondary }]}>
                                     אין ביקורות עדיין
@@ -947,7 +949,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         );
                                     }}
                                 >
-                                    <Text style={[styles.dayLabel, { color: theme.textPrimary }]}>{day.label}</Text>
                                     <View style={[
                                         styles.dayCheckbox,
                                         { backgroundColor: availableDays.includes(day.key) ? theme.success : theme.border }
@@ -956,6 +957,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             <CheckCircle size={16} color={theme.card} strokeWidth={2} />
                                         )}
                                     </View>
+                                    <Text style={[styles.dayLabel, { color: theme.textPrimary }]}>{day.label}</Text>
                                 </TouchableOpacity>
                             ))}
 
@@ -1174,7 +1176,7 @@ const styles = StyleSheet.create({
     // Reviews Card
     reviewsCard: {
         flex: 1,
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         padding: 18,
         borderRadius: 16,
@@ -1475,7 +1477,8 @@ const styles = StyleSheet.create({
     dayRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
+        gap: 12,
         paddingVertical: 14,
         paddingHorizontal: 16,
         borderRadius: 12,

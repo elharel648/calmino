@@ -46,7 +46,7 @@ import {
 } from 'lucide-react-native';
 import { auth, db } from '../services/firebaseConfig';
 import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Language } from '../types';
@@ -339,21 +339,187 @@ export default function SettingsScreen() {
                     setLoading(true);
                     try {
                       const user = auth.currentUser;
-                      if (user) {
-                        // Delete the user from Firebase Auth
-                        await deleteUser(user);
-
-                        // User is automatically signed out after deletion
-                        // But we call signOut to ensure clean state
-                        try {
-                          await signOut(auth);
-                        } catch (e) {
-                          // Ignore - user already deleted
-                        }
-
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        // No alert needed - navigation will handle redirect to login
+                      if (!user) {
+                        setLoading(false);
+                        return;
                       }
+
+                      const userId = user.uid;
+
+                      // 1. Delete all children (babies) created by this user
+                      try {
+                        const babiesQuery = query(
+                          collection(db, 'babies'),
+                          where('parentId', '==', userId)
+                        );
+                        const babiesSnapshot = await getDocs(babiesQuery);
+                        const deleteBabyPromises = babiesSnapshot.docs.map(async (babyDoc) => {
+                          const babyId = babyDoc.id;
+                          // Delete all events for this baby
+                          const eventsQuery = query(
+                            collection(db, 'events'),
+                            where('childId', '==', babyId)
+                          );
+                          const eventsSnapshot = await getDocs(eventsQuery);
+                          const deleteEventPromises = eventsSnapshot.docs.map((eventDoc) =>
+                            deleteDoc(doc(db, 'events', eventDoc.id))
+                          );
+                          await Promise.all(deleteEventPromises);
+                          // Delete the baby
+                          await deleteDoc(doc(db, 'babies', babyId));
+                        });
+                        await Promise.all(deleteBabyPromises);
+                        if (__DEV__) console.log('✅ Deleted all babies and their events');
+                      } catch (error) {
+                        if (__DEV__) console.error('Error deleting babies:', error);
+                      }
+
+                      // 2. Delete all events created by this user (fallback for old data)
+                      try {
+                        const eventsQuery = query(
+                          collection(db, 'events'),
+                          where('userId', '==', userId)
+                        );
+                        const eventsSnapshot = await getDocs(eventsQuery);
+                        const deleteEventPromises = eventsSnapshot.docs.map((eventDoc) =>
+                          deleteDoc(doc(db, 'events', eventDoc.id))
+                        );
+                        await Promise.all(deleteEventPromises);
+                        if (__DEV__) console.log('✅ Deleted all user events');
+                      } catch (error) {
+                        if (__DEV__) console.error('Error deleting events:', error);
+                      }
+
+                      // 3. Remove user from families
+                      try {
+                        const userDoc = await getDoc(doc(db, 'users', userId));
+                        const userData = userDoc.data();
+                        if (userData?.familyId) {
+                          const familyRef = doc(db, 'families', userData.familyId);
+                          const familyDoc = await getDoc(familyRef);
+                          if (familyDoc.exists()) {
+                            await updateDoc(familyRef, {
+                              [`members.${userId}`]: deleteField()
+                            });
+                            await updateDoc(doc(db, 'users', userId), {
+                              familyId: deleteField()
+                            });
+                          }
+                        }
+                        if (__DEV__) console.log('✅ Removed user from families');
+                      } catch (error) {
+                        if (__DEV__) console.error('Error leaving family:', error);
+                      }
+
+                      // 4. Delete bookings where user is parent or babysitter
+                      try {
+                        const parentBookingsQuery = query(
+                          collection(db, 'bookings'),
+                          where('parentId', '==', userId)
+                        );
+                        const babysitterBookingsQuery = query(
+                          collection(db, 'bookings'),
+                          where('babysitterId', '==', userId)
+                        );
+                        const [parentBookingsSnapshot, babysitterBookingsSnapshot] = await Promise.all([
+                          getDocs(parentBookingsQuery),
+                          getDocs(babysitterBookingsQuery)
+                        ]);
+                        const deleteBookingPromises = [
+                          ...parentBookingsSnapshot.docs.map((bookingDoc) => deleteDoc(doc(db, 'bookings', bookingDoc.id))),
+                          ...babysitterBookingsSnapshot.docs.map((bookingDoc) => deleteDoc(doc(db, 'bookings', bookingDoc.id)))
+                        ];
+                        await Promise.all(deleteBookingPromises);
+                        if (__DEV__) console.log('✅ Deleted all bookings');
+                      } catch (error) {
+                        if (__DEV__) console.error('Error deleting bookings:', error);
+                      }
+
+                      // 5. Remove user from chats (update participants list)
+                      try {
+                        const chatsQuery = query(
+                          collection(db, 'chats'),
+                          where('participants', 'array-contains', userId)
+                        );
+                        const chatsSnapshot = await getDocs(chatsQuery);
+                        const updateChatPromises = chatsSnapshot.docs
+                          .filter((chatDoc) => {
+                            const data = chatDoc.data();
+                            return data.participants && Array.isArray(data.participants) && data.participants.includes(userId);
+                          })
+                          .map(async (chatDoc) => {
+                            try {
+                              const chatData = chatDoc.data();
+                              const participants = chatData.participants || [];
+                              const updatedParticipants = participants.filter((id: string) => id !== userId);
+
+                              // If only one participant left or none, we can't delete due to security rules
+                              // Just remove the user from participants
+                              if (updatedParticipants.length > 0) {
+                                await updateDoc(doc(db, 'chats', chatDoc.id), {
+                                  participants: updatedParticipants
+                                });
+                              }
+                            } catch (chatError) {
+                              // Ignore individual chat errors and continue
+                              if (__DEV__) console.warn('Error updating chat:', chatDoc.id, chatError);
+                            }
+                          });
+                        await Promise.all(updateChatPromises);
+                        if (__DEV__) console.log('✅ Removed user from all chats');
+                      } catch (error) {
+                        // Continue even if there's an error - user deletion should not fail due to chats
+                        if (__DEV__) console.error('Error updating chats:', error);
+                      }
+
+                      // 6. Delete sitter document if user is a sitter
+                      try {
+                        const sitterDoc = doc(db, 'sitters', userId);
+                        const sitterSnap = await getDoc(sitterDoc);
+                        if (sitterSnap.exists()) {
+                          await deleteDoc(sitterDoc);
+                          if (__DEV__) console.log('✅ Deleted sitter document');
+                        }
+                      } catch (error) {
+                        if (__DEV__) console.error('Error deleting sitter document:', error);
+                      }
+
+                      // 7. Delete notifications for this user
+                      try {
+                        const notificationsQuery = query(
+                          collection(db, 'notifications'),
+                          where('userId', '==', userId)
+                        );
+                        const notificationsSnapshot = await getDocs(notificationsQuery);
+                        const deleteNotificationPromises = notificationsSnapshot.docs.map((notificationDoc) =>
+                          deleteDoc(doc(db, 'notifications', notificationDoc.id))
+                        );
+                        await Promise.all(deleteNotificationPromises);
+                        if (__DEV__) console.log('✅ Deleted all notifications');
+                      } catch (error) {
+                        if (__DEV__) console.error('Error deleting notifications:', error);
+                      }
+
+                      // 8. Delete user document from Firestore
+                      try {
+                        await deleteDoc(doc(db, 'users', userId));
+                        if (__DEV__) console.log('✅ Deleted user document');
+                      } catch (error) {
+                        if (__DEV__) console.error('Error deleting user document:', error);
+                      }
+
+                      // 9. Delete user from Firebase Auth (this must be last)
+                      await deleteUser(user);
+
+                      // User is automatically signed out after deletion
+                      try {
+                        await signOut(auth);
+                      } catch (e) {
+                        // Ignore - user already deleted
+                      }
+
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      // No alert needed - navigation will handle redirect to login
                     } catch (e: any) {
                       setLoading(false);
                       if (e?.code === 'auth/requires-recent-login') {
@@ -463,7 +629,7 @@ export default function SettingsScreen() {
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>שפה</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                    {currentLang?.flag} {currentLang?.label}
+                    {currentLang?.flag} {currentLang ? t(currentLang.labelKey) : ''}
                   </Text>
                 </View>
               </View>
