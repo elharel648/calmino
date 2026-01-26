@@ -363,6 +363,7 @@ export default function App() {
                 'supplement_reminder': 'medication',
                 'vaccine_reminder': 'medication',
                 'daily_summary': 'reminder',
+                'custom_reminder': 'reminder',
                 'booking_new': 'reminder',
                 'booking_update': 'reminder',
                 'booking_cancelled': 'reminder',

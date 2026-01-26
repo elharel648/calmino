@@ -6,11 +6,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type QuickActionKey =
     | 'food' | 'sleep' | 'diaper' | 'supplements' | 'whiteNoise'
     | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'tools' | 'custom'
-    | 'teeth' | 'nightLight';
+    | 'teeth' | 'nightLight' | 'quickReminder';
 
 // Default order of actions (right to left in RTL)
 const DEFAULT_ORDER: QuickActionKey[] = [
-    'custom', 'tools', 'health', 'growth', 'teeth', 'nightLight', 'magicMoments', 'milestones',
+    'custom', 'quickReminder', 'tools', 'health', 'growth', 'teeth', 'nightLight', 'magicMoments', 'milestones',
     'sos', 'whiteNoise', 'supplements', 'diaper', 'sleep', 'food'
 ];
 

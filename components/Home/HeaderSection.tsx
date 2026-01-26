@@ -328,18 +328,20 @@ const HeaderSection = memo<HeaderSectionProps>(({
             ]).start(() => {
                 // Change notification
                 setCurrentNotificationIndex((prev) => (prev + 1) % smartCards.length);
-                // Reset position (start from bottom)
-                notificationSlideAnim.setValue(-50);
-                // Slide in from bottom and fade in (slow animation)
+                // Reset position (start from top, slide down)
+                notificationSlideAnim.setValue(-30);
+                notificationOpacity.setValue(0);
+                // Slide in from top and fade in (smooth animation)
                 RNAnimated.parallel([
-                    RNAnimated.timing(notificationSlideAnim, {
+                    RNAnimated.spring(notificationSlideAnim, {
                         toValue: 0,
-                        duration: 600,
+                        tension: 50,
+                        friction: 8,
                         useNativeDriver: true,
                     }),
                     RNAnimated.timing(notificationOpacity, {
                         toValue: 1,
-                        duration: 600,
+                        duration: 400,
                         useNativeDriver: true,
                     }),
                 ]).start();
@@ -351,49 +353,33 @@ const HeaderSection = memo<HeaderSectionProps>(({
     
     const currentNotification = smartCards[currentNotificationIndex] || smartCards[0];
 
-    // Animations for toast slide-up effect
-    const toastTranslateY = useRef(new RNAnimated.Value(hasInitialAnimationRun ? 0 : 30)).current;
-    const toastOpacity = useRef(new RNAnimated.Value(hasInitialAnimationRun ? 1 : 0)).current;
-
-    // Smooth slide-up animation for toast notifications
+    // Initial entry animation for toast notifications
     useEffect(() => {
         if (!hasNotifications) {
-            // Hide if no notifications
-            toastOpacity.setValue(0);
             return;
         }
 
         // Only run initial entry animation once (not on every tab switch)
         if (!hasInitialAnimationRun) {
             hasInitialAnimationRun = true;
+            // Start from slightly above, fade in
+            notificationSlideAnim.setValue(-20);
+            notificationOpacity.setValue(0);
             RNAnimated.parallel([
-                RNAnimated.timing(toastTranslateY, {
+                RNAnimated.spring(notificationSlideAnim, {
                     toValue: 0,
-                    duration: 350,
+                    tension: 50,
+                    friction: 8,
                     useNativeDriver: true,
                 }),
-                RNAnimated.timing(toastOpacity, {
+                RNAnimated.timing(notificationOpacity, {
                     toValue: 1,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-        } else if (hasNotifications) {
-            // Show if notification appears
-            RNAnimated.parallel([
-                RNAnimated.timing(toastTranslateY, {
-                    toValue: 0,
-                    duration: 350,
-                    useNativeDriver: true,
-                }),
-                RNAnimated.timing(toastOpacity, {
-                    toValue: 1,
-                    duration: 300,
+                    duration: 400,
                     useNativeDriver: true,
                 }),
             ]).start();
         }
-    }, [hasNotifications, toastTranslateY, toastOpacity]);
+    }, [hasNotifications, notificationSlideAnim, notificationOpacity]);
 
     const NotificationIcon = currentNotification?.icon;
 
@@ -619,9 +605,9 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     style={[
                         styles.toastNotification,
                         {
-                            opacity: RNAnimated.multiply(toastOpacity, notificationOpacity),
+                            opacity: notificationOpacity,
                             transform: [
-                                { translateY: RNAnimated.add(toastTranslateY, notificationSlideAnim) }
+                                { translateY: notificationSlideAnim }
                             ],
                             backgroundColor: theme.card,
                             borderColor: theme.border,

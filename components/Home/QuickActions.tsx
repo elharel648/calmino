@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { Utensils, Moon, Droplets, Music, Heart, Pill, Check, Plus, HeartPulse, TrendingUp, Award, Sparkles, Pencil, LayoutGrid, Lightbulb } from 'lucide-react-native';
+import { Utensils, Moon, Droplets, Music, Heart, Pill, Check, Plus, HeartPulse, TrendingUp, Award, Sparkles, Pencil, LayoutGrid, Lightbulb, Bell } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../../context/SleepTimerContext';
@@ -29,6 +29,7 @@ interface QuickActionsProps {
     onTeethPress?: () => void;
     onNightLightPress?: () => void;
     onCustomPress?: () => void;
+    onQuickReminderPress?: () => void;
     onFoodTimerStop?: (seconds: number, timerType: string) => void;
     onSleepTimerStop?: (seconds: number) => void;
     meds?: MedicationsState;
@@ -66,6 +67,7 @@ const ACTIONS: Record<string, {
     tools: { icon: LayoutGrid, labelKey: 'actions.tools', activeLabelKey: 'actions.tools', color: '#8B5CF6', lightColor: '#F3E8FF' },
     teeth: { icon: TeethIcon, labelKey: 'actions.teeth', activeLabelKey: 'actions.teeth', color: '#EC4899', lightColor: '#FDF2F8' },
     nightLight: { icon: Lightbulb, labelKey: 'actions.nightLight', activeLabelKey: 'actions.nightLight', color: '#F59E0B', lightColor: '#FEF3C7' },
+    quickReminder: { icon: Bell, labelKey: 'actions.quickReminder', activeLabelKey: 'actions.quickReminder', color: '#6B7280', lightColor: '#F3F4F6' },
 };
 
 const QuickActions = memo<QuickActionsProps>(({
@@ -85,6 +87,7 @@ const QuickActions = memo<QuickActionsProps>(({
     onTeethPress,
     onNightLightPress,
     onCustomPress,
+    onQuickReminderPress,
     onFoodTimerStop,
     onSleepTimerStop,
     meds,
@@ -166,6 +169,7 @@ const QuickActions = memo<QuickActionsProps>(({
         teeth: { onPress: onTeethPress || (() => { }) },
         nightLight: { onPress: onNightLightPress || (() => { }) },
         custom: { onPress: onCustomPress || (() => { }) },
+        quickReminder: { onPress: onQuickReminderPress || (() => { }) },
     }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onToolsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount]);
 
     const visibleActions = useMemo(() =>

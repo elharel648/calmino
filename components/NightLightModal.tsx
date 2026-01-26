@@ -23,6 +23,7 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
     const controlsOpacity = useSharedValue(1);
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+    const scrollViewRef = useRef<ScrollView>(null);
 
     // Pulse animation for active color
     const pulseAnim = useSharedValue(0);
@@ -67,28 +68,21 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
         controlsOpacity.value = withTiming(controlsVisible ? 1 : 0, { duration: 300 });
     }, [controlsVisible]);
 
-    // Swipe down to dismiss - Improved
+    // Swipe down to dismiss - Works from anywhere on screen
     const isDragging = useRef(false);
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: (evt) => {
-            const startY = evt.nativeEvent.pageY;
-            if (startY < 200) {
-                isDragging.current = true;
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                return true;
-            }
-            return false;
-        },
+        onStartShouldSetPanResponder: () => false, // Don't capture immediately
         onMoveShouldSetPanResponder: (evt, gestureState) => {
-            if (isDragging.current) return true;
-            const currentY = evt.nativeEvent.pageY;
-            const isTopArea = currentY < 250;
-            const isDraggingDown = gestureState.dy > 8;
-            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.3;
-
-            if (isTopArea && isDraggingDown && isVerticalSwipe) {
+            // Only respond to downward vertical swipes from anywhere
+            const isDraggingDown = gestureState.dy > 20;
+            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5;
+            const startY = evt.nativeEvent.pageY;
+            
+            // Allow swipe down from top area OR fast downward swipe from anywhere
+            const isTopArea = startY < 200;
+            const isFastSwipe = gestureState.vy > 0.3;
+            
+            if (isDraggingDown && isVerticalSwipe && (isTopArea || isFastSwipe) && !isDragging.current) {
                 isDragging.current = true;
                 if (Platform.OS !== 'web') {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -102,15 +96,19 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
+                // Follow finger movement
                 slideAnim.setValue(gestureState.dy);
-                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                // Fade backdrop as we drag down
+                const opacity = Math.max(0, 1 - (gestureState.dy / 300));
                 backdropAnim.setValue(opacity);
             }
         },
         onPanResponderRelease: (_, gestureState) => {
             isDragging.current = false;
-            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
+            const shouldDismiss = gestureState.dy > 100 || gestureState.vy > 0.4;
+            
             if (shouldDismiss) {
+                // Dismiss modal
                 if (Platform.OS !== 'web') {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
@@ -132,6 +130,7 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                     backdropAnim.setValue(0);
                 });
             } else {
+                // Snap back to original position
                 RNAnimated.parallel([
                     RNAnimated.spring(slideAnim, {
                         toValue: 0,
@@ -149,6 +148,20 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
         },
         onPanResponderTerminate: () => {
             isDragging.current = false;
+            // Snap back if interrupted
+            RNAnimated.parallel([
+                RNAnimated.spring(slideAnim, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 65,
+                    friction: 11,
+                }),
+                RNAnimated.timing(backdropAnim, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }),
+            ]).start();
         },
     }), [onClose, slideAnim, backdropAnim]);
 
@@ -226,9 +239,10 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                         transform: [{ translateY: slideAnim }],
                     }
                 ]}
+                {...panResponder.panHandlers}
             >
-                {/* Drag Handle */}
-                <View style={styles.dragHandle} {...panResponder.panHandlers}>
+                {/* Drag Handle - Visual indicator */}
+                <View style={styles.dragHandle}>
                     <View style={[styles.dragHandleBar, { backgroundColor: getTextColor() + '40' }]} />
                 </View>
 
@@ -236,6 +250,7 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                     <View style={StyleSheet.absoluteFill}>
                         <Animated.View style={[styles.controlsOverlay, animatedControlsStyle]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
                             <ScrollView
+                                ref={scrollViewRef}
                                 contentContainerStyle={styles.scrollContent}
                                 showsVerticalScrollIndicator={false}
                                 bounces={true}

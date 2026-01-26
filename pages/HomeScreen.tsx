@@ -41,6 +41,7 @@ import TrackingModal from '../components/TrackingModal';
 import ChecklistModal from '../components/ChecklistModal';
 import ToolsModal from '../components/Home/ToolsModal';
 import NightLightModal from '../components/NightLightModal';
+import QuickReminderModal from '../components/Home/QuickReminderModal';
 import TeethTrackerModal from '../components/Tools/TeethTrackerModal';
 import SleepCalculatorModal from '../components/Tools/SleepCalculatorModal';
 import WhiteNoiseModal from '../components/WhiteNoiseModal';
@@ -196,6 +197,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isTeethOpen, setIsTeethOpen] = useState(false);
     const [isNextNapOpen, setIsNextNapOpen] = useState(false);
     const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+    const [isQuickReminderOpen, setIsQuickReminderOpen] = useState(false);
     const [isWhiteNoiseOpen, setIsWhiteNoiseOpen] = useState(false);
     const [isSupplementsOpen, setIsSupplementsOpen] = useState(false);
     const [isHealthOpen, setIsHealthOpen] = useState(false);
@@ -558,6 +560,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     onTeethPress={() => setIsTeethOpen(true)}
                                     onNightLightPress={() => setIsNightLightOpen(true)}
                                     onCustomPress={() => setIsAddCustomOpen(true)}
+                                    onQuickReminderPress={() => setIsQuickReminderOpen(true)}
                                     onFoodTimerStop={async (seconds, timerType) => {
                                         const mins = Math.floor(seconds / 60);
                                         const secs = seconds % 60;
@@ -627,6 +630,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 <TeethTrackerModal visible={isTeethOpen} onClose={() => setIsTeethOpen(false)} />
                 <SleepCalculatorModal visible={isNextNapOpen} onClose={() => setIsNextNapOpen(false)} />
                 <ChecklistModal visible={isChecklistOpen} onClose={() => setIsChecklistOpen(false)} />
+                <QuickReminderModal visible={isQuickReminderOpen} onClose={() => setIsQuickReminderOpen(false)} />
                 <WhiteNoiseModal visible={isWhiteNoiseOpen} onClose={() => setIsWhiteNoiseOpen(false)} />
                 <SupplementsModal
                     visible={isSupplementsOpen}

@@ -2,7 +2,7 @@ import React, { memo, useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, GripVertical, Eye, EyeOff, RotateCcw, Utensils, Moon, Droplets, Music, Heart, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, LayoutGrid, Lightbulb } from 'lucide-react-native';
+import { X, GripVertical, Eye, EyeOff, RotateCcw, Utensils, Moon, Droplets, Music, Heart, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, LayoutGrid, Lightbulb, Bell } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
@@ -31,6 +31,7 @@ const ICONS: Record<QuickActionKey, any> = {
     tools: LayoutGrid,
     teeth: TeethIcon,
     nightLight: Lightbulb,
+    quickReminder: Bell,
     custom: Plus,
 };
 
@@ -49,6 +50,7 @@ const ACTION_DATA: Record<QuickActionKey, { label: string; color: string }> = {
     tools: { label: 'כלים', color: '#8B5CF6' },
     teeth: { label: 'שיניים', color: '#EC4899' },
     nightLight: { label: 'פנס לילה', color: '#F59E0B' },
+    quickReminder: { label: 'תזכורת מהירה', color: '#6B7280' },
     custom: { label: 'הוספה', color: '#6B7280' },
 };
 

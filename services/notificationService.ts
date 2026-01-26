@@ -607,6 +607,148 @@ class NotificationService {
             logger.error('Failed to schedule smart reminders:', error);
         }
     }
+
+    // Create custom one-time reminder
+    async createCustomReminder(data: {
+        title: string;
+        body: string;
+        date: Date;
+    }): Promise<string> {
+        if (!this.settings.enabled) {
+            throw new Error('Notifications are disabled');
+        }
+
+        try {
+            const id = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: data.title,
+                    body: data.body,
+                    data: { type: 'custom_reminder' },
+                    sound: 'default',
+                },
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.DATE,
+                    date: data.date,
+                },
+            });
+
+            logger.debug('🔔 Custom reminder created:', id);
+            return id;
+        } catch (error) {
+            logger.error('Failed to create custom reminder:', error);
+            throw error;
+        }
+    }
+
+    // Create recurring reminder (daily or weekly)
+    async createRecurringReminder(data: {
+        title: string;
+        body: string;
+        hour: number;
+        minute: number;
+        repeat: 'daily' | 'weekly';
+        weekday?: number; // 0-6 (Sunday-Saturday) for weekly
+    }): Promise<string> {
+        if (!this.settings.enabled) {
+            throw new Error('Notifications are disabled');
+        }
+
+        try {
+            const trigger: any = {
+                type: data.repeat === 'daily' 
+                    ? Notifications.SchedulableTriggerInputTypes.DAILY
+                    : Notifications.SchedulableTriggerInputTypes.WEEKLY,
+                hour: data.hour,
+                minute: data.minute,
+            };
+
+            if (data.repeat === 'weekly' && data.weekday !== undefined) {
+                trigger.weekday = data.weekday;
+            }
+
+            const id = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: data.title,
+                    body: data.body,
+                    data: { type: 'custom_reminder', repeat: data.repeat },
+                    sound: 'default',
+                },
+                trigger,
+            });
+
+            logger.debug('🔔 Recurring reminder created:', id);
+            return id;
+        } catch (error) {
+            logger.error('Failed to create recurring reminder:', error);
+            throw error;
+        }
+    }
+
+    // Get all scheduled custom reminders
+    async getCustomReminders(): Promise<Array<{
+        id: string;
+        title: string;
+        body: string;
+        trigger: any;
+        date?: Date;
+        repeat?: 'daily' | 'weekly';
+    }>> {
+        try {
+            const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
+            const customReminders = allNotifications
+                .filter(notif => {
+                    const data = notif.content.data;
+                    return data?.type === 'custom_reminder';
+                })
+                .map(notif => {
+                    const trigger = notif.trigger as any;
+                    let date: Date | undefined;
+                    
+                    if (trigger.type === Notifications.SchedulableTriggerInputTypes.DATE) {
+                        date = trigger.date ? new Date(trigger.date) : undefined;
+                    } else if (trigger.type === Notifications.SchedulableTriggerInputTypes.DAILY || 
+                               trigger.type === Notifications.SchedulableTriggerInputTypes.WEEKLY) {
+                        // For recurring, create a date from today with the hour/minute
+                        const today = new Date();
+                        today.setHours(trigger.hour || 0, trigger.minute || 0, 0, 0);
+                        date = today;
+                    }
+
+                    return {
+                        id: notif.identifier,
+                        title: notif.content.title || '',
+                        body: notif.content.body || '',
+                        trigger,
+                        date,
+                        repeat: notif.content.data?.repeat as 'daily' | 'weekly' | undefined,
+                    };
+                })
+                .sort((a, b) => {
+                    // Sort by date (upcoming first)
+                    if (a.date && b.date) {
+                        return a.date.getTime() - b.date.getTime();
+                    }
+                    return 0;
+                });
+
+            return customReminders;
+        } catch (error) {
+            logger.error('Failed to get custom reminders:', error);
+            return [];
+        }
+    }
+
+    // Cancel a reminder
+    async cancelReminder(identifier: string): Promise<boolean> {
+        try {
+            await Notifications.cancelScheduledNotificationAsync(identifier);
+            logger.debug('🔔 Reminder cancelled:', identifier);
+            return true;
+        } catch (error) {
+            logger.error('Failed to cancel reminder:', error);
+            return false;
+        }
+    }
 }
 
 // Export singleton
