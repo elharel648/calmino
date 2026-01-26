@@ -40,6 +40,8 @@ import { useBookings } from '../hooks/useBookings';
 import { startShift } from '../services/babysitterService';
 import { Play } from 'lucide-react-native';
 import DayHoursEditor from '../components/BabySitter/DayHoursEditor';
+import { logger } from '../utils/logger';
+import * as Location from 'expo-location';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -113,6 +115,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     });
     const [savingSettings, setSavingSettings] = useState(false);
     const [sitterCity, setSitterCity] = useState(''); // City for location search
+    const [gpsLocation, setGpsLocation] = useState<{ latitude: number; longitude: number } | null>(null); // GPS location
+    const [isLoadingLocation, setIsLoadingLocation] = useState(false); // Loading state for GPS
     const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
     const [profilePhoto, setProfilePhoto] = useState<string | null>(null); // Profile photo URL
     const [uploadingPhoto, setUploadingPhoto] = useState(false); // Photo upload loading state
@@ -148,6 +152,15 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 setHourlyRate(data.sitterPrice || 50);
                 setProfilePhoto(data.photoUrl || auth.currentUser?.photoURL || null);
                 if (data.sitterAvailableDays) setAvailableDays(data.sitterAvailableDays);
+                // Load GPS location if exists
+                if (data.sitterLocation && 
+                    typeof data.sitterLocation.latitude === 'number' &&
+                    typeof data.sitterLocation.longitude === 'number') {
+                    setGpsLocation({
+                        latitude: data.sitterLocation.latitude,
+                        longitude: data.sitterLocation.longitude,
+                    });
+                }
 
                 return {
                     id: userId,
@@ -178,7 +191,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
-        console.log('🔍 Fetching bookings for sitter:', userId);
+        logger.debug('🔍', 'Fetching bookings for sitter:', userId);
 
         try {
             const q = query(
@@ -188,12 +201,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             );
 
             const snapshot = await getDocs(q);
-            console.log('📊 Found bookings:', snapshot.docs.length);
+            logger.debug('📊', 'Found bookings:', snapshot.docs.length);
             const fetchedBookings: Booking[] = [];
 
             for (const docSnap of snapshot.docs) {
                 const data = docSnap.data();
-                console.log('📋 Booking data:', docSnap.id, data);
+                logger.debug('📋', 'Booking data:', docSnap.id);
 
                 // Get parent info
                 let parentName = 'הורה';
@@ -226,7 +239,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
             return fetchedBookings;
         } catch (error) {
-            console.error('❌ Error fetching bookings:', error);
+            logger.error('Error fetching bookings:', error);
             return [];
         }
     };
@@ -265,12 +278,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     Alert.alert('✅', 'התמונה עודכנה בהצלחה!');
                 } catch (uploadError) {
-                    console.error('Failed to upload photo:', uploadError);
+                    logger.error('Failed to upload photo:', uploadError);
                     Alert.alert('שגיאה', 'לא ניתן להעלות תמונה, נסה שוב');
                 }
             }
         } catch (error) {
-            console.error('Image picker error:', error);
+            logger.error('Image picker error:', error);
         } finally {
             setUploadingPhoto(false);
         }
@@ -368,7 +381,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             Alert.alert('✅ משמרת התחילה!', 'הטיימר רץ כעת. ההורה יכול לראות את הזמן.');
             loadData();
         } catch (error) {
-            console.error('Start shift error:', error);
+            logger.error('Start shift error:', error);
             Alert.alert('שגיאה', 'לא הצלחנו להתחיל את המשמרת');
         }
     };
@@ -725,6 +738,54 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     placeholderTextColor={theme.textSecondary}
                                     textAlign="right"
                                 />
+                                
+                                {/* GPS Location Button */}
+                                <TouchableOpacity
+                                    style={[styles.locationBtn, {
+                                        borderColor: gpsLocation ? theme.success : theme.border,
+                                        marginTop: 12,
+                                    }]}
+                                    onPress={async () => {
+                                        setIsLoadingLocation(true);
+                                        try {
+                                            const { status } = await Location.requestForegroundPermissionsAsync();
+                                            if (status !== 'granted') {
+                                                Alert.alert('הרשאות נדרשות', 'אנא אפשר גישה למיקום בהגדרות הטלפון');
+                                                setIsLoadingLocation(false);
+                                                return;
+                                            }
+
+                                            const location = await Location.getCurrentPositionAsync({
+                                                accuracy: Location.Accuracy.Balanced,
+                                            });
+
+                                            setGpsLocation({
+                                                latitude: location.coords.latitude,
+                                                longitude: location.coords.longitude,
+                                            });
+
+                                            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                        } catch (error) {
+                                            logger.error('Location error:', error);
+                                            Alert.alert('שגיאה', 'לא ניתן לקבל מיקום. אנא נסה שוב.');
+                                        } finally {
+                                            setIsLoadingLocation(false);
+                                        }
+                                    }}
+                                    disabled={isLoadingLocation}
+                                    activeOpacity={0.7}
+                                >
+                                    {isLoadingLocation ? (
+                                        <ActivityIndicator size="small" color={theme.primary} />
+                                    ) : (
+                                        <>
+                                            <MapPin size={14} color={gpsLocation ? theme.success : theme.textSecondary} strokeWidth={2} />
+                                            <Text style={[styles.locationBtnText, { color: gpsLocation ? theme.success : theme.textSecondary }]}>
+                                                {gpsLocation ? 'מיקום GPS נשמר ✓' : 'שתף מיקום GPS (מומלץ)'}
+                                            </Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
                             </View>
 
                             {/* Phone */}
@@ -820,7 +881,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             phone: phoneNumber.trim() || null,
                                             sitterNotificationsEnabled: notificationsEnabled,
                                             sitterActive: availableForBookings,
+                                            sitterAvailable: availableForBookings, // Also set sitterAvailable for badge consistency
                                             sitterCity: sitterCity.trim() || null,
+                                            sitterLocation: gpsLocation || null, // Update GPS location
                                             sitterPrice: hourlyRate,
                                             sitterAvailableDays: availableDays,
                                             sitterAvailableHours: availableHours,
@@ -830,7 +893,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         setSettingsVisible(false);
                                         Alert.alert('נשמר!', 'ההגדרות נשמרו בהצלחה');
                                     } catch (error) {
-                                        console.error('Failed to save settings:', error);
+                                        logger.error('Failed to save settings:', error);
                                         Alert.alert('שגיאה', 'לא ניתן לשמור, נסה שוב');
                                     } finally {
                                         setSavingSettings(false);
@@ -949,6 +1012,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         );
                                     }}
                                 >
+                                    <Text style={[styles.dayLabel, { color: theme.textPrimary }]}>{day.label}</Text>
                                     <View style={[
                                         styles.dayCheckbox,
                                         { backgroundColor: availableDays.includes(day.key) ? theme.success : theme.border }
@@ -957,7 +1021,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             <CheckCircle size={16} color={theme.card} strokeWidth={2} />
                                         )}
                                     </View>
-                                    <Text style={[styles.dayLabel, { color: theme.textPrimary }]}>{day.label}</Text>
                                 </TouchableOpacity>
                             ))}
 
@@ -1477,7 +1540,7 @@ const styles = StyleSheet.create({
     dayRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
         gap: 12,
         paddingVertical: 14,
         paddingHorizontal: 16,
@@ -1672,6 +1735,22 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 10,
         fontSize: 15,
+    },
+    locationBtn: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        borderWidth: StyleSheet.hairlineWidth,
+        backgroundColor: 'transparent',
+    },
+    locationBtnText: {
+        fontSize: 13,
+        fontWeight: '600',
+        letterSpacing: -0.1,
     },
     chatSendBtn: {
         width: 42,

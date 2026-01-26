@@ -24,8 +24,7 @@ import { db } from '../services/firebaseConfig';
 import * as Haptics from 'expo-haptics';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, User, Star, X } from 'lucide-react-native';
 import { getUserPushToken, sendPushNotification } from '../services/pushNotificationService';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { logger } from '../utils/logger';
 
 const ParentBookingsScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -105,14 +104,14 @@ const ParentBookingsScreen = ({ navigation }: any) => {
 
                     setBookings(enrichedBookings);
                 } catch (error) {
-                    console.error('Error processing bookings:', error);
+                    logger.error('Error processing bookings:', error);
                 } finally {
                     setLoading(false);
                     setRefreshing(false);
                 }
             },
             (error) => {
-                console.error('Error subscribing to bookings:', error);
+                logger.error('Error subscribing to bookings:', error);
                 setLoading(false);
                 setRefreshing(false);
             }
@@ -155,7 +154,7 @@ const ParentBookingsScreen = ({ navigation }: any) => {
 
             setBookings(enrichedBookings);
         } catch (error) {
-            console.error('Error loading bookings:', error);
+            logger.error('Error loading bookings:', error);
         } finally {
             setRefreshing(false);
         }
@@ -245,13 +244,13 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                                     );
                                 }
                             } catch (pushError) {
-                                console.warn('Failed to send push notification:', pushError);
+                                logger.warn('Failed to send push notification:', pushError);
                             }
 
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             Alert.alert('✅', 'ההזמנה בוטלה בהצלחה');
                         } catch (error) {
-                            console.error('Error cancelling booking:', error);
+                            logger.error('Error cancelling booking:', error);
                             Alert.alert('שגיאה', 'לא הצלחנו לבטל את ההזמנה. נסה שוב.');
                         } finally {
                             setLoading(false);
@@ -262,27 +261,16 @@ const ParentBookingsScreen = ({ navigation }: any) => {
         );
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusIcon = (status: string, theme: any) => {
+        const iconColor = theme.textSecondary;
         switch (status) {
-            case 'pending': return '#F59E0B';
-            case 'confirmed': return '#3B82F6';
-            case 'active': return '#10B981';
-            case 'completed': return '#6366F1';
-            case 'declined': return '#EF4444';
-            case 'cancelled': return '#9CA3AF';
-            default: return '#6B7280';
-        }
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'pending': return <AlertCircle size={16} color={getStatusColor(status)} />;
-            case 'confirmed': return <CheckCircle size={16} color={getStatusColor(status)} />;
-            case 'active': return <Clock size={16} color={getStatusColor(status)} />;
-            case 'completed': return <CheckCircle size={16} color={getStatusColor(status)} />;
-            case 'declined': return <XCircle size={16} color={getStatusColor(status)} />;
-            case 'cancelled': return <XCircle size={16} color={getStatusColor(status)} />;
-            default: return <AlertCircle size={16} color={getStatusColor(status)} />;
+            case 'pending': return <AlertCircle size={12} color={iconColor} strokeWidth={1.5} />;
+            case 'confirmed': return <CheckCircle size={12} color={iconColor} strokeWidth={1.5} />;
+            case 'active': return <Clock size={12} color={iconColor} strokeWidth={1.5} />;
+            case 'completed': return <CheckCircle size={12} color={iconColor} strokeWidth={1.5} />;
+            case 'declined': return <XCircle size={12} color={iconColor} strokeWidth={1.5} />;
+            case 'cancelled': return <XCircle size={12} color={iconColor} strokeWidth={1.5} />;
+            default: return <AlertCircle size={12} color={iconColor} strokeWidth={1.5} />;
         }
     };
 
@@ -298,13 +286,18 @@ const ParentBookingsScreen = ({ navigation }: any) => {
         }
     };
 
-    const formatDate = (date: any) => {
+    const formatDate = (date: any): string => {
         if (!date) return '';
-        const d = date.toDate ? date.toDate() : new Date(date);
-        return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+        try {
+            const d = date.toDate ? date.toDate() : new Date(date);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+        } catch {
+            return '';
+        }
     };
 
-    const formatTime = (time: string) => {
+    const formatTime = (time: string | undefined): string => {
         return time || '--:--';
     };
 
@@ -327,28 +320,12 @@ const ParentBookingsScreen = ({ navigation }: any) => {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {/* Header - Premium Design */}
-            <View style={[styles.header, { backgroundColor: theme.card }]}>
-                {Platform.OS === 'ios' && (
-                    <BlurView
-                        intensity={20}
-                        tint={isDarkMode ? 'dark' : 'light'}
-                        style={StyleSheet.absoluteFill}
-                    />
-                )}
-                <LinearGradient
-                    colors={isDarkMode 
-                        ? [theme.card + 'CC', theme.card + '99']
-                        : ['#FFFFFF', '#FAFAFA']
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                />
-                <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { zIndex: 1 }]}>
+            {/* Header */}
+            <View style={[styles.header, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textPrimary, zIndex: 1 }]}>ההזמנות שלי</Text>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>ההזמנות שלי</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -361,24 +338,8 @@ const ParentBookingsScreen = ({ navigation }: any) => {
             >
                 {bookings.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <View style={styles.emptyIconWrapper}>
-                            {Platform.OS === 'ios' && (
-                                <BlurView
-                                    intensity={20}
-                                    tint={isDarkMode ? 'dark' : 'light'}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                            )}
-                            <LinearGradient
-                                colors={isDarkMode 
-                                    ? ['rgba(99, 102, 241, 0.2)', 'rgba(139, 92, 246, 0.15)']
-                                    : ['rgba(99, 102, 241, 0.1)', 'rgba(139, 92, 246, 0.05)']
-                                }
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={StyleSheet.absoluteFill}
-                            />
-                            <Calendar size={48} color={theme.primary} strokeWidth={1.5} />
+                        <View style={[styles.emptyIconWrapper, { backgroundColor: theme.cardSecondary }]}>
+                            <Calendar size={40} color={theme.textSecondary} strokeWidth={1.5} />
                         </View>
                         <Text style={[styles.emptyText, { color: theme.textPrimary }]}>
                             אין הזמנות עדיין
@@ -395,99 +356,42 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                         return (
                             <View
                                 key={booking.id}
-                                style={styles.bookingCardWrapper}
+                                style={[styles.bookingCardWrapper, { backgroundColor: theme.card }]}
                             >
-                                {Platform.OS === 'ios' && (
-                                    <BlurView
-                                        intensity={20}
-                                        tint={isDarkMode ? 'dark' : 'light'}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-                                )}
-                                <LinearGradient
-                                    colors={isDarkMode 
-                                        ? [theme.card + 'CC', theme.card + '99']
-                                        : ['#FFFFFF', '#FAFAFA']
-                                    }
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                                <View style={[styles.bookingCard, { backgroundColor: 'transparent' }]}>
+                                <View style={styles.bookingCard}>
                                 {/* Header */}
                                 <View style={styles.cardHeader}>
                                     <View style={styles.sitterInfo}>
-                                        <View style={styles.statusBadgeWrapper}>
-                                            {Platform.OS === 'ios' && (
-                                                <BlurView
-                                                    intensity={30}
-                                                    tint={isDarkMode ? 'dark' : 'light'}
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                            )}
-                                            <LinearGradient
-                                                colors={[getStatusColor(booking.status) + '30', getStatusColor(booking.status) + '15']}
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 1 }}
-                                                style={StyleSheet.absoluteFill}
-                                            />
-                                            <View style={[styles.statusBadge, { backgroundColor: 'transparent' }]}>
-                                                {getStatusIcon(booking.status)}
-                                                <Text style={[styles.statusText, { color: getStatusColor(booking.status) }]}>
-                                                    {getStatusLabel(booking.status)}
-                                                </Text>
-                                            </View>
+                                        <View style={[styles.statusBadge, { 
+                                            backgroundColor: theme.cardSecondary,
+                                            borderWidth: StyleSheet.hairlineWidth,
+                                            borderColor: theme.border,
+                                        }]}>
+                                            {getStatusIcon(booking.status, theme)}
+                                            <Text style={[styles.statusText, { color: theme.textSecondary }]}>
+                                                {getStatusLabel(booking.status)}
+                                            </Text>
                                         </View>
                                     </View>
                                     <View style={styles.headerActions}>
                                         {needsRating && (
                                             <TouchableOpacity
-                                                style={styles.rateButtonWrapper}
+                                                style={[styles.actionButton, { borderColor: theme.border }]}
                                                 onPress={() => handleRateBooking(bookingWithSitter)}
-                                                activeOpacity={0.7}
+                                                activeOpacity={0.6}
                                             >
-                                                {Platform.OS === 'ios' && (
-                                                    <BlurView
-                                                        intensity={30}
-                                                        tint="light"
-                                                        style={StyleSheet.absoluteFill}
-                                                    />
-                                                )}
-                                                <LinearGradient
-                                                    colors={['#FEF3C7', '#FDE68A']}
-                                                    start={{ x: 0, y: 0 }}
-                                                    end={{ x: 1, y: 1 }}
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                                <View style={styles.rateButton}>
-                                                    <Star size={16} color="#F59E0B" fill="#F59E0B" strokeWidth={2} />
-                                                    <Text style={styles.rateButtonText}>דרג</Text>
-                                                </View>
+                                                <Star size={14} color={theme.textPrimary} fill="none" strokeWidth={1.5} />
+                                                <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>דרג</Text>
                                             </TouchableOpacity>
                                         )}
                                         {(booking.status === 'pending' || booking.status === 'confirmed') && (
                                             <TouchableOpacity
-                                                style={styles.cancelButtonWrapper}
+                                                style={[styles.actionButton, { borderColor: theme.border }]}
                                                 onPress={() => handleCancelBooking(bookingWithSitter)}
-                                                activeOpacity={0.7}
+                                                activeOpacity={0.6}
                                             >
-                                                {Platform.OS === 'ios' && (
-                                                    <BlurView
-                                                        intensity={30}
-                                                        tint="light"
-                                                        style={StyleSheet.absoluteFill}
-                                                    />
-                                                )}
-                                                <LinearGradient
-                                                    colors={['#FEE2E2', '#FECACA']}
-                                                    start={{ x: 0, y: 0 }}
-                                                    end={{ x: 1, y: 1 }}
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                                <View style={styles.cancelButton}>
-                                                    <X size={16} color="#EF4444" strokeWidth={2.5} />
-                                                    <Text style={styles.cancelButtonText}>בטל</Text>
-                                                </View>
+                                                <X size={14} color={theme.textSecondary} strokeWidth={1.5} />
+                                                <Text style={[styles.actionButtonText, { color: theme.textSecondary }]}>בטל</Text>
                                             </TouchableOpacity>
                                         )}
                                     </View>
@@ -518,20 +422,12 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                                 </View>
 
                                 {/* Price */}
-                                {booking.hourlyRate && (
+                                {booking.hourlyRate != null && booking.hourlyRate > 0 && (
                                     <View style={[styles.priceRow, { borderTopColor: theme.border }]}>
                                         <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>מחיר לשעה:</Text>
-                                        <View style={styles.priceValueWrapper}>
-                                            <LinearGradient
-                                                colors={['#6366F1', '#8B5CF6']}
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 1 }}
-                                                style={styles.priceGradient}
-                                            />
-                                            <Text style={styles.priceValue}>
-                                                ₪{booking.hourlyRate}
-                                            </Text>
-                                        </View>
+                                        <Text style={[styles.priceValue, { color: theme.textPrimary }]}>
+                                            ₪{booking.hourlyRate}
+                                        </Text>
                                     </View>
                                 )}
 
@@ -580,23 +476,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingTop: 60,
-        paddingBottom: 16,
+        paddingBottom: 18,
         paddingHorizontal: 20,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
     },
     backButton: {
         padding: 8,
     },
     headerTitle: {
-        fontSize: 22,
-        fontWeight: '800',
-        letterSpacing: -0.5,
+        fontSize: 24,
+        fontWeight: '700',
+        letterSpacing: -0.4,
     },
     scrollView: {
         flex: 1,
@@ -617,142 +507,98 @@ const styles = StyleSheet.create({
         paddingVertical: 100,
     },
     emptyIconWrapper: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        overflow: 'hidden',
-        marginBottom: 8,
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 4,
+        marginBottom: 16,
     },
     emptyText: {
-        fontSize: 20,
-        fontWeight: '700',
-        marginTop: 20,
-        letterSpacing: -0.5,
+        fontSize: 18,
+        fontWeight: '600',
+        letterSpacing: -0.3,
     },
     emptySubtext: {
-        fontSize: 15,
-        marginTop: 10,
+        fontSize: 14,
+        marginTop: 8,
         textAlign: 'center',
         fontWeight: '400',
-        lineHeight: 22,
+        lineHeight: 20,
+        letterSpacing: -0.2,
     },
     bookingCardWrapper: {
-        borderRadius: 20,
-        marginBottom: 16,
+        borderRadius: 16,
+        marginBottom: 12,
         overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     bookingCard: {
-        borderRadius: 20,
-        padding: 20,
+        borderRadius: 16,
+        padding: 18,
     },
     cardHeader: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
+        alignItems: 'flex-start',
+        marginBottom: 16,
     },
     sitterInfo: {
         flex: 1,
     },
-    statusBadgeWrapper: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 3,
+    headerActions: {
+        flexDirection: 'row-reverse',
+        gap: 8,
+        alignItems: 'center',
     },
     statusBadge: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
         alignSelf: 'flex-start',
-        zIndex: 1,
     },
     statusText: {
-        fontSize: 13,
-        fontWeight: '700',
-        letterSpacing: 0.2,
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: -0.1,
     },
-    rateButtonWrapper: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowColor: '#F59E0B',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    rateButton: {
+    actionButton: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 16,
-        zIndex: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
+        borderWidth: StyleSheet.hairlineWidth,
+        backgroundColor: 'transparent',
     },
-    rateButtonText: {
+    actionButtonText: {
         fontSize: 13,
-        fontWeight: '700',
-        color: '#F59E0B',
-        letterSpacing: 0.2,
-    },
-    cancelButtonWrapper: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowColor: '#EF4444',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    cancelButton: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 16,
-        zIndex: 1,
-    },
-    cancelButtonText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#EF4444',
-        letterSpacing: 0.2,
+        fontWeight: '600',
+        letterSpacing: -0.1,
     },
     sitterRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 12,
+        marginBottom: 14,
     },
     sitterName: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '700',
-        letterSpacing: -0.3,
+        letterSpacing: -0.4,
     },
     detailsRow: {
         flexDirection: 'row-reverse',
-        gap: 16,
-        marginBottom: 12,
+        gap: 20,
+        marginBottom: 14,
     },
     detailItem: {
         flexDirection: 'row-reverse',
@@ -762,52 +608,40 @@ const styles = StyleSheet.create({
     detailText: {
         fontSize: 14,
         fontWeight: '500',
+        letterSpacing: -0.2,
     },
     priceRow: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 16,
+        paddingTop: 14,
         borderTopWidth: StyleSheet.hairlineWidth,
-        marginTop: 12,
+        marginTop: 14,
     },
     priceLabel: {
         fontSize: 14,
         fontWeight: '500',
     },
-    priceValueWrapper: {
-        borderRadius: 12,
-        overflow: 'hidden',
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 4,
-    },
-    priceGradient: {
-        ...StyleSheet.absoluteFillObject,
-    },
     priceValue: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#FFFFFF',
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        letterSpacing: -0.5,
+        fontSize: 16,
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     notesContainer: {
-        marginTop: 12,
-        paddingTop: 16,
+        marginTop: 14,
+        paddingTop: 14,
         borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: '#F3F4F6',
     },
     notesLabel: {
         fontSize: 12,
-        marginBottom: 4,
+        fontWeight: '600',
+        marginBottom: 6,
+        letterSpacing: -0.1,
     },
     notesText: {
         fontSize: 14,
         lineHeight: 20,
+        letterSpacing: -0.2,
     },
 });
 

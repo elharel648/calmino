@@ -23,6 +23,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { AgeRange, Certification } from '../types/babysitter';
+import { logger } from '../utils/logger';
 
 const AGE_RANGES: { value: AgeRange; label: string }[] = [
     { value: '0-1', label: '0-1 שנה' },
@@ -129,7 +130,7 @@ const BecomeBabysitterScreen = () => {
                 [{ text: 'מעולה', onPress: () => navigation.goBack() }]
             );
         } catch (error) {
-            console.error('Error becoming babysitter:', error);
+            logger.error('Error becoming babysitter:', error);
             Alert.alert('שגיאה', 'אירעה שגיאה בשמירת הפרופיל. נסי שוב.');
         } finally {
             setLoading(false);

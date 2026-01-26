@@ -5,7 +5,8 @@ import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
-import { auth } from '../services/firebaseConfig';
+import { auth, db } from '../services/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,9 +46,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
     const [bookingModalVisible, setBookingModalVisible] = useState(false);
+    const [sitterVideoUri, setSitterVideoUri] = useState<string | undefined>(sitterData.videoUri);
+    const [sitterIsAvailable, setSitterIsAvailable] = useState(false);
 
-    // Check if sitter has a real video (not from database yet, so hide video feature for now)
-    const hasVideo = false; // TODO: Set to true when sitter.videoUri is available from Firebase
+    // Check if sitter has a video
+    const hasVideo = Boolean(sitterVideoUri && sitterVideoUri.trim());
 
     if (!sitterData) return null;
 
@@ -94,15 +97,14 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-                console.log('🔍 Fetching reviews for sitter:', sitterData.id);
+                logger.debug('🔍', 'Fetching reviews for sitter:', sitterData.id);
                 const reviews = await getBabysitterReviews(sitterData.id);
-                console.log('📊 Found reviews:', reviews.length, reviews);
+                logger.debug('📊', 'Found reviews:', reviews.length);
                 const stats = await getReviewStats(sitterData.id);
-                console.log('📈 Review stats:', stats);
+                logger.debug('📈', 'Review stats:', stats);
                 setReviewStats(stats);
                 setReviewsList(reviews);
             } catch (error) {
-                console.error('❌ Could not fetch reviews:', error);
                 logger.error('Could not fetch reviews:', error);
             } finally {
                 setLoadingReviews(false);
@@ -111,11 +113,36 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
         const fetchBadges = async () => {
             try {
+                // Fetch sitter data from Firebase to get isAvailable, createdAt, and videoUri
+                const sitterDoc = await getDoc(doc(db, 'users', sitterData.id));
+                
+                let isAvailable = false;
+                let createdAt: Date | undefined = undefined;
+                let videoUri: string | undefined = sitterData.videoUri;
+
+                if (sitterDoc.exists()) {
+                    const data = sitterDoc.data();
+                    isAvailable = data.sitterAvailable || data.sitterActive || false;
+                    setSitterIsAvailable(isAvailable);
+                    
+                    if (data.createdAt) {
+                        createdAt = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                    }
+                    
+                    // Get videoUri from Firebase if not already in sitterData
+                    if (!videoUri) {
+                        videoUri = data.sitterVideoUri || data.videoUri || undefined;
+                    }
+                    if (videoUri) {
+                        setSitterVideoUri(videoUri);
+                    }
+                }
+
                 const calculatedBadges = await calculateSitterBadges(sitterData.id, {
                     rating: sitterData.rating,
                     reviewCount: sitterData.reviews,
-                    isAvailable: false, // TODO: Get from sitter data
-                    createdAt: undefined, // TODO: Get from sitter data
+                    isAvailable,
+                    createdAt,
                 });
                 setBadges(calculatedBadges);
             } catch (error) {
@@ -193,10 +220,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Hero Section - Static image or video */}
                 <View style={styles.heroContainer}>
-                    {hasVideo && sitterData.videoUri ? (
+                    {hasVideo && sitterVideoUri ? (
                         <Video
                             style={styles.heroVideo}
-                            source={{ uri: sitterData.videoUri }}
+                            source={{ uri: sitterVideoUri }}
                             resizeMode={ResizeMode.COVER}
                             isLooping
                             shouldPlay
@@ -296,7 +323,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                                 style={StyleSheet.absoluteFill}
                                             />
                                             <View style={[styles.badge, { backgroundColor: badge.bgColor + 'CC' }]}>
-                                                <Text style={styles.badgeIcon}>{badge.icon}</Text>
+                                                {badge.icon && <Text style={styles.badgeIcon}>{badge.icon}</Text>}
                                                 <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
                                             </View>
                                         </View>
@@ -578,94 +605,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     </View>
                                 </View>
 
-                                {review.text && (
+                                {/* Text comment - Only show if: verified, 5 stars, and text exists */}
+                                {review.text && 
+                                 review.isVerified && 
+                                 review.rating === 5 && (
                                     <Text style={[styles.reviewBody, { color: theme.textPrimary }]}>"{review.text}"</Text>
                                 )}
-
-                                {/* Category Ratings */}
-                                {review.categoryRatings && (
-                                    <View style={styles.categoryRatingsContainer}>
-                                        {review.categoryRatings.reliability && (
-                                            <View style={styles.categoryRatingItem}>
-                                                <Text style={styles.categoryRatingLabel}>אמינות:</Text>
-                                                <View style={styles.categoryRatingStars}>
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <Ionicons
-                                                            key={star}
-                                                            name={star <= review.categoryRatings!.reliability! ? "star" : "star-outline"}
-                                                            size={12}
-                                                            color="#FBBF24"
-                                                        />
-                                                    ))}
-                                                </View>
-                                            </View>
-                                        )}
-                                        {review.categoryRatings.professionalism && (
-                                            <View style={styles.categoryRatingItem}>
-                                                <Text style={styles.categoryRatingLabel}>מקצועיות:</Text>
-                                                <View style={styles.categoryRatingStars}>
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <Ionicons
-                                                            key={star}
-                                                            name={star <= review.categoryRatings!.professionalism! ? "star" : "star-outline"}
-                                                            size={12}
-                                                            color="#FBBF24"
-                                                        />
-                                                    ))}
-                                                </View>
-                                            </View>
-                                        )}
-                                        {review.categoryRatings.kidsInteraction && (
-                                            <View style={styles.categoryRatingItem}>
-                                                <Text style={styles.categoryRatingLabel}>יחס לילדים:</Text>
-                                                <View style={styles.categoryRatingStars}>
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <Ionicons
-                                                            key={star}
-                                                            name={star <= review.categoryRatings!.kidsInteraction! ? "star" : "star-outline"}
-                                                            size={12}
-                                                            color="#FBBF24"
-                                                        />
-                                                    ))}
-                                                </View>
-                                            </View>
-                                        )}
-                                        {review.categoryRatings.cleanliness && (
-                                            <View style={styles.categoryRatingItem}>
-                                                <Text style={styles.categoryRatingLabel}>נקיון:</Text>
-                                                <View style={styles.categoryRatingStars}>
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <Ionicons
-                                                            key={star}
-                                                            name={star <= review.categoryRatings!.cleanliness! ? "star" : "star-outline"}
-                                                            size={12}
-                                                            color="#FBBF24"
-                                                        />
-                                                    ))}
-                                                </View>
-                                            </View>
-                                        )}
-                                    </View>
-                                )}
-
-                                {/* Tags - Premium Design */}
-                                {review.tags && review.tags.length > 0 && (
-                                    <View style={[styles.reviewTags, { zIndex: 1 }]}>
-                                        {review.tags.map((tag, idx) => (
-                                            <View key={idx} style={styles.reviewTag}>
-                                                <LinearGradient
-                                                    colors={['#EEF2FF', '#E0E7FF']}
-                                                    start={{ x: 0, y: 0 }}
-                                                    end={{ x: 1, y: 1 }}
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                                <Text style={[styles.reviewTagText, { color: '#6366F1' }]}>{REVIEW_TAG_LABELS[tag] || tag}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                )}
-
-                                {/* Review Actions Removed as per user request to avoid "gossip" */}
 
                                 {/* Sitter Response Removed as per user request */}
 
@@ -713,10 +658,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     <TouchableOpacity style={styles.closeVideoBtn} onPress={() => setShowFullVideo(false)}>
                         <Ionicons name="close-circle" size={44} color="#fff" />
                     </TouchableOpacity>
-                    {sitterData.videoUri && (
+                    {sitterVideoUri && (
                         <Video
                             style={styles.fullVideo}
-                            source={{ uri: sitterData.videoUri }}
+                            source={{ uri: sitterVideoUri }}
                             useNativeControls
                             resizeMode={ResizeMode.CONTAIN}
                             shouldPlay={showFullVideo}
@@ -965,9 +910,11 @@ const styles = StyleSheet.create({
         textAlign: 'right',
         color: '#374151',
         fontSize: 15,
-        fontStyle: 'italic',
-        lineHeight: 24,
-        marginTop: 4,
+        lineHeight: 22,
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
     },
     emptyReviews: {
         alignItems: 'center',
@@ -1181,28 +1128,6 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontWeight: '500',
     },
-    reviewTags: {
-        flexDirection: 'row-reverse',
-        flexWrap: 'wrap',
-        gap: 6,
-        marginTop: 8,
-    },
-    reviewTag: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
-        overflow: 'hidden',
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    reviewTagText: {
-        fontSize: 12,
-        fontWeight: '600',
-        zIndex: 1,
-    },
     reviewActions: {
         flexDirection: 'row-reverse',
         marginTop: 14,
@@ -1309,27 +1234,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#fff',
         fontWeight: '600',
-    },
-    categoryRatingsContainer: {
-        marginTop: 12,
-        padding: 12,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        gap: 8,
-    },
-    categoryRatingItem: {
-        flexDirection: 'row-reverse',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    categoryRatingLabel: {
-        fontSize: 12,
-        color: '#6B7280',
-        fontWeight: '500',
-    },
-    categoryRatingStars: {
-        flexDirection: 'row-reverse',
-        gap: 2,
     },
 
     // Footer

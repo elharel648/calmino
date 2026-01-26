@@ -32,12 +32,15 @@ interface TimelineEvent {
 interface DailyTimelineProps {
   refreshTrigger?: number;
   childId?: string; // Accept childId as prop
+  showOnlyToday?: boolean;
+  preloadedEvents?: any[];
+  useGrouping?: boolean;
 }
 
 
 const INITIAL_VISIBLE_COUNT = 4;
 
-const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '' }) => {
+const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false }) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { family } = useFamily();
@@ -76,7 +79,22 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       label: 'שיניים',
     },
   };
+
   const [events, setEvents] = useState<TimelineEvent[]>([]);
+
+  // Initialize with preloaded events if provided
+  useEffect(() => {
+    if (preloadedEvents) {
+      // Map preloaded events to ensure correct timestamp type
+      const mapped = preloadedEvents.map(e => ({
+        ...e,
+        timestamp: e.dateObj || (e.timestamp instanceof Date ? e.timestamp : new Date(e.timestamp))
+      }));
+      setEvents(mapped);
+      setLoading(false);
+    }
+  }, [preloadedEvents]);
+
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [lineHeight, setLineHeight] = useState(0);
@@ -84,13 +102,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    if (childId) {
+    if (childId && !preloadedEvents) {
       loadTimeline();
-    } else {
+    } else if (!childId && !preloadedEvents) {
       setEvents([]);
       setLoading(false);
     }
-  }, [childId, refreshTrigger, family]);
+  }, [childId, refreshTrigger, family, preloadedEvents]);
 
   // Check if event happened in last hour for pulsing effect
   const isRecentEvent = (timestamp: Date) => {
@@ -113,7 +131,17 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       const mapped: TimelineEvent[] = history.map((item: any) => ({
         ...item,
         timestamp: item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp),
-      }));
+      }))
+        // Filter for today if requested
+        .filter(event => {
+          if (!showOnlyToday) return true;
+          const eventDate = new Date(event.timestamp);
+          const today = new Date();
+          return eventDate.getDate() === today.getDate() &&
+            eventDate.getMonth() === today.getMonth() &&
+            eventDate.getFullYear() === today.getFullYear();
+        });
+
       setEvents(mapped);
       setError(null);
     } catch (error: any) {
@@ -124,6 +152,40 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       setLoading(false);
     }
   };
+
+  // ... (keeping existing handlers)
+
+  // Group events by date
+  const groupedEvents = React.useMemo(() => {
+    if (!useGrouping || events.length === 0) return null;
+
+    const groups: { [key: string]: TimelineEvent[] } = {};
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    events.forEach(event => {
+      const date = new Date(event.timestamp);
+      let dateKey = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+
+      // Check for Today/Yesterday
+      if (date.toDateString() === today.toDateString()) {
+        dateKey = 'היום';
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        dateKey = 'אתמול';
+      }
+
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(event);
+    });
+
+    return groups;
+  }, [events, useGrouping]);
+
+  // ... (render logic update below) ...
+
 
   const handleDelete = async (eventId: string) => {
     if (Platform.OS !== 'web') {
@@ -178,7 +240,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         return `${event.startTime} → ${event.endTime}`;
       }
       if (event.subType === 'bottle') {
-        return event.amount || t('timeline.bottle');
+        // Handle missing amount gracefully
+        if (!event.amount || event.amount === 'לא צוין') {
+          return t('timeline.bottle');
+        }
+        return `${t('timeline.bottle')} ${event.amount}`;
       } else if (event.subType === 'breast') {
         return t('timeline.breast');
       } else if (event.subType === 'pumping') {
@@ -199,7 +265,15 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         if (h > 0) {
           return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
         }
+        // Don't show "0 דקות" - show sleep label instead
+        if (m === 0) {
+          return t('timeline.sleep');
+        }
         return `${m} דקות`;
+      }
+      // Handle "שינה חדשה" (new sleep) - show as sleep label
+      if (event.note && event.note.includes('שינה חדשה')) {
+        return t('timeline.sleep');
       }
       // Try to extract from note
       if (event.note && event.note.includes('משך שינה')) {
@@ -228,8 +302,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
   const getEventSubtext = (event: TimelineEvent) => {
     if (event.type === 'food') {
-      // For timerange mode: show total duration in subtext
-      if (event.startTime && event.endTime && event.duration) {
+      // For timerange mode: show total duration in subtext (handled in grouped view separately)
+      if (event.startTime && event.endTime && event.duration && !useGrouping) {
         const h = Math.floor(event.duration / 3600);
         const m = Math.floor((event.duration % 3600) / 60);
         let durationText = '';
@@ -248,13 +322,17 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         }
         return durationText;
       }
-      if (event.subType === 'bottle') return event.note || t('timeline.bottle');
+      if (event.subType === 'bottle') {
+        // Don't show "לא צוין" - just show bottle label or note
+        if (event.note && event.note !== 'לא צוין') return event.note;
+        return '';
+      }
       if (event.subType === 'breast') return event.note || '';
       if (event.subType === 'solids') return t('tracking.solidsFood');
       if (event.subType === 'pumping') return event.note || t('timeline.pumping');
     } else if (event.type === 'sleep') {
-      // For timerange mode: show total duration in subtext
-      if (event.startTime && event.endTime && event.duration) {
+      // For timerange mode: show total duration in subtext (handled in grouped view separately)
+      if (event.startTime && event.endTime && event.duration && !useGrouping) {
         const h = Math.floor(event.duration / 3600);
         const m = Math.floor((event.duration % 3600) / 60);
         let durationText = '';
@@ -270,18 +348,21 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         }
         return durationText;
       }
+      // Handle "שינה חדשה" - don't show as subtext, already in title
+      if (event.note && event.note.includes('שינה חדשה')) {
+        return '';
+      }
       // Extract user note after pipe separator
       if (event.note) {
         if (event.note.includes(' | ')) {
           const parts = event.note.split(' | ');
-          return parts[1] ? parts[1].substring(0, 35) : 'שינה';
+          return parts[1] ? parts[1].substring(0, 35) : '';
         }
         // If note exists but no pipe (and it's not just "שינה חדשה" or duration-like), show it
-        // Check if note is just a duration string to avoid duplication if title shows duration
         const isDuration = event.note.includes('משך שינה') || event.note.match(/^\d{2}:\d{2} →/);
-        return isDuration ? 'שינה' : event.note;
+        return isDuration ? '' : event.note;
       }
-      return t('timeline.sleep');
+      return '';
     } else if (event.type === 'diaper') {
       return event.note || '';
     } else if (event.type === 'custom') {
@@ -361,102 +442,280 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.titleSection}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-        </View>
+      {/* Header - Only show if NOT in sectioned/grouped mode (e.g. Home Screen) */}
+      {!useGrouping && (
+        <View style={styles.header}>
+          <View style={styles.titleSection}>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
+          </View>
 
-        {/* Stats Pills */}
-        <View style={styles.statsContainer}>
-          {Object.entries(stats).map(([type, count]) => {
-            const config = TYPE_CONFIG[type as keyof typeof TYPE_CONFIG];
-            if (!config) return null; // Skip if type not in config
-            const Icon = config.icon;
-            return (
-              <View key={type} style={[styles.statPill, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-                <Text style={[styles.statCount, { color: theme.textPrimary }]}>{count}</Text>
-                <Icon size={11} color={theme.textSecondary} strokeWidth={2.5} />
-              </View>
-            );
-          })}
+          {/* Stats Pills */}
+          <View style={styles.statsContainer}>
+            {Object.entries(stats).map(([type, count]) => {
+              const config = TYPE_CONFIG[type as keyof typeof TYPE_CONFIG];
+              if (!config) return null; // Skip if type not in config
+              const Icon = config.icon;
+              return (
+                <View key={type} style={[styles.statPill, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+                  <Text style={[styles.statCount, { color: theme.textPrimary }]}>{count}</Text>
+                  <Icon size={11} color={theme.textSecondary} strokeWidth={2.5} />
+                </View>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Timeline with Staggered Entry and Growing Line */}
-      <View style={styles.timeline}>
-        {visibleEvents.map((event, index) => {
-          const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
-          const Icon = config.icon;
-          const isLast = index === visibleEvents.length - 1;
-          const details = getEventDetails(event);
-          const subtext = getEventSubtext(event);
-          const isRecent = isRecentEvent(event.timestamp);
-
-          return (
-            <Animated.View
-              key={event.id}
-              entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 80), 300)}
-            >
-              <SwipeableRow
-                onDelete={() => handleDelete(event.id)}
-                onShare={() => handleShare(event)}
-              >
-                <View style={styles.eventRow} collapsable={false}>
-                  {/* Left side: Time + Dot */}
-                  <View style={styles.leftSection}>
-                    <Text style={[styles.time, { color: theme.textPrimary }]}>
-                      {event.timestamp.toLocaleTimeString('he-IL', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                      })}
-                    </Text>
-                    <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>
+      <View style={[styles.timeline, useGrouping && styles.timelineGrouped]}>
+        {/* Grouped Rendering */}
+        {useGrouping && groupedEvents ? (
+          Object.entries(groupedEvents).map(([dateLabel, groupEvents], groupIndex) => (
+            <View key={dateLabel} style={{ marginBottom: 12 }}>
+              {/* DATE SEPARATOR - Clean and minimal */}
+              {groupIndex > 0 && (
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginVertical: 28,
+                  paddingHorizontal: 0
+                }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.2 }} />
+                  <View style={{
+                    backgroundColor: theme.cardSecondary,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    marginHorizontal: 16,
+                  }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: theme.textSecondary, letterSpacing: -0.2 }}>{dateLabel}</Text>
                   </View>
-
-                  {/* Timeline icon + line */}
-                  <View style={styles.timelineTrack}>
-                    <View style={[styles.timelineIcon, { backgroundColor: config.color + '20' }]}>
-                      <Icon size={14} color={config.color} strokeWidth={2} />
-                    </View>
-                    {/* Line connector */}
-                    {!isLast && <View style={[styles.connector, { backgroundColor: theme.border }]} />}
-                  </View>
-
-                  {/* Right side: Content */}
-                  <View style={styles.eventCardContainer}>
-                    <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                      <View style={styles.cardContent}>
-                        <View style={styles.eventHeader}>
-                          <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
-                        </View>
-                        {subtext && (
-                          <Text style={[styles.eventSubtext, { color: theme.textSecondary }]}>{subtext}</Text>
-                        )}
-                      </View>
-
-                      {/* Reporter Badge - Small avatar showing who reported */}
-                      {event.reporterName && (
-                        <View style={styles.reporterBadge}>
-                          {event.reporterPhotoUrl ? (
-                            <Image source={{ uri: event.reporterPhotoUrl }} style={styles.reporterAvatar} />
-                          ) : (
-                            <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: config.color + '30' }]}>
-                              <Text style={[styles.reporterInitial, { color: config.color }]}>
-                                {event.reporterName.charAt(0)}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
-                    </View>
+                  <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.2 }} />
+                </View>
+              )}
+              {groupIndex === 0 && (
+                <View style={{
+                  alignItems: 'flex-end',
+                  marginBottom: 20,
+                  marginTop: 8,
+                }}>
+                  <View style={{
+                    backgroundColor: theme.cardSecondary,
+                    paddingHorizontal: 14,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  }}>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary, letterSpacing: -0.2 }}>{dateLabel}</Text>
                   </View>
                 </View>
-              </SwipeableRow>
-            </Animated.View>
-          );
-        })}
+              )}
+
+              {/* Events for this date */}
+              {groupEvents.map((event, index) => {
+                const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+                const Icon = config.icon;
+                const isLast = index === groupEvents.length - 1;
+                const details = getEventDetails(event);
+                let subtext = getEventSubtext(event);
+                
+                // For grouped view, format subtext consistently (without date - already in header)
+                if (useGrouping) {
+                  const isTimerangeEvent = event.startTime && event.endTime;
+                  if (isTimerangeEvent && event.duration) {
+                    // For timerange events, show only duration (date is in group header)
+                    const h = Math.floor(event.duration / 3600);
+                    const m = Math.floor((event.duration % 3600) / 60);
+                    let durationText = '';
+                    if (h > 0) {
+                      durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+                    } else {
+                      durationText = `${m} דקות`;
+                    }
+                    // Add amount/note if exists, but not date
+                    if (event.amount && event.type === 'food') {
+                      subtext = `${durationText} • ${event.amount}`;
+                    } else if (event.note && event.note.includes(' | ')) {
+                      const parts = event.note.split(' | ');
+                      subtext = parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+                    } else {
+                      subtext = durationText;
+                    }
+                  }
+                  // For non-timerange events, keep subtext but remove date if present
+                  // Date is already shown in the group header, no need to repeat
+                }
+
+                return (
+                  <Animated.View
+                    key={event.id}
+                    entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 50), 300)}
+                  >
+                    <SwipeableRow
+                      onDelete={() => handleDelete(event.id)}
+                      onShare={() => handleShare(event)}
+                    >
+                      <View style={styles.eventRow} collapsable={false}>
+                        {/* Left side: Time */}
+                        <View style={styles.leftSection}>
+                          <Text style={[styles.time, { color: theme.textPrimary }]}>
+                            {event.timestamp.toLocaleTimeString('he-IL', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false
+                            })}
+                          </Text>
+                          {/* Only show relative time for recent events in grouped view */}
+                          {useGrouping && (() => {
+                            const now = new Date();
+                            const diffMs = now.getTime() - event.timestamp.getTime();
+                            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                            // Only show "X hours ago" for events within last 24 hours
+                            if (hours < 24 && hours > 0) {
+                              return <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>;
+                            }
+                            return null;
+                          })()}
+                          {!useGrouping && (
+                            <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>
+                          )}
+                        </View>
+
+                        {/* Timeline icon + line */}
+                        <View style={styles.timelineTrack}>
+                          <View style={[styles.timelineIcon, { backgroundColor: config.color + '20' }]}>
+                            <Icon size={14} color={config.color} strokeWidth={2} />
+                          </View>
+                          {/* Line connector */}
+                          {!isLast && <View style={[styles.connector, { backgroundColor: theme.border }]} />}
+                        </View>
+
+                        {/* Right side: Content */}
+                        <View style={styles.eventCardContainer}>
+                          <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            <View style={styles.cardContent}>
+                              <View style={styles.eventHeader}>
+                                <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
+                              </View>
+                              {subtext && (
+                                <Text style={[styles.eventSubtext, { color: theme.textSecondary }]}>{subtext}</Text>
+                              )}
+                            </View>
+
+                            {/* Reporter Badge */}
+                            {event.reporterName && (
+                              <View style={styles.reporterBadge}>
+                                {event.reporterPhotoUrl ? (
+                                  <Image 
+                                    source={{ uri: event.reporterPhotoUrl }} 
+                                    style={styles.reporterAvatar}
+                                    onError={() => {
+                                      // Image failed to load, will fallback to placeholder
+                                    }}
+                                  />
+                                ) : (
+                                  <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: config.color + '30' }]}>
+                                    <Text style={[styles.reporterInitial, { color: config.color }]}>
+                                      {event.reporterName.charAt(0)}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    </SwipeableRow>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          ))
+        ) : (
+          /* Regular Flat Rendering (Fallback or Today View) */
+          visibleEvents.map((event, index) => {
+            const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+            const Icon = config.icon;
+            const isLast = index === visibleEvents.length - 1;
+            const details = getEventDetails(event);
+            const subtext = getEventSubtext(event);
+            const isRecent = isRecentEvent(event.timestamp);
+
+            return (
+              <Animated.View
+                key={event.id}
+                entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 80), 300)}
+              >
+                <SwipeableRow
+                  onDelete={() => handleDelete(event.id)}
+                  onShare={() => handleShare(event)}
+                >
+                  <View style={styles.eventRow} collapsable={false}>
+                    {/* Left side: Time + Dot */}
+                    <View style={styles.leftSection}>
+                      <Text style={[styles.time, { color: theme.textPrimary }]}>
+                        {event.timestamp.toLocaleTimeString('he-IL', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        })}
+                      </Text>
+                      <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>
+                    </View>
+
+                    {/* Timeline icon + line */}
+                    <View style={styles.timelineTrack}>
+                      <View style={[styles.timelineIcon, { backgroundColor: config.color + '20' }]}>
+                        <Icon size={14} color={config.color} strokeWidth={2} />
+                      </View>
+                      {/* Line connector */}
+                      {!isLast && <View style={[styles.connector, { backgroundColor: theme.border }]} />}
+                    </View>
+
+                    {/* Right side: Content */}
+                    <View style={styles.eventCardContainer}>
+                      <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <View style={styles.cardContent}>
+                          <View style={styles.eventHeader}>
+                            <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
+                          </View>
+                          {subtext && (
+                            <Text style={[styles.eventSubtext, { color: theme.textSecondary }]}>{subtext}</Text>
+                          )}
+                        </View>
+
+                        {/* Reporter Badge - Small avatar showing who reported */}
+                        {event.reporterName && (
+                          <View style={styles.reporterBadge}>
+                            {event.reporterPhotoUrl ? (
+                              <Image 
+                                source={{ uri: event.reporterPhotoUrl }} 
+                                style={styles.reporterAvatar}
+                                onError={() => {
+                                  // Image failed to load, will fallback to placeholder
+                                }}
+                              />
+                            ) : (
+                              <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: config.color + '30' }]}>
+                                <Text style={[styles.reporterInitial, { color: config.color }]}>
+                                  {event.reporterName.charAt(0)}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                </SwipeableRow>
+              </Animated.View>
+            );
+          })
+        )}
       </View>
 
       {/* Expand */}
@@ -542,9 +801,13 @@ const styles = StyleSheet.create({
   timeline: {
     gap: 0,
   },
+  timelineGrouped: {
+    paddingHorizontal: 20,
+  },
   eventRow: {
     flexDirection: 'row-reverse',
-    marginBottom: 12,
+    marginBottom: 10,
+    alignItems: 'flex-start',
   },
   loadingContainer: {
     padding: 40,
@@ -583,20 +846,22 @@ const styles = StyleSheet.create({
   // Left: Time
   leftSection: {
     width: 56,
-    paddingTop: 2,
+    paddingTop: 3,
     alignItems: 'flex-end',
+    paddingRight: 4,
   },
   time: {
     fontSize: 13,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
   timeAgo: {
     fontSize: 10,
     fontWeight: '500',
-    marginTop: 2,
+    marginTop: 3,
     fontVariant: ['tabular-nums'],
+    opacity: 0.7,
   },
 
   // Center: Timeline
@@ -604,15 +869,16 @@ const styles = StyleSheet.create({
     width: 36,
     alignItems: 'center',
     position: 'relative',
+    paddingHorizontal: 4,
   },
   timelineIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    marginTop: 2,
+    marginTop: 3,
   },
   dot: {
     width: 8,
@@ -632,43 +898,46 @@ const styles = StyleSheet.create({
   // Right: Content - Premium Card Style
   eventCardContainer: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 16,
     // Enhanced premium shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
   },
   eventCard: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
     minHeight: 68,
     // Subtle border for depth
     borderWidth: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
   },
   deleteBtn: {
     padding: 4,
     borderRadius: 6,
   },
   cardContent: {
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 16,
+    flex: 1,
   },
   eventHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     width: '100%',
-    gap: 12,
+    marginBottom: 3,
   },
   eventTitle: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 20,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     textAlign: 'right',
   },
   iconBadge: {
@@ -679,11 +948,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   eventSubtext: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '500',
     textAlign: 'right',
     marginTop: 2,
+    letterSpacing: -0.1,
+    opacity: 0.75,
   },
 
   // Empty

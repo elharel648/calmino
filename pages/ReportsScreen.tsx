@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
-import { X, TrendingUp, TrendingDown, ChevronRight, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby } from 'lucide-react-native';
+import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby } from 'lucide-react-native';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -35,13 +35,14 @@ import { useBabyProfile } from '../hooks/useBabyProfile';
 import * as Haptics from 'expo-haptics';
 import ChildPicker from '../components/Home/ChildPicker';
 import { LiquidGlassBackground } from '../components/LiquidGlass';
-import { AIInsightHeader, PremiumStatCard, SkiaBezierChart, MilestoneBadge } from '../components/Reports/PremiumReportComponents';
+import { PremiumStatCard, SkiaBezierChart, MilestoneBadge } from '../components/Reports/PremiumReportComponents';
 import { LiquidGlassLineChart, LiquidGlassBarChart } from '../components/Reports/LiquidGlassCharts';
 import GlassBarChartPerfect from '../components/Reports/GlassBarChart';
 import DetailedStatsScreen from '../components/Reports/DetailedStatsScreen';
 import DetailedGrowthScreen from '../components/Reports/DetailedGrowthScreen';
 import GrowthStatCube from '../components/Reports/GrowthStatCube';
 import GrowthModal from '../components/Home/GrowthModal';
+import DailyTimeline from '../components/DailyTimeline';
 import {
   PremiumInsightCard,
   AITipCard,
@@ -503,30 +504,7 @@ ${comparisonText}
   }, [dailyStats, prevWeekStats]);
 
   // Generate AI Insight
-  const aiInsight = useMemo(() => {
-    if (!activeChild?.childName || dailyStats.foodCount === 0) return null;
 
-    const avgSleepPerFeeding = dailyStats.sleepCount > 0 && dailyStats.foodCount > 0
-      ? (dailyStats.sleep / dailyStats.foodCount).toFixed(1)
-      : null;
-
-    const insights = [
-      comparison?.sleepChange && comparison.sleepChange > 10
-        ? `${activeChild.childName} ישן/ה ${comparison.sleepChange}% יותר השבוע! `
-        : null,
-      avgSleepPerFeeding && parseFloat(avgSleepPerFeeding) > 0.5
-        ? `בממוצע, ${activeChild.childName} ישן/ה ${avgSleepPerFeeding} שעות אחרי כל האכלה`
-        : null,
-      dailyStats.feedingTypes.solids > dailyStats.feedingTypes.bottle
-        ? `${activeChild.childName} אוכל/ת יותר מוצקים מבקבוקים - התקדמות יפה!`
-        : null,
-      timeInsights?.biggestFeeding && timeInsights.biggestFeeding > 150
-        ? `האכלה גדולה של ${timeInsights.biggestFeeding} מ"ל - תיאבון בריא!`
-        : null,
-    ].filter(Boolean);
-
-    return insights[0] || `${activeChild.childName} ביום טוב! המשיכו כך `;
-  }, [activeChild, dailyStats, comparison, timeInsights]);
 
   // ========== COMPONENTS ==========
 
@@ -793,6 +771,9 @@ ${comparisonText}
     propsForBackgroundLines: { stroke: theme.border, strokeDasharray: '4,4' }
   };
 
+  // History Modal State
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
   // Summary Tab
   const SummaryTab = () => (
     <ScrollView
@@ -800,6 +781,10 @@ ${comparisonText}
       contentContainerStyle={styles.tabContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
+      {/* AI Insight Header - Premium Glass Squeeze */}
+
+
+      {/* Stats Grid */}
       <Animated.View
         entering={ANIMATIONS.fadeInUp(100, 500)}
         style={[styles.statsGrid, { position: 'relative' }]}
@@ -824,6 +809,7 @@ ${comparisonText}
               icon={Moon}
               value={`${dailyStats.sleep.toFixed(1)}`}
               label="שעות שינה"
+              subValue={`${dailyStats.sleepCount} תנומות`}
               change={comparison?.sleepChange}
               iconColor="#8B5CF6"
               iconBg="#EDE9FE"
@@ -856,11 +842,31 @@ ${comparisonText}
           return null;
         })}
 
-        {/* Growth Cube with Sparkline */}
+        {/* Growth Cube */}
         <GrowthStatCube
           childId={activeChild?.childId}
           onPress={() => setShowGrowthScreen(true)}
         />
+
+        {/* History Cube - Matching Style */}
+        <TouchableOpacity
+          style={[styles.statCard, { backgroundColor: theme.card }]}
+          onPress={() => setShowHistoryModal(true)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.statIconWrap, { backgroundColor: theme.primary + '15' }]}>
+            <Clock size={20} color={theme.primary} strokeWidth={1.5} />
+          </View>
+
+          <View style={styles.statValueRow}>
+            <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>יומן</Text>
+          </View>
+
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>היסטוריה</Text>
+          <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>ציר זמן מלא</Text>
+
+          <ChevronRight size={16} color={theme.textTertiary} style={styles.cardChevron} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.editStatsBtn}
@@ -1297,6 +1303,31 @@ ${comparisonText}
         onClose={() => setShowGrowthModal(false)}
         childId={activeChild?.childId}
       />
+
+      {/* History Log Modal */}
+      <Modal visible={showHistoryModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={[styles.historyModalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.historyHeader, { borderColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setShowHistoryModal(false)} style={[styles.closeButton, { backgroundColor: theme.cardSecondary }]}>
+              <X size={24} color={theme.textPrimary} />
+            </TouchableOpacity>
+            <Text style={[styles.historyModalTitle, { color: theme.textPrimary }]}>היסטוריה מלאה</Text>
+            <View style={{ width: 40 }} />
+          </View>
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <DailyTimeline
+              childId={activeChild?.childId}
+              showOnlyToday={false}
+              preloadedEvents={allEvents}
+              useGrouping={true}
+            />
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 
@@ -1436,6 +1467,57 @@ const styles = StyleSheet.create({
   goalItemProgress: { fontSize: 12 },
   goalProgressBar: { height: 8, borderRadius: 4, overflow: 'hidden' },
   goalProgressFill: { height: '100%', borderRadius: 4 },
+
+
+
+  historyButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  historyIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyInfo: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  historyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  historySubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  historyModalContainer: {
+    flex: 1,
+  },
+  historyHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+  },
+  historyModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
   streakBadge: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, marginTop: 8 },
   streakEmoji: { fontSize: 18 },
   streakText: { fontSize: 13, fontWeight: '600' },

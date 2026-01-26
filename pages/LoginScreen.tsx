@@ -41,6 +41,7 @@ import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { joinFamily } from '../services/familyService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { logger } from '../utils/logger';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -126,16 +127,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
   // Google response handler
   useEffect(() => {
-    if (__DEV__) console.log('🔐 Google Auth - request:', !!request, 'response type:', response?.type);
+    logger.debug('🔐', 'Google Auth - request:', !!request, 'response type:', response?.type);
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      if (__DEV__) console.log('🔐 Google Auth - Got id_token, length:', id_token?.length);
+      logger.debug('🔐', 'Google Auth - Got id_token, length:', id_token?.length);
       const credential = GoogleAuthProvider.credential(id_token);
 
       setLoading(true);
       signInWithCredential(auth, credential)
         .then(async (userCredential) => {
-          if (__DEV__) console.log('✅ Google Sign-In Success!');
+          logger.debug('✅', 'Google Sign-In Success!');
 
           // Check if this is a new user and save agreement
           const userRef = doc(db, 'users', userCredential.user.uid);
@@ -162,16 +163,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           onLoginSuccess();
         })
         .catch((error) => {
-          if (__DEV__) console.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
+          logger.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           Alert.alert('שגיאה', `לא הצלחנו להתחבר עם גוגל: ${error.code}`);
         })
         .finally(() => setLoading(false));
     } else if (response?.type === 'error') {
-      if (__DEV__) console.error('❌ Google Auth Error:', response.error);
+      logger.error('❌ Google Auth Error:', response.error);
       Alert.alert('שגיאת Google', response.error?.message || 'Unknown error');
     } else if (response?.type === 'dismiss') {
-      if (__DEV__) console.log('🔐 Google Auth - User dismissed');
+      logger.debug('🔐', 'Google Auth - User dismissed');
     }
   }, [response]);
 
@@ -202,7 +203,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(t('login.passwordReset.sent'), t('login.passwordReset.sentMessage'));
     } catch (error) {
-      if (__DEV__) console.log('Password reset error:', error);
+      logger.error('Password reset error:', error);
       Alert.alert(t('common.error'), t('alerts.couldNotSendEmail'));
     }
   };
@@ -330,7 +331,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         if (pendingInviteCode.trim().length === 6) {
           const result = await joinFamily(pendingInviteCode.trim());
           if (result.success) {
-            if (__DEV__) console.log('✅ Joined family:', result.family?.babyName);
+            logger.debug('✅', 'Joined family:', result.family?.babyName);
           }
         }
 
@@ -352,7 +353,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         );
       }
     } catch (error: any) {
-      if (__DEV__) console.log('Auth Error:', error?.code);
+      // Error logged via logger in catch block
 
       // Increment attempts for rate limiting
       const newAttempts = attempts + 1;
@@ -730,7 +731,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 accessibilityRole="button"
                 onPress={async () => {
                   try {
-                    if (__DEV__) console.log('🍎 Apple Sign-In - Starting...');
+                    logger.debug('🍎', 'Apple Sign-In - Starting...');
                     // Generate a random nonce
                     const rawNonce = Math.random().toString(36).substring(2, 15) +
                       Math.random().toString(36).substring(2, 15);
@@ -740,7 +741,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       Crypto.CryptoDigestAlgorithm.SHA256,
                       rawNonce
                     );
-                    if (__DEV__) console.log('🍎 Apple Sign-In - Nonce generated, calling signInAsync...');
+                    logger.debug('🍎', 'Apple Sign-In - Nonce generated, calling signInAsync...');
 
                     const credential = await AppleAuthentication.signInAsync({
                       requestedScopes: [
@@ -749,7 +750,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                       ],
                       nonce: hashedNonce,
                     });
-                    if (__DEV__) console.log('🍎 Apple Sign-In - Got credential, identityToken length:', credential.identityToken?.length);
+                    logger.debug('🍎', 'Apple Sign-In - Got credential, identityToken length:', credential.identityToken?.length);
 
                     // Create Firebase credential with rawNonce
                     const provider = new OAuthProvider('apple.com');
@@ -759,9 +760,9 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     });
 
                     setLoading(true);
-                    if (__DEV__) console.log('🍎 Apple Sign-In - Signing in to Firebase...');
+                    logger.debug('🍎', 'Apple Sign-In - Signing in to Firebase...');
                     const userCredential = await signInWithCredential(auth, firebaseCredential);
-                    if (__DEV__) console.log('✅ Apple Sign-In Success!');
+                    logger.debug('✅', 'Apple Sign-In Success!');
 
                     // Check if this is a new user and save agreement
                     const userRef = doc(db, 'users', userCredential.user.uid);
@@ -787,7 +788,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     onLoginSuccess();
                   } catch (e: any) {
-                    if (__DEV__) console.error('❌ Apple Sign-In Error:', e.code, e.message);
+                    logger.error('❌ Apple Sign-In Error:', e.code, e.message);
                     if (e.code !== 'ERR_REQUEST_CANCELED') {
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                       Alert.alert(t('login.errors.appleError'), `${e.code}: ${e.message}`);

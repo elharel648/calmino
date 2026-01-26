@@ -420,7 +420,8 @@ export async function calculateSitterBadges(
             stats = {
                 rating: reviewStats.average || data.sitterRating || 0,
                 reviewCount: reviewStats.total || data.sitterReviewCount || 0,
-                isAvailable: data.sitterAvailable || false,
+                // Check both sitterAvailable and sitterActive for availability
+                isAvailable: data.sitterAvailable || data.sitterActive || false,
                 createdAt: data.createdAt?.toDate?.() || data.createdAt,
             };
         } catch (error) {
@@ -436,8 +437,8 @@ export async function calculateSitterBadges(
         badges.push('top_sitter');
     }
 
-    // 🏆 Highly Recommended - מעל 95% המלצות (4-5 כוכבים)
-    if (reviewCount > 0) {
+    // 🏆 Highly Recommended - לפחות 10 ביקורות + מעל 95% המלצות (4-5 כוכבים)
+    if (reviewCount >= 10) {
         try {
             const reviewStats = await getReviewStats(babysitterId);
             const highRatings = (reviewStats.distribution[4] || 0) + (reviewStats.distribution[5] || 0);

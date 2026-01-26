@@ -9,8 +9,14 @@ import Constants from 'expo-constants';
 import { logger } from '../utils/logger';
 
 // RevenueCat API Keys (get from RevenueCat Dashboard)
-const REVENUECAT_API_KEY_IOS = 'YOUR_IOS_API_KEY'; // TODO: Replace with real key
-const REVENUECAT_API_KEY_ANDROID = 'YOUR_ANDROID_API_KEY'; // TODO: Replace with real key
+// Set these via environment variables or app.json config
+// For production, use: Constants.expoConfig?.extra?.revenueCat?.iosKey
+const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || 
+    Constants.expoConfig?.extra?.revenueCat?.iosKey || 
+    'YOUR_IOS_API_KEY';
+const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || 
+    Constants.expoConfig?.extra?.revenueCat?.androidKey || 
+    'YOUR_ANDROID_API_KEY';
 
 // Entitlement ID (what the user gets when they subscribe)
 export const PREMIUM_ENTITLEMENT_ID = 'premium';

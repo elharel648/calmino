@@ -15,13 +15,14 @@ import { useTheme } from '../context/ThemeContext';
 import { auth } from '../services/firebaseConfig';
 import { getBabysitterReviews, getReviewStats } from '../services/babysitterService';
 import * as Haptics from 'expo-haptics';
+import { logger } from '../utils/logger';
 
 interface Review {
     id: string;
     parentName: string;
     parentPhoto: string | null;
     rating: number;
-    comment: string;
+    comment?: string; // Optional - may not exist
     createdAt: Date;
     isVerified: boolean;
 }
@@ -49,7 +50,7 @@ export default function MyReviewsScreen({ navigation }: any) {
             setReviews(reviewsData as any);
             setStats(statsData);
         } catch (error) {
-            console.error('Error loading reviews:', error);
+            logger.error('Error loading reviews:', error);
         } finally {
             setLoading(false);
         }
@@ -199,10 +200,15 @@ export default function MyReviewsScreen({ navigation }: any) {
                                 )}
                             </View>
 
-                            <Text style={[styles.reviewComment, { color: theme.textSecondary }]} numberOfLines={3}>
-                                {review.comment}
-                            </Text>
-
+                            {/* Text comment - Only show if: verified, 5 stars, and text exists */}
+                            {review.comment && 
+                             review.isVerified && 
+                             review.rating === 5 && (
+                                <Text style={[styles.reviewComment, { color: theme.textSecondary }]} numberOfLines={3}>
+                                    {review.comment}
+                                </Text>
+                            )}
+                            
                             <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>
                                 {new Date(review.createdAt).toLocaleDateString('he-IL')}
                             </Text>
@@ -348,6 +354,7 @@ const styles = StyleSheet.create({
     reviewComment: {
         fontSize: 14,
         lineHeight: 20,
+        marginTop: 8,
         marginBottom: 8,
         textAlign: 'right',
         writingDirection: 'rtl',

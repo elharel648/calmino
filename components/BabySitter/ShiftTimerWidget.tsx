@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { auth, db } from '../../services/firebaseConfig';
 import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
+import { logger } from '../../utils/logger';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -119,7 +120,7 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
                 pausedAt: !isPaused ? serverTimestamp() : null,
             });
         } catch (e) {
-            console.error('Failed to update pause state:', e);
+            logger.error('Failed to update pause state:', e);
         }
     };
 
@@ -154,7 +155,7 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             onShiftEnd?.();
                         } catch (e) {
-                            console.error('Failed to end shift:', e);
+                            logger.error('Failed to end shift:', e);
                             Alert.alert('שגיאה', 'לא הצלחנו לסיים את המשמרת');
                         }
                     }

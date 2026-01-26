@@ -30,6 +30,7 @@ import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { uploadSitterPhoto } from '../services/imageUploadService';
 import { ISRAELI_CITIES } from '../constants/israeliCities';
+import { logger } from '../utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -104,6 +105,11 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     Alert.alert(t('sitter.registration.requiredFields'), t('sitter.registration.fillRequiredFields'));
                     return false;
                 }
+                // Basic phone validation - just check it's not empty
+                if (phone.trim().length < 9) {
+                    Alert.alert('שגיאה', 'מספר טלפון חייב להיות לפחות 9 ספרות');
+                    return false;
+                }
                 return true;
             case 2:
                 if (!profilePhoto) {
@@ -162,7 +168,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (error) {
-            if (__DEV__) console.error('Location error:', error);
+            logger.error('Location error:', error);
             Alert.alert(t('common.error'), t('sitter.registration.locationError'));
         } finally {
             setIsLoadingLocation(false);
@@ -193,9 +199,9 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 // Local URI - need to upload
                 try {
                     photoUrl = await uploadSitterPhoto(profilePhoto);
-                    console.log('📸 Sitter photo uploaded:', photoUrl);
+                    logger.debug('📸', 'Sitter photo uploaded:', photoUrl);
                 } catch (uploadError) {
-                    console.warn('⚠️ Failed to upload photo, continuing without:', uploadError);
+                    logger.warn('Failed to upload photo, continuing without:', uploadError);
                     photoUrl = null; // Don't save local URI
                 }
             }
@@ -203,6 +209,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             await updateDoc(doc(db, 'users', userId), {
                 isSitter: true,
                 sitterActive: true,
+                sitterAvailable: true, // Set available status for badge
                 sitterBio: bio,
                 sitterExperience: experienceYears ? `${experienceYears} שנות ניסיון` : null,
                 sitterAvailability: Object.entries(availability)

@@ -28,6 +28,7 @@ import useSitters, { Sitter } from '../hooks/useSitters';
 import { calculateSitterBadges } from '../services/babysitterService';
 import { BADGE_INFO, SitterBadge } from '../types/babysitter';
 import { ISRAELI_CITIES } from '../constants/israeliCities';
+import { logger } from '../utils/logger';
 
 const BabySitterScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -38,7 +39,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // 🔧 DEBUG: Log when screen loads
     useEffect(() => {
-        if (__DEV__) console.log('🔧 BabySitterScreen: Mounted! isLoading:', isLoading, 'sitters:', sitters.length);
+        logger.debug('🔧', 'BabySitterScreen: Mounted! isLoading:', isLoading, 'sitters:', sitters.length);
     }, [sitters, isLoading]);
 
     // State
@@ -149,7 +150,7 @@ const BabySitterScreen = ({ navigation }: any) => {
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') {
-                    if (__DEV__) console.log('Location permission denied');
+                    logger.log('Location permission denied');
                     return;
                 }
 
@@ -165,7 +166,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     isNaN(location.coords.longitude) ||
                     location.coords.latitude < -90 || location.coords.latitude > 90 ||
                     location.coords.longitude < -180 || location.coords.longitude > 180) {
-                    if (__DEV__) console.warn('Invalid location coordinates');
+                    logger.warn('Invalid location coordinates');
                     return;
                 }
 
@@ -185,22 +186,44 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                     if (isMounted && addresses && addresses.length > 0) {
                         const address = addresses[0];
+                        let detectedCity: string | null = null;
+                        
                         if (address?.city && typeof address.city === 'string') {
-                            setUserCity(address.city);
+                            detectedCity = address.city;
                         } else {
                             // Fallback to other address fields
                             const cityFallback = address?.subregion || address?.region;
                             if (cityFallback && typeof cityFallback === 'string') {
-                                setUserCity(cityFallback);
+                                detectedCity = cityFallback;
+                            }
+                        }
+                        
+                        if (detectedCity) {
+                            setUserCity(detectedCity);
+                            // Auto-filter by detected city - try to match with Israeli cities list
+                            const normalizedCity = detectedCity.trim();
+                            // Check exact match first
+                            if (ISRAELI_CITIES.includes(normalizedCity)) {
+                                setFilterCity(normalizedCity);
+                            } else {
+                                // Try to find similar city name (case-insensitive)
+                                const matchedCity = ISRAELI_CITIES.find(city => 
+                                    city.toLowerCase() === normalizedCity.toLowerCase() ||
+                                    city.toLowerCase().includes(normalizedCity.toLowerCase()) ||
+                                    normalizedCity.toLowerCase().includes(city.toLowerCase())
+                                );
+                                if (matchedCity) {
+                                    setFilterCity(matchedCity);
+                                }
                             }
                         }
                     }
                 } catch (geocodeError) {
                     // Silent fail for geocoding - location still works
-                    if (__DEV__) console.warn('Geocoding error:', geocodeError);
+                    logger.warn('Geocoding error:', geocodeError);
                 }
             } catch (error) {
-                if (__DEV__) console.error('Location fetch error:', error);
+                logger.error('Location fetch error:', error);
                 // Don't set error state - app works fine without location
             }
         };
@@ -480,13 +503,13 @@ const BabySitterScreen = ({ navigation }: any) => {
             distance,
             phone: (sitter.phone && typeof sitter.phone === 'string') ? sitter.phone : undefined,
             bio: (sitter.bio && typeof sitter.bio === 'string') ? sitter.bio : '',
-            reviewsList: [], // TODO: Fetch reviews from Firebase if needed
+            reviewsList: [], // Reviews are fetched by SitterProfileScreen
         };
 
         try {
             navigation.navigate('SitterProfile', { sitterData });
         } catch (error) {
-            console.error('Navigation error:', error);
+            logger.error('Navigation error:', error);
         }
     }, [navigation]);
 
@@ -553,7 +576,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                     const badge = BADGE_INFO[badgeType];
                                     return (
                                         <View key={badgeType} style={[styles.badge, { backgroundColor: badge.bgColor }]}>
-                                            <Text style={styles.badgeIcon}>{badge.icon}</Text>
+                                            {badge.icon && <Text style={styles.badgeIcon}>{badge.icon}</Text>}
                                             <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
                                         </View>
                                     );

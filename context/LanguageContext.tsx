@@ -26,6 +26,17 @@ const translations: Record<Language, Record<string, string>> = {
     'common.undone': 'בוטל',
     'common.or': 'או',
 
+    // Errors
+    'errors.somethingWentWrong': 'אופס! משהו השתבש',
+    'errors.unexpectedError': 'קרתה שגיאה לא צפויה. ניסינו לשמור את הנתונים שלך.',
+    'errors.errorDetails': 'פרטי השגיאה:',
+    'errors.tryAgain': 'נסה שוב',
+
+    // Biometric
+    'biometric.appLocked': 'האפליקציה נעולה',
+    'biometric.biometricRequired': 'נדרש אימות ביומטרי',
+    'biometric.clickToAuthenticate': 'לחץ לאימות',
+
     // Home Screen
     'home.greeting.morning': 'בוקר טוב',
     'home.greeting.afternoon': 'צהריים טובים',
@@ -1044,7 +1055,7 @@ interface LanguageContextType {
   isRTL: boolean;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('he');

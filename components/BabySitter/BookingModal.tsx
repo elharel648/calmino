@@ -26,6 +26,7 @@ import { ANIMATIONS } from '../../utils/designSystem';
 import { getBabysitterBookings } from '../../services/babysitterService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getUserPushToken, sendPushNotification } from '../../services/pushNotificationService';
+import { logger } from '../../utils/logger';
 
 interface BookingModalProps {
     visible: boolean;
@@ -111,7 +112,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                 setSitterBookings(allBookings);
             } catch (error) {
-                console.error('Error fetching sitter bookings:', error);
+                logger.error('Error fetching sitter bookings:', error);
                 // If query fails, set empty array (availability check will be disabled)
                 setSitterBookings([]);
             } finally {
@@ -262,7 +263,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     );
                 }
             } catch (pushError) {
-                console.warn('Failed to send push notification:', pushError);
+                logger.warn('Failed to send push notification:', pushError);
                 // Don't fail the booking if push fails
             }
 
@@ -273,7 +274,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 [{ text: 'מעולה', onPress: () => { onClose(); onSuccess?.(); } }]
             );
         } catch (error) {
-            console.error('Booking error:', error);
+            logger.error('Booking error:', error);
             Alert.alert('שגיאה', 'לא הצלחנו לשלוח את הבקשה. נסה שוב.');
         } finally {
             setLoading(false);

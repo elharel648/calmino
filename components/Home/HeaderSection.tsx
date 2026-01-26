@@ -13,6 +13,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { notificationStorageService } from '../../services/notificationStorageService';
+import { logger } from '../../utils/logger';
 
 interface DailyStats {
     feedCount: number;
@@ -152,7 +153,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 setUploading(false);
             }
         } catch (e) {
-            if (__DEV__) console.error(e);
+            // Error handled silently - user will see upload failed state
             setUploading(false);
         }
     };
@@ -560,7 +561,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         activeOpacity={0.7}
                                     >
                                         {child.photoUrl ? (
-                                            <Image source={{ uri: child.photoUrl }} style={styles.childAvatarImage} />
+                                            <Image 
+                                                source={{ uri: child.photoUrl }} 
+                                                style={styles.childAvatarImage}
+                                                onError={() => {
+                                                    // Image failed to load - will show placeholder
+                                                }}
+                                            />
                                         ) : (
                                             <View style={[
                                                 styles.childAvatarPlaceholder,

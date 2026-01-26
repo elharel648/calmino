@@ -200,7 +200,7 @@ export const REVIEW_TAG_LABELS: Record<ReviewTag, string> = {
 
 export type SitterBadge =
     | 'top_sitter'        // ⭐ סיטר מוביל - מעל 4.8 עם 20+ ביקורות
-    | 'highly_recommended' // 🏆 מומלץ ביותר - מעל 95% המלצות (4-5 כוכבים)
+    | 'highly_recommended' // 🏆 מומלץ ביותר - לפחות 10 ביקורות + מעל 95% המלצות (4-5 כוכבים)
     | 'vip_sitter'        // 💎 סיטר VIP - מעל 50 ביקורות
     | 'rising_star'       // ✨ חדש ומומלץ - סיטר חדש עם ביקורות מעולות
     | 'available_now';    // ⚡ זמין עכשיו - זמין כרגע
@@ -245,7 +245,7 @@ export const BADGE_INFO: Record<SitterBadge, BadgeInfo> = {
     available_now: {
         type: 'available_now',
         label: 'זמין עכשיו',
-        icon: '⚡',
+        icon: '', // No icon - minimalistic design
         color: '#3B82F6',
         bgColor: '#DBEAFE',
     },

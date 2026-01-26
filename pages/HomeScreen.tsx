@@ -63,9 +63,20 @@ import { subscribeToActiveShift } from '../services/babysitterService';
 import { ActiveShift } from '../types/babysitter';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
+import { logger } from '../utils/logger';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // Types
 import { TrackingType, DynamicStyles } from '../types/home';
+
+// Navigation types
+type HomeStackParamList = {
+    Home: undefined;
+    CreateBaby: undefined;
+    Notifications: undefined;
+};
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 // Module-level flag to prevent double animation on tab switch
 let hasHomeAnimationsRun = false;
@@ -74,7 +85,7 @@ let hasHomeAnimationsRun = false;
  * HomeScreen - Main dashboard with modular architecture
  * Reduced from 535 lines to ~180 lines
  */
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation }: { navigation: HomeScreenNavigationProp }) {
     // --- Theme & Language ---
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
@@ -112,7 +123,7 @@ export default function HomeScreen({ navigation }: any) {
                 } else {
                     setBirthDate(null);
                 }
-                
+
                 // Set gender
                 if (babyData?.gender) {
                     setGender(babyData.gender);
@@ -120,7 +131,7 @@ export default function HomeScreen({ navigation }: any) {
                     setGender(undefined);
                 }
             } catch (error) {
-                if (__DEV__) console.error('Error fetching baby data:', error);
+                logger.error('Error fetching baby data:', error);
                 setBirthDate(null);
                 setGender(undefined);
             }
@@ -133,13 +144,13 @@ export default function HomeScreen({ navigation }: any) {
         if (!activeChild) {
             return { id: '', name: 'הבייבי שלי', birthDate: new Date(), ageMonths: 0, photoUrl: undefined, parentId: '' };
         }
-        
+
         // Calculate age in months if we have birth date
         let ageMonths = 0;
         if (birthDate) {
             const now = new Date();
-            ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + 
-                       (now.getMonth() - birthDate.getMonth());
+            ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
+                (now.getMonth() - birthDate.getMonth());
             if (now.getDate() < birthDate.getDate()) {
                 ageMonths--;
             }
@@ -267,24 +278,24 @@ export default function HomeScreen({ navigation }: any) {
     // --- Handlers ---
     const { showToast, showSuccess, showError } = useToast();
     const handleSaveTracking = useCallback(async (data: any) => {
-        console.log('📥 handleSaveTracking called with:', JSON.stringify(data, null, 2));
-        
+        logger.debug('📥', 'handleSaveTracking called with:', JSON.stringify(data, null, 2));
+
         if (!user) {
-            console.error('❌ No user found');
+            logger.error('❌ No user found');
             showError(t('errors.loginRequired'));
             return;
         }
 
         if (!profile.id) {
-            console.error('❌ No profile.id found');
+            logger.error('❌ No profile.id found');
             showError(t('errors.noChildProfile'));
             return;
         }
 
         try {
-            console.log('💾 Saving to Firebase:', { userId: user.uid, childId: profile.id, dataType: data.type });
+            logger.debug('💾', 'Saving to Firebase:', { userId: user.uid, childId: profile.id, dataType: data.type });
             const eventId = await saveEventToFirebase(user.uid, profile.id, data);
-            console.log('✅ Saved successfully, eventId:', eventId);
+            logger.debug('✅', 'Saved successfully, eventId:', eventId);
 
             // Store for undo
             undoService.setLastAction({
@@ -502,7 +513,7 @@ export default function HomeScreen({ navigation }: any) {
                                     meds={meds}
                                     navigation={navigation}
                                     onAddChild={() => navigation.navigate('CreateBaby')}
-                                    onJoinWithCode={() => { if (__DEV__) console.log('🔗 HomeScreen: Opening JoinModal'); setIsJoinModalOpen(true); }}
+                                    onJoinWithCode={() => { logger.debug('🔗', 'HomeScreen: Opening JoinModal'); setIsJoinModalOpen(true); }}
                                     onEditChild={(child) => {
                                         setEditingChild(child);
                                         setIsEditChildModalOpen(true);
@@ -588,7 +599,7 @@ export default function HomeScreen({ navigation }: any) {
                                 entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(200, 500) : undefined}
                                 collapsable={false}
                             >
-                                <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} />
+                                <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} showOnlyToday={true} />
                             </Animated.View>
 
                             {/* Share Button - Enhanced Animation */}
@@ -666,7 +677,7 @@ export default function HomeScreen({ navigation }: any) {
                                 });
                                 onRefresh();
                             } catch (e) {
-                                if (__DEV__) console.error('Failed to update child:', e);
+                                logger.error('Failed to update child:', e);
                             }
                         }}
                         onClose={() => {
