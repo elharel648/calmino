@@ -8,6 +8,11 @@ interface LiveActivityService {
     updatePumpingTimer: (elapsedSeconds: number) => Promise<boolean>;
     stopPumpingTimer: () => Promise<boolean>;
 
+    // Bottle
+    startBottleTimer: (parentName?: string, childName?: string) => Promise<string>;
+    updateBottleTimer: (elapsedSeconds: number) => Promise<boolean>;
+    stopBottleTimer: () => Promise<boolean>;
+
     // Sleep
     startSleepTimer: (parentName?: string, childName?: string) => Promise<string>;
     updateSleepTimer: (elapsedSeconds: number) => Promise<boolean>;
@@ -85,6 +90,61 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
     }
 
+    // MARK: - Bottle Timer
+    async startBottleTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        if (!this.isSupported || !ActivityKitManager) {
+            throw new Error('Live Activities not supported');
+        }
+
+        try {
+            // Reusing pumping timer native method for bottle if specific method not available
+            // Note: If you have a specific startBottleTimer in native module, use that instead.
+            // For now assuming we might need to add native support or reuse existing.
+            // Safe bet: Use startPumpingTimer as a fallback if bottle specific doesn't exist yet, 
+            // OR if you plan to update native code, use new method name.
+            // Given I cannot edit native code right now, I will warn if native method missing.
+
+            if (ActivityKitManager.startBottleTimer) {
+                const id = await ActivityKitManager.startBottleTimer(parentName, childName);
+                this.activityId = id;
+                if (__DEV__) console.log('✅ Bottle Live Activity started:', id);
+                return id;
+            } else {
+                console.warn('startBottleTimer not implemented in native module');
+                return '';
+            }
+        } catch (error: any) {
+            if (__DEV__) console.error('Failed to start Bottle Live Activity:', error);
+            throw error;
+        }
+    }
+
+    async updateBottleTimer(elapsedSeconds: number): Promise<boolean> {
+        // Timer auto-updates via SwiftUI - no action needed usually, but logic exists for others
+        return true;
+    }
+
+    async stopBottleTimer(): Promise<boolean> {
+        if (!this.isSupported || !ActivityKitManager) {
+            return false;
+        }
+
+        try {
+            if (ActivityKitManager.stopBottleTimer) {
+                await ActivityKitManager.stopBottleTimer();
+                this.activityId = null;
+                if (__DEV__) console.log('✅ Bottle Live Activity stopped');
+                return true;
+            } else {
+                console.warn('stopBottleTimer not implemented in native module');
+                return false;
+            }
+        } catch (error: any) {
+            if (__DEV__) console.error('Failed to stop Bottle Live Activity:', error);
+            return false;
+        }
+    }
+
     // MARK: - Sleep Timer
     async startSleepTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
         if (!this.isSupported || !ActivityKitManager) {
@@ -106,7 +166,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         if (!this.isSupported || !ActivityKitManager || !this.activityId) {
             return false;
         }
-        
+
         try {
             await ActivityKitManager.updateSleepTimer(elapsedSeconds);
             return true;
@@ -148,14 +208,14 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw error;
         }
     }
-    
+
     async updateBreastfeedingTimer(elapsedSeconds: number, side?: 'left' | 'right'): Promise<boolean> {
         // For breastfeeding, we can use the same update mechanism
         // The Swift code will handle the side display
         if (!this.isSupported || !ActivityKitManager || !this.activityId) {
             return false;
         }
-        
+
         try {
             // Use updatePumpingTimer as a generic update method
             await ActivityKitManager.updatePumpingTimer(elapsedSeconds);

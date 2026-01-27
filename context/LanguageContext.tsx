@@ -25,6 +25,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.undo': 'בטל',
     'common.undone': 'בוטל',
     'common.or': 'או',
+    'common.done': 'אישור',
 
     // Errors
     'errors.somethingWentWrong': 'אופס! משהו השתבש',
@@ -199,6 +200,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tracking.hours': 'שעות',
     'tracking.duration': 'משך',
     'tracking.timer': 'טיימר',
+    'tracking.now': 'טיימר',
     'tracking.minutes': 'דקות',
     'tracking.whatHappened': 'מה היה?',
     'tracking.both': 'שניהם',
@@ -544,6 +546,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.undone': 'Undone',
     'common.sortBy': 'Sort by',
     'common.or': 'or',
+    'common.done': 'Done',
 
     // Home Screen
     'home.greeting.morning': 'Good Morning',

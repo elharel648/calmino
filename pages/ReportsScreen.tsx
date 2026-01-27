@@ -184,9 +184,16 @@ export default function ReportsScreen() {
     return { start, end };
   }, [timeRange, selectedDate, customStartDate, customEndDate]);
 
+  // Track if currently fetching to prevent double refresh
+  const isFetching = React.useRef(false);
+
   // Fetch data
   const fetchData = async () => {
     if (!activeChild?.childId) return;
+
+    // Prevent concurrent fetches
+    if (isFetching.current) return;
+    isFetching.current = true;
 
     setLoading(true);
     try {
@@ -426,6 +433,7 @@ export default function ReportsScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      isFetching.current = false;
     }
   };
 
@@ -1314,7 +1322,7 @@ ${comparisonText}
             <Text style={[styles.historyModalTitle, { color: theme.textPrimary }]}>היסטוריה מלאה</Text>
             <View style={{ width: 40 }} />
           </View>
-          <ScrollView 
+          <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: 40 }}
             showsVerticalScrollIndicator={false}

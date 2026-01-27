@@ -1,6 +1,6 @@
 // pages/ChatScreen.tsx - Real-time Firebase Chat
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View,
     Text,
@@ -12,18 +12,28 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
+    Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MessageCircle } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { auth } from '../services/firebaseConfig';
-import { getOrCreateChat, sendMessage } from '../services/chatService';
+import { getDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../services/firebaseConfig';
+import { getOrCreateChat, sendMessage, markMessagesAsRead } from '../services/chatService';
 import { useMessages } from '../hooks/useMessages';
 import { useTheme } from '../context/ThemeContext';
 
 // Navigation types
 type RootStackParamList = {
-    ChatScreen: { sitterName?: string; sitterImage?: string; sitterId?: string };
+    ChatScreen: {
+        // Option 1: Pass sitter info (from profile)
+        sitterName?: string;
+        sitterImage?: string;
+        sitterId?: string;
+        // Option 2: Pass chatId directly (from notification)
+        chatId?: string;
+    };
 };
 
 type ChatScreenProps = NativeStackScreenProps<RootStackParamList, 'ChatScreen'>;
@@ -38,28 +48,68 @@ interface DisplayMessage {
 
 const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     const { theme, isDarkMode } = useTheme();
-    const { sitterName = 'בייביסיטר', sitterImage, sitterId } = route.params || {};
+    const { sitterName: paramSitterName, sitterImage: paramSitterImage, sitterId: paramSitterId, chatId: paramChatId } = route.params || {};
     const [messageText, setMessageText] = useState('');
-    const [chatId, setChatId] = useState<string | null>(null);
+    const [chatId, setChatId] = useState<string | null>(paramChatId || null);
+    const [chatData, setChatData] = useState<{
+        sitterName: string;
+        sitterImage: string;
+        sitterId: string;
+    } | null>(null);
     const [initLoading, setInitLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const insets = useSafeAreaInsets();
-    
+    const flatListRef = useRef<FlatList>(null);
+    const markAsReadTimeoutRef = useRef<NodeJS.Timeout>();
+    const inputRef = useRef<TextInput>(null);
+
     // Tab bar height: 90px on iOS, 72px on Android
     const tabBarHeight = Platform.OS === 'ios' ? 90 : 72;
 
     const { messages, loading: messagesLoading } = useMessages(chatId);
 
-    // Initialize chat
+    // Effective sitter info (from params or fetched chat data)
+    const sitterName = chatData?.sitterName || paramSitterName || 'בייביסיטר';
+    const sitterImage = chatData?.sitterImage || paramSitterImage || '';
+    const sitterId = chatData?.sitterId || paramSitterId || '';
+
+    // Fetch chat data when chatId is provided (from notification)
+    useEffect(() => {
+        if (paramChatId && !paramSitterId) {
+            const fetchChatData = async () => {
+                try {
+                    const chatDoc = await getDoc(doc(db, 'chats', paramChatId));
+                    if (chatDoc.exists()) {
+                        const data = chatDoc.data();
+                        const userId = auth.currentUser?.uid;
+                        const isParent = data.parentId === userId;
+
+                        setChatData({
+                            sitterName: isParent ? data.sitterName : data.parentName,
+                            sitterImage: data.sitterImage || '',
+                            sitterId: isParent ? data.sitterId : data.parentId,
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to load chat:', error);
+                } finally {
+                    setInitLoading(false);
+                }
+            };
+            fetchChatData();
+        }
+    }, [paramChatId, paramSitterId]);
+
+    // Initialize chat when sitter info is provided (from profile)
     useEffect(() => {
         const initChat = async () => {
-            if (!sitterId) {
-                setInitLoading(false);
+            if (!paramSitterId) {
+                if (!paramChatId) setInitLoading(false);
                 return;
             }
 
             try {
-                const id = await getOrCreateChat(sitterId, sitterName, sitterImage || '');
+                const id = await getOrCreateChat(paramSitterId, paramSitterName || 'בייביסיטר', paramSitterImage || '');
                 setChatId(id);
             } catch (error) {
                 console.error('Failed to init chat:', error);
@@ -69,7 +119,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
         };
 
         initChat();
-    }, [sitterId, sitterName, sitterImage]);
+    }, [paramSitterId, paramSitterName, paramSitterImage, paramChatId]);
 
     // Convert Firebase messages to display format
     const displayMessages: DisplayMessage[] = useMemo(() => {
@@ -88,6 +138,52 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
         return [...displayMessages].reverse();
     }, [displayMessages]);
 
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
+        if (reversedMessages.length > 0 && !messagesLoading) {
+            // Small delay to ensure render is complete
+            setTimeout(() => {
+                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            }, 100);
+        }
+    }, [reversedMessages.length, messagesLoading]);
+
+    // Mark messages as read after they are displayed (with debounce)
+    useEffect(() => {
+        if (chatId && reversedMessages.length > 0) {
+            // Clear previous timeout
+            if (markAsReadTimeoutRef.current) {
+                clearTimeout(markAsReadTimeoutRef.current);
+            }
+            // Debounce - mark as read 500ms after messages are displayed
+            markAsReadTimeoutRef.current = setTimeout(() => {
+                markMessagesAsRead(chatId).catch(console.error);
+            }, 500);
+        }
+        return () => {
+            if (markAsReadTimeoutRef.current) {
+                clearTimeout(markAsReadTimeoutRef.current);
+            }
+        };
+    }, [chatId, reversedMessages.length]);
+
+    // Keyboard handling - auto-scroll when keyboard opens
+    useEffect(() => {
+        const keyboardWillShow = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => {
+                // Auto-scroll when keyboard opens
+                setTimeout(() => {
+                    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                }, 150);
+            }
+        );
+
+        return () => {
+            keyboardWillShow.remove();
+        };
+    }, []);
+
     const handleSendMessage = async () => {
         if (!messageText.trim() || !chatId) return;
 
@@ -97,6 +193,8 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
         try {
             setSending(true);
             await sendMessage(chatId, text);
+            // Keep focus on input for quick replies
+            setTimeout(() => inputRef.current?.focus(), 100);
         } catch (error) {
             console.error('Failed to send message:', error);
             setMessageText(text); // Restore on error
@@ -107,9 +205,9 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
 
     const renderMessage = ({ item }: { item: DisplayMessage }) => (
         <View style={[
-            styles.bubble, 
-            item.sender === 'me' 
-                ? [styles.myBubble, { backgroundColor: theme.primary }] 
+            styles.bubble,
+            item.sender === 'me'
+                ? [styles.myBubble, { backgroundColor: theme.primary }]
                 : [styles.otherBubble, { backgroundColor: theme.card, borderColor: theme.border }]
         ]}>
             <Text style={[styles.msgText, item.sender === 'me' ? [styles.myText, { color: theme.card }] : [styles.otherText, { color: theme.textPrimary }]]}>
@@ -154,8 +252,19 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                 <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
                     <ActivityIndicator size="large" color={theme.primary} />
                 </View>
+            ) : reversedMessages.length === 0 ? (
+                <View style={[styles.emptyState, { backgroundColor: theme.background }]}>
+                    <MessageCircle size={56} color={theme.textTertiary} strokeWidth={1.5} />
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                        אין הודעות עדיין
+                    </Text>
+                    <Text style={[styles.emptySubtext, { color: theme.textTertiary }]}>
+                        שלח/י הודעה ראשונה כדי להתחיל שיחה
+                    </Text>
+                </View>
             ) : (
                 <FlatList
+                    ref={flatListRef}
                     data={reversedMessages}
                     inverted
                     keyExtractor={(item) => item.id}
@@ -166,6 +275,12 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                     maxToRenderPerBatch={10}
                     windowSize={10}
                     style={{ backgroundColor: theme.background }}
+                    onContentSizeChange={() => {
+                        // Auto-scroll when content size changes (new message)
+                        if (reversedMessages.length > 0) {
+                            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                        }
+                    }}
                 />
             )}
 
@@ -187,6 +302,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         )}
                     </TouchableOpacity>
                     <TextInput
+                        ref={inputRef}
                         style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
                         placeholder="כתוב הודעה..."
                         placeholderTextColor={theme.textSecondary}
@@ -195,6 +311,9 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         textAlign="right"
                         multiline
                         maxLength={500}
+                        returnKeyType="send"
+                        onSubmitEditing={handleSendMessage}
+                        blurOnSubmit={false}
                     />
                 </View>
             </KeyboardAvoidingView>
@@ -210,6 +329,23 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
+        gap: 16,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    emptySubtext: {
+        fontSize: 15,
+        textAlign: 'center',
+        lineHeight: 22,
     },
     header: {
         flexDirection: 'row',

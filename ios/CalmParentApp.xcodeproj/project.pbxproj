@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F1ED42982F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42992F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
@@ -17,9 +18,41 @@
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		EAF0B1858D666A9636D533D9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FFA90978CF1484B1D6B1C774 /* PrivacyInfo.xcprivacy */; };
+		F1ED42D82F29549E006D6F69 /* ActivityKitManager.m in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D52F29549E006D6F69 /* ActivityKitManager.m */; };
+		F1ED42D92F29549E006D6F69 /* CalmParentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D72F29549E006D6F69 /* CalmParentActivityAttributes.swift */; };
+		F1ED42DA2F29549E006D6F69 /* ActivityKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D62F29549E006D6F69 /* ActivityKitManager.swift */; };
+		F1ED42E12F2954FD006D6F69 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1ED42E02F2954FD006D6F69 /* WidgetKit.framework */; };
+		F1ED42E32F2954FD006D6F69 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1ED42E22F2954FD006D6F69 /* SwiftUI.framework */; };
+		F1ED42F22F2954FF006D6F69 /* CalmParentLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F1ED42DF2F2954FD006D6F69 /* CalmParentLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F1ED42FA2F2956F0006D6F69 /* CalmParentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D72F29549E006D6F69 /* CalmParentActivityAttributes.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		F1ED42F02F2954FF006D6F69 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F1ED42DE2F2954FD006D6F69;
+			remoteInfo = CalmParentLiveActivityExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F1ED42F72F2954FF006D6F69 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F1ED42F22F2954FF006D6F69 /* CalmParentLiveActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		F1ED42992F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift; sourceTree = SOURCE_ROOT; };
 		0283259F698A428BB53C9CCC /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "CalmParentApp/noop-file.swift"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* CalmParentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalmParentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = CalmParentApp/AppDelegate.h; sourceTree = "<group>"; };
@@ -34,10 +67,42 @@
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = CalmParentApp/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F1ED42D52F29549E006D6F69 /* ActivityKitManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActivityKitManager.m; sourceTree = "<group>"; };
+		F1ED42D62F29549E006D6F69 /* ActivityKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityKitManager.swift; sourceTree = "<group>"; };
+		F1ED42D72F29549E006D6F69 /* CalmParentActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmParentActivityAttributes.swift; sourceTree = "<group>"; };
+		F1ED42DF2F2954FD006D6F69 /* CalmParentLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CalmParentLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1ED42E02F2954FD006D6F69 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F1ED42E22F2954FD006D6F69 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		F1ED42FB2F2958F8006D6F69 /* CalmParentLiveActivityExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CalmParentLiveActivityExtension.entitlements; sourceTree = "<group>"; };
 		F4BDBF7BF6FB9C3BA596A5F1 /* Pods_CalmParentApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CalmParentApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-CalmParentApp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		FFA90978CF1484B1D6B1C774 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = CalmParentApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F1ED42F32F2954FF006D6F69 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F1ED42DE2F2954FD006D6F69 /* CalmParentLiveActivityExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F1ED42E42F2954FD006D6F69 /* CalmParentLiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F1ED42F32F2954FF006D6F69 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = CalmParentLiveActivity;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
@@ -45,6 +110,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				547930FAAFD55F332F46110D /* Pods_CalmParentApp.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1ED42DC2F2954FD006D6F69 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1ED42E32F2954FD006D6F69 /* SwiftUI.framework in Frameworks */,
+				F1ED42E12F2954FD006D6F69 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,6 +148,8 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				F4BDBF7BF6FB9C3BA596A5F1 /* Pods_CalmParentApp.framework */,
+				F1ED42E02F2954FD006D6F69 /* WidgetKit.framework */,
+				F1ED42E22F2954FD006D6F69 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -88,8 +164,13 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				F1ED42FB2F2958F8006D6F69 /* CalmParentLiveActivityExtension.entitlements */,
+				F1ED42D52F29549E006D6F69 /* ActivityKitManager.m */,
+				F1ED42D62F29549E006D6F69 /* ActivityKitManager.swift */,
+				F1ED42D72F29549E006D6F69 /* CalmParentActivityAttributes.swift */,
 				13B07FAE1A68108700A75B9A /* CalmParentApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
+				F1ED42E42F2954FD006D6F69 /* CalmParentLiveActivity */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				D65327D7A22EEC0BE12398D9 /* Pods */,
@@ -104,6 +185,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* CalmParentApp.app */,
+				F1ED42DF2F2954FD006D6F69 /* CalmParentLiveActivityExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -158,16 +240,40 @@
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				288EE6D5470365B0055FB570 /* [CP] Embed Pods Frameworks */,
 				4CAF54DB21AF5E627581890D /* [CP-User] [RNFB] Core Configuration */,
+				F1ED42F72F2954FF006D6F69 /* Embed Foundation Extensions */,
 				7BC40AB66C1510A03F003E8A /* [CP-User] [RNFB] Crashlytics Configuration */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F1ED42F12F2954FF006D6F69 /* PBXTargetDependency */,
 			);
 			name = CalmParentApp;
 			productName = CalmParentApp;
 			productReference = 13B07F961A680F5B00A75B9A /* CalmParentApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F1ED42DE2F2954FD006D6F69 /* CalmParentLiveActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F1ED42F42F2954FF006D6F69 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivityExtension" */;
+			buildPhases = (
+				F1ED42DB2F2954FD006D6F69 /* Sources */,
+				F1ED42DC2F2954FD006D6F69 /* Frameworks */,
+				F1ED42DD2F2954FD006D6F69 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F1ED42E42F2954FD006D6F69 /* CalmParentLiveActivity */,
+			);
+			name = CalmParentLiveActivityExtension;
+			packageProductDependencies = (
+			);
+			productName = CalmParentLiveActivityExtension;
+			productReference = F1ED42DF2F2954FD006D6F69 /* CalmParentLiveActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -175,10 +281,14 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
+					};
+					F1ED42DE2F2954FD006D6F69 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -196,6 +306,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* CalmParentApp */,
+				F1ED42DE2F2954FD006D6F69 /* CalmParentLiveActivityExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -210,6 +321,13 @@
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				319645FBD76243938E67E88B /* GoogleService-Info.plist in Resources */,
 				EAF0B1858D666A9636D533D9 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1ED42DD2F2954FD006D6F69 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,18 +521,38 @@
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
+				F1ED42D82F29549E006D6F69 /* ActivityKitManager.m in Sources */,
+				F1ED42D92F29549E006D6F69 /* CalmParentActivityAttributes.swift in Sources */,
+				F1ED42DA2F29549E006D6F69 /* ActivityKitManager.swift in Sources */,
 				A28F5C12F2DC4F109731DA23 /* noop-file.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F1ED42DB2F2954FD006D6F69 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1ED42982F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift in Sources */,
+				F1ED42FA2F2956F0006D6F69 /* CalmParentActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F1ED42F12F2954FF006D6F69 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F1ED42DE2F2954FD006D6F69 /* CalmParentLiveActivityExtension */;
+			targetProxy = F1ED42F02F2954FF006D6F69 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6C2E3173556A471DD304B334 /* Pods-CalmParentApp.debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CalmParentApp/CalmParentApp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
@@ -425,7 +563,7 @@
 					"FB_SONARKIT_ENABLED=1",
 				);
 				INFOPLIST_FILE = CalmParentApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -438,6 +576,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				PRODUCT_NAME = "CalmParentApp";
 				SWIFT_OBJC_BRIDGING_HEADER = "CalmParentApp/CalmParentApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -451,13 +590,13 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7A4D352CD337FB3A3BF06240 /* Pods-CalmParentApp.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CalmParentApp/CalmParentApp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = CalmParentApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -470,6 +609,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				PRODUCT_NAME = "CalmParentApp";
 				SWIFT_OBJC_BRIDGING_HEADER = "CalmParentApp/CalmParentApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -618,6 +758,101 @@
 			};
 			name = Release;
 		};
+		F1ED42F52F2954FF006D6F69 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivityExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = Q5555SW7GS;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CalmParentLiveActivity;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.CalmParentLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F1ED42F62F2954FF006D6F69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivityExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Q5555SW7GS;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CalmParentLiveActivity;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.CalmParentLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -635,6 +870,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F1ED42F42F2954FF006D6F69 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1ED42F52F2954FF006D6F69 /* Debug */,
+				F1ED42F62F2954FF006D6F69 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

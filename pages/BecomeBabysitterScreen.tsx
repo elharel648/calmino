@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check, Baby, Clock, MapPin, Wallet, Award } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -92,6 +93,36 @@ const BecomeBabysitterScreen = () => {
             const user = auth.currentUser;
             if (!user) throw new Error('User not logged in');
 
+            // 🌍 Capture GPS location for distance calculations
+            let location = null;
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                    const currentLocation = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                    });
+
+                    // Validate coordinates
+                    if (currentLocation?.coords &&
+                        typeof currentLocation.coords.latitude === 'number' &&
+                        typeof currentLocation.coords.longitude === 'number' &&
+                        !isNaN(currentLocation.coords.latitude) &&
+                        !isNaN(currentLocation.coords.longitude) &&
+                        currentLocation.coords.latitude >= -90 && currentLocation.coords.latitude <= 90 &&
+                        currentLocation.coords.longitude >= -180 && currentLocation.coords.longitude <= 180) {
+                        location = {
+                            latitude: currentLocation.coords.latitude,
+                            longitude: currentLocation.coords.longitude,
+                        };
+                        logger.log('📍 Captured babysitter location:', location);
+                    }
+                } else {
+                    logger.warn('⚠️ Location permission denied');
+                }
+            } catch (locationError) {
+                logger.warn('⚠️ Could not get location:', locationError);
+            }
+
             await updateDoc(doc(db, 'users', user.uid), {
                 isBabysitter: true,
                 babysitterProfile: {
@@ -101,6 +132,7 @@ const BecomeBabysitterScreen = () => {
                     radius: parseInt(radius),
                     bio: bio.trim(),
                     certifications: selectedCerts,
+                    location: location, // 📍 Save GPS location
                     responseTimeMinutes: 0,
                     completedShifts: 0,
                     repeatFamilies: 0,
@@ -118,6 +150,7 @@ const BecomeBabysitterScreen = () => {
                 radius: parseInt(radius),
                 bio: bio.trim(),
                 certifications: selectedCerts,
+                location: location, // 📍 Save GPS location
                 updatedAt: serverTimestamp(),
             }).catch(() => {
                 // If doc doesn't exist, will create via setDoc in future

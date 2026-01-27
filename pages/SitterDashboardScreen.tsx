@@ -153,7 +153,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 setProfilePhoto(data.photoUrl || auth.currentUser?.photoURL || null);
                 if (data.sitterAvailableDays) setAvailableDays(data.sitterAvailableDays);
                 // Load GPS location if exists
-                if (data.sitterLocation && 
+                if (data.sitterLocation &&
                     typeof data.sitterLocation.latitude === 'number' &&
                     typeof data.sitterLocation.longitude === 'number') {
                     setGpsLocation({
@@ -738,7 +738,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     placeholderTextColor={theme.textSecondary}
                                     textAlign="right"
                                 />
-                                
+
                                 {/* GPS Location Button */}
                                 <TouchableOpacity
                                     style={[styles.locationBtn, {
@@ -1001,7 +1001,15 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     key={day.key}
                                     style={[
                                         styles.dayRow,
-                                        { backgroundColor: availableDays.includes(day.key) ? '#E8F5E9' : theme.cardSecondary }
+                                        {
+                                            backgroundColor: isDarkMode
+                                                ? (availableDays.includes(day.key) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)')
+                                                : (availableDays.includes(day.key) ? 'rgba(88, 28, 135, 0.08)' : theme.cardSecondary),
+                                            borderWidth: availableDays.includes(day.key) ? 1 : 0,
+                                            borderColor: availableDays.includes(day.key)
+                                                ? (isDarkMode ? 'rgba(167, 139, 250, 0.3)' : 'rgba(88, 28, 135, 0.2)')
+                                                : 'transparent',
+                                        }
                                     ]}
                                     onPress={() => {
                                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1011,14 +1019,27 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 : [...prev, day.key]
                                         );
                                     }}
+                                    activeOpacity={0.7}
                                 >
-                                    <Text style={[styles.dayLabel, { color: theme.textPrimary }]}>{day.label}</Text>
+                                    <Text style={[
+                                        styles.dayLabel,
+                                        {
+                                            color: availableDays.includes(day.key) ? theme.textPrimary : theme.textSecondary,
+                                            fontWeight: availableDays.includes(day.key) ? '600' : '500',
+                                        }
+                                    ]}>{day.label}</Text>
                                     <View style={[
                                         styles.dayCheckbox,
-                                        { backgroundColor: availableDays.includes(day.key) ? theme.success : theme.border }
+                                        {
+                                            backgroundColor: availableDays.includes(day.key)
+                                                ? (isDarkMode ? '#7C3AED' : '#7C3AED')
+                                                : (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : theme.border),
+                                            borderWidth: availableDays.includes(day.key) ? 0 : 1.5,
+                                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB',
+                                        }
                                     ]}>
                                         {availableDays.includes(day.key) && (
-                                            <CheckCircle size={16} color={theme.card} strokeWidth={2} />
+                                            <CheckCircle size={14} color="#fff" strokeWidth={2.5} />
                                         )}
                                     </View>
                                 </TouchableOpacity>

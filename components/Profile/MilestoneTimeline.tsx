@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, LayoutAnimation, UI
 import { Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Milestone } from '../../types/profile';
+import { SwipeableRow } from '../Common/SwipeableRow';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -27,23 +28,22 @@ interface MilestoneRowProps {
 
 const MilestoneRow = memo(({ title, date, ageAtEvent, onDelete }: MilestoneRowProps) => {
     return (
-        <View style={styles.row}>
-            <View style={styles.rowContent}>
-                <Text style={styles.rowTitle}>{title}</Text>
-                <View style={styles.rowMeta}>
-                    <Text style={styles.rowDate}>{date}</Text>
-                    {ageAtEvent ? (
-                        <>
-                            <Text style={styles.dot}>•</Text>
-                            <Text style={styles.rowAge}>{ageAtEvent}</Text>
-                        </>
-                    ) : null}
+        <SwipeableRow onDelete={onDelete}>
+            <View style={styles.row}>
+                <View style={styles.rowContent}>
+                    <Text style={styles.rowTitle}>{title}</Text>
+                    <View style={styles.rowMeta}>
+                        <Text style={styles.rowDate}>{date}</Text>
+                        {ageAtEvent ? (
+                            <>
+                                <Text style={styles.dot}>•</Text>
+                                <Text style={styles.rowAge}>{ageAtEvent}</Text>
+                            </>
+                        ) : null}
+                    </View>
                 </View>
             </View>
-            <TouchableOpacity onPress={onDelete} style={styles.deleteBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Trash2 size={14} color="#EF4444" />
-            </TouchableOpacity>
-        </View>
+        </SwipeableRow>
     );
 });
 

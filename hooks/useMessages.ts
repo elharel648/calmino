@@ -21,8 +21,8 @@ export function useMessages(chatId: string | null) {
                 setLoading(false);
             });
 
-            // Mark as read when opening chat
-            markMessagesAsRead(chatId);
+            // Note: markMessagesAsRead is now handled in ChatScreen.tsx
+            // with proper debounce and timing control
 
             return unsubscribe;
         } catch (err) {

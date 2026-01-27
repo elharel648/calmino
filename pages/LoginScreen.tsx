@@ -421,7 +421,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             >
               <View style={styles.premiumLogoGlow} />
               <Image
-                source={require('../assets/icon_premium.png')}
+                source={require('../assets/icon.png')}
                 style={styles.premiumLogoImage}
                 resizeMode="contain"
               />

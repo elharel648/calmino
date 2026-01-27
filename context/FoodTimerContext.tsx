@@ -15,6 +15,16 @@ interface FoodTimerContextType {
     resumePumping: () => void;
     resetPumping: () => void;
 
+    // Bottle Timer
+    bottleIsRunning: boolean;
+    bottleIsPaused: boolean;
+    bottleElapsedSeconds: number;
+    startBottle: () => void;
+    stopBottle: () => void;
+    pauseBottle: () => void;
+    resumeBottle: () => void;
+    resetBottle: () => void;
+
     // Breastfeeding Timer
     breastIsRunning: boolean;
     breastIsPaused: boolean;
@@ -58,6 +68,12 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
             elapsedSeconds: number;
             activityId?: string;
         };
+        bottle: {
+            isRunning: boolean;
+            isPaused: boolean;
+            elapsedSeconds: number;
+            activityId?: string;
+        };
         breast: {
             isRunning: boolean;
             isPaused: boolean;
@@ -71,11 +87,13 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
     const INITIAL_STATE: FoodTimerState = {
         pumping: { isRunning: false, isPaused: false, elapsedSeconds: 0 },
+        bottle: { isRunning: false, isPaused: false, elapsedSeconds: 0 },
         breast: { isRunning: false, isPaused: false, activeSide: null, elapsedSeconds: 0, leftBreastTime: 0, rightBreastTime: 0 }
     };
 
     const [timers, setTimers] = useState<Record<string, FoodTimerState>>({});
     const pumpingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const bottleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const breastTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Get active child state
@@ -91,7 +109,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         }));
     }, []);
 
-    const updateNestedState = useCallback((childId: string, type: 'pumping' | 'breast', updates: any) => {
+    const updateNestedState = useCallback((childId: string, type: 'pumping' | 'breast' | 'bottle', updates: any) => {
         setTimers(prev => {
             const childState = prev[childId] || INITIAL_STATE;
             return {
@@ -134,6 +152,35 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
             });
         }, 1000);
         return () => { if (pumpingTimerRef.current) clearInterval(pumpingTimerRef.current); };
+    }, []);
+
+    // --- Global Interval for Bottle ---
+    useEffect(() => {
+        bottleTimerRef.current = setInterval(() => {
+            setTimers(prev => {
+                const next = { ...prev };
+                let changes = false;
+                Object.keys(next).forEach(id => {
+                    if (next[id].bottle.isRunning && !next[id].bottle.isPaused) {
+                        next[id] = {
+                            ...next[id],
+                            bottle: {
+                                ...next[id].bottle,
+                                elapsedSeconds: next[id].bottle.elapsedSeconds + 1
+                            }
+                        };
+                        changes = true;
+
+                        // Update Live Activity (only if this child has one running)
+                        if (Platform.OS === 'ios' && next[id].bottle.activityId) {
+                            liveActivityService.updateBottleTimer(next[id].bottle.elapsedSeconds).catch(() => { });
+                        }
+                    }
+                });
+                return changes ? next : prev;
+            });
+        }, 1000);
+        return () => { if (bottleTimerRef.current) clearInterval(bottleTimerRef.current); };
     }, []);
 
     // --- Global Interval for Breastfeeding ---
@@ -206,6 +253,55 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const resetPumping = useCallback(() => {
         if (!activeChildId) return;
         updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, elapsedSeconds: 0 });
+    }, [activeChildId, updateNestedState]);
+
+
+
+    // === BOTTLE ACTIONS ===
+    const startBottle = useCallback(async () => {
+        if (!activeChildId) return;
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        const newState = { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined };
+
+        // Start iOS Live Activity
+        if (Platform.OS === 'ios') {
+            try {
+                const activityId = await liveActivityService.startBottleTimer(activeChild?.childName || 'תינוק');
+                if (activityId) newState.activityId = activityId;
+            } catch (error) { if (__DEV__) console.warn(error); }
+        }
+
+        updateNestedState(activeChildId, 'bottle', newState);
+    }, [activeChildId, activeChild?.childName, updateNestedState]);
+
+    const stopBottle = useCallback(async () => {
+        if (!activeChildId) return;
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        const activityId = currentState.bottle.activityId;
+        updateNestedState(activeChildId, 'bottle', { isRunning: false, isPaused: false, activityId: undefined });
+
+        if (Platform.OS === 'ios' && activityId) {
+            try { await liveActivityService.stopBottleTimer(); } catch (e) { }
+        }
+    }, [activeChildId, currentState.bottle.activityId, updateNestedState]);
+
+    const pauseBottle = useCallback(async () => {
+        if (!activeChildId || !currentState.bottle.isRunning || currentState.bottle.isPaused) return;
+        updateNestedState(activeChildId, 'bottle', { isPaused: true });
+        if (Platform.OS === 'ios' && currentState.bottle.activityId) await liveActivityService.pauseTimer();
+    }, [activeChildId, currentState.bottle, updateNestedState]);
+
+    const resumeBottle = useCallback(async () => {
+        if (!activeChildId || !currentState.bottle.isRunning || !currentState.bottle.isPaused) return;
+        updateNestedState(activeChildId, 'bottle', { isPaused: false });
+        if (Platform.OS === 'ios' && currentState.bottle.activityId) await liveActivityService.resumeTimer();
+    }, [activeChildId, currentState.bottle, updateNestedState]);
+
+    const resetBottle = useCallback(() => {
+        if (!activeChildId) return;
+        updateNestedState(activeChildId, 'bottle', { isRunning: false, isPaused: false, elapsedSeconds: 0 });
     }, [activeChildId, updateNestedState]);
 
 
@@ -294,6 +390,15 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
                 pausePumping,
                 resumePumping,
                 resetPumping,
+                // Bottle
+                bottleIsRunning: currentState.bottle.isRunning,
+                bottleIsPaused: currentState.bottle.isPaused,
+                bottleElapsedSeconds: currentState.bottle.elapsedSeconds,
+                startBottle,
+                stopBottle,
+                pauseBottle,
+                resumeBottle,
+                resetBottle,
                 // Breastfeeding
                 breastIsRunning: currentState.breast.isRunning,
                 breastIsPaused: currentState.breast.isPaused,

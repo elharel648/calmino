@@ -102,32 +102,47 @@ class ErrorBoundary extends Component<Props, State> {
                         </View>
 
                         <LanguageContext.Consumer>
-                            {({ t }) => (
-                                <>
-                                    <Text style={styles.title}>{t('errors.somethingWentWrong')}</Text>
-                                    <Text style={styles.message}>
-                                        {t('errors.unexpectedError')}
-                                    </Text>
+                            {(context) => {
+                                // Fallback translation function if context is missing
+                                const safeT = (key: string) => {
+                                    if (context?.t) return context.t(key);
+                                    // Simple fallback for critical error messages
+                                    const fallbacks: Record<string, string> = {
+                                        'errors.somethingWentWrong': 'Something went wrong',
+                                        'errors.unexpectedError': 'An unexpected error occurred.',
+                                        'errors.errorDetails': 'Error Details:',
+                                        'errors.tryAgain': 'Try Again'
+                                    };
+                                    return fallbacks[key] || key;
+                                };
 
-                                    {__DEV__ && this.state.error && (
-                                        <View style={styles.errorDetails}>
-                                            <Text style={styles.errorTitle}>{t('errors.errorDetails')}</Text>
-                                            <Text style={styles.errorText}>
-                                                {this.state.error.toString()}
-                                            </Text>
-                                        </View>
-                                    )}
+                                return (
+                                    <>
+                                        <Text style={styles.title}>{safeT('errors.somethingWentWrong')}</Text>
+                                        <Text style={styles.message}>
+                                            {safeT('errors.unexpectedError')}
+                                        </Text>
 
-                                    <TouchableOpacity
-                                        style={styles.retryButton}
-                                        onPress={this.handleRetry}
-                                        activeOpacity={0.8}
-                                    >
-                                        <RefreshCw size={20} color="#fff" />
-                                        <Text style={styles.retryButtonText}>{t('errors.tryAgain')}</Text>
-                                    </TouchableOpacity>
-                                </>
-                            )}
+                                        {__DEV__ && this.state.error && (
+                                            <View style={styles.errorDetails}>
+                                                <Text style={styles.errorTitle}>{safeT('errors.errorDetails')}</Text>
+                                                <Text style={styles.errorText}>
+                                                    {this.state.error.toString()}
+                                                </Text>
+                                            </View>
+                                        )}
+
+                                        <TouchableOpacity
+                                            style={styles.retryButton}
+                                            onPress={this.handleRetry}
+                                            activeOpacity={0.8}
+                                        >
+                                            <RefreshCw size={20} color="#fff" />
+                                            <Text style={styles.retryButtonText}>{safeT('errors.tryAgain')}</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                );
+                            }}
                         </LanguageContext.Consumer>
                     </View>
                 </SafeAreaView>

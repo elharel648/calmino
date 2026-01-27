@@ -25,6 +25,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addMilestone, removeMilestone } from '../../services/babyService';
+import { SwipeableRow } from '../Common/SwipeableRow';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -573,68 +574,53 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                                 {group.label}
                                             </Text>
                                             {group.items.map((milestone, index) => (
-                                                <View key={index} style={styles.milestoneCardWrapper}>
-                                                    {Platform.OS === 'ios' && (
-                                                        <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                                                    )}
-                                                    <LinearGradient
-                                                        colors={isDarkMode
-                                                            ? ['rgba(44, 44, 46, 0.9)', 'rgba(44, 44, 46, 0.7)']
-                                                            : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)']
-                                                        }
-                                                        style={StyleSheet.absoluteFill}
-                                                    />
-                                                    <View style={styles.milestoneCard}>
-                                                        <View style={styles.milestoneHeader}>
-                                                            <TouchableOpacity
-                                                                style={styles.deleteBtn}
-                                                                onPress={() => {
-                                                                    handleDelete(milestone);
-                                                                    if (Platform.OS !== 'web') {
-                                                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                                                    }
-                                                                }}
-                                                                activeOpacity={0.7}
-                                                            >
-                                                                <LinearGradient
-                                                                    colors={['#FEE2E2', '#FECACA']}
-                                                                    style={styles.deleteBtnGradient}
-                                                                >
-                                                                    <Trash2 size={16} color="#EF4444" strokeWidth={2.5} />
-                                                                </LinearGradient>
-                                                            </TouchableOpacity>
-                                                            <View style={styles.milestoneInfo}>
-                                                                <LinearGradient
-                                                                    colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-                                                                    style={styles.milestoneBadgeGradient}
-                                                                    start={{ x: 0, y: 0 }}
-                                                                    end={{ x: 1, y: 1 }}
-                                                                >
-                                                                    <Award size={18} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
-                                                                </LinearGradient>
-                                                                <View style={styles.milestoneTexts}>
-                                                                    <Text style={[styles.milestoneTitle, { color: theme.textPrimary }]}>
-                                                                        {milestone.title}
-                                                                    </Text>
-                                                                    <View style={styles.milestoneDateRow}>
-                                                                        <Calendar size={12} color={theme.textSecondary} strokeWidth={2} />
-                                                                        <Text style={[styles.milestoneDate, { color: theme.textSecondary }]}>
-                                                                            {formatDate(milestone.date)} • {formatRelativeDate(milestone.date)}
+                                                <SwipeableRow key={index} onDelete={() => handleDelete(milestone)}>
+                                                    <View style={styles.milestoneCardWrapper}>
+                                                        {Platform.OS === 'ios' && (
+                                                            <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                                                        )}
+                                                        <LinearGradient
+                                                            colors={isDarkMode
+                                                                ? ['rgba(44, 44, 46, 0.9)', 'rgba(44, 44, 46, 0.7)']
+                                                                : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)']
+                                                            }
+                                                            style={StyleSheet.absoluteFill}
+                                                        />
+                                                        <View style={styles.milestoneCard}>
+                                                            <View style={styles.milestoneHeader}>
+                                                                <View style={styles.milestoneInfo}>
+                                                                    <LinearGradient
+                                                                        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+                                                                        style={styles.milestoneBadgeGradient}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 1, y: 1 }}
+                                                                    >
+                                                                        <Award size={18} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
+                                                                    </LinearGradient>
+                                                                    <View style={styles.milestoneTexts}>
+                                                                        <Text style={[styles.milestoneTitle, { color: theme.textPrimary }]}>
+                                                                            {milestone.title}
                                                                         </Text>
+                                                                        <View style={styles.milestoneDateRow}>
+                                                                            <Calendar size={12} color={theme.textSecondary} strokeWidth={2} />
+                                                                            <Text style={[styles.milestoneDate, { color: theme.textSecondary }]}>
+                                                                                {formatDate(milestone.date)} • {formatRelativeDate(milestone.date)}
+                                                                            </Text>
+                                                                        </View>
                                                                     </View>
                                                                 </View>
                                                             </View>
+                                                            {milestone.notes ? (
+                                                                <View style={[styles.milestoneNotesContainer, { borderTopColor: theme.border }]}>
+                                                                    <FileText size={14} color={theme.textSecondary} strokeWidth={2} />
+                                                                    <Text style={[styles.milestoneNotes, { color: theme.textSecondary }]}>
+                                                                        {milestone.notes}
+                                                                    </Text>
+                                                                </View>
+                                                            ) : null}
                                                         </View>
-                                                        {milestone.notes ? (
-                                                            <View style={[styles.milestoneNotesContainer, { borderTopColor: theme.border }]}>
-                                                                <FileText size={14} color={theme.textSecondary} strokeWidth={2} />
-                                                                <Text style={[styles.milestoneNotes, { color: theme.textSecondary }]}>
-                                                                    {milestone.notes}
-                                                                </Text>
-                                                            </View>
-                                                        ) : null}
                                                     </View>
-                                                </View>
+                                                </SwipeableRow>
                                             ))}
                                         </View>
                                     ))
