@@ -18,7 +18,8 @@
       },
       "ios": {
         "credentialsSource": "remote",
-        "image": "latest"
+        "image": "latest",
+        "prebuildCommand": ".eas/build/prebuild.sh"
       }
     }
   },
