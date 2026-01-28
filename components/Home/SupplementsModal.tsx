@@ -304,111 +304,123 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)', // Slightly darker overlay for focus
         padding: 24,
     },
     modalContent: {
         width: '100%',
         maxWidth: 380,
-        borderRadius: 28,
-        paddingVertical: 28,
-        paddingHorizontal: 28,
+        borderRadius: 24, // Slightly less rounded
+        paddingVertical: 24,
+        paddingHorizontal: 24,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.2,
-        shadowRadius: 24,
-        elevation: 12,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 8,
     },
     header: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 24,
     },
     iconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 40,
+        height: 40,
+        borderRadius: 12, // Squircle-ish
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: 'transparent', // Minimalist
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
     },
     title: {
         flex: 1,
         fontSize: 18,
-        fontWeight: '700',
+        fontWeight: '600', // Lighter weight
         textAlign: 'right',
         marginRight: 12,
         letterSpacing: -0.3,
     },
     closeBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.03)',
     },
     celebrationBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        backgroundColor: 'rgba(34, 197, 94, 0.1)', // Very subtle green
         gap: 6,
         alignSelf: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     celebrationText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '700',
+        color: '#16A34A', // Darker green text
+        fontSize: 13,
+        fontWeight: '600',
     },
     buttonsRow: {
         flexDirection: 'row-reverse',
         justifyContent: 'center',
-        gap: 16,
+        gap: 12,
     },
     medBtn: {
         width: 130,
-        paddingVertical: 20,
+        paddingVertical: 16,
         paddingHorizontal: 12,
-        borderRadius: 20,
+        borderRadius: 16,
         alignItems: 'center',
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.08)', // Subtle border
     },
     medBtnDone: {
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        backgroundColor: 'rgba(34, 197, 94, 0.04)', // Ultra light green bg
+        borderColor: 'rgba(34, 197, 94, 0.3)', // Green border
     },
     medIconWrapper: {
-        marginBottom: 12,
+        marginBottom: 10,
     },
     medIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 48,
+        height: 48,
         alignItems: 'center',
         justifyContent: 'center',
+        // No background
     },
     medIconGradient: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        // Success glow
+        backgroundColor: '#22C55E', // Solid green for checked, cleaner than gradient
+        // subtle shadow
         shadowColor: '#22C55E',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2,
     },
     medText: {
         fontSize: 15,
-        fontWeight: '600',
-        letterSpacing: -0.3,
+        fontWeight: '500', // Regular weight
+        letterSpacing: -0.2,
+        textAlign: 'center',
     },
     medStatus: {
         fontSize: 12,
-        fontWeight: '500',
-        marginTop: 4,
+        fontWeight: '400',
+        marginTop: 2,
+        opacity: 0.6,
     },
     progressContainer: {
         marginTop: 24,
@@ -416,18 +428,21 @@ const styles = StyleSheet.create({
     },
     progressTrack: {
         width: '100%',
-        height: 6,
-        borderRadius: 3,
+        height: 4, // Thinner track
+        borderRadius: 2,
         overflow: 'hidden',
+        backgroundColor: 'rgba(0,0,0,0.05)',
     },
     progressFill: {
         height: '100%',
-        borderRadius: 3,
+        borderRadius: 2,
+        backgroundColor: '#22C55E', // Use solid color
     },
     progressText: {
-        marginTop: 10,
-        fontSize: 13,
-        fontWeight: '500',
+        marginTop: 8,
+        fontSize: 12,
+        fontWeight: '400',
+        opacity: 0.5,
     },
 });
 
