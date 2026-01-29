@@ -179,7 +179,7 @@ const translations: Record<Language, Record<string, string>> = {
     'diaper.mixed': 'מעורב',
 
     // Tracking Modal
-    'tracking.food.title': 'תיעוד אוכל',
+    'tracking.food.title': 'אוכל',
     'tracking.sleep.title': 'תיעוד שינה',
     'tracking.diaper.title': 'החלפת חיתול',
     'tracking.breast': 'הנקה',
