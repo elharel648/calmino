@@ -57,6 +57,13 @@
       "size": "60x60"
     },
     {
+      "filename": "App-Icon-120x120@1x.png",
+      "idiom": "iphone",
+      "platform": "ios",
+      "scale": "1x",
+      "size": "120x120"
+    },
+    {
       "filename": "App-Icon-20x20@1x.png",
       "idiom": "ipad",
       "platform": "ios",
@@ -113,11 +120,25 @@
       "size": "76x76"
     },
     {
+      "filename": "App-Icon-152x152@1x.png",
+      "idiom": "ipad",
+      "platform": "ios",
+      "scale": "1x",
+      "size": "152x152"
+    },
+    {
       "filename": "App-Icon-83.5x83.5@2x.png",
       "idiom": "ipad",
       "platform": "ios",
       "scale": "2x",
       "size": "83.5x83.5"
+    },
+    {
+      "filename": "App-Icon-167x167@1x.png",
+      "idiom": "ipad",
+      "platform": "ios",
+      "scale": "1x",
+      "size": "167x167"
     },
     {
       "filename": "App-Icon-1024x1024@1x.png",

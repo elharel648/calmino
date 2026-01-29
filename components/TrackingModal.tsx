@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder, Dimensions } from 'react-native';
-import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
+import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -69,6 +69,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Selected Date for logging past/future entries
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarView, setCalendarView] = useState<'days' | 'months'>('days');
 
   // --- Sleep States (Manual entry) ---
   const [sleepMode, setSleepMode] = useState<'timer' | 'duration' | 'timerange'>('timer');
@@ -290,16 +291,26 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const activeSide = foodTimerContext.breastActiveSide;
 
   const toggleBreastTimer = (side: 'left' | 'right') => {
-    if (foodTimerContext.breastIsRunning && foodTimerContext.breastActiveSide === side) {
-      foodTimerContext.stopBreast();
+    // If clicking on the same side that's currently running - pause it
+    if (foodTimerContext.breastIsRunning && foodTimerContext.breastActiveSide === side && !foodTimerContext.breastIsPaused) {
+      foodTimerContext.pauseBreast();
+      // If clicking on a paused timer for the same side - resume it
+    } else if (foodTimerContext.breastIsRunning && foodTimerContext.breastActiveSide === side && foodTimerContext.breastIsPaused) {
+      foodTimerContext.resumeBreast();
+      // Otherwise start the timer for this side
     } else {
       foodTimerContext.startBreast(side);
     }
   };
 
   const togglePumpingTimer = () => {
-    if (foodTimerContext.pumpingIsRunning) {
-      foodTimerContext.stopPumping();
+    // If running and not paused - pause it
+    if (foodTimerContext.pumpingIsRunning && !foodTimerContext.pumpingIsPaused) {
+      foodTimerContext.pausePumping();
+      // If paused - resume it  
+    } else if (foodTimerContext.pumpingIsRunning && foodTimerContext.pumpingIsPaused) {
+      foodTimerContext.resumePumping();
+      // Not running - start fresh
     } else {
       foodTimerContext.startPumping();
     }
@@ -312,8 +323,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const bottleTimer = foodTimerContext.bottleElapsedSeconds;
 
   const toggleBottleTimer = () => {
-    if (foodTimerContext.bottleIsRunning) {
-      foodTimerContext.stopBottle();
+    // If running and not paused - pause it
+    if (foodTimerContext.bottleIsRunning && !foodTimerContext.bottleIsPaused) {
+      foodTimerContext.pauseBottle();
+      // If paused - resume it
+    } else if (foodTimerContext.bottleIsRunning && foodTimerContext.bottleIsPaused) {
+      foodTimerContext.resumeBottle();
+      // Not running - start fresh
     } else {
       foodTimerContext.startBottle();
     }
@@ -534,6 +550,19 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       }
       await onSave(data);
       console.log('✅ onSave completed successfully');
+
+      // Reset all food timers after successful save (only here, not on pause!)
+      if (type === 'food') {
+        foodTimerContext.resetBottle();
+        foodTimerContext.resetPumping();
+        foodTimerContext.resetBreast();
+        // Reset notes
+        setFoodNote('');
+        setBottleAmount('');
+        setPumpingAmount('');
+        setSolidsFoodName('');
+      }
+
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);
@@ -767,7 +796,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   style={[
                     styles.breastTimeCard,
                     { width: 130, aspectRatio: 1, flex: 0 },
-                    isBottleActive && styles.breastTimeCardActive
+                    isBottleActive && !foodTimerContext.bottleIsPaused && styles.breastTimeCardActive,
+                    isBottleActive && foodTimerContext.bottleIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
                   ]}
                   onPress={() => { toggleBottleTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
                   activeOpacity={0.8}
@@ -777,7 +807,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                     {formatTime(bottleTimer)}
                   </Text>
                   <View style={[styles.breastPlayBtn, isBottleActive && styles.breastPlayBtnActive]}>
-                    {isBottleActive ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} style={{ marginLeft: 2 }} />}
+                    {isBottleActive && !foodTimerContext.bottleIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isBottleActive ? '#fff' : theme.primary} style={{ marginLeft: 2 }} />}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -795,13 +825,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             <View style={styles.breastTimeRow}>
               {/* Left Breast Card */}
               <TouchableOpacity
-                style={[styles.breastTimeCard, activeSide === 'left' && styles.breastTimeCardActive]}
+                style={[
+                  styles.breastTimeCard,
+                  activeSide === 'left' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
+                  activeSide === 'left' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                ]}
                 onPress={() => { toggleBreastTimer('left'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
               >
-                <Text style={styles.breastTimeLabel}>{t('tracking.left')}</Text>
+                <Text style={[styles.breastTimeLabel, activeSide === 'left' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.left')}</Text>
                 <Text style={[styles.breastTimeValue, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
                 <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
-                  {activeSide === 'left' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
+                  {activeSide === 'left' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'left' ? '#fff' : theme.primary} />}
                 </View>
               </TouchableOpacity>
 
@@ -810,13 +844,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
               {/* Right Breast Card */}
               <TouchableOpacity
-                style={[styles.breastTimeCard, activeSide === 'right' && styles.breastTimeCardActive]}
+                style={[
+                  styles.breastTimeCard,
+                  activeSide === 'right' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
+                  activeSide === 'right' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                ]}
                 onPress={() => { toggleBreastTimer('right'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
               >
-                <Text style={styles.breastTimeLabel}>{t('tracking.right')}</Text>
+                <Text style={[styles.breastTimeLabel, activeSide === 'right' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.right')}</Text>
                 <Text style={[styles.breastTimeValue, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
                 <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
-                  {activeSide === 'right' ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} />}
+                  {activeSide === 'right' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'right' ? '#fff' : theme.primary} />}
                 </View>
               </TouchableOpacity>
             </View>
@@ -897,7 +935,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   style={[
                     styles.breastTimeCard,
                     { width: 130, aspectRatio: 1, flex: 0 },
-                    isPumpingActive && styles.breastTimeCardActive
+                    isPumpingActive && !foodTimerContext.pumpingIsPaused && styles.breastTimeCardActive,
+                    isPumpingActive && foodTimerContext.pumpingIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
                   ]}
                   onPress={() => { togglePumpingTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
                   activeOpacity={0.8}
@@ -907,7 +946,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                     {formatTime(pumpingTimer)}
                   </Text>
                   <View style={[styles.breastPlayBtn, isPumpingActive && styles.breastPlayBtnActive]}>
-                    {isPumpingActive ? <Pause size={14} color="#fff" /> : <Play size={14} color={theme.primary} style={{ marginLeft: 2 }} />}
+                    {isPumpingActive && !foodTimerContext.pumpingIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isPumpingActive ? '#fff' : theme.primary} style={{ marginLeft: 2 }} />}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -939,16 +978,18 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
           <Text style={styles.sleepNoteLabel}>{t('tracking.note')}</Text>
         </View>
-        <TextInput
-          style={styles.sleepNoteInput}
-          placeholder={`${t('tracking.example')}: ...`}
-          placeholderTextColor={theme.textTertiary}
-          value={foodNote}
-          onChangeText={setFoodNote}
-          textAlign="right"
-          multiline
-          maxLength={60}
-        />
+        <View pointerEvents="auto">
+          <TextInput
+            style={[styles.sleepNoteInput, { minHeight: 80, color: theme.textPrimary, backgroundColor: theme.inputBackground }]}
+            placeholder={`${t('tracking.example')}: ...`}
+            placeholderTextColor={theme.textTertiary}
+            value={foodNote}
+            onChangeText={setFoodNote}
+            textAlign="right"
+            multiline
+            numberOfLines={3}
+          />
+        </View>
       </View>
 
       {/* Food Start Time Picker Modal */}
@@ -1372,24 +1413,43 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             {/* Calendar Overlay - Inline */}
             {showCalendar && (
               <View style={styles.calendarInlineOverlay}>
-                <TouchableOpacity style={styles.calendarInlineBackdrop} activeOpacity={1} onPress={() => setShowCalendar(false)} />
+                <TouchableOpacity style={styles.calendarInlineBackdrop} activeOpacity={1} onPress={() => { setShowCalendar(false); setCalendarView('days'); }} />
                 <View style={styles.calendarCard}>
-                  {/* Month Header */}
+                  {/* Month Header - Clickable for drill-up */}
                   <View style={styles.calendarHeader}>
                     <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
                       const newDate = new Date(selectedDate);
-                      newDate.setMonth(newDate.getMonth() + 1);
+                      if (calendarView === 'days') {
+                        newDate.setMonth(newDate.getMonth() + 1);
+                      } else {
+                        newDate.setFullYear(newDate.getFullYear() + 1);
+                      }
                       setSelectedDate(newDate);
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}>
                       <ChevronLeft size={18} color="#374151" strokeWidth={1.5} />
                     </TouchableOpacity>
-                    <Text style={styles.calendarMonthText}>
-                      {selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
-                    </Text>
+                    <TouchableOpacity onPress={() => {
+                      setCalendarView(calendarView === 'days' ? 'months' : 'days');
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Text style={styles.calendarMonthText}>
+                          {calendarView === 'days'
+                            ? selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+                            : selectedDate.getFullYear().toString()
+                          }
+                        </Text>
+                        <ChevronUp size={14} color="#374151" strokeWidth={1.5} style={{ transform: [{ rotate: calendarView === 'months' ? '180deg' : '0deg' }] }} />
+                      </View>
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
                       const newDate = new Date(selectedDate);
-                      newDate.setMonth(newDate.getMonth() - 1);
+                      if (calendarView === 'days') {
+                        newDate.setMonth(newDate.getMonth() - 1);
+                      } else {
+                        newDate.setFullYear(newDate.getFullYear() - 1);
+                      }
                       setSelectedDate(newDate);
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}>
@@ -1397,50 +1457,103 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                     </TouchableOpacity>
                   </View>
 
-                  {/* Week Days */}
-                  <View style={styles.calendarWeekRow}>
-                    {[t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')].map((day, i) => (
-                      <Text key={i} style={styles.calendarWeekDay}>{day}</Text>
-                    ))}
-                  </View>
+                  {/* Days View */}
+                  {calendarView === 'days' && (
+                    <>
+                      {/* Week Days */}
+                      <View style={styles.calendarWeekRow}>
+                        {[t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')].map((day, i) => (
+                          <Text key={i} style={styles.calendarWeekDay}>{day}</Text>
+                        ))}
+                      </View>
 
-                  {/* Days Grid */}
-                  <View style={styles.calendarDaysGrid}>
-                    {(() => {
-                      const year = selectedDate.getFullYear();
-                      const month = selectedDate.getMonth();
-                      const firstDay = new Date(year, month, 1).getDay();
-                      const daysInMonth = new Date(year, month + 1, 0).getDate();
-                      const today = new Date();
-                      const days = [];
+                      {/* Days Grid */}
+                      <View style={styles.calendarDaysGrid}>
+                        {(() => {
+                          const year = selectedDate.getFullYear();
+                          const month = selectedDate.getMonth();
+                          const firstDay = new Date(year, month, 1).getDay();
+                          const daysInMonth = new Date(year, month + 1, 0).getDate();
+                          const today = new Date();
+                          const days = [];
 
-                      for (let i = 0; i < firstDay; i++) {
-                        days.push(<View key={`e-${i}`} style={styles.calendarDay} />);
-                      }
+                          for (let i = 0; i < firstDay; i++) {
+                            days.push(<View key={`e-${i}`} style={styles.calendarDay} />);
+                          }
 
-                      for (let d = 1; d <= daysInMonth; d++) {
-                        const date = new Date(year, month, d);
-                        const isToday = date.toDateString() === today.toDateString();
-                        const isSelected = date.toDateString() === selectedDate.toDateString();
-                        const isFuture = date > today;
+                          for (let d = 1; d <= daysInMonth; d++) {
+                            const date = new Date(year, month, d);
+                            const isToday = date.toDateString() === today.toDateString();
+                            const isSelected = date.toDateString() === selectedDate.toDateString();
+                            const isFuture = date > today;
 
-                        days.push(
+                            days.push(
+                              <TouchableOpacity
+                                key={d}
+                                style={[styles.calendarDay, isToday && styles.calendarDayToday, isSelected && styles.calendarDaySelected, isFuture && styles.calendarDayDisabled]}
+                                onPress={() => { if (!isFuture) { setSelectedDate(date); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } }}
+                                disabled={isFuture}
+                              >
+                                <Text style={[styles.calendarDayText, isSelected && styles.calendarDaySelectedText]}>{d}</Text>
+                              </TouchableOpacity>
+                            );
+                          }
+                          return days;
+                        })()}
+                      </View>
+                    </>
+                  )}
+
+                  {/* Months View */}
+                  {calendarView === 'months' && (
+                    <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', marginTop: 8 }}>
+                      {['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'].map((month, i) => {
+                        const isCurrentMonth = selectedDate.getMonth() === i;
+                        const today = new Date();
+                        const isFutureMonth = selectedDate.getFullYear() > today.getFullYear() ||
+                          (selectedDate.getFullYear() === today.getFullYear() && i > today.getMonth());
+
+                        return (
                           <TouchableOpacity
-                            key={d}
-                            style={[styles.calendarDay, isToday && styles.calendarDayToday, isSelected && styles.calendarDaySelected, isFuture && styles.calendarDayDisabled]}
-                            onPress={() => { if (!isFuture) { setSelectedDate(date); setShowCalendar(false); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } }}
-                            disabled={isFuture}
+                            key={i}
+                            style={{
+                              width: '33.33%',
+                              padding: 12,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: isCurrentMonth ? '#7C3AED' : 'transparent',
+                              borderRadius: 12,
+                              opacity: isFutureMonth ? 0.4 : 1,
+                            }}
+                            onPress={() => {
+                              if (!isFutureMonth) {
+                                const newDate = new Date(selectedDate);
+                                newDate.setMonth(i);
+                                // If selected day doesn't exist in new month, set to last day
+                                const daysInNewMonth = new Date(newDate.getFullYear(), i + 1, 0).getDate();
+                                if (newDate.getDate() > daysInNewMonth) {
+                                  newDate.setDate(daysInNewMonth);
+                                }
+                                setSelectedDate(newDate);
+                                setCalendarView('days');
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              }
+                            }}
+                            disabled={isFutureMonth}
                           >
-                            <Text style={[styles.calendarDayText, isSelected && styles.calendarDaySelectedText]}>{d}</Text>
+                            <Text style={{
+                              fontSize: 14,
+                              fontWeight: '600',
+                              color: isCurrentMonth ? '#fff' : '#374151',
+                            }}>{month}</Text>
                           </TouchableOpacity>
                         );
-                      }
-                      return days;
-                    })()}
-                  </View>
+                      })}
+                    </View>
+                  )}
 
                   {/* Today Button */}
-                  <TouchableOpacity style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0 }]} onPress={() => { setSelectedDate(new Date()); setShowCalendar(false); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                  <TouchableOpacity style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0 }]} onPress={() => { setSelectedDate(new Date()); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
                     <Text style={styles.datePickerBtnText}>{t('tracking.today')}</Text>
                   </TouchableOpacity>
                 </View>
@@ -1623,8 +1736,8 @@ const styles = StyleSheet.create({
   calendarModal: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   calendarOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   calendarInlineOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 10, zIndex: 1001 },
+  calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 10, zIndex: 1001 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   calendarMonthText: { fontSize: 16, fontWeight: '600' },
   calendarNavBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },

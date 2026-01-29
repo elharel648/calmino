@@ -3,7 +3,7 @@
     "name": "CalmParentApp",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.0.3",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -42,6 +42,7 @@
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
+        "CFBundleIconName": "AppIcon",
         "NSPhotoLibraryUsageDescription": "האפליקציה צריכה גישה לתמונות כדי להגדיר תמונת פרופיל",
         "NSFaceIDUsageDescription": "אפשר כניסה מהירה ומאובטחת באמצעות Face ID",
         "NSLocationWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",

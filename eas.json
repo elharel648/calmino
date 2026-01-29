@@ -17,7 +17,8 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "ios": {
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "prebuildCommand": "bash .eas/build/prebuild-icons.sh && bash .eas/build/prebuild.sh"
       }
     }
   },

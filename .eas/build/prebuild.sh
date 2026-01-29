@@ -2,19 +2,53 @@
 
 set -e
 
-echo "🔧 Updating gems to support Xcode 16.2+ (objectVersion 70)..."
+echo "🔧 Fixing Xcode project compatibility for CocoaPods..."
 
-# Update xcodeproj gem to version that supports objectVersion 70
-echo "📦 Installing xcodeproj 1.28.0..."
-gem install xcodeproj -v 1.28.0 --no-document
+# Path to the project.pbxproj file
+PBXPROJ_PATH="${EAS_BUILD_WORKINGDIR}/ios/CalmParentApp.xcodeproj/project.pbxproj"
 
-# Update CocoaPods to latest version for better compatibility
-echo "📦 Updating CocoaPods..."
-gem install cocoapods -v 1.16.2 --no-document
+# Check if file exists
+if [ ! -f "$PBXPROJ_PATH" ]; then
+  echo "❌ Error: project.pbxproj not found at $PBXPROJ_PATH"
+  exit 1
+fi
 
-# Verify installations
-echo "✅ Gem versions installed:"
-gem list xcodeproj
-gem list cocoapods
+echo "📝 Checking objectVersion in project.pbxproj..."
 
-echo "✅ Build environment updated successfully"
+# Check current objectVersion
+CURRENT_VERSION=$(grep -E '^\s*objectVersion = [0-9]+;' "$PBXPROJ_PATH" | sed 's/.*objectVersion = \([0-9]*\);/\1/')
+echo "   Current objectVersion: $CURRENT_VERSION"
+
+# If objectVersion is 70, downgrade to 60 for CocoaPods compatibility
+if [ "$CURRENT_VERSION" = "70" ]; then
+  echo "   Downgrading objectVersion 70 → 60 for CocoaPods compatibility..."
+  sed -i.bak 's/objectVersion = 70;/objectVersion = 60;/' "$PBXPROJ_PATH"
+  rm -f "${PBXPROJ_PATH}.bak"
+  echo "   ✅ Successfully downgraded objectVersion to 60"
+else
+  echo "   ℹ️  objectVersion is $CURRENT_VERSION (no change needed)"
+fi
+
+
+echo "✅ Build environment prepared successfully"
+
+# Ensure CFBundleIconName is in Info.plist
+INFOPLIST_PATH="${EAS_BUILD_WORKINGDIR}/ios/CalmParentApp/Info.plist"
+
+if [ -f "$INFOPLIST_PATH" ]; then
+  echo "📱 Verifying CFBundleIconName in Info.plist..."
+  
+  if ! grep -q "CFBundleIconName" "$INFOPLIST_PATH"; then
+    echo "⚠️  CFBundleIconName missing! Adding it now..."
+    # Add CFBundleIconName before CFBundleIdentifier
+    sed -i.bak '/<key>CFBundleIdentifier<\/key>/i\
+\	<key>CFBundleIconName<\/key>\
+\	<string>AppIcon<\/string>
+' "$INFOPLIST_PATH"
+    rm -f "${INFOPLIST_PATH}.bak"
+    echo "   ✅ Added CFBundleIconName to Info.plist"
+  else
+    echo "   ✅ CFBundleIconName already present"
+  fi
+fi
+

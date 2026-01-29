@@ -10,6 +10,7 @@ import Animated, {
     Easing,
     interpolate,
     useDerivedValue,
+    SharedValue, // Import SharedValue directly
 } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
@@ -23,9 +24,9 @@ const BLOB_COLORS = {
 };
 
 interface LiquidGlassBackgroundProps {
-    scrollY?: Animated.SharedValue<number>;
-    touchX?: Animated.SharedValue<number>;
-    touchY?: Animated.SharedValue<number>;
+    scrollY?: SharedValue<number>;
+    touchX?: SharedValue<number>;
+    touchY?: SharedValue<number>;
 }
 
 /**
@@ -56,109 +57,8 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
     const blob4Scale = useSharedValue(1);
 
     useEffect(() => {
-        // Organic floating animation for each blob
-        blob1X.value = withRepeat(
-            withSequence(
-                withTiming(width * 0.4, { duration: 8000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(width * 0.25, { duration: 7000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(width * 0.35, { duration: 6000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-        blob1Y.value = withRepeat(
-            withSequence(
-                withTiming(height * 0.25, { duration: 9000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(height * 0.15, { duration: 7000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-
-        blob2X.value = withRepeat(
-            withSequence(
-                withTiming(width * 0.6, { duration: 10000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(width * 0.75, { duration: 8000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-        blob2Y.value = withRepeat(
-            withSequence(
-                withTiming(height * 0.35, { duration: 7000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(height * 0.45, { duration: 9000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-
-        blob3X.value = withRepeat(
-            withSequence(
-                withTiming(width * 0.5, { duration: 11000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(width * 0.3, { duration: 9000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-        blob3Y.value = withRepeat(
-            withSequence(
-                withTiming(height * 0.55, { duration: 8000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(height * 0.65, { duration: 10000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-
-        blob4X.value = withRepeat(
-            withSequence(
-                withTiming(width * 0.7, { duration: 7000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(width * 0.55, { duration: 8000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-        blob4Y.value = withRepeat(
-            withSequence(
-                withTiming(height * 0.1, { duration: 9000, easing: Easing.inOut(Easing.sin) }),
-                withTiming(height * 0.2, { duration: 7000, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-
-        // Breathing/pulsing effect
-        blob1Scale.value = withRepeat(
-            withSequence(
-                withTiming(1.15, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.95, { duration: 4000, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
-        blob2Scale.value = withRepeat(
-            withSequence(
-                withTiming(1.1, { duration: 5000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.9, { duration: 5000, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
-        blob3Scale.value = withRepeat(
-            withSequence(
-                withTiming(1.2, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.85, { duration: 6000, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
-        blob4Scale.value = withRepeat(
-            withSequence(
-                withTiming(1.1, { duration: 3500, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.95, { duration: 3500, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
+        // Static positioning - no animations
+        // The "balloon" motion has been removed as requested
     }, []);
 
     // Scroll-reactive offset

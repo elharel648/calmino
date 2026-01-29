@@ -3,11 +3,10 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F1ED42982F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42992F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
@@ -18,6 +17,7 @@
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		EAF0B1858D666A9636D533D9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FFA90978CF1484B1D6B1C774 /* PrivacyInfo.xcprivacy */; };
+		F1ED42982F2954FD006D6F99 /* CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42992F2954FD006D6F99 /* CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift */; };
 		F1ED42D82F29549E006D6F69 /* ActivityKitManager.m in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D52F29549E006D6F69 /* ActivityKitManager.m */; };
 		F1ED42D92F29549E006D6F69 /* CalmParentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D72F29549E006D6F69 /* CalmParentActivityAttributes.swift */; };
 		F1ED42DA2F29549E006D6F69 /* ActivityKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1ED42D62F29549E006D6F69 /* ActivityKitManager.swift */; };
@@ -52,7 +52,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		F1ED42992F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift; sourceTree = SOURCE_ROOT; };
 		0283259F698A428BB53C9CCC /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "CalmParentApp/noop-file.swift"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* CalmParentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalmParentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = CalmParentApp/AppDelegate.h; sourceTree = "<group>"; };
@@ -67,6 +66,7 @@
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = CalmParentApp/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F1ED42992F2954FD006D6F99 /* CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift; sourceTree = SOURCE_ROOT; };
 		F1ED42D52F29549E006D6F69 /* ActivityKitManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActivityKitManager.m; sourceTree = "<group>"; };
 		F1ED42D62F29549E006D6F69 /* ActivityKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityKitManager.swift; sourceTree = "<group>"; };
 		F1ED42D72F29549E006D6F69 /* CalmParentActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmParentActivityAttributes.swift; sourceTree = "<group>"; };
@@ -90,18 +90,7 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		F1ED42E42F2954FD006D6F69 /* CalmParentLiveActivity */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				F1ED42F32F2954FF006D6F69 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = CalmParentLiveActivity;
-			sourceTree = "<group>";
-		};
+		F1ED42E42F2954FD006D6F69 /* CalmParentLiveActivity */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (F1ED42F32F2954FF006D6F69 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = CalmParentLiveActivity; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,6 +164,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				D65327D7A22EEC0BE12398D9 /* Pods */,
 				D7E4C46ADA2E9064B798F356 /* ExpoModulesProviders */,
+				F10D2F192F2AE9240012EE69 /* Recovered References */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -224,6 +214,14 @@
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
+		F10D2F192F2AE9240012EE69 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				F1ED42992F2954FD006D6F99 /* CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -269,8 +267,6 @@
 				F1ED42E42F2954FD006D6F69 /* CalmParentLiveActivity */,
 			);
 			name = CalmParentLiveActivityExtension;
-			packageProductDependencies = (
-			);
 			productName = CalmParentLiveActivityExtension;
 			productReference = F1ED42DF2F2954FD006D6F69 /* CalmParentLiveActivityExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -472,6 +468,8 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/boost/boost_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/glog/glog_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/lottie-ios/LottiePrivacyInfo.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/lottie-react-native/Lottie_React_Native_Privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/nanopb/nanopb_Privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/react-native-maps/ReactNativeMapsPrivacy.bundle",
 			);
@@ -503,6 +501,8 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/boost_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/glog_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/LottiePrivacyInfo.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Lottie_React_Native_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/nanopb_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ReactNativeMapsPrivacy.bundle",
 			);
@@ -532,7 +532,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F1ED42982F2954FD006D6F99 /* CalmParentLiveActivityLiveActivity.swift in Sources */,
+				F1ED42982F2954FD006D6F99 /* CalmParentLiveActivity/CalmParentLiveActivityLiveActivity.swift in Sources */,
 				F1ED42FA2F2956F0006D6F69 /* CalmParentActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -552,6 +552,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6C2E3173556A471DD304B334 /* Pods-CalmParentApp.debug.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CalmParentApp/CalmParentApp.entitlements;
@@ -568,7 +569,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -576,8 +577,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				PRODUCT_NAME = "CalmParentApp";
+				PRODUCT_NAME = CalmParentApp;
 				SWIFT_OBJC_BRIDGING_HEADER = "CalmParentApp/CalmParentApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -590,6 +590,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7A4D352CD337FB3A3BF06240 /* Pods-CalmParentApp.release.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CalmParentApp/CalmParentApp.entitlements;
@@ -601,7 +602,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -609,8 +610,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				PRODUCT_NAME = "CalmParentApp";
+				PRODUCT_NAME = CalmParentApp;
 				SWIFT_OBJC_BRIDGING_HEADER = "CalmParentApp/CalmParentApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -789,9 +789,10 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.CalmParentLiveActivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -838,8 +839,9 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.CalmParentLiveActivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

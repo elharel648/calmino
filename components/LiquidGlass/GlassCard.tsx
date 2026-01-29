@@ -28,21 +28,19 @@ interface GlassCardProps {
 }
 
 /**
- * Apple Design Language - Glass Card
+ * Apple Design Language - Glass Card (Native Liquid)
  * 
- * Specifications:
- * - Materials: ultraThinMaterial (blur 25, saturation 160%)
- * - Apple Stroke: 0.5pt white border with 0.2 opacity
- * - Squircle Corners: continuous corner curve
- * - Liquid Animations: Spring physics (stiffness: 170, damping: 26)
- * - Shadows: Diffuse (high spread, 5-10% opacity)
+ * Update for SDK 54 / iOS 26:
+ * - Uses native 'systemUltraThinMaterial' which maps to Liquid Material.
+ * - Removed manual white overlays to allow true background refraction.
+ * - Retains spring physics and squircle-like radius.
  */
 const GlassCard: React.FC<GlassCardProps> = ({
     children,
     style,
     onPress,
-    blurIntensity = 25,  // Apple ultraThinMaterial
-    borderRadius = 16,   // Apple continuous corners
+    blurIntensity = 25,
+    borderRadius = 16,
     disabled = false,
 }) => {
     const scale = useSharedValue(1);
@@ -81,18 +79,13 @@ const GlassCard: React.FC<GlassCardProps> = ({
 
     const content = (
         <View style={[styles.cardContainer, { borderRadius }, style]}>
-            {/* Layer 1: Material Background (blur + saturation) */}
+            {/* Native Material Blur */}
+            {/* 'systemUltraThinMaterial' adapts to Light/Dark mode and new iOS materials */}
             <BlurView
                 intensity={blurIntensity}
                 tint="systemUltraThinMaterial"
-                style={[StyleSheet.absoluteFill, { borderRadius }]}
+                style={StyleSheet.absoluteFill}
             />
-
-            {/* Layer 2: Semi-transparent overlay */}
-            <View style={[styles.materialOverlay, { borderRadius }]} />
-
-            {/* Apple Stroke: 0.5pt white border with 0.2 opacity */}
-            <View style={[styles.appleStroke, { borderRadius }]} />
 
             {/* Content */}
             <View style={styles.content}>
@@ -136,15 +129,10 @@ const styles = StyleSheet.create({
     cardContainer: {
         overflow: 'hidden',
         backgroundColor: 'transparent',
-    },
-    materialOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    },
-    appleStroke: {
-        ...StyleSheet.absoluteFillObject,
-        borderWidth: 0.5,  // Apple Stroke: 0.5pt
-        borderColor: 'rgba(255, 255, 255, 0.2)',  // White with 0.2 opacity
+        // On iOS 13+, system backgrounds handle the border/surface feel
+        // We can add a very subtle border for contrast if needed, but native look often omits it or relies on the material itself.
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 0.5,
     },
     content: {
         position: 'relative',
