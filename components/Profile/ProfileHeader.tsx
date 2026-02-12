@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Settings, Edit2, Camera, ChevronRight } from 'lucide-react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ProfileHeaderProps {
     babyName: string;
@@ -22,10 +23,12 @@ const ProfileHeader = memo(({
     onPhotoPress,
     onAgePress,
 }: ProfileHeaderProps) => {
+    const { theme, isDarkMode } = useTheme();
+
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={['#4f46e5', '#818cf8']}
+                colors={theme.headerGradient}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -36,15 +39,15 @@ const ProfileHeader = memo(({
                     style={styles.navBtn}
                     accessibilityLabel="הגדרות"
                 >
-                    <Settings size={20} color="white" />
+                    <Settings size={20} color={theme.card} />
                 </TouchableOpacity>
-                <Text style={styles.navTitle}>הבייבי שלי</Text>
+                <Text style={[styles.navTitle, { color: theme.card }]}>הבייבי שלי</Text>
                 <TouchableOpacity
                     onPress={onBackPress}
                     style={styles.navBtn}
                     accessibilityLabel="חזרה"
                 >
-                    <ChevronRight size={20} color="white" />
+                    <ChevronRight size={20} color={theme.card} />
                 </TouchableOpacity>
             </View>
 
@@ -58,16 +61,16 @@ const ProfileHeader = memo(({
                             <Text style={styles.avatarEmoji}>👶</Text>
                         </View>
                     )}
-                    <View style={styles.cameraBtn}>
-                        <Camera size={12} color="#4f46e5" />
+                    <View style={[styles.cameraBtn, { backgroundColor: theme.card }]}>
+                        <Camera size={12} color={theme.primary} />
                     </View>
                 </TouchableOpacity>
 
                 <View style={styles.nameSection}>
-                    <Text style={styles.babyName}>{babyName || 'הבייבי'}</Text>
+                    <Text style={[styles.babyName, { color: theme.card }]}>{babyName || 'הבייבי'}</Text>
                     <TouchableOpacity style={styles.agePill} onPress={onAgePress}>
-                        <Text style={styles.ageText}>{babyAgeMonths} חודשים</Text>
-                        <Edit2 size={10} color="rgba(255,255,255,0.8)" />
+                        <Text style={[styles.ageText, { color: theme.card }]}>{babyAgeMonths} חודשים</Text>
+                        <Edit2 size={10} color={isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.8)'} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -94,7 +97,6 @@ const styles = StyleSheet.create({
         borderRadius: 50,
     },
     navTitle: {
-        color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
     },
@@ -131,7 +133,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: 'white',
         padding: 6,
         borderRadius: 20,
     },
@@ -139,7 +140,6 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     babyName: {
-        color: 'white',
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 5,
@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     ageText: {
-        color: 'white',
         fontSize: 12,
         fontWeight: '600',
     },

@@ -591,6 +591,134 @@ export async function markChatAsRead(chatId: string, userId: string): Promise<vo
 }
 
 // ===================
+// EMERGENCY SEARCH
+// ===================
+
+/**
+ * Find available babysitters for emergency booking
+ * Returns babysitters that are currently active and available
+ */
+export async function findEmergencySitters(
+    parentLocation?: { latitude: number; longitude: number },
+    maxDistanceKm: number = 15
+): Promise<Array<{
+    id: string;
+    name: string;
+    rating: number;
+    reviewCount: number;
+    distance: number;
+    availableIn: number; // minutes (estimated)
+    hourlyRate: number;
+    photoUrl?: string;
+}>> {
+    try {
+        // Query active babysitters
+        const q = query(
+            collection(db, 'users'),
+            where('isSitter', '==', true),
+            where('sitterActive', '==', true)
+        );
+
+        const snapshot = await getDocs(q);
+        const emergencySitters: Array<{
+            id: string;
+            name: string;
+            rating: number;
+            reviewCount: number;
+            distance: number;
+            availableIn: number;
+            hourlyRate: number;
+            photoUrl?: string;
+        }> = [];
+
+        for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+
+            // Calculate distance if location provided
+            let distance = 0;
+            if (parentLocation && data.sitterLocation) {
+                distance = calculateDistance(
+                    parentLocation.latitude,
+                    parentLocation.longitude,
+                    data.sitterLocation.latitude,
+                    data.sitterLocation.longitude
+                );
+            }
+
+            // Skip if too far
+            if (parentLocation && distance > maxDistanceKm) {
+                continue;
+            }
+
+            // Estimate availability time based on distance
+            // Average travel speed ~30 km/h in city
+            const travelTimeMinutes = Math.round((distance / 30) * 60);
+            const availableIn = Math.max(30, travelTimeMinutes + 15); // At least 30 min
+
+            emergencySitters.push({
+                id: docSnap.id,
+                name: data.displayName || 'בייביסיטר',
+                rating: data.sitterRating || 0,
+                reviewCount: data.sitterReviewCount || 0,
+                distance: Math.round(distance * 10) / 10, // Round to 1 decimal
+                availableIn,
+                hourlyRate: data.sitterPrice || 80,
+                photoUrl: data.photoUrl || undefined,
+            });
+        }
+
+        // Sort by:
+        // 1. Availability time (soonest first)
+        // 2. Rating (higher first)
+        // 3. Distance (closer first)
+        emergencySitters.sort((a, b) => {
+            if (a.availableIn !== b.availableIn) {
+                return a.availableIn - b.availableIn;
+            }
+            if (a.rating !== b.rating) {
+                return b.rating - a.rating;
+            }
+            return a.distance - b.distance;
+        });
+
+        // Return top 5
+        return emergencySitters.slice(0, 5);
+    } catch (error) {
+        logger.error('Error finding emergency sitters:', error);
+        throw error;
+    }
+}
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in kilometers
+ */
+function calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+}
+
+// ===================
 // BABYSITTER PROFILE
 // ===================
 

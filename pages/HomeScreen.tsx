@@ -54,7 +54,6 @@ import MagicMomentsModal from '../components/Home/MagicMomentsModal';
 import { EditBasicInfoModal } from '../components/Profile';
 import ShiftTimerWidget from '../components/BabySitter/ShiftTimerWidget';
 import IntelligentInsightsCard from '../components/Home/IntelligentInsightsCard';
-import EmergencyBookingSOS from '../components/BabySitter/EmergencyBookingSOS';
 
 // Services
 import { auth, db } from '../services/firebaseConfig';
@@ -634,15 +633,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 </Animated.ScrollView>
 
                 {/* Modals */}
-                {/* Emergency SOS Booking Modal (replaces CalmMode) */}
-                <EmergencyBookingSOS
-                    visible={isCalmModeOpen}
-                    onClose={() => setIsCalmModeOpen(false)}
-                    onBookSitter={(sitterId) => {
-                        // Navigate to babysitter screen with pre-selected sitter
-                        (navigation as any).navigate('BabySitter', { sitterId });
-                    }}
-                />
+                <CalmModeModal visible={isCalmModeOpen} onClose={() => setIsCalmModeOpen(false)} />
                 <ToolsModal
                     visible={isToolsOpen}
                     onClose={() => setIsToolsOpen(false)}

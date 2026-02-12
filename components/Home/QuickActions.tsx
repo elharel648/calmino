@@ -11,6 +11,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
 import QuickActionsEditModal from './QuickActionsEditModal';
 import ActionButton, { setHasAnimated, getHasAnimated } from './ActionButton';
+import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../utils/designSystem';
 
 interface QuickActionsProps {
     lastFeedTime: string;
@@ -248,31 +249,29 @@ QuickActions.displayName = 'QuickActions';
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 24,
+        marginBottom: SPACING.xxl,
     },
     header: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-        paddingHorizontal: 4,
+        marginBottom: SPACING.xxxl,
+        paddingHorizontal: SPACING.xs,
     },
     sectionTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        letterSpacing: -0.5,
+        ...TYPOGRAPHY.h2,
     },
     editBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 20,
+        gap: SPACING.xs + 2,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.md + 2,
+        borderRadius: BORDER_RADIUS.xl,
         backgroundColor: 'rgba(0, 0, 0, 0.02)',
     },
     editBtnText: {
-        fontSize: 13,
+        ...TYPOGRAPHY.labelSmall,
         fontWeight: '500',
     },
     sliderWrapper: {
@@ -280,21 +279,21 @@ const styles = StyleSheet.create({
     },
     sliderContent: {
         flexDirection: 'row',
-        paddingHorizontal: 4,
-        gap: 16,
+        paddingHorizontal: SPACING.xs,
+        gap: SPACING.lg,
     },
     scrollIndicator: {
         position: 'absolute',
-        bottom: -8,
+        bottom: -SPACING.sm,
         left: '50%',
         transform: [{ translateX: -6 }],
         flexDirection: 'row',
-        gap: 4,
+        gap: SPACING.xs,
     },
     scrollDot: {
         width: 4,
         height: 4,
-        borderRadius: 2,
+        borderRadius: BORDER_RADIUS.xs,
         opacity: 0.4,
     },
 });

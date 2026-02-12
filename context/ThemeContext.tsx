@@ -29,6 +29,13 @@ export const COLORS = {
         shadow: '#000000',
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
+        // Additional UI colors for HealthCard
+        placeholder: '#9CA3AF',
+        iconSecondary: '#6B7280',
+        cardBackground: '#F9FAFB',
+        cardBorder: '#E5E7EB',
+        inputBorder: '#E5E7EB',
+        checkboxBorder: '#D1D5DB',
     },
     dark: {
         background: '#0F0F0F',
@@ -55,6 +62,13 @@ export const COLORS = {
         shadow: '#000000',
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
+        // Additional UI colors for HealthCard
+        placeholder: '#6E6E73',
+        iconSecondary: '#8E8E93',
+        cardBackground: '#2C2C2E',
+        cardBorder: '#38383A',
+        inputBorder: '#38383A',
+        checkboxBorder: '#48484A',
     }
 };
 

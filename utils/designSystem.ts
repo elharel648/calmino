@@ -228,19 +228,67 @@ export const ICON_SIZES = {
 // ============================================
 import { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 
-// Entry animations - DISABLED per user request
+// ============================================
+// ANIMATION SYSTEM - Minimalist & Subtle
+// ============================================
+// Ultra-subtle animations for premium minimalist feel
+
+const MINIMALIST_SPRING = {
+  damping: 20,      // More damping = less bounce = more subtle
+  stiffness: 120,   // Lower stiffness = smoother, less aggressive
+};
+
 export const ANIMATIONS = {
-  // Return undefined to disable animations globally
-  fadeInDown: (delay: number = 0, duration: number = 400) => undefined,
+  /**
+   * Fade in from top - ultra subtle
+   * @param delay - Start delay in ms (default: 0)
+   * @param duration - Animation duration in ms (default: 250)
+   */
+  fadeInDown: (delay: number = 0, duration: number = 250) =>
+    FadeInDown
+      .delay(delay)
+      .duration(duration)
+      .springify()
+      .damping(MINIMALIST_SPRING.damping)
+      .stiffness(MINIMALIST_SPRING.stiffness),
 
-  fadeInUp: (delay: number = 0, duration: number = 400) => undefined,
+  /**
+   * Fade in from bottom - ultra subtle
+   * @param delay - Start delay in ms (default: 0)
+   * @param duration - Animation duration in ms (default: 250)
+   */
+  fadeInUp: (delay: number = 0, duration: number = 250) =>
+    FadeInUp
+      .delay(delay)
+      .duration(duration)
+      .springify()
+      .damping(MINIMALIST_SPRING.damping)
+      .stiffness(MINIMALIST_SPRING.stiffness),
 
-  fadeIn: (delay: number = 0, duration: number = 300) => undefined,
+  /**
+   * Simple fade in - for overlays, modals
+   * @param delay - Start delay in ms (default: 0)
+   * @param duration - Animation duration in ms (default: 200)
+   */
+  fadeIn: (delay: number = 0, duration: number = 200) =>
+    FadeIn
+      .delay(delay)
+      .duration(duration),
 
-  fadeOut: (duration: number = 200) => undefined,
+  /**
+   * Fade out - quick and clean
+   * @param duration - Animation duration in ms (default: 150)
+   */
+  fadeOut: (duration: number = 150) =>
+    FadeOut
+      .duration(duration),
 
-  // Stagger delays for lists - keep logic but it won't be used for animation
-  stagger: (index: number, baseDelay: number = 100) => index * baseDelay,
+  /**
+   * Stagger delays for lists - minimal cascading
+   * @param index - Item index in list
+   * @param baseDelay - Delay between each item in ms (default: 25 - very subtle!)
+   */
+  stagger: (index: number, baseDelay: number = 25) => index * baseDelay,
 } as const;
 
 // ============================================

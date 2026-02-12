@@ -57,8 +57,38 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
     const blob4Scale = useSharedValue(1);
 
     useEffect(() => {
-        // Static positioning - no animations
-        // The "balloon" motion has been removed as requested
+        // Ultra-subtle breathing - barely noticeable, premium minimalist feel
+        // Only scale animation, NO position movement
+
+        // Blob 1 - Very slow, barely breathing
+        blob1Scale.value = withRepeat(
+            withTiming(1.015, { duration: 12000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+
+        // Blob 2 - Slightly faster
+        blob2Scale.value = withRepeat(
+            withTiming(1.02, { duration: 10000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+
+        // Blob 3 - Medium slow
+        blob3Scale.value = withRepeat(
+            withTiming(1.012, { duration: 14000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+
+        // Blob 4 - Subtle accent
+        blob4Scale.value = withRepeat(
+            withTiming(1.018, { duration: 11000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+
+        // NO X/Y movement - static positions for minimalist design
     }, []);
 
     // Scroll-reactive offset
@@ -74,11 +104,11 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
             {/* Skia Canvas with animated blobs */}
             <Canvas style={styles.canvas}>
                 <Group>
-                    {/* Blob 1 - Large muted teal */}
+                    {/* Blob 1 - Large breathing lavender */}
                     <Circle
                         cx={blob1X}
                         cy={blob1Y}
-                        r={width * 0.35}
+                        r={useDerivedValue(() => width * 0.35 * blob1Scale.value)}
                         opacity={0.4}
                     >
                         <LinearGradient
@@ -89,11 +119,11 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <BlurMask blur={60} style="normal" />
                     </Circle>
 
-                    {/* Blob 2 - Medium soft blue */}
+                    {/* Blob 2 - Medium breathing purple */}
                     <Circle
                         cx={blob2X}
                         cy={blob2Y}
-                        r={width * 0.3}
+                        r={useDerivedValue(() => width * 0.3 * blob2Scale.value)}
                         opacity={0.35}
                     >
                         <LinearGradient
@@ -104,11 +134,11 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <BlurMask blur={50} style="normal" />
                     </Circle>
 
-                    {/* Blob 3 - Large light teal */}
+                    {/* Blob 3 - Large breathing pale lavender */}
                     <Circle
                         cx={blob3X}
                         cy={blob3Y}
-                        r={width * 0.4}
+                        r={useDerivedValue(() => width * 0.4 * blob3Scale.value)}
                         opacity={0.3}
                     >
                         <LinearGradient
@@ -119,11 +149,11 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <BlurMask blur={70} style="normal" />
                     </Circle>
 
-                    {/* Blob 4 - Small pale blue accent */}
+                    {/* Blob 4 - Small breathing accent */}
                     <Circle
                         cx={blob4X}
                         cy={blob4Y}
-                        r={width * 0.2}
+                        r={useDerivedValue(() => width * 0.2 * blob4Scale.value)}
                         opacity={0.45}
                     >
                         <LinearGradient
