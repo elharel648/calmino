@@ -35,10 +35,10 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
 
   const sounds = [
-    { id: 'rain', label: 'גשם', icon: CloudRain, gradient: ['#60A5FA', '#3B82F6'] as [string, string], bg: '#EFF6FF' },
-    { id: 'shh', label: 'שששש', icon: Wind, gradient: ['#A78BFA', '#8B5CF6'] as [string, string], bg: '#F5F3FF' },
-    { id: 'heartbeat', label: 'דופק', icon: Heart, gradient: ['#F472B6', '#EC4899'] as [string, string], bg: '#FDF2F8' },
-    { id: 'dryer', label: 'מאוורר', icon: Fan, gradient: ['#34D399', '#10B981'] as [string, string], bg: '#ECFDF5' },
+    { id: 'rain', label: 'גשם', icon: CloudRain, gradient: ['#3B82F6', '#2563EB'] as [string, string], bg: isDarkMode ? 'rgba(59,130,246,0.08)' : '#EFF6FF' },
+    { id: 'shh', label: 'שששש', icon: Wind, gradient: ['#8B5CF6', '#7C3AED'] as [string, string], bg: isDarkMode ? 'rgba(139,92,246,0.08)' : '#F5F3FF' },
+    { id: 'heartbeat', label: 'דופק', icon: Heart, gradient: ['#EC4899', '#DB2777'] as [string, string], bg: isDarkMode ? 'rgba(236,72,153,0.08)' : '#FDF2F8' },
+    { id: 'dryer', label: 'מאוורר', icon: Fan, gradient: ['#10B981', '#059669'] as [string, string], bg: isDarkMode ? 'rgba(16,185,129,0.08)' : '#ECFDF5' },
   ];
 
   // Entry animation
@@ -307,38 +307,32 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                     style={[
                       styles.soundCard,
                       {
-                        backgroundColor: isDarkMode
-                          ? isActive ? 'transparent' : 'rgba(255,255,255,0.06)'
-                          : isActive ? 'transparent' : sound.bg
+                        backgroundColor: isActive
+                          ? theme.primary || '#6366F1'
+                          : isDarkMode
+                            ? 'rgba(255,255,255,0.04)'
+                            : '#FAFAFA',
+                        borderWidth: isActive ? 0 : 1,
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
                       },
                     ]}
                     onPress={() => toggleSound(sound.id)}
                     activeOpacity={0.85}
                     disabled={isLoading}
                   >
-                    {/* Active gradient background */}
-                    {isActive && (
-                      <LinearGradient
-                        colors={sound.gradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFill}
-                      />
-                    )}
-
                     {/* Icon */}
                     <View style={[
                       styles.soundIcon,
                       {
                         backgroundColor: isActive
-                          ? 'rgba(255,255,255,0.25)'
-                          : isDarkMode ? 'rgba(255,255,255,0.1)' : '#fff'
+                          ? 'rgba(255,255,255,0.2)'
+                          : isDarkMode ? 'rgba(255,255,255,0.06)' : '#fff'
                       }
                     ]}>
                       {isActive ? (
-                        <Pause size={22} color="#fff" strokeWidth={2.5} />
+                        <Pause size={20} color="#fff" strokeWidth={2.5} />
                       ) : (
-                        <Icon size={22} color={sound.gradient[0]} strokeWidth={2} />
+                        <Icon size={20} color={isDarkMode ? theme.textSecondary : sound.gradient[0]} strokeWidth={2} />
                       )}
                     </View>
 
@@ -350,9 +344,8 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                     </Text>
 
                     {isActive && (
-                      <View style={styles.playingBadge}>
+                      <View style={styles.playingIndicator}>
                         <View style={styles.playingDot} />
-                        <Text style={styles.playingText}>מנגן</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -459,10 +452,10 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
           {/* Tip */}
           <View style={[
             styles.tipContainer,
-            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9FAFB' }
+            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : '#F9FAFB' }
           ]}>
             <Text style={[styles.tip, { color: theme.textSecondary }]}>
-              🎵 הסאונד ימשיך לנגן גם כשהמסך כבוי
+              הסאונד ימשיך לנגן גם כשהמסך כבוי 🎵
             </Text>
           </View>
         </RNAnimated.View>
@@ -485,44 +478,44 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 340,
-    borderRadius: 28,
+    borderRadius: 24,
     paddingBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 12
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8
   },
   dragHandle: {
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 8,
   },
   dragHandleBar: {
-    width: 36,
-    height: 5,
-    borderRadius: 3,
+    width: 32,
+    height: 4,
+    borderRadius: 2,
   },
   header: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 20
+    marginBottom: 18
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     textAlign: 'right',
-    marginRight: 12,
-    letterSpacing: -0.3,
+    marginRight: 10,
+    letterSpacing: -0.2,
   },
   closeBtn: {
     padding: 8
@@ -536,24 +529,27 @@ const styles = StyleSheet.create({
   },
   soundCard: {
     width: 135,
-    paddingVertical: 22,
+    paddingVertical: 20,
     paddingHorizontal: 12,
-    borderRadius: 22,
+    borderRadius: 18,
     alignItems: 'center',
     overflow: 'hidden',
   },
   soundIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   soundLabel: {
     fontSize: 15,
     fontWeight: '600',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
+  },
+  playingIndicator: {
+    marginTop: 8,
   },
   playingBadge: {
     flexDirection: 'row-reverse',
@@ -566,8 +562,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   playingDot: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     borderRadius: 3,
     backgroundColor: '#fff',
   },

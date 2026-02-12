@@ -655,3 +655,115 @@ export async function getBabysitterStats(babysitterId: string): Promise<{
         avgResponseTime,
     };
 }
+
+// ===================
+// SEARCH & LOCATION
+// ===================
+
+/**
+ * Calculate distance between two GPS coordinates (Haversine formula)
+ */
+function calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+}
+
+function toRad(degrees: number): number {
+    return degrees * (Math.PI / 180);
+}
+
+/**
+ * Search babysitters near a location
+ * @param userLat User's latitude
+ * @param userLon User's longitude
+ * @param radiusKm Search radius in kilometers
+ * @returns Array of babysitters within radius, sorted by distance
+ */
+export async function searchBabysitters(
+    userLat: number,
+    userLon: number,
+    radiusKm: number = 10
+): Promise<any[]> {
+    try {
+        // Get all active babysitters
+        const sittersRef = collection(db, 'babysitters');
+        const q = query(
+            sittersRef,
+            where('isActive', '==', true)
+        );
+
+        const snapshot = await getDocs(q);
+
+        // Filter by distance and calculate distance for each
+        const sittersWithDistance = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+
+                // Skip if no location data
+                if (!data.latitude || !data.longitude) {
+                    return null;
+                }
+
+                const distance = calculateDistance(
+                    userLat,
+                    userLon,
+                    data.latitude,
+                    data.longitude
+                );
+
+                // Skip if outside radius
+                if (distance > radiusKm) {
+                    return null;
+                }
+
+                return {
+                    id: doc.id,
+                    ...data,
+                    distance: Math.round(distance * 10) / 10, // Round to 1 decimal
+                };
+            })
+            .filter(Boolean); // Remove nulls
+
+        // Sort by distance (closest first)
+        sittersWithDistance.sort((a, b) => (a?.distance || 0) - (b?.distance || 0));
+
+        return sittersWithDistance as any[];
+
+    } catch (error) {
+        logger.error('Error searching babysitters:', error);
+        return [];
+    }
+}
+
+/**
+ * Get all babysitters (no location filter)
+ */
+export async function getAllBabysitters(): Promise<any[]> {
+    try {
+        const sittersRef = collection(db, 'babysitters');
+        const q = query(sittersRef, where('isActive', '==', true));
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+    } catch (error) {
+        logger.error('Error getting babysitters:', error);
+        return [];
+    }
+}

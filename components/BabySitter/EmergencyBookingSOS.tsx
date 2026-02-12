@@ -21,6 +21,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { BlurView } from 'expo-blur';
 import { auth } from '../../services/firebaseConfig';
+import { searchBabysitters } from '../../services/babysitterService';
 
 interface Props {
     visible: boolean;
@@ -56,8 +57,10 @@ export default function EmergencyBookingSOS({ visible, onClose, onBookSitter }: 
     const loadEmergencySitters = async () => {
         setLoading(true);
         try {
-            // Mock emergency sitters for now
-            // TODO: Replace with actual searchBabysitters service call when implemented
+            // TODO: Replace mock data with real search when you have user location
+            // Example:
+            // const result = await searchBabysitters(userLat, userLon, 5); // 5km radius
+            // For now, using mock data:
             const result = [
                 {
                     id: 'mock-sitter-1',

@@ -34,7 +34,7 @@ export default function PhoneVerificationScreen({
 }: PhoneVerificationScreenProps) {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
-    
+
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
@@ -137,7 +137,7 @@ export default function PhoneVerificationScreen({
 
     const handleResend = async () => {
         if (countdown > 0) return;
-        
+
         setResending(true);
         await sendSMS();
         setResending(false);
@@ -156,136 +156,136 @@ export default function PhoneVerificationScreen({
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={[styles.container, { backgroundColor: theme.background }]}
             >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        onPress={onCancel}
-                        style={styles.backBtn}
-                        accessibilityLabel="חזרה"
-                    >
-                        <ArrowLeft size={24} color={theme.textPrimary} />
-                    </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                        אימות טלפון
-                    </Text>
-                    <View style={{ width: 40 }} />
-                </View>
-
-                {/* Content */}
-                <View style={styles.content}>
-                    {/* Icon */}
-                    <View style={[styles.iconContainer, { backgroundColor: theme.primaryLight }]}>
-                        <MessageSquare size={48} color={theme.primary} />
-                    </View>
-
-                    {/* Title */}
-                    <Text style={[styles.title, { color: theme.textPrimary }]}>
-                        הזן את קוד האימות
-                    </Text>
-                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        שלחנו קוד אימות למספר{'\n'}
-                        <Text style={{ fontWeight: '700' }}>{formattedPhone}</Text>
-                    </Text>
-
-                    {/* Code Input */}
-                    <View style={styles.codeContainer}>
-                        <TextInput
-                            ref={codeInputRef}
-                            style={[
-                                styles.codeInput,
-                                {
-                                    backgroundColor: theme.card,
-                                    borderColor: code.length === 6 ? theme.success : theme.border,
-                                    color: theme.textPrimary,
-                                },
-                            ]}
-                            value={code}
-                            onChangeText={(text) => {
-                                const cleaned = text.replace(/\D/g, '').slice(0, 6);
-                                setCode(cleaned);
-                                if (cleaned.length === 6) {
-                                    handleVerify();
-                                }
-                            }}
-                            placeholder="000000"
-                            placeholderTextColor={theme.textTertiary}
-                            keyboardType="number-pad"
-                            maxLength={6}
-                            autoFocus
-                            textAlign="center"
-                            selectTextOnFocus
-                        />
-                        {code.length === 6 && (
-                            <View style={styles.checkIcon}>
-                                <CheckCircle size={20} color={theme.success} />
-                            </View>
-                        )}
-                    </View>
-
-                    {/* Resend */}
-                    <View style={styles.resendContainer}>
-                        <Text style={[styles.resendText, { color: theme.textSecondary }]}>
-                            לא קיבלת את הקוד?
-                        </Text>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Header */}
+                    <View style={styles.header}>
                         <TouchableOpacity
-                            onPress={handleResend}
-                            disabled={countdown > 0 || resending || loading}
-                            style={[
-                                styles.resendBtn,
-                                (countdown > 0 || resending || loading) && styles.resendBtnDisabled,
-                            ]}
+                            onPress={onCancel}
+                            style={styles.backBtn}
+                            accessibilityLabel="חזרה"
                         >
-                            {resending ? (
-                                <ActivityIndicator size="small" color={theme.primary} />
-                            ) : (
-                                <Text
-                                    style={[
-                                        styles.resendBtnText,
-                                        { color: countdown > 0 ? theme.textTertiary : theme.primary },
-                                    ]}
-                                >
-                                    {countdown > 0 ? `שלח שוב (${countdown})` : 'שלח שוב'}
-                                </Text>
+                            <ArrowLeft size={24} color={theme.textPrimary} />
+                        </TouchableOpacity>
+                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+                            אימות טלפון
+                        </Text>
+                        <View style={{ width: 40 }} />
+                    </View>
+
+                    {/* Content */}
+                    <View style={styles.content}>
+                        {/* Icon */}
+                        <View style={[styles.iconContainer, { backgroundColor: theme.primaryLight }]}>
+                            <MessageSquare size={48} color={theme.primary} />
+                        </View>
+
+                        {/* Title */}
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>
+                            הזן את קוד האימות
+                        </Text>
+                        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                            שלחנו קוד אימות למספר{'\n'}
+                            <Text style={{ fontWeight: '700' }}>{formattedPhone}</Text>
+                        </Text>
+
+                        {/* Code Input */}
+                        <View style={styles.codeContainer}>
+                            <TextInput
+                                ref={codeInputRef}
+                                style={[
+                                    styles.codeInput,
+                                    {
+                                        backgroundColor: theme.card,
+                                        borderColor: code.length === 6 ? theme.success : theme.border,
+                                        color: theme.textPrimary,
+                                    },
+                                ]}
+                                value={code}
+                                onChangeText={(text) => {
+                                    const cleaned = text.replace(/\D/g, '').slice(0, 6);
+                                    setCode(cleaned);
+                                    if (cleaned.length === 6) {
+                                        handleVerify();
+                                    }
+                                }}
+                                placeholder="000000"
+                                placeholderTextColor={theme.textTertiary}
+                                keyboardType="number-pad"
+                                maxLength={6}
+                                autoFocus
+                                textAlign="center"
+                                selectTextOnFocus
+                            />
+                            {code.length === 6 && (
+                                <View style={styles.checkIcon}>
+                                    <CheckCircle size={20} color={theme.success} />
+                                </View>
                             )}
+                        </View>
+
+                        {/* Resend */}
+                        <View style={styles.resendContainer}>
+                            <Text style={[styles.resendText, { color: theme.textSecondary }]}>
+                                לא קיבלת את הקוד?
+                            </Text>
+                            <TouchableOpacity
+                                onPress={handleResend}
+                                disabled={countdown > 0 || resending || loading}
+                                style={[
+                                    styles.resendBtn,
+                                    (countdown > 0 || resending || loading) && styles.resendBtnDisabled,
+                                ]}
+                            >
+                                {resending ? (
+                                    <ActivityIndicator size="small" color={theme.primary} />
+                                ) : (
+                                    <Text
+                                        style={[
+                                            styles.resendBtnText,
+                                            { color: countdown > 0 ? theme.textTertiary : theme.primary },
+                                        ]}
+                                    >
+                                        {countdown > 0 ? `שלח שוב (${countdown})` : 'שלח שוב'}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Verify Button */}
+                        <TouchableOpacity
+                            style={[
+                                styles.verifyBtn,
+                                (!code || code.length !== 6 || loading) && styles.verifyBtnDisabled,
+                            ]}
+                            onPress={handleVerify}
+                            disabled={!code || code.length !== 6 || loading}
+                            activeOpacity={0.8}
+                        >
+                            <LinearGradient
+                                colors={
+                                    code.length === 6 && !loading
+                                        ? [theme.primary, theme.primary]
+                                        : [theme.textTertiary, theme.textTertiary]
+                                }
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.verifyBtnGradient}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color={theme.card} />
+                                ) : (
+                                    <Text style={[styles.verifyBtnText, { color: theme.card }]}>
+                                        אמת
+                                    </Text>
+                                )}
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
-
-                    {/* Verify Button */}
-                    <TouchableOpacity
-                        style={[
-                            styles.verifyBtn,
-                            (!code || code.length !== 6 || loading) && styles.verifyBtnDisabled,
-                        ]}
-                        onPress={handleVerify}
-                        disabled={!code || code.length !== 6 || loading}
-                        activeOpacity={0.8}
-                    >
-                        <LinearGradient
-                            colors={
-                                code.length === 6 && !loading
-                                    ? [theme.primary, theme.primaryDark || theme.primary]
-                                    : [theme.textTertiary, theme.textTertiary]
-                            }
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.verifyBtnGradient}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color={theme.card} />
-                            ) : (
-                                <Text style={[styles.verifyBtnText, { color: theme.card }]}>
-                                    אמת
-                                </Text>
-                            )}
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </Modal>
     );
 }

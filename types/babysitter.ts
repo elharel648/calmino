@@ -55,6 +55,7 @@ export interface BabysitterBooking {
     pausedMinutes?: number; // total paused time
 
     // Meta
+    hourlyRate?: number; // Hourly rate for this booking
     notes?: string;
     rated?: boolean; // Has parent rated this booking?
     ratedAt?: Timestamp; // When was it rated?
