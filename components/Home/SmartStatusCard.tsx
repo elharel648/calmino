@@ -1,10 +1,9 @@
 import React, { memo, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Baby, Utensils, Moon, Clock, Sparkles } from 'lucide-react-native';
+import { Baby, Utensils, Moon, AlertCircle, Clock, Sparkles } from 'lucide-react-native';
 import { useSleepTimer } from '../../context/SleepTimerContext';
 import { useTheme } from '../../context/ThemeContext';
-import { SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS } from '../../utils/designSystem';
 
 interface SmartStatusCardProps {
     babyName: string;
@@ -181,10 +180,14 @@ SmartStatusCard.displayName = 'SmartStatusCard';
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: BORDER_RADIUS.xxl,
-        padding: SPACING.xl,
-        marginBottom: SPACING.xxxl,
-        ...SHADOWS.elevated,
+        borderRadius: 22,
+        padding: 18,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
     },
     mainRow: {
         flexDirection: 'row-reverse',
@@ -193,17 +196,19 @@ const styles = StyleSheet.create({
     avatarCircle: {
         width: 48,
         height: 48,
-        borderRadius: BORDER_RADIUS.round,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
     infoContainer: {
         flex: 1,
-        marginRight: SPACING.md,
+        marginRight: 12,
         alignItems: 'flex-end',
     },
     babyName: {
-        ...TYPOGRAPHY.h3,
+        fontSize: 20,
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     whiteText: {
         color: '#fff',
@@ -212,44 +217,47 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
     },
     ageText: {
-        ...TYPOGRAPHY.label,
+        fontSize: 14,
         marginTop: 2,
+        letterSpacing: -0.2,
     },
     eventsRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: SPACING.xs + 2,
-        marginTop: SPACING.md,
-        paddingTop: SPACING.md,
+        gap: 6,
+        marginTop: 12,
+        paddingTop: 12,
         borderTopWidth: StyleSheet.hairlineWidth,
     },
     eventsText: {
-        ...TYPOGRAPHY.labelSmall,
+        fontSize: 13,
+        letterSpacing: -0.2,
     },
     sleepingRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: SPACING.sm,
-        marginTop: SPACING.md,
-        paddingTop: SPACING.md,
+        gap: 8,
+        marginTop: 12,
+        paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: 'rgba(255,255,255,0.2)',
     },
     sleepingText: {
-        ...TYPOGRAPHY.body,
+        fontSize: 16,
         fontWeight: '600',
         color: '#fff',
     },
     alertRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: SPACING.sm,
-        marginTop: SPACING.md,
-        padding: SPACING.sm + 2,
-        borderRadius: BORDER_RADIUS.lg,
+        gap: 8,
+        marginTop: 12,
+        padding: 10,
+        borderRadius: 12,
     },
     alertText: {
-        ...TYPOGRAPHY.label,
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
 

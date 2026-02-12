@@ -12,7 +12,7 @@ import Animated, {
     withSequence,
     Easing,
 } from 'react-native-reanimated';
-import { ANIMATIONS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS } from '../../utils/designSystem';
+import { ANIMATIONS } from '../../utils/designSystem';
 import { useTheme } from '../../context/ThemeContext';
 
 // Module-level flag
@@ -53,11 +53,11 @@ const ActionButton = memo(({
     const iconScale = useSharedValue(1);
     const pulseScale = useSharedValue(1);
 
-    // Subtle pulse animation for active state - minimalist
+    // Pulse animation for active state
     useEffect(() => {
         if (isActive) {
             pulseScale.value = withRepeat(
-                withTiming(1.03, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                withTiming(1.1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
                 -1,
                 true
             );
@@ -188,13 +188,17 @@ const styles = StyleSheet.create({
     iconCircleContainer: {
         width: 56,
         height: 56,
-        borderRadius: BORDER_RADIUS.round,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: SPACING.sm,
+        marginBottom: 8,
         position: 'relative',
         overflow: 'hidden',
-        ...SHADOWS.medium,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
     },
     iconCircleBorder: {
         borderWidth: 1.5,
@@ -202,15 +206,18 @@ const styles = StyleSheet.create({
     },
     iconCircleGlass: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: BORDER_RADIUS.round,
+        borderRadius: 30,
     },
     actionLabel: {
-        ...TYPOGRAPHY.labelSmall,
+        fontSize: 13,
+        fontWeight: '600',
         textAlign: 'center',
-        marginBottom: SPACING.xs,
+        marginBottom: 4,
+        letterSpacing: -0.2,
     },
     subText: {
-        ...TYPOGRAPHY.captionSmall,
+        fontSize: 11,
+        fontWeight: '500',
         opacity: 0.7,
     },
     subTextPlaceholder: {
@@ -220,9 +227,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 3,
-        paddingHorizontal: SPACING.xs + 2,
+        paddingHorizontal: 6,
         paddingVertical: 3,
-        borderRadius: BORDER_RADIUS.sm,
+        borderRadius: 8,
         marginTop: 2,
     },
     timerText: {
@@ -231,13 +238,13 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     badgeContainer: {
-        paddingHorizontal: SPACING.xs + 2,
+        paddingHorizontal: 6,
         paddingVertical: 2,
-        borderRadius: BORDER_RADIUS.sm,
+        borderRadius: 6,
         marginTop: 2,
     },
     badgeText: {
-        ...TYPOGRAPHY.captionSmall,
+        fontSize: 10,
         fontWeight: '700',
     },
 });

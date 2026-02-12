@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
 import Animated from 'react-native-reanimated';
-import { ANIMATIONS, SPACING, TYPOGRAPHY, SHADOWS, BORDER_RADIUS } from '../utils/designSystem';
+import { ANIMATIONS } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { auth } from '../services/firebaseConfig';
@@ -753,8 +753,8 @@ DailyTimeline.displayName = 'DailyTimeline';
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: SPACING.xxxl,
-    marginBottom: SPACING.xxxl,
+    marginTop: 20,
+    marginBottom: 20,
   },
 
   // Header
@@ -762,37 +762,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: 16,
   },
   titleSection: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: 8,
   },
   accentLine: {
     width: 3,
     height: 18,
-    borderRadius: BORDER_RADIUS.xs,
+    borderRadius: 2,
   },
   title: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: '700',
   },
   statsContainer: {
     flexDirection: 'row-reverse',
-    gap: SPACING.xs + 2,
+    gap: 6,
   },
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: SPACING.xs + 1,
-    borderRadius: BORDER_RADIUS.round,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 100,
     borderWidth: 1,
   },
   statCount: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -802,44 +802,45 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   timelineGrouped: {
-    paddingHorizontal: SPACING.xxxl,
+    paddingHorizontal: 20,
   },
   eventRow: {
     flexDirection: 'row-reverse',
-    marginBottom: SPACING.sm + 2,
+    marginBottom: 10,
     alignItems: 'flex-start',
   },
   loadingContainer: {
-    padding: SPACING.huge,
-    borderRadius: BORDER_RADIUS.xl,
+    padding: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 100,
   },
   errorContainer: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.xxl,
+    borderRadius: 20,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.md,
+    gap: 12,
     minHeight: 100,
   },
   errorText: {
-    ...TYPOGRAPHY.label,
+    fontSize: 14,
     textAlign: 'center',
-    marginTop: SPACING.xs,
+    marginTop: 4,
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.xxxl,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    marginTop: SPACING.sm,
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 8,
   },
   retryButtonText: {
-    ...TYPOGRAPHY.label,
+    fontSize: 14,
+    fontWeight: '600',
   },
 
   // Left: Time
@@ -847,14 +848,17 @@ const styles = StyleSheet.create({
     width: 56,
     paddingTop: 3,
     alignItems: 'flex-end',
-    paddingRight: SPACING.xs,
+    paddingRight: 4,
   },
   time: {
-    ...TYPOGRAPHY.labelSmall,
+    fontSize: 13,
+    fontWeight: '600',
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.1,
   },
   timeAgo: {
-    ...TYPOGRAPHY.captionSmall,
+    fontSize: 10,
+    fontWeight: '500',
     marginTop: 3,
     fontVariant: ['tabular-nums'],
     opacity: 0.7,
@@ -865,12 +869,12 @@ const styles = StyleSheet.create({
     width: 36,
     alignItems: 'center',
     position: 'relative',
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: 4,
   },
   timelineIcon: {
     width: 26,
     height: 26,
-    borderRadius: BORDER_RADIUS.sm + 1,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -879,9 +883,9 @@ const styles = StyleSheet.create({
   dot: {
     width: 8,
     height: 8,
-    borderRadius: BORDER_RADIUS.xs,
+    borderRadius: 4,
     zIndex: 2,
-    marginTop: SPACING.xs + 2,
+    marginTop: 6,
   },
   connector: {
     position: 'absolute',
@@ -894,26 +898,32 @@ const styles = StyleSheet.create({
   // Right: Content - Premium Card Style
   eventCardContainer: {
     flex: 1,
-    borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.subtle,
+    borderRadius: 16,
+    // Enhanced premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
   },
   eventCard: {
     flex: 1,
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
     minHeight: 68,
+    // Subtle border for depth
     borderWidth: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
   },
   deleteBtn: {
-    padding: SPACING.xs,
-    borderRadius: BORDER_RADIUS.sm,
+    padding: 4,
+    borderRadius: 6,
   },
   cardContent: {
-    paddingVertical: SPACING.md + 1,
-    paddingHorizontal: SPACING.lg,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
     flex: 1,
   },
   eventHeader: {
@@ -924,49 +934,58 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     flex: 1,
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+    letterSpacing: -0.2,
     textAlign: 'right',
   },
   iconBadge: {
     width: 24,
     height: 24,
-    borderRadius: BORDER_RADIUS.sm,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   eventSubtext: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
     textAlign: 'right',
     marginTop: 2,
+    letterSpacing: -0.1,
     opacity: 0.75,
   },
 
   // Empty
   emptyCard: {
-    padding: SPACING.huge,
-    borderRadius: BORDER_RADIUS.xl,
+    padding: 40,
+    borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1,
   },
   emptyIcon: {
     width: 56,
     height: 56,
-    borderRadius: BORDER_RADIUS.round,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: 16,
     borderWidth: 1,
   },
   emptyEmoji: {
     fontSize: 28,
   },
   emptyText: {
-    ...TYPOGRAPHY.label,
-    marginBottom: SPACING.xs,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    letterSpacing: -0.2,
   },
   emptyHint: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
     textAlign: 'center',
+    lineHeight: 18,
   },
 
   // Expand
@@ -974,42 +993,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.xs + 2,
-    marginTop: SPACING.sm,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md + 2,
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     borderWidth: 1,
   },
   expandText: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
     fontWeight: '600',
+    letterSpacing: -0.1,
   },
 
   // Reporter Badge - Enhanced with glow
   reporterBadge: {
     position: 'absolute',
-    bottom: SPACING.sm,
-    left: SPACING.sm,
+    bottom: 8,
+    left: 8,
     zIndex: 10,
-    ...SHADOWS.subtle,
+    // Subtle glow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   reporterAvatar: {
     width: 24,
     height: 24,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: 12,
     borderWidth: 2.5,
   },
   reporterAvatarPlaceholder: {
     width: 24,
     height: 24,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
   },
   reporterInitial: {
-    ...TYPOGRAPHY.captionSmall,
+    fontSize: 10,
     fontWeight: '800',
   },
 });
