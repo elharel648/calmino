@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback, Platform, Animated as RNAnimated } from 'react-native';
-import { X, CloudRain, Wind, Heart, Fan, Volume2, Pause } from 'lucide-react-native';
+import { X, CloudRain, Wind, Heart, Fan, Volume2, Pause, VolumeX, Volume1, Clock, Play } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import Slider from '@react-native-community/slider';
 import { useTheme } from '../context/ThemeContext';
 
 interface WhiteNoiseModalProps {
@@ -24,7 +25,11 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
   const { theme, isDarkMode } = useTheme();
   const [activeSound, setActiveSound] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [volume, setVolume] = useState(0.7); // Default 70%
+  const [sleepTimer, setSleepTimer] = useState<number | null>(null); // Minutes
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
   const slideAnim = useRef(new RNAnimated.Value(100)).current;
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
@@ -150,7 +155,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
         soundFiles[id as keyof typeof soundFiles],
         {
           isLooping: true,
-          volume: 0.8,
+          volume: volume,
         }
       );
 
@@ -176,6 +181,77 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
   const handleClose = async () => {
     await stopSound();
     onClose();
+  };
+
+  // Handle volume changes in real-time
+  const handleVolumeChange = async (newVolume: number) => {
+    setVolume(newVolume);
+    if (soundRef.current) {
+      try {
+        await soundRef.current.setVolumeAsync(newVolume);
+      } catch (error) {
+        console.log('Error changing volume:', error);
+      }
+    }
+  };
+
+  // Start sleep timer
+  const startTimer = (minutes: number) => {
+    setSleepTimer(minutes);
+    setTimeRemaining(minutes * 60); // Convert to seconds
+
+    // Clear existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    // Countdown every second
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 1) {
+          stopTimer();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Stop timer and fade out sound
+  const stopTimer = async () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Fade out audio
+    if (soundRef.current) {
+      try {
+        await soundRef.current.setVolumeAsync(0, 2000); // 2 second fade
+        await stopSound();
+      } catch (error) {
+        console.log('Error during timer fadeout:', error);
+      }
+    }
+
+    setSleepTimer(null);
+    setTimeRemaining(null);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  // Format time remaining as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -284,6 +360,101 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
               );
             })}
           </View>
+
+          {/* Volume Control */}
+          {activeSound && (
+            <View style={[
+              styles.volumeContainer,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9FAFB' }
+            ]}>
+              <View style={styles.volumeHeader}>
+                {volume === 0 ? (
+                  <VolumeX size={18} color={theme.textSecondary} />
+                ) : volume < 0.5 ? (
+                  <Volume1 size={18} color={theme.textSecondary} />
+                ) : (
+                  <Volume2 size={18} color={theme.textSecondary} />
+                )}
+                <Text style={[styles.volumeLabel, { color: theme.textSecondary }]}>
+                  עוצמת קול: {Math.round(volume * 100)}%
+                </Text>
+              </View>
+              <Slider
+                style={styles.slider}
+                value={volume}
+                onValueChange={handleVolumeChange}
+                minimumValue={0}
+                maximumValue={1}
+                minimumTrackTintColor={theme.primary || '#6366F1'}
+                maximumTrackTintColor={isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'}
+                thumbTintColor={theme.primary || '#6366F1'}
+              />
+            </View>
+          )}
+
+          {/* Sleep Timer */}
+          {activeSound && (
+            <View style={styles.timerContainer}>
+              <View style={styles.timerHeader}>
+                <Clock size={18} color={theme.textSecondary} />
+                <Text style={[styles.timerTitle, { color: theme.textPrimary }]}>
+                  טיימר שינה
+                </Text>
+              </View>
+
+              {timeRemaining !== null && (
+                <View style={[
+                  styles.activeTimerBadge,
+                  { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.2)' : '#EEF2FF' }
+                ]}>
+                  <Text style={[styles.timerText, { color: theme.primary || '#6366F1' }]}>
+                    ⏰ {formatTime(timeRemaining)}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.timerButtons}>
+                {[15, 30, 60].map((mins) => (
+                  <TouchableOpacity
+                    key={mins}
+                    style={[
+                      styles.timerBtn,
+                      {
+                        backgroundColor: sleepTimer === mins
+                          ? theme.primary || '#6366F1'
+                          : isDarkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6'
+                      }
+                    ]}
+                    onPress={() => startTimer(mins)}
+                  >
+                    <Text style={[
+                      styles.timerBtnText,
+                      {
+                        color: sleepTimer === mins
+                          ? '#fff'
+                          : theme.textPrimary
+                      }
+                    ]}>
+                      {mins} דק'
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {sleepTimer && (
+                  <TouchableOpacity
+                    style={[
+                      styles.timerBtn,
+                      { backgroundColor: '#EF4444' }
+                    ]}
+                    onPress={stopTimer}
+                  >
+                    <Text style={[styles.timerBtnText, { color: '#fff' }]}>
+                      בטל
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* Tip */}
           <View style={[
@@ -416,5 +587,74 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 13,
     fontWeight: '500',
+  },
+  // Volume Control Styles
+  volumeContainer: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+  },
+  volumeHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  volumeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  // Timer Styles
+  timerContainer: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  timerHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  timerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  activeTimerBadge: {
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  timerText: {
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  timerButtons: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  timerBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  timerBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
