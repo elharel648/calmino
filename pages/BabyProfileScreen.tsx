@@ -117,7 +117,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <Animated.View entering={FadeInDown.duration(600).delay(100)} style={styles.header}>
+          <Animated.View style={styles.header}>
             <View style={styles.iconContainer}>
               <BlurView intensity={80} tint="light" style={styles.iconBlur}>
                 <Baby size={32} color="#6366F1" strokeWidth={1.5} />
@@ -131,7 +131,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           </Animated.View>
 
           {/* Name Input Card */}
-          <Animated.View entering={FadeInDown.duration(500).delay(200)}>
+          <Animated.View>
             <View style={styles.glassCard}>
               <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
               <View style={styles.cardOverlay} />
@@ -162,7 +162,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           </Animated.View>
 
           {/* Birth Date Card */}
-          <Animated.View entering={FadeInDown.duration(500).delay(300)}>
+          <Animated.View>
             <View style={styles.glassCard}>
               <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
               <View style={styles.cardOverlay} />
@@ -203,7 +203,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           )}
 
           {/* Gender Selection */}
-          <Animated.View entering={FadeInDown.duration(500).delay(400)}>
+          <Animated.View>
             <Text style={styles.sectionTitle}>מין הילד</Text>
             <View style={styles.genderRow}>
               {/* Boy Option */}
@@ -251,7 +251,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           </Animated.View>
 
           {/* Submit Button */}
-          <Animated.View entering={FadeInUp.duration(500).delay(500)} style={[styles.submitContainer, buttonAnimatedStyle]}>
+          <Animated.View style={[styles.submitContainer, buttonAnimatedStyle]}>
             <TouchableOpacity
               style={[styles.submitButton, !isFormValid && styles.submitButtonDisabled]}
               onPress={handleSave}
@@ -273,14 +273,14 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           </Animated.View>
 
           {/* Bottom tip */}
-          <Animated.View entering={FadeInUp.duration(400).delay(600)} style={styles.tipContainer}>
+          <Animated.View style={styles.tipContainer}>
             <Heart size={14} color="#EC4899" />
             <Text style={styles.tipText}>אפשר לערוך את הפרופיל בהמשך בכל עת</Text>
           </Animated.View>
 
           {/* Skip Button */}
           {onSkip && (
-            <Animated.View entering={FadeInUp.duration(400).delay(700)}>
+            <Animated.View>
               <TouchableOpacity style={styles.skipButton} onPress={onSkip} activeOpacity={0.7}>
                 <Text style={styles.skipText}>דלג לעכשיו</Text>
               </TouchableOpacity>

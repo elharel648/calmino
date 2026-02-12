@@ -11,6 +11,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, interpolate } from 'react-native-reanimated';
 
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
@@ -105,17 +107,18 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   // Track if we're dragging and scroll position
   const isDragging = useRef(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const scrollOffsetY = useRef(0);
   const dragStartY = useRef(0);
+  const [isScrollEnabled, setIsScrollEnabled] = useState(true);
 
   // Swipe down to dismiss
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: (evt, gestureState) => {
+    onStartShouldSetPanResponder: (evt, _) => {
       const startY = evt.nativeEvent.pageY;
       dragStartY.current = startY;
       if (startY < 300) {
-        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+        setIsScrollEnabled(false);
         return true;
       }
       return false;
@@ -131,7 +134,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
         isDragging.current = true;
         dragStartY.current = currentY;
-        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+        setIsScrollEnabled(false);
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         return true;
       }
@@ -150,7 +153,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     },
     onPanResponderRelease: (_, gestureState) => {
       isDragging.current = false;
-      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+      setIsScrollEnabled(true);
 
       const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
       if (shouldDismiss) {
@@ -190,7 +193,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     },
     onPanResponderTerminate: () => {
       isDragging.current = false;
-      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+      setIsScrollEnabled(true);
     },
   }), [slideAnim, backdropAnim, onClose]);
 
@@ -1279,8 +1282,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           value={sleepNote}
           onChangeText={setSleepNote}
           multiline
-          numberOfLines={2}
-          maxLength={60}
+          numberOfLines={3}
         />
       </View>
     </View>
@@ -1318,7 +1320,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         placeholderTextColor="#9CA3AF"
         onChangeText={(text) => setDiaperNote(text)}
         textAlign="right"
-        maxLength={60}
       />
     </View>
   );
@@ -1337,7 +1338,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   return (
     <>
       <Modal visible={visible} transparent animationType="none">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
+        <View style={styles.overlay}>
           <TouchableWithoutFeedback onPress={onClose}>
             <RNAnimatedView style={[styles.backdrop, { opacity: backdropAnim, backgroundColor: theme.modalOverlay }]}>
               {Platform.OS === 'ios' && (
@@ -1369,15 +1370,18 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
             </View>
 
-            {/* Content - Wrapped in ScrollView */}
-            <ScrollView
+            {/* Content - Wrapped in KeyboardAwareScrollView */}
+            {/* Content - Wrapped in KeyboardAwareScrollView */}
+            <KeyboardAwareScrollView
               ref={scrollViewRef}
               style={{ width: '100%' }}
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
-              scrollEnabled={true}
+              extraScrollHeight={120}
+              enableOnAndroid={true}
+              scrollEnabled={isScrollEnabled}
               onScroll={(e) => {
                 scrollOffsetY.current = e.nativeEvent.contentOffset.y;
               }}
@@ -1387,16 +1391,16 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 if (scrollOffsetY.current <= 0) {
                   const scrollY = e.nativeEvent.contentOffset.y;
                   if (scrollY < 0) {
-                    scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
+                    setIsScrollEnabled(false);
                     setTimeout(() => {
-                      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
+                      setIsScrollEnabled(true);
                     }, 100);
                   }
                 }
               }}
             >
               {renderContent()}
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             {/* Save Button - Premium Full Width */}
             <TouchableOpacity
@@ -1560,7 +1564,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               </View>
             )}
           </RNAnimatedView>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* Calendar Modal */}

@@ -53,6 +53,8 @@ import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import MagicMomentsModal from '../components/Home/MagicMomentsModal';
 import { EditBasicInfoModal } from '../components/Profile';
 import ShiftTimerWidget from '../components/BabySitter/ShiftTimerWidget';
+import IntelligentInsightsCard from '../components/Home/IntelligentInsightsCard';
+import EmergencyBookingSOS from '../components/BabySitter/EmergencyBookingSOS';
 
 // Services
 import { auth, db } from '../services/firebaseConfig';
@@ -523,6 +525,22 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                 />
                             </Animated.View>
 
+                            {/* Intelligent Insights Card - THE DIFFERENTIATOR */}
+                            <Animated.View
+                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(50, 500) : undefined}
+                                collapsable={false}
+                            >
+                                <IntelligentInsightsCard
+                                    childId={profile.id}
+                                    userId={user?.uid || ''}
+                                    onActionPress={(actionType, actionData) => {
+                                        if (actionType === 'book_sitter') {
+                                            (navigation as any).navigate('BabySitter');
+                                        }
+                                    }}
+                                />
+                            </Animated.View>
+
                             {/* Active Babysitter Shift Timer */}
                             {activeShift && (
                                 <Animated.View
@@ -538,7 +556,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
                             {/* Staggered Entry Quick Actions - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(100, 500) : undefined}
+                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(150, 500) : undefined}
                                 collapsable={false}
                             >
                                 <QuickActions
@@ -616,7 +634,15 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 </Animated.ScrollView>
 
                 {/* Modals */}
-                <CalmModeModal visible={isCalmModeOpen} onClose={() => setIsCalmModeOpen(false)} />
+                {/* Emergency SOS Booking Modal (replaces CalmMode) */}
+                <EmergencyBookingSOS
+                    visible={isCalmModeOpen}
+                    onClose={() => setIsCalmModeOpen(false)}
+                    onBookSitter={(sitterId) => {
+                        // Navigate to babysitter screen with pre-selected sitter
+                        (navigation as any).navigate('BabySitter', { sitterId });
+                    }}
+                />
                 <ToolsModal
                     visible={isToolsOpen}
                     onClose={() => setIsToolsOpen(false)}

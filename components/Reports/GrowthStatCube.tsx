@@ -107,7 +107,6 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
     return (
         <TouchableOpacity onPress={handlePress} activeOpacity={1}>
             <Animated.View
-                entering={FadeIn.duration(400)}
                 style={[styles.statCard, { backgroundColor: theme.card }, animatedStyle]}
             >
                 {/* Icon */}

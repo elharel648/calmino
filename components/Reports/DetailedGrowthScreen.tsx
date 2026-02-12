@@ -227,8 +227,6 @@ const MeasurementRow = ({ measurement, onEdit }: {
     return (
         <TouchableOpacity onPress={() => onEdit(measurement)} activeOpacity={0.7}>
             <Animated.View
-                entering={FadeInUp.duration(300)}
-                exiting={FadeOutDown.duration(200)}
                 layout={Layout.springify()}
                 style={[histStyles.row, { backgroundColor: theme.card }]}
             >

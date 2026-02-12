@@ -31,7 +31,7 @@ export const TYPOGRAPHY = {
     letterSpacing: -0.5,
     lineHeight: 40,
   },
-  
+
   // Headers
   h1: {
     fontSize: 28,
@@ -57,7 +57,7 @@ export const TYPOGRAPHY = {
     letterSpacing: -0.3,
     lineHeight: 24,
   },
-  
+
   // Body
   body: {
     fontSize: 16,
@@ -77,7 +77,7 @@ export const TYPOGRAPHY = {
     letterSpacing: -0.2,
     lineHeight: 22,
   },
-  
+
   // Labels & Captions
   label: {
     fontSize: 14,
@@ -103,7 +103,7 @@ export const TYPOGRAPHY = {
     letterSpacing: -0.1,
     lineHeight: 14,
   },
-  
+
   // Special
   button: {
     fontSize: 16,
@@ -228,21 +228,18 @@ export const ICON_SIZES = {
 // ============================================
 import { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 
+// Entry animations - DISABLED per user request
 export const ANIMATIONS = {
-  // Entry animations
-  fadeInDown: (delay: number = 0, duration: number = 400) => 
-    FadeInDown.delay(delay).duration(duration).springify().damping(15),
-  
-  fadeInUp: (delay: number = 0, duration: number = 400) => 
-    FadeInUp.delay(delay).duration(duration).springify().damping(15),
-  
-  fadeIn: (delay: number = 0, duration: number = 300) => 
-    FadeIn.delay(delay).duration(duration),
-  
-  fadeOut: (duration: number = 200) => 
-    FadeOut.duration(duration),
-  
-  // Stagger delays for lists
+  // Return undefined to disable animations globally
+  fadeInDown: (delay: number = 0, duration: number = 400) => undefined,
+
+  fadeInUp: (delay: number = 0, duration: number = 400) => undefined,
+
+  fadeIn: (delay: number = 0, duration: number = 300) => undefined,
+
+  fadeOut: (duration: number = 200) => undefined,
+
+  // Stagger delays for lists - keep logic but it won't be used for animation
   stagger: (index: number, baseDelay: number = 100) => index * baseDelay,
 } as const;
 

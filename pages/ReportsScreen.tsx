@@ -793,8 +793,7 @@ ${comparisonText}
 
 
       {/* Stats Grid */}
-      <Animated.View
-        entering={ANIMATIONS.fadeInUp(100, 500)}
+      <View
         style={[styles.statsGrid, { position: 'relative' }]}
       >
         {statsOrder.map((key) => {
@@ -883,11 +882,10 @@ ${comparisonText}
           <Edit2 size={16} color={theme.textSecondary} />
           <Text style={[styles.editStatsText, { color: theme.textSecondary }]}>{t('stats.editOrder')}</Text>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
 
       {/* Weekly Comparison - Enhanced */}
-      <Animated.View
-        entering={ANIMATIONS.fadeInUp(200, 500)}
+      <View
         style={[styles.comparisonSection, { backgroundColor: theme.card }]}
       >
         <View style={styles.goalsSectionHeader}>
@@ -921,11 +919,10 @@ ${comparisonText}
             </Text>
           </View>
         </View>
-      </Animated.View>
+      </View>
 
       {/* Weekly Goals & Streaks - Enhanced */}
-      <Animated.View
-        entering={ANIMATIONS.fadeInUp(300, 500)}
+      <View
         style={[styles.goalsSection, { backgroundColor: theme.card }]}
       >
         <View style={styles.goalsSectionHeader}>
@@ -987,7 +984,7 @@ ${comparisonText}
             </Text>
           </View>
         )}
-      </Animated.View>
+      </View>
     </ScrollView>
   );
 

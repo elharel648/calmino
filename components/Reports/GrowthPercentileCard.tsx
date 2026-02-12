@@ -144,7 +144,6 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
 
     return (
         <Animated.View
-            entering={FadeInUp.duration(500).springify().damping(15)}
             style={[styles.container, { backgroundColor: theme.card }]}
         >
             {/* Header */}
