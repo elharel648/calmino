@@ -1407,6 +1407,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess]}
               onPress={handleSave}
               disabled={saveSuccess}
+              accessibilityRole="button"
+              accessibilityLabel={saveSuccess ? 'נשמר בהצלחה' : 'שמור תיעוד'}
+              accessibilityState={{ disabled: saveSuccess }}
             >
               <Check size={18} color="#fff" strokeWidth={2.5} />
               <Text style={[styles.saveBtnText, saveSuccess && styles.saveBtnTextSuccess]}>

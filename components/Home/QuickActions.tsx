@@ -190,6 +190,9 @@ const QuickActions = memo<QuickActionsProps>(({
                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('stats.editOrder')}
+                    accessibilityHint="לחץ לעריכת סדר וניהול פעולות מהירות"
                 >
                     <Pencil size={13} color={theme.textSecondary} strokeWidth={2} />
                     <Text style={[styles.editBtnText, { color: theme.textSecondary }]}>{t('stats.editOrder')}</Text>

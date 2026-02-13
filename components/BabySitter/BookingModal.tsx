@@ -2,7 +2,7 @@
  * BookingModal - מודל הזמנת בייביסיטר - Premium Minimalist Design
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -62,6 +62,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const [loadingAvailability, setLoadingAvailability] = useState(true);
     const [showStartTimePicker, setShowStartTimePicker] = useState(false);
     const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+    const [hourlyRate, setHourlyRate] = useState(80);
 
     // Convert HH:MM string to Date object
     const getDateFromTime = (timeString: string): Date => {
@@ -120,8 +121,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
             }
         };
 
+        const fetchSitterRate = async () => {
+            try {
+                const sitterDoc = await getDoc(doc(db, 'users', sitter.id));
+                if (sitterDoc.exists()) {
+                    const sitterData = sitterDoc.data();
+                    setHourlyRate(sitterData.sitterPrice || 80);
+                }
+            } catch (error) {
+                logger.error('Error fetching sitter rate:', error);
+                setHourlyRate(80);
+            }
+        };
+
         if (visible) {
             fetchSitterBookings();
+            fetchSitterRate();
         }
     }, [sitter.id, visible]);
 
@@ -178,6 +193,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }, [startTime, endTime]);
 
     const duration = calculateDuration();
+    const totalPrice = useMemo(() => {
+        const hours = duration / 60;
+        return Math.round(hours * hourlyRate * 100) / 100;
+    }, [duration, hourlyRate]);
 
     // Submit booking
     const handleSubmit = async () => {
@@ -230,15 +249,34 @@ const BookingModal: React.FC<BookingModalProps> = ({
             const user = auth.currentUser;
             if (!user) throw new Error('Not logged in');
 
+            // Get user and sitter details
+            const [userDoc, sitterDoc] = await Promise.all([
+                getDoc(doc(db, 'users', user.uid)),
+                getDoc(doc(db, 'users', sitter.id))
+            ]);
+
+            const userData = userDoc.data();
+            const sitterData = sitterDoc.data();
+
+            // Calculate hours for booking
+            const hours = duration / 60;
+
             // Convert Date to Timestamp for Firestore
             const bookingRef = await addDoc(collection(db, 'bookings'), {
                 parentId: user.uid,
+                parentName: userData?.displayName || 'הורה',
                 babysitterId: sitter.id,
+                sitterName: sitter.name,
+                childIds: [],
                 status: 'pending',
-                date: Timestamp.fromDate(selectedDate), // Fixed: Convert Date to Timestamp
+                date: Timestamp.fromDate(selectedDate),
                 startTime,
                 endTime,
-                notes: notes.trim() || null,
+                hours,
+                hourlyRate,
+                totalPrice,
+                location: '',
+                notes: notes.trim() || '',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
@@ -463,6 +501,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 <Text style={[styles.minimalSummaryLabel, { color: theme.textSecondary }]}>משך</Text>
                                 <Text style={[styles.minimalSummaryValue, { color: theme.textPrimary }]}>
                                     {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')} שעות
+                                </Text>
+                            </View>
+                            <View style={[styles.minimalSummaryDivider, { backgroundColor: theme.border }]} />
+                            <View style={styles.minimalSummaryRow}>
+                                <Text style={[styles.minimalSummaryLabel, { color: theme.textSecondary }]}>עלות משוערת</Text>
+                                <Text style={[styles.minimalSummaryValue, { color: theme.success, fontWeight: '800' }]}>
+                                    ₪{totalPrice.toFixed(2)}
                                 </Text>
                             </View>
                             <View style={[styles.minimalSummaryDivider, { backgroundColor: theme.border }]} />

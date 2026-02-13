@@ -107,6 +107,10 @@ const ActionButton = memo(({
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 style={styles.actionItem}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                accessibilityState={{ selected: isActive }}
+                accessibilityHint={isActive ? 'לחץ לעצירה' : `לחץ להפעלת ${label}`}
             >
                 {/* Icon Circle */}
                 <Animated.View style={iconContainerStyle}>

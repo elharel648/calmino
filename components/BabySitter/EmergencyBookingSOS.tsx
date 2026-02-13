@@ -130,7 +130,13 @@ export default function EmergencyBookingSOS({ visible, onClose, onBookSitter }: 
                             style={StyleSheet.absoluteFill}
                         />
                         <View style={styles.headerContent}>
-                            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                            <TouchableOpacity
+                                onPress={onClose}
+                                style={styles.closeBtn}
+                                accessibilityRole="button"
+                                accessibilityLabel="סגור"
+                                accessibilityHint="לחץ לסגירת חלון ההזמנה החירום"
+                            >
                                 <X size={24} color={theme.textPrimary} />
                             </TouchableOpacity>
                             <View style={styles.headerIcon}>
@@ -243,6 +249,9 @@ export default function EmergencyBookingSOS({ visible, onClose, onBookSitter }: 
                                             { backgroundColor: theme.primary },
                                         ]}
                                         onPress={() => handleBookNow(sitter.id)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`הזמן עכשיו את ${sitter.name}`}
+                                        accessibilityHint={`לחץ להזמנת ${sitter.name} שזמינה בעוד ${sitter.availableIn} דקות`}
                                     >
                                         <Text style={styles.bookBtnText}>הזמן/י עכשיו</Text>
                                     </TouchableOpacity>

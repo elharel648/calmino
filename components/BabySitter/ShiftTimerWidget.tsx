@@ -13,7 +13,7 @@ import {
 import { Play, Pause, CheckCircle, X, Clock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { auth, db } from '../../services/firebaseConfig';
-import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp, getDoc } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
 import { logger } from '../../utils/logger';
 import Animated, {
@@ -125,43 +125,91 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
     };
 
     // End shift
-    const handleEndShift = () => {
+    const handleEndShift = async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
         const payment = calculatePayment();
         const hours = elapsedSeconds / 3600;
 
-        Alert.alert(
-            '✅ סיום משמרת',
-            `סה"כ זמן: ${formatTime(elapsedSeconds)}\nלתשלום: ₪${payment.toFixed(2)}`,
-            [
-                { text: 'ביטול', style: 'cancel' },
-                {
-                    text: 'סיים ודרג',
-                    onPress: async () => {
-                        try {
-                            // Update booking as completed
-                            await updateDoc(doc(db, 'bookings', shift.bookingId), {
-                                status: 'completed',
-                                actualEnd: serverTimestamp(),
-                                totalMinutes: Math.round(elapsedSeconds / 60),
-                                totalAmount: payment,
-                                updatedAt: serverTimestamp(),
-                            });
+        try {
+            // Get booking to compare with planned price
+            const bookingDoc = await getDoc(doc(db, 'bookings', shift.bookingId));
+            const bookingData = bookingDoc.data();
+            const plannedPrice = bookingData?.totalPrice || 0;
+            const difference = payment - plannedPrice;
 
-                            // Delete active shift
-                            await deleteDoc(doc(db, 'activeShifts', shift.id));
+            // Build alert message
+            let message = `סה"כ זמן: ${formatTime(elapsedSeconds)}\nלתשלום: ₪${payment.toFixed(2)}`;
 
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            onShiftEnd?.();
-                        } catch (e) {
-                            logger.error('Failed to end shift:', e);
-                            Alert.alert('שגיאה', 'לא הצלחנו לסיים את המשמרת');
+            if (difference !== 0 && plannedPrice > 0) {
+                const diffText = difference > 0
+                    ? `+₪${difference.toFixed(2)}`
+                    : `₪${difference.toFixed(2)}`;
+                message += `\n(הפרש מהתכנון: ${diffText})`;
+            }
+
+            Alert.alert(
+                '✅ סיום משמרת',
+                message,
+                [
+                    { text: 'ביטול', style: 'cancel' },
+                    {
+                        text: 'סיים ודרג',
+                        onPress: async () => {
+                            try {
+                                // Update booking as completed
+                                await updateDoc(doc(db, 'bookings', shift.bookingId), {
+                                    status: 'completed',
+                                    actualEnd: serverTimestamp(),
+                                    totalMinutes: Math.round(elapsedSeconds / 60),
+                                    totalAmount: payment,
+                                    updatedAt: serverTimestamp(),
+                                });
+
+                                // Delete active shift
+                                await deleteDoc(doc(db, 'activeShifts', shift.id));
+
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                onShiftEnd?.();
+                            } catch (e) {
+                                logger.error('Failed to end shift:', e);
+                                Alert.alert('שגיאה', 'לא הצלחנו לסיים את המשמרת');
+                            }
                         }
                     }
-                }
-            ]
-        );
+                ]
+            );
+        } catch (e) {
+            logger.error('Failed to get booking data:', e);
+            // Fallback to simple message if can't get booking
+            Alert.alert(
+                '✅ סיום משמרת',
+                `סה"כ זמן: ${formatTime(elapsedSeconds)}\nלתשלום: ₪${payment.toFixed(2)}`,
+                [
+                    { text: 'ביטול', style: 'cancel' },
+                    {
+                        text: 'סיים ודרג',
+                        onPress: async () => {
+                            try {
+                                await updateDoc(doc(db, 'bookings', shift.bookingId), {
+                                    status: 'completed',
+                                    actualEnd: serverTimestamp(),
+                                    totalMinutes: Math.round(elapsedSeconds / 60),
+                                    totalAmount: payment,
+                                    updatedAt: serverTimestamp(),
+                                });
+                                await deleteDoc(doc(db, 'activeShifts', shift.id));
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                onShiftEnd?.();
+                            } catch (e) {
+                                logger.error('Failed to end shift:', e);
+                                Alert.alert('שגיאה', 'לא הצלחנו לסיים את המשמרת');
+                            }
+                        }
+                    }
+                ]
+            );
+        }
     };
 
     return (
@@ -219,6 +267,9 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
                 <TouchableOpacity
                     style={[styles.controlBtn, isPaused ? { backgroundColor: theme.success } : { backgroundColor: theme.warning }]}
                     onPress={handleTogglePause}
+                    accessibilityRole="button"
+                    accessibilityLabel={isPaused ? 'המשך משמרת' : 'עצור משמרת'}
+                    accessibilityHint={isPaused ? 'לחץ להמשך טיימר המשמרת' : 'לחץ לעצירת טיימר המשמרת'}
                 >
                     {isPaused ? (
                         <Play size={20} color="#fff" fill="#fff" />
@@ -233,6 +284,9 @@ const ShiftTimerWidget: React.FC<ShiftTimerWidgetProps> = ({ shift, onShiftEnd }
                 <TouchableOpacity
                     style={[styles.endBtn, { backgroundColor: theme.primary }]}
                     onPress={handleEndShift}
+                    accessibilityRole="button"
+                    accessibilityLabel="סיים משמרת"
+                    accessibilityHint="לחץ לסיום המשמרת ושמירת פרטי התשלום"
                 >
                     <CheckCircle size={20} color="#fff" />
                     <Text style={styles.controlBtnText}>סיים משמרת</Text>

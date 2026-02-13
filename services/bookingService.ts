@@ -29,12 +29,19 @@ export interface Booking {
     startTime: string;
     endTime: string;
     hours: number;
+    hourlyRate: number;
     totalPrice: number;
     status: BookingStatus;
     location: string;
     notes: string;
     createdAt: Timestamp;
     confirmedAt?: Timestamp;
+    // Actual shift execution details
+    actualStart?: Timestamp;
+    actualEnd?: Timestamp;
+    totalMinutes?: number;
+    totalAmount?: number;
+    updatedAt?: Timestamp;
 }
 
 /**
@@ -76,11 +83,13 @@ export async function createBooking(
         startTime,
         endTime,
         hours,
+        hourlyRate,
         totalPrice,
         status: 'pending' as BookingStatus,
         location,
         notes,
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
     });
 
     // Send push notification to sitter
