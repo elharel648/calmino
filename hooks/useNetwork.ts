@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback } from 'react';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -86,7 +87,7 @@ export async function queueOfflineAction(type: string, payload: any): Promise<vo
 
         await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
     } catch (error) {
-        console.error('Error queuing offline action:', error);
+        logger.error('Error queuing offline action:', error);
     }
 }
 
@@ -95,7 +96,7 @@ export async function getOfflineQueue(): Promise<QueuedAction[]> {
         const existing = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
         return existing ? JSON.parse(existing) : [];
     } catch (error) {
-        console.error('Error getting offline queue:', error);
+        logger.error('Error getting offline queue:', error);
         return [];
     }
 }
@@ -104,7 +105,7 @@ export async function clearOfflineQueue(): Promise<void> {
     try {
         await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
     } catch (error) {
-        console.error('Error clearing offline queue:', error);
+        logger.error('Error clearing offline queue:', error);
     }
 }
 
@@ -118,7 +119,7 @@ export async function removeFromQueue(id: string): Promise<void> {
 
         await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(filtered));
     } catch (error) {
-        console.error('Error removing from queue:', error);
+        logger.error('Error removing from queue:', error);
     }
 }
 

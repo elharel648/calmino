@@ -1,20 +1,20 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useSharedValue } from 'react-native-reanimated';
+import React, { createContext, useContext, ReactNode, useRef } from 'react';
+import { Animated } from 'react-native';
 
 interface ScrollTrackingContextType {
-    scrollY: ReturnType<typeof useSharedValue<number>>;
-    scrollX: ReturnType<typeof useSharedValue<number>>;
-    gestureX: ReturnType<typeof useSharedValue<number>>;
-    gestureY: ReturnType<typeof useSharedValue<number>>;
+    scrollY: Animated.Value;
+    scrollX: Animated.Value;
+    gestureX: Animated.Value;
+    gestureY: Animated.Value;
 }
 
 const ScrollTrackingContext = createContext<ScrollTrackingContextType | null>(null);
 
 export function ScrollTrackingProvider({ children }: { children: ReactNode }) {
-    const scrollY = useSharedValue(0);
-    const scrollX = useSharedValue(0);
-    const gestureX = useSharedValue(0);
-    const gestureY = useSharedValue(0);
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const scrollX = useRef(new Animated.Value(0)).current;
+    const gestureX = useRef(new Animated.Value(0)).current;
+    const gestureY = useRef(new Animated.Value(0)).current;
 
     return (
         <ScrollTrackingContext.Provider value={{ scrollY, scrollX, gestureX, gestureY }}>

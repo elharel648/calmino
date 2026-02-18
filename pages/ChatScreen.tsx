@@ -23,6 +23,7 @@ import { auth, db } from '../services/firebaseConfig';
 import { getOrCreateChat, sendMessage, markMessagesAsRead } from '../services/chatService';
 import { useMessages } from '../hooks/useMessages';
 import { useTheme } from '../context/ThemeContext';
+import { logger } from '../utils/logger';
 
 // Navigation types
 type RootStackParamList = {
@@ -58,6 +59,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     } | null>(null);
     const [initLoading, setInitLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [sitterUnavailable, setSitterUnavailable] = useState(false);
     const insets = useSafeAreaInsets();
     const flatListRef = useRef<FlatList>(null);
     const markAsReadTimeoutRef = useRef<NodeJS.Timeout>();
@@ -91,7 +93,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         });
                     }
                 } catch (error) {
-                    console.error('Failed to load chat:', error);
+                    logger.error('Failed to load chat:', error);
                 } finally {
                     setInitLoading(false);
                 }
@@ -109,10 +111,19 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
             }
 
             try {
+                // Check if sitter is available
+                const sitterDoc = await getDoc(doc(db, 'users', paramSitterId));
+                if (sitterDoc.exists()) {
+                    const data = sitterDoc.data();
+                    if (!data.sitterActive && data.isSitter) {
+                        setSitterUnavailable(true);
+                    }
+                }
+
                 const id = await getOrCreateChat(paramSitterId, paramSitterName || 'בייביסיטר', paramSitterImage || '');
                 setChatId(id);
             } catch (error) {
-                console.error('Failed to init chat:', error);
+                logger.error('Failed to init chat:', error);
             } finally {
                 setInitLoading(false);
             }
@@ -157,7 +168,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
             }
             // Debounce - mark as read 500ms after messages are displayed
             markAsReadTimeoutRef.current = setTimeout(() => {
-                markMessagesAsRead(chatId).catch(console.error);
+                markMessagesAsRead(chatId).catch(logger.error);
             }, 500);
         }
         return () => {
@@ -196,7 +207,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
             // Keep focus on input for quick replies
             setTimeout(() => inputRef.current?.focus(), 100);
         } catch (error) {
-            console.error('Failed to send message:', error);
+            logger.error('Failed to send message:', error);
             setMessageText(text); // Restore on error
         } finally {
             setSending(false);
@@ -250,7 +261,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
 
             {initLoading || messagesLoading ? (
                 <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                    <ActivityIndicator size="large" color={theme.primary} />
+                    <ActivityIndicator size="large" color={theme.textPrimary} />
                 </View>
             ) : reversedMessages.length === 0 ? (
                 <View style={[styles.emptyState, { backgroundColor: theme.background }]}>
@@ -289,16 +300,23 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? tabBarHeight + insets.bottom : tabBarHeight}
             >
-                <View style={[styles.inputContainer, { paddingBottom: tabBarHeight + insets.bottom, backgroundColor: theme.card, borderTopColor: theme.border }]}>
+                {sitterUnavailable ? (
+                    <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 8, backgroundColor: theme.card, borderTopColor: theme.border, justifyContent: 'center' }]}>
+                        <Text style={{ color: theme.textSecondary, fontSize: 14, fontWeight: '500', textAlign: 'center', flex: 1 }}>
+                            הסיטר לא זמין כרגע
+                        </Text>
+                    </View>
+                ) : (
+                <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 8, backgroundColor: theme.card, borderTopColor: theme.border }]}>
                     <TouchableOpacity
-                        style={[styles.sendBtn, (!messageText.trim() || sending) && styles.sendBtnDisabled, { backgroundColor: theme.primary }]}
+                        style={[styles.sendBtn, (!messageText.trim() || sending) && styles.sendBtnDisabled, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}
                         onPress={handleSendMessage}
                         disabled={!messageText.trim() || sending}
                     >
                         {sending ? (
-                            <ActivityIndicator size="small" color={theme.card} />
+                            <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
                         ) : (
-                            <Ionicons name="send" size={18} color={theme.card} />
+                            <Ionicons name="send" size={18} color={isDarkMode ? '#000' : '#fff'} />
                         )}
                     </TouchableOpacity>
                     <TextInput
@@ -316,6 +334,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         blurOnSubmit={false}
                     />
                 </View>
+                )}
             </KeyboardAvoidingView>
         </View>
     );

@@ -80,7 +80,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
             const invites = await getActiveGuestInvites(familyId);
             setActiveInvites(invites);
         } catch (error) {
-            if (__DEV__) console.log('Error loading active invites:', error);
+            console.log('Error loading active invites:', error);
         } finally {
             setLoadingInvites(false);
         }
@@ -107,7 +107,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                                 Alert.alert(t('common.error'), t('guestInvite.cancelFailed'));
                             }
                         } catch (error) {
-                            if (__DEV__) console.log('Cancel invite error:', error);
+                            console.log('Cancel invite error:', error);
                             Alert.alert(t('common.error'), t('guestInvite.somethingWentWrong'));
                         } finally {
                             setCancelingCode(null);
@@ -157,7 +157,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                 Alert.alert(t('common.error'), t('guestInvite.inviteCreateFailed'));
             }
         } catch (error) {
-            if (__DEV__) console.log('Guest invite error:', error);
+            console.log('Guest invite error:', error);
             Alert.alert(t('common.error'), t('guestInvite.somethingWentWrong'));
         } finally {
             setIsLoading(false);
@@ -183,7 +183,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                 message: `${t('guestInvite.invitedToView', { names: childNames })}\n\n${t('guestInvite.inviteCode', { code: inviteCode })}\n\n${t('guestInvite.downloadApp')}`,
             });
         } catch (error) {
-            if (__DEV__) console.log('Share error:', error);
+            console.log('Share error:', error);
         }
     };
 

@@ -226,8 +226,6 @@ export const ICON_SIZES = {
 // ============================================
 // ANIMATION SYSTEM
 // ============================================
-import { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
-
 // Entry animations - DISABLED per user request
 export const ANIMATIONS = {
   // Return undefined to disable animations globally

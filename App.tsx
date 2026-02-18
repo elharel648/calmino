@@ -14,7 +14,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { BlurView } from 'expo-blur';
 import { Canvas, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import LiquidGlassTabBar from './components/LiquidGlassTabBar';
+import LiquidGlassTabBar from './components/LiquidGlass/LiquidGlassTabBar';
 import { auth, db } from './services/firebaseConfig';
 import { useLanguage } from './context/LanguageContext';
 
@@ -48,6 +48,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ScrollTrackingProvider } from './context/ScrollTrackingContext';
 import { ToastProvider } from './context/ToastContext';
 import { PremiumProvider } from './context/PremiumContext';
+import { AudioProvider } from './context/AudioContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import { navigationRef, navigateFromNotification } from './services/navigationService';
@@ -123,53 +124,42 @@ function MainAppNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: theme.primary,
+        tabBarActiveTintColor: theme.textPrimary,
         tabBarInactiveTintColor: theme.textSecondary,
-        tabBarBackground: () => <LiquidGlassTabBar isDarkMode={isDarkMode} />,
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: Platform.OS === 'ios' ? 90 : 72,
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-          overflow: 'hidden', // Critical for liquid glass effect
-        },
-        tabBarItemStyle: {
-          backgroundColor: 'transparent',
-        },
+        tabBar: (props) => <LiquidGlassTabBar {...props} />,
       }}
     >
       {/* Account - always visible (renamed from Settings) */}
-      <Tab.Screen name={accountTabName} component={AccountStackScreen} options={{
+      < Tab.Screen name={accountTabName} component={AccountStackScreen} options={{
         tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={User} label={t('navigation.account')} />
       }} />
 
 
 
       {/* Reports - only for parents */}
-      {canAccessReports && (
-        <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
-          tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={BarChart2} label={t('navigation.reports')} />
-        }} />
-      )}
+      {
+        canAccessReports && (
+          <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
+            tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={BarChart2} label={t('navigation.reports')} />
+          }} />
+        )
+      }
 
       {/* Babysitter - only for parents */}
-      {canAccessBabysitter && (
-        <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
-          tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label={t('navigation.babysitter')} />
-        }} />
-      )}
+      {
+        canAccessBabysitter && (
+          <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
+            tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label={t('navigation.babysitter')} />
+          }} />
+        )
+      }
 
       {/* Home - always visible */}
       <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
         tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={Home} label={t('navigation.home')} />
       }} />
 
-    </Tab.Navigator>
+    </Tab.Navigator >
   );
 }
 
@@ -177,7 +167,14 @@ function MainAppNavigator() {
 
 function HomeStackScreen() {
   return (
-    <HomeStack.Navigator id="HomeStack" screenOptions={{ headerShown: false }}>
+    <HomeStack.Navigator
+      id="HomeStack"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#FFFFFF' },
+        cardStyle: { backgroundColor: '#FFFFFF' }
+      }}
+    >
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="CreateBaby" component={CreateBabyScreen} />
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
@@ -188,7 +185,14 @@ function HomeStackScreen() {
 // Account Stack Navigator
 function AccountStackScreen() {
   return (
-    <AccountStack.Navigator id="AccountStack" screenOptions={{ headerShown: false }}>
+    <AccountStack.Navigator
+      id="AccountStack"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#FFFFFF' },
+        cardStyle: { backgroundColor: '#FFFFFF' }
+      }}
+    >
       <AccountStack.Screen name="Account" component={SettingsScreen} />
       <AccountStack.Screen name="FullSettings" component={FullSettingsScreen} />
     </AccountStack.Navigator>
@@ -215,7 +219,14 @@ function CreateBabyScreen({ navigation }: any) {
 // ✅ Stack לבייביסיטר - מחבר את הרשימה, הפרופיל והצ'אט
 function BabysitterStackScreen() {
   return (
-    <BabysitterStack.Navigator id="BabysitterStack" screenOptions={{ headerShown: false }}>
+    <BabysitterStack.Navigator
+      id="BabysitterStack"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#FFFFFF' },
+        cardStyle: { backgroundColor: '#FFFFFF' }
+      }}
+    >
       <BabysitterStack.Screen name="SitterList" component={BabySitterScreen} />
       <BabysitterStack.Screen name="SitterProfile" component={SitterProfileScreen} />
       <BabysitterStack.Screen name="SitterRegistration" component={SitterRegistrationScreen} />
@@ -305,11 +316,11 @@ function LiveActivityURLHandler() {
               }
             }
           } catch (error) {
-            if (__DEV__) console.error('Error saving timer from Live Activity:', error);
+            logger.error('Error saving timer from Live Activity:', error);
           }
         }
       } catch (error) {
-        if (__DEV__) console.error('Error handling URL:', error);
+        logger.error('Error handling URL:', error);
       }
     };
 
@@ -381,7 +392,7 @@ export default function App() {
                 isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
               });
             } catch (error) {
-              console.error('Failed to save notification:', error);
+              logger.error('Failed to save notification:', error);
               // Don't throw - notification should still show
             }
           }, 0);
@@ -433,7 +444,7 @@ export default function App() {
           await currentUser.reload();
         } catch (e) {
           // If reload fails (e.g. network), we continue with cached value
-          if (__DEV__) console.log('User reload failed:', e);
+          logger.log('User reload failed:', e);
         }
       }
 
@@ -443,7 +454,7 @@ export default function App() {
 
         // Register for push notifications
         registerForPushNotifications().catch((err) => {
-          if (__DEV__) console.log('Push registration:', err);
+          logger.log('Push registration:', err);
         });
       } else {
         setUser(null);
@@ -475,7 +486,7 @@ export default function App() {
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);
 
     } catch (error) {
-      if (__DEV__) console.log('Error during startup checks:', error);
+      logger.log('Error during startup checks:', error);
       setIsAppLoading(false);
     }
   };
@@ -492,7 +503,7 @@ export default function App() {
       });
 
       if (result.success) setIsLocked(false);
-    } catch (e) { if (__DEV__) console.log('Authentication error:', e); }
+    } catch (e) { logger.log('Authentication error:', e); }
   };
 
   // Keep splash visible while loading - return null to not render anything
@@ -570,50 +581,52 @@ export default function App() {
                   <QuickActionsProvider>
                     <SleepTimerProvider>
                       <FoodTimerProvider>
-                        <PremiumProvider>
-                          <LiveActivityURLHandler />
-                          <SafeAreaProvider>
-                            <NavigationContainer
-                              ref={navigationRef}
-                              linking={{
-                                prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
-                                config: {
-                                  screens: {
-                                    // Hebrew routes (for deep linking)
-                                    'בית': 'home',
-                                    'סטטיסטיקות': 'reports',
-                                    'חשבון': 'account',
-                                    'בייביסיטר': 'babysitter',
-                                    // English routes (for deep linking)
-                                    'Statistics': 'reports',
-                                    Home: {
-                                      screens: {
-                                        Home: 'home',
-                                        CreateBaby: 'create-baby',
-                                        Notifications: 'notifications',
+                        <AudioProvider>
+                          <PremiumProvider>
+                            <LiveActivityURLHandler />
+                            <SafeAreaProvider>
+                              <NavigationContainer
+                                ref={navigationRef}
+                                linking={{
+                                  prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
+                                  config: {
+                                    screens: {
+                                      // Hebrew routes (for deep linking)
+                                      'בית': 'home',
+                                      'סטטיסטיקות': 'reports',
+                                      'חשבון': 'account',
+                                      'בייביסיטר': 'babysitter',
+                                      // English routes (for deep linking)
+                                      'Statistics': 'reports',
+                                      Home: {
+                                        screens: {
+                                          Home: 'home',
+                                          CreateBaby: 'create-baby',
+                                          Notifications: 'notifications',
+                                        },
                                       },
-                                    },
-                                    Account: {
-                                      screens: {
-                                        Account: 'account',
-                                        FullSettings: 'settings',
+                                      Account: {
+                                        screens: {
+                                          Account: 'account',
+                                          FullSettings: 'settings',
+                                        },
                                       },
-                                    },
-                                    Babysitter: {
-                                      screens: {
-                                        SitterList: 'babysitter',
-                                        SitterProfile: 'babysitter/:sitterId',
-                                        SitterDashboard: 'babysitter/dashboard',
+                                      Babysitter: {
+                                        screens: {
+                                          SitterList: 'babysitter',
+                                          SitterProfile: 'babysitter/:sitterId',
+                                          SitterDashboard: 'babysitter/dashboard',
+                                        },
                                       },
                                     },
                                   },
-                                },
-                              }}
-                            >
-                              <MainAppNavigator />
-                            </NavigationContainer>
-                          </SafeAreaProvider>
-                        </PremiumProvider>
+                                }}
+                              >
+                                <MainAppNavigator />
+                              </NavigationContainer>
+                            </SafeAreaProvider>
+                          </PremiumProvider>
+                        </AudioProvider>
                       </FoodTimerProvider>
                     </SleepTimerProvider>
                   </QuickActionsProvider>

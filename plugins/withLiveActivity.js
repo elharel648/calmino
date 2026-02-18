@@ -11,7 +11,6 @@ const withLiveActivity = (config) => {
   });
 
   // 2. העתקת קבצי Swift ו-Info.plist + יצירת Entitlements
-  // חשוב: זה חייב להיות לפני withXcodeProject כדי שהקבצים יהיו קיימים
   config = withDangerousMod(config, [
     'ios',
     async (config) => {
@@ -19,27 +18,24 @@ const withLiveActivity = (config) => {
       const projectRoot = config.modRequest.projectRoot;
       const iosRoot = config.modRequest.platformProjectRoot;
 
-      // נתיבים: מקור (בשורש הפרויקט) ויעד (ב-ios/)
       const sourceDir = path.join(projectRoot, widgetName);
       const targetDir = path.join(iosRoot, widgetName);
 
-      // יצירת תיקיית היעד
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }
 
-      // רשימת הקבצים להעתקה
+      // רשימה מעודכנת של קבצים להעתקה
       const filesToCopy = [
         'ActivityAttributes.swift',
-        'CalmParentLiveActivity.swift',
+        'BabysitterShiftLiveActivity.swift',
+        'SleepLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
-        'ActivityKitManager.swift',
-        'ActivityKitManagerBridge.m',
         'Info.plist',
         'CalmParentLiveActivity.entitlements',
+        'GlassComponents.swift',
       ];
 
-      // העתקת הקבצים
       let copiedCount = 0;
       filesToCopy.forEach((fileName) => {
         const sourcePath = path.join(sourceDir, fileName);
@@ -50,15 +46,11 @@ const withLiveActivity = (config) => {
           console.log(`✅ Copied ${fileName} to ${targetDir}`);
           copiedCount++;
         } else {
-          console.warn(`⚠️  Source file not found: ${sourcePath}`);
+          console.warn(`⚠️ Source file not found: ${sourcePath}`);
         }
       });
 
-      if (copiedCount === 0) {
-        console.warn(`⚠️  No files found in ${sourceDir}. Make sure the Swift files exist in the root ${widgetName}/ folder.`);
-      }
-
-      // יצירת Entitlements (אם לא קיים) - כולל App Group
+      // יצירת Entitlements (אם לא הועתק)
       const entitlementsPath = path.join(targetDir, `${widgetName}.entitlements`);
       if (!fs.existsSync(entitlementsPath)) {
         const entitlementsContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -74,46 +66,8 @@ const withLiveActivity = (config) => {
 </dict>
 </plist>`;
         fs.writeFileSync(entitlementsPath, entitlementsContent);
-        console.log(`✅ Created ${widgetName}.entitlements`);
       }
 
-      // יצירת Info.plist אם לא הועתק
-      const infoPlistPath = path.join(targetDir, 'Info.plist');
-      if (!fs.existsSync(infoPlistPath)) {
-        const infoPlistContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
-	<string>CalmParent Live Activity</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
-	<key>CFBundlePackageType</key>
-	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>NSExtension</key>
-	<dict>
-		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.widgetkit-extension</string>
-	</dict>
-</dict>
-</plist>`;
-        fs.writeFileSync(infoPlistPath, infoPlistContent);
-        console.log(`✅ Created Info.plist`);
-      }
-
-      console.log(`✅ ${widgetName} files processed successfully (${copiedCount}/${filesToCopy.length} files copied).`);
       return config;
     }
   ]);
@@ -127,42 +81,48 @@ const withLiveActivity = (config) => {
       return config;
     }
 
-    // בדיקת bundleIdentifier
     if (!config.ios || !config.ios.bundleIdentifier) {
-      console.warn(`⚠️  iOS bundleIdentifier not found. Skipping Live Activity target setup.`);
       return config;
     }
 
-    // Use 'LiveActivity' (capital L) to match existing App ID in Apple Developer Portal
     const bundleId = `${config.ios.bundleIdentifier}.LiveActivity`;
     const pbxProjectSection = xcodeProject.pbxProjectSection();
     const projectUuid = Object.keys(pbxProjectSection).find(key => key !== 'undefined' && !key.endsWith('_comment'));
 
-    // בדיקת projectUuid
-    if (!projectUuid || !pbxProjectSection[projectUuid]) {
-      console.warn(`⚠️  Could not find Xcode project UUID. Skipping Live Activity target setup.`);
-      return config;
-    }
+    if (!projectUuid) return config;
 
     const mainGroupKey = pbxProjectSection[projectUuid].mainGroup;
-
     const target = xcodeProject.addTarget(widgetName, 'app_extension', widgetName);
 
-    const files = [
-      'CalmParentLiveActivity.swift',
+    // הוספת קבצי ה-Widget ל-Target של ה-Widget
+    const widgetFiles = [
+      'BabysitterShiftLiveActivity.swift',
+      'SleepLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
-      'ActivityKitManager.swift'
+      'ActivityAttributes.swift', // הכרחי שיהיה בשניהם!
     ];
 
-    files.forEach(file => {
+    widgetFiles.forEach(file => {
       const filePath = path.join(widgetName, file);
       xcodeProject.addSourceFile(filePath, { target: target.uuid }, mainGroupKey);
     });
 
+    // הוספת Frameworks ל-Widget
     ['ActivityKit.framework', 'WidgetKit.framework', 'SwiftUI.framework'].forEach(f => {
       xcodeProject.addFramework(f, { target: target.uuid, weak: true });
     });
 
+    // הוספת קבצים משותפים ל-Main Target
+    const mainTargetKey = xcodeProject.findTargetKey(config.name);
+    if (mainTargetKey) {
+      const glassPath = path.join(widgetName, 'GlassComponents.swift');
+      xcodeProject.addSourceFile(glassPath, { target: mainTargetKey }, mainGroupKey);
+
+      const attributesPath = path.join(widgetName, 'ActivityAttributes.swift');
+      xcodeProject.addSourceFile(attributesPath, { target: mainTargetKey }, mainGroupKey);
+    }
+
+    // הגדרות Build
     const configurations = xcodeProject.pbxXCBuildConfigurationSection();
     Object.keys(configurations).forEach(key => {
       const configObj = configurations[key];
@@ -175,9 +135,8 @@ const withLiveActivity = (config) => {
           settings.CODE_SIGN_ENTITLEMENTS = `"${widgetName}/${widgetName}.entitlements"`;
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          // Enable automatic signing for EAS Build
           settings.CODE_SIGN_STYLE = 'Automatic';
-          settings.DEVELOPMENT_TEAM = 'Q5555SW7GS'; // Ziv Tothani's team ID
+          settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
         }
       }
     });

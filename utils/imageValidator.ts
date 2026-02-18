@@ -24,7 +24,7 @@ export async function validateAndCompressImage(
         const blob = await response.blob();
         const sizeInBytes = blob.size;
 
-        console.log(`📸 Image size: ${(sizeInBytes / 1024).toFixed(2)}KB`);
+        logger.log(`📸 Image size: ${(sizeInBytes / 1024).toFixed(2)}KB`);
 
         // If already small enough, return as-is
         if (sizeInBytes <= MAX_IMAGE_SIZE_BYTES) {
@@ -32,7 +32,7 @@ export async function validateAndCompressImage(
         }
 
         // Compress image
-        console.log('📸 Compressing image...');
+        logger.log('📸 Compressing image...');
         const manipResult = await ImageManipulator.manipulateAsync(
             uri,
             [{ resize: { width: MAX_DIMENSION } }],
@@ -44,7 +44,7 @@ export async function validateAndCompressImage(
         const compressedBlob = await compressedResponse.blob();
         const compressedSize = compressedBlob.size;
 
-        console.log(`📸 Compressed to: ${(compressedSize / 1024).toFixed(2)}KB`);
+        logger.log(`📸 Compressed to: ${(compressedSize / 1024).toFixed(2)}KB`);
 
         if (compressedSize > MAX_IMAGE_SIZE_BYTES) {
             return {
@@ -55,7 +55,7 @@ export async function validateAndCompressImage(
 
         return { isValid: true, compressedUri: manipResult.uri };
     } catch (error) {
-        console.error('Image validation error:', error);
+        logger.error('Image validation error:', error);
         return {
             isValid: false,
             error: 'שגיאה בטעינת התמונה. נסה תמונה אחרת',

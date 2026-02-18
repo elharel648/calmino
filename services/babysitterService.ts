@@ -16,6 +16,7 @@ import {
     onSnapshot,
     getDoc,
     Timestamp,
+    increment,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage, SitterBadge } from '../types/babysitter';
@@ -35,16 +36,74 @@ export async function createBooking(bookingData: {
     date: Date;
     startTime: string;
     endTime: string;
+    hourlyRate?: number;
+    location?: string;
+    childIds?: string[];
     notes?: string;
 }): Promise<string> {
+    // Calculate hours and totalPrice
+    const [startH, startM] = bookingData.startTime.split(':').map(Number);
+    const [endH, endM] = bookingData.endTime.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    const hours = (endMinutes - startMinutes) / 60;
+
+    // Get hourlyRate (use provided or fetch from sitter profile or default to 80)
+    let hourlyRate = bookingData.hourlyRate || 80;
+    if (!bookingData.hourlyRate) {
+        try {
+            const sitterDoc = await getDoc(doc(db, 'users', bookingData.babysitterId));
+            if (sitterDoc.exists()) {
+                const sitterData = sitterDoc.data();
+                hourlyRate = sitterData?.sitterPrice || 80;
+            }
+        } catch (error) {
+            logger.error('Error fetching sitter price:', error);
+            // Keep default 80
+        }
+    }
+
+    const totalPrice = Math.round(hours * hourlyRate * 100) / 100;
+
+    // Get user names
+    let parentName = 'הורה';
+    let sitterName = 'בייביסיטר';
+
+    try {
+        const [parentDoc, sitterDoc] = await Promise.all([
+            getDoc(doc(db, 'users', bookingData.parentId)),
+            getDoc(doc(db, 'users', bookingData.babysitterId)),
+        ]);
+
+        if (parentDoc.exists()) {
+            const parentData = parentDoc.data();
+            parentName = parentData?.displayName || parentData?.name || 'הורה';
+        }
+
+        if (sitterDoc.exists()) {
+            const sitterData = sitterDoc.data();
+            sitterName = sitterData?.displayName || sitterData?.name || 'בייביסיטר';
+        }
+    } catch (error) {
+        logger.error('Error fetching user names:', error);
+        // Continue with defaults
+    }
+
     const bookingRef = await addDoc(collection(db, 'bookings'), {
         parentId: bookingData.parentId,
+        parentName,
         babysitterId: bookingData.babysitterId,
+        sitterName,
+        childIds: bookingData.childIds || [],
         status: 'pending',
         date: Timestamp.fromDate(bookingData.date),
         startTime: bookingData.startTime,
         endTime: bookingData.endTime,
-        notes: bookingData.notes || null,
+        hours,
+        hourlyRate,
+        totalPrice,
+        location: bookingData.location || '',
+        notes: bookingData.notes || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
@@ -167,11 +226,32 @@ export async function declineBooking(bookingId: string): Promise<void> {
  * Start a shift - create active shift record
  */
 export async function startShift(booking: BabysitterBooking, babysitterName: string): Promise<string> {
+    // Get hourlyRate from booking or babysitter profile
+    let hourlyRate = 80; // Default fallback
+
+    try {
+        // First try to get from booking
+        const bookingDoc = await getDoc(doc(db, 'bookings', booking.id));
+        const bookingData = bookingDoc.data();
+        if (bookingData?.hourlyRate) {
+            hourlyRate = bookingData.hourlyRate;
+        } else {
+            // Fallback: get from babysitter profile
+            const sitterDoc = await getDoc(doc(db, 'users', booking.babysitterId));
+            const sitterData = sitterDoc.data();
+            hourlyRate = sitterData?.sitterPrice || 80;
+        }
+    } catch (error) {
+        logger.error('Error fetching hourly rate:', error);
+        // Keep default 80
+    }
+
     const shiftRef = await addDoc(collection(db, 'activeShifts'), {
         bookingId: booking.id,
         parentId: booking.parentId,
         babysitterId: booking.babysitterId,
         babysitterName,
+        hourlyRate, // ✅ ADD THIS
         startedAt: serverTimestamp(),
         isPaused: false,
         totalPausedSeconds: 0,
@@ -226,6 +306,42 @@ export function subscribeToActiveShift(
             callback({ id: doc.id, ...doc.data() } as ActiveShift);
         }
     });
+}
+
+/**
+ * Complete a shift - mark booking as completed with payment details
+ */
+export async function completeShift(
+    shiftId: string,
+    bookingId: string,
+    totalMinutes: number,
+    hourlyRate: number
+): Promise<void> {
+    // Calculate total amount
+    const hours = totalMinutes / 60;
+    const totalAmount = Math.round(hours * hourlyRate * 100) / 100;
+
+    try {
+        // Update booking with completion details
+        await updateDoc(doc(db, 'bookings', bookingId), {
+            status: 'completed',
+            actualEnd: serverTimestamp(),
+            totalMinutes,
+            totalAmount,
+            updatedAt: serverTimestamp(),
+        });
+
+        // Mark active shift as inactive
+        await updateDoc(doc(db, 'activeShifts', shiftId), {
+            isActive: false,
+            updatedAt: serverTimestamp(),
+        });
+
+        logger.log(`✅ Shift completed: ${totalMinutes} minutes, ₪${totalAmount}`);
+    } catch (error) {
+        logger.error('Error completing shift:', error);
+        throw error;
+    }
 }
 
 // ===================
@@ -765,5 +881,164 @@ export async function getAllBabysitters(): Promise<any[]> {
     } catch (error) {
         logger.error('Error getting babysitters:', error);
         return [];
+    }
+}
+
+// ===================
+// PROFILE VIEWS & ANALYTICS
+// ===================
+
+/**
+ * Track a profile view when a parent views a sitter's profile
+ */
+export async function trackProfileView(sitterId: string, viewerId: string): Promise<void> {
+    try {
+        if (!sitterId || !viewerId || sitterId === viewerId) return;
+
+        await addDoc(collection(db, 'profileViews'), {
+            sitterId,
+            viewerId,
+            viewedAt: serverTimestamp(),
+        });
+
+        // Also increment total view count on user doc for quick access
+        const userRef = doc(db, 'users', sitterId);
+        await updateDoc(userRef, {
+            totalProfileViews: increment(1),
+        });
+    } catch (error) {
+        logger.error('Error tracking profile view:', error);
+    }
+}
+
+/**
+ * Get profile view stats for the last 7 days (daily breakdown)
+ */
+export async function getProfileViewStats(sitterId: string): Promise<{
+    dailyViews: { date: string; count: number }[];
+    totalWeek: number;
+    totalAllTime: number;
+}> {
+    try {
+        const now = new Date();
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        // Get views from last 7 days
+        const viewsQuery = query(
+            collection(db, 'profileViews'),
+            where('sitterId', '==', sitterId),
+            where('viewedAt', '>=', Timestamp.fromDate(sevenDaysAgo)),
+            orderBy('viewedAt', 'asc')
+        );
+        const viewsSnapshot = await getDocs(viewsQuery);
+
+        // Build daily breakdown
+        const dailyMap: Record<string, number> = {};
+        const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+
+        // Initialize all 7 days
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(sevenDaysAgo);
+            d.setDate(d.getDate() + i);
+            const key = d.toISOString().split('T')[0];
+            dailyMap[key] = 0;
+        }
+
+        viewsSnapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const viewDate = data.viewedAt?.toDate?.() || new Date(data.viewedAt);
+            const key = viewDate.toISOString().split('T')[0];
+            if (dailyMap[key] !== undefined) {
+                dailyMap[key]++;
+            }
+        });
+
+        const dailyViews = Object.entries(dailyMap).map(([dateStr, count]) => {
+            const d = new Date(dateStr);
+            return {
+                date: dayNames[d.getDay()],
+                count,
+            };
+        });
+
+        const totalWeek = viewsSnapshot.size;
+
+        // Get all-time count from user doc
+        let totalAllTime = totalWeek;
+        try {
+            const userDoc = await getDoc(doc(db, 'users', sitterId));
+            if (userDoc.exists()) {
+                totalAllTime = userDoc.data().totalProfileViews || totalWeek;
+            }
+        } catch (e) {
+            // fallback to week count
+        }
+
+        return { dailyViews, totalWeek, totalAllTime };
+    } catch (error) {
+        logger.error('Error getting profile view stats:', error);
+        return {
+            dailyViews: [
+                { date: 'א׳', count: 0 }, { date: 'ב׳', count: 0 },
+                { date: 'ג׳', count: 0 }, { date: 'ד׳', count: 0 },
+                { date: 'ה׳', count: 0 }, { date: 'ו׳', count: 0 },
+                { date: 'ש׳', count: 0 },
+            ],
+            totalWeek: 0,
+            totalAllTime: 0,
+        };
+    }
+}
+
+/**
+ * Get response rate stats - percentage of bookings responded to and avg time
+ */
+export async function getResponseRateStats(sitterId: string): Promise<{
+    responseRate: number; // 0-100 percentage
+    avgResponseMinutes: number;
+    totalRequests: number;
+    totalResponded: number;
+}> {
+    try {
+        // Get all bookings for this sitter
+        const allBookingsQuery = query(
+            collection(db, 'bookings'),
+            where('babysitterId', '==', sitterId)
+        );
+        const allSnapshot = await getDocs(allBookingsQuery);
+        const totalRequests = allSnapshot.size;
+
+        // Get responded bookings (anything that's not pending)
+        const respondedStatuses = ['confirmed', 'accepted', 'completed', 'active', 'declined', 'cancelled'];
+        let totalResponded = 0;
+        const responseTimes: number[] = [];
+
+        allSnapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            if (respondedStatuses.includes(data.status)) {
+                totalResponded++;
+
+                if (data.createdAt && data.updatedAt) {
+                    const created = data.createdAt.toDate?.() || new Date(data.createdAt);
+                    const updated = data.updatedAt.toDate?.() || new Date(data.updatedAt);
+                    const diffMinutes = Math.floor((updated.getTime() - created.getTime()) / (1000 * 60));
+                    if (diffMinutes > 0 && diffMinutes < 1440) {
+                        responseTimes.push(diffMinutes);
+                    }
+                }
+            }
+        });
+
+        const responseRate = totalRequests > 0 ? Math.round((totalResponded / totalRequests) * 100) : 100;
+        const avgResponseMinutes = responseTimes.length > 0
+            ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+            : 0;
+
+        return { responseRate, avgResponseMinutes, totalRequests, totalResponded };
+    } catch (error) {
+        logger.error('Error getting response rate stats:', error);
+        return { responseRate: 100, avgResponseMinutes: 0, totalRequests: 0, totalResponded: 0 };
     }
 }

@@ -242,7 +242,7 @@ export default function DetailedStatsScreen({
                             timestamp: doc.data().timestamp?.toDate() || new Date(),
                         }));
                     } catch (error) {
-                        console.error('Error fetching previous week data:', error);
+                        logger.error('Error fetching previous week data:', error);
                     }
                 }
 
@@ -322,7 +322,7 @@ export default function DetailedStatsScreen({
                     setPrevWeekData([]);
                 }
             } catch (error) {
-                console.error('Error fetching stats:', error);
+                logger.error('Error fetching stats:', error);
             } finally {
                 setLoading(false);
             }

@@ -1,18 +1,27 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, Share } from 'react-native';
-import { Utensils, Moon, Layers, ChevronDown, ChevronUp, X, FileText, Pill, AlertCircle, RefreshCw, Sparkles } from 'lucide-react-native';
+import { Utensils, Moon, Droplets, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
+import Svg, { Path } from 'react-native-svg';
 import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
 import Animated from 'react-native-reanimated';
-import { ANIMATIONS } from '../utils/designSystem';
+import { ANIMATIONS, TYPOGRAPHY, SPACING } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { auth } from '../services/firebaseConfig';
 import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
+
+// Custom Tooth Icon from QuickActions
+const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: string; strokeWidth?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M7.5 22C6.5 22 5.5 21 5.5 19C5.5 15.5 5 12 5 10C5 5.5 8 2 12 2C16 2 19 5.5 19 10C19 12 18.5 15.5 18.5 19C18.5 21 17.5 22 16.5 22C15.5 22 14.5 20.5 14.5 20.5L12 18L9.5 20.5C9.5 20.5 8.5 22 7.5 22Z" />
+    <Path d="M9 7C9 7 10.5 8.5 12 8.5C13.5 8.5 15 7 15 7" opacity="0.6" strokeWidth={strokeWidth * 0.8} />
+  </Svg>
+);
 
 interface TimelineEvent {
   id: string;
@@ -46,36 +55,36 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const { family } = useFamily();
   const { showSuccess, showError } = useToast();
 
-  // Get translated TYPE_CONFIG
+  // Get translated TYPE_CONFIG with theme-aware colors
   const TYPE_CONFIG = {
     food: {
       icon: Utensils,
-      color: '#F59E0B',
+      color: theme.actionColors.food.color,
       label: t('actions.food'),
     },
     sleep: {
       icon: Moon,
-      color: '#8B5CF6',
+      color: theme.actionColors.sleep.color,
       label: t('actions.sleep'),
     },
     diaper: {
-      icon: Layers,
-      color: '#10B981',
+      icon: Droplets,
+      color: theme.actionColors.diaper.color,
       label: t('actions.diaper'),
     },
     supplements: {
       icon: Pill,
-      color: '#EC4899',
+      color: theme.actionColors.supplements.color,
       label: t('actions.supplements'),
     },
     custom: {
-      icon: FileText,
-      color: '#8B5CF6',
+      icon: Plus,
+      color: theme.actionColors.custom.color,
       label: t('actions.custom'),
     },
     teeth: {
-      icon: Sparkles,
-      color: '#8B5CF6',
+      icon: TeethIcon,
+      color: theme.actionColors.teeth.color,
       label: 'שיניים',
     },
   };
@@ -145,7 +154,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       setEvents(mapped);
       setError(null);
     } catch (error: any) {
-      if (__DEV__) console.log('Timeline load error:', error);
+      logger.log('Timeline load error:', error);
       const errorMessage = error?.message || t('timeline.loading');
       setError(errorMessage);
     } finally {
@@ -491,7 +500,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     borderColor: theme.border,
                     marginHorizontal: 16,
                   }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: theme.textSecondary, letterSpacing: -0.2 }}>{dateLabel}</Text>
+                    <Text style={{ ...TYPOGRAPHY.labelSmall, color: theme.textSecondary }}>{dateLabel}</Text>
                   </View>
                   <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.2 }} />
                 </View>
@@ -510,7 +519,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     borderWidth: 1,
                     borderColor: theme.border,
                   }}>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary, letterSpacing: -0.2 }}>{dateLabel}</Text>
+                    <Text style={{ ...TYPOGRAPHY.caption, fontWeight: '600', color: theme.textSecondary }}>{dateLabel}</Text>
                   </View>
                 </View>
               )}
@@ -522,7 +531,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                 const isLast = index === groupEvents.length - 1;
                 const details = getEventDetails(event);
                 let subtext = getEventSubtext(event);
-                
+
                 // For grouped view, format subtext consistently (without date - already in header)
                 if (useGrouping) {
                   const isTimerangeEvent = event.startTime && event.endTime;
@@ -610,8 +619,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             {event.reporterName && (
                               <View style={styles.reporterBadge}>
                                 {event.reporterPhotoUrl ? (
-                                  <Image 
-                                    source={{ uri: event.reporterPhotoUrl }} 
+                                  <Image
+                                    source={{ uri: event.reporterPhotoUrl }}
                                     style={styles.reporterAvatar}
                                     onError={() => {
                                       // Image failed to load, will fallback to placeholder
@@ -692,8 +701,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         {event.reporterName && (
                           <View style={styles.reporterBadge}>
                             {event.reporterPhotoUrl ? (
-                              <Image 
-                                source={{ uri: event.reporterPhotoUrl }} 
+                              <Image
+                                source={{ uri: event.reporterPhotoUrl }}
                                 style={styles.reporterAvatar}
                                 onError={() => {
                                   // Image failed to load, will fallback to placeholder
@@ -753,8 +762,8 @@ DailyTimeline.displayName = 'DailyTimeline';
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xl,
   },
 
   // Header
@@ -762,12 +771,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   titleSection: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
+    gap: SPACING.sm,
   },
   accentLine: {
     width: 3,
@@ -775,7 +784,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   title: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body,
     fontWeight: '700',
   },
   statsContainer: {
@@ -785,14 +794,14 @@ const styles = StyleSheet.create({
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING.xs,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 100,
     borderWidth: 1,
   },
   statCount: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -802,7 +811,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   timelineGrouped: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
   },
   eventRow: {
     flexDirection: 'row-reverse',
@@ -810,37 +819,36 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   loadingContainer: {
-    padding: 40,
-    borderRadius: 20,
+    padding: SPACING.huge,
+    borderRadius: SPACING.xl,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 100,
   },
   errorContainer: {
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: SPACING.xl,
+    padding: SPACING.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: SPACING.md,
     minHeight: 100,
   },
   errorText: {
-    fontSize: 14,
+    ...TYPOGRAPHY.label,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 8,
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
+    borderRadius: SPACING.md,
+    marginTop: SPACING.sm,
   },
   retryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...TYPOGRAPHY.label,
   },
 
   // Left: Time
@@ -851,10 +859,8 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   time: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...TYPOGRAPHY.labelSmall,
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.1,
   },
   timeAgo: {
     fontSize: 10,
@@ -934,10 +940,9 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     flex: 1,
-    fontSize: 15,
+    ...TYPOGRAPHY.bodySmall,
     fontWeight: '600',
     lineHeight: 20,
-    letterSpacing: -0.2,
     textAlign: 'right',
   },
   iconBadge: {
@@ -948,12 +953,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   eventSubtext: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
     lineHeight: 16,
-    fontWeight: '500',
     textAlign: 'right',
     marginTop: 2,
-    letterSpacing: -0.1,
     opacity: 0.75,
   },
 
@@ -974,16 +977,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   emptyEmoji: {
-    fontSize: 28,
+    ...TYPOGRAPHY.h1,
   },
   emptyText: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...TYPOGRAPHY.label,
     marginBottom: 4,
-    letterSpacing: -0.2,
   },
   emptyHint: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -1001,9 +1002,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   expandText: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
     fontWeight: '600',
-    letterSpacing: -0.1,
   },
 
   // Reporter Badge - Enhanced with glow

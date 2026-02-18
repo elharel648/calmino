@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { db, auth } from './firebaseConfig';
 import {
     collection,
@@ -49,7 +50,7 @@ class NotificationStorageService {
             const duplicateSnapshot = await getDocs(duplicateCheck);
             if (!duplicateSnapshot.empty) {
                 // Duplicate found - don't save again
-                if (__DEV__) console.log('🔔 Duplicate notification prevented:', notification.title);
+                logger.log('🔔 Duplicate notification prevented:', notification.title);
                 return null;
             }
 
@@ -59,7 +60,7 @@ class NotificationStorageService {
             });
             return docRef.id;
         } catch (error) {
-            if (__DEV__) console.log('Failed to save notification:', error);
+            logger.log('Failed to save notification:', error);
             return null;
         }
     }
@@ -95,7 +96,7 @@ class NotificationStorageService {
                 };
             });
         } catch (error) {
-            if (__DEV__) console.log('Failed to get notifications:', error);
+            logger.log('Failed to get notifications:', error);
             return [];
         }
     }
@@ -117,7 +118,7 @@ class NotificationStorageService {
             const snapshot = await getDocs(q);
             return snapshot.size;
         } catch (error) {
-            if (__DEV__) console.log('Failed to get unread count:', error);
+            logger.log('Failed to get unread count:', error);
             return 0;
         }
     }
@@ -131,7 +132,7 @@ class NotificationStorageService {
                 isRead: true,
             });
         } catch (error) {
-            if (__DEV__) console.log('Failed to mark as read:', error);
+            logger.log('Failed to mark as read:', error);
         }
     }
 
@@ -158,7 +159,7 @@ class NotificationStorageService {
 
             await batch.commit();
         } catch (error) {
-            if (__DEV__) console.log('Failed to mark all as read:', error);
+            logger.log('Failed to mark all as read:', error);
         }
     }
 
@@ -169,7 +170,7 @@ class NotificationStorageService {
         try {
             await deleteDoc(doc(db, this.collectionName, notificationId));
         } catch (error) {
-            if (__DEV__) console.log('Failed to delete notification:', error);
+            logger.log('Failed to delete notification:', error);
         }
     }
 
@@ -195,7 +196,7 @@ class NotificationStorageService {
 
             await batch.commit();
         } catch (error) {
-            if (__DEV__) console.log('Failed to clear all notifications:', error);
+            logger.log('Failed to clear all notifications:', error);
         }
     }
 
@@ -219,7 +220,7 @@ class NotificationStorageService {
             });
             return docRef.id;
         } catch (error) {
-            if (__DEV__) console.log('Failed to send notification to user:', error);
+            logger.log('Failed to send notification to user:', error);
             return null;
         }
     }

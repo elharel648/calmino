@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { auth } from '../services/firebaseConfig';
@@ -61,7 +62,7 @@ export const useChildProfile = (): UseChildProfileReturn => {
                 });
             }
         } catch (e) {
-            console.error('Error loading profile:', e);
+            logger.error('Error loading profile:', e);
             setError('שגיאה בטעינת הפרופיל');
         } finally {
             setLoading(false);

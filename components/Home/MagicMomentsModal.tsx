@@ -26,6 +26,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { Timestamp } from 'firebase/firestore';
+import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -33,6 +34,7 @@ import Animated, {
     withSpring,
     withDelay,
 } from 'react-native-reanimated';
+import { logger } from '../../utils/logger';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -212,7 +214,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                     refresh();
                 }, 1000);
             } catch (error) {
-                console.error('Error adding photo:', error);
+                logger.error('Error adding photo:', error);
                 Alert.alert('שגיאה', 'לא הצלחנו להוסיף תמונה');
             }
         }
@@ -261,12 +263,12 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
     // Debug: Log albumDates to see if it's loaded
     useEffect(() => {
         if (baby?.albumDates) {
-            console.log('📅 Album dates loaded:', baby.albumDates);
+            logger.log('📅 Album dates loaded:', baby.albumDates);
         } else {
-            console.log('⚠️ No albumDates found in baby data');
+            logger.log('⚠️ No albumDates found in baby data');
         }
         if (baby?.album) {
-            console.log('📸 Album photos:', Object.keys(baby.album));
+            logger.log('📸 Album photos:', Object.keys(baby.album));
         }
     }, [baby?.albumDates, baby?.album]);
 
@@ -323,9 +325,10 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                     </Animated.View>
 
                     {/* Content */}
-                    <ScrollView
-                        ref={scrollViewRef}
-                        style={styles.scrollView}
+                    <ScrollFadeWrapper fadeHeight={80}>
+                        <ScrollView
+                            ref={scrollViewRef}
+                            style={styles.scrollView}
                         contentContainerStyle={styles.content}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
@@ -618,7 +621,8 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                 </View>
                             )}
                         </Animated.View>
-                    </ScrollView>
+                        </ScrollView>
+                    </ScrollFadeWrapper>
                 </RNAnimatedView>
             </KeyboardAvoidingView>
 

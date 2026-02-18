@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronRight,
-    User, Award, UserPlus, MapPin, Calendar, Plus, Minus
+    User, Award, UserPlus, MapPin, Calendar
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -25,8 +25,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import useSitters, { Sitter } from '../hooks/useSitters';
-import { calculateSitterBadges } from '../services/babysitterService';
-import { BADGE_INFO, SitterBadge } from '../types/babysitter';
 import { ISRAELI_CITIES } from '../constants/israeliCities';
 import { logger } from '../utils/logger';
 
@@ -46,7 +44,6 @@ const BabySitterScreen = ({ navigation }: any) => {
     const [userMode, setUserMode] = useState<'parent' | 'sitter'>('parent');
     const [refreshing, setRefreshing] = useState(false);
     const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance'>('rating');
-    const [maxDistance, setMaxDistance] = useState<number | null>(null); // Radius filter
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
     const [checkingStatus, setCheckingStatus] = useState(false);
     const [filterCity, setFilterCity] = useState<string>(''); // Manual city filter
@@ -252,7 +249,8 @@ const BabySitterScreen = ({ navigation }: any) => {
             } else {
                 setIsSitterRegistered(false);
             }
-        } catch {
+        } catch (error) {
+            logger.error('Failed to check sitter status:', error);
             setIsSitterRegistered(false);
         } finally {
             setCheckingStatus(false);
@@ -400,19 +398,8 @@ const BabySitterScreen = ({ navigation }: any) => {
             }
         }
 
-        // 2. Filter by Radius (Max Distance)
-        if (maxDistance !== null && userLocation) {
-            filtered = filtered.filter(s => {
-                // If sitter has valid distance calculated
-                if (typeof s.distance === 'number' && !isNaN(s.distance)) {
-                    return s.distance <= maxDistance;
-                }
-                return false; // Exclude if distance unknown
-            });
-        }
-
         return filtered;
-    }, [processedSitters, activeCity, maxDistance, userLocation]);
+    }, [processedSitters, activeCity, userLocation]);
 
     // Sort sitters intelligently: prioritize nearby sitters, then by selected sort (memoized)
     const sortedSitters = useMemo(() => {
@@ -504,6 +491,11 @@ const BabySitterScreen = ({ navigation }: any) => {
             phone: (sitter.phone && typeof sitter.phone === 'string') ? sitter.phone : undefined,
             bio: (sitter.bio && typeof sitter.bio === 'string') ? sitter.bio : '',
             reviewsList: [], // Reviews are fetched by SitterProfileScreen
+            socialLinks: sitter.socialLinks,
+            experience: sitter.experience || undefined,
+            languages: sitter.languages || undefined,
+            certifications: sitter.certifications || undefined,
+            city: sitter.city || undefined,
         };
 
         try {
@@ -517,209 +509,152 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Minimalist Sitter Card
     const SitterCard = ({ sitter }: { sitter: Sitter }) => {
-        const mutualFriends = sitter.mutualFriends || [];
-        const hasMutualFriends = mutualFriends.length > 0;
         const [imageError, setImageError] = useState(false);
-        const [badges, setBadges] = useState<SitterBadge[]>([]);
-
-        // Calculate badges on mount
-        useEffect(() => {
-            const loadBadges = async () => {
-                try {
-                    const calculatedBadges = await calculateSitterBadges(sitter.id, {
-                        rating: sitter.rating,
-                        reviewCount: sitter.reviewCount,
-                        isAvailable: sitter.isAvailable,
-                        createdAt: sitter.createdAt,
-                    });
-                    setBadges(calculatedBadges);
-                } catch (error) {
-                    // Silent fail
-                }
-            };
-            if (sitter.id && !sitter.id.startsWith('mock_')) {
-                loadBadges();
-            }
-        }, [sitter.id, sitter.rating, sitter.reviewCount]);
+        const rating = typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating > 0
+            ? Math.max(0, Math.min(5, sitter.rating)) : 0;
+        const price = typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) && sitter.pricePerHour > 0
+            ? sitter.pricePerHour : 50;
+        // Hide unrealistic distances (>100 km - babysitters search is local)
+        const rawDistance = typeof sitter.distance === 'number' && !isNaN(sitter.distance) ? sitter.distance : null;
+        const distance = rawDistance !== null && rawDistance > 0 && rawDistance <= 100 ? rawDistance : null;
 
         return (
             <TouchableOpacity
-                style={[styles.sitterCard, { backgroundColor: theme.card }]}
+                style={[styles.sitterCard, {
+                    backgroundColor: theme.card,
+                    borderColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+                }]}
                 onPress={() => handleSitterPress(sitter)}
-                activeOpacity={0.7}
+                activeOpacity={0.75}
                 accessibilityRole="button"
-                accessibilityLabel={`${sitter.name || 'סיטר'}, ${t('babysitter.rating')} ${(typeof sitter.rating === 'number' && !isNaN(sitter.rating) ? Math.max(0, Math.min(5, sitter.rating)) : 0).toFixed(1)}, ${t('babysitter.price')} ${typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) ? Math.max(0, sitter.pricePerHour) : 50} ${t('babysitter.perHour')}`}
+                accessibilityLabel={`${sitter.name || 'סיטר'}, דירוג ${rating.toFixed(1)}, מחיר ${price} לשעה`}
             >
-                <View style={styles.sitterCardContent}>
-                    {sitter.photoUrl && !imageError ? (
-                        <Image
-                            source={{ uri: sitter.photoUrl }}
-                            style={styles.sitterPhoto}
-                            onError={() => setImageError(true)}
-                        />
-                    ) : (
-                        <View style={[styles.sitterPhotoPlaceholder, { backgroundColor: theme.cardSecondary }]}>
-                            <User size={24} color={theme.textSecondary} />
-                        </View>
-                    )}
-                    <View style={styles.sitterInfo}>
-                        <View style={styles.sitterHeader}>
-                            <Text style={[styles.sitterName, { color: theme.textPrimary }]}>{sitter.name}</Text>
-                            {sitter.isVerified && (
-                                <Award size={14} color={theme.success} strokeWidth={1.5} />
-                            )}
-                        </View>
-                        {/* Badges */}
-                        {badges.length > 0 && (
-                            <View style={styles.badgesRow}>
-                                {badges.slice(0, 2).map((badgeType) => {
-                                    const badge = BADGE_INFO[badgeType];
-                                    return (
-                                        <View key={badgeType} style={[styles.badge, { backgroundColor: badge.bgColor }]}>
-                                            {badge.icon && <Text style={styles.badgeIcon}>{badge.icon}</Text>}
-                                            <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
-                                        </View>
-                                    );
-                                })}
+                <View style={styles.sitterCardTop}>
+                    {/* Photo */}
+                    <View style={styles.sitterPhotoWrapper}>
+                        {sitter.photoUrl && !imageError ? (
+                            <Image
+                                source={{ uri: sitter.photoUrl }}
+                                style={styles.sitterPhoto}
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <View style={[styles.sitterPhotoPlaceholder, {
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                            }]}>
+                                <User size={26} color={theme.textSecondary} strokeWidth={1.5} />
                             </View>
                         )}
-                        <View style={styles.sitterMeta}>
-                            {typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating > 0 && (
-                                <View style={styles.ratingBadge}>
-                                    <Star size={12} color={theme.warning} fill={theme.warning} />
-                                    <Text style={[styles.ratingText, { color: theme.textPrimary }]}>
-                                        {Math.max(0, Math.min(5, sitter.rating)).toFixed(1)}
-                                    </Text>
-                                </View>
-                            )}
-                            {sitter.experience && (
-                                <Text style={[styles.experienceText, { color: theme.textSecondary }]}>
-                                    {sitter.experience}
-                                </Text>
-                            )}
-                        </View>
-                        {/* 🔥 חברים משותפים */}
-                        {hasMutualFriends && mutualFriends.every(f => f.id && f.name) && (
-                            <View style={styles.mutualFriendsRow}>
-                                <View style={styles.mutualAvatars}>
-                                    {mutualFriends.slice(0, 3).map((friend, index) => (
-                                        <Image
-                                            key={friend.id}
-                                            source={{ uri: friend.picture?.data?.url || `https://i.pravatar.cc/50?u=${friend.id}` }}
-                                            style={[
-                                                styles.mutualAvatar,
-                                                {
-                                                    marginLeft: index > 0 ? -8 : 0,
-                                                    zIndex: 3 - index,
-                                                    borderColor: theme.card,
-                                                    backgroundColor: theme.cardSecondary
-                                                }
-                                            ]}
-                                        />
-                                    ))}
-                                </View>
-                                <Text style={[styles.mutualText, { color: theme.primary }]}>
-                                    {t('babysitter.mutualFriends', { count: mutualFriends.length })}
-                                </Text>
-                            </View>
+                        {sitter.isAvailable && (
+                            <View style={[styles.availableDot, { borderColor: theme.card }]} />
                         )}
                     </View>
+
+                    {/* Info - center */}
+                    <View style={styles.sitterInfo}>
+                        {/* Name row */}
+                        <View style={styles.sitterHeader}>
+                            <Text style={[styles.sitterName, { color: theme.textPrimary }]} numberOfLines={1}>
+                                {sitter.name}
+                            </Text>
+                            {sitter.isVerified && (
+                                <View style={[styles.verifiedDot, { backgroundColor: isDarkMode ? '#fff' : '#111' }]}>
+                                    <Award size={9} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Rating + Experience */}
+                        <View style={styles.sitterMeta}>
+                            {rating > 0 ? (
+                                <View style={styles.ratingBadge}>
+                                    <Star size={11} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
+                                    <Text style={[styles.ratingText, { color: theme.textPrimary }]}>
+                                        {rating.toFixed(1)}
+                                    </Text>
+                                    {sitter.reviewCount > 0 && (
+                                        <Text style={[styles.reviewCountText, { color: theme.textSecondary }]}>
+                                            ({sitter.reviewCount})
+                                        </Text>
+                                    )}
+                                </View>
+                            ) : null}
+                            {rating > 0 && sitter.experience ? (
+                                <View style={[styles.metaDot, { backgroundColor: theme.textSecondary }]} />
+                            ) : null}
+                            {sitter.experience ? (
+                                <Text style={[styles.experienceText, { color: theme.textSecondary }]} numberOfLines={1}>
+                                    {sitter.experience}
+                                </Text>
+                            ) : null}
+                        </View>
+
+                        {/* City + Distance */}
+                        {(sitter.city || distance) ? (
+                            <View style={styles.sitterLocationRow}>
+                                <MapPin size={10} color={theme.textSecondary} strokeWidth={2} />
+                                {sitter.city ? (
+                                    <Text style={[styles.locationText, { color: theme.textSecondary }]}>
+                                        {sitter.city}
+                                    </Text>
+                                ) : null}
+                                {sitter.city && distance ? (
+                                    <Text style={[styles.locationText, { color: theme.textSecondary }]}>·</Text>
+                                ) : null}
+                                {distance ? (
+                                    <Text style={[styles.locationText, { color: theme.textSecondary }]}>
+                                        {distance < 1 ? `${Math.round(distance * 1000)} מ'` : `${distance.toFixed(1)} ק"מ`}
+                                    </Text>
+                                ) : null}
+                            </View>
+                        ) : null}
+                    </View>
+
+                    {/* Price - right side, clean */}
                     <View style={styles.priceSection}>
-                        <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>
-                            ₪{typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) ? Math.max(0, sitter.pricePerHour) : 50}
-                        </Text>
-                        <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>{t('babysitter.perHour')}</Text>
+                        <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>₪{price}</Text>
+                        <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>לשעה</Text>
                     </View>
                 </View>
             </TouchableOpacity>
         );
     };
 
-    // Radius Filter Component
-    const RadiusFilter = () => {
-        // Only show if we have user location
-        if (!userLocation) return null;
+    // Sort Pills
+    const SORT_OPTIONS = [
+        { key: 'rating' as const, label: 'דירוג', icon: '⭐' },
+        { key: 'price' as const, label: 'מחיר', icon: '₪' },
+        { key: 'distance' as const, label: 'מרחק', icon: '📍' },
+    ];
 
-        const radii = [1, 3, 5, 10, 20, 50];
-
-        return (
-            <View style={styles.radiusRow}>
-                <Text style={[styles.filterLabel, { color: theme.textSecondary }]}>{t('babysitter.distanceFilter')}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.radiusScroll}>
-                    {/* "All" option */}
-                    <TouchableOpacity
-                        style={[
-                            styles.radiusPill,
-                            {
-                                backgroundColor: maxDistance === null ? theme.primary : theme.card,
-                                borderColor: maxDistance === null ? theme.primary : theme.border,
-                            }
-                        ]}
-                        onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setMaxDistance(null);
-                        }}
-                    >
-                        <Text style={[styles.radiusPillText, { color: maxDistance === null ? theme.card : theme.textPrimary }]}>
-                            {t('common.all')}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {radii.map((radius) => (
+    const SortPills = () => (
+        <View style={styles.filtersContainer}>
+            <View style={styles.sortRow}>
+                {SORT_OPTIONS.map((opt) => {
+                    const isActive = sortBy === opt.key;
+                    return (
                         <TouchableOpacity
-                            key={radius}
+                            key={opt.key}
                             style={[
-                                styles.radiusPill,
+                                styles.sortPill,
                                 {
-                                    backgroundColor: maxDistance === radius ? theme.primary : theme.card,
-                                    borderColor: maxDistance === radius ? theme.primary : theme.border,
+                                    backgroundColor: isActive ? theme.textPrimary : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                                    borderColor: isActive ? theme.textPrimary : theme.border,
                                 }
                             ]}
                             onPress={() => {
                                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setMaxDistance(radius);
+                                setSortBy(opt.key);
                             }}
+                            activeOpacity={0.7}
                         >
-                            <Text style={[styles.radiusPillText, { color: maxDistance === radius ? theme.card : theme.textPrimary }]}>
-                                {radius} {t('units.km')}
+                            <Text style={{ fontSize: 11 }}>{opt.icon}</Text>
+                            <Text style={[styles.sortPillText, { color: isActive ? theme.card : theme.textSecondary, fontWeight: isActive ? '700' : '500' }]}>
+                                {opt.label}
                             </Text>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-        );
-    };
-
-    // Sort Pills
-    const SortPills = () => (
-        <View style={styles.filtersContainer}>
-            <RadiusFilter />
-            <View style={styles.sortRow}>
-                {(['rating', 'price', 'distance'] as const).map((sort) => (
-                    <TouchableOpacity
-                        key={sort}
-                        style={[
-                            styles.sortPill,
-                            {
-                                backgroundColor: sortBy === sort ? theme.textPrimary : 'transparent',
-                                borderColor: theme.border,
-                            }
-                        ]}
-                        onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setSortBy(sort);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${t('common.sortBy')} ${sort === 'rating' ? t('babysitter.sortByRating') : sort === 'price' ? t('babysitter.sortByPrice') : t('babysitter.sortByDistance')}`}
-                        accessibilityState={{ selected: sortBy === sort }}
-                    >
-                        <Text style={[styles.sortPillText, { color: sortBy === sort ? theme.card : theme.textSecondary }]}>
-                            {sort === 'rating' ? t('babysitter.sortByRating') :
-                                sort === 'price' ? t('babysitter.sortByPrice') :
-                                    t('babysitter.sortByDistance')}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+                    );
+                })}
             </View>
         </View>
     );
@@ -781,61 +716,86 @@ const BabySitterScreen = ({ navigation }: any) => {
             />
 
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View style={[styles.header, {
+                backgroundColor: theme.card,
+                borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+            }]}>
+                {/* Top: back + title + avatar */}
                 <View style={styles.headerTop}>
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('common.back')}
+                        style={[styles.headerBackBtn, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                        }]}
+                        activeOpacity={0.7}
                     >
-                        <ChevronRight size={24} color={theme.textSecondary} />
+                        <ChevronRight size={18} color={theme.textPrimary} strokeWidth={2.5} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('babysitter.findSitter')}</Text>
+
+                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>מצא סיטר</Text>
+
                     <View style={styles.headerRight}>
                         {userMode === 'parent' && (
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('ParentBookings')}
-                                style={styles.bookingsButton}
-                                accessibilityRole="button"
-                                accessibilityLabel="ההזמנות שלי"
+                                style={[styles.headerIconBtn, {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                }]}
+                                activeOpacity={0.7}
                             >
-                                <Calendar size={20} color={theme.textPrimary} />
+                                <Calendar size={17} color={theme.textPrimary} strokeWidth={2} />
                             </TouchableOpacity>
                         )}
                         {userPhoto ? (
                             <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
                         ) : (
-                            <View style={[styles.userPhotoPlaceholder, { backgroundColor: theme.cardSecondary }]}>
-                                <User size={16} color={theme.textSecondary} />
+                            <View style={[styles.userPhotoPlaceholder, {
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                            }]}>
+                                <User size={15} color={theme.textSecondary} strokeWidth={1.5} />
                             </View>
                         )}
                     </View>
                 </View>
 
-                {/* Mode Toggle */}
-                <View style={[styles.modeToggle, { backgroundColor: theme.cardSecondary }]}>
+                {/* Mode Toggle - Monochromatic Pill */}
+                <View style={[styles.modeToggle, {
+                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+                }]}>
                     <TouchableOpacity
-                        style={[styles.modeBtn, userMode === 'parent' && [styles.modeBtnActive, { backgroundColor: theme.card }]]}
-                        onPress={() => setUserMode('parent')}
-                        accessibilityRole="tab"
-                        accessibilityLabel={t('babysitter.parentMode')}
-                        accessibilityState={{ selected: userMode === 'parent' }}
+                        style={[styles.modeBtn, userMode === 'parent' && [styles.modeBtnActive, {
+                            backgroundColor: isDarkMode ? '#fff' : '#000',
+                        }]]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setUserMode('parent');
+                        }}
+                        activeOpacity={0.8}
                     >
-                        <Search size={16} color={userMode === 'parent' ? theme.textPrimary : theme.textSecondary} strokeWidth={1.5} />
-                        <Text style={[styles.modeBtnText, { color: userMode === 'parent' ? theme.textPrimary : theme.textSecondary }]}>
-                            {t('babysitter.parentMode')}
+                        <Search size={14} color={userMode === 'parent' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} strokeWidth={2} />
+                        <Text style={[styles.modeBtnText, {
+                            color: userMode === 'parent' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary,
+                            fontWeight: userMode === 'parent' ? '700' : '500',
+                        }]}>
+                            מצב הורה
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.modeBtn, userMode === 'sitter' && [styles.modeBtnActive, { backgroundColor: theme.card }]]}
-                        onPress={() => setUserMode('sitter')}
-                        accessibilityRole="tab"
-                        accessibilityLabel={t('babysitter.sitterMode')}
-                        accessibilityState={{ selected: userMode === 'sitter' }}
+                        style={[styles.modeBtn, userMode === 'sitter' && [styles.modeBtnActive, {
+                            backgroundColor: isDarkMode ? '#fff' : '#000',
+                        }]]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setUserMode('sitter');
+                        }}
+                        activeOpacity={0.8}
                     >
-                        <Briefcase size={16} color={userMode === 'sitter' ? theme.textPrimary : theme.textSecondary} strokeWidth={1.5} />
-                        <Text style={[styles.modeBtnText, { color: userMode === 'sitter' ? theme.textPrimary : theme.textSecondary }]}>
-                            {t('babysitter.sitterMode')}
+                        <Briefcase size={14} color={userMode === 'sitter' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} strokeWidth={2} />
+                        <Text style={[styles.modeBtnText, {
+                            color: userMode === 'sitter' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary,
+                            fontWeight: userMode === 'sitter' ? '700' : '500',
+                        }]}>
+                            מצב סיטר
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -844,15 +804,16 @@ const BabySitterScreen = ({ navigation }: any) => {
             {/* Parent Mode Content */}
             {userMode === 'parent' && (
                 <>
-                    {/* Location Filter - Premium Minimalist Design */}
+                    {/* Location Search Bar */}
                     <View style={styles.locationSection}>
-                        <View style={[styles.locationButton, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                            {/* Search Icon - Left */}
-                            <View style={[styles.locationIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}>
-                                <Search size={15} color={theme.primary} strokeWidth={2} />
-                            </View>
+                        <View style={[styles.locationButton, {
+                            backgroundColor: theme.card,
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
+                        }]}>
+                            {/* MapPin icon - right side */}
+                            <MapPin size={16} color={theme.textSecondary} strokeWidth={2} />
 
-                            {/* Input Field - Center */}
+                            {/* Input */}
                             <TextInput
                                 style={[styles.locationInput, { color: theme.textPrimary }]}
                                 value={filterCity}
@@ -865,48 +826,36 @@ const BabySitterScreen = ({ navigation }: any) => {
                                         setCitySuggestions(filtered.slice(0, 5));
                                         setShowCitySuggestions(filtered.length > 0);
                                     } else {
-                                        // Show suggestions when focusing empty field
                                         const filtered = ISRAELI_CITIES.slice(0, 5);
                                         setCitySuggestions(filtered);
                                         setShowCitySuggestions(true);
                                     }
                                 }}
                                 onBlur={() => {
-                                    // Delay hiding to allow selection
-                                    if (autocompleteTimeoutRef.current) {
-                                        clearTimeout(autocompleteTimeoutRef.current);
-                                    }
-                                    autocompleteTimeoutRef.current = setTimeout(() => {
-                                        setShowCitySuggestions(false);
-                                    }, 200);
+                                    if (autocompleteTimeoutRef.current) clearTimeout(autocompleteTimeoutRef.current);
+                                    autocompleteTimeoutRef.current = setTimeout(() => setShowCitySuggestions(false), 200);
                                 }}
                                 placeholder={userCity && ISRAELI_CITIES.includes(userCity) ? `${userCity} (אוטומטי)` : 'חפש לפי עיר...'}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
-                                accessibilityLabel="חפש לפי עיר"
-                                accessibilityHint="הקלד שם עיר כדי למצוא ביביסטרים באזור"
                             />
 
-                            {/* Right Side - Clear or Location Icon */}
+                            {/* Clear button or search icon */}
                             {filterCity.length > 0 ? (
                                 <TouchableOpacity
                                     onPress={() => {
-                                        if (autocompleteTimeoutRef.current) {
-                                            clearTimeout(autocompleteTimeoutRef.current);
-                                        }
+                                        if (autocompleteTimeoutRef.current) clearTimeout(autocompleteTimeoutRef.current);
                                         setFilterCity('');
                                         setShowCitySuggestions(false);
                                         setCitySuggestions([]);
                                     }}
-                                    style={[styles.clearButton, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}
+                                    style={styles.clearButton}
                                     activeOpacity={0.7}
                                 >
-                                    <Text style={{ color: theme.textSecondary, fontSize: 20, fontWeight: '200', lineHeight: 20 }}>×</Text>
+                                    <Text style={{ color: theme.textSecondary, fontSize: 18, lineHeight: 20 }}>×</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <View style={[styles.locationBadge, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.06)' }]}>
-                                    <MapPin size={15} color={theme.primary} strokeWidth={2} />
-                                </View>
+                                <Search size={15} color={theme.textSecondary} strokeWidth={2} />
                             )}
                         </View>
 
@@ -939,18 +888,24 @@ const BabySitterScreen = ({ navigation }: any) => {
                         )}
                     </View>
 
-                    {/* Sort & Count */}
+                    {/* Sort Pills Only */}
                     <View style={styles.filterSection}>
-                        <Text style={[styles.resultsCount, { color: theme.textSecondary }]}>
-                            {t('babysitter.availableSitters', { count: sortedSitters.length })} {activeCity ? t('babysitter.inCity', { city: activeCity }) : ''}
-                        </Text>
                         <SortPills />
                     </View>
+
+                    {/* Sitters Count - slim separator line style */}
+                    {!isLoading && sortedSitters.length > 0 && (
+                        <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth }]}>
+                            <Text style={[styles.sittersHeaderTitle, { color: theme.textSecondary }]}>
+                                {sortedSitters.length} סיטרים{activeCity ? ` ב${activeCity}` : ' זמינים'}
+                            </Text>
+                        </View>
+                    )}
 
                     {/* Sitters List */}
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={theme.primary} />
+                            <ActivityIndicator size="large" color={theme.textPrimary} />
                         </View>
                     ) : sortedSitters.length === 0 ? (
                         <View style={styles.emptyState}>
@@ -979,7 +934,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 <>
                     {checkingStatus ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={theme.primary} />
+                            <ActivityIndicator size="large" color={theme.textPrimary} />
                             <Text style={[styles.loadingText, { color: theme.textSecondary }]}>{t('babysitter.checkingStatus')}</Text>
                         </View>
                     ) : isSitterRegistered ? (
@@ -1023,46 +978,61 @@ const styles = StyleSheet.create({
 
     // Header
     header: {
-        paddingTop: Platform.OS === 'ios' ? 60 : 45,
+        paddingTop: Platform.OS === 'ios' ? 58 : 44,
         paddingHorizontal: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
+        paddingBottom: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     headerTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 14,
+    },
+    headerBackBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerIconBtn: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerRight: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 12,
+        gap: 10,
     },
     bookingsButton: {
         padding: 8,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: '700',
+        letterSpacing: -0.4,
     },
     userPhoto: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
     },
     userPhotoPlaceholder: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
         alignItems: 'center',
         justifyContent: 'center',
     },
 
-    // Mode Toggle
+    // Mode Toggle - Monochromatic pill
     modeToggle: {
         flexDirection: 'row',
-        borderRadius: 12,
+        borderRadius: 14,
         padding: 4,
     },
     modeBtn: {
@@ -1072,18 +1042,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 6,
         paddingVertical: 10,
-        borderRadius: 10,
+        borderRadius: 11,
     },
-    modeBtnActive: {},
+    modeBtnActive: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        elevation: 3,
+    },
     modeBtnText: {
         fontSize: 13,
-        fontWeight: '600',
     },
 
     // Filter Section
     filterSection: {
         paddingHorizontal: 20,
-        paddingVertical: 14,
+        paddingVertical: 10,
     },
     resultsCount: {
         fontSize: 13,
@@ -1091,67 +1066,120 @@ const styles = StyleSheet.create({
         textAlign: 'right',
         marginBottom: 10,
     },
+
+    // Sitters Header - Clean & Minimal
+    sittersHeader: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 8,
+        marginBottom: 2,
+    },
+    sittersHeaderTitle: {
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'right',
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+    },
     sortRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        gap: 8,
+        gap: 6,
     },
     sortPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
         paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: 16,
-        borderWidth: 1,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: StyleSheet.hairlineWidth,
     },
     sortPillText: {
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
     },
 
-    // Sitter Card - Enhanced with shadow
+    // Sitter Card
     scrollContent: {
         paddingHorizontal: 20,
+        paddingTop: 4,
     },
     sitterCard: {
-        borderRadius: 16,
-        marginBottom: 12,
-        padding: 16,
-        ...SHADOWS.subtle,
+        borderRadius: 14,
+        marginBottom: 8,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderWidth: StyleSheet.hairlineWidth,
     },
-    sitterCardContent: {
+    sitterCardTop: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
+        gap: 12,
+    },
+    sitterPhotoWrapper: {
+        position: 'relative',
+        flexShrink: 0,
     },
     sitterPhoto: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
     },
     sitterPhotoPlaceholder: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    availableDot: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 13,
+        height: 13,
+        borderRadius: 7,
+        backgroundColor: '#10B981',
+        borderWidth: 2,
+    },
     sitterInfo: {
         flex: 1,
-        marginRight: 12,
         alignItems: 'flex-end',
+        gap: 3,
     },
     sitterHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 5,
+    },
+    verifiedDot: {
+        width: 17,
+        height: 17,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     sitterName: {
         fontSize: 15,
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: -0.2,
     },
     sitterMeta: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginTop: 4,
+        gap: 5,
+    },
+    metaDot: {
+        width: 3,
+        height: 3,
+        borderRadius: 1.5,
+        opacity: 0.4,
+    },
+    metaDivider: {
+        width: 3,
+        height: 3,
+        borderRadius: 1.5,
+        opacity: 0.4,
     },
     ratingBadge: {
         flexDirection: 'row',
@@ -1160,41 +1188,49 @@ const styles = StyleSheet.create({
     },
     ratingText: {
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '700',
+    },
+    reviewCountText: {
+        fontSize: 11,
+        fontWeight: '400',
+        opacity: 0.7,
     },
     experienceText: {
         fontSize: 12,
+        fontWeight: '400',
     },
-    badgesRow: {
-        flexDirection: 'row-reverse',
-        gap: 6,
-        marginTop: 6,
-        flexWrap: 'wrap',
-    },
-    badge: {
-        flexDirection: 'row-reverse',
+    sitterLocationRow: {
+        flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
     },
-    badgeIcon: {
-        fontSize: 12,
-    },
-    badgeText: {
-        fontSize: 10,
-        fontWeight: '600',
-    },
-    priceSection: {
+    locationChip: {
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 3,
+    },
+    locationText: {
+        fontSize: 11,
+        fontWeight: '400',
+    },
+    distanceText: {
+        fontSize: 11,
+        fontWeight: '400',
+    },
+    // Price - clean minimal, no box
+    priceSection: {
+        alignItems: 'flex-end',
+        flexShrink: 0,
     },
     priceAmount: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 17,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     priceLabel: {
-        fontSize: 11,
+        fontSize: 10,
+        fontWeight: '400',
+        opacity: 0.6,
     },
 
     // Loading & Empty
@@ -1307,46 +1343,32 @@ const styles = StyleSheet.create({
     // Location filter styles - Enhanced with medium shadow
     locationSection: {
         paddingHorizontal: 20,
-        marginBottom: 16,
+        marginTop: 12,
+        marginBottom: 4,
         position: 'relative',
         zIndex: 10,
     },
     locationButton: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 13,
         paddingHorizontal: 16,
-        borderRadius: 18,
+        borderRadius: 14,
         borderWidth: StyleSheet.hairlineWidth,
+        gap: 10,
         ...SHADOWS.subtle,
         gap: 10,
-    },
-    locationIconContainer: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     locationInput: {
         flex: 1,
         fontSize: 15,
         fontWeight: '400',
-        paddingHorizontal: 6,
         paddingVertical: 0,
         minHeight: 20,
     },
     clearButton: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    locationBadge: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+        width: 24,
+        height: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1396,36 +1418,6 @@ const styles = StyleSheet.create({
     // Radius Filter Styles
     filtersContainer: {
         paddingBottom: 10,
-    },
-    radiusRow: {
-        marginBottom: 14,
-    },
-    filterLabel: {
-        fontSize: 13,
-        fontWeight: '500',
-        marginBottom: 8,
-        paddingHorizontal: 20,
-        textAlign: 'right',
-    },
-    radiusScroll: {
-        paddingHorizontal: 20,
-        gap: 8,
-        flexDirection: 'row-reverse', // RTL
-        paddingBottom: 4,
-    },
-    radiusPill: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        minWidth: 64,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...SHADOWS.subtle,
-    },
-    radiusPillText: {
-        fontSize: 13,
-        fontWeight: '600',
     },
 });
 

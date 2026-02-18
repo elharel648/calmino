@@ -1,0 +1,9 @@
+{
+    "name": "shared-attributes",
+    "version": "1.0.0",
+    "main": "index.ts",
+    "description": "Shared Activity Attributes",
+    "author": "Harel",
+    "license": "MIT",
+    "homepage": "https://example.com"
+}

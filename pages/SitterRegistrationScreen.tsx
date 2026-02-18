@@ -491,7 +491,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         style={StyleSheet.absoluteFill}
                     />
                     {isLoadingLocation ? (
-                        <ActivityIndicator size="small" color={theme.primary} />
+                        <ActivityIndicator size="small" color={theme.textPrimary} />
                     ) : (
                         <>
                             <LinearGradient

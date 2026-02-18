@@ -23,6 +23,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Haptics from 'expo-haptics';
+import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   LogOut,
@@ -57,6 +58,7 @@ import { deleteChild } from '../services/babyService';
 import { IntervalPicker } from '../components/Settings/IntervalPicker';
 import { TimePicker } from '../components/Settings/TimePicker';
 import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
+import { logger } from '../utils/logger';
 
 const LANGUAGES = [
   { key: 'he', labelKey: 'settings.hebrew', flag: '🇮🇱' },
@@ -120,7 +122,7 @@ export default function SettingsScreen() {
         });
       }
     } catch (error) {
-      if (__DEV__) console.log('Error fetching settings:', error);
+      logger.log('Error fetching settings:', error);
     } finally {
       setInitialLoading(false);
     }
@@ -138,7 +140,7 @@ export default function SettingsScreen() {
         }, { merge: true });
       }
     } catch (error) {
-      if (__DEV__) console.log('Failed to save setting:', key);
+      logger.log('Failed to save setting:', key);
     }
   };
 
@@ -369,9 +371,9 @@ export default function SettingsScreen() {
                           await deleteDoc(doc(db, 'babies', babyId));
                         });
                         await Promise.all(deleteBabyPromises);
-                        if (__DEV__) console.log('✅ Deleted all babies and their events');
+                        logger.log('✅ Deleted all babies and their events');
                       } catch (error) {
-                        if (__DEV__) console.error('Error deleting babies:', error);
+                        logger.error('Error deleting babies:', error);
                       }
 
                       // 2. Delete all events created by this user (fallback for old data)
@@ -385,9 +387,9 @@ export default function SettingsScreen() {
                           deleteDoc(doc(db, 'events', eventDoc.id))
                         );
                         await Promise.all(deleteEventPromises);
-                        if (__DEV__) console.log('✅ Deleted all user events');
+                        logger.log('✅ Deleted all user events');
                       } catch (error) {
-                        if (__DEV__) console.error('Error deleting events:', error);
+                        logger.error('Error deleting events:', error);
                       }
 
                       // 3. Remove user from families
@@ -406,9 +408,9 @@ export default function SettingsScreen() {
                             });
                           }
                         }
-                        if (__DEV__) console.log('✅ Removed user from families');
+                        logger.log('✅ Removed user from families');
                       } catch (error) {
-                        if (__DEV__) console.error('Error leaving family:', error);
+                        logger.error('Error leaving family:', error);
                       }
 
                       // 4. Delete bookings where user is parent or babysitter
@@ -430,9 +432,9 @@ export default function SettingsScreen() {
                           ...babysitterBookingsSnapshot.docs.map((bookingDoc) => deleteDoc(doc(db, 'bookings', bookingDoc.id)))
                         ];
                         await Promise.all(deleteBookingPromises);
-                        if (__DEV__) console.log('✅ Deleted all bookings');
+                        logger.log('✅ Deleted all bookings');
                       } catch (error) {
-                        if (__DEV__) console.error('Error deleting bookings:', error);
+                        logger.error('Error deleting bookings:', error);
                       }
 
                       // 5. Remove user from chats (update participants list)
@@ -462,14 +464,14 @@ export default function SettingsScreen() {
                               }
                             } catch (chatError) {
                               // Ignore individual chat errors and continue
-                              if (__DEV__) console.warn('Error updating chat:', chatDoc.id, chatError);
+                              logger.warn('Error updating chat:', chatDoc.id, chatError);
                             }
                           });
                         await Promise.all(updateChatPromises);
-                        if (__DEV__) console.log('✅ Removed user from all chats');
+                        logger.log('✅ Removed user from all chats');
                       } catch (error) {
                         // Continue even if there's an error - user deletion should not fail due to chats
-                        if (__DEV__) console.error('Error updating chats:', error);
+                        logger.error('Error updating chats:', error);
                       }
 
                       // 6. Delete sitter document if user is a sitter
@@ -478,10 +480,10 @@ export default function SettingsScreen() {
                         const sitterSnap = await getDoc(sitterDoc);
                         if (sitterSnap.exists()) {
                           await deleteDoc(sitterDoc);
-                          if (__DEV__) console.log('✅ Deleted sitter document');
+                          logger.log('✅ Deleted sitter document');
                         }
                       } catch (error) {
-                        if (__DEV__) console.error('Error deleting sitter document:', error);
+                        logger.error('Error deleting sitter document:', error);
                       }
 
                       // 7. Delete notifications for this user
@@ -495,17 +497,17 @@ export default function SettingsScreen() {
                           deleteDoc(doc(db, 'notifications', notificationDoc.id))
                         );
                         await Promise.all(deleteNotificationPromises);
-                        if (__DEV__) console.log('✅ Deleted all notifications');
+                        logger.log('✅ Deleted all notifications');
                       } catch (error) {
-                        if (__DEV__) console.error('Error deleting notifications:', error);
+                        logger.error('Error deleting notifications:', error);
                       }
 
                       // 8. Delete user document from Firestore
                       try {
                         await deleteDoc(doc(db, 'users', userId));
-                        if (__DEV__) console.log('✅ Deleted user document');
+                        logger.log('✅ Deleted user document');
                       } catch (error) {
-                        if (__DEV__) console.error('Error deleting user document:', error);
+                        logger.error('Error deleting user document:', error);
                       }
 
                       // 9. Delete user from Firebase Auth (this must be last)
@@ -536,7 +538,7 @@ export default function SettingsScreen() {
                           ]
                         );
                       } else {
-                        console.error('Delete account error:', e);
+                        logger.error('Delete account error:', e);
                         Alert.alert(t('common.error'), t('alerts.deleteAccountError'));
                       }
                     }
@@ -579,8 +581,8 @@ export default function SettingsScreen() {
         {/* התראות ותזכורות - Premium Design */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: '#FFF4E6' }]}>
-              <Bell size={18} color="#FF9500" strokeWidth={2} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(255, 159, 28, 0.12)' : 'rgba(255, 159, 28, 0.08)' }]}>
+              <Bell size={18} color={isDarkMode ? '#FFB84D' : '#FF9F1C'} strokeWidth={1.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.notifications')}</Text>
           </View>
@@ -591,8 +593,8 @@ export default function SettingsScreen() {
         {/* תצוגה והתנהגות */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: '#EDE9FE' }]}>
-              <Moon size={18} color="#8B5CF6" strokeWidth={2} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.08)' }]}>
+              <Moon size={18} color={isDarkMode ? '#A78BFA' : '#9F7AEA'} strokeWidth={1.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.display')}</Text>
           </View>
@@ -600,8 +602,8 @@ export default function SettingsScreen() {
           <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
             <View style={[styles.listItem, styles.listItemFirst]}>
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#EDE9FE' }]}>
-                  <Moon size={18} color="#8B5CF6" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.08)' }]}>
+                  <Moon size={18} color={isDarkMode ? '#A78BFA' : '#9F7AEA'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.nightMode')}</Text>
@@ -623,8 +625,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#D1FAE5' }]}>
-                  <Globe size={18} color="#10B981" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)' }]}>
+                  <Globe size={18} color={isDarkMode ? '#6EE7B7' : '#34D399'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>שפה</Text>
@@ -640,8 +642,8 @@ export default function SettingsScreen() {
 
             <View style={[styles.listItem, styles.listItemLast]}>
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#D1FAE5' }]}>
-                  <Lock size={18} color="#10B981" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)' }]}>
+                  <Lock size={18} color={isDarkMode ? '#6EE7B7' : '#34D399'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.biometric')}</Text>
@@ -661,8 +663,8 @@ export default function SettingsScreen() {
         {/* פרטיות ותמיכה */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: '#D1FAE5' }]}>
-              <Shield size={18} color="#10B981" strokeWidth={2} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)' }]}>
+              <Shield size={18} color={isDarkMode ? '#6EE7B7' : '#34D399'} strokeWidth={1.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.privacy')}</Text>
           </View>
@@ -674,8 +676,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: theme.divider }]}>
-                  <FileText size={18} color={theme.textSecondary} strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.08)' }]}>
+                  <FileText size={18} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={1.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.privacyPolicy')}</Text>
               </View>
@@ -690,8 +692,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: theme.divider }]}>
-                  <FileText size={18} color={theme.textSecondary} strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.08)' }]}>
+                  <FileText size={18} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={1.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.termsOfService')}</Text>
               </View>
@@ -706,8 +708,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#E0F2FE' }]}>
-                  <MessageCircle size={18} color="#0EA5E9" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)' }]}>
+                  <MessageCircle size={18} color={isDarkMode ? '#60A5FA' : '#3B82F6'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.contact')}</Text>
@@ -725,8 +727,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#F3E8FF' }]}>
-                  <Share2 size={18} color="#A78BFA" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.12)' : 'rgba(167, 139, 250, 0.08)' }]}>
+                  <Share2 size={18} color={isDarkMode ? '#C4B5FD' : '#A78BFA'} strokeWidth={1.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.shareFriends')}</Text>
               </View>
@@ -738,8 +740,8 @@ export default function SettingsScreen() {
         {/* אזור מסוכן */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: '#FEE2E2' }]}>
-              <Trash2 size={18} color="#EF4444" strokeWidth={2} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
+              <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.dangerZone')}</Text>
           </View>
@@ -751,8 +753,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#DBEAFE' }]}>
-                  <Key size={18} color="#3B82F6" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)' }]}>
+                  <Key size={18} color={isDarkMode ? '#60A5FA' : '#3B82F6'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.changePassword')}</Text>
@@ -770,11 +772,11 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FEE2E2' }]}>
-                  <Trash2 size={18} color="#EF4444" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
+                  <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: '#EF4444' }]}>{t('settings.deleteCurrentChild')}</Text>
+                  <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.deleteCurrentChild')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
                     {activeChild ? `מחק את ${activeChild.childName}` : 'אין ילד נבחר'}
                   </Text>
@@ -791,10 +793,10 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FEE2E2' }]}>
-                  <LogOut size={18} color="#EF4444" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
+                  <LogOut size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
                 </View>
-                <Text style={[styles.listItemText, { color: '#EF4444' }]}>{t('settings.logout')}</Text>
+                <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.logout')}</Text>
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
@@ -807,11 +809,11 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: '#FEE2E2' }]}>
-                  <Trash2 size={18} color="#EF4444" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
+                  <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: '#EF4444' }]}>{t('account.deleteAccount')}</Text>
+                  <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('account.deleteAccount')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>{t('account.deleteAccountWarning')}</Text>
                 </View>
               </View>
@@ -821,7 +823,8 @@ export default function SettingsScreen() {
         </View>
 
         {/* Version */}
-        <Text style={[styles.version, { color: theme.textSecondary }]}>CalmParent v1.0.4</Text>
+        {/* Version */}
+        <Text style={[styles.version, { color: theme.textSecondary }]}>CalmParent v{Constants.expoConfig?.version}</Text>
       </ScrollView>
 
       {/* Language Modal */}

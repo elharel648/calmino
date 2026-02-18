@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -220,7 +221,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
             try {
                 const activityId = await liveActivityService.startPumpingTimer();
                 if (activityId) newState.activityId = activityId;
-            } catch (error) { if (__DEV__) console.warn(error); }
+            } catch (error) { logger.warn(error); }
         }
 
         updateNestedState(activeChildId, 'pumping', newState);
@@ -269,7 +270,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
             try {
                 const activityId = await liveActivityService.startBottleTimer(activeChild?.childName || 'תינוק');
                 if (activityId) newState.activityId = activityId;
-            } catch (error) { if (__DEV__) console.warn(error); }
+            } catch (error) { logger.warn(error); }
         }
 
         updateNestedState(activeChildId, 'bottle', newState);

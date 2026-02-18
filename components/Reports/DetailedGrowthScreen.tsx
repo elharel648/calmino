@@ -16,9 +16,10 @@ import {
 } from 'react-native';
 import {
     ChevronLeft, TrendingUp, Scale, Ruler, Activity,
-    Plus, Info, Calendar, Edit3, Share2
+    Plus, Info, Calendar, Edit3, Share2, ChevronDown
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { logger } from '../../utils/logger';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
@@ -305,7 +306,7 @@ export default function DetailedGrowthScreen({
             setMeasurements(measurementsData);
             setChange(changeData);
         } catch (error) {
-            console.error('Error fetching growth data:', error);
+            logger.error('Error fetching growth data:', error);
         }
     }, [childId]);
 
@@ -412,13 +413,14 @@ export default function DetailedGrowthScreen({
     }, [measurements]);
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+
+        <View style={[styles.container, { backgroundColor: theme.card }]}>
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: theme.border }]}>
                 <TouchableOpacity style={styles.backButton}
                     onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onClose(); }}
                 >
-                    <ChevronLeft size={28} color={theme.textPrimary} />
+                    <ChevronDown size={28} color={theme.textPrimary} />
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
                     <TrendingUp size={20} color="#10B981" strokeWidth={2} />
@@ -491,7 +493,7 @@ export default function DetailedGrowthScreen({
 
                         {/* Export Button */}
                         <TouchableOpacity
-                            style={[styles.exportBtn, { backgroundColor: theme.card }]}
+                            style={[styles.exportBtn, { backgroundColor: theme.cardSecondary }]}
                             onPress={handleExport}
                         >
                             <Share2 size={18} color="#10B981" />
@@ -517,18 +519,18 @@ export default function DetailedGrowthScreen({
                 childId={childId}
                 editMeasurement={editMeasurement}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 10 : 20, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1
+        flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+        paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1 // Reduced padding top for modal
     },
-    backButton: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
-    headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    backButton: { width: 44, height: 44, alignItems: 'flex-end', justifyContent: 'center' }, // Right align for RTL
+    headerTitle: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
     headerText: { fontSize: 18, fontWeight: '600' },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     headerBtn: { padding: 6 },

@@ -44,7 +44,7 @@ const BookingsScreen = ({ navigation }: any) => {
             const result = await getParentBookings(userId);
             setBookings(result);
         } catch (error) {
-            console.error('Error loading bookings:', error);
+            logger.error('Error loading bookings:', error);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -69,7 +69,7 @@ const BookingsScreen = ({ navigation }: any) => {
             await updateBookingStatus(bookingId, 'cancelled');
             loadBookings();
         } catch (error) {
-            console.error('Error cancelling booking:', error);
+            logger.error('Error cancelling booking:', error);
         }
     };
 
@@ -77,7 +77,7 @@ const BookingsScreen = ({ navigation }: any) => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         navigation.navigate('ChatScreen', {
-            sitterId: booking.sitterId,
+            sitterId: booking.babysitterId,
             sitterName: booking.sitterName,
             sitterImage: null,
         });
@@ -88,7 +88,7 @@ const BookingsScreen = ({ navigation }: any) => {
 
         navigation.navigate('RatingScreen', {
             bookingId: booking.id,
-            sitterId: booking.sitterId,
+            sitterId: booking.babysitterId,
             sitterName: booking.sitterName,
         });
     };
@@ -197,7 +197,7 @@ const BookingsScreen = ({ navigation }: any) => {
             {/* Content */}
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.primary} />
+                    <ActivityIndicator size="large" color={theme.textPrimary} />
                     <Text style={[styles.loadingText, { color: theme.textSecondary }]}>טוען הזמנות...</Text>
                 </View>
             ) : (

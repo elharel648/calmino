@@ -125,10 +125,10 @@ export default function ChecklistModal({ visible, onClose }: ChecklistModalProps
 
                     {/* Content */}
                     <ScrollView
-                        style={styles.content}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                    >
+                            style={styles.content}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                        >
                         {/* Progress - Minimal */}
                         <Reanimated.View 
                             entering={ANIMATIONS.fadeInDown(50)}

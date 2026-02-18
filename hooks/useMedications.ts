@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useCallback } from 'react';
 import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../services/firebaseConfig';
@@ -29,7 +30,7 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
             });
             setSyncStatus('synced');
         } catch (e) {
-            if (__DEV__) console.log('Med sync error:', e);
+            logger.log('Med sync error:', e);
             setSyncStatus('error');
         }
     }, [childId]);
@@ -51,9 +52,9 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
                 timestamp: serverTimestamp(),
                 reporterName: user.displayName || 'אני',
             });
-            if (__DEV__) console.log('💊 Supplement event saved:', supplementName);
+            logger.log('💊 Supplement event saved:', supplementName);
         } catch (e) {
-            if (__DEV__) console.log('Supplement event save error:', e);
+            logger.log('Supplement event save error:', e);
         }
     }, [childId]);
 
@@ -90,7 +91,7 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
                 }
             }
         } catch (e) {
-            if (__DEV__) console.log('Med refresh error:', e);
+            logger.log('Med refresh error:', e);
         }
     }, [childId]);
 

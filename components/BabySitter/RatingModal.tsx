@@ -1,8 +1,8 @@
 /**
- * RatingModal - מודל דירוג בייביסיטר
+ * RatingModal - מודל דירוג בייביסיטר (Centered Glass Popup)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,21 +10,25 @@ import {
     Modal,
     TouchableOpacity,
     Alert,
-    ScrollView,
     TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from 'react-native';
-import { X, Star, AlertCircle } from 'lucide-react-native';
+import { X, Star, AlertCircle, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { auth, db } from '../../services/firebaseConfig';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { useTheme } from '../../context/ThemeContext';
 import { logger } from '../../utils/logger';
 import { containsInappropriateContent, hasNegativeSentiment } from '../../utils/moderation';
+import { BlurView } from 'expo-blur';
 
 interface RatingModalProps {
     visible: boolean;
     onClose: () => void;
-    bookingId?: string; // Optional - not present for guest invite ratings
+    bookingId?: string;
     babysitterId: string;
     babysitterName: string;
     onSuccess?: () => void;
@@ -38,93 +42,72 @@ const RatingModal: React.FC<RatingModalProps> = ({
     babysitterName,
     onSuccess,
 }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const [rating, setRating] = useState(0);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(false);
-    
+
     // Reset form when modal closes
-    React.useEffect(() => {
+    useEffect(() => {
         if (!visible) {
             setRating(0);
             setText('');
         }
     }, [visible]);
-    
-    // Check if text review is allowed
-    // Only 5 stars can write text (not 4) - to prevent negative reviews with high rating
+
     const isVerified = bookingId && !bookingId.startsWith('guest_');
-    const isPerfectRating = rating === 5; // Only 5 stars can write text
+    const isPerfectRating = rating === 5;
     const canAddText = isVerified && isPerfectRating;
-    
-    // Character limit
     const MAX_TEXT_LENGTH = 100;
 
-    // Handle star press
     const handleStarPress = (value: number) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setRating(value);
-        // Clear text if rating is not 5 (text only allowed for 5 stars)
-        if (value !== 5) {
-            setText('');
-        }
+        if (value !== 5) setText('');
     };
 
-    // Submit review
     const handleSubmit = async () => {
-        if (rating === 0) {
-            Alert.alert('שגיאה', 'יש לבחור דירוג');
-            return;
-        }
+        if (rating === 0) return;
 
-        // Validate text if provided
+        // Validation for verified text reviews
         const trimmedText = text.trim();
         if (trimmedText.length > 0) {
-            // Check if text is allowed (only for verified 5-star reviews)
             if (!canAddText) {
-                Alert.alert('שגיאה', 'תגובות טקסט אפשריות רק לביקורות מאומתות עם 5 כוכבים');
+                Alert.alert('שגיאה', 'תגובות בכתב אפשריות רק לדירוג 5 כוכבים');
                 return;
             }
-            
-            // Check for inappropriate content
             if (containsInappropriateContent(trimmedText)) {
-                Alert.alert('שגיאה', 'התגובה מכילה תוכן לא הולם. אנא נסי שוב.');
+                Alert.alert('תוכן לא הולם', 'אנא בדקי את הניסוח ונסה שוב');
                 return;
             }
-            
-            // Check for negative sentiment (even with 5 stars)
             if (hasNegativeSentiment(trimmedText)) {
-                Alert.alert(
-                    'שגיאה', 
-                    'נראה שהתגובה שלך שלילית. תגובות טקסט אפשריות רק לביקורות חיוביות. אם יש לך ביקורת, אנא צרי קשר עם התמיכה.'
-                );
+                Alert.alert('שגיאה', 'תגובות טקסט מיועדות לפרגון בלבד. לבעיות אנא פני לתמיכה.');
                 return;
             }
         }
 
         setLoading(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         try {
             const user = auth.currentUser;
             if (!user) throw new Error('Not logged in');
 
-            // Create review with conditional text
+            // Save review
             await addDoc(collection(db, 'reviews'), {
                 bookingId: bookingId || null,
                 parentId: user.uid,
                 babysitterId,
                 rating,
-                // Only save text if: verified booking AND positive rating (4-5 stars)
                 text: (canAddText && trimmedText.length > 0) ? trimmedText : null,
-                tags: null, // No tags allowed
+                tags: null,
                 isVerified: isVerified || false,
                 helpfulCount: 0,
                 helpfulBy: [],
                 createdAt: serverTimestamp(),
             });
 
-            // Mark booking as rated (only if this is a real booking, not a guest invite)
+            // Update booking status
             if (bookingId && !bookingId.startsWith('guest_')) {
                 await updateDoc(doc(db, 'bookings', bookingId), {
                     rated: true,
@@ -132,344 +115,264 @@ const RatingModal: React.FC<RatingModalProps> = ({
                 });
             }
 
-            // Update babysitter's average rating
+            // Update sitter aggregation
             try {
                 const sitterDoc = await getDoc(doc(db, 'users', babysitterId));
                 if (sitterDoc.exists()) {
-                    const sitterData = sitterDoc.data();
-                    const currentRating = sitterData.sitterRating || 0;
-                    const currentCount = sitterData.sitterReviewCount || 0;
-
-                    // Calculate new average: (oldAvg * oldCount + newRating) / newCount
+                    const data = sitterDoc.data();
+                    const currentRating = data.sitterRating || 0;
+                    const currentCount = data.sitterReviewCount || 0;
                     const newCount = currentCount + 1;
                     const newAverage = ((currentRating * currentCount) + rating) / newCount;
 
                     await updateDoc(doc(db, 'users', babysitterId), {
-                        sitterRating: Math.round(newAverage * 10) / 10, // Round to 1 decimal
+                        sitterRating: Math.round(newAverage * 10) / 10,
                         sitterReviewCount: increment(1),
                     });
-                    logger.debug('✅', 'Rating updated: new average =', newAverage.toFixed(1));
                 }
-            } catch (ratingError) {
-                logger.warn('⚠️ Could not update sitter rating:', ratingError);
-                // Don't fail the whole submission if rating update fails
+            } catch (e) {
+                logger.warn('Failed to update sitter aggregated rating', e);
             }
 
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            const successMessage = trimmedText.length > 0 
-                ? 'הדירוג והתגובה שלך נשמרו בהצלחה!'
-                : 'הדירוג שלך נשמר.';
-            Alert.alert(
-                '⭐ תודה!',
-                successMessage,
-                [{ text: 'סגור', onPress: () => { onClose(); onSuccess?.(); } }]
-            );
+            // Success UI
+            onClose();
+            onSuccess?.();
+
         } catch (error) {
-            logger.error('Rating error:', error);
+            logger.error('Rating submit error:', error);
             Alert.alert('שגיאה', 'לא הצלחנו לשמור את הדירוג');
         } finally {
             setLoading(false);
         }
     };
 
-    // Render stars
-    const renderStars = () => {
-        return (
-            <View style={styles.starsRow}>
-                {[1, 2, 3, 4, 5].map(value => (
-                    <TouchableOpacity
-                        key={value}
-                        onPress={() => handleStarPress(value)}
-                        style={styles.starBtn}
-                    >
-                        <Star
-                            size={40}
-                            color={value <= rating ? '#FBBF24' : '#E5E7EB'}
-                            fill={value <= rating ? '#FBBF24' : 'transparent'}
-                        />
-                    </TouchableOpacity>
-                ))}
-            </View>
-        );
-    };
-
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                        <X size={24} color={theme.textPrimary} />
-                    </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                        דרגי את {babysitterName}
-                    </Text>
-                    <View style={{ width: 40 }} />
-                </View>
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.overlay}>
+                    <BlurView
+                        intensity={20}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
+                    />
 
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                    {/* Emoji Header */}
-                    <View style={styles.emojiHeader}>
-                        <Text style={styles.emoji}>⭐</Text>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>
-                            איך היה?
-                        </Text>
-                        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                            הדירוג שלך עוזר להורים אחרים לבחור
-                        </Text>
-                    </View>
-
-                    {/* Stars */}
-                    <View style={styles.section}>
-                        {renderStars()}
-                        <Text style={[styles.ratingLabel, { color: theme.textSecondary }]}>
-                            {rating === 0 && 'לחצי על הכוכבים'}
-                            {rating === 1 && 'גרוע 😞'}
-                            {rating === 2 && 'לא טוב 😐'}
-                            {rating === 3 && 'בסדר 🙂'}
-                            {rating === 4 && 'טוב מאוד 😊'}
-                            {rating === 5 && 'מעולה! 🤩'}
-                        </Text>
-                    </View>
-
-                    {/* Text Review - Only for verified positive reviews */}
-                    {canAddText && (
-                        <View style={styles.section}>
-                            <View style={styles.textSectionHeader}>
-                                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                    כתבי ביקורת (אופציונלי)
-                                </Text>
-                                <View style={[styles.verifiedBadge, { backgroundColor: '#10B981' + '20' }]}>
-                                    <Text style={[styles.verifiedBadgeText, { color: '#10B981' }]}>✓ מאומת</Text>
-                                </View>
-                            </View>
-                            <TextInput
-                                style={[
-                                    styles.textInput, 
-                                    { 
-                                        backgroundColor: theme.card, 
-                                        color: theme.textPrimary,
-                                        borderColor: theme.border,
-                                    }
-                                ]}
-                                placeholder="מה עוד היית רוצה לספר? (עד 100 תווים)"
-                                placeholderTextColor={theme.textSecondary}
-                                value={text}
-                                onChangeText={(newText) => {
-                                    if (newText.length <= MAX_TEXT_LENGTH) {
-                                        setText(newText);
-                                    }
-                                }}
-                                multiline
-                                numberOfLines={3}
-                                textAlignVertical="top"
-                                maxLength={MAX_TEXT_LENGTH}
-                            />
-                            <View style={styles.charCounter}>
-                                <Text style={[styles.charCounterText, { 
-                                    color: text.length >= MAX_TEXT_LENGTH ? theme.danger : theme.textSecondary 
-                                }]}>
-                                    {text.length}/{MAX_TEXT_LENGTH}
-                                </Text>
-                            </View>
-                            {text.length > 0 && (
-                                <>
-                                    {containsInappropriateContent(text) && (
-                                        <View style={[styles.warningBox, { backgroundColor: theme.danger + '15', borderColor: theme.danger }]}>
-                                            <AlertCircle size={16} color={theme.danger} />
-                                            <Text style={[styles.warningText, { color: theme.danger }]}>
-                                                התגובה מכילה תוכן לא הולם
-                                            </Text>
-                                        </View>
-                                    )}
-                                    {hasNegativeSentiment(text) && (
-                                        <View style={[styles.warningBox, { backgroundColor: theme.danger + '15', borderColor: theme.danger }]}>
-                                            <AlertCircle size={16} color={theme.danger} />
-                                            <Text style={[styles.warningText, { color: theme.danger }]}>
-                                                התגובה נראית שלילית. תגובות טקסט אפשריות רק לביקורות חיוביות
-                                            </Text>
-                                        </View>
-                                    )}
-                                </>
-                            )}
-                        </View>
-                    )}
-
-                    {/* Info message for non-verified or non-5-star reviews */}
-                    {rating > 0 && !canAddText && (
-                        <View style={[styles.infoBox, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-                            <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-                                {!isVerified 
-                                    ? '💡 תגובות טקסט אפשריות רק לביקורות מאומתות (אחרי הזמנה שהושלמה)'
-                                    : rating !== 5
-                                    ? '💡 תגובות טקסט אפשריות רק לביקורות עם 5 כוכבים'
-                                    : ''
-                                }
-                            </Text>
-                        </View>
-                    )}
-
-                </ScrollView>
-
-                {/* Submit Button */}
-                <View style={styles.footer}>
-                    <TouchableOpacity
-                        style={[
-                            styles.submitBtn,
-                            rating === 0 && styles.submitBtnDisabled,
-                            loading && styles.submitBtnDisabled
-                        ]}
-                        onPress={handleSubmit}
-                        disabled={rating === 0 || loading}
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={styles.keyboardView}
                     >
-                        <Text style={styles.submitBtnText}>
-                            {loading ? 'שומר...' : '⭐ שלחי דירוג'}
-                        </Text>
-                    </TouchableOpacity>
+                        <View style={[styles.modalCard, {
+                            backgroundColor: isDarkMode ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)',
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                        }]}>
+
+                            {/* Close Button */}
+                            <TouchableOpacity
+                                onPress={onClose}
+                                style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                            >
+                                <X size={20} color={theme.textSecondary} />
+                            </TouchableOpacity>
+
+                            {/* Header */}
+                            <View style={styles.headerContent}>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>
+                                    דרגי את {babysitterName}
+                                </Text>
+                                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                                    איך היה הבייביסיטר?
+                                </Text>
+                            </View>
+
+                            {/* Stars */}
+                            <View style={styles.starsContainer}>
+                                <View style={styles.starsRow}>
+                                    {[1, 2, 3, 4, 5].map(value => (
+                                        <TouchableOpacity
+                                            key={value}
+                                            onPress={() => handleStarPress(value)}
+                                            activeOpacity={0.7}
+                                            style={styles.starBtn}
+                                        >
+                                            <Star
+                                                size={36}
+                                                color={value <= rating ? '#FBBF24' : (isDarkMode ? '#333' : '#E5E7EB')}
+                                                fill={value <= rating ? '#FBBF24' : 'transparent'}
+                                                strokeWidth={2}
+                                            />
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <Text style={[styles.ratingLabel, { color: theme.primary }]}>
+                                    {rating === 1 && 'לא טוב'}
+                                    {rating === 2 && 'סביר'}
+                                    {rating === 3 && 'בסדר'}
+                                    {rating === 4 && 'טוב'}
+                                    {rating === 5 && 'מצוין!'}
+                                    {rating === 0 && ' '}
+                                </Text>
+                            </View>
+
+                            {/* Optional Text Input */}
+                            {canAddText && (
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={[styles.input, {
+                                            backgroundColor: isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                                            color: theme.textPrimary
+                                        }]}
+                                        placeholder="איך היה? (אופציונלי)"
+                                        placeholderTextColor={theme.textTertiary}
+                                        multiline
+                                        maxLength={MAX_TEXT_LENGTH}
+                                        value={text}
+                                        onChangeText={setText}
+                                    />
+                                    <Text style={[styles.charCount, { color: theme.textTertiary }]}>
+                                        {text.length}/{MAX_TEXT_LENGTH}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {/* Submit Button */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.submitBtn,
+                                    { backgroundColor: theme.primary },
+                                    (rating === 0 || loading) && styles.submitBtnDisabled
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={rating === 0 || loading}
+                            >
+                                {loading ? (
+                                    <Text style={styles.submitBtnText}>שומר...</Text>
+                                ) : (
+                                    <View style={styles.btnContent}>
+                                        <Check size={18} color="#fff" strokeWidth={2.5} />
+                                        <Text style={styles.submitBtnText}>שלחי דירוג</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+
+                        </View>
+                    </KeyboardAvoidingView>
                 </View>
-            </View>
+            </TouchableWithoutFeedback>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    overlay: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
+        backgroundColor: 'rgba(0,0,0,0.4)', // Dimmed background
+    },
+    keyboardView: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalCard: {
+        width: '85%',
+        maxWidth: 340,
+        borderRadius: 24,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        elevation: 10,
+        borderWidth: 1,
+        alignItems: 'center',
     },
     closeBtn: {
-        padding: 8,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-    },
-    content: {
-        flex: 1,
-        padding: 20,
-    },
-    emojiHeader: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
-        marginBottom: 32,
+        justifyContent: 'center',
+        zIndex: 10,
     },
-    emoji: {
-        fontSize: 56,
-        marginBottom: 12,
+    headerContent: {
+        alignItems: 'center',
+        marginBottom: 24,
+        marginTop: 8,
     },
     title: {
-        fontSize: 24,
-        fontWeight: '800',
-        marginBottom: 8,
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 4,
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 14,
         textAlign: 'center',
     },
-    section: {
-        marginBottom: 28,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 14,
-        textAlign: 'right',
+    starsContainer: {
+        alignItems: 'center',
+        marginBottom: 24,
+        width: '100%',
     },
     starsRow: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 12,
+        gap: 8,
+        marginBottom: 8,
     },
     starBtn: {
         padding: 4,
     },
     ratingLabel: {
-        textAlign: 'center',
-        marginTop: 12,
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    textSectionHeader: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 14,
-    },
-    verifiedBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    verifiedBadgeText: {
-        fontSize: 11,
+        height: 20,
+        fontSize: 14,
         fontWeight: '600',
     },
-    textInput: {
-        borderRadius: 14,
-        padding: 16,
-        fontSize: 15,
-        minHeight: 80,
-        textAlign: 'right',
-        borderWidth: 1,
+    inputContainer: {
+        width: '100%',
+        marginBottom: 24,
     },
-    charCounter: {
-        alignItems: 'flex-end',
-        marginTop: 6,
-    },
-    charCounterText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    warningBox: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 8,
+    input: {
+        width: '100%',
+        height: 80,
+        borderRadius: 16,
         padding: 12,
-        borderRadius: 12,
-        marginTop: 12,
-        borderWidth: 1,
-    },
-    warningText: {
-        fontSize: 13,
-        fontWeight: '500',
-        flex: 1,
-    },
-    infoBox: {
-        padding: 14,
-        borderRadius: 12,
-        marginTop: 12,
-        borderWidth: 1,
-    },
-    infoText: {
-        fontSize: 13,
-        lineHeight: 18,
         textAlign: 'right',
+        textAlignVertical: 'top',
+        fontSize: 14,
     },
-    footer: {
-        padding: 20,
-        paddingBottom: 40,
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
+    charCount: {
+        fontSize: 11,
+        textAlign: 'left', // LTR for numbers looks better usually, or 'right' if strict Hebrew
+        marginTop: 4,
+        marginRight: 4,
     },
     submitBtn: {
-        backgroundColor: '#FBBF24',
+        width: '100%',
+        paddingVertical: 14,
         borderRadius: 16,
-        paddingVertical: 18,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     submitBtnDisabled: {
         opacity: 0.5,
     },
+    btnContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     submitBtnText: {
-        color: '#1F2937',
-        fontSize: 17,
+        color: '#fff',
+        fontSize: 16,
         fontWeight: '700',
     },
 });

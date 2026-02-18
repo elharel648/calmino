@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // services/navigationService.ts
 // Global navigation service for deep linking from notifications
 
@@ -18,7 +19,7 @@ export function navigate(name: string, params?: object) {
         );
     } else {
         // Navigation not ready, queue the navigation
-        console.log('Navigation not ready, queuing:', name);
+        logger.log('Navigation not ready, queuing:', name);
         setTimeout(() => navigate(name, params), 100);
     }
 }
@@ -75,7 +76,7 @@ export function navigateToNotifications() {
  * Navigate based on notification type
  */
 export function navigateFromNotification(type: string, data?: any) {
-    console.log('🔔 Navigating from notification:', type);
+    logger.log('🔔 Navigating from notification:', type);
 
     switch (type) {
         case 'feeding_reminder':

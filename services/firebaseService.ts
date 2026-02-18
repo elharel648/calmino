@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // services/firebaseService.ts
 import {
   collection,
@@ -97,7 +98,7 @@ export const getChildProfile = async (userId: string): Promise<ChildProfile | nu
     }
     return null;
   } catch (e) {
-    if (__DEV__) console.error('Error getting child profile:', e);
+    logger.error('Error getting child profile:', e);
     return null;
   }
 };
@@ -109,7 +110,7 @@ export const getChildProfile = async (userId: string): Promise<ChildProfile | nu
 // 💡 נוסף childId
 export const saveEventToFirebase = async (userId: string, childId: string, data: any) => {
   try {
-    console.log('🔥 saveEventToFirebase called:', { userId, childId, dataType: data.type });
+    logger.log('🔥 saveEventToFirebase called:', { userId, childId, dataType: data.type });
     const eventsRef = collection(db, EVENTS_COLLECTION);
 
     // Handle timestamp conversion carefully
@@ -145,7 +146,7 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       timestamp
     };
 
-    console.log('🔥 Saving eventData to Firestore:', JSON.stringify({
+    logger.log('🔥 Saving eventData to Firestore:', JSON.stringify({
       type: eventData.type,
       duration: eventData.duration,
       startTime: eventData.startTime,
@@ -156,14 +157,14 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
     }, null, 2));
 
     const docRef = await addDoc(eventsRef, eventData);
-    console.log('✅ Event saved successfully with ID:', docRef.id);
+    logger.log('✅ Event saved successfully with ID:', docRef.id);
     return docRef.id; // Return event ID for undo functionality
   } catch (error: any) {
-    console.error('❌ saveEventToFirebase error:', error?.code, error?.message);
-    console.error('❌ Full error:', error);
+    logger.error('❌ saveEventToFirebase error:', error?.code, error?.message);
+    logger.error('❌ Full error:', error);
     if (__DEV__) {
-      console.log('saveEventToFirebase error:', error?.code);
-      console.log('saveEventToFirebase error message:', error?.message);
+      logger.log('saveEventToFirebase error:', error?.code);
+      logger.log('saveEventToFirebase error message:', error?.message);
     }
     throw error;
   }
@@ -212,7 +213,7 @@ export const getLastEvent = async (childId: string, eventType: 'food' | 'sleep' 
 
     return null;
   } catch (e) {
-    if (__DEV__) console.error('Error getting last event:', e);
+    logger.error('Error getting last event:', e);
     return null;
   }
 };
@@ -265,7 +266,7 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
     // Already sorted by server, return directly
     return events;
   } catch (e) {
-    if (__DEV__) console.error('Error getting recent history:', e);
+    logger.error('Error getting recent history:', e);
     return [];
   }
 };

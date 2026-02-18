@@ -24,8 +24,10 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, int
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { addMilestone, removeMilestone } from '../../services/babyService';
 import { SwipeableRow } from '../Common/SwipeableRow';
+import { logger } from '../../utils/logger';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -66,6 +68,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
     // Premium animations
     const glowAnim = useSharedValue(0);
     const sparkleAnim = useSharedValue(0);
+    const awardAnim = useSharedValue(0);
 
     useEffect(() => {
         if (visible) {
@@ -96,11 +99,17 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                 -1,
                 true
             );
+            awardAnim.value = withRepeat(
+                withTiming(1, { duration: 2500 }),
+                -1,
+                true
+            );
         } else {
             slideAnim.setValue(SCREEN_HEIGHT);
             backdropAnim.setValue(0);
             glowAnim.value = 0;
             sparkleAnim.value = 0;
+            awardAnim.value = 0;
         }
     }, [visible]);
 
@@ -228,6 +237,14 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
         };
     });
 
+    const awardStyle = useAnimatedStyle(() => {
+        const scale = interpolate(awardAnim.value, [0, 0.5, 1], [1, 1.15, 1]);
+        const rotate = interpolate(awardAnim.value, [0, 0.25, 0.5, 0.75, 1], [0, -8, 0, 8, 0]);
+        return {
+            transform: [{ scale }, { rotate: `${rotate}deg` }],
+        };
+    });
+
     const handleSave = async () => {
         if (!title.trim()) {
             Alert.alert('שגיאה', 'נא להזין כותרת');
@@ -253,7 +270,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
             setDate(new Date());
             setActiveTab('history');
         } catch (error) {
-            if (__DEV__) console.log('Error saving milestone:', error);
+            logger.log('Error saving milestone:', error);
             Alert.alert('שגיאה', 'לא הצלחנו לשמור את אבן הדרך');
         } finally {
             setLoading(false);
@@ -271,7 +288,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
         } catch (error) {
-            if (__DEV__) console.log('Error deleting milestone:', error);
+            logger.log('Error deleting milestone:', error);
         }
     };
 
@@ -347,20 +364,12 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                         )}
 
                         <View style={styles.headerContent}>
-                            <Animated.View style={glowStyle}>
-                                <LinearGradient
-                                    colors={['#F59E0B', '#FBBF24', '#FCD34D']}
-                                    style={styles.iconCircleGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    <Animated.View style={sparkleStyle}>
-                                        <Sparkles size={16} color="#fff" strokeWidth={2} style={{ position: 'absolute', top: -4, right: -4 }} />
-                                    </Animated.View>
-                                    <Award size={28} color="#fff" strokeWidth={2.5} fill="#fff" />
-                                </LinearGradient>
-                            </Animated.View>
-                            <Text style={[styles.title, { color: theme.textPrimary }]}>אבני דרך</Text>
+                            <View style={[styles.iconCircleBorder, { borderColor: '#F59E0B' }]}>
+                                <Animated.View style={awardStyle}>
+                                    <Award size={32} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
+                                </Animated.View>
+                            </View>
+                            <Text style={[styles.title, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>אבני דרך</Text>
                             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>תעדו את הרגעים המיוחדים</Text>
                         </View>
                     </View>
@@ -418,7 +427,8 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                         </View>
                     </View>
 
-                    <ScrollView
+                    <ScrollFadeWrapper fadeHeight={80}>
+                        <ScrollView
                         ref={scrollViewRef}
                         showsVerticalScrollIndicator={false}
                         style={styles.content}
@@ -454,7 +464,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             textAlign="center"
                                         />
                                     </View>
-                                    <Text style={[styles.labelMinimal, { color: theme.textPrimary }]}>כותרת</Text>
+                                    <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>כותרת</Text>
                                 </View>
 
                                 {/* Date Row - Premium */}
@@ -486,7 +496,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             </Text>
                                         </View>
                                     </TouchableOpacity>
-                                    <Text style={[styles.labelMinimal, { color: theme.textPrimary }]}>תאריך</Text>
+                                    <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>תאריך</Text>
                                 </View>
 
                                 {/* Notes Row - Premium */}
@@ -513,31 +523,31 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                             numberOfLines={2}
                                         />
                                     </View>
-                                    <Text style={[styles.labelMinimal, { color: theme.textPrimary }]}>הערות</Text>
+                                    <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>הערות</Text>
                                 </View>
 
-                                {/* Save Button - Premium Gradient */}
+                                {/* Save Button - Minimalist Yellow Border */}
                                 <TouchableOpacity
-                                    style={[styles.saveBtnWrapper, { opacity: !title.trim() || loading ? 0.5 : 1 }]}
+                                    style={[
+                                        styles.saveBtnMinimal,
+                                        {
+                                            borderColor: '#F59E0B',
+                                            backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.05)',
+                                            opacity: !title.trim() || loading ? 0.5 : 1
+                                        }
+                                    ]}
                                     onPress={handleSave}
                                     disabled={!title.trim() || loading}
-                                    activeOpacity={0.8}
+                                    activeOpacity={0.7}
                                 >
-                                    <LinearGradient
-                                        colors={['#34D399', '#10B981', '#059669']}
-                                        style={styles.saveBtnGradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                    >
-                                        {loading ? (
-                                            <ActivityIndicator color="#fff" />
-                                        ) : (
-                                            <>
-                                                <Award size={20} color="#fff" strokeWidth={2.5} fill="#fff" />
-                                                <Text style={styles.saveBtnTextGreen}>שמור אבן דרך</Text>
-                                            </>
-                                        )}
-                                    </LinearGradient>
+                                    {loading ? (
+                                        <ActivityIndicator color="#F59E0B" />
+                                    ) : (
+                                        <>
+                                            <Award size={20} color="#F59E0B" strokeWidth={2.5} />
+                                            <Text style={styles.saveBtnTextMinimal}>שמור אבן דרך</Text>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         ) : (
@@ -627,7 +637,8 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                 )}
                             </View>
                         )}
-                    </ScrollView>
+                        </ScrollView>
+                    </ScrollFadeWrapper>
 
                     {/* Date Picker */}
                     {showDatePicker && (
@@ -697,18 +708,18 @@ const styles = StyleSheet.create({
         gap: 12,
         zIndex: 1,
     },
-    iconCircleGradient: {
+    iconCircleBorder: {
         width: 72,
         height: 72,
         borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 2.5,
         shadowColor: '#F59E0B',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-        elevation: 8,
-        position: 'relative',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
     },
     title: {
         fontSize: 32,
@@ -1063,8 +1074,18 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         borderRadius: 18,
     },
-    saveBtnTextGreen: {
-        color: '#fff',
+    saveBtnMinimal: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 18,
+        borderRadius: 18,
+        borderWidth: 2,
+        marginTop: 12,
+    },
+    saveBtnTextMinimal: {
+        color: '#F59E0B',
         fontSize: 17,
         fontWeight: '800',
         letterSpacing: 0.3,

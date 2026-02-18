@@ -35,6 +35,7 @@ import { he } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { addGrowthMeasurement, updateGrowthMeasurement, deleteGrowthMeasurement, GrowthMeasurement } from '../../services/growthService';
+import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { Timestamp } from 'firebase/firestore';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -299,7 +300,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                 }
             }
         } catch (error) {
-            console.error('Error saving measurement:', error);
+            logger.error('Error saving measurement:', error);
         }
 
         resetAndClose();
@@ -315,7 +316,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
         try {
             await deleteGrowthMeasurement(editMeasurement.id);
         } catch (error) {
-            console.error('Error deleting measurement:', error);
+            logger.error('Error deleting measurement:', error);
         }
 
         resetAndClose();
@@ -400,9 +401,10 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                         </Text>
                     </Animated.View>
 
-                    <ScrollView
-                        ref={scrollViewRef}
-                        style={styles.scrollView}
+                    <ScrollFadeWrapper fadeHeight={80}>
+                        <ScrollView
+                            ref={scrollViewRef}
+                            style={styles.scrollView}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
@@ -583,7 +585,8 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                 </TouchableOpacity>
                             )}
                         </Animated.View>
-                    </ScrollView>
+                        </ScrollView>
+                    </ScrollFadeWrapper>
                 </RNAnimatedView>
             </KeyboardAvoidingView>
         </Modal>

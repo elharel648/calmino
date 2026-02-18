@@ -1,4 +1,3 @@
-// components/Home/QuickReminderModal.tsx - Quick Reminder Creation Modal
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
     View,
@@ -13,19 +12,36 @@ import {
     Animated as RNAnimated,
     Dimensions,
     Alert,
+    KeyboardAvoidingView,
+    Switch,
 } from 'react-native';
-import { X, Bell, Clock, Calendar, Check, Trash2, List, Plus, ShoppingCart, Baby, Pill, Phone } from 'lucide-react-native';
+import {
+    X, Bell, Clock, Calendar, Check, Trash2, List, Plus,
+    ShoppingCart, Baby, Pill, Phone, Sparkles, Zap, Moon, Sun
+} from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { notificationService } from '../../services/notificationService';
 import { logger } from '../../utils/logger';
-import Reanimated, { FadeInDown, useSharedValue, withRepeat, withTiming, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
+import Reanimated, {
+    FadeInDown,
+    FadeInUp,
+    useSharedValue,
+    withRepeat,
+    withTiming,
+    useAnimatedStyle,
+    withSpring,
+    interpolate,
+    Extrapolate
+} from 'react-native-reanimated';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
 interface QuickReminderModalProps {
@@ -53,22 +69,47 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
     const [message, setMessage] = useState('');
     const [reminderType, setReminderType] = useState<ReminderType>('once');
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [selectedTime, setSelectedTime] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
+    const [addToCalendar, setAddToCalendar] = useState(false);
     const [saving, setSaving] = useState(false);
     const [reminders, setReminders] = useState<ReminderItem[]>([]);
     const [loadingReminders, setLoadingReminders] = useState(false);
 
+    // Slide Animation (RN Animated for PanResponder)
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
-    const fadeAnim = useRef(new RNAnimated.Value(0)).current;
-    const isDragging = useRef(false);
 
-    // Premium animations
-    const glowAnim = useSharedValue(0);
-    const sparkleAnim = useSharedValue(0);
+    // Premium Glow Animation (Reanimated)
+    const pulseAnim = useSharedValue(1);
 
-    // Load reminders when modal opens
+    useEffect(() => {
+        if (visible) {
+            slideAnim.setValue(SCREEN_HEIGHT);
+            RNAnimated.spring(slideAnim, {
+                toValue: 0,
+                useNativeDriver: true,
+                tension: 65,
+                friction: 11,
+            }).start();
+
+            // Start Pulse
+            pulseAnim.value = withRepeat(withTiming(1.1, { duration: 1500 }), -1, true);
+
+            loadReminders();
+            resetForm();
+        } else {
+            pulseAnim.value = 1;
+        }
+    }, [visible]);
+
+    const resetForm = () => {
+        setViewMode('list');
+        setMessage('');
+        setReminderType('once');
+        setSelectedDate(new Date());
+        setAddToCalendar(false);
+    };
+
     const loadReminders = async () => {
         setLoadingReminders(true);
         try {
@@ -81,989 +122,1041 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
         }
     };
 
-    useEffect(() => {
-        if (visible) {
-            slideAnim.setValue(SCREEN_HEIGHT);
-            fadeAnim.setValue(0);
-            RNAnimated.parallel([
-                RNAnimated.spring(slideAnim, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                    tension: 65,
-                    friction: 11,
-                }),
-                RNAnimated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-            // Load reminders and reset form
-            loadReminders();
-            setViewMode('list');
-            setMessage('');
-            setReminderType('once');
-            setSelectedDate(new Date());
-            setSelectedTime(new Date());
-        } else {
-            slideAnim.setValue(SCREEN_HEIGHT);
-            fadeAnim.setValue(0);
-        }
-    }, [visible]);
-
-    // Swipe down to dismiss
+    // Pan Responder for Dismiss
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (_, gestureState) => {
-            const isDraggingDown = gestureState.dy > 20;
-            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5;
-
-            if (isDraggingDown && isVerticalSwipe && !isDragging.current) {
-                isDragging.current = true;
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                return true;
-            }
-            return false;
+            const { dy, dx } = gestureState;
+            return dy > 10 && Math.abs(dy) > Math.abs(dx);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
                 slideAnim.setValue(gestureState.dy);
-                const opacity = Math.max(0, 1 - (gestureState.dy / 300));
-                fadeAnim.setValue(opacity);
             }
         },
         onPanResponderRelease: (_, gestureState) => {
-            isDragging.current = false;
-            const shouldDismiss = gestureState.dy > 100 || gestureState.vy > 0.4;
-
-            if (shouldDismiss) {
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
-                RNAnimated.parallel([
-                    RNAnimated.spring(slideAnim, {
-                        toValue: SCREEN_HEIGHT,
-                        useNativeDriver: true,
-                        tension: 65,
-                        friction: 11,
-                    }),
-                    RNAnimated.timing(fadeAnim, {
-                        toValue: 0,
-                        duration: 200,
-                        useNativeDriver: true,
-                    }),
-                ]).start(() => {
-                    onClose();
-                    slideAnim.setValue(SCREEN_HEIGHT);
-                    fadeAnim.setValue(0);
-                });
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                RNAnimated.timing(slideAnim, {
+                    toValue: SCREEN_HEIGHT,
+                    duration: 250,
+                    useNativeDriver: true,
+                }).start(onClose);
             } else {
-                RNAnimated.parallel([
-                    RNAnimated.spring(slideAnim, {
-                        toValue: 0,
-                        useNativeDriver: true,
-                        tension: 65,
-                        friction: 11,
-                    }),
-                    RNAnimated.timing(fadeAnim, {
-                        toValue: 1,
-                        duration: 200,
-                        useNativeDriver: true,
-                    }),
-                ]).start();
-            }
-        },
-        onPanResponderTerminate: () => {
-            isDragging.current = false;
-            RNAnimated.parallel([
                 RNAnimated.spring(slideAnim, {
                     toValue: 0,
                     useNativeDriver: true,
                     tension: 65,
                     friction: 11,
-                }),
-                RNAnimated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-            ]).start();
+                }).start();
+            }
         },
-    }), [onClose, slideAnim, fadeAnim]);
+    }), [onClose]);
 
-    // Combine date and time
+    // Helpers
     const getReminderDateTime = (): Date => {
-        const date = new Date(selectedDate);
-        const time = new Date(selectedTime);
-        date.setHours(time.getHours());
-        date.setMinutes(time.getMinutes());
-        date.setSeconds(0);
-        return date;
+        return selectedDate;
     };
 
     const handleSave = async () => {
-        if (!message.trim()) {
-            Alert.alert('שגיאה', 'יש להזין הודעה לתזכורת');
-            return;
-        }
-
-        const reminderDate = getReminderDateTime();
-
-        if (reminderDate < new Date() && reminderType === 'once') {
-            Alert.alert('שגיאה', 'תאריך התזכורת צריך להיות בעתיד');
-            return;
-        }
-
-        // Check if notifications are enabled
-        const settings = notificationService.getSettings();
-        if (!settings.enabled) {
-            Alert.alert(
-                'תראות מושבתות',
-                'כדי ליצור תזכורות, יש להפעיל תראות בהגדרות האפליקציה.\n\nאנא פתח את הגדרות התראות והפעל אותן.',
-                [
-                    { text: 'ביטול', style: 'cancel' },
-                    {
-                        text: 'פתח הגדרות',
-                        onPress: async () => {
-                            try {
-                                // Try to request permissions
-                                const granted = await notificationService.requestPermissions();
-                                if (!granted) {
-                                    Alert.alert(
-                                        'הרשאות נדרשות',
-                                        'יש להפעיל תראות בהגדרות המכשיר.\n\nעבור להגדרות > CalmParent > תראות והפעל אותן.'
-                                    );
-                                }
-                            } catch (error) {
-                                logger.error('Failed to request permissions:', error);
-                                Alert.alert(
-                                    'הרשאות נדרשות',
-                                    'יש להפעיל תראות בהגדרות המכשיר.\n\nעבור להגדרות > CalmParent > תראות והפעל אותן.'
-                                );
-                            }
-                        },
-                    },
-                ]
-            );
-            return;
-        }
+        if (!message.trim()) return;
 
         setSaving(true);
+        // Haptic Feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
         try {
+            let date = getReminderDateTime();
+            const now = new Date();
+
+            // If date is in the past or very close to now, add a buffer
+            if (date.getTime() <= now.getTime()) {
+                // If it's within the last minute, just bump it to 10 seconds from now
+                if (now.getTime() - date.getTime() < 60000) {
+                    date = new Date(now.getTime() + 5000); // 5 seconds from now
+                } else if (reminderType === 'once') {
+                    Alert.alert('שגיאה', 'לא ניתן לקבוע תזכורת לעבר');
+                    setSaving(false);
+                    return;
+                }
+            }
+
+            let result;
             if (reminderType === 'once') {
-                // Single reminder
-                await notificationService.createCustomReminder({
-                    title: '🔔 תזכורת',
+                result = await notificationService.createCustomReminder({
+                    title: 'תזכורת',
                     body: message.trim(),
-                    date: reminderDate,
+                    date: date,
                 });
-            } else if (reminderType === 'daily') {
-                // Daily reminder
-                await notificationService.createRecurringReminder({
-                    title: '🔔 תזכורת יומית',
-                    body: message.trim(),
-                    hour: reminderDate.getHours(),
-                    minute: reminderDate.getMinutes(),
-                    repeat: 'daily',
-                });
-            } else if (reminderType === 'weekly') {
-                // Weekly reminder
-                await notificationService.createRecurringReminder({
-                    title: '🔔 תזכורת שבועית',
-                    body: message.trim(),
-                    hour: reminderDate.getHours(),
-                    minute: reminderDate.getMinutes(),
-                    repeat: 'weekly',
-                    weekday: reminderDate.getDay(),
-                });
-            }
 
-            if (Platform.OS !== 'web') {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
+                // Add to Calendar if checked
+                if (addToCalendar && result) {
+                    try {
+                        const calendarSuccess = await notificationService.addToCalendar(
+                            'תזכורת: ' + message.trim(),
+                            date,
+                            'נוצר באפליקציית CalmParent'
+                        );
 
-            Alert.alert('נשמר!', 'התזכורת נשמרה בהצלחה');
-            await loadReminders();
-            setViewMode('list');
-            setMessage('');
-            setReminderType('once');
-            setSelectedDate(new Date());
-            setSelectedTime(new Date());
-        } catch (error: any) {
-            logger.error('Failed to create reminder:', error);
-            const errorMessage = error?.message || 'לא ניתן ליצור תזכורת';
+                        if (calendarSuccess) {
+                            Alert.alert('נשמר!', 'התזכורת נשמרה באפליקציה וביומן');
+                        } else {
+                            Alert.alert('נשמר', 'התזכורת נשמרה באפליקציה, אך השמירה ביומן נכשלה');
+                        }
 
-            if (errorMessage.includes('Notifications are disabled')) {
-                Alert.alert(
-                    'תראות מושבתות',
-                    'כדי ליצור תזכורות, יש להפעיל תראות בהגדרות האפליקציה.\n\nאנא פתח את הגדרות התראות והפעל אותן.'
-                );
+                        // Return early since we already alerted
+                        setViewMode('list');
+                        loadReminders();
+                        setMessage('');
+                        setAddToCalendar(false);
+                        setSaving(false);
+                        return;
+                    } catch (calError) {
+                        logger.error('Calendar add error', calError);
+                    }
+                }
             } else {
-                Alert.alert('שגיאה', 'לא ניתן ליצור תזכורת. נסה שוב.');
+                if (reminderType === 'daily') {
+                    await notificationService.createRecurringReminder({
+                        title: 'תזכורת יומית',
+                        body: message.trim(),
+                        hour: date.getHours(),
+                        minute: date.getMinutes(),
+                        repeat: 'daily',
+                    });
+                } else {
+                    await notificationService.createRecurringReminder({
+                        title: 'תזכורת שבועית',
+                        body: message.trim(),
+                        hour: date.getHours(),
+                        minute: date.getMinutes(),
+                        repeat: 'weekly',
+                        weekday: date.getDay(),
+                    });
+                }
+                // Note: Calendar API doesn't easily support recurrence in one simple call in this implementation, 
+                // but we could expand notificationService.addToCalendar to handle it if needed.
+                // For now, we only sync 'once' reminders mostly, or just the first occurrence if we wanted.
+                // The current addToCalendar implementation is for single events.
             }
+
+            setViewMode('list');
+            loadReminders();
+            setMessage('');
+            setAddToCalendar(false);
+            Alert.alert('נשמר!', 'התזכורת הוגדרה בהצלחה');
+        } catch (e) {
+            logger.error('Failed to save reminder', e);
+            Alert.alert('שגיאה', 'לא ניתן לשמור את התזכורת. אנא וודא שהתאריך עתידי.');
         } finally {
             setSaving(false);
         }
     };
 
-    const formatDate = (date: Date): string => {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        if (date.toDateString() === today.toDateString()) {
-            return 'היום';
-        }
-        if (date.toDateString() === tomorrow.toDateString()) {
-            return 'מחר';
-        }
-        return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
-    };
-
-    const formatTime = (date: Date): string => {
-        return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const quickPresets = [
-        { text: 'להכין בקבוק', icon: Baby, color: '#F59E0B' },
-        { text: 'לקנות חיתולים', icon: ShoppingCart, color: '#10B981' },
-        { text: 'להתקשר לרופא', icon: Phone, color: '#6366F1' },
-        { text: 'לקחת תרופה', icon: Pill, color: '#EF4444' },
-    ];
-
-    const handleDeleteReminder = async (id: string) => {
-        Alert.alert(
-            'מחיקת תזכורת',
-            'האם אתה בטוח שברצונך למחוק את התזכורת?',
-            [
-                { text: 'ביטול', style: 'cancel' },
-                {
-                    text: 'מחק',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const success = await notificationService.cancelReminder(id);
-                        if (success) {
-                            if (Platform.OS !== 'web') {
-                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            }
-                            await loadReminders();
-                        } else {
-                            Alert.alert('שגיאה', 'לא ניתן למחוק את התזכורת');
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    const formatReminderDate = (reminder: ReminderItem): string => {
-        if (reminder.repeat === 'daily') {
-            return `יומי - ${formatTime(reminder.date || new Date())}`;
-        }
-        if (reminder.repeat === 'weekly') {
-            const weekdays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-            const weekday = reminder.date ? weekdays[reminder.date.getDay()] : '';
-            return `שבועי - ${weekday} ${formatTime(reminder.date || new Date())}`;
-        }
-        if (reminder.date) {
-            const now = new Date();
-            const reminderDate = reminder.date;
-            if (reminderDate.toDateString() === now.toDateString()) {
-                return `היום ${formatTime(reminderDate)}`;
+    const handleDelete = async (id: string) => {
+        Alert.alert('מחיקה', 'למחוק תזכורת זו?', [
+            { text: 'ביטול', style: 'cancel' },
+            {
+                text: 'מחק',
+                style: 'destructive',
+                onPress: async () => {
+                    await notificationService.cancelReminder(id);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    loadReminders();
+                }
             }
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            if (reminderDate.toDateString() === tomorrow.toDateString()) {
-                return `מחר ${formatTime(reminderDate)}`;
-            }
-            return `${formatDate(reminderDate)} ${formatTime(reminderDate)}`;
-        }
-        return '';
+        ]);
     };
+
+    // Quick Time presets
+    const addTime = (minutes: number) => {
+        const newDate = new Date();
+        newDate.setMinutes(newDate.getMinutes() + minutes);
+        setSelectedDate(newDate);
+        Haptics.selectionAsync();
+    };
+
+    const setTimeForTomorrow = (hour: number) => {
+        const newDate = new Date();
+        newDate.setDate(newDate.getDate() + 1);
+        newDate.setHours(hour, 0, 0, 0);
+        setSelectedDate(newDate);
+        Haptics.selectionAsync();
+    };
+
+    const pulseStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseAnim.value }],
+    }));
+
+    // Minimalist Theme Colors
+    const primaryColor = theme.primary;
+    const borderColor = isDarkMode ? '#333' : '#E5E7EB';
 
     return (
-        <Modal visible={visible} animationType="none" transparent onRequestClose={onClose} statusBarTranslucent>
-            <RNAnimated.View style={[styles.overlay, { opacity: fadeAnim, backgroundColor: theme.modalOverlay }]}>
-                {Platform.OS === 'ios' && (
-                    <BlurView
-                        intensity={20}
-                        tint={isDarkMode ? 'dark' : 'light'}
-                        style={StyleSheet.absoluteFill}
-                    />
-                )}
-                <TouchableOpacity
-                    style={StyleSheet.absoluteFill}
-                    activeOpacity={1}
-                    onPress={onClose}
-                />
+        <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+            {/* Backdrop */}
+            <View style={styles.backdrop}>
+                <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose}>
+                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                </TouchableOpacity>
 
+                {/* Main Sheet */}
                 <RNAnimatedView
                     style={[
-                        styles.container,
+                        styles.sheet,
                         {
-                            backgroundColor: theme.card,
                             transform: [{ translateY: slideAnim }],
+                            backgroundColor: isDarkMode ? '#121212' : '#FFFFFF'
                         }
                     ]}
                     {...panResponder.panHandlers}
                 >
                     {/* Drag Handle */}
-                    <View style={styles.dragHandle}>
-                        <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+                    <View style={styles.handleContainer}>
+                        <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }]} />
                     </View>
 
                     {/* Header */}
-                    <View style={[styles.header, { backgroundColor: theme.card }]}>
-                        {Platform.OS === 'ios' && (
-                            <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                        )}
-
-                        <View style={{ alignItems: 'center', gap: 12, zIndex: 1, flex: 1 }}>
-                            <LinearGradient
-                                colors={['#F59E0B', '#FBBF24', '#FCD34D']}
-                                style={styles.iconCircle}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                <Bell size={32} color="#fff" strokeWidth={2.5} fill="#fff" />
-                            </LinearGradient>
-                            <Text style={[styles.title, { color: theme.textPrimary }]}>תזכורת מהירה</Text>
+                    <View style={styles.header}>
+                        <View style={[styles.headerIconContainer, { shadowColor: primaryColor }]}>
+                            <View style={[styles.headerIconBg, { backgroundColor: '#EEF2FF' }]}>
+                                <Bell size={24} color={theme.primary} />
+                            </View>
                         </View>
+                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+                            {viewMode === 'list' ? 'התזכורות שלי' : 'תזכורת חדשה'}
+                        </Text>
 
                         {viewMode === 'list' ? (
                             <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}
                                 onPress={() => {
                                     setViewMode('create');
-                                    if (Platform.OS !== 'web') {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    }
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 }}
-                                style={styles.addButtonWrapper}
-                                activeOpacity={0.7}
                             >
-                                <LinearGradient
-                                    colors={['#34D399', '#10B981', '#059669']}
-                                    style={styles.addButton}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                >
-                                    <Plus size={20} color="#fff" strokeWidth={2.5} />
-                                </LinearGradient>
+                                <Plus size={24} color={theme.textPrimary} />
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
+                                style={[styles.actionButton, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}
                                 onPress={() => {
                                     setViewMode('list');
-                                    if (Platform.OS !== 'web') {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    }
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 }}
-                                style={[styles.addButton, { backgroundColor: theme.inputBackground }]}
-                                activeOpacity={0.7}
                             >
-                                <List size={20} color={theme.textSecondary} strokeWidth={2.5} />
+                                <List size={24} color={theme.textSecondary} />
                             </TouchableOpacity>
                         )}
-
-                        <TouchableOpacity
-                            onPress={onClose}
-                            style={[styles.closeButton, { backgroundColor: theme.inputBackground }]}
-                            activeOpacity={0.7}
-                        >
-                            <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                        </TouchableOpacity>
                     </View>
+
 
                     <ScrollView
                         style={styles.content}
-                        contentContainerStyle={styles.scrollContent}
+                        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
                         showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                        bounces={false}
                     >
                         {viewMode === 'list' ? (
-                            /* Reminders List */
-                            <Reanimated.View
-                                entering={FadeInDown.duration(400).springify().damping(15)}
-                                style={styles.section}
-                            >
-                                {loadingReminders ? (
-                                    <View style={styles.emptyState}>
-                                        <Text style={[styles.emptyStateSubtext, { color: theme.textSecondary }]}>טוען...</Text>
+                            reminders.length === 0 ? (
+                                <Reanimated.View entering={FadeInDown.delay(200)} style={styles.emptyState}>
+                                    <View style={[styles.emptyIconWrapper, { backgroundColor: isDarkMode ? '#222' : '#F9FAFB' }]}>
+                                        <Bell size={48} color={theme.textTertiary} />
                                     </View>
-                                ) : reminders.length === 0 ? (
-                                    <View style={styles.emptyState}>
-                                        <LinearGradient
-                                            colors={isDarkMode
-                                                ? ['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.06)']
-                                                : ['rgba(251, 191, 36, 0.2)', 'rgba(251, 191, 36, 0.1)']
-                                            }
-                                            style={styles.emptyIconGradient}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 1 }}
-                                        >
-                                            <Bell size={56} color="#F59E0B" strokeWidth={2.5} />
-                                        </LinearGradient>
-                                        <Text style={[styles.emptyStateTitle, { color: theme.textPrimary }]}>אין תזכורות שמורות</Text>
-                                        <Text style={[styles.emptyStateSubtext, { color: theme.textSecondary }]}>לחץ על + כדי ליצור תזכורת חדשה</Text>
-                                    </View>
-                                ) : (
-                                    reminders.map((reminder) => (
-                                        <Reanimated.View
-                                            key={reminder.id}
-                                            entering={FadeInDown.duration(300).springify().damping(15)}
-                                            style={[styles.reminderCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
-                                        >
-                                            <View style={styles.reminderContent}>
-                                                <View style={[styles.reminderIconCircle, {
-                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
-                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-                                                }]}>
-                                                    <Bell size={18} color={theme.textSecondary} strokeWidth={2} />
-                                                </View>
-                                                <View style={styles.reminderTextContainer}>
-                                                    <Text style={[styles.reminderTitle, { color: theme.textPrimary }]} numberOfLines={1}>
-                                                        {reminder.title}
-                                                    </Text>
-                                                    <Text style={[styles.reminderBody, { color: theme.textSecondary }]} numberOfLines={2}>
-                                                        {reminder.body}
-                                                    </Text>
-                                                    <View style={styles.reminderDateRow}>
-                                                        <Clock size={12} color={theme.textTertiary} strokeWidth={2} />
-                                                        <Text style={[styles.reminderDate, { color: theme.textTertiary }]}>
-                                                            {formatReminderDate(reminder)}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                            <TouchableOpacity
-                                                onPress={() => handleDeleteReminder(reminder.id)}
-                                                style={[styles.deleteButton, { backgroundColor: theme.danger + '15' }]}
-                                                activeOpacity={0.7}
-                                            >
-                                                <Trash2 size={16} color={theme.danger} strokeWidth={2} />
-                                            </TouchableOpacity>
-                                        </Reanimated.View>
-                                    ))
-                                )}
-                            </Reanimated.View>
-                        ) : (
-                            <>
-                                {/* Quick Presets */}
-                                <Reanimated.View
-                                    entering={FadeInDown.duration(400).delay(100).springify().damping(15)}
-                                    style={styles.section}
-                                >
-                                    <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>בחירה מהירה</Text>
-                                    <View style={styles.presetsGrid}>
-                                        {quickPresets.map((preset, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={[styles.presetBtn, {
-                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-                                                }]}
-                                                onPress={() => {
-                                                    setMessage(preset.text);
-                                                    if (Platform.OS !== 'web') {
-                                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                    }
-                                                }}
-                                                activeOpacity={0.7}
-                                            >
-                                                <View style={[styles.presetIconContainer, {
-                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
-                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
-                                                }]}>
-                                                    {React.createElement(preset.icon, {
-                                                        size: 22,
-                                                        color: preset.color,
-                                                        strokeWidth: 2
-                                                    })}
-                                                </View>
-                                                <Text style={[styles.presetText, { color: theme.textPrimary }]} numberOfLines={1}>
-                                                    {preset.text}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </Reanimated.View>
-
-                                {/* Message Input */}
-                                <Reanimated.View
-                                    entering={FadeInDown.duration(400).delay(200).springify().damping(15)}
-                                    style={styles.section}
-                                >
-                                    <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>הודעה</Text>
-                                    <TextInput
-                                        style={[
-                                            styles.messageInput,
-                                            {
-                                                backgroundColor: theme.inputBackground,
-                                                color: theme.textPrimary,
-                                                borderColor: theme.border
-                                            }
-                                        ]}
-                                        value={message}
-                                        onChangeText={setMessage}
-                                        placeholder="למשל: להכין בקבוק בעוד שעה"
-                                        placeholderTextColor={theme.textTertiary}
-                                        multiline
-                                        maxLength={100}
-                                        textAlign="right"
-                                    />
-                                    <Text style={[styles.charCount, { color: theme.textTertiary }]}>
-                                        {message.length}/100
-                                    </Text>
-                                </Reanimated.View>
-
-                                {/* Reminder Type */}
-                                <Reanimated.View
-                                    entering={FadeInDown.duration(400).delay(300).springify().damping(15)}
-                                    style={styles.section}
-                                >
-                                    <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>סוג תזכורת</Text>
-                                    <View style={styles.typeRow}>
-                                        {(['once', 'daily', 'weekly'] as ReminderType[]).map((type) => (
-                                            <TouchableOpacity
-                                                key={type}
-                                                style={[
-                                                    styles.typeBtn,
-                                                    {
-                                                        backgroundColor: reminderType === type ? theme.primary : theme.cardSecondary,
-                                                        borderColor: reminderType === type ? theme.primary : theme.border
-                                                    }
-                                                ]}
-                                                onPress={() => {
-                                                    setReminderType(type);
-                                                    if (Platform.OS !== 'web') {
-                                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                    }
-                                                }}
-                                                activeOpacity={0.7}
-                                            >
-                                                <Text style={[
-                                                    styles.typeBtnText,
-                                                    { color: reminderType === type ? theme.card : theme.textPrimary }
-                                                ]}>
-                                                    {type === 'once' ? 'פעם אחת' : type === 'daily' ? 'יומי' : 'שבועי'}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </Reanimated.View>
-
-                                {/* Date & Time */}
-                                <Reanimated.View
-                                    entering={FadeInDown.duration(400).delay(400).springify().damping(15)}
-                                    style={styles.section}
-                                >
-                                    <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-                                        {reminderType === 'once' ? 'תאריך ושעה' : 'שעה'}
-                                    </Text>
-
-                                    {reminderType === 'once' && (
-                                        <TouchableOpacity
-                                            style={[styles.dateTimeBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
-                                            onPress={() => setShowDatePicker(true)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Calendar size={18} color={theme.primary} strokeWidth={2} />
-                                            <Text style={[styles.dateTimeText, { color: theme.textPrimary }]}>
-                                                {formatDate(selectedDate)}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
+                                    <Text style={[styles.emptyTitle, { color: theme.textSecondary }]}>אין תזכורות עדיין</Text>
+                                    <Text style={[styles.emptySub, { color: theme.textTertiary }]}>מתי תרצה שנזכיר לך משהו?</Text>
 
                                     <TouchableOpacity
-                                        style={[styles.dateTimeBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
-                                        onPress={() => setShowTimePicker(true)}
+                                        style={[styles.createFirstBtn, { backgroundColor: theme.primary }]}
+                                        onPress={() => setViewMode('create')}
+                                    >
+                                        <Text style={styles.createFirstText}>צור תזכורת ראשונה</Text>
+                                    </TouchableOpacity>
+                                </Reanimated.View>
+                            ) : (
+                                reminders.map((item, index) => {
+                                    const renderLeftActions = (_progress: any, dragX: any) => {
+                                        const scale = dragX.interpolate({
+                                            inputRange: [0, 100],
+                                            outputRange: [0, 1],
+                                            extrapolate: 'clamp',
+                                        });
+
+                                        return (
+                                            <TouchableOpacity
+                                                style={styles.swipeDeleteButton}
+                                                onPress={() => handleDelete(item.id)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <RNAnimated.View style={{ transform: [{ scale }] }}>
+                                                    <View style={styles.deleteIconCircle}>
+                                                        <Trash2 size={20} color="#EF4444" strokeWidth={2.5} />
+                                                    </View>
+                                                </RNAnimated.View>
+                                            </TouchableOpacity>
+                                        );
+                                    };
+
+                                    return (
+                                        <Reanimated.View
+                                            key={item.id}
+                                            entering={FadeInDown.delay(index * 100).springify()}
+                                        >
+                                            <Swipeable
+                                                renderLeftActions={renderLeftActions}
+                                                overshootLeft={false}
+                                                leftThreshold={40}
+                                            >
+                                                <View style={[styles.reminderCard, {
+                                                    backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                                                    borderColor: borderColor,
+                                                    shadowColor: theme.shadow,
+                                                    shadowOpacity: isDarkMode ? 0.3 : 0.08,
+                                                }]}>
+                                                    <View style={[styles.reminderIconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#F3F4F6' }]}>
+                                                        <Bell size={18} color={theme.primary} strokeWidth={2.5} />
+                                                    </View>
+                                                    <View style={styles.reminderInfo}>
+                                                        <Text style={[styles.reminderCardBody, { color: theme.textPrimary }]}>{item.body}</Text>
+                                                        <View style={styles.reminderMeta}>
+                                                            <Clock size={12} color={theme.textTertiary} strokeWidth={2} />
+                                                            <Text style={[styles.reminderTime, { color: theme.textTertiary }]}>
+                                                                {item.date ? new Date(item.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            </Swipeable>
+                                        </Reanimated.View>
+                                    );
+                                })
+                            )
+                        ) : (
+                            // Create Mode
+                            <View>
+                                {/* Presets - Premium Slider Design */}
+                                <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>מה להזכיר?</Text>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={styles.presetsScroll}
+                                    contentContainerStyle={styles.presetsContainer}
+                                    decelerationRate="fast"
+                                    snapToInterval={122}
+                                    snapToAlignment="end"
+                                >
+                                    {[
+                                        { label: 'בקבוק', icon: Baby, color: '#60A5FA' },
+                                        { label: 'חיתולים', icon: ShoppingCart, color: '#34D399' },
+                                        { label: 'תרופה', icon: Pill, color: '#F472B6' },
+                                        { label: 'רופא', icon: Phone, color: '#A78BFA' },
+                                        { label: 'לישון', icon: Moon, color: '#818CF8' },
+                                    ].map((p, i) => (
+                                        <TouchableOpacity
+                                            key={i}
+                                            style={[
+                                                styles.premiumSlider,
+                                                message === p.label && [styles.premiumSliderActive, {
+                                                    backgroundColor: p.color + '15',
+                                                    borderColor: p.color
+                                                }],
+                                                message !== p.label && {
+                                                    backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                                                    borderColor: isDarkMode ? '#333' : '#E5E7EB'
+                                                }
+                                            ]}
+                                            onPress={() => {
+                                                setMessage(p.label);
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <View style={[
+                                                styles.sliderIconWrapper,
+                                                message === p.label && { backgroundColor: p.color + '20' }
+                                            ]}>
+                                                <p.icon
+                                                    size={20}
+                                                    color={message === p.label ? p.color : theme.textSecondary}
+                                                />
+                                            </View>
+                                            <Text style={[
+                                                styles.sliderLabel,
+                                                { color: message === p.label ? (isDarkMode ? '#FFF' : p.color) : theme.textPrimary }
+                                            ]}>
+                                                {p.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+
+                                {/* Custom Input - Integrated Design */}
+                                <View style={[styles.customInputWrapper, {
+                                    backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                                    borderColor: message && ![' בקבוק', 'חיתולים', 'תרופה', 'רופא', 'לישון'].includes(message)
+                                        ? theme.primary
+                                        : (isDarkMode ? '#333' : '#E5E7EB')
+                                }]}>
+                                    <Sparkles
+                                        size={18}
+                                        color={message && ![' בקבוק', 'חיתולים', 'תרופה', 'רופא', 'לישון'].includes(message) ? theme.primary : theme.textTertiary}
+                                    />
+                                    <TextInput
+                                        style={[styles.customInput, { color: theme.textPrimary }]}
+                                        placeholder="או רשום משהו אחר..."
+                                        placeholderTextColor={theme.textTertiary}
+                                        value={message}
+                                        onChangeText={setMessage}
+                                        textAlign="right"
+                                        onFocus={() => Haptics.selectionAsync()}
+                                    />
+                                </View>
+
+                                {/* Time Selection - Ultra Minimalist */}
+                                <Text style={[styles.minimalLabel, { color: theme.textTertiary }]}>מתי?</Text>
+
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={styles.timePresetsScroll}
+                                    contentContainerStyle={styles.timePresetsContainer}
+                                >
+                                    <TouchableOpacity
+                                        style={[styles.minimalTimeChip, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}
+                                        onPress={() => addTime(15)}
+                                    >
+                                        <Text style={[styles.minimalTimeText, { color: theme.primary }]}>+15 דק׳</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.minimalTimeChip, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}
+                                        onPress={() => addTime(60)}
+                                    >
+                                        <Text style={[styles.minimalTimeText, { color: theme.primary }]}>+1 שעה</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.minimalTimeChip, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}
+                                        onPress={() => setTimeForTomorrow(8)}
+                                    >
+                                        <Text style={[styles.minimalTimeText, { color: theme.primary }]}>מחר 08:00</Text>
+                                    </TouchableOpacity>
+                                </ScrollView>
+
+                                {/* Date & Time Selection - Split Row */}
+                                <View style={styles.dateTimeRow}>
+                                    {/* Date Button */}
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.dateTimeButton,
+                                            showDatePicker && styles.dateTimeButtonActive,
+                                            { backgroundColor: isDarkMode ? '#1A1A1A' : '#FAFAFA' }
+                                        ]}
+                                        onPress={() => {
+                                            setShowDatePicker(!showDatePicker);
+                                            setShowTimePicker(false);
+                                            Haptics.selectionAsync();
+                                        }}
                                         activeOpacity={0.7}
                                     >
-                                        <Clock size={18} color={theme.primary} strokeWidth={2} />
-                                        <Text style={[styles.dateTimeText, { color: theme.textPrimary }]}>
-                                            {formatTime(selectedTime)}
+                                        <Calendar size={20} color={showDatePicker ? theme.primary : theme.textSecondary} />
+                                        <Text style={[
+                                            styles.dateTimeButtonText,
+                                            { color: showDatePicker ? theme.primary : theme.textPrimary }
+                                        ]}>
+                                            {selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
                                         </Text>
                                     </TouchableOpacity>
 
-                                    {showDatePicker && (
+                                    {/* Time Button */}
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.dateTimeButton,
+                                            showTimePicker && styles.dateTimeButtonActive,
+                                            { backgroundColor: isDarkMode ? '#1A1A1A' : '#FAFAFA' }
+                                        ]}
+                                        onPress={() => {
+                                            setShowTimePicker(!showTimePicker);
+                                            setShowDatePicker(false);
+                                            Haptics.selectionAsync();
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Clock size={20} color={showTimePicker ? theme.primary : theme.textSecondary} />
+                                        <Text style={[
+                                            styles.dateTimeButtonText,
+                                            { color: showTimePicker ? theme.primary : theme.textPrimary }
+                                        ]}>
+                                            {selectedDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* Inline Pickers Expansion */}
+                                {showDatePicker && (
+                                    <View style={styles.inlinePickerContainer}>
                                         <DateTimePicker
                                             value={selectedDate}
                                             mode="date"
-                                            display="default"
-                                            minimumDate={new Date()}
-                                            onChange={(event, date) => {
-                                                setShowDatePicker(Platform.OS === 'ios');
-                                                if (date) setSelectedDate(date);
+                                            display="inline"
+                                            locale="he-IL"
+                                            onChange={(e, d) => {
+                                                if (d) {
+                                                    const newDate = new Date(selectedDate);
+                                                    newDate.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
+                                                    setSelectedDate(newDate);
+                                                }
+                                                // Don't auto-close inline pickers, let user toggle them
                                             }}
+                                            style={styles.datePickerStyle}
+                                            textColor={theme.textPrimary}
+                                            accentColor={theme.primary}
                                         />
-                                    )}
+                                    </View>
+                                )}
 
-                                    {showTimePicker && (
+                                {showTimePicker && (
+                                    <View style={styles.inlinePickerContainer}>
                                         <DateTimePicker
-                                            value={selectedTime}
+                                            value={selectedDate}
                                             mode="time"
-                                            display="default"
+                                            display="spinner"
                                             is24Hour={true}
-                                            onChange={(event, date) => {
-                                                setShowTimePicker(Platform.OS === 'ios');
-                                                if (date) setSelectedTime(date);
+                                            locale="he-IL"
+                                            onChange={(e, d) => {
+                                                if (d) {
+                                                    const newDate = new Date(selectedDate);
+                                                    newDate.setHours(d.getHours(), d.getMinutes());
+                                                    setSelectedDate(newDate);
+                                                }
                                             }}
+                                            style={styles.datePickerStyle}
+                                            textColor={theme.textPrimary}
                                         />
-                                    )}
-                                </Reanimated.View>
+                                    </View>
+                                )}
 
-                                {/* Save Button */}
-                                <Reanimated.View
-                                    entering={FadeInDown.duration(400).delay(500).springify().damping(15)}
-                                    style={styles.section}
+                                {/* Add to Calendar - Minimalist Toggle */}
+                                <TouchableOpacity
+                                    style={[styles.minimalCalendarRow, {
+                                        backgroundColor: addToCalendar
+                                            ? (isDarkMode ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.08)')
+                                            : (isDarkMode ? '#1A1A1A' : '#FAFAFA')
+                                    }]}
+                                    onPress={() => {
+                                        setAddToCalendar(!addToCalendar);
+                                        Haptics.selectionAsync();
+                                    }}
+                                    activeOpacity={0.7}
                                 >
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.saveBtn,
-                                            { backgroundColor: message.trim() ? theme.primary : theme.textTertiary }
-                                        ]}
-                                        onPress={handleSave}
-                                        disabled={!message.trim() || saving}
-                                        activeOpacity={0.8}
-                                    >
-                                        <LinearGradient
-                                            colors={message.trim() ? [theme.primary, theme.primary] : [theme.textTertiary, theme.textTertiary]}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 0 }}
-                                            style={styles.saveBtnGradient}
-                                        >
-                                            {saving ? (
-                                                <Text style={[styles.saveBtnText, { color: theme.card }]}>שומר...</Text>
-                                            ) : (
-                                                <>
-                                                    <Check size={18} color={theme.card} strokeWidth={2.5} />
-                                                    <Text style={[styles.saveBtnText, { color: theme.card }]}>שמור תזכורת</Text>
-                                                </>
-                                            )}
-                                        </LinearGradient>
-                                    </TouchableOpacity>
-                                </Reanimated.View>
-                            </>
+                                    <View style={[styles.calendarCheckbox, {
+                                        backgroundColor: addToCalendar ? theme.primary : 'transparent',
+                                        borderColor: addToCalendar ? theme.primary : (isDarkMode ? '#333' : '#D1D5DB')
+                                    }]}>
+                                        {addToCalendar && <Check size={14} color="#FFF" strokeWidth={3} />}
+                                    </View>
+                                    <Text style={[styles.calendarRowText, {
+                                        color: addToCalendar ? theme.primary : theme.textSecondary
+                                    }]}>
+                                        הוסף ליומן
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {/* Save Button - Ultra Clean */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.minimalSaveButton,
+                                        {
+                                            opacity: message ? 1 : 0.4,
+                                            backgroundColor: theme.primary
+                                        }
+                                    ]}
+                                    disabled={!message || saving}
+                                    onPress={handleSave}
+                                    activeOpacity={0.8}
+                                >
+                                    {saving ? (
+                                        <Text style={styles.minimalSaveText}>שומר...</Text>
+                                    ) : (
+                                        <Text style={styles.minimalSaveText}>שמור</Text>
+                                    )}
+                                </TouchableOpacity>
+
+                            </View>
                         )}
                     </ScrollView>
                 </RNAnimatedView>
-            </RNAnimated.View>
+            </View>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: {
+    backdrop: {
         flex: 1,
         justifyContent: 'flex-end',
     },
-    container: {
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        paddingBottom: 44,
-        maxHeight: '95%',
-        flex: 1,
+    sheet: {
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        height: '85%',
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -12 },
-        shadowOpacity: 0.2,
-        shadowRadius: 32,
-        elevation: 16,
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 20,
     },
-    dragHandle: {
+    handleContainer: {
         alignItems: 'center',
-        paddingTop: 10,
-        paddingBottom: 16,
+        paddingTop: 12,
+        paddingBottom: 20,
+        zIndex: 1,
     },
-    dragHandleBar: {
-        width: 40,
-        height: 4,
-        borderRadius: 2,
+    handle: {
+        width: 48,
+        height: 5,
+        borderRadius: 3,
     },
     header: {
         flexDirection: 'row-reverse',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 12,
-        paddingBottom: 24,
         paddingHorizontal: 24,
-        borderRadius: 0,
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    titleContainer: {
-        alignItems: 'center',
-        gap: 12,
-        flex: 1,
+        marginBottom: 20,
         zIndex: 1,
     },
-    iconCircle: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+    headerIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        marginLeft: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#F59E0B',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-        elevation: 8,
-        position: 'relative',
     },
-    title: {
-        fontSize: 32,
+    headerIconBg: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
+        fontSize: 24,
         fontWeight: '800',
-        letterSpacing: -0.5,
-    },
-    closeButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    addButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    addButtonWrapper: {
-        position: 'absolute',
-        top: 20,
-        left: 20,
-        zIndex: 10,
-    },
-    content: {
         flex: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingBottom: Platform.OS === 'ios' ? 50 : 40,
-    },
-    section: {
-        marginBottom: 32,
-    },
-    sectionLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginBottom: 16,
         textAlign: 'right',
-        letterSpacing: 0.3,
-        textTransform: 'uppercase',
     },
-    presetsGrid: {
-        flexDirection: 'row-reverse',
-        flexWrap: 'wrap',
-        gap: 14,
-    },
-    presetBtn: {
-        flex: 1,
-        minWidth: '45%',
-        padding: 24,
-        borderRadius: 22,
-        alignItems: 'center',
-        gap: 14,
-        borderWidth: StyleSheet.hairlineWidth,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    presetIconContainer: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: StyleSheet.hairlineWidth,
-        marginBottom: 4,
-    },
-    presetText: {
-        fontSize: 14,
-        fontWeight: '500',
-        textAlign: 'center',
-        letterSpacing: -0.2,
-    },
-    messageInput: {
-        width: '100%',
-        minHeight: 120,
-        borderRadius: 18,
-        padding: 18,
-        fontSize: 15,
-        borderWidth: StyleSheet.hairlineWidth,
-        textAlignVertical: 'top',
-        lineHeight: 22,
-        letterSpacing: -0.1,
-    },
-    charCount: {
-        fontSize: 11,
-        textAlign: 'right',
-        marginTop: 8,
-        letterSpacing: 0.2,
-        opacity: 0.6,
-    },
-    typeRow: {
-        flexDirection: 'row-reverse',
-        gap: 10,
-    },
-    typeBtn: {
-        flex: 1,
-        paddingVertical: 16,
-        paddingHorizontal: 18,
-        borderRadius: 16,
-        alignItems: 'center',
-        borderWidth: StyleSheet.hairlineWidth,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        elevation: 1,
-    },
-    typeBtnText: {
-        fontSize: 14,
-        fontWeight: '600',
-        letterSpacing: -0.2,
-    },
-    dateTimeBtn: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 14,
-        padding: 18,
-        borderRadius: 18,
-        borderWidth: StyleSheet.hairlineWidth,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        elevation: 1,
-    },
-    dateTimeText: {
-        fontSize: 15,
-        fontWeight: '500',
-        letterSpacing: -0.2,
-    },
-    saveBtn: {
-        borderRadius: 18,
-        overflow: 'hidden',
-        marginTop: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 12,
-        elevation: 4,
-    },
-    saveBtnGradient: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        paddingVertical: 18,
-    },
-    saveBtnText: {
-        fontSize: 16,
-        fontWeight: '600',
-        letterSpacing: -0.3,
-    },
-    emptyState: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 80,
-        gap: 20,
-    },
-    emptyIconGradient: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    emptyStateTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        textAlign: 'center',
-        letterSpacing: -0.4,
-    },
-
-    emptyStateSubtext: {
-        fontSize: 14,
-        textAlign: 'center',
-        marginTop: 4,
-        letterSpacing: -0.1,
-        opacity: 0.7,
-    },
-    reminderCard: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 18,
-        borderRadius: 18,
-        borderWidth: StyleSheet.hairlineWidth,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    reminderContent: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        flex: 1,
-        gap: 12,
-    },
-    reminderIconCircle: {
+    actionButton: {
         width: 44,
         height: 44,
         borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: StyleSheet.hairlineWidth,
     },
-    reminderTextContainer: {
+
+    // Content Content
+    content: {
         flex: 1,
-        gap: 4,
     },
-    reminderTitle: {
-        fontSize: 15,
-        fontWeight: '600',
-        letterSpacing: -0.2,
-        marginBottom: 4,
+    sectionLabel: {
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 12,
+        textAlign: 'right',
+        opacity: 0.6,
     },
-    reminderBody: {
-        fontSize: 13,
-        lineHeight: 20,
-        letterSpacing: -0.1,
-    },
-    reminderDateRow: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 8,
-        marginTop: 6,
-    },
-    reminderDate: {
-        fontSize: 11,
-        fontWeight: '500',
-        letterSpacing: 0.1,
-        opacity: 0.7,
-    },
-    deleteButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
+
+    // Empty State
+    emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: 8,
+        paddingTop: 60,
+    },
+    emptyIconWrapper: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 8,
+    },
+    emptySub: {
+        fontSize: 15,
+        marginBottom: 32,
+    },
+    createFirstBtn: {
+        paddingVertical: 14,
+        paddingHorizontal: 32,
+        borderRadius: 16,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+    createFirstText: {
+        color: '#FFF',
+        fontWeight: '700',
+        fontSize: 16,
+    },
+
+    // List Items - Minimalist with Swipe
+    reminderCard: {
+        flexDirection: 'row-reverse',
+        padding: 16,
+        borderRadius: 18,
+        marginBottom: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        gap: 14,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    reminderIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    reminderInfo: {
+        flex: 1,
+    },
+    reminderCardTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        marginBottom: 4,
+        textAlign: 'right',
+    },
+    reminderCardBody: {
+        fontSize: 14,
+        marginBottom: 6,
+        textAlign: 'right',
+        fontWeight: '500',
+    },
+    reminderMeta: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 5,
+    },
+    reminderTime: {
+        fontSize: 11,
+        fontWeight: '600',
+    },
+    deleteBtn: {
+        padding: 10,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderRadius: 12,
+    },
+    swipeDeleteButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 60,
+        borderRadius: 14,
+        marginBottom: 10,
+        marginRight: 8,
+    },
+    deleteIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // Create Mode - Premium Sliders
+    presetsScroll: {
+        marginBottom: 20,
+    },
+    presetsContainer: {
+        paddingHorizontal: 20,
+        gap: 12,
+        flexDirection: 'row',
+    },
+    premiumSlider: {
+        width: 110,
+        paddingVertical: 16,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        borderWidth: 2,
+        alignItems: 'center',
+        gap: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    premiumSliderActive: {
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
+        transform: [{ scale: 1.02 }],
+    },
+    sliderIconWrapper: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.03)',
+    },
+    sliderLabel: {
+        fontSize: 13,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    customInputWrapper: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderRadius: 18,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        marginBottom: 24,
+        gap: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    customInput: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
+        minHeight: 22,
+    },
+    // Legacy styles (kept for compatibility)
+    presetChip: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        marginLeft: 10,
+        gap: 8,
+    },
+    presetText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    inputContainer: {
+        borderWidth: 1,
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        marginBottom: 24,
+    },
+    input: {
+        fontSize: 16,
+        minHeight: 24,
+    },
+
+    // Minimalist Time Selection
+    minimalLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        marginBottom: 12,
+        textAlign: 'right',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+    },
+    timePresetsScroll: {
+        marginBottom: 16,
+    },
+    timePresetsContainer: {
+        gap: 8,
+        flexDirection: 'row-reverse',
+    },
+    minimalTimeChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    minimalTimeText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    minimalDatePicker: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 16,
+        gap: 14,
+    },
+    dateIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    dateTextContainer: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
+    dateMainText: {
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    dateTimeText: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
+    dateTimeRow: {
+        flexDirection: 'row-reverse', // RTL
+        gap: 12,
+        marginBottom: 16,
+    },
+    dateTimeButton: {
+        flex: 1,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    dateTimeButtonActive: {
+        borderColor: '#8B5CF6', // Primary color
+        backgroundColor: 'rgba(139, 92, 246, 0.05)',
+    },
+    dateTimeButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        fontFamily: 'Heebo-Medium',
+    },
+    inlinePickerContainer: {
+        marginTop: 4,
+        marginBottom: 16,
+        padding: 8,
+        borderRadius: 16,
+        backgroundColor: Platform.OS === 'ios' ? 'transparent' : '#fff', // iOS handles inline bg
+        alignItems: 'center',
+    },
+    datePickerStyle: {
+        // Adjust width for full container
+        width: Platform.OS === 'ios' ? '100%' : undefined,
+    },
+    // Old styles kept if needed (or can be removed), new ones added above
+    minimalCalendarRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+        gap: 12,
+    },
+    calendarCheckbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 7,
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    calendarRowText: {
+        fontSize: 16,
+        fontWeight: '500',
+        flex: 1,
+        textAlign: 'right',
+        fontFamily: 'Heebo-Medium',
+    },
+    minimalSaveButton: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        borderRadius: 20,
+        gap: 10,
+        marginVertical: 8,
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    minimalSaveText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '700',
+        fontFamily: 'Heebo-Bold',
+    },
+
+    // Legacy Time Selection (kept for compatibility)
+    quickTimeGrid: {
+        flexDirection: 'row-reverse',
+        gap: 12,
+        marginBottom: 20,
+    },
+    quickTimeBtn: {
+        flex: 1,
+        borderWidth: 1,
+        borderRadius: 16,
+        paddingVertical: 12,
+        alignItems: 'center',
+        gap: 6,
+    },
+    quickTimeText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    datePickerTrigger: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 32,
+    },
+    dateText: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    calendarToggle: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+    },
+    calendarToggleText: {
+        fontSize: 15,
+        fontWeight: '600',
+        flex: 1,
+        marginRight: 12,
+        textAlign: 'right'
+    },
+    saveButton: {
+        borderRadius: 20,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 5,
+        overflow: 'hidden',
+    },
+    saveContent: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        borderRadius: 20,
+        gap: 12,
+    },
+    saveText: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: '700',
     },
 });

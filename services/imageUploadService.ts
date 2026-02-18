@@ -1,20 +1,12 @@
+import { logger } from '../utils/logger';
 // services/imageUploadService.ts - Firebase Storage Image Upload
 // UPDATED: Using Firebase Storage instead of Base64
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { auth, db, storage } from './firebaseConfig';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
-// Simple logger fallback if utils/logger doesn't exist
-const logger = {
-    debug: (...args: any[]) => {
-        if (__DEV__) console.log(...args);
-    },
-    error: (...args: any[]) => {
-        console.error(...args);
-    },
-};
 
 /**
  * Compress image before upload
@@ -89,8 +81,8 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 
         return downloadURL;
     } catch (error: any) {
-        // Log detailed error for debugging
-        logger.error('❌ Storage upload failed:', error.code, error.message);
+        // Storage failed, but we have a fallback - this is expected in some cases
+        logger.warn('⚠️ Storage upload failed (will use base64 fallback):', error.code, error.message);
 
         // Provide user-friendly error messages
         let errorMessage = 'Image upload failed';
@@ -119,27 +111,34 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 /**
  * Fallback: Upload as Base64 (if Storage fails)
  * This should be used sparingly as it can cause Firestore size issues
+ * Compresses very aggressively to stay under Firestore's 1MB document limit
  */
 async function uploadImageAsBase64(uri: string): Promise<string> {
-    // Compress more aggressively for base64 fallback
-    const manipResult = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: 600 } }], // Smaller size for base64
-        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG } // Lower quality
-    );
+    try {
+        // Compress VERY aggressively for base64 fallback to avoid Firestore size limit
+        const manipResult = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 400 } }], // Small size for base64
+            { compress: 0.3, format: ImageManipulator.SaveFormat.JPEG } // Very low quality
+        );
 
-    const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-    });
+        const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
+            encoding: 'base64',
+        });
 
-    const base64Size = (base64.length * 3) / 4; // Approximate size in bytes
-    logger.debug('📦 Base64 size:', base64Size, 'bytes');
+        const base64Size = (base64.length * 3) / 4; // Approximate size in bytes
+        logger.debug('📦 Base64 size:', base64Size, 'bytes');
 
-    if (base64Size > 500000) { // 500KB limit for base64
-        throw new Error('Image too large for base64 fallback. Please try again or use a smaller image.');
+        // Firestore has 1MB document limit, so base64 must be < 300KB to be safe
+        if (base64Size > 300000) {
+            throw new Error('Image too large even after compression. Please use a smaller image or check your internet connection.');
+        }
+
+        return `data:image/jpeg;base64,${base64}`;
+    } catch (error: any) {
+        logger.error('❌ Base64 conversion failed:', error);
+        throw new Error('Failed to save image. Please check your internet connection and try again.');
     }
-
-    return `data:image/jpeg;base64,${base64}`;
 }
 
 /**

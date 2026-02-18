@@ -22,7 +22,7 @@ export default function NotificationsScreen() {
             const data = await notificationStorageService.getNotifications();
             setNotifications(data);
         } catch (error) {
-            if (__DEV__) console.log('Failed to fetch notifications:', error);
+            logger.log('Failed to fetch notifications:', error);
         } finally {
             setLoading(false);
         }
@@ -64,14 +64,9 @@ export default function NotificationsScreen() {
         }
     };
 
-    const getIconColor = (type: StoredNotification['type']) => {
-        switch (type) {
-            case 'feed': return '#F59E0B';
-            case 'sleep': return '#8B5CF6';
-            case 'medication': return '#EF4444';
-            case 'achievement': return '#10B981';
-            default: return '#6366F1';
-        }
+    // Monochromatic design - no colors needed
+    const getIconColor = () => {
+        return isDarkMode ? '#fff' : '#000';
     };
 
     const formatTime = (date: Date) => {
@@ -143,12 +138,12 @@ export default function NotificationsScreen() {
                 <View style={styles.headerActions}>
                     {unreadCount > 0 && (
                         <TouchableOpacity onPress={markAllAsRead} style={styles.markAllBtn}>
-                            <Text style={[styles.markAllText, { color: theme.primary }]}>סמן הכל</Text>
+                            <Text style={[styles.markAllText, { color: theme.textPrimary }]}>סמן הכל</Text>
                         </TouchableOpacity>
                     )}
                     {notifications.length > 0 && (
                         <TouchableOpacity onPress={clearAllNotifications} style={styles.clearBtn}>
-                            <Trash2 size={18} color={theme.danger} />
+                            <Trash2 size={18} color={theme.textSecondary} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -174,7 +169,7 @@ export default function NotificationsScreen() {
                     <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
                         {notifications.map((notification, index) => {
                             const Icon = getIcon(notification.type);
-                            const iconColor = getIconColor(notification.type);
+                            const iconColor = getIconColor();
 
                             return (
                                 <React.Fragment key={notification.id}>
@@ -193,10 +188,10 @@ export default function NotificationsScreen() {
                                             onPress={() => markAsRead(notification.id)}
                                             activeOpacity={0.7}
                                         >
-                                            {/* Icon */}
+                                            {/* Icon - Monochromatic */}
                                             <View style={[
                                                 styles.iconContainer,
-                                                { backgroundColor: `${iconColor}15` },
+                                                { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' },
                                             ]}>
                                                 <Icon size={18} color={iconColor} strokeWidth={2} />
                                             </View>
@@ -205,7 +200,7 @@ export default function NotificationsScreen() {
                                             <View style={styles.notificationContent}>
                                                 <View style={styles.notificationTitleRow}>
                                                     {!notification.isRead && (
-                                                        <View style={[styles.unreadDot, { backgroundColor: iconColor }]} />
+                                                        <View style={[styles.unreadDot, { backgroundColor: isDarkMode ? '#fff' : '#000' }]} />
                                                     )}
                                                     <Text style={[styles.notificationTitle, { color: theme.textPrimary }]}>
                                                         {notification.title}

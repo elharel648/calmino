@@ -51,6 +51,12 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>האפליקציה צריכה גישה ל-Live Activities</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your calendars</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>האפליקציה צריכה גישה ליומן כדי לשמור את התזכורות שלך</string>
     <key>NSCameraUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your camera</string>
     <key>NSFaceIDUsageDescription</key>
@@ -60,15 +66,28 @@
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך</string>
+    <string>We need your location to provide accurate weather information for your baby's outdoor activities and clothing recommendations.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>האפליקציה צריכה גישה לתמונות כדי להגדיר תמונת פרופיל</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your reminders</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>האפליקציה צריכה גישה לתזכורות כדי לשמור את התזכורות שלך</string>
     <key>NSSupportsLiveActivities</key>
     <true/>
     <key>RCTNewArchEnabled</key>
     <true/>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>instagram</string>
+      <string>fb</string>
+      <string>linkedin</string>
+      <string>whatsapp</string>
+      <string>tiktok</string>
+      <string>tg</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

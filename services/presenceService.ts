@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // presenceService.ts - Real-time presence tracking for family members
 import { doc, setDoc, onSnapshot, serverTimestamp, getDoc, updateDoc, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
@@ -30,7 +31,7 @@ export const setUserOnline = async (familyId: string): Promise<void> => {
             name: auth.currentUser?.displayName || 'משתמש',
         }, { merge: true });
     } catch (e) {
-        if (__DEV__) console.error('setUserOnline error:', e);
+        logger.error('setUserOnline error:', e);
     }
 };
 
@@ -46,7 +47,7 @@ export const setUserOffline = async (familyId: string): Promise<void> => {
             lastSeen: serverTimestamp(),
         });
     } catch (e) {
-        if (__DEV__) console.error('setUserOffline error:', e);
+        logger.error('setUserOffline error:', e);
     }
 };
 
@@ -96,7 +97,7 @@ export const subscribeToFamilyPresence = (
                     };
                 }
             } catch (e) {
-                if (__DEV__) console.error('getPresence error:', e);
+                logger.error('getPresence error:', e);
                 return {
                     userId: memberId,
                     name: members[memberId]?.name || 'משתמש',

@@ -202,9 +202,10 @@ const Toast: React.FC<ToastProps> = ({
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={hide}
-                            activeOpacity={0.7}
+                            activeOpacity={0.6}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                         >
-                            <X size={16} color="#fff" strokeWidth={2.5} />
+                            <X size={18} color="#fff" strokeWidth={2.5} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -268,7 +269,10 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     closeButton: {
-        padding: 6,
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        marginLeft: 4,
     },
     accentLine: {
         position: 'absolute',

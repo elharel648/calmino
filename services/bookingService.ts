@@ -16,11 +16,11 @@ import {
 import { db, auth } from './firebaseConfig';
 import { getUserPushToken, sendPushNotification } from './pushNotificationService';
 
-export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+export type BookingStatus = 'pending' | 'accepted' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Booking {
     id: string;
-    sitterId: string;
+    babysitterId: string;  // ✅ FIXED: Changed from sitterId to babysitterId to match Firestore
     parentId: string;
     sitterName: string;
     parentName: string;
@@ -128,9 +128,9 @@ export async function updateBookingStatus(
         const currentUserId = auth.currentUser?.uid;
 
         // Determine who to notify
-        const notifyUserId = currentUserId === booking.sitterId
+        const notifyUserId = currentUserId === booking.babysitterId
             ? booking.parentId
-            : booking.sitterId;
+            : booking.babysitterId;
 
         const notifyToken = await getUserPushToken(notifyUserId);
         if (notifyToken) {

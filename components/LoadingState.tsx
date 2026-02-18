@@ -26,7 +26,7 @@ export default function LoadingState({
     <View style={containerStyle}>
       <ActivityIndicator 
         size={size} 
-        color={theme.primary} 
+        color={theme.textPrimary}
       />
       {message && (
         <Text style={[styles.message, { color: theme.textSecondary }]}>

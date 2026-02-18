@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect } from 'react';
 import { auth } from '../services/firebaseConfig';
 import { isPremiumUser, getMaxSharedUsers } from '../services/subscriptionService';
@@ -31,7 +32,7 @@ export const useGuardian = (): UseGuardianReturn => {
             const maxUsers = await getMaxSharedUsers(user.uid);
             setMaxSharedUsers(maxUsers);
         } catch (e) {
-            if (__DEV__) console.log('Subscription fetch error:', e);
+            logger.log('Subscription fetch error:', e);
         }
     }, [user]);
 

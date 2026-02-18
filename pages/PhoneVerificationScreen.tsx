@@ -240,7 +240,7 @@ export default function PhoneVerificationScreen({
                                 ]}
                             >
                                 {resending ? (
-                                    <ActivityIndicator size="small" color={theme.primary} />
+                                    <ActivityIndicator size="small" color={theme.textPrimary} />
                                 ) : (
                                     <Text
                                         style={[

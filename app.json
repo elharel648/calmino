@@ -18,17 +18,16 @@
       "expo-local-authentication",
       "expo-font",
       "@react-native-community/datetimepicker",
-      "@react-native-firebase/app",
-      "@react-native-firebase/perf",
-      "@react-native-firebase/crashlytics",
       [
         "expo-build-properties",
         {
           "ios": {
-            "useFrameworks": "dynamic"
+            "useFrameworks": "static",
+            "deploymentTarget": "16.1"
           }
         }
-      ]
+      ],
+      "./plugins/withLiveActivity"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
@@ -47,6 +46,8 @@
         "NSFaceIDUsageDescription": "אפשר כניסה מהירה ומאובטחת באמצעות Face ID",
         "NSLocationWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
+        "NSCalendarsUsageDescription": "האפליקציה צריכה גישה ליומן כדי לשמור את התזכורות שלך",
+        "NSRemindersUsageDescription": "האפליקציה צריכה גישה לתזכורות כדי לשמור את התזכורות שלך",
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
         "CFBundleURLTypes": [

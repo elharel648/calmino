@@ -13,6 +13,7 @@ import { X, Copy, Share2, RefreshCw, Users, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { useFamily } from '../../hooks/useFamily';
+import { useTheme } from '../../context/ThemeContext';
 
 interface InviteFamilyModalProps {
     visible: boolean;
@@ -27,6 +28,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
     babyId,
     babyName,
 }) => {
+    const { theme } = useTheme();
     const { family, inviteCode, create, refreshInviteCode, isLoading } = useFamily();
     const [copied, setCopied] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -50,9 +52,9 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
     const handleCreateFamily = React.useCallback(async () => {
         if (!family && !creatingFamily) {
             setCreatingFamily(true);
-            if (__DEV__) console.log('📋 Creating family for:', babyId, babyName);
+            console.log('📋 Creating family for:', babyId, babyName);
             const success = await create(babyId, babyName);
-            if (__DEV__) console.log('📋 Family creation result:', success);
+            console.log('📋 Family creation result:', success);
             setCreatingFamily(false);
         }
     }, [family, creatingFamily, babyId, babyName, create]);
@@ -116,7 +118,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
 
                     {(isLoading || creatingFamily) ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#6366F1" />
+                            <ActivityIndicator size="large" color={theme.textPrimary} />
                             <Text style={styles.loadingText}>
                                 {creatingFamily ? 'יוצר משפחה...' : 'טוען...'}
                             </Text>

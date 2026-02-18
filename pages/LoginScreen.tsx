@@ -70,6 +70,7 @@ const getPasswordStrengthColor = (password: string): string => {
 };
 
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+  logger.log('🎨 LoginScreen rendered with theme:', isDarkMode ? 'dark' : 'light');
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
@@ -413,27 +414,19 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         <LinearGradient colors={['#0F172A', '#1E1B4B', '#312E81']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         <View style={styles.headerContent}>
           <View style={styles.premiumLogoContainer}>
-            <LinearGradient
-              colors={['#8B5CF6', '#6366F1', '#4F46E5']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.premiumLogoGradient}
-            >
-              <View style={styles.premiumLogoGlow} />
+            <View style={styles.glassLogoBackground}>
               <Image
                 source={require('../assets/icon.png')}
                 style={styles.premiumLogoImage}
                 resizeMode="contain"
               />
-              <View style={styles.premiumLogoShine} />
-            </LinearGradient>
-            <View style={styles.premiumLogoShadow} />
+            </View>
           </View>
           <Text style={styles.appTitle}>{t('login.appName')}</Text>
           <Text style={styles.appSubtitle}>{t('login.appSubtitle')}</Text>
         </View>
-        <View style={[styles.blob, { top: -50, left: -50, backgroundColor: '#4F46E5', opacity: 0.2 }]} />
-        <View style={[styles.blob, { top: 50, right: -20, backgroundColor: '#7C3AED', opacity: 0.2 }]} />
+        <View style={[styles.blob, { top: -50, left: -50, backgroundColor: theme.primary, opacity: 0.2 }]} />
+        <View style={[styles.blob, { top: 50, right: -20, backgroundColor: theme.accent, opacity: 0.2 }]} />
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.formContainer}>
@@ -725,6 +718,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <Text style={[styles.socialText, { color: theme.textPrimary }]}>Google</Text>
               </TouchableOpacity>
 
+              {Platform.OS === 'ios' && (
               <TouchableOpacity
                 style={[styles.socialBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
                 accessibilityLabel="התחברות עם Apple"
@@ -801,6 +795,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/0/747.png' }} style={styles.socialIcon} />
                 <Text style={[styles.socialText, { color: theme.textPrimary }]}>Apple</Text>
               </TouchableOpacity>
+              )}
             </View>
 
             {/* Switch mode */}
@@ -915,12 +910,28 @@ const styles = StyleSheet.create({
     elevation: 10
   },
   premiumLogoContainer: {
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
     marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+  },
+  glassLogoBackground: {
+    width: 110,
+    height: 110,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 15,
   },
   premiumLogoGradient: {
     width: 100,
@@ -946,8 +957,8 @@ const styles = StyleSheet.create({
     left: -10,
   },
   premiumLogoImage: {
-    width: 90,
-    height: 90,
+    width: 95,
+    height: 95,
     zIndex: 10,
   },
   premiumLogoShine: {
@@ -971,21 +982,22 @@ const styles = StyleSheet.create({
     left: 5,
     zIndex: -1,
   },
-  appTitle: { fontSize: 32, fontWeight: '900', color: 'white', marginBottom: 4 },
-  appSubtitle: { fontSize: 14, color: '#e0e7ff', opacity: 0.9 },
+  appTitle: { fontSize: 38, fontWeight: '900', color: 'white', marginBottom: 6, letterSpacing: -0.8 },
+  appSubtitle: { fontSize: 16, color: '#e0e7ff', opacity: 1, fontWeight: '500' },
   blob: { position: 'absolute', width: 150, height: 150, borderRadius: 75, opacity: 0.4 },
 
   // Form
   formContainer: { flex: 1, marginTop: -30 },
   scrollContent: {
-    padding: 24,
-    paddingBottom: 40,
-    marginHorizontal: 20,
-    borderRadius: 24,
+    padding: 28,
+    paddingBottom: 44,
+    marginHorizontal: 18,
+    borderRadius: 28,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 10
   },
 
   // Security badge
@@ -1002,18 +1014,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  formTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  formSubtitle: { fontSize: 14, textAlign: 'center', marginBottom: 28, letterSpacing: -0.2 },
+  formTitle: { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 10, letterSpacing: -0.7 },
+  formSubtitle: { fontSize: 15, textAlign: 'center', marginBottom: 32, letterSpacing: -0.2, opacity: 0.85, lineHeight: 22 },
 
   // Inputs
-  inputGroup: { marginBottom: 18 },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 8, textAlign: 'right', letterSpacing: -0.2 },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '700', marginBottom: 10, textAlign: 'right', letterSpacing: -0.3 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    height: 54
+    borderRadius: 16,
+    borderWidth: 2,
+    height: 58
   },
   inputError: {
   },
@@ -1021,8 +1033,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     textAlign: 'right',
-    paddingHorizontal: 12,
-    fontSize: 15,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    fontWeight: '500',
   },
   eyeBtn: {
     padding: 12,
@@ -1073,25 +1086,26 @@ const styles = StyleSheet.create({
   // Main button
   mainButton: {
     marginTop: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#4f46e5',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
   },
   mainButtonDisabled: {
-    shadowOpacity: 0,
-    elevation: 0,
+    shadowOpacity: 0.1,
+    elevation: 2,
   },
   gradientBtn: {
-    paddingVertical: 16,
+    paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10
   },
-  mainButtonText: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  mainButtonText: { fontSize: 17, fontWeight: '800', letterSpacing: -0.4 },
 
   // Divider
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
@@ -1099,19 +1113,24 @@ const styles = StyleSheet.create({
   orText: { marginHorizontal: 12, fontSize: 12, fontWeight: '600', letterSpacing: -0.2 },
 
   // Social buttons
-  socialRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  socialRow: { flexDirection: 'row', gap: 14, marginBottom: 24 },
   socialBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  socialIcon: { width: 20, height: 20 },
-  socialText: { fontSize: 14, fontWeight: '600' },
+  socialIcon: { width: 22, height: 22 },
+  socialText: { fontSize: 15, fontWeight: '700' },
 
   // Switch mode
   switchMode: { alignItems: 'center', marginTop: 8 },

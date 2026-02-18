@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '../services/firebaseConfig';
@@ -22,6 +23,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.back': 'חזרה',
     'common.sortBy': 'מיון לפי',
     'common.savedSuccess': 'נשמר בהצלחה',
+    'common.deletedSuccess': 'נמחק בהצלחה',
     'common.undo': 'בטל',
     'common.undone': 'בוטל',
     'common.or': 'או',
@@ -103,7 +105,6 @@ const translations: Record<Language, Record<string, string>> = {
     'actions.growth': 'מעקב גדילה',
     'actions.milestones': 'אבני דרך',
     'actions.magicMoments': 'רגעים קסומים',
-    'actions.tools': 'כלים',
     'actions.teeth': 'שיניים',
     'actions.nightLight': 'פנס לילה',
     'actions.quickReminder': 'תזכורת מהירה',
@@ -125,13 +126,6 @@ const translations: Record<Language, Record<string, string>> = {
     'stats.goals.weekly': 'יעדים שבועיים',
     'stats.goals.monthly': 'יעדים חודשיים',
     'stats.streak': '{count} ימים רצופים',
-
-    // Tools
-    'tools.title': 'ארגז כלים',
-    'tools.sleepCalculator': 'מחשבון שינה',
-    'tools.sleepCalculator.subtitle': 'מתי להשכיב לישון?',
-    'tools.checklist': 'צ\'קליסט הרגעה',
-    'tools.checklist.subtitle': 'תינוק בוכה? בוא נבדוק',
 
     // Account
     'account.title': 'חשבון',
@@ -542,6 +536,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.retry': 'Retry',
     'common.back': 'Back',
     'common.savedSuccess': 'Saved successfully',
+    'common.deletedSuccess': 'Deleted successfully',
     'common.undo': 'Undo',
     'common.undone': 'Undone',
     'common.sortBy': 'Sort by',
@@ -605,7 +600,6 @@ const translations: Record<Language, Record<string, string>> = {
     'actions.growth': 'Growth',
     'actions.milestones': 'Milestones',
     'actions.magicMoments': 'Magic Moments',
-    'actions.tools': 'Tools',
     'actions.teeth': 'Teeth',
     'actions.nightLight': 'Night Light',
     'actions.quickReminder': 'Quick Reminder',
@@ -627,13 +621,6 @@ const translations: Record<Language, Record<string, string>> = {
     'stats.goals.weekly': 'Weekly Goals',
     'stats.goals.monthly': 'Monthly Goals',
     'stats.streak': '{count} days streak',
-
-    // Tools
-    'tools.title': 'Toolbox',
-    'tools.sleepCalculator': 'Sleep Calculator',
-    'tools.sleepCalculator.subtitle': 'When to put to sleep?',
-    'tools.checklist': 'Calming Checklist',
-    'tools.checklist.subtitle': 'Baby crying? Let\'s check',
 
     // Account
     'account.title': 'Account',
@@ -1092,7 +1079,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
           }
         }
       } catch (error) {
-        if (__DEV__) console.error('Error loading language:', error);
+        logger.error('Error loading language:', error);
       }
     };
 
@@ -1116,7 +1103,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         }, { merge: true });
       }
     } catch (error) {
-      if (__DEV__) console.error('Error saving language:', error);
+      logger.error('Error saving language:', error);
     }
   }, []);
 

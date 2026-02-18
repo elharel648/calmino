@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions } from 'react-native';
 import { Check, Sparkles, X, Calendar, TrendingUp, Award, Clock } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { db, auth } from '../../services/firebaseConfig';
+import { logger } from '../../utils/logger';
+import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { doc, getDoc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
 import { saveEventToFirebase } from '../../services/firebaseService';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -101,20 +104,20 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                 parsed[key] = new Date(val);
                             }
                         } catch (e) {
-                            console.log('Error parsing date', e);
+                            logger.log('Error parsing date', e);
                         }
                     }
                 });
                 setTeethData(parsed);
             }
         } catch (e) {
-            console.error('Failed to load teeth data', e);
+            logger.error('Failed to load teeth data', e);
         }
     };
 
     const handleToothPress = (id: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        
+
         // If tooth is already erupted, allow editing date or removing
         if (teethData[id]) {
             // Show date picker with option to edit or remove
@@ -123,7 +126,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
             setShowDatePicker(true);
             return;
         }
-        
+
         // New tooth - show date picker
         setSelectedTooth(id);
         setCurrentDate(new Date());
@@ -132,16 +135,16 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
 
     const handleRemoveTooth = async (id: string) => {
         if (!activeChild?.childId) return;
-        
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
+
         // Remove from state
         setTeethData(prev => {
             const updated = { ...prev };
             delete updated[id];
             return updated;
         });
-        
+
         // Remove from Firebase
         try {
             const docRef = doc(db, 'babies', activeChild.childId);
@@ -149,7 +152,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                 [`teeth.${id}`]: deleteField()
             });
         } catch (e) {
-            console.error('Failed to remove tooth', e);
+            logger.error('Failed to remove tooth', e);
         }
     };
 
@@ -164,7 +167,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                 await updateDoc(docRef, {
                     [`teeth.${selectedTooth}`]: Timestamp.fromDate(newDate)
                 });
-                
+
                 // Save to timeline if it's a new tooth
                 if (isNewTooth && auth.currentUser) {
                     const toothConfig = TEETH_CONFIG.find(t => t.id === selectedTooth);
@@ -178,7 +181,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                     });
                 }
             } catch (e) {
-                console.error('Failed to save tooth', e);
+                logger.error('Failed to save tooth', e);
             }
         }
         setShowDatePicker(false);
@@ -236,7 +239,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        
+
         const thisMonth = chronological.filter(t => {
             const d = t.date;
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -253,7 +256,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
     const renderTooth = (tooth: typeof TEETH_CONFIG[0]) => {
         const isErupted = !!teethData[tooth.id];
         const shapeStyle = getToothShapeStyle(tooth.type);
-        
+
         return (
             <TouchableOpacity
                 key={tooth.id}
@@ -306,30 +309,28 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                         },
                     ]}
                 >
-                    {/* Header */}
-                    <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                        <TouchableOpacity
-                            style={styles.closeBtn}
-                            onPress={handleClose}
-                            activeOpacity={0.7}
-                        >
-                            <X size={24} color={theme.textSecondary} strokeWidth={2.5} />
-                        </TouchableOpacity>
-                        <View style={styles.headerContent}>
-                            <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                                <Sparkles size={28} color="#8B5CF6" strokeWidth={2.5} />
-                            </View>
-                            <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
-                        </View>
-                        <View style={{ width: 40 }} />
+                    {/* Close Button */}
+                    <View style={styles.swipeHandle}>
+                        <View style={[styles.swipeBar, { backgroundColor: theme.textTertiary }]} />
                     </View>
 
+                        {/* Header */}
+                        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                            <View style={styles.headerContent}>
+                                <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                                    <MaterialCommunityIcons name="tooth" size={28} color="#8B5CF6" />
+                                </View>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
+                            </View>
+                        </View>
+
                     {/* Scrollable Content */}
-                    <ScrollView
-                        style={styles.scrollView}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                    >
+                    <ScrollFadeWrapper fadeHeight={80}>
+                        <ScrollView
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                        >
                         {/* Main Chart */}
                         <Animated.View
                             entering={ANIMATIONS.fadeInDown(100)}
@@ -383,7 +384,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                         <Text style={[styles.statsText, { color: theme.textPrimary, marginBottom: 16 }]}>
                                             סה"כ שיניים שבקעו: {stats.total} / 20
                                         </Text>
-                                        
+
                                         {/* Advanced Statistics */}
                                         <View style={styles.advancedStats}>
                                             <View style={[styles.statItem, { backgroundColor: theme.card }]}>
@@ -393,7 +394,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                                     <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.thisMonth}</Text>
                                                 </View>
                                             </View>
-                                            
+
                                             {stats.first && (
                                                 <View style={[styles.statItem, { backgroundColor: theme.card }]}>
                                                     <Award size={18} color="#F87171" strokeWidth={2} />
@@ -406,7 +407,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                                     </View>
                                                 </View>
                                             )}
-                                            
+
                                             {stats.last && (
                                                 <View style={[styles.statItem, { backgroundColor: theme.card }]}>
                                                     <Clock size={18} color="#34D399" strokeWidth={2} />
@@ -420,7 +421,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                                 </View>
                                             )}
                                         </View>
-                                        
+
                                         {stats.total === 20 && (
                                             <View style={styles.completeBadge}>
                                                 <Sparkles size={16} color={theme.primary} strokeWidth={2} />
@@ -436,7 +437,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                         {(() => {
                             const chronological = getChronologicalTeeth();
                             if (chronological.length === 0) return null;
-                            
+
                             return (
                                 <Animated.View
                                     entering={ANIMATIONS.fadeInDown(400)}
@@ -449,14 +450,14 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                                 היסטוריה כרונולוגית
                                             </Text>
                                         </View>
-                                        <ScrollView 
+                                        <ScrollView
                                             style={styles.historyList}
                                             showsVerticalScrollIndicator={false}
                                             nestedScrollEnabled
                                         >
                                             {chronological.map((tooth, index) => (
-                                                <View 
-                                                    key={tooth.id} 
+                                                <View
+                                                    key={tooth.id}
                                                     style={[styles.historyItem, { borderBottomColor: theme.border }]}
                                                 >
                                                     <View style={[styles.historyItemLeft, { backgroundColor: tooth.color + '20' }]}>
@@ -480,7 +481,8 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                 </Animated.View>
                             );
                         })()}
-                    </ScrollView>
+                        </ScrollView>
+                    </ScrollFadeWrapper>
 
                     {/* Date Picker Modal */}
                     {showDatePicker && (
@@ -504,8 +506,8 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                 >
                                     <View style={[styles.datePickerHeader, { borderBottomColor: theme.border }]}>
                                         <Text style={[styles.datePickerTitle, { color: theme.textPrimary }]}>
-                                            {selectedTooth && teethData[selectedTooth] 
-                                                ? 'ערוך תאריך בקעת השן' 
+                                            {selectedTooth && teethData[selectedTooth]
+                                                ? 'ערוך תאריך בקעת השן'
                                                 : 'מתי בקעה השן?'}
                                         </Text>
                                         <TouchableOpacity
@@ -600,16 +602,28 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 10,
     },
+    swipeHandle: {
+        width: '100%',
+        paddingTop: 12,
+        paddingBottom: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    swipeBar: {
+        width: 40,
+        height: 4,
+        borderRadius: 2,
+        opacity: 0.3,
+    },
     header: {
-        flexDirection: 'row-reverse',
-        justifyContent: 'space-between',
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingVertical: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     headerContent: {
-        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
@@ -618,13 +632,6 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    closeBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },

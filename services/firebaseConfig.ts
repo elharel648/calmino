@@ -9,12 +9,12 @@ import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAdESrCDWktlnZGyDrSeqElw3WL7Q9MPUQ",
-  authDomain: "baby-app-42b3b.firebaseapp.com",
-  projectId: "baby-app-42b3b",
-  storageBucket: "baby-app-42b3b.appspot.com",
-  messagingSenderId: "16421819020",
-  appId: "1:16421819020:web:2c87cd757d69fae199a1a9",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
   // measurementId לא חובה במובייל
 };
 

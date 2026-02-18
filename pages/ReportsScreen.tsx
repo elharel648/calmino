@@ -38,6 +38,7 @@ import { LiquidGlassBackground } from '../components/LiquidGlass';
 import { PremiumStatCard, SkiaBezierChart, MilestoneBadge } from '../components/Reports/PremiumReportComponents';
 import { LiquidGlassLineChart, LiquidGlassBarChart } from '../components/Reports/LiquidGlassCharts';
 import GlassBarChartPerfect from '../components/Reports/GlassBarChart';
+import { logger } from '../utils/logger';
 import DetailedStatsScreen from '../components/Reports/DetailedStatsScreen';
 import DetailedGrowthScreen from '../components/Reports/DetailedGrowthScreen';
 import GrowthStatCube from '../components/Reports/GrowthStatCube';
@@ -428,7 +429,7 @@ export default function ReportsScreen() {
       }
 
     } catch (error) {
-      if (__DEV__) console.error('ReportsScreen fetchData error:', error);
+      logger.error('ReportsScreen fetchData error:', error);
       // Silent fail - don't show error to user
     } finally {
       setLoading(false);
@@ -487,7 +488,8 @@ ${comparisonText}
 
     try {
       await Share.share({ message: report });
-    } catch {
+    } catch (error) {
+      logger.error('Failed to share report:', error);
       // Use toast instead of Alert
       if (typeof window !== 'undefined' && (window as any).showToast) {
         (window as any).showToast({ message: 'לא ניתן לשתף', type: 'error' });
@@ -532,13 +534,13 @@ ${comparisonText}
       <View style={styles.statValueRow}>
         <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
         {change !== undefined && change !== 0 && (
-          <View style={[styles.trendBadge, { backgroundColor: change > 0 ? '#D1FAE5' : '#FEE2E2' }]}>
+          <View style={[styles.trendBadge, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
             {change > 0 ? (
-              <TrendingUp size={12} color="#059669" />
+              <TrendingUp size={12} color={theme.textPrimary} />
             ) : (
-              <TrendingDown size={12} color="#DC2626" />
+              <TrendingDown size={12} color={theme.textPrimary} />
             )}
-            <Text style={{ fontSize: 10, color: change > 0 ? '#059669' : '#DC2626', fontWeight: '600' }}>
+            <Text style={{ fontSize: 10, color: theme.textPrimary, fontWeight: '600' }}>
               {Math.abs(change)}%
             </Text>
           </View>
@@ -805,8 +807,8 @@ ${comparisonText}
               label="האכלות"
               subValue={`${dailyStats.food} מ"ל`}
               change={comparison?.feedingChange}
-              iconColor="#F59E0B"
-              iconBg="#FEF3C7"
+              iconColor={isDarkMode ? '#fff' : '#000'}
+              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
               onPress={() => setSelectedMetric('food')}
             />
           );
@@ -818,8 +820,8 @@ ${comparisonText}
               label="שעות שינה"
               subValue={`${dailyStats.sleepCount} תנומות`}
               change={comparison?.sleepChange}
-              iconColor="#8B5CF6"
-              iconBg="#EDE9FE"
+              iconColor={isDarkMode ? '#fff' : '#000'}
+              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
               onPress={() => setSelectedMetric('sleep')}
             />
           );
@@ -830,8 +832,8 @@ ${comparisonText}
               value={dailyStats.diapers}
               label="חיתולים"
               change={comparison?.diaperChange}
-              iconColor="#14B8A6"
-              iconBg="#CCFBF1"
+              iconColor={isDarkMode ? '#fff' : '#000'}
+              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
               onPress={() => setSelectedMetric('diapers')}
             />
           );
@@ -841,8 +843,8 @@ ${comparisonText}
               icon={Pill}
               value={dailyStats.supplements}
               label="תוספים"
-              iconColor="#EC4899"
-              iconBg="#FCE7F3"
+              iconColor={isDarkMode ? '#fff' : '#000'}
+              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
               onPress={() => setSelectedMetric('supplements')}
             />
           );
@@ -895,18 +897,18 @@ ${comparisonText}
         </View>
 
         <View style={styles.comparisonGrid}>
-          {/* Sleep Comparison */}
+          {/* Sleep Comparison - Blue */}
           <View style={styles.comparisonItem}>
             <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>שינה</Text>
-            <Text style={[styles.comparisonValue, { color: comparison?.sleepChange && comparison.sleepChange >= 0 ? '#10B981' : '#EF4444' }]}>
+            <Text style={[styles.comparisonValue, { color: '#3B82F6' }]}>
               {comparison?.sleepChange !== undefined ? (comparison.sleepChange >= 0 ? '+' : '') + comparison.sleepChange + '%' : '--'}
             </Text>
           </View>
 
-          {/* Food Comparison */}
+          {/* Food Comparison - Green */}
           <View style={styles.comparisonItem}>
             <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלות</Text>
-            <Text style={[styles.comparisonValue, { color: comparison?.feedingChange && comparison.feedingChange >= 0 ? '#10B981' : '#EF4444' }]}>
+            <Text style={[styles.comparisonValue, { color: '#10B981' }]}>
               {comparison?.feedingChange !== undefined ? (comparison.feedingChange >= 0 ? '+' : '') + comparison.feedingChange + '%' : '--'}
             </Text>
           </View>
@@ -914,7 +916,7 @@ ${comparisonText}
           {/* Diapers Comparison */}
           <View style={styles.comparisonItem}>
             <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
-            <Text style={[styles.comparisonValue, { color: comparison?.diaperChange && comparison.diaperChange >= 0 ? '#10B981' : '#EF4444' }]}>
+            <Text style={[styles.comparisonValue, { color: theme.textPrimary }]}>
               {comparison?.diaperChange !== undefined ? (comparison.diaperChange >= 0 ? '+' : '') + comparison.diaperChange + '%' : '--'}
             </Text>
           </View>
@@ -933,36 +935,36 @@ ${comparisonText}
           </View>
         </View>
 
-        {/* Sleep Goal */}
+        {/* Sleep Goal - Blue */}
         <View style={styles.goalItem}>
           <View style={styles.goalItemHeader}>
             <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>שינה של 8+ שעות</Text>
-            <Text style={[styles.goalItemProgress, { color: theme.textSecondary }]}>
+            <Text style={[styles.goalItemProgress, { color: '#3B82F6' }]}>
               {weeklyGoals.sleepDaysMet}/{weeklyGoals.sleepDaysGoal}
             </Text>
           </View>
-          <View style={[styles.goalProgressBar, { backgroundColor: theme.cardSecondary }]}>
+          <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(60, 130, 246, 0.2)' : 'rgba(60, 130, 246, 0.1)' }]}>
             <View
               style={[
                 styles.goalProgressFill,
                 {
                   width: `${weeklyGoals.sleepDaysGoal > 0 ? (weeklyGoals.sleepDaysMet / weeklyGoals.sleepDaysGoal) * 100 : 0}%`,
-                  backgroundColor: '#10B981'
+                  backgroundColor: '#3B82F6'
                 }
               ]}
             />
           </View>
         </View>
 
-        {/* Documentation Goal */}
+        {/* Documentation Goal - Green */}
         <View style={styles.goalItem}>
           <View style={styles.goalItemHeader}>
             <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>ימים עם תיעוד</Text>
-            <Text style={[styles.goalItemProgress, { color: theme.textSecondary }]}>
+            <Text style={[styles.goalItemProgress, { color: '#10B981' }]}>
               {weeklyGoals.docDaysMet}/{weeklyGoals.docDaysGoal}
             </Text>
           </View>
-          <View style={[styles.goalProgressBar, { backgroundColor: theme.cardSecondary }]}>
+          <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)' }]}>
             <View
               style={[
                 styles.goalProgressFill,
@@ -978,8 +980,8 @@ ${comparisonText}
         {/* Streak with icon */}
         {weeklyGoals.streak > 0 && (
           <View style={styles.streakRow}>
-            <Check size={16} color="#10B981" strokeWidth={2.5} />
-            <Text style={[styles.streakSimple, { color: '#10B981' }]}>
+            <Check size={16} color={theme.textPrimary} strokeWidth={2.5} />
+            <Text style={[styles.streakSimple, { color: theme.textPrimary }]}>
               {weeklyGoals.streak} ימים רצופים
             </Text>
           </View>
@@ -1027,21 +1029,21 @@ ${comparisonText}
           icon={Moon}
           title="שינה ארוכה ביותר"
           value={`${timeInsights?.longestSleep || 0} שעות`}
-          color="#8B5CF6"
+          color={isDarkMode ? '#fff' : '#000'}
           delay={0}
         />
         <PremiumInsightCard
           icon={Utensils}
           title="האכלה גדולה ביותר"
           value={`${timeInsights?.biggestFeeding || 0} מ"ל`}
-          color="#F59E0B"
+          color={isDarkMode ? '#fff' : '#000'}
           delay={50}
         />
         <PremiumInsightCard
           icon={Clock}
           title="זמן ממוצע בין האכלות"
           value={`${timeInsights?.avgFeedingInterval || 0} שעות`}
-          color="#10B981"
+          color={isDarkMode ? '#fff' : '#000'}
           delay={100}
         />
       </View>
@@ -1270,7 +1272,7 @@ ${comparisonText}
       {/* Content */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
+          <ActivityIndicator size="large" color={theme.textPrimary} />
         </View>
       ) : !activeChild?.childId ? (
         <View style={styles.emptyState}>
@@ -1336,30 +1338,42 @@ ${comparisonText}
     </View>
   );
 
-  // If a metric is selected, show the detailed stats screen
-  if (selectedMetric) {
-    return (
-      <DetailedStatsScreen
-        onClose={() => setSelectedMetric(null)}
-        metricType={selectedMetric}
-        childId={activeChild?.childId || ''}
-      />
-    );
-  }
+  return (
+    <>
+      {mainContent}
 
-  // If growth screen is selected, show the detailed growth screen
-  if (showGrowthScreen) {
-    return (
-      <DetailedGrowthScreen
-        onClose={() => setShowGrowthScreen(false)}
-        childId={activeChild?.childId || ''}
-        ageInMonths={babyAgeMonths}
-        gender={baby?.gender || 'boy'}
-      />
-    );
-  }
+      {/* Detailed Stats Modal */}
+      <Modal
+        visible={!!selectedMetric}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSelectedMetric(null)}
+      >
+        {selectedMetric && (
+          <DetailedStatsScreen
+            onClose={() => setSelectedMetric(null)}
+            metricType={selectedMetric}
+            childId={activeChild?.childId || ''}
+          />
+        )}
+      </Modal>
 
-  return mainContent;
+      {/* Growth Screen Modal - PageSheet for Blur Effect */}
+      <Modal
+        visible={showGrowthScreen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowGrowthScreen(false)}
+      >
+        <DetailedGrowthScreen
+          onClose={() => setShowGrowthScreen(false)}
+          childId={activeChild?.childId || ''}
+          ageInMonths={babyAgeMonths}
+          gender={baby?.gender || 'boy'}
+        />
+      </Modal>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({

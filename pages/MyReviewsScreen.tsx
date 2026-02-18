@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Star, ChevronRight, TrendingUp, Award, ThumbsUp } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { auth } from '../services/firebaseConfig';
 import { getBabysitterReviews, getReviewStats } from '../services/babysitterService';
@@ -29,6 +30,7 @@ interface Review {
 
 export default function MyReviewsScreen({ navigation }: any) {
     const { theme, isDarkMode } = useTheme();
+    const insets = useSafeAreaInsets();
     const [reviews, setReviews] = useState<Review[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -59,10 +61,33 @@ export default function MyReviewsScreen({ navigation }: any) {
     if (loading) {
         return (
             <View style={[styles.container, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.primary} />
+                <ActivityIndicator size="large" color={theme.textPrimary} />
             </View>
         );
     }
+
+    const Header = () => (
+        <View style={[styles.header, {
+            paddingTop: insets.top + 8,
+            backgroundColor: isDarkMode ? 'rgba(28,28,30,0.95)' : 'rgba(255,255,255,0.95)',
+            borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        }]}>
+            <TouchableOpacity
+                style={[styles.backBtn, {
+                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                }]}
+                onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.goBack();
+                }}
+                activeOpacity={0.7}
+            >
+                <ChevronRight size={22} color={theme.textPrimary} strokeWidth={2.5} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>הביקורות שלי</Text>
+            <View style={{ width: 36 }} />
+        </View>
+    );
 
     // Empty State
     if (reviews.length === 0) {
@@ -72,22 +97,39 @@ export default function MyReviewsScreen({ navigation }: any) {
                 <LinearGradient
                     colors={isDarkMode
                         ? [theme.background, '#1a1a2e', theme.background]
-                        : ['#FFF9E6', '#FFE5B4', '#FFF9E6']
+                        : ['#FFFFFF', '#FFFFFF', '#FFFFFF']
                     }
                     style={StyleSheet.absoluteFill}
                 />
 
+                <Header />
                 <ScrollView contentContainerStyle={styles.emptyContainer}>
-                    {/* Premium Empty State */}
-                    <View style={[styles.emptyCard, { backgroundColor: theme.card }]}>
+                    {/* Premium Empty State - New Black Aesthetic */}
+                    <View style={[styles.emptyCard, {
+                        backgroundColor: isDarkMode ? 'rgba(28, 28, 30, 0.6)' : 'rgba(255, 255, 255, 0.9)',
+                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        borderWidth: 1,
+                    }]}>
+                        {/* Glass Gradient Overlay */}
                         <LinearGradient
-                            colors={['#FBBF24', '#F59E0B']}
-                            style={styles.emptyIconContainer}
+                            colors={isDarkMode
+                                ? ['rgba(255, 255, 255, 0.03)', 'rgba(255, 255, 255, 0.01)']
+                                : ['rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0.4)']
+                            }
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
-                        >
-                            <Star size={48} color="#FFF" fill="#FFF" strokeWidth={2} />
-                        </LinearGradient>
+                            style={StyleSheet.absoluteFill}
+                        />
+
+                        <View style={[styles.emptyIconContainer, {
+                            backgroundColor: isDarkMode ? '#FFF' : '#000',
+                            shadowColor: isDarkMode ? '#FFF' : '#000',
+                            shadowOpacity: 0.15,
+                            shadowRadius: 20,
+                            elevation: 10,
+                        }]}>
+                            <Star size={44} color={isDarkMode ? '#000' : '#FFF'} fill={isDarkMode ? '#000' : '#FFF'} strokeWidth={0} />
+                        </View>
 
                         <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
                             עדיין אין ביקורות
@@ -97,22 +139,34 @@ export default function MyReviewsScreen({ navigation }: any) {
                             התחל לאסוף המלצות מהורים מרוצים וצפה בדירוג שלך עולה!
                         </Text>
 
-                        {/* Tips Cards */}
+                        {/* Tips Cards - Monochromatic */}
                         <View style={styles.tipsContainer}>
-                            <View style={[styles.tipCard, { backgroundColor: theme.cardSecondary }]}>
-                                <Award size={20} color="#10B981" />
+                            <View style={[styles.tipCardGlass, {
+                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                                borderWidth: 1,
+                            }]}>
+                                <Award size={18} color={theme.textPrimary} strokeWidth={1.5} />
                                 <Text style={[styles.tipText, { color: theme.textPrimary }]}>
                                     השלם הזמנות בהצלחה
                                 </Text>
                             </View>
-                            <View style={[styles.tipCard, { backgroundColor: theme.cardSecondary }]}>
-                                <ThumbsUp size={20} color="#3B82F6" />
+                            <View style={[styles.tipCardGlass, {
+                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                                borderWidth: 1,
+                            }]}>
+                                <ThumbsUp size={18} color={theme.textPrimary} strokeWidth={1.5} />
                                 <Text style={[styles.tipText, { color: theme.textPrimary }]}>
                                     תן שירות מעולה
                                 </Text>
                             </View>
-                            <View style={[styles.tipCard, { backgroundColor: theme.cardSecondary }]}>
-                                <TrendingUp size={20} color="#8B5CF6" />
+                            <View style={[styles.tipCardGlass, {
+                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                                borderWidth: 1,
+                            }]}>
+                                <TrendingUp size={18} color={theme.textPrimary} strokeWidth={1.5} />
                                 <Text style={[styles.tipText, { color: theme.textPrimary }]}>
                                     בקש המלצה
                                 </Text>
@@ -127,6 +181,7 @@ export default function MyReviewsScreen({ navigation }: any) {
     // Has Reviews
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <Header />
             <ScrollView>
                 {/* Stats Header */}
                 <LinearGradient
@@ -201,14 +256,14 @@ export default function MyReviewsScreen({ navigation }: any) {
                             </View>
 
                             {/* Text comment - Only show if: verified, 5 stars, and text exists */}
-                            {review.comment && 
-                             review.isVerified && 
-                             review.rating === 5 && (
-                                <Text style={[styles.reviewComment, { color: theme.textSecondary }]} numberOfLines={3}>
-                                    {review.comment}
-                                </Text>
-                            )}
-                            
+                            {review.comment &&
+                                review.isVerified &&
+                                review.rating === 5 && (
+                                    <Text style={[styles.reviewComment, { color: theme.textSecondary }]} numberOfLines={3}>
+                                        {review.comment}
+                                    </Text>
+                                )}
+
                             <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>
                                 {new Date(review.createdAt).toLocaleDateString('he-IL')}
                             </Text>
@@ -223,6 +278,27 @@ export default function MyReviewsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        zIndex: 10,
+    },
+    backBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     emptyContainer: {
         flex: 1,
@@ -266,12 +342,13 @@ const styles = StyleSheet.create({
         width: '100%',
         gap: 12,
     },
-    tipCard: {
+    tipCardGlass: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 16,
         gap: 12,
+        marginBottom: 8,
     },
     tipText: {
         fontSize: 14,

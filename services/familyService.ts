@@ -13,6 +13,7 @@ import {
     Unsubscribe
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
+import { logger } from '../utils/logger';
 
 // --- Types ---
 export type FamilyRole = 'admin' | 'member' | 'viewer' | 'guest';
@@ -104,7 +105,7 @@ export const createFamily = async (babyId: string, babyName: string): Promise<Fa
 
         return { id: familyId, ...familyData };
     } catch (error) {
-        if (__DEV__) console.log('Error creating family:', error);
+        logger.log('Error creating family:', error);
         return null;
     }
 };
@@ -142,7 +143,7 @@ export const getMyFamily = async (): Promise<Family | null> => {
 
         return null;
     } catch (error) {
-        if (__DEV__) console.log('Error getting family:', error);
+        logger.log('Error getting family:', error);
         return null;
     }
 };
@@ -301,7 +302,7 @@ export const joinFamily = async (inviteCode: string, role: FamilyRole = 'member'
             isGuest: false,
         };
     } catch (error: any) {
-        if (__DEV__) console.log('Error joining family:', error?.code, error?.message);
+        logger.log('Error joining family:', error?.code, error?.message);
         return { success: false, message: `שגיאה בהצטרפות למשפחה: ${error?.code || error?.message || 'unknown'}` };
     }
 };
@@ -342,7 +343,7 @@ export const leaveFamily = async (): Promise<boolean> => {
 
         return true;
     } catch (error) {
-        if (__DEV__) console.log('Error leaving family:', error);
+        logger.log('Error leaving family:', error);
         return false;
     }
 };
@@ -378,7 +379,7 @@ export const removeMember = async (memberUserId: string): Promise<boolean> => {
 
         return true;
     } catch (error) {
-        if (__DEV__) console.log('Error removing member:', error);
+        logger.log('Error removing member:', error);
         return false;
     }
 };
@@ -405,7 +406,7 @@ export const regenerateInviteCode = async (): Promise<string | null> => {
 
         return newCode;
     } catch (error) {
-        if (__DEV__) console.log('Error regenerating invite code:', error);
+        logger.log('Error regenerating invite code:', error);
         return null;
     }
 };
@@ -431,7 +432,7 @@ export const renameFamily = async (newName: string): Promise<boolean> => {
 
         return true;
     } catch (error) {
-        if (__DEV__) console.log('Error renaming family:', error);
+        logger.log('Error renaming family:', error);
         return false;
     }
 };
@@ -457,7 +458,7 @@ export const updateMemberRole = async (memberUserId: string, newRole: FamilyRole
 
         return true;
     } catch (error) {
-        if (__DEV__) console.log('Error updating member role:', error);
+        logger.log('Error updating member role:', error);
         return false;
     }
 };
@@ -539,7 +540,7 @@ export const createGuestInvite = async (
         // SECURITY CHECK: Verify user is admin/member of this family
         const familyDoc = await getDoc(doc(db, 'families', familyId));
         if (!familyDoc.exists()) {
-            if (__DEV__) console.log('Family not found');
+            logger.log('Family not found');
             return null;
         }
 
@@ -548,7 +549,7 @@ export const createGuestInvite = async (
 
         // Only admin or member can create invites (not guest or viewer)
         if (memberRole !== 'admin' && memberRole !== 'member') {
-            if (__DEV__) console.log('User not authorized to create invites');
+            logger.log('User not authorized to create invites');
             return null;
         }
 
@@ -565,7 +566,7 @@ export const createGuestInvite = async (
         }
 
         if (attempts >= maxAttempts) {
-            if (__DEV__) console.log('Failed to generate unique invite code');
+            logger.log('Failed to generate unique invite code');
             return null;
         }
 
@@ -585,7 +586,7 @@ export const createGuestInvite = async (
 
         return { code, expiresAt };
     } catch (error) {
-        if (__DEV__) console.log('Error creating guest invite:', error);
+        logger.log('Error creating guest invite:', error);
         return null;
     }
 };
@@ -607,16 +608,16 @@ export const joinAsGuest = async (
     try {
         // Find the invite
         const trimmedCode = inviteCode.trim();
-        if (__DEV__) console.log('🔍 joinAsGuest: Looking for invite code:', trimmedCode);
+        logger.log('🔍 joinAsGuest: Looking for invite code:', trimmedCode);
 
         const inviteDoc = await getDoc(doc(db, 'invites', trimmedCode));
 
         if (!inviteDoc.exists()) {
-            if (__DEV__) console.log('❌ joinAsGuest: Invite not found in Firestore');
+            logger.log('❌ joinAsGuest: Invite not found in Firestore');
             return { success: false, message: 'קוד הזמנה לא תקין' };
         }
 
-        if (__DEV__) console.log('✅ joinAsGuest: Found invite:', inviteDoc.data());
+        logger.log('✅ joinAsGuest: Found invite:', inviteDoc.data());
 
         const inviteData = inviteDoc.data();
 
@@ -693,7 +694,7 @@ export const joinAsGuest = async (
             familyId,
         };
     } catch (error) {
-        if (__DEV__) console.log('Error joining as guest:', error);
+        logger.log('Error joining as guest:', error);
         return { success: false, message: 'שגיאה בהצטרפות' };
     }
 };
@@ -724,7 +725,7 @@ export const revokeGuestAccess = async (guestUserId: string, familyId: string): 
 
         return true;
     } catch (error) {
-        if (__DEV__) console.log('Error revoking guest access:', error);
+        logger.log('Error revoking guest access:', error);
         return false;
     }
 };
@@ -786,7 +787,7 @@ export const getActiveGuestInvites = async (familyId: string): Promise<GuestInvi
 
         return invites;
     } catch (error) {
-        if (__DEV__) console.log('Error getting active guest invites:', error);
+        logger.log('Error getting active guest invites:', error);
         return [];
     }
 };
@@ -805,7 +806,7 @@ export const cancelGuestInvite = async (inviteCode: string): Promise<boolean> =>
 
         const inviteData = inviteDoc.data();
         if (inviteData.createdBy !== userId) {
-            if (__DEV__) console.log('Not authorized to cancel this invite');
+            logger.log('Not authorized to cancel this invite');
             return false;
         }
 
@@ -815,7 +816,7 @@ export const cancelGuestInvite = async (inviteCode: string): Promise<boolean> =>
 
         return true;
     } catch (error) {
-        if (__DEV__) console.log('Error canceling guest invite:', error);
+        logger.log('Error canceling guest invite:', error);
         return false;
     }
 };

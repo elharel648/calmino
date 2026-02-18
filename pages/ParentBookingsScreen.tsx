@@ -1,4 +1,4 @@
-// pages/ParentBookingsScreen.tsx - Parent Bookings Management
+// pages/ParentBookingsScreen.tsx - History Screen (Parent side)
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -12,27 +12,25 @@ import {
     Alert,
     Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../services/firebaseConfig';
-import { getParentBookings } from '../services/babysitterService';
 import { BabysitterBooking } from '../types/babysitter';
 import RatingModal from '../components/BabySitter/RatingModal';
-import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import * as Haptics from 'expo-haptics';
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, User, Star, X } from 'lucide-react-native';
+import { ChevronRight, Clock, CheckCircle, XCircle, AlertCircle, User, Star, X } from 'lucide-react-native';
 import { getUserPushToken, sendPushNotification } from '../services/pushNotificationService';
 import { logger } from '../utils/logger';
+import { getParentBookings } from '../services/babysitterService';
 
 const ParentBookingsScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
-    const { t } = useLanguage();
     const [bookings, setBookings] = useState<BabysitterBooking[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [selectedBooking, setSelectedBooking] = useState<{ bookingId: string; sitterId: string; sitterName: string } | null>(null);
+    const [selectedBooking, setSelectedBooking] = useState<{ bookingId: string; babysitterId: string; sitterName: string } | null>(null);
     const [ratingModalVisible, setRatingModalVisible] = useState(false);
 
     // Real-time subscription to bookings
@@ -45,7 +43,6 @@ const ParentBookingsScreen = ({ navigation }: any) => {
 
         setLoading(true);
 
-        // Real-time subscription to parent bookings
         const bookingsQuery = query(
             collection(db, 'bookings'),
             where('parentId', '==', userId)
@@ -56,7 +53,7 @@ const ParentBookingsScreen = ({ navigation }: any) => {
             async (snapshot) => {
                 try {
                     const fetchedBookings: BabysitterBooking[] = [];
-                    
+
                     snapshot.forEach((docSnap) => {
                         const data = docSnap.data();
                         fetchedBookings.push({
@@ -74,7 +71,6 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                         });
                     });
 
-                    // Enrich with sitter names
                     const enrichedBookings = await Promise.all(
                         fetchedBookings.map(async (booking) => {
                             try {
@@ -88,14 +84,10 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                             } catch (error) {
                                 // Silent fail
                             }
-                            return {
-                                ...booking,
-                                sitterName: 'בייביסיטר',
-                            };
+                            return { ...booking, sitterName: 'בייביסיטר' };
                         })
                     );
 
-                    // Sort by date (newest first)
                     enrichedBookings.sort((a, b) => {
                         const dateA = a.date?.toDate?.() || new Date(a.date);
                         const dateB = b.date?.toDate?.() || new Date(b.date);
@@ -120,7 +112,6 @@ const ParentBookingsScreen = ({ navigation }: any) => {
         return () => unsubscribe();
     }, []);
 
-    // Fallback: load bookings once on mount (for initial load)
     const loadBookings = async () => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
@@ -130,28 +121,17 @@ const ParentBookingsScreen = ({ navigation }: any) => {
 
         try {
             const fetchedBookings = await getParentBookings(userId);
-
-            // Enrich with sitter names
             const enrichedBookings = await Promise.all(
                 fetchedBookings.map(async (booking) => {
                     try {
                         const sitterDoc = await getDoc(doc(db, 'users', booking.babysitterId));
                         if (sitterDoc.exists()) {
-                            return {
-                                ...booking,
-                                sitterName: sitterDoc.data().displayName || 'בייביסיטר',
-                            };
+                            return { ...booking, sitterName: sitterDoc.data().displayName || 'בייביסיטר' };
                         }
-                    } catch (error) {
-                        // Silent fail
-                    }
-                    return {
-                        ...booking,
-                        sitterName: 'בייביסיטר',
-                    };
+                    } catch (error) { /* Silent fail */ }
+                    return { ...booking, sitterName: 'בייביסיטר' };
                 })
             );
-
             setBookings(enrichedBookings);
         } catch (error) {
             logger.error('Error loading bookings:', error);
@@ -160,26 +140,40 @@ const ParentBookingsScreen = ({ navigation }: any) => {
         }
     };
 
-    // Auto-trigger rating modal for completed bookings that need rating
+    // Auto-trigger rating for completed unrated bookings (Max 2 times per booking)
     useEffect(() => {
-        const completedUnrated = bookings.find(
-            b => b.status === 'completed' && !(b as any).rated
-        );
+        const checkAndPromptRating = async () => {
+            const completedUnrated = bookings.find(
+                b => b.status === 'completed' && !(b as any).rated
+            );
 
-        if (completedUnrated) {
-            const bookingWithSitter = completedUnrated as BabysitterBooking & { sitterName?: string };
-            if (bookingWithSitter.sitterName) {
-                // Small delay to let screen render first
-                setTimeout(() => {
-                    setSelectedBooking({
-                        bookingId: completedUnrated.id,
-                        sitterId: completedUnrated.babysitterId,
-                        sitterName: bookingWithSitter.sitterName || 'בייביסיטר',
-                    });
-                    setRatingModalVisible(true);
-                }, 1000);
+            if (completedUnrated) {
+                const bookingWithSitter = completedUnrated as BabysitterBooking & { sitterName?: string };
+                if (bookingWithSitter.sitterName) {
+                    try {
+                        const storageKey = `rating_prompt_count_${completedUnrated.id}`;
+                        const promptCountStr = await AsyncStorage.getItem(storageKey);
+                        const promptCount = promptCountStr ? parseInt(promptCountStr) : 0;
+
+                        if (promptCount < 2) {
+                            setTimeout(() => {
+                                setSelectedBooking({
+                                    bookingId: completedUnrated.id,
+                                    babysitterId: completedUnrated.babysitterId,
+                                    sitterName: bookingWithSitter.sitterName || 'בייביסיטר',
+                                });
+                                setRatingModalVisible(true);
+                                AsyncStorage.setItem(storageKey, (promptCount + 1).toString());
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        // Silent fail on storage error
+                    }
+                }
             }
-        }
+        };
+
+        checkAndPromptRating();
     }, [bookings]);
 
     const onRefresh = () => {
@@ -189,26 +183,24 @@ const ParentBookingsScreen = ({ navigation }: any) => {
 
     const handleRateBooking = (booking: BabysitterBooking & { sitterName?: string }) => {
         if (!booking.sitterName) return;
-
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setSelectedBooking({
             bookingId: booking.id,
-            sitterId: booking.babysitterId,
+            babysitterId: booking.babysitterId,
             sitterName: booking.sitterName,
         });
         setRatingModalVisible(true);
     };
 
     const handleCancelBooking = async (booking: BabysitterBooking & { sitterName?: string }) => {
-        // Only allow cancellation for pending or confirmed bookings
         if (booking.status !== 'pending' && booking.status !== 'confirmed') {
-            Alert.alert('לא ניתן לבטל', 'ניתן לבטל רק הזמנות ממתינות או מאושרות');
+            Alert.alert('לא ניתן לבטל', 'ניתן לבטל רק פגישות ממתינות או מאושרות');
             return;
         }
 
         Alert.alert(
-            'ביטול הזמנה',
-            `האם אתה בטוח שברצונך לבטל את ההזמנה ל${booking.sitterName || 'בייביסיטר'}?`,
+            'ביטול',
+            `לבטל את הפגישה עם ${booking.sitterName || 'בייביסיטר'}?`,
             [
                 { text: 'לא', style: 'cancel' },
                 {
@@ -217,30 +209,22 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                     onPress: async () => {
                         try {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            setLoading(true);
-
                             await updateDoc(doc(db, 'bookings', booking.id), {
                                 status: 'cancelled',
                                 updatedAt: serverTimestamp(),
                                 cancelledAt: serverTimestamp(),
                             });
 
-                            // Send push notification to sitter
                             try {
                                 const sitterToken = await getUserPushToken(booking.babysitterId);
                                 if (sitterToken) {
                                     const userDoc = await getDoc(doc(db, 'users', auth.currentUser?.uid || ''));
                                     const parentName = userDoc.data()?.displayName || 'הורה';
-                                    
                                     await sendPushNotification(
                                         sitterToken,
-                                        '❌ הזמנה בוטלה',
-                                        `${parentName} ביטל/ה את ההזמנה`,
-                                        { 
-                                            type: 'booking_cancelled', 
-                                            bookingId: booking.id,
-                                            channelId: 'booking'
-                                        }
+                                        'ביטול',
+                                        `${parentName} ביטל/ה את הפגישה`,
+                                        { type: 'booking_cancelled', bookingId: booking.id, channelId: 'booking' }
                                     );
                                 }
                             } catch (pushError) {
@@ -248,12 +232,9 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                             }
 
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            Alert.alert('✅', 'ההזמנה בוטלה בהצלחה');
                         } catch (error) {
                             logger.error('Error cancelling booking:', error);
-                            Alert.alert('שגיאה', 'לא הצלחנו לבטל את ההזמנה. נסה שוב.');
-                        } finally {
-                            setLoading(false);
+                            Alert.alert('שגיאה', 'לא הצלחנו לבטל. נסה שוב.');
                         }
                     },
                 },
@@ -261,28 +242,17 @@ const ParentBookingsScreen = ({ navigation }: any) => {
         );
     };
 
-    const getStatusIcon = (status: string, theme: any) => {
-        const iconColor = theme.textSecondary;
+    const getStatusConfig = (status: string) => {
+        // Updated to verified badge color #0D9488 (Teal 600)
+        const greenColor = isDarkMode ? '#2DD4BF' : '#0D9488';
         switch (status) {
-            case 'pending': return <AlertCircle size={12} color={iconColor} strokeWidth={1.5} />;
-            case 'confirmed': return <CheckCircle size={12} color={iconColor} strokeWidth={1.5} />;
-            case 'active': return <Clock size={12} color={iconColor} strokeWidth={1.5} />;
-            case 'completed': return <CheckCircle size={12} color={iconColor} strokeWidth={1.5} />;
-            case 'declined': return <XCircle size={12} color={iconColor} strokeWidth={1.5} />;
-            case 'cancelled': return <XCircle size={12} color={iconColor} strokeWidth={1.5} />;
-            default: return <AlertCircle size={12} color={iconColor} strokeWidth={1.5} />;
-        }
-    };
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'pending': return 'ממתין לאישור';
-            case 'confirmed': return 'מאושר';
-            case 'active': return 'פעיל';
-            case 'completed': return 'הושלם';
-            case 'declined': return 'נדחה';
-            case 'cancelled': return 'בוטל';
-            default: return status;
+            case 'pending': return { label: 'ממתין', icon: AlertCircle, color: undefined };
+            case 'confirmed': return { label: 'מאושר', icon: CheckCircle, color: undefined };
+            case 'active': return { label: 'פעיל', icon: Clock, color: undefined };
+            case 'completed': return { label: 'הושלם', icon: CheckCircle, color: greenColor }; // Green accent
+            case 'declined': return { label: 'נדחה', icon: XCircle, color: undefined };
+            case 'cancelled': return { label: 'בוטל', icon: XCircle, color: undefined };
+            default: return { label: status, icon: AlertCircle, color: undefined };
         }
     };
 
@@ -291,160 +261,175 @@ const ParentBookingsScreen = ({ navigation }: any) => {
         try {
             const d = date.toDate ? date.toDate() : new Date(date);
             if (isNaN(d.getTime())) return '';
-            return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-        } catch {
-            return '';
-        }
+            return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+        } catch { return ''; }
     };
 
-    const formatTime = (time: string | undefined): string => {
-        return time || '--:--';
+    const formatTime = (start?: string, end?: string): string => {
+        if (!start && !end) return '';
+        return `${start || '--:--'} - ${end || '--:--'}`;
     };
+
+    // Group bookings by status
+    const pendingBookings = bookings.filter(b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'active');
+    const completedBookings = bookings.filter(b => b.status === 'completed' || b.status === 'cancelled' || b.status === 'declined');
 
     if (loading) {
         return (
             <View style={[styles.container, { backgroundColor: theme.background }]}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
+                        <ChevronRight size={24} color={theme.textSecondary} strokeWidth={2} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>ההזמנות שלי</Text>
+                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>היסטוריה</Text>
                     <View style={{ width: 40 }} />
                 </View>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.primary} />
+                    <ActivityIndicator size="large" color={theme.textSecondary} />
                 </View>
             </View>
         );
     }
 
+    const renderBookingItem = (booking: BabysitterBooking & { sitterName?: string }) => {
+        const status = getStatusConfig(booking.status);
+        const StatusIcon = status.icon;
+        const needsRating = booking.status === 'completed' && !(booking as any).rated;
+        const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
+
+        return (
+            <View
+                key={booking.id}
+                style={[styles.historyItem, {
+                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                }]}
+            >
+                {/* Top Row: Name + Status */}
+                <View style={styles.itemTopRow}>
+                    <View style={styles.itemNameRow}>
+                        <User size={15} color={theme.textSecondary} strokeWidth={2} />
+                        <Text style={[styles.itemName, { color: theme.textPrimary }]}>
+                            {booking.sitterName || 'בייביסיטר'}
+                        </Text>
+                    </View>
+                    <View style={[styles.statusPill, {
+                        backgroundColor: (status.label === 'הושלם')
+                            ? (status.color || theme.primary) // Solid background for Completed
+                            : (status.color ? (isDarkMode ? 'rgba(45, 212, 191, 0.1)' : 'rgba(13, 148, 136, 0.1)') : (isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)')),
+                    }]}>
+                        <StatusIcon
+                            size={11}
+                            color={(status.label === 'הושלם') ? '#fff' : (status.color || theme.textSecondary)}
+                            strokeWidth={2}
+                        />
+                        <Text style={[styles.statusPillText, {
+                            color: (status.label === 'הושלם') ? '#fff' : (status.color || theme.textSecondary)
+                        }]}>
+                            {status.label}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Date & Time Row */}
+                <View style={styles.itemDetailsRow}>
+                    <Text style={[styles.itemDate, { color: theme.textSecondary }]}>
+                        {formatDate(booking.date)}
+                    </Text>
+                    {(booking.startTime || booking.endTime) && (
+                        <>
+                            <Text style={[styles.itemDot, { color: theme.textSecondary }]}>·</Text>
+                            <Text style={[styles.itemTime, { color: theme.textSecondary }]}>
+                                {formatTime(booking.startTime, booking.endTime)}
+                            </Text>
+                        </>
+                    )}
+                </View>
+
+                {/* Actions */}
+                {(needsRating || canCancel) && (
+                    <View style={styles.itemActions}>
+                        {needsRating && (
+                            <TouchableOpacity
+                                style={[styles.itemActionBtn, {
+                                    backgroundColor: isDarkMode ? 'rgba(100, 160, 255, 0.1)' : 'rgba(59, 130, 246, 0.1)', // Blue tint
+                                }]}
+                                onPress={() => handleRateBooking(booking)}
+                                activeOpacity={0.7}
+                            >
+                                <Star size={13} color={isDarkMode ? 'rgba(100, 160, 255, 0.8)' : '#3B82F6'} fill="none" strokeWidth={2} />
+                                <Text style={[styles.itemActionText, { color: isDarkMode ? 'rgba(100, 160, 255, 0.8)' : '#3B82F6' }]}>דרג</Text>
+                            </TouchableOpacity>
+                        )}
+                        {canCancel && (
+                            <TouchableOpacity
+                                style={[styles.itemActionBtn, {
+                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                                }]}
+                                onPress={() => handleCancelBooking(booking)}
+                                activeOpacity={0.7}
+                            >
+                                <X size={13} color={theme.textSecondary} strokeWidth={2} />
+                                <Text style={[styles.itemActionText, { color: theme.textSecondary }]}>בטל</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+            </View>
+        );
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+            <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
+                    <ChevronRight size={24} color={theme.textSecondary} strokeWidth={2} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>ההזמנות שלי</Text>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>היסטוריה</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView
-                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textSecondary} />
                 }
             >
                 {bookings.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <View style={[styles.emptyIconWrapper, { backgroundColor: theme.cardSecondary }]}>
-                            <Calendar size={40} color={theme.textSecondary} strokeWidth={1.5} />
-                        </View>
-                        <Text style={[styles.emptyText, { color: theme.textPrimary }]}>
-                            אין הזמנות עדיין
-                        </Text>
-                        <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                            הזמין בייביסיטר דרך טאב "בייביסיטר"
+                        <Clock size={36} color={theme.textSecondary} strokeWidth={1.5} />
+                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                            אין היסטוריה עדיין
                         </Text>
                     </View>
                 ) : (
-                    bookings.map((booking) => {
-                        const bookingWithSitter = booking as BabysitterBooking & { sitterName?: string };
-                        const needsRating = booking.status === 'completed' && !(booking as any).rated;
-
-                        return (
-                            <View
-                                key={booking.id}
-                                style={[styles.bookingCardWrapper, { backgroundColor: theme.card }]}
-                            >
-                                <View style={styles.bookingCard}>
-                                {/* Header */}
-                                <View style={styles.cardHeader}>
-                                    <View style={styles.sitterInfo}>
-                                        <View style={[styles.statusBadge, { 
-                                            backgroundColor: theme.cardSecondary,
-                                            borderWidth: StyleSheet.hairlineWidth,
-                                            borderColor: theme.border,
-                                        }]}>
-                                            {getStatusIcon(booking.status, theme)}
-                                            <Text style={[styles.statusText, { color: theme.textSecondary }]}>
-                                                {getStatusLabel(booking.status)}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    <View style={styles.headerActions}>
-                                        {needsRating && (
-                                            <TouchableOpacity
-                                                style={[styles.actionButton, { borderColor: theme.border }]}
-                                                onPress={() => handleRateBooking(bookingWithSitter)}
-                                                activeOpacity={0.6}
-                                            >
-                                                <Star size={14} color={theme.textPrimary} fill="none" strokeWidth={1.5} />
-                                                <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>דרג</Text>
-                                            </TouchableOpacity>
-                                        )}
-                                        {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                                            <TouchableOpacity
-                                                style={[styles.actionButton, { borderColor: theme.border }]}
-                                                onPress={() => handleCancelBooking(bookingWithSitter)}
-                                                activeOpacity={0.6}
-                                            >
-                                                <X size={14} color={theme.textSecondary} strokeWidth={1.5} />
-                                                <Text style={[styles.actionButtonText, { color: theme.textSecondary }]}>בטל</Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                </View>
-
-                                {/* Sitter Name */}
-                                <View style={styles.sitterRow}>
-                                    <User size={16} color={theme.textSecondary} />
-                                    <Text style={[styles.sitterName, { color: theme.textPrimary }]}>
-                                        {bookingWithSitter.sitterName || 'בייביסיטר'}
-                                    </Text>
-                                </View>
-
-                                {/* Date & Time */}
-                                <View style={styles.detailsRow}>
-                                    <View style={styles.detailItem}>
-                                        <Calendar size={14} color={theme.textSecondary} />
-                                        <Text style={[styles.detailText, { color: theme.textSecondary }]}>
-                                            {formatDate(booking.date)}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.detailItem}>
-                                        <Clock size={14} color={theme.textSecondary} />
-                                        <Text style={[styles.detailText, { color: theme.textSecondary }]}>
-                                            {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {/* Price */}
-                                {booking.hourlyRate != null && booking.hourlyRate > 0 && (
-                                    <View style={[styles.priceRow, { borderTopColor: theme.border }]}>
-                                        <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>מחיר לשעה:</Text>
-                                        <Text style={[styles.priceValue, { color: theme.textPrimary }]}>
-                                            ₪{booking.hourlyRate}
-                                        </Text>
-                                    </View>
-                                )}
-
-                                {/* Notes */}
-                                {booking.notes && (
-                                    <View style={styles.notesContainer}>
-                                        <Text style={[styles.notesLabel, { color: theme.textSecondary }]}>הערות:</Text>
-                                        <Text style={[styles.notesText, { color: theme.textPrimary }]}>
-                                            {booking.notes}
-                                        </Text>
-                                    </View>
-                                )}
-                                </View>
+                    <>
+                        {/* Active / Pending Section */}
+                        {pendingBookings.length > 0 && (
+                            <View style={styles.section}>
+                                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                                    פעיל
+                                </Text>
+                                {pendingBookings.map(b => renderBookingItem(b as BabysitterBooking & { sitterName?: string }))}
                             </View>
-                        );
-                    })
+                        )}
+
+                        {/* Completed Section */}
+                        {completedBookings.length > 0 && (
+                            <View style={styles.section}>
+                                {pendingBookings.length > 0 && (
+                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                                        קודמים
+                                    </Text>
+                                )}
+                                {completedBookings.map(b => renderBookingItem(b as BabysitterBooking & { sitterName?: string }))}
+                            </View>
+                        )}
+                    </>
                 )}
+
+                <View style={{ height: 100 }} />
             </ScrollView>
 
             {/* Rating Modal */}
@@ -456,10 +441,10 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                         setSelectedBooking(null);
                     }}
                     bookingId={selectedBooking.bookingId}
-                    babysitterId={selectedBooking.sitterId}
+                    babysitterId={selectedBooking.babysitterId}
                     babysitterName={selectedBooking.sitterName}
                     onSuccess={() => {
-                        loadBookings(); // Refresh after rating
+                        loadBookings();
                     }}
                 />
             )}
@@ -475,175 +460,118 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 60,
-        paddingBottom: 18,
+        paddingTop: Platform.OS === 'ios' ? 60 : 45,
+        paddingBottom: 16,
         paddingHorizontal: 20,
-        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     backButton: {
-        padding: 8,
+        padding: 4,
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '700',
-        letterSpacing: -0.4,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: 20,
-        paddingBottom: 100,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    emptyState: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 100,
+    scrollContent: {
+        paddingHorizontal: 16,
     },
-    emptyIconWrapper: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        justifyContent: 'center',
+
+    // Empty State
+    emptyState: {
         alignItems: 'center',
-        marginBottom: 16,
+        justifyContent: 'center',
+        paddingVertical: 120,
+        gap: 12,
     },
     emptyText: {
-        fontSize: 18,
-        fontWeight: '600',
-        letterSpacing: -0.3,
-    },
-    emptySubtext: {
-        fontSize: 14,
-        marginTop: 8,
-        textAlign: 'center',
-        fontWeight: '400',
-        lineHeight: 20,
-        letterSpacing: -0.2,
-    },
-    bookingCardWrapper: {
-        borderRadius: 16,
-        marginBottom: 12,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    bookingCard: {
-        borderRadius: 16,
-        padding: 18,
-    },
-    cardHeader: {
-        flexDirection: 'row-reverse',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    sitterInfo: {
-        flex: 1,
-    },
-    headerActions: {
-        flexDirection: 'row-reverse',
-        gap: 8,
-        alignItems: 'center',
-    },
-    statusBadge: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
-        alignSelf: 'flex-start',
-    },
-    statusText: {
-        fontSize: 12,
-        fontWeight: '600',
-        letterSpacing: -0.1,
-    },
-    actionButton: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 8,
-        borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: 'transparent',
-    },
-    actionButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        letterSpacing: -0.1,
-    },
-    sitterRow: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 14,
-    },
-    sitterName: {
-        fontSize: 18,
-        fontWeight: '700',
-        letterSpacing: -0.4,
-    },
-    detailsRow: {
-        flexDirection: 'row-reverse',
-        gap: 20,
-        marginBottom: 14,
-    },
-    detailItem: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 6,
-    },
-    detailText: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '500',
-        letterSpacing: -0.2,
     },
-    priceRow: {
+
+    // Sections
+    section: {
+        marginBottom: 24,
+    },
+    sectionTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        textAlign: 'right',
+        marginBottom: 10,
+        paddingHorizontal: 4,
+    },
+
+    // History Item
+    historyItem: {
+        borderWidth: 1,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 10,
+    },
+    itemTopRow: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 14,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        marginTop: 14,
+        marginBottom: 8,
     },
-    priceLabel: {
-        fontSize: 14,
-        fontWeight: '500',
+    itemNameRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
     },
-    priceValue: {
+    itemName: {
         fontSize: 16,
         fontWeight: '700',
-        letterSpacing: -0.3,
     },
-    notesContainer: {
-        marginTop: 14,
-        paddingTop: 14,
-        borderTopWidth: StyleSheet.hairlineWidth,
+    statusPill: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
-    notesLabel: {
-        fontSize: 12,
+    statusPillText: {
+        fontSize: 11,
         fontWeight: '600',
-        marginBottom: 6,
-        letterSpacing: -0.1,
     },
-    notesText: {
-        fontSize: 14,
-        lineHeight: 20,
-        letterSpacing: -0.2,
+    itemDetailsRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+    },
+    itemDate: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
+    itemDot: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    itemTime: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
+    itemActions: {
+        flexDirection: 'row-reverse',
+        gap: 8,
+        marginTop: 12,
+    },
+    itemActionBtn: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 10,
+    },
+    itemActionText: {
+        fontSize: 13,
+        fontWeight: '600',
     },
 });
 
 export default ParentBookingsScreen;
-

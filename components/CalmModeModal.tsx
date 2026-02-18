@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
+import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -239,7 +240,8 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
           </View>
 
           {/* Content */}
-          <ScrollView
+          <ScrollFadeWrapper fadeHeight={80}>
+              <ScrollView
             ref={scrollViewRef}
             style={styles.content}
             contentContainerStyle={styles.scrollContent}
@@ -319,7 +321,8 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
                 </TouchableOpacity>
               ))}
             </View>
-          </ScrollView>
+              </ScrollView>
+          </ScrollFadeWrapper>
         </Animated.View>
       </View>
     </Modal>

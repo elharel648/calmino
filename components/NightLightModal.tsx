@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withRepeat, interpolate } from 'react-native-reanimated';
+import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -230,7 +231,7 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
     if (!visible) return null;
 
     return (
-        <Modal visible={visible} animationType="none" transparent={false}>
+        <Modal visible={visible} animationType="none" transparent={true}>
             <RNAnimatedView
                 style={[
                     styles.container,
@@ -249,7 +250,8 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                 <TouchableWithoutFeedback onPress={() => setControlsVisible(!controlsVisible)}>
                     <View style={StyleSheet.absoluteFill}>
                         <Animated.View style={[styles.controlsOverlay, animatedControlsStyle]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
-                            <ScrollView
+                            <ScrollFadeWrapper fadeHeight={80}>
+                                <ScrollView
                                 ref={scrollViewRef}
                                 contentContainerStyle={styles.scrollContent}
                                 showsVerticalScrollIndicator={false}
@@ -378,7 +380,8 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                                         </View>
                                     </View>
                                 </View>
-                            </ScrollView>
+                                </ScrollView>
+                            </ScrollFadeWrapper>
                         </Animated.View>
                     </View>
                 </TouchableWithoutFeedback>

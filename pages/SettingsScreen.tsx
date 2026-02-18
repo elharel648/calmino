@@ -28,6 +28,14 @@ import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import GuestInviteModal from '../components/Family/GuestInviteModal';
 import { EditBasicInfoModal } from '../components/Profile';
 
+const getInitials = (name: string) => {
+  if (!name) return '';
+  const names = name.trim().split(' ');
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0].charAt(0).toUpperCase();
+  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+};
+
 export default function SettingsScreen() {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
@@ -192,7 +200,7 @@ export default function SettingsScreen() {
       try {
         const userRef = doc(db, 'users', user.uid);
         await updateDoc(userRef, { photoURL: newImageUri });
-        await updateProfile(user, { photoURL: newImageUri }).catch((e) => { if (__DEV__) console.log('Auth profile update error', e); });
+        await updateProfile(user, { photoURL: newImageUri }).catch((e) => { logger.log('Auth profile update error', e); });
         setUserPhotoURL(newImageUri);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (error) {
@@ -268,18 +276,25 @@ export default function SettingsScreen() {
             style={styles.avatarContainer}
             activeOpacity={0.8}
           >
-            <View style={[styles.avatarGlow, { borderColor: isDarkMode ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)' }]}>
-              {userPhotoURL ? (
-                <Image source={{ uri: userPhotoURL }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? theme.card : '#EEF2FF' }]}>
-                  <User size={48} color={theme.primary} strokeWidth={1.5} />
+            {userPhotoURL ? (
+              <>
+                <View style={[styles.avatarGlow, { borderColor: isDarkMode ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)' }]}>
+                  <Image source={{ uri: userPhotoURL }} style={styles.avatar} />
                 </View>
-              )}
-            </View>
-            <View style={[styles.cameraBadge, { backgroundColor: theme.primary, borderColor: isDarkMode ? theme.background : '#fff' }]}>
-              <Camera size={15} color="#fff" strokeWidth={2.5} />
-            </View>
+                <View style={[styles.cameraBadge, { backgroundColor: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? theme.background : '#fff' }]}>
+                  <Camera size={15} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
+                </View>
+              </>
+            ) : (
+              <View style={styles.avatarMinimal}>
+                <View style={[styles.iconCircleMinimal, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                  <User size={32} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                </View>
+                <View style={[styles.cameraBadgeSmall, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}>
+                  <Camera size={12} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
+                </View>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -290,7 +305,7 @@ export default function SettingsScreen() {
             <Text style={[styles.userName, { color: theme.textPrimary }]}>
               {userName || t('account.myUser')}
             </Text>
-            <Pencil size={16} color={theme.primary} strokeWidth={2} />
+            <Pencil size={16} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
           </TouchableOpacity>
 
           {user?.email && (
@@ -300,7 +315,7 @@ export default function SettingsScreen() {
         {/* Premium Card - Highlighted Premium Design */}
         <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.section}>
           <TouchableOpacity
-            style={[styles.premiumCardMinimal, { 
+            style={[styles.premiumCardMinimal, {
               backgroundColor: isDarkMode ? 'rgba(255,107,53,0.08)' : '#FFF7ED',
               borderColor: isDarkMode ? 'rgba(255,107,53,0.2)' : '#FFE4CC',
               borderWidth: 1,
@@ -330,11 +345,11 @@ export default function SettingsScreen() {
 
           {/* Family Info Card - Only if in a family */}
           {family && (
-            <Animated.View entering={ANIMATIONS.fadeInDown(400)} style={[styles.familyInfoCard, { backgroundColor: theme.card }]}>
+            <Animated.View entering={ANIMATIONS.fadeInDown(400)} style={[styles.familyInfoCard, { backgroundColor: theme.card, borderWidth: 1, borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
               <View style={styles.familyInfoHeader}>
                 <View style={styles.familyInfoLeft}>
-                  <View style={[styles.familyInfoAvatar, { backgroundColor: theme.primary }]}>
-                    <Users size={20} color="#fff" strokeWidth={2} />
+                  <View style={[styles.familyInfoAvatar, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                    <Users size={20} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                   </View>
                   <View style={styles.familyInfoText}>
                     <Text style={[styles.familyInfoName, { color: theme.textPrimary }]}>
@@ -362,11 +377,11 @@ export default function SettingsScreen() {
                 {members.map((member, index) => {
                   const isMe = member.id === auth.currentUser?.uid;
                   const roleConfig = {
-                    admin: { label: 'מנהל', color: '#F59E0B' },
-                    member: { label: 'חבר', color: '#6366F1' },
-                    viewer: { label: 'צופה', color: '#10B981' },
-                    guest: { label: 'אורח', color: '#F59E0B' },
-                  }[member.role] || { label: 'חבר', color: '#6366F1' };
+                    admin: { label: 'מנהל', color: isDarkMode ? '#fff' : '#000' },
+                    member: { label: 'חבר', color: isDarkMode ? '#fff' : '#000' },
+                    viewer: { label: 'צופה', color: isDarkMode ? '#fff' : '#000' },
+                    guest: { label: 'אורח', color: isDarkMode ? '#fff' : '#000' },
+                  }[member.role] || { label: 'חבר', color: isDarkMode ? '#fff' : '#000' };
 
                   return (
                     <View key={member.id || index} style={[styles.memberRow, index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.divider }]}>
@@ -377,10 +392,10 @@ export default function SettingsScreen() {
                           style={styles.removeButton}
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                          <Trash2 size={16} color="#EF4444" strokeWidth={2} />
+                          <Trash2 size={16} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                         </TouchableOpacity>
                       )}
-                      <View style={[styles.memberBadge, { backgroundColor: isDarkMode ? roleConfig.color + '25' : roleConfig.color + '20' }]}>
+                      <View style={[styles.memberBadge, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
                         <Text style={[styles.memberBadgeText, { color: roleConfig.color }]}>{roleConfig.label}</Text>
                       </View>
                       <View style={styles.memberInfo}>
@@ -391,7 +406,7 @@ export default function SettingsScreen() {
                           <Text style={[styles.memberEmail, { color: theme.textSecondary }]}>{member.email}</Text>
                         )}
                       </View>
-                      <View style={[styles.memberAvatar, { backgroundColor: isDarkMode ? roleConfig.color + '25' : roleConfig.color + '20' }]}>
+                      <View style={[styles.memberAvatar, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
                         <Text style={[styles.memberInitial, { color: roleConfig.color }]}>
                           {(member.name || 'מ').charAt(0).toUpperCase()}
                         </Text>
@@ -417,8 +432,8 @@ export default function SettingsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.familyActionContent}>
-                  <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                    <UserPlus size={18} color="#6366F1" strokeWidth={2} />
+                  <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                    <UserPlus size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                   </View>
                   <View style={styles.familyActionText}>
                     <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
@@ -446,14 +461,14 @@ export default function SettingsScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.familyActionContent}>
-                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
-                  <Users size={18} color="#10B981" strokeWidth={2} />
+                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Users size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
                 <View style={styles.familyActionText}>
                   <View style={styles.familyActionTitleRow}>
                     <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                    <View style={[styles.badgeMinimal, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#D1FAE5' }]}>
-                      <Text style={[styles.badgeTextMinimal, { color: '#10B981' }]}>24h</Text>
+                    <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                      <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>24h</Text>
                     </View>
                   </View>
                   <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
@@ -474,14 +489,14 @@ export default function SettingsScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.familyActionContent}>
-                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FFF7ED' }]}>
-                  <LinkIcon size={18} color="#F59E0B" strokeWidth={2} />
+                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <LinkIcon size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
                 <View style={styles.familyActionText}>
                   <View style={styles.familyActionTitleRow}>
                     <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                    <View style={[styles.badgeMinimal, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.2)' : '#FEF3C7' }]}>
-                      <Text style={[styles.badgeTextMinimal, { color: '#F59E0B' }]}>אוטומטי</Text>
+                    <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                      <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>אוטומטי</Text>
                     </View>
                   </View>
                   <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
@@ -502,11 +517,11 @@ export default function SettingsScreen() {
                 activeOpacity={0.6}
               >
                 <View style={styles.listItemContent}>
-                  <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.2)' : '#FEE2E2' }]}>
-                    <LogOut size={20} color="#EF4444" strokeWidth={2.5} />
+                  <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                    <LogOut size={20} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                   </View>
                   <View style={styles.listItemTextContainer}>
-                    <Text style={[styles.listItemText, { color: '#EF4444' }]}>עזוב משפחה</Text>
+                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>עזוב משפחה</Text>
                     <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
                       יניתק אותך מהמשפחה המשותפת
                     </Text>
@@ -571,7 +586,7 @@ export default function SettingsScreen() {
               style={StyleSheet.absoluteFill}
             />
           )}
-          <Animated.View 
+          <Animated.View
             entering={ANIMATIONS.fadeInDown(0, 400)}
             style={[styles.modalContainer, { backgroundColor: theme.card }]}
           >
@@ -599,8 +614,8 @@ export default function SettingsScreen() {
                   styles.planCard,
                   {
                     borderColor: selectedPlan === 'monthly' ? theme.primary : theme.divider,
-                    backgroundColor: selectedPlan === 'monthly' 
-                      ? (isDarkMode ? 'rgba(99,102,241,0.15)' : theme.primaryLight) 
+                    backgroundColor: selectedPlan === 'monthly'
+                      ? (isDarkMode ? 'rgba(99,102,241,0.15)' : theme.primaryLight)
                       : (isDarkMode ? theme.card : theme.background),
                   },
                 ]}
@@ -621,8 +636,8 @@ export default function SettingsScreen() {
                   styles.planCard,
                   {
                     borderColor: selectedPlan === 'yearly' ? theme.primary : theme.divider,
-                    backgroundColor: selectedPlan === 'yearly' 
-                      ? (isDarkMode ? 'rgba(99,102,241,0.15)' : theme.primaryLight) 
+                    backgroundColor: selectedPlan === 'yearly'
+                      ? (isDarkMode ? 'rgba(99,102,241,0.15)' : theme.primaryLight)
                       : (isDarkMode ? theme.card : theme.background),
                   },
                 ]}
@@ -644,58 +659,58 @@ export default function SettingsScreen() {
             {/* Features */}
             <Animated.View entering={ANIMATIONS.fadeInDown(300)} style={styles.featuresContainer}>
               <Animated.View entering={ANIMATIONS.fadeInDown(400)} style={styles.featureRow}>
-                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
-                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                  <Check size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.detailedReports')}
                 </Text>
-                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.2)' }]}>
-                  <Sparkles size={18} color="#6366F1" strokeWidth={2} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Sparkles size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
               </Animated.View>
               <Animated.View entering={ANIMATIONS.fadeInDown(450)} style={styles.featureRow}>
-                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
-                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                  <Check size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.exportData')}
                 </Text>
-                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.2)' }]}>
-                  <Download size={18} color="#10B981" strokeWidth={2} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Download size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
               </Animated.View>
               <Animated.View entering={ANIMATIONS.fadeInDown(500)} style={styles.featureRow}>
-                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
-                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                  <Check size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.unlimitedSharing')}
                 </Text>
-                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.2)' }]}>
-                  <Users size={18} color="#F59E0B" strokeWidth={2} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Users size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
               </Animated.View>
               <Animated.View entering={ANIMATIONS.fadeInDown(550)} style={styles.featureRow}>
-                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }]}>
-                  <Check size={18} color="#10B981" strokeWidth={2.5} />
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                  <Check size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.autoBackup')}
                 </Text>
-                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.25)' : 'rgba(139,92,246,0.2)' }]}>
-                  <Shield size={18} color="#8B5CF6" strokeWidth={2} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Shield size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
               </Animated.View>
               <Animated.View entering={ANIMATIONS.fadeInDown(600)} style={styles.featureRow}>
-                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255,107,53,0.15)' : 'rgba(255,107,53,0.1)' }]}>
-                  <Star size={18} color="#FF6B35" strokeWidth={2.5} />
+                <View style={[styles.checkContainer, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                  <Check size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.featureText, { color: theme.textPrimary }]}>
                   {t('premium.noAds')}
                 </Text>
-                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255,107,53,0.25)' : 'rgba(255,107,53,0.2)' }]}>
-                  <Star size={18} color="#FF6B35" strokeWidth={2} />
+                <View style={[styles.featureIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Star size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                 </View>
               </Animated.View>
             </Animated.View>
@@ -799,6 +814,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarMinimal: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconCircleMinimal: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
   cameraBadge: {
     position: 'absolute',
     bottom: 4,
@@ -814,6 +843,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
+  },
+  cameraBadgeSmall: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   nameRow: {
     flexDirection: 'row-reverse',

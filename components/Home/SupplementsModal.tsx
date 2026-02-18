@@ -174,13 +174,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                         </TouchableOpacity>
                     </View>
 
-                    {/* Celebration badge */}
-                    {allDone && (
-                        <Animated.View style={[styles.celebrationBadge, { backgroundColor: theme.success }, celebrationStyle]}>
-                            <Sparkles size={16} color="#fff" strokeWidth={2} />
-                            <Text style={styles.celebrationText}>כל הכבוד! 🎉</Text>
-                        </Animated.View>
-                    )}
+                    {/* Removed celebration badge for minimalist design */}
 
                     {/* Supplements */}
                     <View style={styles.buttonsRow}>
@@ -206,23 +200,23 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                     ) : (
                                         <View style={[
                                             styles.medIcon,
-                                            { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FEF3C7' }
+                                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
                                         ]}>
-                                            <Sun size={24} color="#F59E0B" strokeWidth={2} />
+                                            <Sun size={22} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
                                         </View>
                                     )}
                                 </View>
                                 <Text style={[
                                     styles.medText,
-                                    { color: meds.vitaminD ? theme.success : theme.textPrimary }
+                                    { color: meds.vitaminD ? theme.primary : theme.textPrimary }
                                 ]}>
                                     ויטמין D
                                 </Text>
                                 <Text style={[
                                     styles.medStatus,
-                                    { color: meds.vitaminD ? theme.success : theme.textSecondary }
+                                    { color: meds.vitaminD ? theme.primary : theme.textSecondary }
                                 ]}>
-                                    {meds.vitaminD ? 'ניתן ✓' : 'לא ניתן'}
+                                    {meds.vitaminD ? 'ניתן' : 'לא ניתן'}
                                 </Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -249,23 +243,23 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                     ) : (
                                         <View style={[
                                             styles.medIcon,
-                                            { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.15)' : '#FEE2E2' }
+                                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
                                         ]}>
-                                            <Droplet size={24} color="#EF4444" strokeWidth={2} />
+                                            <Droplet size={22} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
                                         </View>
                                     )}
                                 </View>
                                 <Text style={[
                                     styles.medText,
-                                    { color: meds.iron ? theme.success : theme.textPrimary }
+                                    { color: meds.iron ? theme.primary : theme.textPrimary }
                                 ]}>
                                     ברזל
                                 </Text>
                                 <Text style={[
                                     styles.medStatus,
-                                    { color: meds.iron ? theme.success : theme.textSecondary }
+                                    { color: meds.iron ? theme.primary : theme.textSecondary }
                                 ]}>
-                                    {meds.iron ? 'ניתן ✓' : 'לא ניתן'}
+                                    {meds.iron ? 'ניתן' : 'לא ניתן'}
                                 </Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -273,12 +267,15 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
 
                     {/* Progress indicator */}
                     <View style={styles.progressContainer}>
+                        <Text style={[styles.progressText, { color: theme.textSecondary }]}>
+                            {(meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)}/2 ניתנו היום
+                        </Text>
                         <View style={[
                             styles.progressTrack,
-                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : theme.border }
+                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
                         ]}>
                             <LinearGradient
-                                colors={[theme.success, theme.success]}
+                                colors={['#8B5CF6', '#A78BFA']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={[
@@ -287,9 +284,6 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                                 ]}
                             />
                         </View>
-                        <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                            {(meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)}/2 ניתנו היום
-                        </Text>
                     </View>
                 </RNAnimated.View>
             </RNAnimated.View>
@@ -310,14 +304,16 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 380,
-        borderRadius: 24, // Slightly less rounded
-        paddingVertical: 24,
-        paddingHorizontal: 24,
+        borderRadius: 28,
+        paddingVertical: 32,
+        paddingHorizontal: 28,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.25,
+        shadowRadius: 32,
+        elevation: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     header: {
         flexDirection: 'row-reverse',
@@ -325,22 +321,22 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     iconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 12, // Squircle-ish
+        width: 44,
+        height: 44,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'transparent', // Minimalist
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.06)',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(139, 92, 246, 0.2)',
     },
     title: {
         flex: 1,
-        fontSize: 18,
-        fontWeight: '600', // Lighter weight
+        fontSize: 22,
+        fontWeight: '700',
         textAlign: 'right',
         marginRight: 12,
-        letterSpacing: -0.3,
+        letterSpacing: -0.5,
     },
     closeBtn: {
         width: 32,
@@ -373,76 +369,85 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     medBtn: {
-        width: 130,
-        paddingVertical: 16,
-        paddingHorizontal: 12,
-        borderRadius: 16,
+        width: 140,
+        paddingVertical: 24,
+        paddingHorizontal: 16,
+        borderRadius: 20,
         alignItems: 'center',
         backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)', // Subtle border
+        borderWidth: 1.5,
+        borderColor: 'rgba(0,0,0,0.06)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
+        elevation: 1,
     },
     medBtnDone: {
-        backgroundColor: 'rgba(34, 197, 94, 0.04)', // Ultra light green bg
-        borderColor: 'rgba(34, 197, 94, 0.3)', // Green border
+        backgroundColor: 'rgba(139, 92, 246, 0.06)',
+        borderColor: 'rgba(139, 92, 246, 0.2)',
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 3,
     },
     medIconWrapper: {
         marginBottom: 10,
     },
     medIcon: {
-        width: 48,
-        height: 48,
+        width: 56,
+        height: 56,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        // No background
     },
     medIconGradient: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 56,
+        height: 56,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#22C55E', // Solid green for checked, cleaner than gradient
-        // subtle shadow
-        shadowColor: '#22C55E',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 2,
+        backgroundColor: '#8B5CF6',
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 6,
     },
     medText: {
-        fontSize: 15,
-        fontWeight: '500', // Regular weight
-        letterSpacing: -0.2,
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: -0.3,
         textAlign: 'center',
+        marginTop: 4,
     },
     medStatus: {
-        fontSize: 12,
-        fontWeight: '400',
-        marginTop: 2,
-        opacity: 0.6,
+        fontSize: 13,
+        fontWeight: '500',
+        marginTop: 4,
+        opacity: 0.5,
     },
     progressContainer: {
-        marginTop: 24,
+        marginTop: 28,
         alignItems: 'center',
+        gap: 10,
     },
     progressTrack: {
         width: '100%',
-        height: 4, // Thinner track
-        borderRadius: 2,
+        height: 6,
+        borderRadius: 3,
         overflow: 'hidden',
-        backgroundColor: 'rgba(0,0,0,0.05)',
     },
     progressFill: {
         height: '100%',
-        borderRadius: 2,
-        backgroundColor: '#22C55E', // Use solid color
+        borderRadius: 3,
     },
     progressText: {
-        marginTop: 8,
-        fontSize: 12,
-        fontWeight: '400',
-        opacity: 0.5,
+        fontSize: 13,
+        fontWeight: '500',
+        opacity: 0.6,
+        letterSpacing: -0.2,
     },
 });
 

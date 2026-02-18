@@ -92,7 +92,7 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
       <View style={styles.cardHeader}>
         {/* Icon Container - Right side (RTL) */}
         <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
-          <Icon size={18} color={iconColor} strokeWidth={2} />
+          <Icon size={18} color={iconColor} strokeWidth={1.5} />
         </View>
 
         {/* Title & Subtitle */}
@@ -166,7 +166,7 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
 };
 
 export default function PremiumNotificationSettings() {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { settings, updateSettings, sendTestNotification } = useNotifications();
 
   const handleTestNotification = async (type: 'feeding' | 'supplement' | 'summary') => {
@@ -180,8 +180,8 @@ export default function PremiumNotificationSettings() {
   const notificationCards: NotificationCardConfig[] = [
     {
       icon: Utensils,
-      iconColor: '#F59E0B',
-      iconBg: '#FEF3C7',
+      iconColor: isDarkMode ? '#FFB84D' : '#FF9F1C',
+      iconBg: isDarkMode ? 'rgba(255, 159, 28, 0.12)' : 'rgba(255, 159, 28, 0.08)',
       title: 'תזכורת אוכל',
       getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
       enabled: settings.feedingReminder,
@@ -209,8 +209,8 @@ export default function PremiumNotificationSettings() {
     },
     {
       icon: Pill,
-      iconColor: '#10B981',
-      iconBg: '#D1FAE5',
+      iconColor: isDarkMode ? '#6EE7B7' : '#34D399',
+      iconBg: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)',
       title: 'תזכורת תוספים',
       getSubtitle: () => `כל יום בשעה ${settings.supplementTime}`,
       enabled: settings.supplementReminder,
@@ -230,8 +230,8 @@ export default function PremiumNotificationSettings() {
     },
     {
       icon: FileText,
-      iconColor: '#EC4899',
-      iconBg: '#FCE7F3',
+      iconColor: isDarkMode ? '#F9A8D4' : '#EC4899',
+      iconBg: isDarkMode ? 'rgba(236, 72, 153, 0.12)' : 'rgba(236, 72, 153, 0.08)',
       title: 'סיכום יומי',
       getSubtitle: () => `כל יום בשעה ${settings.dailySummaryTime}`,
       enabled: settings.dailySummary,

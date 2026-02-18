@@ -1,35 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback, Platform, Animated as RNAnimated } from 'react-native';
 import { X, CloudRain, Wind, Heart, Fan, Volume2, Pause, VolumeX, Volume1, Clock, Play } from 'lucide-react-native';
-import { Audio } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '../context/ThemeContext';
+import { useAudio, SoundId } from '../context/AudioContext';
 
 interface WhiteNoiseModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
-// Sound file imports
-const soundFiles = {
-  rain: require('../assets/sounds/rain.mp3'),
-  shh: require('../assets/sounds/shh.mp3'),
-  heartbeat: require('../assets/sounds/heartbeat.mp3'),
-  dryer: require('../assets/sounds/dryer.mp3'),
-};
-
 export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalProps) {
   const { theme, isDarkMode } = useTheme();
-  const [activeSound, setActiveSound] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [volume, setVolume] = useState(0.7); // Default 70%
-  const [sleepTimer, setSleepTimer] = useState<number | null>(null); // Minutes
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { activeSound, volume, isLoading, toggleSound, setVolume, stopSound, sleepTimer, timeRemaining, startTimer, stopTimer } = useAudio();
+
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
   const slideAnim = useRef(new RNAnimated.Value(100)).current;
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
@@ -87,165 +74,15 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
     }
   }, [activeSound]);
 
-  // Setup audio mode
-  useEffect(() => {
-    const setupAudio = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
-        });
-      } catch (error) {
-        console.log('Error setting up audio mode:', error);
-      }
-    };
-    setupAudio();
-  }, []);
-
-  // Cleanup sound on unmount or close
-  useEffect(() => {
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-      }
-    };
-  }, []);
-
-  // Stop sound when modal closes
-  useEffect(() => {
-    if (!visible && soundRef.current) {
-      stopSound();
-    }
-  }, [visible]);
-
-  const stopSound = async () => {
-    try {
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-      setActiveSound(null);
-    } catch (error) {
-      console.log('Error stopping sound:', error);
-    }
-  };
-
-  const playSound = async (id: string) => {
-    try {
-      setIsLoading(true);
-
-      // Stop current sound if playing
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-
-      // If clicking same sound, just stop
-      if (activeSound === id) {
-        setActiveSound(null);
-        setIsLoading(false);
-        return;
-      }
-
-      // Load and play new sound
-      const { sound } = await Audio.Sound.createAsync(
-        soundFiles[id as keyof typeof soundFiles],
-        {
-          isLooping: true,
-          volume: volume,
-        }
-      );
-
-      soundRef.current = sound;
-      await sound.playAsync();
-      setActiveSound(id);
-
-    } catch (error) {
-      console.log('Error playing sound:', error);
-      setActiveSound(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleSound = async (id: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    await playSound(id);
-  };
-
-  const handleClose = async () => {
-    await stopSound();
+  const handleClose = () => {
+    // Don't stop sound on close!
     onClose();
   };
 
   // Handle volume changes in real-time
   const handleVolumeChange = async (newVolume: number) => {
-    setVolume(newVolume);
-    if (soundRef.current) {
-      try {
-        await soundRef.current.setVolumeAsync(newVolume);
-      } catch (error) {
-        console.log('Error changing volume:', error);
-      }
-    }
+    await setVolume(newVolume);
   };
-
-  // Start sleep timer
-  const startTimer = (minutes: number) => {
-    setSleepTimer(minutes);
-    setTimeRemaining(minutes * 60); // Convert to seconds
-
-    // Clear existing timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    // Countdown every second
-    timerRef.current = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev === null || prev <= 1) {
-          stopTimer();
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Stop timer and fade out sound
-  const stopTimer = async () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    // Fade out audio
-    if (soundRef.current) {
-      try {
-        await soundRef.current.setVolumeAsync(0, 2000); // 2 second fade
-        await stopSound();
-      } catch (error) {
-        console.log('Error during timer fadeout:', error);
-      }
-    }
-
-    setSleepTimer(null);
-    setTimeRemaining(null);
-  };
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
 
   // Format time remaining as MM:SS
   const formatTime = (seconds: number): string => {
@@ -316,7 +153,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                         borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
                       },
                     ]}
-                    onPress={() => toggleSound(sound.id)}
+                    onPress={() => toggleSound(sound.id as SoundId)}
                     activeOpacity={0.85}
                     disabled={isLoading}
                   >

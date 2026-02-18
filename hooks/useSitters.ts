@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // hooks/useSitters.ts - Production Firebase Sitters Hook with Caching
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../services/firebaseConfig';
@@ -15,6 +16,15 @@ export interface MutualFriend {
             url: string;
         };
     };
+}
+
+export interface SocialLinks {
+    instagram?: string;
+    facebook?: string;
+    linkedin?: string;
+    whatsapp?: string;
+    tiktok?: string;
+    telegram?: string;
 }
 
 export interface Sitter {
@@ -43,13 +53,14 @@ export interface Sitter {
         longitude: number;
     };
     pricePerHour?: number; // Added to match usage in BabySitterScreen
+    socialLinks?: SocialLinks; // Social media links for credibility
 }
 
 /**
  * Custom Hook לניהול רשימת בייביסיטרים מ-Firebase
  */
 const useSitters = () => {
-    console.log('🔧 useSitters: HOOK CALLED');
+    logger.log('🔧 useSitters: HOOK CALLED');
     const [sitters, setSitters] = useState<Sitter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -66,7 +77,7 @@ const useSitters = () => {
 
             // Check if cache is still valid
             if (now - timestamp < CACHE_EXPIRY_MS) {
-                console.log('📦 useSitters: Loading from cache');
+                logger.log('📦 useSitters: Loading from cache');
                 return data;
             }
 
@@ -74,7 +85,7 @@ const useSitters = () => {
             await AsyncStorage.removeItem(CACHE_KEY);
             return null;
         } catch (error) {
-            console.warn('useSitters: Error loading cache:', error);
+            logger.warn('useSitters: Error loading cache:', error);
             return null;
         }
     }, []);
@@ -86,14 +97,14 @@ const useSitters = () => {
                 data,
                 timestamp: Date.now(),
             }));
-            console.log('💾 useSitters: Saved to cache');
+            logger.log('💾 useSitters: Saved to cache');
         } catch (error) {
-            console.warn('useSitters: Error saving cache:', error);
+            logger.warn('useSitters: Error saving cache:', error);
         }
     }, []);
 
     const fetchSitters = useCallback(async (forceRefresh = false) => {
-        console.log('🔧 useSitters: fetchSitters START', { forceRefresh });
+        logger.log('🔧 useSitters: fetchSitters START', { forceRefresh });
 
         // Try to load from cache first (unless force refresh)
         if (!forceRefresh) {
@@ -123,7 +134,7 @@ const useSitters = () => {
             );
 
             const snapshot = await getDocs(q);
-            console.log('🔧 useSitters: Found', snapshot.size, 'sitters in Firebase');
+            logger.log('🔧 useSitters: Found', snapshot.size, 'sitters in Firebase');
             const fetchedSitters: Sitter[] = [];
 
             snapshot.forEach((doc) => {
@@ -172,14 +183,17 @@ const useSitters = () => {
                         ? data.sitterLocation
                         : undefined,
                     pricePerHour,
+                    socialLinks: (data.socialLinks && typeof data.socialLinks === 'object')
+                        ? data.socialLinks
+                        : undefined,
                 });
             });
 
-            console.log('🔧 useSitters: fetchedSitters.length =', fetchedSitters.length);
+            logger.log('🔧 useSitters: fetchedSitters.length =', fetchedSitters.length);
 
             // In production, if no sitters found, show empty state (no mock data)
             if (fetchedSitters.length === 0) {
-                console.log('📭 useSitters: No sitters found in database');
+                logger.log('📭 useSitters: No sitters found in database');
                 setSitters([]);
                 setIsLoading(false);
                 return;
@@ -202,7 +216,7 @@ const useSitters = () => {
 
         } catch (err) {
             // Silent fail - just show empty state (user needs to update Firebase rules)
-            console.warn('useSitters: Firebase permission issue');
+            logger.warn('useSitters: Firebase permission issue');
             setSitters([]);
             setError(null);
         } finally {

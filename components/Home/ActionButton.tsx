@@ -137,9 +137,9 @@ const ActionButton = memo(({
                         )}
 
                         {isActive ? (
-                            <Pause size={20} color={theme.card} strokeWidth={2.5} />
+                            <Pause size={20} color={theme.card} strokeWidth={2} />
                         ) : (
-                            <Icon size={20} color={config.color} strokeWidth={2} />
+                            <Icon size={20} color={config.color} strokeWidth={1.5} />
                         )}
                     </View>
                 </Animated.View>
@@ -152,7 +152,7 @@ const ActionButton = memo(({
                 {/* Time, Badge, or Last Time */}
                 {activeTime && isActive ? (
                     <View style={[styles.timerBadge, { backgroundColor: config.color }]}>
-                        <Timer size={7} color={theme.card} strokeWidth={2} />
+                        <Timer size={7} color={theme.card} strokeWidth={1.5} />
                         <Text style={[styles.timerText, { color: theme.card }]}>{activeTime}</Text>
                     </View>
                 ) : lastTime ? (

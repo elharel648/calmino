@@ -1,21 +1,8 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { WeatherData } from '../types/home';
-
-// Weather code to icon mapping for Open-Meteo
-const getWeatherIcon = (code: number): string => {
-    // https://open-meteo.com/en/docs - Weather interpretation codes
-    if (code === 0) return '☀️'; // Clear sky
-    if (code <= 3) return '⛅'; // Partly cloudy
-    if (code <= 48) return '☁️'; // Fog/Cloudy
-    if (code <= 55) return '🌧️'; // Drizzle
-    if (code <= 65) return '🌧️'; // Rain
-    if (code <= 77) return '❄️'; // Snow
-    if (code <= 82) return '🌧️'; // Rain showers
-    if (code <= 86) return '❄️'; // Snow showers
-    if (code >= 95) return '⛈️'; // Thunderstorm
-    return '☁️';
-};
+import { weatherKitService } from '../services/weatherKitService';
 
 interface UseWeatherReturn {
     weather: WeatherData;
@@ -23,7 +10,8 @@ interface UseWeatherReturn {
 }
 
 /**
- * Custom hook for weather data using Open-Meteo (free, no API key)
+ * Custom hook for weather data using Apple WeatherKit
+ * Requires iOS 16+ and WeatherKit entitlement
  */
 export const useWeather = (): UseWeatherReturn => {
     const [weather, setWeather] = useState<WeatherData>({
@@ -72,29 +60,20 @@ export const useWeather = (): UseWeatherReturn => {
 
             const { latitude, longitude } = location.coords;
 
-            // Open-Meteo API - FREE, no API key needed!
-            const response = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
-            );
-
-            if (!response.ok) {
-                throw new Error('Weather API error');
-            }
-
-            const data = await response.json();
-            const temp = Math.round(data.current.temperature_2m);
-            const weatherCode = data.current.weather_code;
+            // Apple WeatherKit - Native iOS API with 15-min caching
+            const weatherData = await weatherKitService.getWeather(latitude, longitude);
+            const temp = Math.round(weatherData.temperature);
             const cityName = await getCityName(latitude, longitude);
 
             setWeather({
                 temp,
                 city: cityName,
-                icon: getWeatherIcon(weatherCode),
+                icon: weatherData.icon,
                 recommendation: getRecommendation(temp),
                 loading: false,
             });
         } catch (e) {
-            if (__DEV__) console.log('Weather fetch issue:', e);
+            logger.log('Weather fetch issue:', e);
             setWeather({
                 temp: 22,
                 city: 'ישראל',

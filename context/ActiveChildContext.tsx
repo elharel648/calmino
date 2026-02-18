@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, onSnapshot, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -164,7 +165,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                             });
                         }
                     } catch (err) {
-                        if (__DEV__) console.warn('Error loading guest family:', familyId, err);
+                        logger.warn('Error loading guest family:', familyId, err);
                         // Continue to next family, don't crash
                     }
                 }
@@ -180,7 +181,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
             }
 
         } catch (error) {
-            if (__DEV__) console.log('Error loading children:', error);
+            logger.log('Error loading children:', error);
         } finally {
             setIsLoading(false);
             // Notify App.tsx that initial load is complete

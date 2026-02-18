@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 /**
  * useGuestExpiryWatcher - Monitors invited guests and removes them when their time expires
  * If the expired guest is a registered babysitter, opens a rating modal
@@ -33,17 +34,17 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
     const processedGuests = useRef<Set<string>>(new Set());
 
     const checkForExpiredGuests = useCallback(async () => {
-        console.log('🕐 GuestExpiry: Starting check... familyId:', familyId, 'currentUser:', auth.currentUser?.uid);
+        logger.log('🕐 GuestExpiry: Starting check... familyId:', familyId, 'currentUser:', auth.currentUser?.uid);
 
         if (!familyId || !auth.currentUser) {
-            console.log('🕐 GuestExpiry: Skipping - no familyId or currentUser');
+            logger.log('🕐 GuestExpiry: Skipping - no familyId or currentUser');
             return;
         }
 
         try {
             const familyDoc = await getDoc(doc(db, 'families', familyId));
             if (!familyDoc.exists()) {
-                console.log('🕐 GuestExpiry: Family doc not found');
+                logger.log('🕐 GuestExpiry: Family doc not found');
                 return;
             }
 
@@ -51,44 +52,44 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
             const members = familyData.members || {};
             const currentUserId = auth.currentUser.uid;
 
-            console.log('🕐 GuestExpiry: Found members:', Object.keys(members));
-            console.log('🕐 GuestExpiry: Current user role:', members[currentUserId]?.role);
+            logger.log('🕐 GuestExpiry: Found members:', Object.keys(members));
+            logger.log('🕐 GuestExpiry: Current user role:', members[currentUserId]?.role);
 
             // Only the family admin checks for expired guests
             if (members[currentUserId]?.role !== 'admin') {
-                console.log('🕐 GuestExpiry: Skipping - current user is not admin');
+                logger.log('🕐 GuestExpiry: Skipping - current user is not admin');
                 return;
             }
 
             const now = new Date();
-            console.log('🕐 GuestExpiry: Current time:', now.toISOString());
+            logger.log('🕐 GuestExpiry: Current time:', now.toISOString());
 
             for (const [memberId, memberData] of Object.entries(members)) {
                 const member = memberData as any;
-                console.log('🕐 GuestExpiry: Checking member:', memberId, 'role:', member.role, 'expiresAt:', member.expiresAt);
+                logger.log('🕐 GuestExpiry: Checking member:', memberId, 'role:', member.role, 'expiresAt:', member.expiresAt);
 
                 // Skip non-guests or already processed
                 if (member.role !== 'guest') continue;
                 if (processedGuests.current.has(memberId)) {
-                    console.log('🕐 GuestExpiry: Already processed, skipping');
+                    logger.log('🕐 GuestExpiry: Already processed, skipping');
                     continue;
                 }
 
                 // Check if guest has expiresAt and if it's expired
                 if (!member.expiresAt) {
-                    console.log('🕐 GuestExpiry: No expiresAt field');
+                    logger.log('🕐 GuestExpiry: No expiresAt field');
                     continue;
                 }
 
                 const expiresAt = member.expiresAt?.toDate ? member.expiresAt.toDate() : new Date(member.expiresAt);
-                console.log('🕐 GuestExpiry: Parsed expiresAt:', expiresAt.toISOString(), 'now:', now.toISOString(), 'expired:', now > expiresAt);
+                logger.log('🕐 GuestExpiry: Parsed expiresAt:', expiresAt.toISOString(), 'now:', now.toISOString(), 'expired:', now > expiresAt);
 
                 if (now > expiresAt) {
-                    console.log('🕐 GuestExpiry: 🚨 EXPIRED! Removing guest:', member.name);
+                    logger.log('🕐 GuestExpiry: 🚨 EXPIRED! Removing guest:', member.name);
 
                     // Get babysitter status from member data (saved when guest joined)
                     const isBabysitter = member.isBabysitter === true;
-                    console.log('🕐 GuestExpiry: isBabysitter:', isBabysitter);
+                    logger.log('🕐 GuestExpiry: isBabysitter:', isBabysitter);
 
                     // Remove guest from family
                     const removed = await revokeGuestAccess(memberId, familyId);
@@ -96,7 +97,7 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
                     if (removed) {
                         // Only mark as processed AFTER successful removal
                         processedGuests.current.add(memberId);
-                        console.log('🕐 GuestExpiry: Guest removed from family!');
+                        logger.log('🕐 GuestExpiry: Guest removed from family!');
 
                         // Always send notification to the guest that their access ended
                         try {
@@ -106,14 +107,14 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
                                 'סיום גישת אורח',
                                 'הגישה שלך כאורח הסתיימה. תודה על העזרה! 💜'
                             );
-                            console.log('🕐 GuestExpiry: Notification sent to guest');
+                            logger.log('🕐 GuestExpiry: Notification sent to guest');
                         } catch (notifError) {
-                            console.log('🕐 GuestExpiry: Could not send notification to guest:', notifError);
+                            logger.log('🕐 GuestExpiry: Could not send notification to guest:', notifError);
                         }
 
                         // If babysitter, trigger rating popup for the admin
                         if (isBabysitter) {
-                            console.log('🕐 GuestExpiry: Opening rating modal for babysitter');
+                            logger.log('🕐 GuestExpiry: Opening rating modal for babysitter');
                             setExpiredGuest({
                                 guestId: memberId,
                                 guestName: member.name || 'בייביסיטר',
@@ -126,7 +127,7 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
                             });
                         } else {
                             // Just notify about regular guest removal
-                            console.log('🕐 GuestExpiry: Showing alert for regular guest');
+                            logger.log('🕐 GuestExpiry: Showing alert for regular guest');
                             Alert.alert(
                                 'סיום גישת אורח',
                                 `הגישה של ${member.name || 'האורח'} הסתיימה.`
@@ -136,12 +137,12 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
                         // Only handle one expired guest at a time
                         break;
                     } else {
-                        console.log('🕐 GuestExpiry: Failed to remove guest, will retry next check');
+                        logger.log('🕐 GuestExpiry: Failed to remove guest, will retry next check');
                     }
                 }
             }
         } catch (error) {
-            console.log('🕐 GuestExpiry: ERROR:', error);
+            logger.log('🕐 GuestExpiry: ERROR:', error);
         }
     }, [familyId]);
 

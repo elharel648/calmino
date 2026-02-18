@@ -13,17 +13,321 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Check if the current user is a member of the family that owns the baby
+    function hasFamilyAccessToBaby(babyId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      // Ensure user document exists and has a familyId
+      let familyId = userDoc != null ? userDoc.data.familyId : null;
+      
+      // If no familyId, return false immediately to save reads (short-circuit logic if supported, otherwise explicit check)
+      return familyId != null && 
+             // Get the family document
+             get(/databases/$(database)/documents/families/$(familyId)).data.babyId == babyId &&
+             // Ensure user is still in the members list of that family
+             get(/databases/$(database)/documents/families/$(familyId)).data.members[request.auth.uid] != null;
+    }
+
     // ===================
     // USERS COLLECTION
     // ===================
     match /users/{userId} {
       // Read: owner can always read their data
       // OR any authenticated user can read if user is an active sitter
-      allow read: if isOwner(userId) || 
+      allow read: if isOwner(userId) ||
                      (isAuthenticated() && resource.data.get('isSitter', false) == true && resource.data.get('sitterActive', false) == true);
-      
+
       // Write: only owner
       allow write: if isOwner(userId);
+
+      // Allow any authenticated user to increment profile view counter only
+      allow update: if isAuthenticated() &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews']);
+
+      // Reminders subcollection
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ===================
+    // FAMILIES COLLECTION
+    // ===================
+    match /families/{familyId} {
+      // Read: any authenticated user (needed to query by inviteCode for joining)
+      // Note: Ideal would be to restrict this, but it breaks the 'join by code' flow unless we have a separate public lookup.
+      // Keeping open for READ but strict for WRITE is a common pattern for invite systems.
+      allow read: if isAuthenticated();
+      
+      // Create: any authenticated
+      allow create: if isAuthenticated();
+      
+      // Update: ONLY admins of the family
+      allow update: if isAuthenticated() && (
+        resource.data.members[request.auth.uid].role == 'admin' ||
+        // Allow updating members list (e.g. self-leave) if strict rules applied? 
+        // For now, restricting to ADMIN prevents unauthorized modifications.
+        // Exception: A user leaving a family removes THEMSELVES. 
+        // We should allow a user to remove their OWN key from members.
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+         request.resource.data.members.diff(resource.data.members).removedKeys().hasOnly([request.auth.uid]))
+      );
+      
+      // Delete: only creator (who should be an admin)
+      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      
+      // Presence subcollection
+      match /presence/{memberId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // ===================
+    // BABIES COLLECTION
+    // ===================
+    match /babies/{babyId} {
+      // Read: parent OR family member with verified access
+      allow read: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        hasFamilyAccessToBaby(babyId)
+      );
+      
+      // Create: authenticated with parentId matching
+      allow create: if isAuthenticated() && request.resource.data.parentId == request.auth.uid;
+      
+      // Update: parent
+      allow update: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid
+      );
+      
+      // Delete: only parent
+      allow delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+    }
+
+    // ===================
+    // EVENTS COLLECTION
+    // ===================
+    match /events/{eventId} {
+      // Read: parent OR family member with verified access
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.parentId == request.auth.uid ||
+        hasFamilyAccessToBaby(resource.data.childId)
+      );
+      
+      // Create: any authenticated (typically parents or sitters for a child)
+      allow create: if isAuthenticated();
+      
+      // Update/Delete: creator or parent
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.creatorId == request.auth.uid || 
+        resource.data.parentId == request.auth.uid
+      );
+    }
+
+    // ===================
+    // INVITES COLLECTION
+    // ===================
+    match /invites/{inviteCode} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Allow creator to update, OR allow anyone to mark as used (system action)
+      allow update: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedBy', 'usedAt'])
+      );
+      allow delete: if false;
+    }
+
+    // ===================
+    // PRESENCE COLLECTION
+    // ===================
+    match /presence/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == docId;
+    }
+
+    // =================== 
+    // SITTERS COLLECTION
+    // ===================
+    match /sitters/{sitterId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == sitterId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == sitterId;
+    }
+
+    // ===================
+    // CHATS COLLECTION
+    // ===================
+    match /chats/{chatId} {
+      // Read: participants only
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      
+      // Create: if user is in participants
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participants;
+      
+      // Update: participants only (for unread counts, last message)
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Read: if user is chat participant
+        allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Create: if user is chat participant and is the sender
+        allow create: if isAuthenticated() && 
+                         request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
+                         request.resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // ===================
+    // BOOKINGS COLLECTION
+    // ===================
+    match /bookings/{bookingId} {
+      // Read: 
+      // - Parent or babysitter involved in the booking (any status)
+      // - OR any authenticated user can read confirmed/active bookings (for availability checks)
+      allow read: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        resource.data.babysitterId == request.auth.uid ||
+        (resource.data.status == 'confirmed' || resource.data.status == 'active')
+      );
+      
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        resource.data.babysitterId == request.auth.uid
+      );
+      allow delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+    }
+
+    // ===================
+    // ACTIVE SHIFTS COLLECTION
+    // ===================
+    match /activeShifts/{shiftId} {
+      // Read: parent or babysitter involved in the shift
+      allow read: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        resource.data.babysitterId == request.auth.uid
+      );
+      
+      // Create: babysitter can start a shift
+      allow create: if isAuthenticated() && 
+        request.resource.data.babysitterId == request.auth.uid;
+      
+      // Update: babysitter or parent can update (pause, etc)
+      allow update: if isAuthenticated() && (
+        resource.data.babysitterId == request.auth.uid ||
+        resource.data.parentId == request.auth.uid
+      );
+      
+      // Delete: babysitter or parent can end shift
+      allow delete: if isAuthenticated() && (
+        resource.data.babysitterId == request.auth.uid ||
+        resource.data.parentId == request.auth.uid
+      );
+    }
+
+    // ===================
+    // REVIEWS COLLECTION
+    // ===================
+    match /reviews/{reviewId} {
+      // Read: any authenticated user (reviews are public for all sitters)
+      allow read: if isAuthenticated();
+      
+      // Create: any authenticated user (parent can create review)
+      allow create: if isAuthenticated() && request.resource.data.parentId == request.auth.uid;
+      
+      // Update: 
+      // - Parent can update their own review
+      // - Sitter can add response to their review (only sitterResponse field)
+      // - Anyone can update helpfulCount/helpfulBy (for marking as helpful)
+      allow update: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        (resource.data.babysitterId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sitterResponse'])) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount', 'helpfulBy'])
+      );
+      
+      // Delete: only parent who created the review
+      allow delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+    }
+
+    // ===================
+    // NOTIFICATIONS COLLECTION
+    // ===================
+    match /notifications/{notificationId} {
+      // Strict read access (OWNER ONLY)
+      allow read: if isOwner(resource.data.userId);
+      
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ===================
+    // GROWTH MEASUREMENTS COLLECTION
+    // ===================
+    match /growthMeasurements/{measurementId} {
+      // Read: access via family logic
+      // Note: Measurement docs should store childId. If they don't, we might need parentId.
+      allow read: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        (resource.data.get('childId', null) != null && hasFamilyAccessToBaby(resource.data.childId))
+      );
+      
+      // Create: any authenticated user
+      allow create: if isAuthenticated();
+      
+      // Update/Delete: creator only
+      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+
+    // ===================
+    // PROFILE VIEWS COLLECTION
+    // ===================
+    match /profileViews/{viewId} {
+      // Read: sitter can read their own profile views
+      allow read: if isAuthenticated(); // KEEP OPEN or restrict? Profile views are generally aggregated. Keeping open for now as low risk.
+
+      // Create: any authenticated user can record a view
+      allow create: if isAuthenticated() && request.resource.data.viewerId == request.auth.uid;
+    }
+
+    // ===================
+    // TEETH TRACKER COLLECTION
+    // ===================
+    match /teeth/{toothId} {
+      // Read: access via family logic (assuming tooth records link to childId)
+      allow read: if isAuthenticated(); // Teeth data is low sensitivity, but strictly should be secured. 
+      // Keeping open for regression safety unless childId is guaranteed on all records.
+      
+      // Create: any authenticated user
+      allow create: if isAuthenticated();
+      
+      // Update/Delete: creator only
+      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+  }
+}
+    match /users/{userId} {
+      // Read: owner can always read their data
+      // OR any authenticated user can read if user is an active sitter
+      allow read: if isOwner(userId) ||
+                     (isAuthenticated() && resource.data.get('isSitter', false) == true && resource.data.get('sitterActive', false) == true);
+
+      // Write: only owner
+      allow write: if isOwner(userId);
+
+      // Allow any authenticated user to increment profile view counter only
+      allow update: if isAuthenticated() &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews']);
+
+      // Reminders subcollection
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ===================
@@ -242,6 +546,17 @@ service cloud.firestore {
       
       // Update/Delete: creator only
       allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+
+    // ===================
+    // PROFILE VIEWS COLLECTION
+    // ===================
+    match /profileViews/{viewId} {
+      // Read: sitter can read their own profile views
+      allow read: if isAuthenticated();
+
+      // Create: any authenticated user can record a view
+      allow create: if isAuthenticated() && request.resource.data.viewerId == request.auth.uid;
     }
 
     // ===================

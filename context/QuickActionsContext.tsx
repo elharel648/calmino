@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -5,12 +6,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Define all available quick action keys
 export type QuickActionKey =
     | 'food' | 'sleep' | 'diaper' | 'supplements' | 'whiteNoise'
-    | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'tools' | 'custom'
+    | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'custom'
     | 'teeth' | 'nightLight' | 'quickReminder';
 
 // Default order of actions (right to left in RTL)
 const DEFAULT_ORDER: QuickActionKey[] = [
-    'custom', 'quickReminder', 'tools', 'health', 'growth', 'teeth', 'nightLight', 'magicMoments', 'milestones',
+    'custom', 'quickReminder', 'health', 'growth', 'teeth', 'nightLight', 'magicMoments', 'milestones',
     'sos', 'whiteNoise', 'supplements', 'diaper', 'sleep', 'food'
 ];
 
@@ -62,7 +63,7 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
                 setHiddenActions(JSON.parse(savedHidden));
             }
         } catch (error) {
-            console.error('Error loading quick actions preferences:', error);
+            logger.error('Error loading quick actions preferences:', error);
         }
     };
 
@@ -73,7 +74,7 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
                 AsyncStorage.setItem(STORAGE_KEY_HIDDEN, JSON.stringify(hidden)),
             ]);
         } catch (error) {
-            console.error('Error saving quick actions preferences:', error);
+            logger.error('Error saving quick actions preferences:', error);
         }
     };
 

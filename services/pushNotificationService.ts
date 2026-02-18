@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // services/pushNotificationService.ts
 // Push Notifications Service using Expo Push Notifications
 
@@ -13,7 +14,7 @@ import Constants from 'expo-constants';
  */
 export async function registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
-        console.log('Push notifications only work on physical devices');
+        logger.log('Push notifications only work on physical devices');
         return null;
     }
 
@@ -28,7 +29,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
         }
 
         if (finalStatus !== 'granted') {
-            console.log('Push notification permissions not granted');
+            logger.log('Push notification permissions not granted');
             return null;
         }
 
@@ -41,7 +42,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
         });
 
         const pushToken = tokenData.data;
-        console.log('📱 Push token:', pushToken);
+        logger.log('📱 Push token:', pushToken);
 
         // Save to Firebase
         const userId = auth.currentUser?.uid;
@@ -75,7 +76,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
         return pushToken;
     } catch (error) {
-        console.error('Error getting push token:', error);
+        logger.error('Error getting push token:', error);
         return null;
     }
 }
@@ -102,9 +103,9 @@ async function savePushToken(userId: string, token: string): Promise<void> {
             }, { merge: true });
         }
 
-        console.log('✅ Push token saved to Firebase');
+        logger.log('✅ Push token saved to Firebase');
     } catch (error) {
-        console.error('Error saving push token:', error);
+        logger.error('Error saving push token:', error);
     }
 }
 
@@ -122,9 +123,9 @@ export async function removePushToken(): Promise<void> {
             pushTokenUpdatedAt: new Date(),
         });
 
-        console.log('✅ Push token removed');
+        logger.log('✅ Push token removed');
     } catch (error) {
-        console.error('Error removing push token:', error);
+        logger.error('Error removing push token:', error);
     }
 }
 
@@ -169,14 +170,14 @@ export async function sendPushNotification(
         
         // Check if there are any errors
         if (result.data && result.data.status === 'error') {
-            console.error('📤 Push error:', result.data.message);
+            logger.error('📤 Push error:', result.data.message);
             return false;
         }
         
-        console.log('📤 Push sent successfully:', result);
+        logger.log('📤 Push sent successfully:', result);
         return true;
     } catch (error) {
-        console.error('Error sending push:', error);
+        logger.error('Error sending push:', error);
         return false;
     }
 }
@@ -194,7 +195,7 @@ export async function getUserPushToken(userId: string): Promise<string | null> {
         }
         return null;
     } catch (error) {
-        console.error('Error getting user push token:', error);
+        logger.error('Error getting user push token:', error);
         return null;
     }
 }

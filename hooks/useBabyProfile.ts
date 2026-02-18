@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Alert, Platform, ActionSheetIOS, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -43,7 +44,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                 if (data) setBaby(data);
             }
         } catch (e) {
-            console.error('Error loading baby profile:', e);
+            logger.error('Error loading baby profile:', e);
         } finally {
             setLoading(false);
         }
@@ -104,7 +105,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
     // Update all stats in one call to avoid race condition
     const updateAllStats = useCallback(async (newStats: { weight?: string; height?: string; headCircumference?: string }) => {
         if (!baby?.id) {
-            console.log('❌ updateAllStats: No baby.id');
+            logger.log('❌ updateAllStats: No baby.id');
             return;
         }
 
@@ -120,9 +121,9 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
             ...(newStats.headCircumference !== undefined && { headCircumference: newStats.headCircumference }),
         };
 
-        console.log('📤 updateAllStats saving:', mergedStats);
+        logger.log('📤 updateAllStats saving:', mergedStats);
         await updateBabyData(baby.id, { stats: mergedStats });
-        console.log('✅ updateAllStats successful');
+        logger.log('✅ updateAllStats successful');
         setBaby(prev => prev ? { ...prev, stats: mergedStats } : null);
     }, [baby?.id, baby?.stats]);
 
@@ -175,19 +176,19 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                 return null;
             }
 
-            console.log('📸 Opening image library...');
+            logger.log('📸 Opening image library...');
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],
                 allowsEditing: true,
                 aspect: type === 'profile' ? [1, 1] : [3, 4],
                 quality: type === 'album' ? 0.7 : 0.3, // Higher quality for album photos
-                base64: type === 'profile', // Only need base64 for profile (small), not for album (will use Storage)
+                base64: true, // Always get base64 as fallback in case Storage fails
             });
 
-            console.log('📸 Image picker result:', result.canceled ? 'CANCELED' : 'SELECTED');
+            logger.log('📸 Image picker result:', result.canceled ? 'CANCELED' : 'SELECTED');
             return result;
         } catch (error) {
-            console.error('❌ Error in pickImageFromLibrary:', error);
+            logger.error('❌ Error in pickImageFromLibrary:', error);
             Alert.alert('שגיאה', 'לא הצלחנו לפתוח את הגלריה');
             return null;
         }
@@ -204,7 +205,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
             allowsEditing: true,
             aspect: type === 'profile' ? [1, 1] : [3, 4],
             quality: type === 'album' ? 0.7 : 0.3, // Higher quality for album photos
-            base64: type === 'profile', // Only need base64 for profile (small), not for album (will use Storage)
+            base64: true, // Always get base64 as fallback in case Storage fails
         });
 
         return result;
@@ -212,28 +213,28 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
 
     const processImage = useCallback(async (result: ImagePicker.ImagePickerResult | null, type: 'profile' | 'album', monthIndex?: number) => {
         if (!result) {
-            console.log('⚠️ processImage: No result provided');
+            logger.log('⚠️ processImage: No result provided');
             return;
         }
 
         if (result.canceled) {
-            console.log('⚠️ processImage: User canceled');
+            logger.log('⚠️ processImage: User canceled');
             return;
         }
 
         if (!result.assets || !result.assets[0]) {
-            console.error('❌ processImage: No asset in result');
+            logger.error('❌ processImage: No asset in result');
             Alert.alert('שגיאה', 'לא הצלחנו לטעון את התמונה');
             return;
         }
 
         if (!baby?.id) {
-            console.error('❌ processImage: No baby.id');
+            logger.error('❌ processImage: No baby.id');
             Alert.alert('שגיאה', 'לא נמצא פרופיל תינוק');
             return;
         }
 
-        console.log('💾 Processing image...', { type, monthIndex });
+        logger.log('💾 Processing image...', { type, monthIndex });
         setSavingImage(true);
 
         try {
@@ -244,37 +245,24 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                     const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
                     await updateBabyData(baby.id, { photoUrl: base64Img });
                     setBaby(prev => prev ? { ...prev, photoUrl: base64Img } : null);
-                    console.log('✅ Profile photo saved');
+                    logger.log('✅ Profile photo saved');
                 } else if (result.assets[0].uri) {
                     // Fallback to URI if base64 not available
                     await updateBabyData(baby.id, { photoUrl: result.assets[0].uri });
                     setBaby(prev => prev ? { ...prev, photoUrl: result.assets[0].uri } : null);
-                    console.log('✅ Profile photo saved (URI)');
+                    logger.log('✅ Profile photo saved (URI)');
                 }
             } else if (type === 'album' && monthIndex !== undefined) {
-                console.log('💾 Saving album image for month:', monthIndex);
+                logger.log('💾 Saving album image for month:', monthIndex);
                 
                 // Upload to Firebase Storage instead of saving base64
                 if (!result.assets[0].uri) {
                     throw new Error('No image URI available');
                 }
 
-                let downloadURL: string;
-                try {
-                    downloadURL = await uploadAlbumPhoto(baby.id, monthIndex, result.assets[0].uri);
-                    console.log('✅ Album photo uploaded to Storage:', downloadURL.substring(0, 50));
-                } catch (storageError) {
-                    console.error('❌ Storage upload failed, trying fallback...', storageError);
-                    // If Storage fails, try to use base64 but compress it more
-                    if (result.assets[0].base64) {
-                        // Compress base64 more aggressively
-                        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
-                        downloadURL = base64Img;
-                        console.log('⚠️ Using base64 fallback (compressed)');
-                    } else {
-                        throw new Error('Storage upload failed and no base64 available');
-                    }
-                }
+                // Upload to Firebase Storage (includes automatic fallback)
+                const downloadURL = await uploadAlbumPhoto(baby.id, monthIndex, result.assets[0].uri);
+                logger.log('✅ Album photo uploaded:', downloadURL.substring(0, 50));
                 
                 // Save the Storage URL (or compressed base64) to Firestore
                 await saveAlbumImage(baby.id, monthIndex, downloadURL);
@@ -287,7 +275,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                 setBaby(prev => {
                     if (!prev) return null;
                     const updatedAlbum = { ...prev.album, [monthIndex]: downloadURL };
-                    console.log('✅ Album photo saved, date set to:', today);
+                    logger.log('✅ Album photo saved, date set to:', today);
                     return { 
                         ...prev, 
                         album: updatedAlbum,
@@ -298,9 +286,9 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                 // Also save the date to Firebase
                 try {
                     await updateBabyData(baby.id, { albumDates: updatedDates });
-                    console.log('✅ Album date saved to Firebase');
+                    logger.log('✅ Album date saved to Firebase');
                 } catch (e) {
-                    console.error('❌ Error auto-saving date:', e);
+                    logger.error('❌ Error auto-saving date:', e);
                 }
             }
 
@@ -308,7 +296,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
         } catch (e) {
-            console.error('❌ Error saving image:', e);
+            logger.error('❌ Error saving image:', e);
             Alert.alert('שגיאה', 'לא הצלחנו לשמור את התמונה. נסה שוב.');
         } finally {
             setSavingImage(false);
@@ -324,24 +312,24 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                     title: 'בחר מקור תמונה',
                 },
                 async (buttonIndex) => {
-                    console.log('📱 Action sheet button pressed:', buttonIndex);
+                    logger.log('📱 Action sheet button pressed:', buttonIndex);
                     if (buttonIndex === 1) {
                         // Camera
-                        console.log('📷 User selected camera');
+                        logger.log('📷 User selected camera');
                         const result = await takePhotoWithCamera(type);
                         if (result && !result.canceled) {
                             await processImage(result, type, monthIndex);
                         } else {
-                            console.log('⚠️ Camera canceled or failed');
+                            logger.log('⚠️ Camera canceled or failed');
                         }
                     } else if (buttonIndex === 2) {
                         // Gallery
-                        console.log('📸 User selected gallery');
+                        logger.log('📸 User selected gallery');
                         const result = await pickImageFromLibrary(type, monthIndex);
                         if (result && !result.canceled) {
                             await processImage(result, type, monthIndex);
                         } else {
-                            console.log('⚠️ Gallery canceled or failed');
+                            logger.log('⚠️ Gallery canceled or failed');
                         }
                     }
                 }
@@ -356,24 +344,24 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                     {
                         text: 'צלם תמונה',
                         onPress: async () => {
-                            console.log('📷 User selected camera (Android)');
+                            logger.log('📷 User selected camera (Android)');
                             const result = await takePhotoWithCamera(type);
                             if (result && !result.canceled) {
                                 await processImage(result, type, monthIndex);
                             } else {
-                                console.log('⚠️ Camera canceled or failed');
+                                logger.log('⚠️ Camera canceled or failed');
                             }
                         }
                     },
                     {
                         text: 'בחר מהגלריה',
                         onPress: async () => {
-                            console.log('📸 User selected gallery (Android)');
+                            logger.log('📸 User selected gallery (Android)');
                             const result = await pickImageFromLibrary(type, monthIndex);
                             if (result && !result.canceled) {
                                 await processImage(result, type, monthIndex);
                             } else {
-                                console.log('⚠️ Gallery canceled or failed');
+                                logger.log('⚠️ Gallery canceled or failed');
                             }
                         }
                     },
@@ -400,7 +388,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
         } catch (e) {
-            console.error('Error saving album note:', e);
+            logger.error('Error saving album note:', e);
             Alert.alert('שגיאה', 'לא הצלחנו לשמור את ההערה');
         }
     }, [baby?.id, baby?.albumNotes]);
@@ -420,7 +408,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
             await updateBabyData(baby.id, { albumDates: updatedDates });
             setBaby(prev => prev ? { ...prev, albumDates: updatedDates } : null);
         } catch (e) {
-            console.error('Error saving album date:', e);
+            logger.error('Error saving album date:', e);
             Alert.alert('שגיאה', 'לא הצלחנו לשמור את התאריך');
         }
     }, [baby?.id, baby?.albumDates]);

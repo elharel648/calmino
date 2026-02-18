@@ -220,16 +220,16 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                         style={styles.addOptionRow}
                                         onPress={() => {
                                             try {
-                                                console.log('🔗 Join with code button pressed');
+                                                logger.log('🔗 Join with code button pressed');
                                                 setDropdownOpen(false);
-                                                console.log('🔗 Dropdown closed, waiting before opening JoinModal...');
+                                                logger.log('🔗 Dropdown closed, waiting before opening JoinModal...');
                                                 // Add delay to prevent modal collision
                                                 setTimeout(() => {
-                                                    console.log('🔗 Now calling onJoinWithCode');
+                                                    logger.log('🔗 Now calling onJoinWithCode');
                                                     onJoinWithCode?.();
                                                 }, 300);
                                             } catch (error) {
-                                                console.error('🔗 CRASH ERROR:', error);
+                                                logger.error('🔗 CRASH ERROR:', error);
                                             }
                                         }}
                                         activeOpacity={0.7}

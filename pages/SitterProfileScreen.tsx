@@ -3,19 +3,30 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, M
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats } from '../services/babysitterService';
+import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats, trackProfileView } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { logger } from '../utils/logger';
 import { calculateSitterBadges } from '../services/babysitterService';
-import BookingModal from '../components/BabySitter/BookingModal';
 import { auth as firebaseAuth } from '../services/firebaseConfig';
 import { useTheme } from '../context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
+import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send } from 'lucide-react-native';
+
+interface SocialLinks {
+    instagram?: string;
+    facebook?: string;
+    linkedin?: string;
+    whatsapp?: string;
+    tiktok?: string;
+    telegram?: string;
+}
 
 interface SitterData {
     id: string;
@@ -30,6 +41,11 @@ interface SitterData {
     phone?: string;
     bio?: string;
     videoUri?: string;
+    socialLinks?: SocialLinks;
+    experience?: string;
+    languages?: string[];
+    certifications?: string[];
+    city?: string;
 }
 
 type RootStackParamList = {
@@ -42,12 +58,13 @@ type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Sitt
 const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) => {
     const { sitterData } = route.params || {};
     const { theme, isDarkMode } = useTheme();
+    const insets = useSafeAreaInsets();
     const [showFullVideo, setShowFullVideo] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
-    const [bookingModalVisible, setBookingModalVisible] = useState(false);
     const [sitterVideoUri, setSitterVideoUri] = useState<string | undefined>(sitterData.videoUri);
     const [sitterIsAvailable, setSitterIsAvailable] = useState(false);
+    const [sitterIsVerified, setSitterIsVerified] = useState(false);
 
     // Check if sitter has a video
     const hasVideo = Boolean(sitterVideoUri && sitterVideoUri.trim());
@@ -124,6 +141,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     const data = sitterDoc.data();
                     isAvailable = data.sitterAvailable || data.sitterActive || false;
                     setSitterIsAvailable(isAvailable);
+                    setSitterIsVerified(Boolean(data.sitterVerified));
                     
                     if (data.createdAt) {
                         createdAt = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
@@ -153,6 +171,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
         if (sitterData.id && !sitterData.id.startsWith('mock_')) {
             fetchReviews();
             fetchBadges();
+            // Track profile view
+            const currentUserId = auth.currentUser?.uid;
+            if (currentUserId) {
+                trackProfileView(sitterData.id, currentUserId);
+            }
         } else {
             // Mock data - don't fetch
             setLoadingReviews(false);
@@ -213,11 +236,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             {/* Back button */}
             <View style={styles.topNav}>
                 <TouchableOpacity style={styles.navBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-forward" size={24} color="#1F2937" />
+                    <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}>
                 {/* Hero Section - Static image or video */}
                 <View style={styles.heroContainer}>
                     {hasVideo && sitterVideoUri ? (
@@ -233,7 +256,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         <>
                             {imageLoading && !imageError && (
                                 <View style={[styles.heroVideo, { backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }]}>
-                                    <ActivityIndicator size="large" color="#6366F1" />
+                                    <ActivityIndicator size="large" color={theme.textPrimary} />
                                 </View>
                             )}
                             {!imageError ? (
@@ -261,8 +284,6 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         end={{ x: 0, y: 1 }}
                         style={StyleSheet.absoluteFill}
                     />
-                    <View style={styles.heroOverlay} />
-
                     <View style={styles.heroContent}>
                         <View style={styles.avatarContainer}>
                             <View style={styles.avatarWrapper}>
@@ -274,15 +295,14 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     style={StyleSheet.absoluteFill}
                                 />
                             </View>
-                            <View style={styles.verifiedBadge}>
-                                <LinearGradient
-                                    colors={['#6366F1', '#8B5CF6']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                                <MaterialIcons name="verified" size={18} color="#fff" />
-                            </View>
+                            {sitterIsVerified && (
+                                <View style={[styles.verifiedBadge, {
+                                    backgroundColor: isDarkMode ? '#fff' : '#000',
+                                    shadowColor: isDarkMode ? '#fff' : '#000'
+                                }]}>
+                                    <MaterialIcons name="verified" size={18} color={isDarkMode ? '#000' : '#fff'} />
+                                </View>
+                            )}
                         </View>
                         <Text style={styles.heroName}>{sitterData.name || 'סיטר'}, {sitterData.age ?? ''}</Text>
                         <View style={styles.ratingTag}>
@@ -302,30 +322,41 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             <Star size={16} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
                             <Text style={styles.ratingText}>{sitterData.rating ?? 0} ({sitterData.reviews ?? 0} ביקורות)</Text>
                         </View>
-                        {/* Badges - Premium Design */}
-                        {badges.length > 0 && (
+
+                        {/* Available Now - Clean Pill */}
+                        {sitterIsAvailable && (
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 6,
+                                backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                                paddingHorizontal: 14,
+                                paddingVertical: 6,
+                                borderRadius: 20,
+                                marginTop: 10,
+                            }}>
+                                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' }} />
+                                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>זמין עכשיו</Text>
+                            </View>
+                        )}
+
+                        {/* Sitter Badges */}
+                        {badges.filter(b => b !== 'available_now').length > 0 && (
                             <View style={styles.badgesContainer}>
-                                {badges.map((badgeType) => {
+                                {badges.filter(b => b !== 'available_now').map((badgeType) => {
                                     const badge = BADGE_INFO[badgeType];
                                     return (
-                                        <View key={badgeType} style={styles.badgeWrapper}>
-                                            {Platform.OS === 'ios' && (
-                                                <BlurView
-                                                    intensity={30}
-                                                    tint="dark"
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                            )}
-                                            <LinearGradient
-                                                colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.15)']}
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 1 }}
-                                                style={StyleSheet.absoluteFill}
-                                            />
-                                            <View style={[styles.badge, { backgroundColor: badge.bgColor + 'CC' }]}>
-                                                {badge.icon && <Text style={styles.badgeIcon}>{badge.icon}</Text>}
-                                                <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
-                                            </View>
+                                        <View key={badgeType} style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            backgroundColor: 'rgba(0,0,0,0.45)',
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 5,
+                                            borderRadius: 16,
+                                        }}>
+                                            {badge.icon ? <Text style={{ fontSize: 12 }}>{badge.icon}</Text> : null}
+                                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>{badge.label}</Text>
                                         </View>
                                     );
                                 })}
@@ -341,49 +372,125 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     )}
                 </View>
 
-                {/* Stats Row - Premium Design */}
-                <View style={[styles.trustRow, {
-                    backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
-                    borderBottomColor: theme.border
-                }]}>
-                    {Platform.OS === 'ios' && (
-                        <BlurView
-                            intensity={20}
-                            tint={isDarkMode ? 'dark' : 'light'}
-                            style={StyleSheet.absoluteFill}
-                        />
-                    )}
-                    <LinearGradient
-                        colors={isDarkMode
-                            ? [theme.card + 'CC', theme.card + '99']
-                            : ['#FFFFFF', '#FAFAFA']
-                        }
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFill}
-                    />
-                    <View style={[styles.trustItem, { zIndex: 1 }]}>
-                        <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.distance ?? 0} ק"מ</Text>
-                        <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>מרחק ממך</Text>
-                    </View>
-                    {(sitterData.reviews ?? 0) > 0 && (
-                        <>
+                {/* Stats Row */}
+                {((sitterData.distance ?? 0) > 0 || (sitterData.reviews ?? 0) > 0) && (
+                    <View style={[styles.trustRow, {
+                        backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
+                    }]}>
+                        {(sitterData.distance ?? 0) > 0 && (
+                            <View style={styles.trustItem}>
+                                <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.distance} ק"מ</Text>
+                                <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>מרחק ממך</Text>
+                            </View>
+                        )}
+                        {(sitterData.distance ?? 0) > 0 && (sitterData.reviews ?? 0) > 0 && (
                             <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                            <View style={[styles.trustItem, { zIndex: 1 }]}>
-                                <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.reviews ?? 0}</Text>
+                        )}
+                        {(sitterData.reviews ?? 0) > 0 && (
+                            <View style={styles.trustItem}>
+                                <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.reviews}</Text>
                                 <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>ביקורות</Text>
                             </View>
-                        </>
+                        )}
+                    </View>
+                )}
+
+                {/* About + Quick Info - Combined clean block */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
+                    {/* Quick Info Chips */}
+                    {(sitterData.price > 0 || sitterData.experience || sitterData.city) && (
+                        <View style={[styles.infoGrid, { marginBottom: sitterData.bio ? 14 : 0 }]}>
+                            {sitterData.price > 0 && (
+                                <View style={[styles.infoItem, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                                    <Text style={{ fontSize: 13, fontWeight: '800', color: theme.primary }}>₪</Text>
+                                    <Text style={[styles.infoValue, { color: theme.textPrimary }]}>{sitterData.price}/שעה</Text>
+                                </View>
+                            )}
+                            {sitterData.city && (
+                                <View style={[styles.infoItem, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                                    <MapPin size={13} color={theme.textSecondary} strokeWidth={2} />
+                                    <Text style={[styles.infoValue, { color: theme.textPrimary }]}>{sitterData.city}</Text>
+                                </View>
+                            )}
+                            {sitterData.experience && (
+                                <View style={[styles.infoItem, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                                    <Briefcase size={13} color={theme.textSecondary} strokeWidth={2} />
+                                    <Text style={[styles.infoValue, { color: theme.textPrimary }]}>{sitterData.experience}</Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+
+                    {/* Bio */}
+                    {sitterData.bio && (
+                        <Text style={[styles.bioText, { color: theme.textSecondary }]}>{sitterData.bio}</Text>
                     )}
                 </View>
 
-                {/* About - only if bio exists */}
-                {sitterData.bio && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>קצת עליי</Text>
-                        <Text style={styles.bioText}>{sitterData.bio}</Text>
+                {/* Languages + Certifications - inline if both exist */}
+                {((sitterData.languages && sitterData.languages.length > 0) || (sitterData.certifications && sitterData.certifications.length > 0)) && (
+                    <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+                        {sitterData.languages && sitterData.languages.length > 0 && (
+                            <View style={{ marginBottom: (sitterData.certifications && sitterData.certifications.length > 0) ? 12 : 0 }}>
+                                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>שפות</Text>
+                                <View style={styles.tagsRow}>
+                                    {sitterData.languages.map((lang) => (
+                                        <View key={lang} style={[styles.tagPill, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
+                                            <Text style={[styles.tagText, { color: theme.textPrimary }]}>{lang}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {sitterData.certifications && sitterData.certifications.length > 0 && (
+                            <View>
+                                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>הסמכות</Text>
+                                <View style={styles.tagsRow}>
+                                    {sitterData.certifications.map((cert) => (
+                                        <View key={cert} style={[styles.tagPill, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)', borderColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)' }]}>
+                                            <CheckCircle size={11} color="#10B981" strokeWidth={2.5} />
+                                            <Text style={[styles.tagText, { color: theme.textPrimary }]}>{cert}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
                     </View>
                 )}
+
+                {/* Social Media Links */}
+                {sitterData.socialLinks && Object.values(sitterData.socialLinks).some(v => v) && (
+                    <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>רשתות חברתיות</Text>
+                        <View style={styles.socialRow}>
+                            {([
+                                { key: 'instagram', icon: Instagram, color: '#E1306C', label: 'Instagram' },
+                                { key: 'facebook', icon: Facebook, color: '#1877F2', label: 'Facebook' },
+                                { key: 'linkedin', icon: Linkedin, color: '#0077B5', label: 'LinkedIn' },
+                                { key: 'whatsapp', icon: MessageCircle, color: '#25D366', label: 'WhatsApp' },
+                                { key: 'tiktok', icon: Music, color: isDarkMode ? '#fff' : '#000', label: 'TikTok' },
+                                { key: 'telegram', icon: Send, color: '#0088CC', label: 'Telegram' },
+                            ] as const).filter(s => sitterData.socialLinks?.[s.key as keyof SocialLinks]).map((s) => {
+                                const Icon = s.icon;
+                                return (
+                                    <TouchableOpacity
+                                        key={s.key}
+                                        style={[styles.socialChip, { borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}
+                                        onPress={() => openSocialLink(s.key as SocialPlatform, sitterData.socialLinks![s.key as keyof SocialLinks]!)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Icon size={15} color={s.color} strokeWidth={2} />
+                                        <Text style={[styles.socialChipText, { color: theme.textPrimary }]}>{s.label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+                )}
+
+                {/* Thin separator before reviews */}
+                <View style={{ height: 1, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', marginHorizontal: 20 }} />
 
                 {/* Reviews */}
                 <View style={styles.section}>
@@ -422,8 +529,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     </View>
                                     {reviewStats.verifiedCount > 0 && (
                                         <View style={styles.verifiedBadgeContainer}>
-                                            <CheckCircle size={12} color="#10B981" strokeWidth={2.5} />
-                                            <Text style={styles.verifiedCountText}>
+                                            <CheckCircle size={12} color={theme.textPrimary} strokeWidth={2.5} />
+                                            <Text style={[styles.verifiedCountText, {
+                                                color: theme.textPrimary,
+                                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'
+                                            }]}>
                                                 {reviewStats.verifiedCount} מאומתות
                                             </Text>
                                         </View>
@@ -486,38 +596,42 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         <View style={styles.reviewControls}>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
                                 <TouchableOpacity
-                                    style={[styles.filterChip, reviewFilter === 'all' && styles.filterChipActive]}
+                                    style={[styles.filterChip,
+                                        reviewFilter === 'all' && {
+                                            backgroundColor: isDarkMode ? '#fff' : '#000',
+                                            borderColor: isDarkMode ? '#fff' : '#000'
+                                        }
+                                    ]}
                                     onPress={() => setReviewFilter('all')}
                                     activeOpacity={0.7}
                                 >
-                                    {reviewFilter === 'all' && (
-                                        <LinearGradient
-                                            colors={['#6366F1', '#8B5CF6']}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 1 }}
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                    )}
-                                    <Text style={[styles.filterChipText, reviewFilter === 'all' && styles.filterChipTextActive]}>הכל</Text>
+                                    <Text style={[styles.filterChipText,
+                                        reviewFilter === 'all' && {
+                                            color: isDarkMode ? '#000' : '#fff',
+                                            fontWeight: '700'
+                                        }
+                                    ]}>הכל</Text>
                                 </TouchableOpacity>
                                 {[5, 4, 3, 2, 1].map(rating => (
                                     <TouchableOpacity
                                         key={rating}
-                                        style={[styles.filterChip, reviewFilter === String(rating) && styles.filterChipActive]}
+                                        style={[styles.filterChip,
+                                            reviewFilter === String(rating) && {
+                                                backgroundColor: isDarkMode ? '#fff' : '#000',
+                                                borderColor: isDarkMode ? '#fff' : '#000'
+                                            }
+                                        ]}
                                         onPress={() => setReviewFilter(String(rating) as any)}
                                         activeOpacity={0.7}
                                     >
-                                        {reviewFilter === String(rating) && (
-                                            <LinearGradient
-                                                colors={['#6366F1', '#8B5CF6']}
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 1 }}
-                                                style={StyleSheet.absoluteFill}
-                                            />
-                                        )}
                                         <View style={styles.filterChipContent}>
-                                            <Star size={14} color={reviewFilter === String(rating) ? '#fff' : '#6B7280'} fill={reviewFilter === String(rating) ? '#fff' : 'transparent'} strokeWidth={1.5} />
-                                            <Text style={[styles.filterChipText, reviewFilter === String(rating) && styles.filterChipTextActive]}>
+                                            <Star size={14} color={reviewFilter === String(rating) ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} fill={reviewFilter === String(rating) ? (isDarkMode ? '#000' : '#fff') : 'transparent'} strokeWidth={1.5} />
+                                            <Text style={[styles.filterChipText,
+                                                reviewFilter === String(rating) && {
+                                                    color: isDarkMode ? '#000' : '#fff',
+                                                    fontWeight: '700'
+                                                }
+                                            ]}>
                                                 {rating}
                                             </Text>
                                         </View>
@@ -526,8 +640,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             </ScrollView>
                             <TouchableOpacity
                                 style={[styles.sortButton, {
-                                    backgroundColor: isDarkMode ? theme.card : '#EEF2FF',
-                                    borderColor: isDarkMode ? theme.border : '#C7D2FE'
+                                    backgroundColor: isDarkMode ? theme.card : 'rgba(0, 0, 0, 0.04)',
+                                    borderColor: theme.border
                                 }]}
                                 activeOpacity={0.7}
                                 onPress={() => {
@@ -536,8 +650,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     setReviewSort(options[(currentIndex + 1) % options.length] as any);
                                 }}
                             >
-                                <ArrowUpDown size={16} color="#6366F1" />
-                                <Text style={styles.sortButtonText}>
+                                <ArrowUpDown size={16} color={theme.textPrimary} />
+                                <Text style={[styles.sortButtonText, { color: theme.textPrimary }]}>
                                     {reviewSort === 'newest' ? 'חדשות' : reviewSort === 'helpful' ? 'מועילות' : 'גבוהות'}
                                 </Text>
                             </TouchableOpacity>
@@ -546,7 +660,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
                     {loadingReviews ? (
                         <View style={styles.emptyReviews}>
-                            <ActivityIndicator size="small" color="#6366F1" />
+                            <ActivityIndicator size="small" color={theme.textPrimary} />
                         </View>
                     ) : filteredAndSortedReviews.length > 0 ? (
                         filteredAndSortedReviews.map((review) => (
@@ -575,15 +689,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     <View style={styles.reviewHeaderLeft}>
                                         <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.parentName || 'הורה'}</Text>
                                         {review.isVerified && (
-                                            <View style={styles.verifiedBadgeSmall}>
-                                                <LinearGradient
-                                                    colors={['#10B981', '#059669']}
-                                                    start={{ x: 0, y: 0 }}
-                                                    end={{ x: 1, y: 1 }}
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                                <CheckCircle size={12} color="#fff" strokeWidth={2.5} />
-                                                <Text style={styles.verifiedText}>מאומת</Text>
+                                            <View style={[styles.verifiedBadgeSmall, {
+                                                backgroundColor: isDarkMode ? '#fff' : '#000',
+                                                shadowColor: isDarkMode ? '#fff' : '#000'
+                                            }]}>
+                                                <CheckCircle size={12} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
+                                                <Text style={[styles.verifiedText, { color: isDarkMode ? '#000' : '#fff' }]}>מאומת</Text>
                                             </View>
                                         )}
                                     </View>
@@ -627,29 +738,32 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             </ScrollView>
 
             {/* Sticky Footer */}
-            <View style={styles.stickyFooter}>
-                <View style={styles.priceContainer}>
-                    <Text style={styles.priceLabel}>מחיר לשעה</Text>
-                    <Text style={styles.priceValue}>₪{sitterData.price}</Text>
-                </View>
+            <View style={[styles.stickyFooter, {
+                paddingBottom: insets.bottom + 8,
+                backgroundColor: isDarkMode ? theme.background : '#fff',
+                borderTopColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
+            }]}>
+                <TouchableOpacity style={[styles.iconBtn, {
+                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'
+                }]} onPress={handleCall}>
+                    <Ionicons name="call" size={20} color={theme.textPrimary} />
+                </TouchableOpacity>
 
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.iconBtn} onPress={handleCall}>
-                        <Ionicons name="call" size={20} color="#6366F1" />
-                    </TouchableOpacity>
+                <TouchableOpacity style={[styles.iconBtn, {
+                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'
+                }]} onPress={handleWhatsApp}>
+                    <Ionicons name="logo-whatsapp" size={20} color={theme.textPrimary} />
+                </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.iconBtn} onPress={handleChat}>
-                        <Ionicons name="chatbubble-ellipses" size={20} color="#6366F1" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.bookBtn}
-                        onPress={() => setBookingModalVisible(true)}
-                    >
-                        <Ionicons name="calendar" size={18} color="#fff" />
-                        <Text style={styles.bookBtnText}>הזמן עכשיו</Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                    style={[styles.bookBtn, {
+                        backgroundColor: isDarkMode ? '#fff' : '#000'
+                    }]}
+                    onPress={handleChat}
+                >
+                    <Ionicons name="chatbubble" size={18} color={isDarkMode ? '#000' : '#fff'} />
+                    <Text style={[styles.bookBtnText, { color: isDarkMode ? '#000' : '#fff' }]}>שלח הודעה</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Video Modal */}
@@ -670,17 +784,6 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 </View>
             </Modal>
 
-            {/* Booking Modal */}
-            <BookingModal
-                visible={bookingModalVisible}
-                onClose={() => setBookingModalVisible(false)}
-                sitter={{
-                    id: sitterData.id,
-                    name: sitterData.name,
-                    hourlyRate: sitterData.price,
-                    image: sitterData.image,
-                }}
-            />
         </View>
     );
 };
@@ -688,10 +791,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff'
     },
     scrollContent: {
-        paddingBottom: 180,
+        // paddingBottom handled dynamically
     },
     topNav: {
         position: 'absolute',
@@ -721,10 +823,6 @@ const styles = StyleSheet.create({
     },
     heroVideo: {
         ...StyleSheet.absoluteFillObject
-    },
-    heroOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.3)'
     },
     heroContent: {
         alignItems: 'center',
@@ -758,7 +856,6 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         padding: 4,
         overflow: 'hidden',
-        shadowColor: '#6366F1',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
@@ -813,28 +910,21 @@ const styles = StyleSheet.create({
     trustRow: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-evenly',
-        paddingVertical: 24,
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingVertical: 18,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
     },
     trustItem: {
         alignItems: 'center',
-        gap: 4,
+        gap: 2,
     },
     trustValue: {
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: '800',
-        letterSpacing: -0.5,
+        letterSpacing: -0.3,
     },
     trustLabel: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
-        marginTop: 2,
     },
     divider: {
         width: StyleSheet.hairlineWidth,
@@ -843,23 +933,22 @@ const styles = StyleSheet.create({
 
     // Sections
     section: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6'
+        paddingHorizontal: 20,
+        paddingVertical: 16,
     },
     sectionTitle: {
-        fontSize: 19,
-        fontWeight: '800',
-        color: '#1F2937',
-        marginBottom: 12,
+        fontSize: 14,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 10,
         textAlign: 'right',
-        letterSpacing: -0.3,
+        opacity: 0.5,
     },
     bioText: {
         fontSize: 15,
-        color: '#4B5563',
-        lineHeight: 24,
-        textAlign: 'right'
+        lineHeight: 23,
+        textAlign: 'right',
     },
     galleryScroll: {
         marginTop: 16,
@@ -967,9 +1056,7 @@ const styles = StyleSheet.create({
     },
     verifiedCountText: {
         fontSize: 12,
-        color: '#10B981',
         fontWeight: '700',
-        backgroundColor: '#D1FAE5',
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 10,
@@ -1050,14 +1137,6 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
-    filterChipActive: {
-        borderColor: '#6366F1',
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
-    },
     filterChipContent: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
@@ -1090,7 +1169,6 @@ const styles = StyleSheet.create({
     },
     sortButtonText: {
         fontSize: 14,
-        color: '#6366F1',
         fontWeight: '700',
     },
     reviewHeaderLeft: {
@@ -1111,7 +1189,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 0,
         overflow: 'hidden',
-        shadowColor: '#10B981',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
@@ -1119,7 +1196,6 @@ const styles = StyleSheet.create({
     },
     verifiedText: {
         fontSize: 11,
-        color: '#fff',
         fontWeight: '700',
         letterSpacing: 0.3,
     },
@@ -1236,45 +1312,27 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    // Footer
+    // Footer - True Sticky (Fixed at bottom during scroll)
     stickyFooter: {
         position: 'absolute',
-        bottom: 100,
-        left: 16,
-        right: 16,
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        padding: 16,
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    priceContainer: {
-        flex: 1,
-    },
-    priceLabel: {
-        fontSize: 12,
-        color: '#6B7280',
-        textAlign: 'right'
-    },
-    priceValue: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: '#1F2937',
-        textAlign: 'right'
-    },
-    actionButtons: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 16,
+        paddingTop: 16,
         flexDirection: 'row',
-        gap: 10
+        alignItems: 'center',
+        gap: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
     iconBtn: {
         width: 48,
         height: 48,
-        backgroundColor: '#EEF2FF',
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center'
@@ -1296,7 +1354,6 @@ const styles = StyleSheet.create({
     },
     bookBtn: {
         flexDirection: 'row',
-        backgroundColor: '#6366F1',
         paddingHorizontal: 20,
         height: 48,
         borderRadius: 14,
@@ -1361,6 +1418,63 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '700',
         letterSpacing: 0.2,
+    },
+    // Info Grid
+    infoGrid: {
+        flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    infoItem: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+    },
+    infoValue: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    // Tags
+    tagsRow: {
+        flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    tagPill: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    tagText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    // Social Media
+    socialRow: {
+        flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    socialChip: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+    },
+    socialChipText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
 });
 

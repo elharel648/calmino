@@ -14,6 +14,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { notificationStorageService } from '../../services/notificationStorageService';
 import { logger } from '../../utils/logger';
+import { TYPOGRAPHY, SPACING } from '../../utils/designSystem';
 
 interface DailyStats {
     feedCount: number;
@@ -233,7 +234,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 type: 'vitamin_reminder',
                 icon: Pill,
                 color: theme.primary,
-                bgColor: '#F3E8FF',
+                bgColor: theme.actionColors.supplements.lightColor,
                 title: t('notifications.vitaminD'),
                 subtitle: t('notifications.notYetToday'),
                 isUrgent: true,
@@ -247,7 +248,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 type: 'iron_reminder',
                 icon: Pill,
                 color: theme.danger,
-                bgColor: '#FEE2E2',
+                bgColor: theme.actionColors.sos.lightColor,
                 title: t('notifications.iron'),
                 subtitle: t('notifications.notYetToday'),
                 isUrgent: true,
@@ -263,8 +264,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 cards.push({
                     type: 'feed_reminder',
                     icon: Utensils,
-                    color: '#F59E0B', // Same orange as Quick Actions
-                    bgColor: isOverdue ? '#FEE2E2' : '#FEF3C7',
+                    color: theme.actionColors.food.color,
+                    bgColor: isOverdue ? theme.actionColors.sos.lightColor : theme.actionColors.food.lightColor,
                     title: isOverdue ? t('notifications.feedReminder') : t('notifications.lastFeed'),
                     subtitle: feedTime.hours > 0
                         ? t('time.hoursAgo', { count: feedTime.hours }) + ' ' + t('time.minutesAgo', { count: feedTime.mins })
@@ -276,8 +277,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 cards.push({
                     type: 'feed_reminder',
                     icon: Utensils,
-                    color: '#F59E0B', // Same orange as Quick Actions
-                    bgColor: '#FEF3C7',
+                    color: theme.actionColors.food.color,
+                    bgColor: theme.actionColors.food.lightColor,
                     title: t('notifications.firstFeed'),
                     subtitle: t('notifications.notYetToday'),
                     priority: 3,
@@ -390,7 +391,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 const count = await notificationStorageService.getUnreadCount();
                 setUnreadCount(count);
             } catch (error) {
-                if (__DEV__) console.log('Failed to fetch unread count:', error);
+                logger.log('Failed to fetch unread count:', error);
             }
         };
 
@@ -595,7 +596,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     activeOpacity={0.7}
                 >
                     <Plus size={16} color={theme.textTertiary} />
-                    <Text style={styles.singleChildAddText}>{t('header.addChild')}</Text>
+                    <Text style={[styles.singleChildAddText, { color: theme.textTertiary }]}>{t('header.addChild')}</Text>
                 </TouchableOpacity>
             )}
 
@@ -734,7 +735,7 @@ HeaderSection.displayName = 'HeaderSection';
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 24,
+        marginBottom: SPACING.xxl,
     },
 
     // Top Row
@@ -749,23 +750,21 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     greetingLarge: {
-        fontSize: 17,
+        ...TYPOGRAPHY.bodyLarge,
         fontWeight: '600',
-        letterSpacing: -0.3,
         marginBottom: 0,
     },
     ageText: {
-        fontSize: 14,
+        ...TYPOGRAPHY.label,
         fontWeight: '400',
-        letterSpacing: -0.2,
         marginTop: 2,
     },
     greetingSubtitle: {
-        fontSize: 15,
+        ...TYPOGRAPHY.bodySmall,
         fontWeight: '400',
     },
     greeting: {
-        fontSize: 14,
+        ...TYPOGRAPHY.label,
         fontWeight: '500',
     },
 
@@ -773,43 +772,40 @@ const styles = StyleSheet.create({
     weatherBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: SPACING.xs,
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 20,
     },
     weatherText: {
-        fontSize: 13,
-        fontWeight: '600',
-        letterSpacing: -0.2,
+        ...TYPOGRAPHY.labelSmall,
     },
 
     // Children Row - RTL aligned to right side
     childrenRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     singleChildAddBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 12,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.md,
+        borderRadius: SPACING.md,
         backgroundColor: 'rgba(0,0,0,0.02)',
         alignSelf: 'flex-start',
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     singleChildAddText: {
-        fontSize: 13,
+        ...TYPOGRAPHY.labelSmall,
         fontWeight: '500',
-        color: '#9CA3AF',
     },
     avatarsContainer: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 8,
+        gap: SPACING.sm,
     },
     avatarsScrollView: {
         flexShrink: 0,
@@ -817,14 +813,14 @@ const styles = StyleSheet.create({
     avatarsScrollContent: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 4,
+        gap: SPACING.sm,
+        paddingHorizontal: SPACING.xs,
     },
 
     // Adjust children scroll content spacing for names
     childrenScrollContent: {
         flexDirection: 'row',
-        paddingHorizontal: 4,
+        paddingHorizontal: SPACING.xs,
         gap: 10,
     },
     childAvatar: {
@@ -849,7 +845,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     childInitial: {
-        fontSize: 16,
+        ...TYPOGRAPHY.body,
         fontWeight: '600',
     },
     activeIndicator: {
@@ -870,7 +866,7 @@ const styles = StyleSheet.create({
         borderStyle: 'dashed',
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: 8,
+        marginLeft: SPACING.sm,
     },
 
     // Toast Notification - Single Pill Style
@@ -906,12 +902,10 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     toastTitle: {
-        fontSize: 14,
-        fontWeight: '600',
+        ...TYPOGRAPHY.label,
     },
     toastTime: {
-        fontSize: 12,
-        fontWeight: '500',
+        ...TYPOGRAPHY.caption,
     },
     notificationBell: {
         padding: 8,
@@ -943,7 +937,7 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     badgeText: {
-        fontSize: 11,
+        ...TYPOGRAPHY.captionSmall,
         fontWeight: '700',
         textAlign: 'center',
     },
@@ -973,11 +967,9 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     modalTitle: {
-        fontSize: 22,
-        fontWeight: '700',
+        ...TYPOGRAPHY.h3,
         textAlign: 'center',
         marginBottom: 24,
-        letterSpacing: -0.5,
     },
     modalOption: {
         flexDirection: 'row-reverse',
@@ -1010,14 +1002,13 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     modalOptionTitle: {
-        fontSize: 16,
+        ...TYPOGRAPHY.body,
         fontWeight: '700',
-        letterSpacing: -0.3,
     },
     modalOptionSubtitle: {
-        fontSize: 13,
+        ...TYPOGRAPHY.labelSmall,
+        fontWeight: '500',
         marginTop: 4,
-        letterSpacing: -0.2,
     },
 });
 

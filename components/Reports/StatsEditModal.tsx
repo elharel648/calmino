@@ -62,7 +62,7 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
         try {
             await AsyncStorage.setItem(STATS_ORDER_KEY, JSON.stringify(newOrder));
         } catch (e) {
-            console.error('Failed to save stats order', e);
+            logger.error('Failed to save stats order', e);
         }
     }, [onOrderChange]);
 
@@ -78,7 +78,7 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
         try {
             await AsyncStorage.setItem(STATS_ORDER_KEY, JSON.stringify(DEFAULT_STATS_ORDER));
         } catch (e) {
-            console.error('Failed to reset stats order', e);
+            logger.error('Failed to reset stats order', e);
         }
     }, [onOrderChange]);
 

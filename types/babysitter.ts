@@ -27,6 +27,57 @@ export interface BabysitterProfile {
 }
 
 // ===================
+// AVAILABILITY SYSTEM
+// ===================
+
+export interface DayAvailability {
+    available: boolean;
+    start: string; // "09:00"
+    end: string;   // "18:00"
+}
+
+export type ExceptionType = 'unavailable' | 'custom';
+
+export interface AvailabilityException {
+    id: string; // unique ID for this exception
+    date: string; // "2026-02-15" (YYYY-MM-DD format)
+    type: ExceptionType;
+    start?: string; // for 'custom' type: "10:00"
+    end?: string;   // for 'custom' type: "16:00"
+    reason?: string; // "רופא", "אירוע משפחתי"
+    createdAt: Timestamp;
+}
+
+export interface Vacation {
+    id: string; // unique ID for this vacation
+    startDate: string; // "2026-02-22" (YYYY-MM-DD)
+    endDate: string;   // "2026-02-28" (YYYY-MM-DD)
+    reason?: string; // "חופשה בחו\"ל", "אירוע משפחתי"
+    createdAt: Timestamp;
+}
+
+export interface SitterAvailability {
+    // Weekly default pattern
+    weeklyPattern: {
+        sunday: DayAvailability | null;
+        monday: DayAvailability | null;
+        tuesday: DayAvailability | null;
+        wednesday: DayAvailability | null;
+        thursday: DayAvailability | null;
+        friday: DayAvailability | null;
+        saturday: DayAvailability | null;
+    };
+
+    // Date-specific exceptions
+    exceptions: AvailabilityException[];
+
+    // Long vacations
+    vacations: Vacation[];
+
+    updatedAt: Timestamp;
+}
+
+// ===================
 // BOOKING
 // ===================
 
@@ -41,26 +92,36 @@ export type BookingStatus =
 export interface BabysitterBooking {
     id: string;
     parentId: string;
+    parentName?: string; // Parent display name
     babysitterId: string;
+    sitterName?: string; // Sitter display name
+    childIds?: string[]; // Child IDs involved in booking
     status: BookingStatus;
 
     // Scheduled time
     date: Timestamp;
     startTime: string; // "18:00"
     endTime: string;   // "22:00"
+    hours?: number; // Scheduled duration in hours
 
     // Actual time (for timer)
     actualStart?: Timestamp;
     actualEnd?: Timestamp;
-    pausedMinutes?: number; // total paused time
+    totalMinutes?: number; // Actual duration in minutes
+    pausedMinutes?: number; // total paused time (legacy, use totalMinutes)
+
+    // Payment
+    hourlyRate?: number; // Hourly rate for this booking
+    totalPrice?: number; // Planned cost (hours × hourlyRate)
+    totalAmount?: number; // Actual payment (totalMinutes ÷ 60 × hourlyRate)
 
     // Meta
-    hourlyRate?: number; // Hourly rate for this booking
+    location?: string;
     notes?: string;
     rated?: boolean; // Has parent rated this booking?
     ratedAt?: Timestamp; // When was it rated?
     createdAt: Timestamp;
-    updatedAt: Timestamp;
+    updatedAt?: Timestamp;
 }
 
 // ===================

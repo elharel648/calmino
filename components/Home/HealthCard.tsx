@@ -43,12 +43,12 @@ const COMMON_MEDICATIONS = [
 ];
 
 const HEALTH_OPTIONS: HealthOption[] = [
-    { key: 'doctor', label: 'ביקור רופא', icon: Stethoscope, iconColor: '#10B981' },
-    { key: 'vaccines', label: 'חיסונים', icon: Syringe, iconColor: '#6366F1' },
-    { key: 'illness', label: 'מחלות', icon: Heart, iconColor: '#EF4444' },
-    { key: 'temperature', label: 'טמפרטורה', icon: Thermometer, iconColor: '#F59E0B' },
-    { key: 'medications', label: 'תרופות', icon: Pill, iconColor: '#8B5CF6' },
-    { key: 'history', label: 'היסטוריה', icon: ClipboardList, iconColor: '#0EA5E9' },
+    { key: 'doctor', label: 'ביקור רופא', icon: Stethoscope, iconColor: '#34D399' },
+    { key: 'vaccines', label: 'חיסונים', icon: Syringe, iconColor: '#9F7AEA' },
+    { key: 'illness', label: 'מחלות', icon: Heart, iconColor: '#F87171' },
+    { key: 'temperature', label: 'טמפרטורה', icon: Thermometer, iconColor: '#FF9F1C' },
+    { key: 'medications', label: 'תרופות', icon: Pill, iconColor: '#A78BFA' },
+    { key: 'history', label: 'היסטוריה', icon: ClipboardList, iconColor: '#3B82F6' },
 ];
 
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
@@ -56,7 +56,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
-    
+
     // Swipe down animations
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -126,7 +126,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 setCustomVaccines(data.customVaccines || []);
             }
         } catch (error) {
-            if (__DEV__) console.log('Error loading vaccines:', error);
+            logger.log('Error loading vaccines:', error);
         }
     };
 
@@ -147,7 +147,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 setHealthLog(log);
             }
         } catch (error) {
-            if (__DEV__) console.log('Error loading health log:', error);
+            logger.log('Error loading health log:', error);
         }
         setLoadingHistory(false);
     };
@@ -200,7 +200,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 });
             }
         } catch (error) {
-            if (__DEV__) console.log('Error updating vaccine:', error);
+            logger.log('Error updating vaccine:', error);
         }
     };
 
@@ -225,7 +225,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         try {
             await updateDoc(doc(db, 'babies', babyId), { customVaccines: updated });
         } catch (error) {
-            if (__DEV__) console.log('Error adding custom vaccine:', error);
+            logger.log('Error adding custom vaccine:', error);
         }
     };
 
@@ -242,7 +242,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         try {
             await updateDoc(doc(db, 'babies', babyId), { customVaccines: updated });
         } catch (error) {
-            if (__DEV__) console.log('Error deleting custom vaccine:', error);
+            logger.log('Error deleting custom vaccine:', error);
         }
     };
 
@@ -269,7 +269,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 }
             }
         } catch (error) {
-            if (__DEV__) console.log('Photo pick error:', error);
+            logger.log('Photo pick error:', error);
         } finally {
             setUploadingPhoto(false);
         }
@@ -290,7 +290,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 }
             }
         } catch (error) {
-            if (__DEV__) console.log('Document pick error:', error);
+            logger.log('Document pick error:', error);
         } finally {
             setUploadingDoc(false);
         }
@@ -477,7 +477,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     await updateDoc(doc(db, 'babies', docId), { healthLog: arrayUnion(entry) });
                 }
             } catch (error) {
-                if (__DEV__) console.log('Error saving entry:', error);
+                logger.log('Error saving entry:', error);
                 Alert.alert('שגיאה', 'לא ניתן לשמור');
                 return;
             }
@@ -486,7 +486,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 const entry = { ...data, timestamp: new Date().toISOString(), type };
                 await updateDoc(doc(db, 'babies', babyId), { healthLog: arrayUnion(entry) });
             } catch (error) {
-                if (__DEV__) console.log('Error saving entry:', error);
+                logger.log('Error saving entry:', error);
                 Alert.alert('שגיאה', 'לא ניתן לשמור');
                 return;
             }
@@ -517,7 +517,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
         } catch (error) {
-            if (__DEV__) console.log('Error deleting entry:', error);
+            logger.log('Error deleting entry:', error);
             Alert.alert('שגיאה', 'לא ניתן למחוק');
         }
     };
@@ -531,9 +531,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     // Menu - Minimal Premium Style
     const renderMenu = () => (
-        <ScrollView 
+        <ScrollView
             ref={scrollViewRef}
-            contentContainerStyle={styles.menuContainer} 
+            contentContainerStyle={styles.menuContainer}
             showsVerticalScrollIndicator={false}
             onScroll={(e) => {
                 scrollOffsetY.current = e.nativeEvent.contentOffset.y;
@@ -1011,7 +1011,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
                     {loadingHistory ? (
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
-                            <ActivityIndicator size="large" color={theme.primary} />
+                            <ActivityIndicator size="large" color={theme.textPrimary} />
                             <Text style={{ color: theme.textSecondary, marginTop: 12 }}>טוען...</Text>
                         </View>
                     ) : filteredLogs.length === 0 ? (
@@ -1089,20 +1089,20 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                             <View style={{ flexDirection: 'row-reverse', gap: 8, marginTop: 8 }}>
                                                 {item.photoUri && (
                                                     <TouchableOpacity
-                                                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
+                                                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.successLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
                                                         onPress={() => {
                                                             // Open photo in a lightbox or share
                                                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                                         }}
                                                     >
-                                                        <Camera size={14} color="#10B981" />
-                                                        <Text style={{ fontSize: 12, color: '#10B981', fontWeight: '500' }}>תמונה</Text>
+                                                        <Camera size={14} color={theme.success} />
+                                                        <Text style={{ fontSize: 12, color: theme.success, fontWeight: '500' }}>תמונה</Text>
                                                     </TouchableOpacity>
                                                 )}
                                                 {item.documentName && (
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                                                        <FileText size={14} color="#3B82F6" />
-                                                        <Text style={{ fontSize: 12, color: '#3B82F6', fontWeight: '500' }} numberOfLines={1}>{item.documentName}</Text>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                                                        <FileText size={14} color={theme.primary} />
+                                                        <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '500' }} numberOfLines={1}>{item.documentName}</Text>
                                                     </View>
                                                 )}
                                             </View>
@@ -1147,7 +1147,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     return (
         <Modal visible={isModalOpen} transparent animationType="none" onRequestClose={closeModal}>
             <TouchableWithoutFeedback onPress={closeModal}>
-                <Animated.View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay, opacity: backdropAnim }]} />
+                <Animated.View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay || 'rgba(0,0,0,0.5)', opacity: backdropAnim }]} />
             </TouchableWithoutFeedback>
             <Animated.View
                 style={[
@@ -1159,42 +1159,42 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 ]}
                 {...panResponder.panHandlers}
             >
-                            {/* Drag Handle */}
-                            <View style={styles.dragHandle} {...panResponder.panHandlers}>
-                                <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
-                            </View>
+                {/* Drag Handle */}
+                <View style={styles.dragHandle} {...panResponder.panHandlers}>
+                    <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+                </View>
 
-                            {/* Minimal Header */}
-                            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
-                                {currentScreen !== 'menu' ? (
-                                    <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
-                                        <ChevronRight size={22} color={theme.textPrimary} />
-                                    </TouchableOpacity>
-                                ) : (
-                                    <View style={{ width: 40 }} />
-                                )}
-                                <View style={styles.headerTitleContainer}>
-                                    {currentScreen === 'menu' && (
-                                        <View style={styles.headerIconWrapper}>
-                                            <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB' }]}>
-                                                <HeartPulse size={20} color="#14B8A6" strokeWidth={2} />
-                                            </View>
-                                        </View>
-                                    )}
-                                    <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
+                {/* Minimal Header */}
+                <View style={[styles.modalHeader, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
+                    {currentScreen !== 'menu' ? (
+                        <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
+                            <ChevronRight size={22} color={theme.textPrimary} />
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={{ width: 40 }} />
+                    )}
+                    <View style={styles.headerTitleContainer}>
+                        {currentScreen === 'menu' && (
+                            <View style={styles.headerIconWrapper}>
+                                <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB' }]}>
+                                    <HeartPulse size={20} color="#14B8A6" strokeWidth={2} />
                                 </View>
-                                <View style={{ width: 40 }} />
                             </View>
-
-                    <View style={[styles.modalBody, { backgroundColor: theme.background }]}>
-                        {currentScreen === 'menu' && renderMenu()}
-                        {currentScreen === 'vaccines' && renderVaccines()}
-                        {currentScreen === 'doctor' && renderDoctor()}
-                        {currentScreen === 'illness' && renderIllness()}
-                        {currentScreen === 'temperature' && renderTemperature()}
-                        {currentScreen === 'medications' && renderMedications()}
-                        {currentScreen === 'history' && renderHistory()}
+                        )}
+                        <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
                     </View>
+                    <View style={{ width: 40 }} />
+                </View>
+
+                <View style={[styles.modalBody, { backgroundColor: theme.background }]}>
+                    {currentScreen === 'menu' && renderMenu()}
+                    {currentScreen === 'vaccines' && renderVaccines()}
+                    {currentScreen === 'doctor' && renderDoctor()}
+                    {currentScreen === 'illness' && renderIllness()}
+                    {currentScreen === 'temperature' && renderTemperature()}
+                    {currentScreen === 'medications' && renderMedications()}
+                    {currentScreen === 'history' && renderHistory()}
+                </View>
             </Animated.View>
         </Modal>
     );
@@ -1236,12 +1236,12 @@ const styles = StyleSheet.create({
     headerBtn: { padding: 8, backgroundColor: '#F3F4F6', borderRadius: 10 },
     headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'column' },
     headerIconWrapper: { marginBottom: 8, alignItems: 'center' },
-    headerIconCircle: { 
-        width: 56, 
-        height: 56, 
-        borderRadius: 28, 
-        backgroundColor: '#FFFFFF', 
-        alignItems: 'center', 
+    headerIconCircle: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
         shadowColor: '#000',

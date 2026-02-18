@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { Utensils, Moon, Droplets, Music, Heart, Pill, Check, Plus, HeartPulse, TrendingUp, Award, Sparkles, Pencil, LayoutGrid, Lightbulb, Bell } from 'lucide-react-native';
+import { Utensils, Moon, Droplets, Music, Heart, Pill, Check, Plus, HeartPulse, TrendingUp, Award, Sparkles, Pencil, Lightbulb, Bell } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../../context/SleepTimerContext';
@@ -11,6 +11,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
 import QuickActionsEditModal from './QuickActionsEditModal';
 import ActionButton, { setHasAnimated, getHasAnimated } from './ActionButton';
+import { TYPOGRAPHY, SPACING } from '../../utils/designSystem';
+import { logger } from '../../utils/logger';
 
 interface QuickActionsProps {
     lastFeedTime: string;
@@ -25,7 +27,6 @@ interface QuickActionsProps {
     onGrowthPress?: () => void;
     onMilestonesPress?: () => void;
     onMagicMomentsPress?: () => void;
-    onToolsPress?: () => void;
     onTeethPress?: () => void;
     onNightLightPress?: () => void;
     onCustomPress?: () => void;
@@ -44,30 +45,27 @@ const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: stri
     </Svg>
 );
 
-// Action button configuration
-const ACTIONS: Record<string, {
+// Action button base configuration (icons and labels only)
+const ACTION_BASE_CONFIG: Record<string, {
     icon: any;
     labelKey: string;
     activeLabelKey: string;
-    color: string;
-    lightColor: string;
     hasBorder?: boolean;
 }> = {
-    food: { icon: Utensils, labelKey: 'actions.food', activeLabelKey: 'actions.active.food', color: '#F59E0B', lightColor: '#FEF3C7' },
-    sleep: { icon: Moon, labelKey: 'actions.sleep', activeLabelKey: 'actions.active.sleep', color: '#6366F1', lightColor: '#EEF2FF' },
-    diaper: { icon: Droplets, labelKey: 'actions.diaper', activeLabelKey: 'actions.diaper', color: '#10B981', lightColor: '#D1FAE5' },
-    supplements: { icon: Pill, labelKey: 'actions.supplements', activeLabelKey: 'actions.supplements', color: '#0EA5E9', lightColor: '#E0F2FE' },
-    whiteNoise: { icon: Music, labelKey: 'actions.whiteNoise', activeLabelKey: 'actions.whiteNoise', color: '#8B5CF6', lightColor: '#F3E8FF' },
-    sos: { icon: Heart, labelKey: 'actions.sos', activeLabelKey: 'actions.sos', color: '#EF4444', lightColor: '#FEE2E2' },
-    custom: { icon: Plus, labelKey: 'actions.custom', activeLabelKey: 'actions.custom', color: '#6B7280', lightColor: '#FFFFFF', hasBorder: true },
-    health: { icon: HeartPulse, labelKey: 'actions.health', activeLabelKey: 'actions.health', color: '#14B8A6', lightColor: '#CCFBF1' },
-    growth: { icon: TrendingUp, labelKey: 'actions.growth', activeLabelKey: 'actions.growth', color: '#10B981', lightColor: '#D1FAE5' },
-    milestones: { icon: Award, labelKey: 'actions.milestones', activeLabelKey: 'actions.milestones', color: '#F59E0B', lightColor: '#FEF3C7' },
-    magicMoments: { icon: Sparkles, labelKey: 'actions.magicMoments', activeLabelKey: 'actions.magicMoments', color: '#A78BFA', lightColor: '#EDE9FE' },
-    tools: { icon: LayoutGrid, labelKey: 'actions.tools', activeLabelKey: 'actions.tools', color: '#8B5CF6', lightColor: '#F3E8FF' },
-    teeth: { icon: TeethIcon, labelKey: 'actions.teeth', activeLabelKey: 'actions.teeth', color: '#EC4899', lightColor: '#FDF2F8' },
-    nightLight: { icon: Lightbulb, labelKey: 'actions.nightLight', activeLabelKey: 'actions.nightLight', color: '#F59E0B', lightColor: '#FEF3C7' },
-    quickReminder: { icon: Bell, labelKey: 'actions.quickReminder', activeLabelKey: 'actions.quickReminder', color: '#6B7280', lightColor: '#F3F4F6' },
+    food: { icon: Utensils, labelKey: 'actions.food', activeLabelKey: 'actions.active.food' },
+    sleep: { icon: Moon, labelKey: 'actions.sleep', activeLabelKey: 'actions.active.sleep' },
+    diaper: { icon: Droplets, labelKey: 'actions.diaper', activeLabelKey: 'actions.diaper' },
+    supplements: { icon: Pill, labelKey: 'actions.supplements', activeLabelKey: 'actions.supplements' },
+    whiteNoise: { icon: Music, labelKey: 'actions.whiteNoise', activeLabelKey: 'actions.whiteNoise' },
+    sos: { icon: Heart, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },
+    custom: { icon: Plus, labelKey: 'actions.custom', activeLabelKey: 'actions.custom', hasBorder: true },
+    health: { icon: HeartPulse, labelKey: 'actions.health', activeLabelKey: 'actions.health' },
+    growth: { icon: TrendingUp, labelKey: 'actions.growth', activeLabelKey: 'actions.growth' },
+    milestones: { icon: Award, labelKey: 'actions.milestones', activeLabelKey: 'actions.milestones' },
+    magicMoments: { icon: Sparkles, labelKey: 'actions.magicMoments', activeLabelKey: 'actions.magicMoments' },
+    teeth: { icon: TeethIcon, labelKey: 'actions.teeth', activeLabelKey: 'actions.teeth' },
+    nightLight: { icon: Lightbulb, labelKey: 'actions.nightLight', activeLabelKey: 'actions.nightLight' },
+    quickReminder: { icon: Bell, labelKey: 'actions.quickReminder', activeLabelKey: 'actions.quickReminder' },
 };
 
 const QuickActions = memo<QuickActionsProps>(({
@@ -83,7 +81,6 @@ const QuickActions = memo<QuickActionsProps>(({
     onGrowthPress,
     onMilestonesPress,
     onMagicMomentsPress,
-    onToolsPress,
     onTeethPress,
     onNightLightPress,
     onCustomPress,
@@ -93,12 +90,36 @@ const QuickActions = memo<QuickActionsProps>(({
     meds,
     dynamicStyles,
 }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const sleepTimer = useSleepTimer();
     const foodTimer = useFoodTimer();
     const { actionOrder, hiddenActions } = useQuickActions();
     const [isEditModalVisible, setEditModalVisible] = useState(false);
+
+    // Combine base config with theme-aware colors
+    const ACTIONS = useMemo(() => {
+        const combined: Record<string, {
+            icon: any;
+            labelKey: string;
+            activeLabelKey: string;
+            color: string;
+            lightColor: string;
+            hasBorder?: boolean;
+        }> = {};
+
+        Object.keys(ACTION_BASE_CONFIG).forEach(key => {
+            const base = ACTION_BASE_CONFIG[key];
+            const colors = theme.actionColors[key as keyof typeof theme.actionColors];
+            combined[key] = {
+                ...base,
+                color: colors.color,
+                lightColor: colors.lightColor,
+            };
+        });
+
+        return combined;
+    }, [theme]);
 
     const getActionLabel = (key: string, isActive: boolean) => {
         const config = ACTIONS[key];
@@ -114,27 +135,35 @@ const QuickActions = memo<QuickActionsProps>(({
     const foodElapsed = pumpingIsRunning ? pumpingElapsedSeconds : breastIsRunning ? breastElapsedSeconds : 0;
 
     const handleFoodPress = useCallback(() => {
-        if (pumpingIsRunning) {
-            if (onFoodTimerStop && pumpingElapsedSeconds > 0) onFoodTimerStop(pumpingElapsedSeconds, 'pumping');
-            stopPumping();
-            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else if (breastIsRunning) {
-            const totalBreastTime = leftBreastTime + rightBreastTime + breastElapsedSeconds;
-            if (onFoodTimerStop && totalBreastTime > 0) onFoodTimerStop(totalBreastTime, breastActiveSide === 'left' ? 'breast_left' : 'breast_right');
-            stopBreast();
-            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else {
-            onFoodPress();
+        try {
+            if (pumpingIsRunning) {
+                if (onFoodTimerStop && pumpingElapsedSeconds > 0) onFoodTimerStop(pumpingElapsedSeconds, 'pumping');
+                stopPumping();
+                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else if (breastIsRunning) {
+                const totalBreastTime = leftBreastTime + rightBreastTime + breastElapsedSeconds;
+                if (onFoodTimerStop && totalBreastTime > 0) onFoodTimerStop(totalBreastTime, breastActiveSide === 'left' ? 'breast_left' : 'breast_right');
+                stopBreast();
+                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+                onFoodPress();
+            }
+        } catch (error) {
+            logger.error('Error in handleFoodPress:', error);
         }
     }, [pumpingIsRunning, breastIsRunning, pumpingElapsedSeconds, breastElapsedSeconds, leftBreastTime, rightBreastTime, breastActiveSide, stopPumping, stopBreast, onFoodPress, onFoodTimerStop]);
 
     const handleSleepPress = useCallback(() => {
-        if (sleepIsRunning) {
-            if (onSleepTimerStop && sleepElapsed > 0) onSleepTimerStop(sleepElapsed);
-            sleepTimer.stop();
-            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else {
-            onSleepPress();
+        try {
+            if (sleepIsRunning) {
+                if (onSleepTimerStop && sleepElapsed > 0) onSleepTimerStop(sleepElapsed);
+                sleepTimer.stop();
+                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+                onSleepPress();
+            }
+        } catch (error) {
+            logger.error('Error in handleSleepPress:', error);
         }
     }, [sleepIsRunning, sleepTimer, sleepElapsed, onSleepPress, onSleepTimerStop]);
 
@@ -144,14 +173,20 @@ const QuickActions = memo<QuickActionsProps>(({
     const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
-        setTimeout(() => {
+        // Fix memory leak: cleanup scroll timeout
+        const scrollTimer = setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: false });
         }, 50);
 
+        let animationTimer: NodeJS.Timeout | undefined;
         if (!getHasAnimated()) {
-            const timer = setTimeout(() => setHasAnimated(true), 400);
-            return () => clearTimeout(timer);
+            animationTimer = setTimeout(() => setHasAnimated(true), 400);
         }
+
+        return () => {
+            clearTimeout(scrollTimer);
+            if (animationTimer) clearTimeout(animationTimer);
+        };
     }, []);
 
     const actionHandlers: Record<QuickActionKey, { onPress: () => void; isActive?: boolean; activeTime?: string; lastTime?: string; badge?: string }> = useMemo(() => ({
@@ -165,12 +200,11 @@ const QuickActions = memo<QuickActionsProps>(({
         growth: { onPress: onGrowthPress || (() => { }) },
         milestones: { onPress: onMilestonesPress || (() => { }) },
         magicMoments: { onPress: onMagicMomentsPress || (() => { }) },
-        tools: { onPress: onToolsPress || (() => { }) },
         teeth: { onPress: onTeethPress || (() => { }) },
         nightLight: { onPress: onNightLightPress || (() => { }) },
         custom: { onPress: onCustomPress || (() => { }) },
         quickReminder: { onPress: onQuickReminderPress || (() => { }) },
-    }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onToolsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount]);
+    }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount]);
 
     const visibleActions = useMemo(() =>
         actionOrder.filter(key => !hiddenActions.includes(key)),
@@ -184,7 +218,11 @@ const QuickActions = memo<QuickActionsProps>(({
                     {t('home.quickActions')}
                 </Text>
                 <TouchableOpacity
-                    style={styles.editBtn}
+                    style={[styles.editBtn, {
+                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                        borderWidth: 1,
+                    }]}
                     onPress={() => {
                         setEditModalVisible(true);
                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -214,6 +252,9 @@ const QuickActions = memo<QuickActionsProps>(({
                             ? { ...ACTIONS[actionKey], icon: Check }
                             : ACTIONS[actionKey];
                         const handler = actionHandlers[actionKey];
+
+                        // ✅ FIX: Check if handler exists before accessing properties
+                        if (!handler) return null;
 
                         return (
                             <ActionButton
@@ -251,52 +292,50 @@ QuickActions.displayName = 'QuickActions';
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 24,
+        marginBottom: SPACING.xxl,
     },
     header: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-        paddingHorizontal: 4,
+        marginBottom: SPACING.xl,
+        paddingHorizontal: SPACING.xs,
     },
     sectionTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        letterSpacing: -0.5,
+        ...TYPOGRAPHY.h2,
     },
     editBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 8,
+        paddingVertical: SPACING.sm,
         paddingHorizontal: 14,
         borderRadius: 20,
         backgroundColor: 'rgba(0, 0, 0, 0.02)',
     },
     editBtnText: {
-        fontSize: 13,
-        fontWeight: '500',
+        ...TYPOGRAPHY.labelSmall,
+        fontWeight: '500', // Override to 500 instead of 600
     },
     sliderWrapper: {
         position: 'relative',
     },
     sliderContent: {
         flexDirection: 'row',
-        paddingHorizontal: 4,
-        gap: 16,
+        paddingHorizontal: SPACING.xs,
+        gap: SPACING.lg,
     },
     scrollIndicator: {
         position: 'absolute',
-        bottom: -8,
+        bottom: -SPACING.sm,
         left: '50%',
         transform: [{ translateX: -6 }],
         flexDirection: 'row',
-        gap: 4,
+        gap: SPACING.xs,
     },
     scrollDot: {
-        width: 4,
-        height: 4,
+        width: SPACING.xs,
+        height: SPACING.xs,
         borderRadius: 2,
         opacity: 0.4,
     },

@@ -1,6 +1,8 @@
-import { NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import { requireNativeModule } from 'expo-modules-core';
+import { logger } from '../utils/logger';
 
-const { ActivityKitManager } = NativeModules;
+const ActivityKitManager = Platform.OS === 'ios' ? requireNativeModule('ActivityKitManager') : null;
 
 interface LiveActivityService {
     // Pumping
@@ -26,6 +28,11 @@ interface LiveActivityService {
     pauseTimer: () => Promise<boolean>;
     resumeTimer: () => Promise<boolean>;
 
+    // Babysitter Shift
+    startBabysitterShift: (babysitterName: string, hourlyRate: number) => Promise<string>;
+    updateBabysitterShift: (isPaused: boolean, totalPausedSeconds: number) => Promise<boolean>;
+    stopBabysitterShift: () => Promise<boolean>;
+
     isLiveActivitySupported: () => Promise<boolean>;
 }
 
@@ -45,9 +52,7 @@ class LiveActivityServiceClass implements LiveActivityService {
                 this.isSupported = await ActivityKitManager.isLiveActivitySupported();
             }
         } catch (error) {
-            if (__DEV__) {
-                console.warn('Live Activity not supported:', error);
-            }
+            logger.warn('Live Activity not supported:', error);
             this.isSupported = false;
         }
     }
@@ -59,12 +64,12 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            const id = await ActivityKitManager.startPumpingTimer(parentName, childName);
+            const id = await ActivityKitManager.startMeal(childName, '🍼', 'pumping', [], 0);
             this.activityId = id;
-            if (__DEV__) console.log('✅ Pumping Live Activity started:', id);
+            logger.log('✅ Pumping Live Activity started:', id);
             return id;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to start Pumping Live Activity:', error);
+            logger.error('Failed to start Pumping Live Activity:', error);
             throw error;
         }
     }
@@ -80,12 +85,12 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            await ActivityKitManager.stopPumpingTimer();
+            await ActivityKitManager.stopMeal();
             this.activityId = null;
-            if (__DEV__) console.log('✅ Pumping Live Activity stopped');
+            logger.log('✅ Pumping Live Activity stopped');
             return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to stop Pumping Live Activity:', error);
+            logger.error('Failed to stop Pumping Live Activity:', error);
             return false;
         }
     }
@@ -97,24 +102,12 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            // Reusing pumping timer native method for bottle if specific method not available
-            // Note: If you have a specific startBottleTimer in native module, use that instead.
-            // For now assuming we might need to add native support or reuse existing.
-            // Safe bet: Use startPumpingTimer as a fallback if bottle specific doesn't exist yet, 
-            // OR if you plan to update native code, use new method name.
-            // Given I cannot edit native code right now, I will warn if native method missing.
-
-            if (ActivityKitManager.startBottleTimer) {
-                const id = await ActivityKitManager.startBottleTimer(parentName, childName);
-                this.activityId = id;
-                if (__DEV__) console.log('✅ Bottle Live Activity started:', id);
-                return id;
-            } else {
-                console.warn('startBottleTimer not implemented in native module');
-                return '';
-            }
+            const id = await ActivityKitManager.startMeal(childName, '🍼', 'bottle', [], 0);
+            this.activityId = id;
+            logger.log('✅ Bottle Live Activity started:', id);
+            return id;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to start Bottle Live Activity:', error);
+            logger.error('Failed to start Bottle Live Activity:', error);
             throw error;
         }
     }
@@ -130,17 +123,12 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            if (ActivityKitManager.stopBottleTimer) {
-                await ActivityKitManager.stopBottleTimer();
-                this.activityId = null;
-                if (__DEV__) console.log('✅ Bottle Live Activity stopped');
-                return true;
-            } else {
-                console.warn('stopBottleTimer not implemented in native module');
-                return false;
-            }
+            await ActivityKitManager.stopMeal();
+            this.activityId = null;
+            logger.log('✅ Bottle Live Activity stopped');
+            return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to stop Bottle Live Activity:', error);
+            logger.error('Failed to stop Bottle Live Activity:', error);
             return false;
         }
     }
@@ -152,28 +140,19 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            const id = await ActivityKitManager.startSleepTimer(parentName, childName);
+            // Updated to match ActivityKitModule.swift signature: (babyName, babyEmoji, sleepType, isAwake)
+            const id = await ActivityKitManager.startSleep(childName, '😴', 'שינה', false);
             this.activityId = id;
-            if (__DEV__) console.log('✅ Sleep Live Activity started:', id);
+            logger.log('✅ Sleep Live Activity started:', id);
             return id;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to start Sleep Live Activity:', error);
+            logger.error('Failed to start Sleep Live Activity:', error);
             throw error;
         }
     }
 
     async updateSleepTimer(elapsedSeconds: number): Promise<boolean> {
-        if (!this.isSupported || !ActivityKitManager || !this.activityId) {
-            return false;
-        }
-
-        try {
-            await ActivityKitManager.updateSleepTimer(elapsedSeconds);
-            return true;
-        } catch (error: any) {
-            if (__DEV__) console.error('Failed to update Sleep Live Activity:', error);
-            return false;
-        }
+        return true;
     }
 
     async stopSleepTimer(): Promise<boolean> {
@@ -182,12 +161,12 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            await ActivityKitManager.stopSleepTimer();
+            await ActivityKitManager.stopSleep();
             this.activityId = null;
-            if (__DEV__) console.log('✅ Sleep Live Activity stopped');
+            logger.log('✅ Sleep Live Activity stopped');
             return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to stop Sleep Live Activity:', error);
+            logger.error('Failed to stop Sleep Live Activity:', error);
             return false;
         }
     }
@@ -199,12 +178,14 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            const id = await ActivityKitManager.startBreastfeedingTimer(parentName, childName, side);
+            const sideEmoji = side === 'left' ? '👈' : '👉';
+            const mealType = side === 'left' ? 'breastfeeding-left' : 'breastfeeding-right';
+            const id = await ActivityKitManager.startMeal(childName, sideEmoji, mealType, [], 0);
             this.activityId = id;
-            if (__DEV__) console.log('✅ Breastfeeding Live Activity started:', id);
+            logger.log('✅ Breastfeeding Live Activity started:', id, side);
             return id;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to start Breastfeeding Live Activity:', error);
+            logger.error('Failed to start Breastfeeding Live Activity:', error);
             throw error;
         }
     }
@@ -221,7 +202,7 @@ class LiveActivityServiceClass implements LiveActivityService {
             await ActivityKitManager.updatePumpingTimer(elapsedSeconds);
             return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to update Breastfeeding Live Activity:', error);
+            logger.error('Failed to update Breastfeeding Live Activity:', error);
             return false;
         }
     }
@@ -232,12 +213,12 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            await ActivityKitManager.stopBreastfeedingTimer();
+            await ActivityKitManager.stopMeal();
             this.activityId = null;
-            if (__DEV__) console.log('✅ Breastfeeding Live Activity stopped');
+            logger.log('✅ Breastfeeding Live Activity stopped');
             return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to stop Breastfeeding Live Activity:', error);
+            logger.error('Failed to stop Breastfeeding Live Activity:', error);
             return false;
         }
     }
@@ -250,10 +231,10 @@ class LiveActivityServiceClass implements LiveActivityService {
 
         try {
             await ActivityKitManager.pauseTimer();
-            if (__DEV__) console.log('✅ Live Activity paused');
+            logger.log('✅ Live Activity paused');
             return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to pause Live Activity:', error);
+            logger.error('Failed to pause Live Activity:', error);
             return false;
         }
     }
@@ -265,10 +246,58 @@ class LiveActivityServiceClass implements LiveActivityService {
 
         try {
             await ActivityKitManager.resumeTimer();
-            if (__DEV__) console.log('✅ Live Activity resumed');
+            logger.log('✅ Live Activity resumed');
             return true;
         } catch (error: any) {
-            if (__DEV__) console.error('Failed to resume Live Activity:', error);
+            logger.error('Failed to resume Live Activity:', error);
+            return false;
+        }
+    }
+
+    // MARK: - Babysitter Shift
+    async startBabysitterShift(babysitterName: string, hourlyRate: number): Promise<string> {
+        if (!this.isSupported || !ActivityKitManager) {
+            throw new Error('Live Activities not supported');
+        }
+
+        try {
+            const id = await ActivityKitManager.startBabysitterShift(babysitterName, hourlyRate);
+            this.activityId = id;
+            logger.log('✅ Babysitter Shift Live Activity started:', id);
+            return id;
+        } catch (error: any) {
+            logger.error('Failed to start Babysitter Shift Live Activity:', error);
+            throw error;
+        }
+    }
+
+    async updateBabysitterShift(isPaused: boolean, totalPausedSeconds: number): Promise<boolean> {
+        if (!this.isSupported || !ActivityKitManager || !this.activityId) {
+            return false;
+        }
+
+        try {
+            await ActivityKitManager.updateBabysitterShift(isPaused, totalPausedSeconds);
+            logger.log('✅ Babysitter Shift updated:', { isPaused, totalPausedSeconds });
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to update Babysitter Shift Live Activity:', error);
+            return false;
+        }
+    }
+
+    async stopBabysitterShift(): Promise<boolean> {
+        if (!this.isSupported || !ActivityKitManager) {
+            return false;
+        }
+
+        try {
+            await ActivityKitManager.stopBabysitterShift();
+            this.activityId = null;
+            logger.log('✅ Babysitter Shift Live Activity stopped');
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to stop Babysitter Shift Live Activity:', error);
             return false;
         }
     }

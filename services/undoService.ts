@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
@@ -46,7 +47,7 @@ class UndoService {
             }
             return true;
         } catch (error) {
-            console.error('Undo failed:', error);
+            logger.error('Undo failed:', error);
             return false;
         }
     }

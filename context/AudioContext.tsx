@@ -1,0 +1,206 @@
+import { logger } from '../utils/logger';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
+
+// Sound file imports
+const soundFiles = {
+    rain: require('../assets/sounds/rain.mp3'),
+    shh: require('../assets/sounds/shh.mp3'),
+    heartbeat: require('../assets/sounds/heartbeat.mp3'),
+    dryer: require('../assets/sounds/dryer.mp3'),
+};
+
+export type SoundId = keyof typeof soundFiles;
+
+interface AudioContextType {
+    activeSound: SoundId | null;
+    volume: number;
+    isLoading: boolean;
+    sleepTimer: number | null;
+    timeRemaining: number | null;
+    playSound: (id: SoundId) => Promise<void>;
+    stopSound: () => Promise<void>;
+    setVolume: (volume: number) => Promise<void>;
+    toggleSound: (id: SoundId) => Promise<void>;
+    startTimer: (minutes: number) => void;
+    stopTimer: () => void;
+}
+
+const AudioContext = createContext<AudioContextType | undefined>(undefined);
+
+export const useAudio = () => {
+    const context = useContext(AudioContext);
+    if (!context) {
+        throw new Error('useAudio must be used within an AudioProvider');
+    }
+    return context;
+};
+
+export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [activeSound, setActiveSound] = useState<SoundId | null>(null);
+    const [volume, setVolumeState] = useState(0.7);
+    const [isLoading, setIsLoading] = useState(false);
+    const [sleepTimer, setSleepTimer] = useState<number | null>(null);
+    const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const soundRef = useRef<Audio.Sound | null>(null);
+
+    // Setup audio mode for background playback
+    useEffect(() => {
+        const setupAudio = async () => {
+            try {
+                await Audio.setAudioModeAsync({
+                    startsAudioSession: true,
+                    playsInSilentModeIOS: true,
+                    staysActiveInBackground: true,
+                    shouldDuckAndroid: true,
+                    playThroughEarpieceAndroid: false,
+                });
+            } catch (error) {
+                logger.log('Error setting up audio mode:', error);
+            }
+        };
+        setupAudio();
+
+        // Cleanup on unmount
+        return () => {
+            if (soundRef.current) {
+                soundRef.current.unloadAsync();
+            }
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, []);
+
+    const stopSound = async () => {
+        try {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+            setSleepTimer(null);
+            setTimeRemaining(null);
+
+            if (soundRef.current) {
+                try {
+                    await soundRef.current.stopAsync();
+                    await soundRef.current.unloadAsync();
+                } catch (e) {
+                    logger.log('Error unloading sound:', e);
+                }
+                soundRef.current = null;
+            }
+            setActiveSound(null);
+        } catch (error) {
+            logger.log('Error stopping sound:', error);
+        }
+    };
+
+    const playSound = async (id: SoundId) => {
+        try {
+            setIsLoading(true);
+
+            // Stop current sound if playing (but keep timer if we want? No, usually switching sound resets or keeps timer. Let's keep timer running effectively)
+            // Actually, standard behavior: if I switch sound, timer persists? Or resets?
+            // Let's assume timer persists if already running.
+
+            if (soundRef.current) {
+                await soundRef.current.stopAsync();
+                await soundRef.current.unloadAsync();
+                soundRef.current = null;
+            }
+
+            const { sound } = activeSound === id && soundRef.current ? { sound: soundRef.current } : await Audio.Sound.createAsync(
+                soundFiles[id],
+                {
+                    isLooping: true,
+                    volume: volume,
+                    shouldPlay: true,
+                }
+            );
+
+
+            soundRef.current = sound;
+            setActiveSound(id);
+
+        } catch (error) {
+            logger.log('Error playing sound:', error);
+            setActiveSound(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const toggleSound = async (id: SoundId) => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+
+        if (activeSound === id) {
+            await stopSound();
+        } else {
+            await playSound(id);
+        }
+    };
+
+    const setVolume = async (newVolume: number) => {
+        setVolumeState(newVolume);
+        if (soundRef.current) {
+            try {
+                await soundRef.current.setVolumeAsync(newVolume);
+            } catch (error) {
+                logger.log('Error changing volume:', error);
+            }
+        }
+    };
+
+    const startTimer = (minutes: number) => {
+        setSleepTimer(minutes);
+        setTimeRemaining(minutes * 60);
+
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+
+        timerRef.current = setInterval(() => {
+            setTimeRemaining((prev) => {
+                if (prev === null || prev <= 1) {
+                    // Timer finished
+                    stopSound(); // This clears timer ref and stops sound
+                    return null;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const stopTimer = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+        setSleepTimer(null);
+        setTimeRemaining(null);
+    };
+
+    return (
+        <AudioContext.Provider value={{
+            activeSound,
+            volume,
+            isLoading,
+            sleepTimer,
+            timeRemaining,
+            playSound,
+            stopSound,
+            setVolume,
+            toggleSound,
+            startTimer,
+            stopTimer
+        }}>
+            {children}
+        </AudioContext.Provider>
+    );
+};

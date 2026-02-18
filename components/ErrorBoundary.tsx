@@ -3,19 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from
 import { AlertTriangle, RefreshCw } from 'lucide-react-native';
 import { LanguageContext } from '../context/LanguageContext';
 import Constants from 'expo-constants';
+import { logger } from '../utils/logger';
 
-// Lazy import crashlytics - only works in development builds, not Expo Go
+// Crashlytics temporarily disabled
 let crashlytics: any = null;
-try {
-    if (Constants.appOwnership !== 'expo' && Platform.OS !== 'web') {
-        crashlytics = require('@react-native-firebase/crashlytics').default;
-    }
-} catch (error) {
-    // Crashlytics not available (Expo Go or not installed)
-    if (__DEV__) {
-        console.log('Crashlytics not available:', error);
-    }
-}
 
 interface Props {
     children: ReactNode;
@@ -54,8 +45,8 @@ class ErrorBoundary extends Component<Props, State> {
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
         // Log error to console in DEV only
         if (__DEV__) {
-            console.log('🚨 ErrorBoundary caught an error:', error);
-            console.log('Component stack:', errorInfo.componentStack);
+            logger.log('🚨 ErrorBoundary caught an error:', error);
+            logger.log('Component stack:', errorInfo.componentStack);
         }
 
         this.setState({
@@ -73,7 +64,7 @@ class ErrorBoundary extends Component<Props, State> {
             } catch (crashlyticsError) {
                 // Silently fail if Crashlytics is not available
                 if (__DEV__) {
-                    console.log('Crashlytics error:', crashlyticsError);
+                    logger.log('Crashlytics error:', crashlyticsError);
                 }
             }
         }
@@ -123,7 +114,7 @@ class ErrorBoundary extends Component<Props, State> {
                                             {safeT('errors.unexpectedError')}
                                         </Text>
 
-                                        {__DEV__ && this.state.error && (
+                                        {this.state.error && (
                                             <View style={styles.errorDetails}>
                                                 <Text style={styles.errorTitle}>{safeT('errors.errorDetails')}</Text>
                                                 <Text style={styles.errorText}>

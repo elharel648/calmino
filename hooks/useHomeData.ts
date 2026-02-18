@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebaseConfig';
@@ -62,7 +63,7 @@ export const useHomeData = (
             const childRef = doc(db, 'babies', childId);
             await updateDoc(childRef, { status });
         } catch (e) {
-            if (__DEV__) console.error('Status update error:', e);
+            logger.error('Status update error:', e);
         }
     }, [childId]);
 
@@ -211,7 +212,7 @@ export const useHomeData = (
             }
 
         } catch (e) {
-            if (__DEV__) console.error('Home data refresh error:', e);
+            logger.error('Home data refresh error:', e);
         }
     }, [childId, creatorId, calculateDailyStats]);
 

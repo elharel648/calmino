@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { Platform } from 'react-native';
 
 /**
@@ -38,13 +39,13 @@ class WatchService {
             // Check if WatchConnectivity is available
             // This will be implemented in native code
             if (__DEV__) {
-                console.log('⌚ Watch Service: Initializing...');
+                logger.log('⌚ Watch Service: Initializing...');
             }
             // TODO: Initialize WatchConnectivity in native module
             this.isSupported = true;
         } catch (error) {
             if (__DEV__) {
-                console.warn('⌚ Watch Service: Not available', error);
+                logger.warn('⌚ Watch Service: Not available', error);
             }
             this.isSupported = false;
         }
@@ -81,12 +82,12 @@ class WatchService {
             };
             // TODO: Send via WatchConnectivity
             if (__DEV__) {
-                console.log('⌚ Sending to Watch:', message);
+                logger.log('⌚ Sending to Watch:', message);
             }
             return true;
         } catch (error) {
             if (__DEV__) {
-                console.error('⌚ Error sending to Watch:', error);
+                logger.error('⌚ Error sending to Watch:', error);
             }
             return false;
         }
@@ -110,12 +111,12 @@ class WatchService {
             };
             // TODO: Send via WatchConnectivity
             if (__DEV__) {
-                console.log('⌚ Sending clock to Watch:', message);
+                logger.log('⌚ Sending clock to Watch:', message);
             }
             return true;
         } catch (error) {
             if (__DEV__) {
-                console.error('⌚ Error sending clock to Watch:', error);
+                logger.error('⌚ Error sending clock to Watch:', error);
             }
             return false;
         }
@@ -135,12 +136,12 @@ class WatchService {
             };
             // TODO: Send via WatchConnectivity
             if (__DEV__) {
-                console.log('⌚ Stopping Watch display');
+                logger.log('⌚ Stopping Watch display');
             }
             return true;
         } catch (error) {
             if (__DEV__) {
-                console.error('⌚ Error stopping Watch:', error);
+                logger.error('⌚ Error stopping Watch:', error);
             }
             return false;
         }

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -16,7 +17,7 @@ export function useOnboarding() {
             const value = await AsyncStorage.getItem(ONBOARDING_KEY);
             setHasCompletedOnboarding(value === 'true');
         } catch (error) {
-            console.error('Error checking onboarding status:', error);
+            logger.error('Error checking onboarding status:', error);
             setHasCompletedOnboarding(false);
         } finally {
             setIsLoading(false);
@@ -28,7 +29,7 @@ export function useOnboarding() {
             await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
             setHasCompletedOnboarding(true);
         } catch (error) {
-            console.error('Error completing onboarding:', error);
+            logger.error('Error completing onboarding:', error);
         }
     };
 

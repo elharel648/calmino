@@ -1,0 +1,150 @@
+//
+//  SharedActivityAttributes.swift
+//  CalmParentApp
+//
+//  Shared Activity Attributes for Main App and Widget Extension
+//  This file should be added to BOTH targets!
+//
+
+import ActivityKit
+import Foundation
+
+// MARK: - Babysitter Shift Attributes
+
+@available(iOS 16.2, *)
+public struct BabysitterShiftAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+        public var isPaused: Bool
+        public var totalPausedSeconds: TimeInterval
+        public var hourlyRate: Double
+        
+        public init(startTime: Date, isPaused: Bool, totalPausedSeconds: TimeInterval, hourlyRate: Double) {
+            self.startTime = startTime
+            self.isPaused = isPaused
+            self.totalPausedSeconds = totalPausedSeconds
+            self.hourlyRate = hourlyRate
+        }
+    }
+    
+    // Static attributes
+    public var babysitterName: String
+    public var babysitterPhoto: String? // URL or emoji
+    
+    public init(babysitterName: String, babysitterPhoto: String? = nil) {
+        self.babysitterName = babysitterName
+        self.babysitterPhoto = babysitterPhoto
+    }
+}
+
+// MARK: - Meal Activity Attributes
+
+@available(iOS 16.2, *)
+public struct MealActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+        public var mealType: String // "ארוחת בוקר", "צהריים", "ערב", "חטיף"
+        public var babyName: String
+        public var foodItems: [String]
+        public var isPaused: Bool
+        public var progress: Double // 0.0 - 1.0
+        
+        public init(startTime: Date, mealType: String, babyName: String, foodItems: [String], isPaused: Bool, progress: Double) {
+            self.startTime = startTime
+            self.mealType = mealType
+            self.babyName = babyName
+            self.foodItems = foodItems
+            self.isPaused = isPaused
+            self.progress = progress
+        }
+    }
+    
+    public var babyName: String
+    public var babyEmoji: String
+    
+    public init(babyName: String, babyEmoji: String) {
+        self.babyName = babyName
+        self.babyEmoji = babyEmoji
+    }
+}
+
+// MARK: - Sleep Activity Attributes
+
+@available(iOS 16.2, *)
+public struct SleepActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+        public var babyName: String
+        public var sleepType: String // "תנומת צהריים", "שינת לילה"
+        public var isAwake: Bool
+        public var quality: String? // "טוב", "רגיל", "לא טוב"
+        
+        public init(startTime: Date, babyName: String, sleepType: String, isAwake: Bool, quality: String? = nil) {
+            self.startTime = startTime
+            self.babyName = babyName
+            self.sleepType = sleepType
+            self.isAwake = isAwake
+            self.quality = quality
+        }
+    }
+    
+    public var babyName: String
+    public var babyEmoji: String
+    
+    public init(babyName: String, babyEmoji: String) {
+        self.babyName = babyName
+        self.babyEmoji = babyEmoji
+    }
+}
+
+// MARK: - Play Activity Attributes
+
+@available(iOS 16.2, *)
+public struct PlayActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+        public var babyName: String
+        public var activityType: String // "משחק חופשי", "קריאה", "שירה", "משחק חוץ"
+        public var isPaused: Bool
+        
+        public init(startTime: Date, babyName: String, activityType: String, isPaused: Bool) {
+            self.startTime = startTime
+            self.babyName = babyName
+            self.activityType = activityType
+            self.isPaused = isPaused
+        }
+    }
+    
+    public var babyName: String
+    public var babyEmoji: String
+    
+    public init(babyName: String, babyEmoji: String) {
+        self.babyName = babyName
+        self.babyEmoji = babyEmoji
+    }
+}
+
+// MARK: - Meditation Activity Attributes
+
+@available(iOS 16.2, *)
+public struct ParentMeditationAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+        public var duration: TimeInterval // משך במילישניות
+        public var meditationType: String // "נשימות", "סריקת גוף", "הרפיה"
+        public var isActive: Bool
+        
+        public init(startTime: Date, duration: TimeInterval, meditationType: String, isActive: Bool) {
+            self.startTime = startTime
+            self.duration = duration
+            self.meditationType = meditationType
+            self.isActive = isActive
+        }
+    }
+    
+    public var parentName: String
+    
+    public init(parentName: String) {
+        self.parentName = parentName
+    }
+}

@@ -1,7 +1,8 @@
+import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { liveActivityService } from '../services/liveActivityService';
+import quickActionsService from '../services/quickActionsService';
 import { useActiveChild } from '../context/ActiveChildContext';
 
 interface SleepTimerState {
@@ -105,15 +106,16 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
         };
 
         // Start iOS Live Activity
-        if (Platform.OS === 'ios') {
+        if (Platform.OS === 'ios' && activeChild) {
             try {
-                const activityId = await liveActivityService.startSleepTimer('הורה', activeChild?.childName || 'תינוק');
-                if (activityId) {
-                    newState.activityId = activityId;
-                    if (__DEV__) console.log('✅ Sleep Live Activity started:', activityId, 'for child:', activeChildId);
-                }
+                await quickActionsService.startSleep(
+                    activeChild.childName,
+                    '👶',
+                    'night'
+                );
+                logger.log('✅ Sleep Live Activity started for child:', activeChildId);
             } catch (error) {
-                if (__DEV__) console.warn('⚠️ Sleep Live Activity not supported:', error);
+                logger.warn('⚠️ Sleep Live Activity not supported:', error);
             }
         }
 
@@ -137,12 +139,12 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
         });
 
         // Stop iOS Live Activity
-        if (Platform.OS === 'ios' && activityId) {
+        if (Platform.OS === 'ios') {
             try {
-                await liveActivityService.stopSleepTimer();
-                if (__DEV__) console.log('✅ Sleep Live Activity stopped');
+                await quickActionsService.stopSleep();
+                logger.log('✅ Sleep Live Activity stopped');
             } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error stopping Sleep Live Activity:', error);
+                logger.warn('⚠️ Error stopping Sleep Live Activity:', error);
             }
         }
     }, [activeChildId, updateChildState, timers]);
@@ -154,14 +156,8 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
 
         updateChildState(activeChildId, { isPaused: true });
 
-        // Pause Live Activity
-        if (Platform.OS === 'ios' && timer.activityId) {
-            try {
-                await liveActivityService.pauseTimer();
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error pausing Sleep Live Activity:', error);
-            }
-        }
+        // Note: quickActionsService doesn't support pause/resume yet
+        // Could be added in the future if needed
     }, [activeChildId, timers, updateChildState]);
 
     const resume = useCallback(async () => {
@@ -171,22 +167,12 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
 
         updateChildState(activeChildId, { isPaused: false });
 
-        // Resume Live Activity
-        if (Platform.OS === 'ios' && timer.activityId) {
-            try {
-                await liveActivityService.resumeTimer();
-            } catch (error) {
-                if (__DEV__) console.warn('⚠️ Error resuming Sleep Live Activity:', error);
-            }
-        }
+        // Note: quickActionsService doesn't support pause/resume yet
+        // Could be added in the future if needed
     }, [activeChildId, timers, updateChildState]);
 
-    // Update Live Activity when timer changes
-    useEffect(() => {
-        if (Platform.OS === 'ios' && currentState.isRunning && currentState.activityId) {
-            liveActivityService.updateSleepTimer(currentState.elapsedSeconds).catch(() => {});
-        }
-    }, [currentState.elapsedSeconds, currentState.isRunning, currentState.activityId]);
+    // Note: Live Activity updates automatically via iOS system
+    // No manual update needed
 
     const reset = useCallback(() => {
         if (!activeChildId) return;

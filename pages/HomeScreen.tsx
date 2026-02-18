@@ -1,21 +1,10 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, Dimensions, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, Dimensions, TouchableOpacity, Text, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-    withRepeat,
-    interpolate,
-    Extrapolation,
-    Easing,
-} from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
-import { useAnimatedScrollHandler } from 'react-native-reanimated';
 
 // Hooks
 import { useHomeData } from '../hooks/useHomeData';
@@ -39,7 +28,6 @@ import DailyTimeline from '../components/DailyTimeline';
 import CalmModeModal from '../components/CalmModeModal';
 import TrackingModal from '../components/TrackingModal';
 import ChecklistModal from '../components/ChecklistModal';
-import ToolsModal from '../components/Home/ToolsModal';
 import NightLightModal from '../components/NightLightModal';
 import QuickReminderModal from '../components/Home/QuickReminderModal';
 import TeethTrackerModal from '../components/Tools/TeethTrackerModal';
@@ -52,8 +40,6 @@ import AddCustomActionModal, { CustomAction } from '../components/Home/AddCustom
 import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import MagicMomentsModal from '../components/Home/MagicMomentsModal';
 import { EditBasicInfoModal } from '../components/Profile';
-import ShiftTimerWidget from '../components/BabySitter/ShiftTimerWidget';
-import EmergencyBookingSOS from '../components/BabySitter/EmergencyBookingSOS';
 
 // Services
 import { auth, db } from '../services/firebaseConfig';
@@ -61,8 +47,6 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { saveEventToFirebase, formatTimeFromTimestamp } from '../services/firebaseService';
 import { useToast } from '../context/ToastContext';
 import { undoService } from '../services/undoService';
-import { subscribeToActiveShift } from '../services/babysitterService';
-import { ActiveShift } from '../types/babysitter';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '../utils/logger';
@@ -80,14 +64,13 @@ type HomeStackParamList = {
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
-// Module-level flag to prevent double animation on tab switch
-let hasHomeAnimationsRun = false;
-
 /**
  * HomeScreen - Main dashboard with modular architecture
  * Reduced from 535 lines to ~180 lines
  */
 export default function HomeScreen({ navigation }: { navigation: HomeScreenNavigationProp }) {
+    // Fix: Use useRef instead of module-level flag for animation state
+    const hasAnimationsRun = useRef(false);
     // --- Theme & Language ---
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
@@ -193,7 +176,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
     // --- Local State ---
     const [isCalmModeOpen, setIsCalmModeOpen] = useState(false);
-    const [isToolsOpen, setIsToolsOpen] = useState(false);
     const [isNightLightOpen, setIsNightLightOpen] = useState(false);
     const [isTeethOpen, setIsTeethOpen] = useState(false);
     const [isNextNapOpen, setIsNextNapOpen] = useState(false);
@@ -213,8 +195,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [editingChild, setEditingChild] = useState<any>(null);
     const [isEditChildModalOpen, setIsEditChildModalOpen] = useState(false);
-    const [activeShift, setActiveShift] = useState<ActiveShift | null>(null);
-
     const user = auth.currentUser;
 
     // Refresh data when active child changes
@@ -225,15 +205,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             setTimelineRefresh(prev => prev + 1);
         }
     }, [activeChild?.childId]);
-
-    // Subscribe to active babysitter shift
-    useEffect(() => {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return;
-
-        const unsubscribe = subscribeToActiveShift(userId, setActiveShift);
-        return () => unsubscribe();
-    }, []);
 
     // --- Dynamic Styles (now from global theme) ---
     const dynamicStyles: DynamicStyles = useMemo(() => ({
@@ -269,10 +240,10 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
     // Mark animations as run after first render
     useEffect(() => {
-        if (!hasHomeAnimationsRun) {
+        if (!hasAnimationsRun.current) {
             // Delay to allow animations to complete
             const timer = setTimeout(() => {
-                hasHomeAnimationsRun = true;
+                hasAnimationsRun.current = true;
             }, 600);
             return () => clearTimeout(timer);
         }
@@ -351,65 +322,75 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     // --- Animations (MUST be before any early returns) ---
     // Use global scroll tracking for parallax tab bar effect
     const { scrollY, scrollX } = useScrollTracking();
-    const localScrollY = useSharedValue(0); // Keep local for HomeScreen-specific parallax
-    const floatingOffset = useSharedValue(0);
+    const localScrollY = useRef(new Animated.Value(0)).current; // Keep local for HomeScreen-specific parallax
+    const floatingOffset = useRef(new Animated.Value(0)).current;
 
     // Floating animation for background elements
     useEffect(() => {
-        floatingOffset.value = withRepeat(
-            withTiming(20, {
-                duration: 3000,
-                easing: Easing.inOut(Easing.sin),
-            }),
-            -1,
-            true
-        );
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(floatingOffset, {
+                    toValue: 20,
+                    duration: 3000,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(floatingOffset, {
+                    toValue: 0,
+                    duration: 3000,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
     }, [floatingOffset]);
 
-    // Scroll handler for parallax - updates both global and local scroll values
-    const scrollHandler = useAnimatedScrollHandler({
-        onScroll: (event) => {
-            const offsetY = event.contentOffset.y;
-            const offsetX = event.contentOffset.x || 0;
-            // Update global scroll tracking for tab bar parallax
-            scrollY.value = offsetY;
-            scrollX.value = offsetX;
-            // Update local scroll for HomeScreen-specific effects
-            localScrollY.value = offsetY;
-        },
-    });
+    // Scroll handler using standard Animated
+    const scrollHandler = Animated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }], // Sync global scrollY
+        {
+            useNativeDriver: true,
+            listener: (event: any) => {
+                // Also update local for background (or just use scrollY for both?)
+                // We can just setValue on localScrollY if we want separate control, 
+                // or simpler: just use scrollY for everything. 
+                // But let's keep localScrollY distinct if logic diverged.
+                // Actually, simpler to just map to ONE value if possible. 
+                // Animated.event can map to one.
+                // We'll map to scrollY (global). And we'll just use scrollY for the background too.
+                // But we need to verify scrollY is an Animated.Value (it is from our new Context).
+                localScrollY.setValue(event.nativeEvent.contentOffset.y);
+                scrollX.setValue(event.nativeEvent.contentOffset.x || 0);
+            }
+        }
+    );
 
-    // Parallax background style (uses local scroll for HomeScreen-specific effect)
-    const parallaxBackgroundStyle = useAnimatedStyle(() => {
-        const translateY = interpolate(
-            localScrollY.value,
-            [0, 500],
-            [0, -100],
-            Extrapolation.CLAMP
-        );
-        return {
-            transform: [{ translateY }],
-        };
-    });
+    // Parallax background style
+    const parallaxBackgroundStyle = {
+        transform: [{
+            translateY: localScrollY.interpolate({
+                inputRange: [0, 500],
+                outputRange: [0, -100],
+                extrapolate: 'clamp'
+            })
+        }],
+    };
 
     // Floating glow style
-    const floatingGlowStyle = useAnimatedStyle(() => {
-        const translateY = interpolate(
-            floatingOffset.value,
-            [0, 20],
-            [0, 10],
-            Extrapolation.CLAMP
-        );
-        return {
-            transform: [{ translateY }],
-            opacity: interpolate(
-                floatingOffset.value,
-                [0, 20],
-                [0.6, 1],
-                Extrapolation.CLAMP
-            ),
-        };
-    });
+    const floatingGlowStyle = {
+        transform: [{
+            translateY: floatingOffset.interpolate({
+                inputRange: [0, 20],
+                outputRange: [0, 10],
+                extrapolate: 'clamp'
+            })
+        }],
+        opacity: floatingOffset.interpolate({
+            inputRange: [0, 20],
+            outputRange: [0.6, 1],
+            extrapolate: 'clamp'
+        }),
+    };
 
     // Get loading state from context (but don't show loading screen)
     const { isLoading: contextLoading } = useActiveChild();
@@ -420,7 +401,11 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     return (
         <View style={styles.container}>
             {/* Enhanced Background - Parallax */}
-            <Animated.View style={[StyleSheet.absoluteFill, parallaxBackgroundStyle]}>
+            <Animated.View style={[
+                StyleSheet.absoluteFill,
+                { height: SCREEN_HEIGHT + 120 }, // Extend height to cover parallax movement
+                parallaxBackgroundStyle
+            ]}>
                 <LinearGradient
                     colors={isDarkMode
                         ? ['#0F0F0F', '#1C1C1E', '#0A0A0A', '#0F0F0F']
@@ -434,11 +419,15 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             </Animated.View>
 
             {/* Dot Pattern Texture - Parallax */}
-            <Animated.View style={[StyleSheet.absoluteFill, parallaxBackgroundStyle]}>
+            <Animated.View style={[
+                StyleSheet.absoluteFill,
+                { height: SCREEN_HEIGHT + 120 }, // Extend height to cover parallax movement
+                parallaxBackgroundStyle
+            ]}>
                 <Svg
                     style={StyleSheet.absoluteFill}
                     width={SCREEN_WIDTH}
-                    height={SCREEN_HEIGHT}
+                    height={SCREEN_HEIGHT + 120}
                     preserveAspectRatio="none"
                 >
                     <Defs>
@@ -456,7 +445,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             />
                         </Pattern>
                     </Defs>
-                    <Rect width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="url(#dotPattern)" />
+                    <Rect width={SCREEN_WIDTH} height={SCREEN_HEIGHT + 120} fill="url(#dotPattern)" />
                 </Svg>
             </Animated.View>
 
@@ -501,7 +490,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                         <>
                             {/* Staggered Entry Header - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(0, 500) : undefined}
                                 collapsable={false}
                             >
                                 <HeaderSection
@@ -525,23 +513,8 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             </Animated.View>
 
 
-
-                            {/* Active Babysitter Shift Timer */}
-                            {activeShift && (
-                                <Animated.View
-                                    entering={ANIMATIONS.fadeInDown(0, 400)}
-                                    style={{ marginBottom: 16 }}
-                                >
-                                    <ShiftTimerWidget
-                                        shift={activeShift}
-                                        onShiftEnd={() => setActiveShift(null)}
-                                    />
-                                </Animated.View>
-                            )}
-
                             {/* Staggered Entry Quick Actions - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(150, 500) : undefined}
                                 collapsable={false}
                             >
                                 <QuickActions
@@ -558,7 +531,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     onMilestonesPress={() => setIsMilestonesOpen(true)}
 
                                     onMagicMomentsPress={() => setIsMagicMomentsOpen(true)}
-                                    onToolsPress={() => setIsToolsOpen(true)}
                                     // onChecklistPress={() => setIsChecklistOpen(true)} // Moved to Tools
                                     onTeethPress={() => setIsTeethOpen(true)}
                                     onNightLightPress={() => setIsNightLightOpen(true)}
@@ -602,7 +574,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
                             {/* Staggered Entry Timeline - Enhanced */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(200, 500) : undefined}
                                 collapsable={false}
                             >
                                 <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} showOnlyToday={true} />
@@ -610,7 +581,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
                             {/* Share Button - Enhanced Animation */}
                             <Animated.View
-                                entering={!hasHomeAnimationsRun ? ANIMATIONS.fadeInDown(300, 500) : undefined}
                             >
                                 <ShareStatusButton onShare={shareStatus} message={shareMessage} />
                             </Animated.View>
@@ -619,23 +589,10 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 </Animated.ScrollView>
 
                 {/* Modals */}
-                {/* Emergency SOS Booking Modal (replaces CalmMode) */}
-                <EmergencyBookingSOS
+                {/* Restored SOS Modal (Numbers) */}
+                <CalmModeModal
                     visible={isCalmModeOpen}
                     onClose={() => setIsCalmModeOpen(false)}
-                    onBookSitter={(sitterId) => {
-                        // Navigate to babysitter screen with pre-selected sitter
-                        (navigation as any).navigate('BabySitter', { sitterId });
-                    }}
-                />
-                <ToolsModal
-                    visible={isToolsOpen}
-                    onClose={() => setIsToolsOpen(false)}
-                    onNextNapPress={() => {
-                        setIsToolsOpen(false);
-                        setTimeout(() => setIsNextNapOpen(true), 300);
-                    }}
-                    onChecklistPress={() => setIsChecklistOpen(true)}
                 />
                 <NightLightModal visible={isNightLightOpen} onClose={() => setIsNightLightOpen(false)} />
                 <TeethTrackerModal visible={isTeethOpen} onClose={() => setIsTeethOpen(false)} />
@@ -722,7 +679,8 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                 });
                                 setTimelineRefresh(prev => prev + 1);
                                 Alert.alert('נוסף!', `"${action.name}" נשמר בהצלחה`);
-                            } catch {
+                            } catch (error) {
+                                logger.error('Failed to save custom action:', error);
                                 Alert.alert('שגיאה בשמירה');
                             }
                         }

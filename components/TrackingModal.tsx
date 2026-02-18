@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder, Dimensions } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
+import { useSwipeDismiss } from '../hooks/useSwipeDismiss';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../context/SleepTimerContext';
 import { useFoodTimer } from '../context/FoodTimerContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useActiveChild } from '../context/ActiveChildContext';
+import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, interpolate } from 'react-native-reanimated';
 
@@ -27,6 +30,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const foodTimerContext = useFoodTimer();
+  const { activeChild } = useActiveChild();
 
   // Premium animations
   const glowAnim = useSharedValue(0);
@@ -97,6 +101,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // --- Diaper States ---
   const [subType, setSubType] = useState<string | null>(null);
   const [diaperNote, setDiaperNote] = useState('');
+  const [diaperTime, setDiaperTime] = useState(() => new Date());
+  const [showDiaperTimePicker, setShowDiaperTimePicker] = useState(false);
 
   // Save success state for checkmark animation
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -208,6 +214,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       setSleepMinutes(30);
       setSleepNote('');
       setDiaperNote('');
+      setDiaperTime(new Date());
+      setShowDiaperTimePicker(false);
       // Reset logic...
       setSleepMode('timer');
       const now = new Date();
@@ -506,11 +514,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     } else if (type === 'diaper') {
       data.subType = subType;
       data.note = diaperNote;
+      // Set the timestamp to the selected diaper time
+      data.timestamp = diaperTime;
     }
 
     // Debug: Log data before saving
     if (type === 'sleep' && sleepMode === 'timerange') {
-      console.log('🔵 Sleep timerange data to save:', JSON.stringify({
+      logger.log('🔵 Sleep timerange data to save:', JSON.stringify({
         type: data.type,
         duration: data.duration,
         startTime: data.startTime,
@@ -525,12 +535,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     // Validate that we have required data for timerange mode
     if (type === 'sleep' && sleepMode === 'timerange') {
       if (!data.timestamp) {
-        console.error('❌ Missing timestamp');
+        logger.error('❌ Missing timestamp');
         Alert.alert(t('common.error'), 'שגיאה: חסר timestamp. נא לנסות שוב.');
         return;
       }
       if (data.duration === undefined || data.duration === null) {
-        console.error('❌ Missing duration');
+        logger.error('❌ Missing duration');
         Alert.alert(t('common.error'), 'שגיאה: חסר duration. נא לנסות שוב.');
         return;
       }
@@ -539,7 +549,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     try {
       // Always log full data for sleep timerange
       if (type === 'sleep' && sleepMode === 'timerange') {
-        console.log('🟢 Calling onSave with FULL sleep timerange data:', {
+        logger.log('🟢 Calling onSave with FULL sleep timerange data:', {
           type: data.type,
           duration: data.duration,
           startTime: data.startTime,
@@ -549,10 +559,21 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           allData: data
         });
       } else {
-        console.log('🟢 Calling onSave with data:', { type: data.type, ...data });
+        logger.log('🟢 Calling onSave with data:', { type: data.type, ...data });
       }
       await onSave(data);
-      console.log('✅ onSave completed successfully');
+      logger.log('✅ onSave completed successfully');
+
+      // Start Live Activity for food
+      if (type === 'food' && activeChild) {
+        quickActionsService.startMeal({
+          babyName: activeChild.childName,
+          babyEmoji: '👶', // Default emoji since ActiveChild doesn't have emoji property
+          mealType: foodType,
+          foodItems: solidsFoodName ? [solidsFoodName] : [],
+          progress: 0.5,
+        }).catch(err => logger.log('Meal activity error:', err));
+      }
 
       // Reset all food timers after successful save (only here, not on pause!)
       if (type === 'food') {
@@ -572,7 +593,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         onClose();
       }, 1500);
     } catch (error) {
-      console.error('Save failed', error);
+      logger.error('Save failed', error);
       Alert.alert(t('common.error'), t('common.saveFailed'));
     }
   };
@@ -1314,10 +1335,65 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           );
         })}
       </View>
+
+      {/* Premium Time Picker */}
+      <View style={{ marginTop: 24 }}>
+        <TouchableOpacity
+          style={[styles.premiumTimeCard, { backgroundColor: theme.card }]}
+          onPress={() => {
+            setShowDiaperTimePicker(true);
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary }]}>מתי זה קרה?</Text>
+          <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
+            <Clock size={20} color={theme.primary} strokeWidth={2} />
+            <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary }]}>
+              {diaperTime.getHours().toString().padStart(2, '0')}:{diaperTime.getMinutes().toString().padStart(2, '0')}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Diaper Time Picker Modal */}
+      {showDiaperTimePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={diaperTime}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedTime) => {
+                if (Platform.OS === 'android') {
+                  setShowDiaperTimePicker(false);
+                }
+                if (selectedTime) {
+                  setDiaperTime(selectedTime);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setShowDiaperTimePicker(false);
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              >
+                <Text style={styles.timePickerDoneBtnText}>סיום</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
       <TextInput
         style={styles.diaperNoteInput}
         placeholder="הערות (אופציונלי)..."
         placeholderTextColor="#9CA3AF"
+        value={diaperNote}
         onChangeText={(text) => setDiaperNote(text)}
         textAlign="right"
       />

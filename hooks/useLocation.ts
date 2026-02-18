@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
 
@@ -64,7 +65,7 @@ const useLocation = (): UseLocationReturn => {
                 setAddress('מיקום נוכחי');
             }
         } catch (err) {
-            if (__DEV__) console.error('Location error:', err);
+            logger.error('Location error:', err);
             setError('שגיאה באיתור מיקום');
             setAddress('לא ניתן לאתר מיקום');
         } finally {

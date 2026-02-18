@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { db, auth } from './firebaseConfig';
 import {
   collection,
@@ -83,7 +84,7 @@ export const getBabyData = async (): Promise<BabyData | null> => {
       }
     }
   } catch (e) {
-    if (__DEV__) console.error('Error fetching baby data from family:', e);
+    logger.error('Error fetching baby data from family:', e);
   }
 
   return null;
@@ -122,7 +123,7 @@ export const getBabyDataById = async (childId: string): Promise<BabyData | null>
     }
 
     // Only log unexpected errors
-    if (__DEV__) console.error('Error fetching baby data by ID:', e);
+    logger.error('Error fetching baby data by ID:', e);
     return null;
   }
 };

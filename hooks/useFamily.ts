@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import {
@@ -75,7 +76,7 @@ export const useFamily = (): UseFamilyReturn => {
                         }
                         setIsLoading(false);
                     }, (error) => {
-                        if (__DEV__) console.log('Error listening to family doc:', error);
+                        logger.log('Error listening to family doc:', error);
                         setIsLoading(false);
                     });
                 } else {
@@ -92,7 +93,7 @@ export const useFamily = (): UseFamilyReturn => {
                 setIsLoading(false);
             }
         }, (error) => {
-            if (__DEV__) console.log('Error listening to user doc:', error);
+            logger.log('Error listening to user doc:', error);
             setIsLoading(false);
         });
 

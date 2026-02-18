@@ -110,7 +110,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
+        <ActivityIndicator size="large" color={theme.textPrimary} />
       </View>
     );
   }
@@ -139,8 +139,12 @@ export default function ProfileScreen() {
               {baby?.photoUrl ? (
                 <Image source={{ uri: baby.photoUrl }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? '#2D2D3A' : '#EEF2FF' }]}>
-                  {getGenderIcon()}
+                <View style={[styles.avatarPlaceholder, {
+                  backgroundColor: isDarkMode ? '#334155' : '#E2E8F0',
+                  borderWidth: 2,
+                  borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                }]}>
+                  <User size={48} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={2} />
                 </View>
               )}
               <View style={[styles.cameraBadge, { borderColor: theme.card }]}>

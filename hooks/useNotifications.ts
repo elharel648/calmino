@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { notificationService, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/notificationService';
@@ -46,7 +47,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         // Listeners for when app is open (for logging/debugging)
         // Note: The main handler is in App.tsx to ensure it works globally
         notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-            if (__DEV__) console.log('🔔 Notification received:', notification);
+            logger.log('🔔 Notification received:', notification);
             // Note: Saving to Firebase is handled in setNotificationHandler in App.tsx
             // This listener is just for logging/debugging
         });
@@ -56,10 +57,10 @@ export const useNotifications = (): UseNotificationsReturn => {
 
         return () => {
             if (notificationListener.current) {
-                Notifications.removeNotificationSubscription(notificationListener.current);
+                notificationListener.current.remove();
             }
             if (responseListener.current) {
-                Notifications.removeNotificationSubscription(responseListener.current);
+                responseListener.current.remove();
             }
         };
     }, []);

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 /**
  * Growth Measurement Service
  * Handles historical growth data (weight, height, head circumference)
@@ -72,7 +73,7 @@ export const addGrowthMeasurement = async (
         const docRef = await addDoc(collection(db, COLLECTION_NAME), measurement);
         return docRef.id;
     } catch (error) {
-        console.error('Error adding growth measurement:', error);
+        logger.error('Error adding growth measurement:', error);
         return null;
     }
 };
@@ -130,7 +131,7 @@ export const getGrowthMeasurements = async (
 
         return measurements;
     } catch (error) {
-        console.error('Error getting growth measurements:', error);
+        logger.error('Error getting growth measurements:', error);
         return [];
     }
 };
@@ -201,7 +202,7 @@ export const deleteGrowthMeasurement = async (measurementId: string): Promise<bo
         await deleteDoc(doc(db, COLLECTION_NAME, measurementId));
         return true;
     } catch (error) {
-        console.error('Error deleting growth measurement:', error);
+        logger.error('Error deleting growth measurement:', error);
         return false;
     }
 };
@@ -230,7 +231,7 @@ export const updateGrowthMeasurement = async (
         await updateDoc(doc(db, COLLECTION_NAME, measurementId), updateData);
         return true;
     } catch (error) {
-        console.error('Error updating growth measurement:', error);
+        logger.error('Error updating growth measurement:', error);
         return false;
     }
 };
