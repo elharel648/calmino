@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef, useMemo } from 'react';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, onSnapshot, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { AccessLevel, FamilyRole } from '../services/familyService';
@@ -220,21 +220,32 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
         setActiveChildState(child);
     }, []);
 
+    const contextValue = useMemo(() => ({
+        activeChild,
+        allChildren,
+        isLoading,
+        isGuest,
+        isParent,
+        canAccessReports,
+        canAccessProfile,
+        canAccessBabysitter,
+        setActiveChild,
+        refreshChildren,
+    }), [
+        activeChild,
+        allChildren,
+        isLoading,
+        isGuest,
+        isParent,
+        canAccessReports,
+        canAccessProfile,
+        canAccessBabysitter,
+        setActiveChild,
+        refreshChildren,
+    ]);
+
     return (
-        <ActiveChildContext.Provider
-            value={{
-                activeChild,
-                allChildren,
-                isLoading,
-                isGuest,
-                isParent,
-                canAccessReports,
-                canAccessProfile,
-                canAccessBabysitter,
-                setActiveChild,
-                refreshChildren,
-            }}
-        >
+        <ActiveChildContext.Provider value={contextValue}>
             {children}
         </ActiveChildContext.Provider>
     );

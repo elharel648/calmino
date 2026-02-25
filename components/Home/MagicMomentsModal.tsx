@@ -26,13 +26,15 @@ import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { Timestamp } from 'firebase/firestore';
-import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
+
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withTiming,
     withSpring,
     withDelay,
+    withRepeat,
+    withSequence,
 } from 'react-native-reanimated';
 import { logger } from '../../utils/logger';
 
@@ -71,6 +73,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
     // Simple animations
     const headerOpacity = useSharedValue(0);
     const contentOpacity = useSharedValue(0);
+    const iconScaleAnim = useSharedValue(1);
 
     useEffect(() => {
         if (visible) {
@@ -92,82 +95,57 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
 
             headerOpacity.value = withTiming(1, { duration: 300 });
             contentOpacity.value = withDelay(150, withTiming(1, { duration: 300 }));
+
+            // Continuous breathing/hover effect for the icon
+            iconScaleAnim.value = withRepeat(
+                withSequence(
+                    withTiming(1.08, { duration: 1500 }),
+                    withTiming(1, { duration: 1500 })
+                ),
+                -1,
+                true
+            );
         } else {
             headerOpacity.value = 0;
             contentOpacity.value = 0;
+            iconScaleAnim.value = 1;
             slideAnim.setValue(SCREEN_HEIGHT);
             backdropAnim.setValue(0);
         }
     }, [visible]);
 
-    // Swipe down to dismiss
+    // Swipe down to dismiss - matching perfect QuickReminderModal behavior
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: (evt) => {
-            const startY = evt.nativeEvent.pageY;
-            dragStartY.current = startY;
-            if (startY < 300) {
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                return true;
-            }
-            return false;
-        },
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-            if (isDragging.current) return true;
-            const currentY = evt.nativeEvent.pageY;
-            const isTopArea = currentY < 300;
-            const isDraggingDown = gestureState.dy > 8;
-            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.3;
-            const isScrollAtTop = scrollOffsetY.current <= 5;
-
-            if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-                isDragging.current = true;
-                dragStartY.current = currentY;
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                return true;
-            }
-            return false;
-        },
-        onPanResponderGrant: () => {
-            isDragging.current = true;
-            if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            const { dy, dx } = gestureState;
+            return dy > 10 && Math.abs(dy) > Math.abs(dx);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
                 slideAnim.setValue(gestureState.dy);
-                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                const opacity = Math.max(0, 1 - gestureState.dy / 300);
                 backdropAnim.setValue(opacity);
             }
         },
         onPanResponderRelease: (_, gestureState) => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-
-            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
-            if (shouldDismiss) {
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
                 if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
                 RNAnimated.parallel([
-                    RNAnimated.spring(slideAnim, {
+                    RNAnimated.timing(slideAnim, {
                         toValue: SCREEN_HEIGHT,
+                        duration: 250,
                         useNativeDriver: true,
-                        tension: 65,
-                        friction: 11,
                     }),
                     RNAnimated.timing(backdropAnim, {
                         toValue: 0,
-                        duration: 200,
+                        duration: 250,
                         useNativeDriver: true,
                     }),
                 ]).start(() => {
                     onClose();
-                    slideAnim.setValue(SCREEN_HEIGHT);
-                    backdropAnim.setValue(0);
                 });
             } else {
                 RNAnimated.parallel([
@@ -177,17 +155,12 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                         tension: 65,
                         friction: 11,
                     }),
-                    RNAnimated.timing(backdropAnim, {
+                    RNAnimated.spring(backdropAnim, {
                         toValue: 1,
-                        duration: 200,
                         useNativeDriver: true,
                     }),
                 ]).start();
             }
-        },
-        onPanResponderTerminate: () => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
         },
     }), [onClose, slideAnim, backdropAnim]);
 
@@ -197,6 +170,10 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
 
     const contentStyle = useAnimatedStyle(() => ({
         opacity: contentOpacity.value,
+    }));
+
+    const iconAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: iconScaleAnim.value }]
     }));
 
     const handleMonthPress = async (month: number) => {
@@ -304,8 +281,8 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
 
                     {/* Clean Header */}
                     <Animated.View style={[styles.header, headerStyle]} {...panResponder.panHandlers}>
-                        {/* Simple icon */}
-                        <View style={styles.iconContainer}>
+                        {/* Animated Simple icon */}
+                        <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
                             <LinearGradient
                                 colors={[ACCENT, '#A78BFA']}
                                 style={styles.iconGradient}
@@ -314,7 +291,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                             >
                                 <Sparkles size={28} color="#fff" strokeWidth={2} />
                             </LinearGradient>
-                        </View>
+                        </Animated.View>
 
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
                             רגעים קסומים
@@ -325,10 +302,9 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                     </Animated.View>
 
                     {/* Content */}
-                    <ScrollFadeWrapper fadeHeight={80}>
-                        <ScrollView
-                            ref={scrollViewRef}
-                            style={styles.scrollView}
+                    <ScrollView
+                        ref={scrollViewRef}
+                        style={styles.scrollView}
                         contentContainerStyle={styles.content}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
@@ -341,7 +317,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                             {/* Stats Section */}
                             {baby?.album && (
                                 <View style={styles.statsContainer}>
-                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)' }]}>
+                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
                                         <Text style={[styles.statNumber, { color: ACCENT }]}>
                                             {Object.keys(baby.album).length}
                                         </Text>
@@ -349,7 +325,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                             תמונות
                                         </Text>
                                     </View>
-                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)' }]}>
+                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
                                         <Text style={[styles.statNumber, { color: ACCENT }]}>
                                             {Object.keys(baby.album).filter(m => parseInt(m) <= 12).length}/12
                                         </Text>
@@ -379,13 +355,13 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                                         backgroundColor: photoUrl
                                                             ? 'transparent'
                                                             : isDarkMode
-                                                            ? 'rgba(255,255,255,0.03)'
-                                                            : 'rgba(0,0,0,0.02)',
+                                                                ? 'rgba(255,255,255,0.03)'
+                                                                : 'rgba(0,0,0,0.02)',
                                                         borderColor: photoUrl
                                                             ? ACCENT + '40'
                                                             : isDarkMode
-                                                            ? 'rgba(255,255,255,0.08)'
-                                                            : 'rgba(0,0,0,0.08)',
+                                                                ? 'rgba(255,255,255,0.08)'
+                                                                : 'rgba(0,0,0,0.08)',
                                                     },
                                                 ]}
                                                 onPress={() => handleMonthPress(month)}
@@ -621,8 +597,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                 </View>
                             )}
                         </Animated.View>
-                        </ScrollView>
-                    </ScrollFadeWrapper>
+                    </ScrollView>
                 </RNAnimatedView>
             </KeyboardAvoidingView>
 

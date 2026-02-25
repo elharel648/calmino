@@ -59,6 +59,8 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (14.0.11):
     - ExpoModulesCore
+  - ExpoGlassEffect (0.1.9):
+    - ExpoModulesCore
   - ExpoHaptics (15.0.8):
     - ExpoModulesCore
   - ExpoImageManipulator (14.0.8):
@@ -150,8 +152,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - PurchasesHybridCommon (17.37.0):
-    - RevenueCat (= 5.58.0)
+  - PurchasesHybridCommon (17.33.0):
+    - RevenueCat (= 5.57.1)
   - RCTDeprecation (0.81.5)
   - RCTRequired (0.81.5)
   - RCTTypeSafety (0.81.5):
@@ -1941,7 +1943,7 @@ PODS:
     - React-utils (= 0.81.5)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.81.5)
-  - RevenueCat (5.58.0)
+  - RevenueCat (5.57.1)
   - RNCAsyncStorage (2.2.0):
     - hermes-engine
     - RCTRequired
@@ -2009,8 +2011,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - RNPurchases (9.9.0):
-    - PurchasesHybridCommon (= 17.37.0)
+  - RNPurchases (9.8.0):
+    - PurchasesHybridCommon (= 17.33.0)
     - React-Core
   - RNReanimated (4.1.6):
     - hermes-engine
@@ -2178,7 +2180,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - RNWorklets (0.7.3):
+  - RNWorklets (0.5.1):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2200,9 +2202,9 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
-    - RNWorklets/worklets (= 0.7.3)
+    - RNWorklets/worklets (= 0.5.1)
     - Yoga
-  - RNWorklets/worklets (0.7.3):
+  - RNWorklets/worklets (0.5.1):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2224,9 +2226,9 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
-    - RNWorklets/worklets/apple (= 0.7.3)
+    - RNWorklets/worklets/apple (= 0.5.1)
     - Yoga
-  - RNWorklets/worklets/apple (0.7.3):
+  - RNWorklets/worklets/apple (0.5.1):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2257,7 +2259,7 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
-  - ActivityKitModule (from `../node_modules/activity-kit-module/ios`)
+  - ActivityKitModule (from `../local-modules/activity-kit-module-v2/ios`)
   - EXApplication (from `../node_modules/expo-application/ios`)
   - EXAV (from `../node_modules/expo-av/ios`)
   - EXConstants (from `../node_modules/expo-constants/ios`)
@@ -2274,6 +2276,7 @@ DEPENDENCIES:
   - ExpoDocumentPicker (from `../node_modules/expo-document-picker/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
+  - ExpoGlassEffect (from `../node_modules/expo-glass-effect/ios`)
   - ExpoHaptics (from `../node_modules/expo-haptics/ios`)
   - ExpoImageManipulator (from `../node_modules/expo-image-manipulator/ios`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
@@ -2368,7 +2371,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
-  - SharedAttributes (from `../node_modules/shared-attributes`)
+  - SharedAttributes (from `../local-modules/shared-attributes`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2382,7 +2385,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   ActivityKitModule:
-    :path: "../node_modules/activity-kit-module/ios"
+    :path: "../local-modules/activity-kit-module-v2/ios"
   EXApplication:
     :path: "../node_modules/expo-application/ios"
   EXAV:
@@ -2415,6 +2418,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-file-system/ios"
   ExpoFont:
     :path: "../node_modules/expo-font/ios"
+  ExpoGlassEffect:
+    :path: "../node_modules/expo-glass-effect/ios"
   ExpoHaptics:
     :path: "../node_modules/expo-haptics/ios"
   ExpoImageManipulator:
@@ -2603,7 +2608,7 @@ EXTERNAL SOURCES:
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
   SharedAttributes:
-    :path: "../node_modules/shared-attributes"
+    :path: "../local-modules/shared-attributes"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -2625,6 +2630,7 @@ SPEC CHECKSUMS:
   ExpoDocumentPicker: 7cd9e71a0f66fb19eb0a586d6f26eee1284692e0
   ExpoFileSystem: 858a44267a3e6e9057e0888ad7c7cfbf55d52063
   ExpoFont: f543ce20a228dd702813668b1a07b46f51878d47
+  ExpoGlassEffect: 93f0665d19063cb3b46bbd0a2ebea4a36b6a4e37
   ExpoHaptics: d3a6375d8dcc3a1083d003bc2298ff654fafb536
   ExpoImageManipulator: 607a5c8c88085381639458a46cc55fb9d3869148
   ExpoImagePicker: 1af3e4e31512d2f34c95c2a3018a3edc40aee748
@@ -2644,7 +2650,7 @@ SPEC CHECKSUMS:
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   lottie-ios: 8f959969761e9c45d70353667d00af0e5b9cadb3
   lottie-react-native: 04593e71e10b42fccb1ccacfbcf50c8ba4921c55
-  PurchasesHybridCommon: 5e012ecbd932092af743a8cec6bf55b605f2d89d
+  PurchasesHybridCommon: a7454fdf1d3ab71e09149a51c8ab1352be03b22a
   RCTDeprecation: 943572d4be82d480a48f4884f670135ae30bf990
   RCTRequired: 8f3cfc90cc25cf6e420ddb3e7caaaabc57df6043
   RCTTypeSafety: 16a4144ca3f959583ab019b57d5633df10b5e97c
@@ -2713,15 +2719,15 @@ SPEC CHECKSUMS:
   ReactCodegen: 9a5f0d4c80fe9bb1ff29309a76392825aabe68c7
   ReactCommon: 08810150b1206cc44aecf5f6ae19af32f29151a8
   ReactNativeDependencies: 71ce9c28beb282aa720ea7b46980fff9669f428a
-  RevenueCat: 88bb4229115b2badcce0e5a97f3dd8cc952b38c8
+  RevenueCat: 1da8d1116fcc89f5084fe1caf91b11e5e61b0f96
   RNCAsyncStorage: c8407cc394627a3a4cf56b457d594bfa822b6ab8
   RNDateTimePicker: 3b90b0645499e9ae1a86298f23275a648283d415
   RNGestureHandler: c3831b3b1b5014c6afab7fff7e4171394a3419ab
-  RNPurchases: 16d7bcf8f51f76e74fd553fc056770344fc4a2b5
+  RNPurchases: 862e44a40fc03117245e465fe11dd9cfea030f45
   RNReanimated: 8315d083516a6690fcdb479b56fca8fabf65a73d
   RNScreens: 33bbd1d0f86ed957557620dc94054b71db0a94ee
   RNSVG: ac3047fdd9c0ebac9d0b731a352bddf216af6242
-  RNWorklets: 9f996b65ea2510225270067ebc89ee6ec06df8cf
+  RNWorklets: 76fce72926e28e304afb44f0da23b2d24f2c1fa0
   SDWebImage: 1bb6a1b84b6fe87b972a102bdc77dd589df33477
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
   SharedAttributes: cbf7d09a894fcc9a5f94099cccf440f875414968

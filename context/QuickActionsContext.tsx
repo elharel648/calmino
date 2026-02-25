@@ -62,8 +62,8 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
             if (savedHidden) {
                 setHiddenActions(JSON.parse(savedHidden));
             }
-        } catch (error) {
-            logger.error('Error loading quick actions preferences:', error);
+        } catch {
+            // AsyncStorage can fail on simulator - non-critical
         }
     };
 
@@ -73,8 +73,8 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
                 AsyncStorage.setItem(STORAGE_KEY_ORDER, JSON.stringify(order)),
                 AsyncStorage.setItem(STORAGE_KEY_HIDDEN, JSON.stringify(hidden)),
             ]);
-        } catch (error) {
-            logger.error('Error saving quick actions preferences:', error);
+        } catch {
+            // AsyncStorage can fail on simulator - non-critical
         }
     };
 

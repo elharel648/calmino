@@ -4,6 +4,19 @@ import { Plus, ChevronDown, Check, X } from 'lucide-react-native';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
+import { logger } from '../../utils/logger';
+
+// Unique avatar colors per child index
+const AVATAR_COLORS = [
+    { bg: '#8B5CF6', light: '#EDE9FE' },  // Purple
+    { bg: '#3B82F6', light: '#DBEAFE' },  // Blue
+    { bg: '#EC4899', light: '#FCE7F3' },  // Pink
+    { bg: '#10B981', light: '#D1FAE5' },  // Green
+    { bg: '#F59E0B', light: '#FEF3C7' },  // Amber
+    { bg: '#6366F1', light: '#E0E7FF' },  // Indigo
+    { bg: '#EF4444', light: '#FEE2E2' },  // Red
+    { bg: '#14B8A6', light: '#CCFBF1' },  // Teal
+];
 
 interface ChildPickerProps {
     onChildSelect?: (child: ActiveChild) => void;
@@ -13,7 +26,7 @@ interface ChildPickerProps {
 }
 
 const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, onJoinWithCode, compact = false }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { allChildren, activeChild, setActiveChild } = useActiveChild();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
@@ -39,6 +52,8 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
     const getInitials = (name: string) => {
         return name.split(' ').map(n => n[0]).join('').slice(0, 2);
     };
+
+    const getChildColor = (index: number) => AVATAR_COLORS[index % AVATAR_COLORS.length];
 
     // Compact mode - Single avatar with dropdown
     if (compact) {
@@ -106,11 +121,11 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                             {/* Header with close button */}
                             <View style={styles.modalHeader}>
                                 <TouchableOpacity
-                                    style={styles.closeButton}
+                                    style={[styles.closeButton, { backgroundColor: isDarkMode ? '#2D2D3A' : '#F3F4F6' }]}
                                     onPress={() => setDropdownOpen(false)}
                                     activeOpacity={0.7}
                                 >
-                                    <X size={20} color="#9CA3AF" />
+                                    <X size={20} color={theme.textSecondary} />
                                 </TouchableOpacity>
                                 <Text style={[styles.dropdownTitle, { color: theme.textPrimary }]}>
                                     החלפת ילד
@@ -119,31 +134,32 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                             </View>
 
                             {/* Divider */}
-                            <View style={styles.divider} />
+                            <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
                             <ScrollView style={styles.childrenList} showsVerticalScrollIndicator={false}>
-                                {allChildren.map((child) => {
+                                {allChildren.map((child, index) => {
                                     const isActive = activeChild?.childId === child.childId;
                                     const isGuest = child.role === 'guest';
+                                    const color = getChildColor(index);
 
                                     return (
                                         <TouchableOpacity
                                             key={child.childId}
                                             style={[
                                                 styles.childRow,
-                                                isActive && styles.childRowActive
+                                                isActive && [styles.childRowActive, { backgroundColor: color.light, borderColor: `${color.bg}40` }]
                                             ]}
                                             onPress={() => handleSelect(child)}
                                             activeOpacity={0.7}
                                         >
-                                            {/* Avatar with gradient border for active */}
+                                            {/* Avatar */}
                                             <View style={[
                                                 styles.rowAvatarWrapper,
-                                                isActive && styles.rowAvatarWrapperActive
+                                                isActive && { borderColor: color.bg }
                                             ]}>
                                                 {child.photoUrl && !imageErrors.has(child.childId) ? (
-                                                    <Image 
-                                                        source={{ uri: child.photoUrl }} 
+                                                    <Image
+                                                        source={{ uri: child.photoUrl }}
                                                         style={styles.rowAvatar}
                                                         onError={() => {
                                                             setImageErrors(prev => new Set(prev).add(child.childId));
@@ -152,12 +168,9 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                                 ) : (
                                                     <View style={[
                                                         styles.rowAvatarPlaceholder,
-                                                        { backgroundColor: isActive ? theme.primary : '#E5E7EB' }
+                                                        { backgroundColor: color.bg }
                                                     ]}>
-                                                        <Text style={[
-                                                            styles.rowInitials,
-                                                            { color: isActive ? '#fff' : theme.textPrimary }
-                                                        ]}>
+                                                        <Text style={styles.rowInitials}>
                                                             {getInitials(child.childName)}
                                                         </Text>
                                                     </View>
@@ -169,7 +182,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                                 <Text style={[
                                                     styles.rowName,
                                                     { color: theme.textPrimary },
-                                                    isActive && styles.rowNameActive
+                                                    isActive && { fontWeight: '700', color: color.bg }
                                                 ]}>
                                                     {child.childName}
                                                 </Text>
@@ -180,10 +193,10 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                                 )}
                                             </View>
 
-                                            {/* Checkmark for active */}
+                                            {/* Checkmark */}
                                             {isActive && (
-                                                <View style={styles.checkCircle}>
-                                                    <Check size={14} color="#fff" />
+                                                <View style={[styles.checkCircle, { backgroundColor: color.bg }]}>
+                                                    <Check size={14} color="#fff" strokeWidth={3} />
                                                 </View>
                                             )}
                                         </TouchableOpacity>
@@ -192,32 +205,32 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                             </ScrollView>
 
                             {/* Divider */}
-                            <View style={styles.divider} />
+                            <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
                             {/* Add Child Options */}
                             {onAddChild && (
                                 <View style={styles.addOptionsSection}>
-                                    <Text style={styles.addSectionTitle}>הוספת ילד</Text>
+                                    <Text style={[styles.addSectionTitle, { color: theme.textTertiary }]}>הוספת ילד</Text>
 
                                     {/* Register new child */}
                                     <TouchableOpacity
-                                        style={styles.addOptionRow}
+                                        style={[styles.addOptionRow, { backgroundColor: isDarkMode ? '#1E1E2A' : '#F9FAFB' }]}
                                         onPress={handleAddChild}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: '#E0E7FF' }]}>
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#E0E7FF' }]}>
                                             <Plus size={18} color="#6366F1" />
                                         </View>
                                         <View style={styles.addOptionText}>
-                                            <Text style={styles.addOptionTitle}>רישום ילד חדש</Text>
-                                            <Text style={styles.addOptionSubtitle}>צור פרופיל חדש לילד</Text>
+                                            <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>רישום ילד חדש</Text>
+                                            <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>צור פרופיל חדש לילד</Text>
                                         </View>
-                                        <ChevronDown size={16} color="#9CA3AF" style={{ transform: [{ rotate: '90deg' }] }} />
+                                        <ChevronDown size={16} color={theme.textTertiary} style={{ transform: [{ rotate: '90deg' }] }} />
                                     </TouchableOpacity>
 
                                     {/* Join with code */}
                                     <TouchableOpacity
-                                        style={styles.addOptionRow}
+                                        style={[styles.addOptionRow, { backgroundColor: isDarkMode ? '#1E1E2A' : '#F9FAFB' }]}
                                         onPress={() => {
                                             try {
                                                 logger.log('🔗 Join with code button pressed');
@@ -234,14 +247,14 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: '#FEF3C7' }]}>
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FEF3C7' }]}>
                                             <Text style={{ fontSize: 16 }}>🔗</Text>
                                         </View>
                                         <View style={styles.addOptionText}>
-                                            <Text style={styles.addOptionTitle}>הצטרפות עם קוד</Text>
-                                            <Text style={styles.addOptionSubtitle}>קיבלת קוד מהשותף?</Text>
+                                            <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>הצטרפות עם קוד</Text>
+                                            <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>קיבלת קוד מהשותף?</Text>
                                         </View>
-                                        <ChevronDown size={16} color="#9CA3AF" style={{ transform: [{ rotate: '90deg' }] }} />
+                                        <ChevronDown size={16} color={theme.textTertiary} style={{ transform: [{ rotate: '90deg' }] }} />
                                     </TouchableOpacity>
                                 </View>
                             )}
@@ -533,7 +546,7 @@ const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        backgroundColor: 'rgba(0,0,0,0.45)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
@@ -580,6 +593,7 @@ const styles = StyleSheet.create({
     rowInitials: {
         fontSize: 16,
         fontWeight: '700',
+        color: '#fff',
     },
     rowTextSection: {
         flex: 1,
@@ -624,23 +638,15 @@ const styles = StyleSheet.create({
         marginVertical: 12,
     },
     childRowActive: {
-        backgroundColor: '#EEF2FF',
         borderWidth: 1,
-        borderColor: '#C7D2FE',
     },
     rowAvatarWrapper: {
         width: 48,
         height: 48,
         borderRadius: 24,
         padding: 2,
-    },
-    rowAvatarWrapperActive: {
         borderWidth: 2,
-        borderColor: '#6366F1',
-    },
-    rowNameActive: {
-        fontWeight: '700',
-        color: '#4F46E5',
+        borderColor: 'transparent',
     },
     checkCircle: {
         width: 24,

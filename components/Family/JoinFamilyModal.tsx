@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,11 +9,13 @@ import {
     ActivityIndicator,
     Platform,
     KeyboardAvoidingView,
+    Animated,
 } from 'react-native';
-import { X, Users, LogIn } from 'lucide-react-native';
+import { X, Users, LogIn, CheckCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { joinFamily } from '../../services/familyService';
-import { logger } from '../../utils/logger';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface JoinFamilyModalProps {
     visible: boolean;
@@ -26,15 +28,50 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
     onClose,
     onSuccess,
 }) => {
+    const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
-    console.log('\ud83d\udd17 JoinFamilyModal RENDER - visible:', visible);
+    // Success animation
+    const successScale = useRef(new Animated.Value(0)).current;
+    const successOpacity = useRef(new Animated.Value(0)).current;
+
+    const playSuccessAndClose = (message: string) => {
+        setShowSuccess(true);
+        setSuccessMessage(message);
+        successScale.setValue(0);
+        successOpacity.setValue(0);
+
+        Animated.parallel([
+            Animated.spring(successScale, {
+                toValue: 1,
+                tension: 50,
+                friction: 7,
+                useNativeDriver: true,
+            }),
+            Animated.timing(successOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        // Auto-close after 1.5 seconds
+        setTimeout(() => {
+            setShowSuccess(false);
+            setCode('');
+            onClose();
+            onSuccess?.();
+        }, 1500);
+    };
 
     const handleJoin = async () => {
         if (code.length !== 6) {
-            setError('הקוד צריך להיות 6 ספרות');
+            setError(t('joinFamily.codeMustBe6'));
             return;
         }
 
@@ -42,18 +79,14 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         setError('');
 
         try {
-            // Smart join - automatically detects if code is for family or guest
             const result = await joinFamily(code);
-
             setLoading(false);
 
             if (result.success) {
                 if (Platform.OS !== 'web') {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
-                setCode('');
-                onClose();
-                onSuccess?.();
+                playSuccessAndClose(t('joinFamily.success'));
             } else {
                 if (Platform.OS !== 'web') {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -65,12 +98,11 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             }
-            setError('שגיאה בהצטרפות. נסה שוב.');
+            setError(t('joinFamily.error'));
         }
     };
 
     const handleCodeChange = (text: string) => {
-        // Only allow digits and max 6 characters
         const cleaned = text.replace(/[^0-9]/g, '').slice(0, 6);
         setCode(cleaned);
         setError('');
@@ -82,59 +114,80 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                 style={styles.overlay}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
-                <View style={styles.modalContent}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                            <X size={22} color="#9CA3AF" />
-                        </TouchableOpacity>
-                        <Text style={styles.title}>הצטרף למשפחה</Text>
-                        <Users size={22} color="#10B981" />
-                    </View>
+                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                    {showSuccess ? (
+                        /* Success Animation Screen */
+                        <Animated.View style={[styles.successContainer, { transform: [{ scale: successScale }], opacity: successOpacity }]}>
+                            <View style={styles.successIconCircle}>
+                                <CheckCircle size={48} color="#10B981" />
+                            </View>
+                            <Text style={[styles.successText, { color: theme.textPrimary }]}>
+                                {successMessage}
+                            </Text>
+                        </Animated.View>
+                    ) : (
+                        <>
+                            {/* Header */}
+                            <View style={styles.header}>
+                                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                                    <X size={22} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>{t('joinFamily.title')}</Text>
+                                <Users size={22} color="#10B981" />
+                            </View>
 
-                    {/* Description */}
-                    <Text style={styles.description}>
-                        הזן את קוד ההזמנה שקיבלת{'\n'}
-                        המערכת תזהה אוטומטית אם זה קוד למשפחה (גישה מלאה) או קוד לאורח (24 שעות)
-                    </Text>
+                            {/* Description */}
+                            <Text style={[styles.description, { color: theme.textSecondary }]}>
+                                {t('joinFamily.description')}{'\n'}
+                                {t('joinFamily.autoDetect')}
+                            </Text>
 
-                    {/* Code Input */}
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>קוד הזמנה</Text>
-                        <TextInput
-                            style={[styles.codeInput, error ? styles.codeInputError : null]}
-                            value={code}
-                            onChangeText={handleCodeChange}
-                            placeholder="000000"
-                            placeholderTextColor="#9CA3AF"
-                            keyboardType="number-pad"
-                            maxLength={6}
-                        // autoFocus removed to prevent crash on mount
-                        />
-                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                    </View>
+                            {/* Code Input */}
+                            <View style={styles.inputContainer}>
+                                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>{t('joinFamily.codeLabel')}</Text>
+                                <TextInput
+                                    style={[styles.codeInput, {
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
+                                        color: theme.textPrimary,
+                                        borderColor: error
+                                            ? '#EF4444'
+                                            : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
+                                    }, error && {
+                                        backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2',
+                                    }]}
+                                    value={code}
+                                    onChangeText={handleCodeChange}
+                                    placeholder="000000"
+                                    placeholderTextColor={theme.textSecondary}
+                                    keyboardType="number-pad"
+                                    maxLength={6}
+                                />
+                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                            </View>
 
-                    {/* Join Button */}
-                    <TouchableOpacity
-                        style={[styles.joinBtn, code.length !== 6 && styles.joinBtnDisabled]}
-                        onPress={handleJoin}
-                        disabled={loading || code.length !== 6}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <>
-                                <LogIn size={20} color="#fff" />
-                                <Text style={styles.joinBtnText}>הצטרף</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                            {/* Join Button */}
+                            <TouchableOpacity
+                                style={[styles.joinBtn, code.length !== 6 && styles.joinBtnDisabled]}
+                                onPress={handleJoin}
+                                disabled={loading || code.length !== 6}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <>
+                                        <LogIn size={20} color="#fff" />
+                                        <Text style={styles.joinBtnText}>{t('joinFamily.join')}</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
 
-                    {/* Tip */}
-                    <Text style={styles.tip}>
-                        💡 קוד משפחה: גישה מלאה לכל הילדים{'\n'}
-                        💡 קוד אורח: גישה ל-24 שעות בלבד
-                    </Text>
+                            {/* Tip */}
+                            <Text style={[styles.tip, { color: theme.textSecondary }]}>
+                                {t('joinFamily.tipFamily')}{'\n'}
+                                {t('joinFamily.tipGuest')}
+                            </Text>
+                        </>
+                    )}
                 </View>
             </KeyboardAvoidingView>
         </Modal>
@@ -148,7 +201,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#fff',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         padding: 24,
@@ -166,11 +218,9 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: '800',
-        color: '#1F2937',
     },
     description: {
         fontSize: 14,
-        color: '#6B7280',
         textAlign: 'center',
         marginBottom: 24,
         lineHeight: 22,
@@ -181,12 +231,10 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#374151',
         marginBottom: 8,
         textAlign: 'right',
     },
     codeInput: {
-        backgroundColor: '#F9FAFB',
         borderRadius: 16,
         paddingVertical: 20,
         paddingHorizontal: 16,
@@ -194,13 +242,7 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         textAlign: 'center',
         letterSpacing: 8,
-        color: '#1F2937',
         borderWidth: 2,
-        borderColor: '#E5E7EB',
-    },
-    codeInputError: {
-        borderColor: '#EF4444',
-        backgroundColor: '#FEF2F2',
     },
     errorText: {
         fontSize: 12,
@@ -228,7 +270,26 @@ const styles = StyleSheet.create({
     },
     tip: {
         fontSize: 12,
-        color: '#9CA3AF',
+        textAlign: 'center',
+    },
+    // Success animation
+    successContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 60,
+    },
+    successIconCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: 'rgba(16,185,129,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    successText: {
+        fontSize: 20,
+        fontWeight: '700',
         textAlign: 'center',
     },
 });

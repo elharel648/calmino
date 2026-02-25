@@ -157,8 +157,8 @@ export const useGuestExpiryWatcher = (familyId: string | null): UseGuestExpiryWa
         // Initial check
         checkForExpiredGuests();
 
-        // Check every 30 seconds
-        intervalRef.current = setInterval(checkForExpiredGuests, 30 * 1000);
+        // Check every 60 seconds
+        intervalRef.current = setInterval(checkForExpiredGuests, 60 * 1000);
 
         return () => {
             if (intervalRef.current) {

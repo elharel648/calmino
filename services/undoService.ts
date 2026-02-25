@@ -21,7 +21,7 @@ class UndoService {
         }
         this.undoTimeout = setTimeout(() => {
             this.lastAction = null;
-        }, 5000);
+        }, 10000);
     }
 
     getLastAction(): UndoableAction | null {

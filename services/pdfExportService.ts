@@ -172,7 +172,7 @@ function generateReportHTML(
             <div class="subtitle">
                 תקופה: ${formatDate(startDate)} - ${formatDate(endDate)}<br>
                 נוצר ב: ${formatDate(new Date())}<br>
-                מערכת CalmParent
+                מערכת Calmino
             </div>
 
             <h2>📊 פעילויות יומיות</h2>
@@ -207,8 +207,8 @@ function generateReportHTML(
             ` : ''}
 
             <div class="footer">
-                דוח זה נוצר באמצעות אפליקציית CalmParent<br>
-                למידע נוסף: calmparent.co.il
+                דוח זה נוצר באמצעות אפליקציית Calmino<br>
+                למידע נוסף: calmino.co.il
             </div>
         </body>
         </html>

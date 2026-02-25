@@ -6,13 +6,14 @@ import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     TouchableOpacity,
     Image,
     RefreshControl,
     Platform,
     ActivityIndicator,
     TextInput,
+    FlatList,
+    ListRenderItem
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronRight,
@@ -27,6 +28,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import useSitters, { Sitter } from '../hooks/useSitters';
 import { ISRAELI_CITIES } from '../constants/israeliCities';
 import { logger } from '../utils/logger';
+import SitterCard from '../components/BabySitter/SitterCard';
+import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
+import PremiumPaywall from '../components/Premium/PremiumPaywall';
 
 const BabySitterScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -42,6 +46,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // State
     const [userMode, setUserMode] = useState<'parent' | 'sitter'>('parent');
+    const [isPaywallOpen, setIsPaywallOpen] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance'>('rating');
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
@@ -184,7 +189,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     if (isMounted && addresses && addresses.length > 0) {
                         const address = addresses[0];
                         let detectedCity: string | null = null;
-                        
+
                         if (address?.city && typeof address.city === 'string') {
                             detectedCity = address.city;
                         } else {
@@ -194,7 +199,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 detectedCity = cityFallback;
                             }
                         }
-                        
+
                         if (detectedCity) {
                             setUserCity(detectedCity);
                             // Auto-filter by detected city - try to match with Israeli cities list
@@ -204,7 +209,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 setFilterCity(normalizedCity);
                             } else {
                                 // Try to find similar city name (case-insensitive)
-                                const matchedCity = ISRAELI_CITIES.find(city => 
+                                const matchedCity = ISRAELI_CITIES.find(city =>
                                     city.toLowerCase() === normalizedCity.toLowerCase() ||
                                     city.toLowerCase().includes(normalizedCity.toLowerCase()) ||
                                     normalizedCity.toLowerCase().includes(city.toLowerCase())
@@ -505,120 +510,17 @@ const BabySitterScreen = ({ navigation }: any) => {
         }
     }, [navigation]);
 
+    // Render Sitter Card component for FlatList
+    const renderSitterItem: ListRenderItem<Sitter> = useCallback(({ item }) => (
+        <SitterCard
+            sitter={item}
+            theme={theme}
+            isDarkMode={isDarkMode}
+            onPress={handleSitterPress}
+        />
+    ), [theme, isDarkMode, handleSitterPress]);
+
     // ========== COMPONENTS ==========
-
-    // Minimalist Sitter Card
-    const SitterCard = ({ sitter }: { sitter: Sitter }) => {
-        const [imageError, setImageError] = useState(false);
-        const rating = typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating > 0
-            ? Math.max(0, Math.min(5, sitter.rating)) : 0;
-        const price = typeof sitter.pricePerHour === 'number' && !isNaN(sitter.pricePerHour) && sitter.pricePerHour > 0
-            ? sitter.pricePerHour : 50;
-        // Hide unrealistic distances (>100 km - babysitters search is local)
-        const rawDistance = typeof sitter.distance === 'number' && !isNaN(sitter.distance) ? sitter.distance : null;
-        const distance = rawDistance !== null && rawDistance > 0 && rawDistance <= 100 ? rawDistance : null;
-
-        return (
-            <TouchableOpacity
-                style={[styles.sitterCard, {
-                    backgroundColor: theme.card,
-                    borderColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
-                }]}
-                onPress={() => handleSitterPress(sitter)}
-                activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel={`${sitter.name || 'סיטר'}, דירוג ${rating.toFixed(1)}, מחיר ${price} לשעה`}
-            >
-                <View style={styles.sitterCardTop}>
-                    {/* Photo */}
-                    <View style={styles.sitterPhotoWrapper}>
-                        {sitter.photoUrl && !imageError ? (
-                            <Image
-                                source={{ uri: sitter.photoUrl }}
-                                style={styles.sitterPhoto}
-                                onError={() => setImageError(true)}
-                            />
-                        ) : (
-                            <View style={[styles.sitterPhotoPlaceholder, {
-                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                            }]}>
-                                <User size={26} color={theme.textSecondary} strokeWidth={1.5} />
-                            </View>
-                        )}
-                        {sitter.isAvailable && (
-                            <View style={[styles.availableDot, { borderColor: theme.card }]} />
-                        )}
-                    </View>
-
-                    {/* Info - center */}
-                    <View style={styles.sitterInfo}>
-                        {/* Name row */}
-                        <View style={styles.sitterHeader}>
-                            <Text style={[styles.sitterName, { color: theme.textPrimary }]} numberOfLines={1}>
-                                {sitter.name}
-                            </Text>
-                            {sitter.isVerified && (
-                                <View style={[styles.verifiedDot, { backgroundColor: isDarkMode ? '#fff' : '#111' }]}>
-                                    <Award size={9} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                                </View>
-                            )}
-                        </View>
-
-                        {/* Rating + Experience */}
-                        <View style={styles.sitterMeta}>
-                            {rating > 0 ? (
-                                <View style={styles.ratingBadge}>
-                                    <Star size={11} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
-                                    <Text style={[styles.ratingText, { color: theme.textPrimary }]}>
-                                        {rating.toFixed(1)}
-                                    </Text>
-                                    {sitter.reviewCount > 0 && (
-                                        <Text style={[styles.reviewCountText, { color: theme.textSecondary }]}>
-                                            ({sitter.reviewCount})
-                                        </Text>
-                                    )}
-                                </View>
-                            ) : null}
-                            {rating > 0 && sitter.experience ? (
-                                <View style={[styles.metaDot, { backgroundColor: theme.textSecondary }]} />
-                            ) : null}
-                            {sitter.experience ? (
-                                <Text style={[styles.experienceText, { color: theme.textSecondary }]} numberOfLines={1}>
-                                    {sitter.experience}
-                                </Text>
-                            ) : null}
-                        </View>
-
-                        {/* City + Distance */}
-                        {(sitter.city || distance) ? (
-                            <View style={styles.sitterLocationRow}>
-                                <MapPin size={10} color={theme.textSecondary} strokeWidth={2} />
-                                {sitter.city ? (
-                                    <Text style={[styles.locationText, { color: theme.textSecondary }]}>
-                                        {sitter.city}
-                                    </Text>
-                                ) : null}
-                                {sitter.city && distance ? (
-                                    <Text style={[styles.locationText, { color: theme.textSecondary }]}>·</Text>
-                                ) : null}
-                                {distance ? (
-                                    <Text style={[styles.locationText, { color: theme.textSecondary }]}>
-                                        {distance < 1 ? `${Math.round(distance * 1000)} מ'` : `${distance.toFixed(1)} ק"מ`}
-                                    </Text>
-                                ) : null}
-                            </View>
-                        ) : null}
-                    </View>
-
-                    {/* Price - right side, clean */}
-                    <View style={styles.priceSection}>
-                        <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>₪{price}</Text>
-                        <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>לשעה</Text>
-                    </View>
-                </View>
-            </TouchableOpacity>
-        );
-    };
 
     // Sort Pills
     const SORT_OPTIONS = [
@@ -902,7 +804,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         </View>
                     )}
 
-                    {/* Sitters List */}
+                    {/* Sitters List - Switched to FlatList */}
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="large" color={theme.textPrimary} />
@@ -913,18 +815,19 @@ const BabySitterScreen = ({ navigation }: any) => {
                             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('babysitter.noSitters')}</Text>
                         </View>
                     ) : (
-                        <ScrollView
+                        <FlatList
+                            data={sortedSitters}
+                            renderItem={renderSitterItem}
+                            keyExtractor={(item) => item.id}
                             showsVerticalScrollIndicator={false}
                             refreshControl={
                                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                             }
                             contentContainerStyle={styles.scrollContent}
-                        >
-                            {sortedSitters.map((sitter) => (
-                                <SitterCard key={sitter.id} sitter={sitter} />
-                            ))}
-                            <View style={{ height: 100 }} />
-                        </ScrollView>
+                            ListFooterComponent={<View style={{ height: 180 }} />}
+                            initialNumToRender={5}
+                            windowSize={10}
+                        />
                     )}
                 </>
             )}
@@ -944,6 +847,15 @@ const BabySitterScreen = ({ navigation }: any) => {
                     )}
                 </>
             )}
+            <DynamicPromoModal
+                currentScreenName="BabySitter"
+                onNavigateToPaywall={() => setIsPaywallOpen(true)}
+            />
+            <PremiumPaywall
+                visible={isPaywallOpen}
+                onClose={() => setIsPaywallOpen(false)}
+                trigger="promo_modal_babysitter"
+            />
         </View>
     );
 };
@@ -1099,138 +1011,10 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 
-    // Sitter Card
+    // Sitter Card - STYLES MOVED TO SitterCard.tsx, keeping scrollContent
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 4,
-    },
-    sitterCard: {
-        borderRadius: 14,
-        marginBottom: 8,
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderWidth: StyleSheet.hairlineWidth,
-    },
-    sitterCardTop: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 12,
-    },
-    sitterPhotoWrapper: {
-        position: 'relative',
-        flexShrink: 0,
-    },
-    sitterPhoto: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-    },
-    sitterPhotoPlaceholder: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    availableDot: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 13,
-        height: 13,
-        borderRadius: 7,
-        backgroundColor: '#10B981',
-        borderWidth: 2,
-    },
-    sitterInfo: {
-        flex: 1,
-        alignItems: 'flex-end',
-        gap: 3,
-    },
-    sitterHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-    },
-    verifiedDot: {
-        width: 17,
-        height: 17,
-        borderRadius: 9,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    sitterName: {
-        fontSize: 15,
-        fontWeight: '700',
-        letterSpacing: -0.2,
-    },
-    sitterMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-    },
-    metaDot: {
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        opacity: 0.4,
-    },
-    metaDivider: {
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        opacity: 0.4,
-    },
-    ratingBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 3,
-    },
-    ratingText: {
-        fontSize: 12,
-        fontWeight: '700',
-    },
-    reviewCountText: {
-        fontSize: 11,
-        fontWeight: '400',
-        opacity: 0.7,
-    },
-    experienceText: {
-        fontSize: 12,
-        fontWeight: '400',
-    },
-    sitterLocationRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    locationChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 3,
-    },
-    locationText: {
-        fontSize: 11,
-        fontWeight: '400',
-    },
-    distanceText: {
-        fontSize: 11,
-        fontWeight: '400',
-    },
-    // Price - clean minimal, no box
-    priceSection: {
-        alignItems: 'flex-end',
-        flexShrink: 0,
-    },
-    priceAmount: {
-        fontSize: 17,
-        fontWeight: '800',
-        letterSpacing: -0.5,
-    },
-    priceLabel: {
-        fontSize: 10,
-        fontWeight: '400',
-        opacity: 0.6,
     },
 
     // Loading & Empty
@@ -1258,7 +1042,7 @@ const styles = StyleSheet.create({
     registrationContainer: {
         flex: 1,
         paddingHorizontal: 20,
-        paddingBottom: 120,
+        paddingBottom: 160,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1297,6 +1081,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 40,
+        paddingBottom: 160,
         gap: 12,
     },
     sitterModeTitle: {
@@ -1355,9 +1140,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 14,
         borderWidth: StyleSheet.hairlineWidth,
-        gap: 10,
         ...SHADOWS.subtle,
-        gap: 10,
     },
     locationInput: {
         flex: 1,

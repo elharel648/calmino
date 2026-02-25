@@ -19,8 +19,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Baby, Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase } from 'lucide-react-native';
-import * as WebBrowser from 'expo-web-browser';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User } from 'lucide-react-native';
+import LegalModal, { LegalType } from '../components/Legal/LegalModal';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
@@ -34,6 +34,7 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
   OAuthProvider,
+  updateProfile,
 } from 'firebase/auth';
 
 import { auth, db } from '../services/firebaseConfig';
@@ -42,8 +43,6 @@ import { joinFamily } from '../services/familyService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { logger } from '../utils/logger';
-
-WebBrowser.maybeCompleteAuthSession();
 
 type LoginScreenProps = {
   onLoginSuccess: () => void;
@@ -70,16 +69,20 @@ const getPasswordStrengthColor = (password: string): string => {
 };
 
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
-  logger.log('🎨 LoginScreen rendered with theme:', isDarkMode ? 'dark' : 'light');
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [attempts, setAttempts] = useState(0);
   const [lockoutTime, setLockoutTime] = useState<number | null>(null);
 
@@ -87,6 +90,9 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [showJoinCodeModal, setShowJoinCodeModal] = useState(false);
   const [pendingInviteCode, setPendingInviteCode] = useState('');
   const [joiningFamily, setJoiningFamily] = useState(false);
+
+  // Legal modals
+  const [legalModal, setLegalModal] = useState<LegalType | null>(null);
 
   // Babysitter registration
   const [registerAsBabysitter, setRegisterAsBabysitter] = useState(false);
@@ -99,7 +105,9 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  const nameRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
   // Google Auth - Using iOS native client ID from GoogleService-Info.plist
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
@@ -212,8 +220,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   // --- Main auth handler ---
   const handleAuth = async () => {
     Keyboard.dismiss();
+    setDisplayNameError('');
     setEmailError('');
     setPasswordError('');
+    setConfirmPasswordError('');
 
     // Check lockout
     if (lockoutTime && Date.now() < lockoutTime) {
@@ -222,9 +232,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       return;
     }
 
+    // Validate name (signup only)
+    if (!isLogin && !displayName.trim()) {
+      setDisplayNameError(t('login.errors.enterName'));
+      triggerShake();
+      return;
+    }
+
     // Validate email
     if (!email) {
-      setEmailError(t('login.errors.enterPassword'));
+      setEmailError(t('login.errors.enterEmail'));
       triggerShake();
       return;
     }
@@ -242,6 +259,13 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     }
     if (!isLogin && password.length < 6) {
       setPasswordError(t('login.errors.passwordMinLength'));
+      triggerShake();
+      return;
+    }
+
+    // Validate confirm password (signup only)
+    if (!isLogin && password !== confirmPassword) {
+      setConfirmPasswordError(t('login.errors.passwordsDoNotMatch'));
       triggerShake();
       return;
     }
@@ -309,11 +333,13 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: displayName.trim() });
         await sendEmailVerification(userCredential.user);
 
-        // Save user agreement to Firestore
+        // Save user agreement and profile to Firestore
         const userRef = doc(db, 'users', userCredential.user.uid);
         await setDoc(userRef, {
+          displayName: displayName.trim(),
           agreements: {
             termsOfService: {
               agreed: true,
@@ -326,6 +352,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               version: '2026-01-20', // Update this date when privacy policy changes
             },
           },
+          ...(registerAsBabysitter ? { isSitter: true, sitterActive: false } : {}),
         }, { merge: true });
 
         // If user has a pending invite code, join the family
@@ -402,31 +429,47 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     }
   };
 
-  const isFormValid = email.length > 0 && password.length >= 6 && (isLogin || (agreedToTerms && agreedToPrivacy));
+  const isFormValid = email.length > 0 && password.length >= 6 && (
+    isLogin || (
+      displayName.trim().length > 0 &&
+      confirmPassword === password &&
+      agreedToTerms &&
+      agreedToPrivacy
+    )
+  );
   const passwordStrength = validatePassword(password, t);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="light" />
 
-      {/* Header */}
+      {/* Premium Header */}
       <View style={styles.header}>
-        <LinearGradient colors={['#0F172A', '#1E1B4B', '#312E81']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={['#0F0A1A', '#1a1040', '#2D1B69']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Subtle ambient glow */}
+        <View style={styles.ambientGlow} />
+        <View style={styles.ambientGlow2} />
+
         <View style={styles.headerContent}>
           <View style={styles.premiumLogoContainer}>
-            <View style={styles.glassLogoBackground}>
-              <Image
-                source={require('../assets/icon.png')}
-                style={styles.premiumLogoImage}
-                resizeMode="contain"
-              />
+            <View style={styles.logoRing}>
+              <View style={styles.glassLogoBackground}>
+                <Image
+                  source={require('../assets/icon.png')}
+                  style={styles.premiumLogoImage}
+                  resizeMode="contain"
+                />
+              </View>
             </View>
           </View>
           <Text style={styles.appTitle}>{t('login.appName')}</Text>
           <Text style={styles.appSubtitle}>{t('login.appSubtitle')}</Text>
         </View>
-        <View style={[styles.blob, { top: -50, left: -50, backgroundColor: theme.primary, opacity: 0.2 }]} />
-        <View style={[styles.blob, { top: 50, right: -20, backgroundColor: theme.accent, opacity: 0.2 }]} />
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.formContainer}>
@@ -440,24 +483,62 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         ]}>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-            {/* Security badge */}
-            <View style={styles.securityBadge}>
-              <Shield size={14} color="#10B981" />
-              <Text style={styles.securityText}>{t('login.security')}</Text>
-            </View>
+            <Text style={[styles.formTitle, { color: theme.textPrimary }]}>
+              {isLogin ? t('login.welcomeBack') : t('login.createAccount')}
+            </Text>
+            <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>
+              {isLogin ? t('login.enterDetails') : t('login.joinCommunity')}
+            </Text>
 
-            <Text style={[styles.formTitle, { color: theme.textPrimary }]}>{isLogin ? t('login.welcomeBack') : t('login.createAccount')}</Text>
-            <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>{isLogin ? t('login.enterDetails') : t('login.joinCommunity')}</Text>
+            {/* Display Name Input - signup only */}
+            {!isLogin && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>{t('login.fullName')}</Text>
+                <View style={[
+                  styles.inputWrapper,
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
+                  displayNameError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' }
+                ]}>
+                  <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
+                    <User size={16} color={displayNameError ? '#EF4444' : theme.textTertiary} />
+                  </View>
+                  <TextInput
+                    ref={nameRef}
+                    style={[styles.input, { color: theme.textPrimary }]}
+                    placeholder={t('login.fullNamePlaceholder')}
+                    placeholderTextColor={theme.textTertiary}
+                    value={displayName}
+                    onChangeText={(text) => { setDisplayName(text); setDisplayNameError(''); }}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    returnKeyType="next"
+                    onSubmitEditing={() => {
+                      const emailInput = (passwordRef.current as any)?.props?.ref;
+                      passwordRef.current?.focus();
+                    }}
+                    textAlign="right"
+                  />
+                </View>
+                {displayNameError ? (
+                  <View style={styles.errorRow}>
+                    <AlertCircle size={12} color="#EF4444" />
+                    <Text style={[styles.errorText, { color: '#EF4444' }]}>{displayNameError}</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
 
             {/* Email Input */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textPrimary }]}>{t('login.email')}</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{t('login.email')}</Text>
               <View style={[
                 styles.inputWrapper,
-                { backgroundColor: theme.inputBackground, borderColor: theme.border },
-                emailError && [styles.inputError, { borderColor: theme.danger, backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }]
+                { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
+                emailError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' }
               ]}>
-                <Mail size={20} color={emailError ? theme.danger : theme.textTertiary} style={{ marginLeft: 10 }} />
+                <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
+                  <Mail size={16} color={emailError ? '#EF4444' : theme.textTertiary} />
+                </View>
                 <TextInput
                   style={[styles.input, { color: theme.textPrimary }]}
                   placeholder="your@email.com"
@@ -473,26 +554,30 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   accessibilityHint={t('login.emailHint')}
                 />
                 {email.length > 0 && validateEmail(email) && (
-                  <Check size={18} color={theme.success} style={{ marginRight: 12 }} />
+                  <View style={[styles.checkBadge, { backgroundColor: '#10B981' }]}>
+                    <Check size={12} color="#fff" strokeWidth={3} />
+                  </View>
                 )}
               </View>
               {emailError ? (
                 <View style={styles.errorRow}>
-                  <AlertCircle size={14} color={theme.danger} />
-                  <Text style={[styles.errorText, { color: theme.danger }]}>{emailError}</Text>
+                  <AlertCircle size={12} color="#EF4444" />
+                  <Text style={[styles.errorText, { color: '#EF4444' }]}>{emailError}</Text>
                 </View>
               ) : null}
             </View>
 
             {/* Password Input */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textPrimary }]}>{t('login.password')}</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{t('login.password')}</Text>
               <View style={[
                 styles.inputWrapper,
-                { backgroundColor: theme.inputBackground, borderColor: theme.border },
-                passwordError && [styles.inputError, { borderColor: theme.danger, backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }]
+                { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
+                passwordError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' }
               ]}>
-                <Lock size={20} color={passwordError ? theme.danger : theme.textTertiary} style={{ marginLeft: 10 }} />
+                <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
+                  <Lock size={16} color={passwordError ? '#EF4444' : theme.textTertiary} />
+                </View>
                 <TextInput
                   ref={passwordRef}
                   style={[styles.input, { color: theme.textPrimary }]}
@@ -515,14 +600,22 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   accessibilityLabel={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   accessibilityRole="button"
                 >
-                  {showPassword ? <EyeOff size={20} color={theme.textTertiary} /> : <Eye size={20} color={theme.textTertiary} />}
+                  {showPassword ? <EyeOff size={18} color={theme.textTertiary} /> : <Eye size={18} color={theme.textTertiary} />}
                 </TouchableOpacity>
               </View>
 
-              {/* Password strength indicator */}
+              {/* Password strength indicator - Premium */}
               {!isLogin && password.length > 0 && (
                 <View style={styles.strengthRow}>
-                  <View style={[styles.strengthBar, { flex: password.length >= 6 ? 1 : 0.3, backgroundColor: getPasswordStrengthColor(password) }]} />
+                  <View style={styles.strengthTrack}>
+                    <View style={[
+                      styles.strengthBar,
+                      {
+                        width: password.length < 6 ? '30%' : password.length < 8 ? '60%' : '100%',
+                        backgroundColor: getPasswordStrengthColor(password),
+                      }
+                    ]} />
+                  </View>
                   <Text style={[styles.strengthText, { color: getPasswordStrengthColor(password) }]}>
                     {passwordStrength.message}
                   </Text>
@@ -531,11 +624,59 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
               {passwordError ? (
                 <View style={styles.errorRow}>
-                  <AlertCircle size={14} color={theme.danger} />
-                  <Text style={[styles.errorText, { color: theme.danger }]}>{passwordError}</Text>
+                  <AlertCircle size={12} color="#EF4444" />
+                  <Text style={[styles.errorText, { color: '#EF4444' }]}>{passwordError}</Text>
                 </View>
               ) : null}
             </View>
+
+            {/* Confirm Password - signup only */}
+            {!isLogin && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>{t('login.confirmPassword')}</Text>
+                <View style={[
+                  styles.inputWrapper,
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
+                  confirmPasswordError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' },
+                  !confirmPasswordError && confirmPassword.length > 0 && confirmPassword === password && { borderColor: '#10B981' }
+                ]}>
+                  <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
+                    <Lock size={16} color={confirmPasswordError ? '#EF4444' : theme.textTertiary} />
+                  </View>
+                  <TextInput
+                    ref={confirmPasswordRef}
+                    style={[styles.input, { color: theme.textPrimary }]}
+                    placeholder={t('login.confirmPassword')}
+                    placeholderTextColor={theme.textTertiary}
+                    value={confirmPassword}
+                    onChangeText={(text) => { setConfirmPassword(text); setConfirmPasswordError(''); }}
+                    secureTextEntry={!showConfirmPassword}
+                    returnKeyType="done"
+                    onSubmitEditing={handleAuth}
+                  />
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowConfirmPassword(!showConfirmPassword);
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                    style={styles.eyeBtn}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} color={theme.textTertiary} /> : <Eye size={18} color={theme.textTertiary} />}
+                  </TouchableOpacity>
+                  {!confirmPasswordError && confirmPassword.length > 0 && confirmPassword === password && (
+                    <View style={[styles.checkBadge, { backgroundColor: '#10B981' }]}>
+                      <Check size={12} color="#fff" strokeWidth={3} />
+                    </View>
+                  )}
+                </View>
+                {confirmPasswordError ? (
+                  <View style={styles.errorRow}>
+                    <AlertCircle size={12} color="#EF4444" />
+                    <Text style={[styles.errorText, { color: '#EF4444' }]}>{confirmPasswordError}</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
 
             {/* Forgot password link */}
             {isLogin && (
@@ -549,14 +690,18 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               </TouchableOpacity>
             )}
 
-            {/* Babysitter Registration Option - Minimalist */}
+            {/* Registration Options */}
             {!isLogin && (
-              <View style={{ gap: 12, marginBottom: 16, marginTop: 8 }}>
+              <View style={styles.registrationOptions}>
+                {/* Babysitter Registration */}
                 <TouchableOpacity
                   style={[
-                    styles.joinCodeBtnMinimal,
-                    { borderColor: theme.border },
-                    registerAsBabysitter && { borderColor: '#F59E0B', backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.1)' : '#FFFBEB' }
+                    styles.optionCard,
+                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FAFAFA', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' },
+                    registerAsBabysitter && {
+                      borderColor: '#F59E0B',
+                      backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.08)' : '#FFFDF5',
+                    }
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -564,30 +709,37 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.joinContentRow}>
-                    <View style={[styles.minimizeIconContainer, { backgroundColor: registerAsBabysitter ? '#F59E0B' : '#FEF3C7' }]}>
-                      <Briefcase size={18} color={registerAsBabysitter ? '#fff' : '#D97706'} />
+                  <View style={styles.optionRow}>
+                    <View style={[styles.optionIcon, { backgroundColor: registerAsBabysitter ? '#F59E0B' : (isDarkMode ? 'rgba(245,158,11,0.15)' : '#FEF3C7') }]}>
+                      <Briefcase size={16} color={registerAsBabysitter ? '#fff' : '#D97706'} strokeWidth={2.5} />
                     </View>
-                    <View style={styles.joinTextContainer}>
-                      <Text style={[styles.joinCodeTitleMinimal, { color: theme.textPrimary }]}>
+                    <View style={styles.optionTextWrap}>
+                      <Text style={[styles.optionTitle, { color: theme.textPrimary }]}>
                         {t('login.babysitter.title')}
                       </Text>
-                      <Text style={[styles.joinCodeSubtitleMinimal, { color: theme.textSecondary }]}>
+                      <Text style={[styles.optionSubtitle, { color: theme.textSecondary }]}>
                         {t('login.babysitter.subtitle')}
                       </Text>
                     </View>
                   </View>
-                  <View style={[styles.babysitterCheckbox, registerAsBabysitter && styles.babysitterCheckboxActive]}>
-                    {registerAsBabysitter && <Check size={14} color={theme.card} />}
+                  <View style={[
+                    styles.optionCheckbox,
+                    { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB' },
+                    registerAsBabysitter && { backgroundColor: '#F59E0B', borderColor: '#F59E0B' }
+                  ]}>
+                    {registerAsBabysitter && <Check size={12} color="#fff" strokeWidth={3} />}
                   </View>
                 </TouchableOpacity>
 
-                {/* Join Family Code - Moved Here */}
+                {/* Join Family Code */}
                 <TouchableOpacity
                   style={[
-                    styles.joinCodeBtnMinimal,
-                    { borderColor: theme.border, marginTop: 0 },
-                    pendingInviteCode.length === 6 && { borderColor: theme.success, backgroundColor: isDarkMode ? 'rgba(16,185,129,0.1)' : '#ECFDF5' }
+                    styles.optionCard,
+                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FAFAFA', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' },
+                    pendingInviteCode.length === 6 && {
+                      borderColor: '#10B981',
+                      backgroundColor: isDarkMode ? 'rgba(16,185,129,0.08)' : '#F0FDF9',
+                    }
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -595,113 +747,123 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.joinContentRow}>
-                    <View style={[styles.minimizeIconContainer, { backgroundColor: pendingInviteCode.length === 6 ? theme.success : theme.primaryLight }]}>
-                      <Users size={18} color={pendingInviteCode.length === 6 ? '#fff' : theme.primary} />
+                  <View style={styles.optionRow}>
+                    <View style={[styles.optionIcon, { backgroundColor: pendingInviteCode.length === 6 ? '#10B981' : (isDarkMode ? 'rgba(139,92,246,0.15)' : theme.primaryLight) }]}>
+                      <Users size={16} color={pendingInviteCode.length === 6 ? '#fff' : theme.primary} strokeWidth={2.5} />
                     </View>
-                    <View style={styles.joinTextContainer}>
-                      <Text style={[styles.joinCodeTitleMinimal, { color: theme.textPrimary }]}>
+                    <View style={styles.optionTextWrap}>
+                      <Text style={[styles.optionTitle, { color: theme.textPrimary }]}>
                         {pendingInviteCode.length === 6 ? t('login.codeSaved') : t('login.enterInviteCode')}
                       </Text>
-                      <Text style={[styles.joinCodeSubtitleMinimal, { color: theme.textSecondary }]}>
+                      <Text style={[styles.optionSubtitle, { color: theme.textSecondary }]}>
                         {pendingInviteCode.length === 6 ? pendingInviteCode : t('login.partnerSentCode')}
                       </Text>
                     </View>
                   </View>
-                  <View style={styles.arrowContainer}>
-                    <Users size={16} color={theme.textTertiary} style={{ transform: [{ rotate: '180deg' }] }} />
+                  <View style={[styles.optionArrow, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
+                    <Mail size={14} color={theme.textTertiary} />
                   </View>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* Terms and Privacy Agreement - Only in signup mode */}
+            {/* Terms and Privacy Agreement - Premium */}
             {!isLogin && (
               <View style={styles.agreementContainer}>
-                <View style={[styles.agreementRow, { flexDirection: 'row-reverse', justifyContent: 'flex-start' }]}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setAgreedToTerms(!agreedToTerms);
-                    }}
-                    style={[
-                      styles.agreementCheckbox,
-                      { marginLeft: 10, borderColor: agreedToTerms ? theme.primary : theme.border },
-                      agreedToTerms && { backgroundColor: theme.primary }
-                    ]}
-                  >
-                    {agreedToTerms && <Check size={12} color={theme.card} strokeWidth={3} />}
-                  </TouchableOpacity>
-                  <Text style={[styles.agreementText, { color: theme.textSecondary, textAlign: 'right' }]}>
-                    {t('login.agreement.terms')} <Text
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setAgreedToTerms(!agreedToTerms);
+                  }}
+                  style={styles.agreementRow}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.agreementCheckbox,
+                    { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB' },
+                    agreedToTerms && { backgroundColor: theme.primary, borderColor: theme.primary }
+                  ]}>
+                    {agreedToTerms && <Check size={10} color="#fff" strokeWidth={3} />}
+                  </View>
+                  <Text style={[styles.agreementText, { color: theme.textSecondary }]}>
+                    {t('login.agreement.terms')}{' '}
+                    <Text
                       style={[styles.agreementLink, { color: theme.primary }]}
-                      onPress={() => WebBrowser.openBrowserAsync('https://www.calmparent.app/terms')}
+                      onPress={() => setLegalModal('terms')}
                     >{t('login.agreement.termsLink')}</Text>
                   </Text>
-                </View>
 
-                <View style={[styles.agreementRow, { flexDirection: 'row-reverse', justifyContent: 'flex-start', marginTop: 12 }]}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setAgreedToPrivacy(!agreedToPrivacy);
-                    }}
-                    style={[
-                      styles.agreementCheckbox,
-                      { marginLeft: 10, borderColor: agreedToPrivacy ? theme.primary : theme.border },
-                      agreedToPrivacy && { backgroundColor: theme.primary }
-                    ]}
-                  >
-                    {agreedToPrivacy && <Check size={12} color={theme.card} strokeWidth={3} />}
-                  </TouchableOpacity>
-                  <Text style={[styles.agreementText, { color: theme.textSecondary, textAlign: 'right' }]}>
-                    אני מסכים/ה ל <Text
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setAgreedToPrivacy(!agreedToPrivacy);
+                  }}
+                  style={styles.agreementRow}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.agreementCheckbox,
+                    { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB' },
+                    agreedToPrivacy && { backgroundColor: theme.primary, borderColor: theme.primary }
+                  ]}>
+                    {agreedToPrivacy && <Check size={10} color="#fff" strokeWidth={3} />}
+                  </View>
+                  <Text style={[styles.agreementText, { color: theme.textSecondary }]}>
+                    {t('login.agreement.privacy')}{' '}
+                    <Text
                       style={[styles.agreementLink, { color: theme.primary }]}
-                      onPress={() => WebBrowser.openBrowserAsync('https://www.calmparent.app/privacy')}
-                    >מדיניות הפרטיות</Text>
+                      onPress={() => setLegalModal('privacy')}
+                    >{t('login.agreement.privacyLink')}</Text>
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* Submit button */}
+            {/* Submit button - Premium */}
             <TouchableOpacity
               style={[styles.mainButton, !isFormValid && styles.mainButtonDisabled]}
               onPress={handleAuth}
               disabled={loading || !isFormValid}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               accessibilityLabel={isLogin ? 'כפתור התחברות' : 'כפתור הרשמה'}
               accessibilityRole="button"
               accessibilityState={{ disabled: loading || !isFormValid }}
             >
               <LinearGradient
-                colors={isFormValid ? ['#8B5CF6', '#6D28D9'] : [theme.textTertiary, theme.textTertiary]}
+                colors={isFormValid ? ['#7C3AED', '#6D28D9', '#5B21B6'] : [isDarkMode ? '#333' : '#D1D5DB', isDarkMode ? '#2a2a2a' : '#C4C4C4']}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={styles.gradientBtn}
               >
                 {loading ? (
-                  <ActivityIndicator color={theme.card} />
+                  <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={[styles.mainButtonText, { color: theme.card }]}>{isLogin ? 'התחברות' : 'הרשמה'}</Text>
+                  <>
+                    <Text style={styles.mainButtonText}>
+                      {isLogin ? 'התחברות' : 'צור חשבון'}
+                    </Text>
+                    {isFormValid && <Shield size={16} color="rgba(255,255,255,0.7)" strokeWidth={2} />}
+                  </>
                 )}
               </LinearGradient>
             </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.divider}>
-              <View style={[styles.line, { backgroundColor: theme.border }]} />
-              <Text style={[styles.orText, { color: theme.textTertiary }]}>או באמצעות</Text>
-              <View style={[styles.line, { backgroundColor: theme.border }]} />
+              <View style={[styles.line, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' }]} />
+              <Text style={[styles.orText, { color: theme.textTertiary }]}>או</Text>
+              <View style={[styles.line, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' }]} />
             </View>
 
-            {/* Social buttons */}
+            {/* Social buttons - Premium */}
             <View style={styles.socialRow}>
               <TouchableOpacity
                 style={[
                   styles.socialBtn,
-                  { backgroundColor: theme.card, borderColor: theme.border },
-                  !request && { opacity: 0.5 }
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0' },
+                  !request && { opacity: 0.4 }
                 ]}
                 onPress={() => {
                   if (request) {
@@ -719,82 +881,99 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               </TouchableOpacity>
 
               {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.socialBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-                accessibilityLabel="התחברות עם Apple"
-                accessibilityRole="button"
-                onPress={async () => {
-                  try {
-                    logger.debug('🍎', 'Apple Sign-In - Starting...');
-                    // Generate a random nonce
-                    const rawNonce = Math.random().toString(36).substring(2, 15) +
-                      Math.random().toString(36).substring(2, 15);
+                <TouchableOpacity
+                  style={[
+                    styles.socialBtn,
+                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0' },
+                  ]}
+                  accessibilityLabel="התחברות עם Apple"
+                  accessibilityRole="button"
+                  onPress={async () => {
+                    try {
+                      logger.debug('🍎', 'Apple Sign-In - Starting...');
 
-                    // Hash the nonce using SHA256
-                    const hashedNonce = await Crypto.digestStringAsync(
-                      Crypto.CryptoDigestAlgorithm.SHA256,
-                      rawNonce
-                    );
-                    logger.debug('🍎', 'Apple Sign-In - Nonce generated, calling signInAsync...');
+                      // Check if Apple Authentication is available (not available on simulator)
+                      const isAvailable = await AppleAuthentication.isAvailableAsync();
+                      if (!isAvailable) {
+                        Alert.alert('לא זמין', 'התחברות עם Apple לא זמינה במכשיר זה. נסה במכשיר אמיתי.');
+                        return;
+                      }
 
-                    const credential = await AppleAuthentication.signInAsync({
-                      requestedScopes: [
-                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                      ],
-                      nonce: hashedNonce,
-                    });
-                    logger.debug('🍎', 'Apple Sign-In - Got credential, identityToken length:', credential.identityToken?.length);
+                      // Generate a random nonce
+                      const rawNonce = Math.random().toString(36).substring(2, 15) +
+                        Math.random().toString(36).substring(2, 15);
 
-                    // Create Firebase credential with rawNonce
-                    const provider = new OAuthProvider('apple.com');
-                    const firebaseCredential = provider.credential({
-                      idToken: credential.identityToken!,
-                      rawNonce: rawNonce,
-                    });
+                      // Hash the nonce using SHA256
+                      const hashedNonce = await Crypto.digestStringAsync(
+                        Crypto.CryptoDigestAlgorithm.SHA256,
+                        rawNonce
+                      );
+                      logger.debug('🍎', 'Apple Sign-In - Nonce generated, calling signInAsync...');
 
-                    setLoading(true);
-                    logger.debug('🍎', 'Apple Sign-In - Signing in to Firebase...');
-                    const userCredential = await signInWithCredential(auth, firebaseCredential);
-                    logger.debug('✅', 'Apple Sign-In Success!');
+                      const appleCredential = await AppleAuthentication.signInAsync({
+                        requestedScopes: [
+                          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                        ],
+                        nonce: hashedNonce,
+                      });
+                      logger.debug('🍎', 'Apple Sign-In - Got credential, identityToken length:', appleCredential.identityToken?.length);
 
-                    // Check if this is a new user and save agreement
-                    const userRef = doc(db, 'users', userCredential.user.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (!userSnap.exists()) {
-                      // New user - save agreement
-                      await setDoc(userRef, {
-                        agreements: {
-                          termsOfService: {
-                            agreed: true,
-                            agreedAt: serverTimestamp(),
-                            version: '2026-01-20',
+                      // Validate identity token exists before using it
+                      if (!appleCredential.identityToken) {
+                        Alert.alert('שגיאה', 'לא התקבל טוקן מ-Apple. נסה שוב.');
+                        return;
+                      }
+
+                      // Create Firebase credential with rawNonce
+                      const provider = new OAuthProvider('apple.com');
+                      const firebaseCredential = provider.credential({
+                        idToken: appleCredential.identityToken,
+                        rawNonce: rawNonce,
+                      });
+
+                      setLoading(true);
+                      logger.debug('🍎', 'Apple Sign-In - Signing in to Firebase...');
+                      const userCredential = await signInWithCredential(auth, firebaseCredential);
+                      logger.debug('✅', 'Apple Sign-In Success!');
+
+                      // Check if this is a new user and save agreement
+                      const userRef = doc(db, 'users', userCredential.user.uid);
+                      const userSnap = await getDoc(userRef);
+                      if (!userSnap.exists()) {
+                        // New user - save agreement
+                        await setDoc(userRef, {
+                          agreements: {
+                            termsOfService: {
+                              agreed: true,
+                              agreedAt: serverTimestamp(),
+                              version: '2026-01-20',
+                            },
+                            privacyPolicy: {
+                              agreed: true,
+                              agreedAt: serverTimestamp(),
+                              version: '2026-01-20',
+                            },
                           },
-                          privacyPolicy: {
-                            agreed: true,
-                            agreedAt: serverTimestamp(),
-                            version: '2026-01-20',
-                          },
-                        },
-                      }, { merge: true });
-                    }
+                        }, { merge: true });
+                      }
 
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    onLoginSuccess();
-                  } catch (e: any) {
-                    logger.error('❌ Apple Sign-In Error:', e.code, e.message);
-                    if (e.code !== 'ERR_REQUEST_CANCELED') {
-                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                      Alert.alert(t('login.errors.appleError'), `${e.code}: ${e.message}`);
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      onLoginSuccess();
+                    } catch (e: any) {
+                      logger.error('❌ Apple Sign-In Error:', e.code, e.message);
+                      if (e.code !== 'ERR_REQUEST_CANCELED' && e.code !== 'ERR_CANCELED' && e.code !== 'ERR_REQUEST_UNKNOWN') {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                        Alert.alert('שגיאת Apple', e.message || 'שגיאה לא ידועה');
+                      }
+                    } finally {
+                      setLoading(false);
                     }
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-              >
-                <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/0/747.png' }} style={styles.socialIcon} />
-                <Text style={[styles.socialText, { color: theme.textPrimary }]}>Apple</Text>
-              </TouchableOpacity>
+                  }}
+                >
+                  <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/0/747.png' }} style={styles.socialIcon} />
+                  <Text style={[styles.socialText, { color: theme.textPrimary }]}>Apple</Text>
+                </TouchableOpacity>
               )}
             </View>
 
@@ -802,8 +981,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             <TouchableOpacity
               onPress={() => {
                 setIsLogin(!isLogin);
+                setDisplayName('');
+                setConfirmPassword('');
+                setDisplayNameError('');
                 setEmailError('');
                 setPasswordError('');
+                setConfirmPasswordError('');
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
               style={styles.switchMode}
@@ -811,12 +994,18 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               accessibilityRole="button"
             >
               <Text style={[styles.switchText, { color: theme.textSecondary }]}>
-                {isLogin ? t('login.noAccount') : t('login.hasAccount')}
+                {isLogin ? t('login.noAccount') : t('login.hasAccount')}{' '}
                 <Text style={[styles.linkText, { color: theme.primary }]}>{isLogin ? t('login.signupNow') : t('login.loginNow')}</Text>
               </Text>
             </TouchableOpacity>
 
-
+            {/* Security footer */}
+            <View style={styles.securityFooter}>
+              <Shield size={12} color={theme.textTertiary} />
+              <Text style={[styles.securityFooterText, { color: theme.textTertiary }]}>
+                {t('login.security')}
+              </Text>
+            </View>
 
           </ScrollView>
         </Animated.View>
@@ -878,6 +1067,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </View>
         </View>
       </Modal>
+
+      <LegalModal
+        visible={legalModal !== null}
+        type={legalModal ?? 'terms'}
+        onClose={() => setLegalModal(null)}
+      />
     </View >
   );
 }
@@ -885,168 +1080,166 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  // Header
+  // ===== HEADER =====
   header: {
-    height: '32%',
+    height: '28%',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
     overflow: 'hidden',
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40
   },
-  headerContent: { alignItems: 'center', zIndex: 10 },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    backgroundColor: 'white',
-    borderRadius: 40,
+  headerContent: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 10
-  },
-  premiumLogoContainer: {
-    width: 110,
-    height: 110,
-    marginBottom: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  glassLogoBackground: {
-    width: 110,
-    height: 110,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 15,
-  },
-  premiumLogoGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  premiumLogoGlow: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 30,
-    backgroundColor: 'rgba(139, 92, 246, 0.3)',
-    top: -10,
-    left: -10,
-  },
-  premiumLogoImage: {
-    width: 95,
-    height: 95,
     zIndex: 10,
   },
-  premiumLogoShine: {
+  ambientGlow: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    zIndex: 5,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+    top: -80,
+    right: -80,
   },
-  premiumLogoShadow: {
+  ambientGlow2: {
     position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    top: 8,
-    left: 5,
-    zIndex: -1,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    bottom: -60,
+    left: -60,
   },
-  appTitle: { fontSize: 38, fontWeight: '900', color: 'white', marginBottom: 6, letterSpacing: -0.8 },
-  appSubtitle: { fontSize: 16, color: '#e0e7ff', opacity: 1, fontWeight: '500' },
-  blob: { position: 'absolute', width: 150, height: 150, borderRadius: 75, opacity: 0.4 },
-
-  // Form
-  formContainer: { flex: 1, marginTop: -30 },
-  scrollContent: {
-    padding: 28,
-    paddingBottom: 44,
-    marginHorizontal: 18,
-    borderRadius: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 10
-  },
-
-  // Security badge
-  securityBadge: {
-    flexDirection: 'row',
+  premiumLogoContainer: {
+    marginBottom: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+  },
+  logoRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  glassLogoBackground: {
+    width: 84,
+    height: 84,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  premiumLogoImage: {
+    width: 72,
+    height: 72,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  appSubtitle: {
+    fontSize: 14,
+    color: 'rgba(200, 200, 255, 0.7)',
+    fontWeight: '500',
+    letterSpacing: -0.2,
+  },
+
+  // ===== FORM =====
+  formContainer: {
+    flex: 1,
+    marginTop: -24,
+  },
+  scrollContent: {
+    padding: 24,
+    paddingTop: 28,
+    paddingBottom: 32,
+    marginHorizontal: 16,
+    borderRadius: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 28,
+    letterSpacing: -0.2,
+    lineHeight: 20,
+  },
+
+  // ===== INPUTS =====
+  inputGroup: {
     marginBottom: 16,
   },
-  securityText: {
-    fontSize: 12,
-    color: '#10B981',
+  label: {
+    fontSize: 13,
     fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'right',
+    letterSpacing: -0.2,
   },
-
-  formTitle: { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 10, letterSpacing: -0.7 },
-  formSubtitle: { fontSize: 15, textAlign: 'center', marginBottom: 32, letterSpacing: -0.2, opacity: 0.85, lineHeight: 22 },
-
-  // Inputs
-  inputGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '700', marginBottom: 10, textAlign: 'right', letterSpacing: -0.3 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 16,
-    borderWidth: 2,
-    height: 58
+    borderWidth: 1,
+    height: 52,
   },
-  inputError: {
+  inputIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
   input: {
     flex: 1,
     height: '100%',
     textAlign: 'right',
-    paddingHorizontal: 14,
-    fontSize: 16,
+    paddingHorizontal: 12,
+    fontSize: 15,
     fontWeight: '500',
+  },
+  checkBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   eyeBtn: {
     padding: 12,
   },
 
-  // Error display
+  // ===== ERRORS =====
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 6,
+    gap: 5,
     marginTop: 6,
   },
   errorText: {
@@ -1055,27 +1248,36 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // Password strength
+  // ===== PASSWORD STRENGTH =====
   strengthRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginTop: 8,
-    gap: 8,
+    marginTop: 10,
+    gap: 10,
   },
-  strengthBar: {
+  strengthTrack: {
+    flex: 1,
     height: 4,
     borderRadius: 2,
-    maxWidth: 100,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    maxWidth: 120,
+    overflow: 'hidden',
+  },
+  strengthBar: {
+    height: '100%',
+    borderRadius: 2,
   },
   strengthText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
 
-  // Forgot password
+  // ===== FORGOT PASSWORD =====
   forgotBtn: {
     alignSelf: 'flex-start',
     marginBottom: 8,
+    marginTop: -4,
   },
   forgotText: {
     fontSize: 13,
@@ -1083,134 +1285,231 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // Main button
-  mainButton: {
-    marginTop: 12,
+  // ===== REGISTRATION OPTIONS =====
+  registrationOptions: {
+    gap: 10,
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  optionCard: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
     borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 10,
+    borderWidth: 1,
   },
-  mainButtonDisabled: {
-    shadowOpacity: 0.1,
-    elevation: 2,
+  optionRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
-  gradientBtn: {
-    paddingVertical: 18,
-    flexDirection: 'row',
+  optionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10
   },
-  mainButtonText: { fontSize: 17, fontWeight: '800', letterSpacing: -0.4 },
+  optionTextWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  optionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'right',
+    letterSpacing: -0.2,
+  },
+  optionSubtitle: {
+    fontSize: 12,
+    textAlign: 'right',
+    marginTop: 1,
+    letterSpacing: -0.1,
+  },
+  optionCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  optionArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
 
-  // Divider
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
-  line: { flex: 1, height: StyleSheet.hairlineWidth },
-  orText: { marginHorizontal: 12, fontSize: 12, fontWeight: '600', letterSpacing: -0.2 },
+  // ===== AGREEMENTS =====
+  agreementContainer: {
+    marginBottom: 8,
+    gap: 14,
+  },
+  agreementRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+  },
+  agreementCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  agreementText: {
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
+    textAlign: 'right',
+  },
+  agreementLink: {
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
 
-  // Social buttons
-  socialRow: { flexDirection: 'row', gap: 14, marginBottom: 24 },
+  // ===== MAIN BUTTON =====
+  mainButton: {
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  mainButtonDisabled: {
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    elevation: 1,
+  },
+  gradientBtn: {
+    paddingVertical: 17,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  mainButtonText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.3,
+  },
+
+  // ===== DIVIDER =====
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  line: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  orText: {
+    marginHorizontal: 16,
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: -0.2,
+  },
+
+  // ===== SOCIAL BUTTONS =====
+  socialRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
   socialBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  socialIcon: { width: 22, height: 22 },
-  socialText: { fontSize: 15, fontWeight: '700' },
-
-  // Switch mode
-  switchMode: { alignItems: 'center', marginTop: 8 },
-  switchText: { fontSize: 14, letterSpacing: -0.2 },
-  linkText: { fontWeight: '700' },
-
-  // Join Code Section
-  joinCodeSection: {
-    marginTop: 24,
-    paddingTop: 8,
-  },
-  joinCodeDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  joinCodeLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-  },
-  joinCodeOrText: {
-    marginHorizontal: 12,
-    fontSize: 12,
-    letterSpacing: -0.2,
-  },
-  joinCodeBtn: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
     borderWidth: 1,
-    borderStyle: 'dashed',
+    gap: 10,
   },
-  joinCodeIcon: {
-    fontSize: 28,
+  socialIcon: {
+    width: 24,
+    height: 24,
   },
-  joinCodeTitle: {
+  socialText: {
     fontSize: 15,
     fontWeight: '700',
-    textAlign: 'right',
     letterSpacing: -0.3,
   },
-  joinCodeSubtitle: {
-    fontSize: 12,
-    textAlign: 'right',
-    marginTop: 2,
+
+  // ===== SWITCH MODE =====
+  switchMode: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  switchText: {
+    fontSize: 14,
     letterSpacing: -0.2,
   },
-  joinCodeBtnActive: {
+  linkText: {
+    fontWeight: '800',
   },
 
-  // Join Modal styles
+  // ===== SECURITY FOOTER =====
+  securityFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 16,
+    paddingTop: 12,
+  },
+  securityFooterText: {
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+  },
+
+  // ===== JOIN MODAL =====
   joinModalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   joinModalContent: {
-    borderRadius: 28,
+    borderRadius: 24,
     padding: 28,
     width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.2,
+    shadowRadius: 32,
+    elevation: 16,
     alignItems: 'center',
   },
   joinModalClose: {
     position: 'absolute',
     top: 16,
     left: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   joinModalTitle: {
     fontSize: 22,
     fontWeight: '800',
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: -0.5,
   },
   joinModalSubtitle: {
@@ -1218,11 +1517,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     letterSpacing: -0.2,
+    lineHeight: 20,
   },
   joinModalInput: {
     width: '100%',
     height: 56,
-    borderRadius: 14,
+    borderRadius: 16,
     fontSize: 24,
     fontWeight: '700',
     letterSpacing: 8,
@@ -1235,136 +1535,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginTop: 20,
   },
-  joinModalBtnDisabled: {
-  },
+  joinModalBtnDisabled: {},
   joinModalBtnText: {
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: -0.3,
-  },
-
-
-
-  // Babysitter Registration Styles
-  babysitterOptionCard: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  babysitterOptionCardActive: {
-  },
-  babysitterBtnActive: {
-  },
-  babysitterIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#FDE68A',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  babysitterIconCircleActive: {
-    backgroundColor: '#F59E0B',
-  },
-  babysitterTextSection: {
-    flex: 1,
-    marginRight: 12,
-    alignItems: 'flex-end',
-  },
-  babysitterTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#92400E',
-    textAlign: 'right',
-  },
-  babysitterSubtitle: {
-    fontSize: 12,
-    color: '#B45309',
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  babysitterCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  babysitterCheckboxActive: {
-    backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
-  },
-  agreementContainer: {
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 12,
-  },
-  agreementRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-  },
-  agreementCheckbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  agreementText: {
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
-  },
-  agreementLink: {
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  // Minimal Join Code Styles
-  joinCodeBtnMinimal: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginTop: 18,
-  },
-  joinContentRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-  },
-  minimizeIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  joinTextContainer: {
-    alignItems: 'flex-end',
-  },
-  joinCodeTitleMinimal: {
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  joinCodeSubtitleMinimal: {
-    fontSize: 12,
-    textAlign: 'right',
-    marginTop: 2,
-  },
-  arrowContainer: {
-    padding: 4,
-    opacity: 0.5,
   },
 });

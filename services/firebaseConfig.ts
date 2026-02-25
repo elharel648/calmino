@@ -34,5 +34,4 @@ try {
 
 export { auth };
 export const db = getFirestore(app);
-// Storage - use default bucket from config
 export const storage = getStorage(app);

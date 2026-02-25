@@ -146,14 +146,15 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       timestamp
     };
 
+    const anyEventData = eventData as any;
     logger.log('🔥 Saving eventData to Firestore:', JSON.stringify({
-      type: eventData.type,
-      duration: eventData.duration,
-      startTime: eventData.startTime,
-      endTime: eventData.endTime,
+      type: anyEventData.type,
+      duration: anyEventData.duration,
+      startTime: anyEventData.startTime,
+      endTime: anyEventData.endTime,
       timestamp: timestamp.toDate().toISOString(),
-      note: eventData.note,
-      childId: eventData.childId
+      note: anyEventData.note,
+      childId: anyEventData.childId
     }, null, 2));
 
     const docRef = await addDoc(eventsRef, eventData);

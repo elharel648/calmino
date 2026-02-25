@@ -1,5 +1,4 @@
-// pages/ReportsScreen.tsx - Comprehensive Reports Dashboard
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -13,14 +12,18 @@ import {
   Share,
   Alert,
   Modal,
+  Animated as RNAnimated,
 } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
-import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby } from 'lucide-react-native';
+import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock } from 'lucide-react-native';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
+import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { db } from '../services/firebaseConfig';
@@ -44,6 +47,9 @@ import DetailedGrowthScreen from '../components/Reports/DetailedGrowthScreen';
 import GrowthStatCube from '../components/Reports/GrowthStatCube';
 import GrowthModal from '../components/Home/GrowthModal';
 import DailyTimeline from '../components/DailyTimeline';
+import { usePremium } from '../context/PremiumContext';
+import PremiumPaywall from '../components/Premium/PremiumPaywall';
+import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
 import {
   PremiumInsightCard,
   AITipCard,
@@ -141,6 +147,10 @@ export default function ReportsScreen() {
   const [showStatsEdit, setShowStatsEdit] = useState(false);
   const [showGrowthModal, setShowGrowthModal] = useState(false);
   const [showGrowthScreen, setShowGrowthScreen] = useState(false);
+
+  // Premium State
+  const { isPremium } = usePremium();
+  const [showPaywall, setShowPaywall] = useState(false);
 
   // Load stats order
   useEffect(() => {
@@ -447,49 +457,499 @@ export default function ReportsScreen() {
     fetchData();
   }, [activeChild?.childId, timeRange, selectedDate, customStartDate, customEndDate]);
 
-  // Export report with improved formatting and comparisons
+  // Export report with beautiful PDF formatting using expo-print
   const handleExport = async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Lock behind premium
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
 
     const avgSleep = dailyStats.sleepCount > 0
       ? (dailyStats.sleep / dailyStats.sleepCount).toFixed(1)
       : '0';
 
-    // Add comparison data if available
-    const comparisonText = comparison ? `
-📈 השוואה לשבוע הקודם:
-   ${comparison.sleepChange !== 0 ? `שינה: ${comparison.sleepChange > 0 ? '+' : ''}${comparison.sleepChange}%` : ''}
-   ${comparison.feedingChange !== 0 ? `האכלות: ${comparison.feedingChange > 0 ? '+' : ''}${comparison.feedingChange}%` : ''}
-   ${comparison.diaperChange !== 0 ? `חיתולים: ${comparison.diaperChange > 0 ? '+' : ''}${comparison.diaperChange}%` : ''}
-` : '';
+    const periodText = timeRange === 'week' ? `תקופה: שבוע` : timeRange === 'month' ? `תקופה: חודש` : `תקופה: יום`;
+    const dateText = format(selectedDate || new Date(), 'd MMMM yyyy', { locale: he });
 
-    const report = `
-📊 דוח ${activeChild?.childName || 'התינוק'}
-📅 ${format(selectedDate || new Date(), 'd MMMM yyyy', { locale: he })}
-${timeRange === 'week' ? `📆 תקופה: שבוע` : timeRange === 'month' ? `📆 תקופה: חודש` : `📆 תקופה: יום`}
+    // Generate table rows for daily breakdown (if week or month)
+    let dailyRows = '';
+    if (timeRange !== 'day' && dayBreakdown) {
+      Object.keys(dayBreakdown).forEach(day => {
+        const stats = dayBreakdown[day];
+        dailyRows += `
+          <tr>
+            <td style="font-weight: 600;">${day}</td>
+            <td>${stats.food} מ"ל (${stats.foodCount})</td>
+            <td>${stats.sleep.toFixed(1)} שעות</td>
+            <td>${stats.diapers}</td>
+            <td>${stats.supplements}</td>
+          </tr>
+        `;
+      });
+    }
 
-🍼 האכלות: ${dailyStats.foodCount} (${dailyStats.food} מ"ל)
-   בקבוק: ${dailyStats.feedingTypes.bottle}
-   הנקה: ${dailyStats.feedingTypes.breast}
-   מוצקים: ${dailyStats.feedingTypes.solids}
-   שאיבה: ${dailyStats.feedingTypes.pumping || 0}
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דוח התפתחות מקיף - ${activeChild?.childName || 'התינוק'}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            margin: 0;
+            padding: 40px;
+            direction: rtl;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            border-radius: 24px;
+            padding: 40px;
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
 
-😴 שינה: ${dailyStats.sleep.toFixed(1)} שעות (ממוצע: ${avgSleep}ש')
-   שינה ארוכה ביותר: ${timeInsights?.longestSleep || 0}ש'
-   יום שינה הכי טוב: ${timeInsights?.bestSleepDay || 'לא ידוע'}
+        .title {
+            font-size: 38px;
+            font-weight: 800;
+            margin: 0 0 12px 0;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            opacity: 0.9;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0F172A;
+            margin: 40px 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-🧷 חיתולים: ${dailyStats.diapers}
-💊 תוספים: ${dailyStats.supplements}
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid #F1F5F9;
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+        
+        .icon {
+            font-size: 26px;
+            background: #F8FAFC;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            border: 1px solid #F1F5F9;
+        }
+        
+        h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #334155;
+            font-weight: 700;
+        }
+        
+        .stat-main {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        
+        .stat-unit {
+            font-size: 16px;
+            color: #64748B;
+            font-weight: 600;
+        }
 
-${comparisonText}
----
-הורה רגוע 💜
-        `.trim();
+        .stat-sub {
+            font-size: 15px;
+            color: #64748B;
+            font-weight: 600;
+            background: #F8FAFC;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+        
+        .details-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px dashed #E2E8F0;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            color: #475569;
+        }
+        
+        .detail-value {
+            font-weight: 700;
+            color: #1E293B;
+            background: #F1F5F9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .trends-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .trend-card {
+            background: #F8FAFC;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid #F1F5F9;
+        }
+
+        .trend-label {
+            color: #64748B;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .trend-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0F172A;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid #E2E8F0;
+        }
+
+        .data-table th {
+            background: #F8FAFC;
+            color: #475569;
+            font-weight: 700;
+            text-align: right;
+            padding: 16px;
+            border-bottom: 2px solid #E2E8F0;
+        }
+
+        .data-table td {
+            padding: 16px;
+            border-bottom: 1px solid #F1F5F9;
+            color: #1E293B;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 2px solid #E2E8F0;
+            color: #94A3B8;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .brand {
+            font-weight: 800;
+            color: #4F46E5;
+            font-size: 18px;
+        }
+
+        /* Goals styles */
+        .goals-container {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .goal-item {
+            flex: 1;
+            background: white;
+            padding: 24px;
+            border-radius: 24px;
+            text-align: center;
+            border: 1px solid #F1F5F9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .goal-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #EEF2FF;
+            color: #4F46E5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0 auto 16px auto;
+            border: 4px solid #DFE7FF;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">דוח מעקב מלא - ${activeChild?.childName || 'התינוק'}</h1>
+        <p class="subtitle">${dateText} | ${periodText}</p>
+    </div>
+
+    <!-- Goals & Consistency -->
+    <div class="section-title">✨ עקביות ומטרות</div>
+    <div class="goals-container">
+        <div class="goal-item">
+            <div class="goal-circle">${weeklyGoals.streak}</div>
+            <h3 style="margin-bottom: 4px;">רצף מעקב</h3>
+            <span style="color:#64748B; font-size:14px;">ימים רצופים של תיעוד</span>
+        </div>
+        <div class="goal-item">
+            <div class="goal-circle" style="background:#F0FDF4; color:#16A34A; border-color:#DCFCE7;">
+                ${weeklyGoals.sleepDaysMet}/${weeklyGoals.sleepDaysGoal}
+            </div>
+            <h3 style="margin-bottom: 4px;">יעדי שינה</h3>
+            <span style="color:#64748B; font-size:14px;">ימים עם 8+ שעות שינה</span>
+        </div>
+        <div class="goal-item">
+            <div class="goal-circle" style="background:#FFF7ED; color:#EA580C; border-color:#FFEDD5;">
+                ${weeklyGoals.docDaysMet}/${weeklyGoals.docDaysGoal}
+            </div>
+            <h3 style="margin-bottom: 4px;">יעדי תיעוד</h3>
+            <span style="color:#64748B; font-size:14px;">ימים של תיעוד יומן</span>
+        </div>
+    </div>
+
+    <div class="section-title">📊 סיכום כולל</div>
+    <div class="grid">
+        <!-- Feeding Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">🍼</div>
+                <h3>תזונה והאכלה</h3>
+            </div>
+            <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">ארוחות בסך הכל</span></div>
+            <div class="stat-sub">כמות כוללת: ${dailyStats.food} מ"ל</div>
+            
+            <div class="details-list">
+                <div class="detail-item">
+                    <span>בקבוק תמ"ל/שאוב</span>
+                    <span class="detail-value">${dailyStats.feedingTypes.bottle} ארוחות</span>
+                </div>
+                <div class="detail-item">
+                    <span>הנקה ישירה</span>
+                    <span class="detail-value">${dailyStats.feedingTypes.breast} ארוחות</span>
+                </div>
+                <div class="detail-item">
+                    <span>מוצקים</span>
+                    <span class="detail-value">${dailyStats.feedingTypes.solids} ארוחות</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sleep Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">😴</div>
+                <h3>שינה ומנוחה</h3>
+            </div>
+            <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">שעות שינה מצטברות</span></div>
+            <div class="stat-sub">ממוצע לתנומה: ${avgSleep} שעות</div>
+            
+            <div class="details-list">
+                <div class="detail-item">
+                    <span>תנומה ארוכה ביותר</span>
+                    <span class="detail-value">${timeInsights?.longestSleep || 0} שעות</span>
+                </div>
+                <div class="detail-item">
+                    <span>יום שינה אידיאלי</span>
+                    <span class="detail-value">${timeInsights?.bestSleepDay || '-'}</span>
+                </div>
+                <div class="detail-item">
+                    <span>שעת השכבה ממוצעת</span>
+                    <span class="detail-value">${timeInsights?.avgSleepTime || '-'}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diapers Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">🧷</div>
+                <h3>החתלה והיגיינה</h3>
+            </div>
+            <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">החלפות חיתול</span></div>
+            <div class="stat-sub">מעקב תקין של יציאות והרטבות</div>
+        </div>
+
+        <!-- Supplements Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="icon">💊</div>
+                <h3>תוספים ותרופות</h3>
+            </div>
+            <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">מנות שניתנו</span></div>
+            <div class="stat-sub">לפי תיעוד הורים או היסטוריה רפואית</div>
+        </div>
+    </div>
+
+    <!-- Analytics & Comparisons -->
+    ${comparison && (comparison.sleepChange !== 0 || comparison.feedingChange !== 0 || comparison.diaperChange !== 0) ? `
+    <div class="section-title">📈 מגמות ותובנות שבועיות</div>
+    <div class="card" style="margin-bottom: 40px;">
+        <div class="card-header">
+            <div class="icon" style="background:#EFF6FF; border:none; box-shadow:none;">✨</div>
+            <h3>השוואה לתקופה מקבילה קודמת</h3>
+        </div>
+        <p style="color:#64748B; margin-top:0; font-size:16px;">זיהוי דפוסים אל מול הנתונים מהתקופה שעברה.</p>
+        
+        <div class="trends-grid">
+            <div class="trend-card" style="border-top: 4px solid ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#CBD5E1'};">
+                <span class="trend-label">שינה ומנוחה</span>
+                <span class="trend-value" style="color: ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#1E293B'}">
+                    ${comparison.sleepChange > 0 ? '+' : ''}${comparison.sleepChange}%
+                </span>
+            </div>
+            
+            <div class="trend-card" style="border-top: 4px solid ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#CBD5E1'};">
+                <span class="trend-label">כמויות האכלה</span>
+                <span class="trend-value" style="color: ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#1E293B'}">
+                    ${comparison.feedingChange > 0 ? '+' : ''}${comparison.feedingChange}%
+                </span>
+            </div>
+            
+            <div class="trend-card" style="border-top: 4px solid ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#CBD5E1'};">
+                <span class="trend-label">החלפות חיתול</span>
+                <span class="trend-value" style="color: ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#1E293B'}">
+                    ${comparison.diaperChange > 0 ? '+' : ''}${comparison.diaperChange}%
+                </span>
+            </div>
+        </div>
+    </div>
+    ` : ''}
+
+    <!-- Daily Breakdown Table -->
+    ${dailyRows ? `
+    <div class="section-title">📅 פירוט נתונים יומי</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>תאריך</th>
+                <th>האכלות (כמות / ארוחות)</th>
+                <th>שעות שינה</th>
+                <th>חיתולים</th>
+                <th>תוספים</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${dailyRows}
+        </tbody>
+    </table>
+    ` : ''}
+
+    <div class="footer">
+        הופק באהבה באמצעות מערכת <span class="brand">Calmino 💜</span>
+        <br>
+        <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">כל זכויות הנתונים שמורות להורים בלבד.</span>
+    </div>
+
+</body>
+</html>
+    `;
 
     try {
-      await Share.share({ message: report });
+      // 1. Generate PDF from HTML
+      const { uri } = await Print.printToFileAsync({
+        html: htmlContent,
+        base64: false
+      });
+
+      // 2. Share the generated PDF file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `דוח מערכת - ${activeChild?.childName || 'התינוק'}`,
+          UTI: 'com.adobe.pdf'
+        });
+      } else {
+        Alert.alert('שגיאה', 'שיתוף קבצים אינו נתמך במכשיר זה');
+      }
     } catch (error) {
-      logger.error('Failed to share report:', error);
+      logger.error('Failed to generate/share PDF report:', error);
       // Use toast instead of Alert
       if (typeof window !== 'undefined' && (window as any).showToast) {
         (window as any).showToast({ message: 'לא ניתן לשתף', type: 'error' });
@@ -518,39 +978,72 @@ ${comparisonText}
 
   // ========== COMPONENTS ==========
 
-  // Minimalist Stat Card with Trend - Colored Icons (Now Clickable!)
-  const StatCard = ({ icon: Icon, value, label, subValue, change, iconColor, iconBg, onPress }: any) => (
-    <TouchableOpacity
-      style={[styles.statCard, { backgroundColor: theme.card }]}
-      onPress={() => {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onPress?.();
-      }}
-      activeOpacity={0.7}
-    >
-      <View style={[styles.statIconWrap, { backgroundColor: iconBg || theme.cardSecondary }]}>
-        <Icon size={20} color={iconColor || theme.textSecondary} strokeWidth={1.5} />
-      </View>
-      <View style={styles.statValueRow}>
-        <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
-        {change !== undefined && change !== 0 && (
-          <View style={[styles.trendBadge, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
-            {change > 0 ? (
-              <TrendingUp size={12} color={theme.textPrimary} />
-            ) : (
-              <TrendingDown size={12} color={theme.textPrimary} />
-            )}
-            <Text style={{ fontSize: 10, color: theme.textPrimary, fontWeight: '600' }}>
-              {Math.abs(change)}%
-            </Text>
-          </View>
-        )}
-      </View>
-      <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
-      {subValue && <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>{subValue}</Text>}
-      <ChevronRight size={16} color={theme.textSecondary} style={styles.cardChevron} />
-    </TouchableOpacity>
-  );
+  // ✨ Premium Stat Card with Category Colors, Sparkline & Smart Trends
+  const StatCard = ({ icon: Icon, value, label, subValue, change, iconColor, iconBg, accentColor, sparklineData, onPress }: any) => {
+    // Smart trend color: green = positive, red = negative, gray = neutral
+    const getTrendColor = (val: number) => {
+      if (val > 0) return '#10B981'; // Green
+      if (val < 0) return '#EF4444'; // Red
+      return theme.textSecondary;
+    };
+    const trendColor = change !== undefined && change !== 0 ? getTrendColor(change) : null;
+
+    // Mini sparkline renderer
+    const renderSparkline = () => {
+      if (!sparklineData || sparklineData.length < 2) return null;
+      const max = Math.max(...sparklineData, 1);
+      const barWidth = Math.max(2, Math.min(4, (SCREEN_WIDTH - 100) / sparklineData.length / 2));
+      return (
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 1.5, height: 20, marginTop: 8, opacity: 0.6 }}>
+          {sparklineData.slice(-7).map((val: number, i: number) => (
+            <View
+              key={i}
+              style={{
+                width: barWidth,
+                height: Math.max(2, (val / max) * 20),
+                borderRadius: 1.5,
+                backgroundColor: accentColor || theme.textSecondary,
+              }}
+            />
+          ))}
+        </View>
+      );
+    };
+
+    return (
+      <TouchableOpacity
+        style={[styles.statCard, { backgroundColor: theme.card }]}
+        onPress={() => {
+          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress?.();
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.statIconWrap, { backgroundColor: iconBg || theme.cardSecondary }]}>
+          <Icon size={20} color={iconColor || theme.textSecondary} strokeWidth={1.5} />
+        </View>
+        <View style={styles.statValueRow}>
+          <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
+          {trendColor && (
+            <View style={[styles.trendBadge, { backgroundColor: trendColor + '18' }]}>
+              {change > 0 ? (
+                <TrendingUp size={11} color={trendColor} strokeWidth={2.5} />
+              ) : (
+                <TrendingDown size={11} color={trendColor} strokeWidth={2.5} />
+              )}
+              <Text style={{ fontSize: 10, color: trendColor, fontWeight: '700' }}>
+                {Math.abs(change)}%
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
+        {subValue && <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>{subValue}</Text>}
+        {renderSparkline()}
+        <ChevronRight size={16} color={theme.textSecondary} style={styles.cardChevron} />
+      </TouchableOpacity>
+    );
+  };
 
   // Insight Card
   const InsightCard = ({ icon: Icon, title, value, subtitle }: any) => (
@@ -784,6 +1277,38 @@ ${comparisonText}
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
+  // ✨ Staggered entry animation
+  const cardAnims = useRef(
+    Array.from({ length: 6 }, () => new RNAnimated.Value(0))
+  ).current;
+  const cardSlides = useRef(
+    Array.from({ length: 6 }, () => new RNAnimated.Value(18))
+  ).current;
+
+  useEffect(() => {
+    // Reset
+    cardAnims.forEach(a => a.setValue(0));
+    cardSlides.forEach(a => a.setValue(18));
+    // Stagger
+    const animations = cardAnims.map((anim, i) =>
+      RNAnimated.parallel([
+        RNAnimated.timing(anim, { toValue: 1, duration: 350, delay: i * 60, useNativeDriver: true }),
+        RNAnimated.timing(cardSlides[i], { toValue: 0, duration: 350, delay: i * 60, useNativeDriver: true }),
+      ])
+    );
+    RNAnimated.parallel(animations).start();
+  }, [loading]);
+
+  const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => (
+    <RNAnimated.View style={{
+      width: (SCREEN_WIDTH - 52) / 2,
+      opacity: cardAnims[Math.min(index, 5)],
+      transform: [{ translateY: cardSlides[Math.min(index, 5)] }],
+    }}>
+      {children}
+    </RNAnimated.View>
+  );
+
   // Summary Tab
   const SummaryTab = () => (
     <ScrollView
@@ -791,202 +1316,267 @@ ${comparisonText}
       contentContainerStyle={styles.tabContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {/* AI Insight Header - Premium Glass Squeeze */}
-
-
       {/* Stats Grid */}
       <View
         style={[styles.statsGrid, { position: 'relative' }]}
       >
-        {statsOrder.map((key) => {
+        {statsOrder.map((key, idx) => {
           if (key === 'food') return (
-            <StatCard
-              key="food"
-              icon={Utensils}
-              value={dailyStats.foodCount}
-              label="האכלות"
-              subValue={`${dailyStats.food} מ"ל`}
-              change={comparison?.feedingChange}
-              iconColor={isDarkMode ? '#fff' : '#000'}
-              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
-              onPress={() => setSelectedMetric('food')}
-            />
+            <AnimatedCard key="food" index={idx}>
+              <StatCard
+                icon={Utensils}
+                value={dailyStats.foodCount}
+                label="האכלות"
+                subValue={dailyStats.food > 0 ? `${dailyStats.food} מ"ל` : undefined}
+                change={comparison?.feedingChange}
+                accentColor="#10B981"
+                iconColor="#10B981"
+                iconBg={isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)'}
+                sparklineData={weeklyData.food}
+                onPress={() => isPremium ? setSelectedMetric('food') : setShowPaywall(true)}
+              />
+            </AnimatedCard>
           );
           if (key === 'sleep') return (
-            <StatCard
-              key="sleep"
-              icon={Moon}
-              value={`${dailyStats.sleep.toFixed(1)}`}
-              label="שעות שינה"
-              subValue={`${dailyStats.sleepCount} תנומות`}
-              change={comparison?.sleepChange}
-              iconColor={isDarkMode ? '#fff' : '#000'}
-              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
-              onPress={() => setSelectedMetric('sleep')}
-            />
+            <AnimatedCard key="sleep" index={idx}>
+              <StatCard
+                icon={Moon}
+                value={dailyStats.sleep > 0 ? dailyStats.sleep.toFixed(1) : (dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount}` : '—')}
+                label={dailyStats.sleep > 0 ? 'שעות שינה' : (dailyStats.sleepCount > 0 ? 'תנומות' : 'שעות שינה')}
+                subValue={dailyStats.sleep > 0 && dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount} תנומות` : undefined}
+                change={comparison?.sleepChange}
+                accentColor="#6366F1"
+                iconColor="#6366F1"
+                iconBg={isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)'}
+                sparklineData={weeklyData.sleep}
+                onPress={() => isPremium ? setSelectedMetric('sleep') : setShowPaywall(true)}
+              />
+            </AnimatedCard>
           );
           if (key === 'diapers') return (
-            <StatCard
-              key="diapers"
-              icon={Droplets}
-              value={dailyStats.diapers}
-              label="חיתולים"
-              change={comparison?.diaperChange}
-              iconColor={isDarkMode ? '#fff' : '#000'}
-              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
-              onPress={() => setSelectedMetric('diapers')}
-            />
+            <AnimatedCard key="diapers" index={idx}>
+              <StatCard
+                icon={Droplets}
+                value={dailyStats.diapers}
+                label="חיתולים"
+                change={comparison?.diaperChange}
+                accentColor="#F59E0B"
+                iconColor="#F59E0B"
+                iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
+                sparklineData={weeklyData.diapers}
+                onPress={() => isPremium ? setSelectedMetric('diapers') : setShowPaywall(true)}
+              />
+            </AnimatedCard>
           );
           if (key === 'supplements') return (
-            <StatCard
-              key="supplements"
-              icon={Pill}
-              value={dailyStats.supplements}
-              label="תוספים"
-              iconColor={isDarkMode ? '#fff' : '#000'}
-              iconBg={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
-              onPress={() => setSelectedMetric('supplements')}
-            />
+            <AnimatedCard key="supplements" index={idx}>
+              <StatCard
+                icon={Pill}
+                value={dailyStats.supplements}
+                label="תוספים"
+                accentColor="#EC4899"
+                iconColor="#EC4899"
+                iconBg={isDarkMode ? 'rgba(236, 72, 153, 0.15)' : 'rgba(236, 72, 153, 0.1)'}
+                onPress={() => isPremium ? setSelectedMetric('supplements') : setShowPaywall(true)}
+              />
+            </AnimatedCard>
           );
           return null;
         })}
 
         {/* Growth Cube */}
-        <GrowthStatCube
-          childId={activeChild?.childId}
-          onPress={() => setShowGrowthScreen(true)}
-        />
+        <AnimatedCard index={4}>
+          {renderLockedSection(
+            <GrowthStatCube
+              childId={activeChild?.childId}
+              onPress={() => setShowGrowthScreen(true)}
+            />,
+            true
+          )}
+        </AnimatedCard>
 
-        {/* History Cube - Matching Style */}
-        <TouchableOpacity
-          style={[styles.statCard, { backgroundColor: theme.card }]}
-          onPress={() => setShowHistoryModal(true)}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.statIconWrap, { backgroundColor: theme.primary + '15' }]}>
-            <Clock size={20} color={theme.primary} strokeWidth={1.5} />
-          </View>
+        {/* History Cube */}
+        <AnimatedCard index={5}>
+          {renderLockedSection(
+            <TouchableOpacity
+              style={[styles.statCard, { backgroundColor: theme.card }]}
+              onPress={() => setShowHistoryModal(true)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.statIconWrap, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }]}>
+                <Clock size={20} color="#3B82F6" strokeWidth={1.5} />
+              </View>
 
-          <View style={styles.statValueRow}>
-            <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>יומן</Text>
-          </View>
+              <View style={styles.statValueRow}>
+                <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>יומן</Text>
+              </View>
 
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>היסטוריה</Text>
-          <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>ציר זמן מלא</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>היסטוריה</Text>
+              <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>ציר זמן מלא</Text>
 
-          <ChevronRight size={16} color={theme.textTertiary} style={styles.cardChevron} />
-        </TouchableOpacity>
+              <ChevronRight size={16} color={theme.textTertiary} style={styles.cardChevron} />
+            </TouchableOpacity>,
+            true
+          )}
+        </AnimatedCard>
 
-        <TouchableOpacity
-          style={styles.editStatsBtn}
-          onPress={() => setShowStatsEdit(true)}
-        >
+        <TouchableOpacity style={styles.editStatsBtn} onPress={() => setShowStatsEdit(true)}>
           <Edit2 size={16} color={theme.textSecondary} />
           <Text style={[styles.editStatsText, { color: theme.textSecondary }]}>{t('stats.editOrder')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Weekly Comparison - Enhanced */}
-      <View
-        style={[styles.comparisonSection, { backgroundColor: theme.card }]}
-      >
-        <View style={styles.goalsSectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-            {timeRange === 'day' ? t('stats.comparison.yesterday') : timeRange === 'month' ? t('stats.comparison.lastMonth') : t('stats.comparison.lastWeek')}
-          </Text>
-        </View>
-
-        <View style={styles.comparisonGrid}>
-          {/* Sleep Comparison - Blue */}
-          <View style={styles.comparisonItem}>
-            <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>שינה</Text>
-            <Text style={[styles.comparisonValue, { color: '#3B82F6' }]}>
-              {comparison?.sleepChange !== undefined ? (comparison.sleepChange >= 0 ? '+' : '') + comparison.sleepChange + '%' : '--'}
-            </Text>
-          </View>
-
-          {/* Food Comparison - Green */}
-          <View style={styles.comparisonItem}>
-            <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלות</Text>
-            <Text style={[styles.comparisonValue, { color: '#10B981' }]}>
-              {comparison?.feedingChange !== undefined ? (comparison.feedingChange >= 0 ? '+' : '') + comparison.feedingChange + '%' : '--'}
-            </Text>
-          </View>
-
-          {/* Diapers Comparison */}
-          <View style={styles.comparisonItem}>
-            <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
-            <Text style={[styles.comparisonValue, { color: theme.textPrimary }]}>
-              {comparison?.diaperChange !== undefined ? (comparison.diaperChange >= 0 ? '+' : '') + comparison.diaperChange + '%' : '--'}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Weekly Goals & Streaks - Enhanced */}
-      <View
-        style={[styles.goalsSection, { backgroundColor: theme.card }]}
-      >
-        <View style={styles.goalsSectionHeader}>
+      {renderLockedSection(
+        <View style={[styles.comparisonSection, { backgroundColor: theme.card }]}>
           <View style={styles.goalsSectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              {timeRange === 'day' ? t('stats.goals.daily') : timeRange === 'month' ? t('stats.goals.monthly') : t('stats.goals.weekly')}
+              {timeRange === 'day' ? t('stats.comparison.yesterday') : timeRange === 'month' ? t('stats.comparison.lastMonth') : t('stats.comparison.lastWeek')}
             </Text>
+          </View>
+
+          <View style={styles.comparisonGrid}>
+            {/* Sleep Comparison */}
+            <View style={styles.comparisonItem}>
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
+                <Moon size={16} color="#6366F1" strokeWidth={2} />
+              </View>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>שינה</Text>
+              <Text style={[styles.comparisonValue, {
+                color: comparison?.sleepChange !== undefined && comparison.sleepChange !== 0
+                  ? (comparison.sleepChange > 0 ? '#10B981' : '#EF4444')
+                  : theme.textSecondary
+              }]}>
+                {comparison?.sleepChange !== undefined && comparison.sleepChange !== 0
+                  ? (comparison.sleepChange >= 0 ? '+' : '') + comparison.sleepChange + '%'
+                  : '—'}
+              </Text>
+              {comparison?.sleepChange !== undefined && comparison.sleepChange !== 0 && (
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.sleepChange))}%`, backgroundColor: '#6366F1' }]} />
+                </View>
+              )}
+            </View>
+
+            {/* Food Comparison */}
+            <View style={styles.comparisonItem}>
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
+                <Utensils size={16} color="#10B981" strokeWidth={2} />
+              </View>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלות</Text>
+              <Text style={[styles.comparisonValue, {
+                color: comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
+                  ? (comparison.feedingChange > 0 ? '#10B981' : '#EF4444')
+                  : theme.textSecondary
+              }]}>
+                {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
+                  ? (comparison.feedingChange >= 0 ? '+' : '') + comparison.feedingChange + '%'
+                  : '—'}
+              </Text>
+              {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0 && (
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: '#10B981' }]} />
+                </View>
+              )}
+            </View>
+
+            {/* Diapers Comparison */}
+            <View style={styles.comparisonItem}>
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
+                <Droplets size={16} color="#F59E0B" strokeWidth={2} />
+              </View>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
+              <Text style={[styles.comparisonValue, {
+                color: comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
+                  ? (comparison.diaperChange > 0 ? '#10B981' : '#EF4444')
+                  : theme.textSecondary
+              }]}>
+                {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
+                  ? (comparison.diaperChange >= 0 ? '+' : '') + comparison.diaperChange + '%'
+                  : '—'}
+              </Text>
+              {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0 && (
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: '#F59E0B' }]} />
+                </View>
+              )}
+            </View>
           </View>
         </View>
+      )}
 
-        {/* Sleep Goal - Blue */}
-        <View style={styles.goalItem}>
-          <View style={styles.goalItemHeader}>
-            <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>שינה של 8+ שעות</Text>
-            <Text style={[styles.goalItemProgress, { color: '#3B82F6' }]}>
-              {weeklyGoals.sleepDaysMet}/{weeklyGoals.sleepDaysGoal}
-            </Text>
+      {/* Weekly Goals & Streaks - Enhanced */}
+      {renderLockedSection(
+        <View style={[styles.goalsSection, { backgroundColor: theme.card }]}>
+          <View style={styles.goalsSectionHeader}>
+            <View style={styles.goalsSectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                {timeRange === 'day' ? t('stats.goals.daily') : timeRange === 'month' ? t('stats.goals.monthly') : t('stats.goals.weekly')}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(60, 130, 246, 0.2)' : 'rgba(60, 130, 246, 0.1)' }]}>
-            <View
-              style={[
-                styles.goalProgressFill,
-                {
-                  width: `${weeklyGoals.sleepDaysGoal > 0 ? (weeklyGoals.sleepDaysMet / weeklyGoals.sleepDaysGoal) * 100 : 0}%`,
-                  backgroundColor: '#3B82F6'
-                }
-              ]}
-            />
+
+          {/* Sleep Goal - Blue */}
+          <View style={styles.goalItem}>
+            <View style={styles.goalItemHeader}>
+              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>שינה של 8+ שעות</Text>
+              <Text style={[styles.goalItemProgress, { color: '#3B82F6' }]}>
+                {weeklyGoals.sleepDaysMet}/{weeklyGoals.sleepDaysGoal}
+              </Text>
+            </View>
+            <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(60, 130, 246, 0.2)' : 'rgba(60, 130, 246, 0.1)' }]}>
+              <View
+                style={[
+                  styles.goalProgressFill,
+                  {
+                    width: `${weeklyGoals.sleepDaysGoal > 0 ? (weeklyGoals.sleepDaysMet / weeklyGoals.sleepDaysGoal) * 100 : 0}%`,
+                    backgroundColor: '#3B82F6'
+                  }
+                ]}
+              />
+            </View>
           </View>
+
+          {/* Documentation Goal - Green */}
+          <View style={styles.goalItem}>
+            <View style={styles.goalItemHeader}>
+              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>ימים עם תיעוד</Text>
+              <Text style={[styles.goalItemProgress, { color: '#10B981' }]}>
+                {weeklyGoals.docDaysMet}/{weeklyGoals.docDaysGoal}
+              </Text>
+            </View>
+            <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)' }]}>
+              <View
+                style={[
+                  styles.goalProgressFill,
+                  {
+                    width: `${weeklyGoals.docDaysGoal > 0 ? (weeklyGoals.docDaysMet / weeklyGoals.docDaysGoal) * 100 : 0}%`,
+                    backgroundColor: '#10B981'
+                  }
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* 🔥 Premium Streak Badge */}
+          {weeklyGoals.streak > 0 && (
+            <View style={[styles.streakBadgePremium, {
+              backgroundColor: isDarkMode ? 'rgba(251, 146, 60, 0.12)' : 'rgba(251, 146, 60, 0.08)',
+              borderColor: isDarkMode ? 'rgba(251, 146, 60, 0.25)' : 'rgba(251, 146, 60, 0.15)',
+            }]}>
+              <Text style={styles.streakFireEmoji}>🔥</Text>
+              <View style={styles.streakTextWrap}>
+                <Text style={[styles.streakNumber, { color: '#F97316' }]}>
+                  {weeklyGoals.streak}
+                </Text>
+                <Text style={[styles.streakDaysLabel, { color: theme.textSecondary }]}>
+                  ימים רצופים
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
-
-        {/* Documentation Goal - Green */}
-        <View style={styles.goalItem}>
-          <View style={styles.goalItemHeader}>
-            <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>ימים עם תיעוד</Text>
-            <Text style={[styles.goalItemProgress, { color: '#10B981' }]}>
-              {weeklyGoals.docDaysMet}/{weeklyGoals.docDaysGoal}
-            </Text>
-          </View>
-          <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)' }]}>
-            <View
-              style={[
-                styles.goalProgressFill,
-                {
-                  width: `${weeklyGoals.docDaysGoal > 0 ? (weeklyGoals.docDaysMet / weeklyGoals.docDaysGoal) * 100 : 0}%`,
-                  backgroundColor: '#10B981'
-                }
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Streak with icon */}
-        {weeklyGoals.streak > 0 && (
-          <View style={styles.streakRow}>
-            <Check size={16} color={theme.textPrimary} strokeWidth={2.5} />
-            <Text style={[styles.streakSimple, { color: theme.textPrimary }]}>
-              {weeklyGoals.streak} ימים רצופים
-            </Text>
-          </View>
-        )}
-      </View>
+      )}
     </ScrollView>
   );
 
@@ -1003,6 +1593,54 @@ ${comparisonText}
   }, [dailyStats, timeInsights, weeklyData, prevWeekStats, activeChild?.childName]);
 
   // Premium Insights Tab
+  const renderLockedSection = (children: React.ReactNode, compact: boolean = false) => {
+    if (isPremium) return children;
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => setShowPaywall(true)}
+        style={{ overflow: 'hidden', borderRadius: 24, marginTop: 10 }}
+      >
+        <View style={{ opacity: 0.4 }} pointerEvents="none">
+          {children}
+        </View>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 40 : 100}
+          tint={isDarkMode ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', padding: compact ? 12 : 20 }]}
+        >
+          <View style={{
+            backgroundColor: theme.textPrimary,
+            paddingVertical: compact ? 8 : 14,
+            paddingHorizontal: compact ? 16 : 24,
+            borderRadius: 100, // Pill shape
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: compact ? 8 : 12,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: compact ? 4 : 6 },
+            shadowOpacity: 0.15,
+            shadowRadius: compact ? 8 : 12,
+            elevation: 8,
+            maxWidth: '100%',
+          }}>
+            <Lock size={compact ? 14 : 18} color={theme.card} strokeWidth={2} />
+            <Text
+              style={{ color: theme.card, fontWeight: '700', fontSize: compact ? 13 : 16, textAlign: 'center' }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {compact ? 'תובנות מתקדמות' : 'פתיחת תובנות מתקדמות'}
+            </Text>
+          </View>
+        </BlurView>
+      </TouchableOpacity>
+    );
+  };
+
   const InsightsTab = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.tabContent}>
       {/* Insights Section */}
@@ -1024,29 +1662,31 @@ ${comparisonText}
         <Award size={16} color="#6366F1" strokeWidth={1.5} />
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>הישגים</Text>
       </View>
-      <View style={styles.insightsList}>
-        <PremiumInsightCard
-          icon={Moon}
-          title="שינה ארוכה ביותר"
-          value={`${timeInsights?.longestSleep || 0} שעות`}
-          color={isDarkMode ? '#fff' : '#000'}
-          delay={0}
-        />
-        <PremiumInsightCard
-          icon={Utensils}
-          title="האכלה גדולה ביותר"
-          value={`${timeInsights?.biggestFeeding || 0} מ"ל`}
-          color={isDarkMode ? '#fff' : '#000'}
-          delay={50}
-        />
-        <PremiumInsightCard
-          icon={Clock}
-          title="זמן ממוצע בין האכלות"
-          value={`${timeInsights?.avgFeedingInterval || 0} שעות`}
-          color={isDarkMode ? '#fff' : '#000'}
-          delay={100}
-        />
-      </View>
+      {renderLockedSection(
+        <View style={styles.insightsList}>
+          <PremiumInsightCard
+            icon={Moon}
+            title="שינה ארוכה ביותר"
+            value={`${timeInsights?.longestSleep || 0} שעות`}
+            color={isDarkMode ? '#fff' : '#000'}
+            delay={0}
+          />
+          <PremiumInsightCard
+            icon={Utensils}
+            title="האכלה גדולה ביותר"
+            value={`${timeInsights?.biggestFeeding || 0} מ"ל`}
+            color={isDarkMode ? '#fff' : '#000'}
+            delay={50}
+          />
+          <PremiumInsightCard
+            icon={Clock}
+            title="זמן ממוצע בין האכלות"
+            value={`${timeInsights?.avgFeedingInterval || 0} שעות`}
+            color={isDarkMode ? '#fff' : '#000'}
+            delay={100}
+          />
+        </View>
+      )}
 
       {/* Patterns Section */}
       {aiInsights.patterns.length > 0 && (
@@ -1055,18 +1695,20 @@ ${comparisonText}
             <Activity size={16} color="#6366F1" strokeWidth={1.5} />
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>דפוסים</Text>
           </View>
-          <View style={styles.insightsList}>
-            {aiInsights.patterns.map((pattern, index) => (
-              <PremiumInsightCard
-                key={index}
-                icon={pattern.icon}
-                title={pattern.label}
-                value={pattern.value}
-                color={pattern.color}
-                delay={index * 50}
-              />
-            ))}
-          </View>
+          {renderLockedSection(
+            <View style={styles.insightsList}>
+              {aiInsights.patterns.map((pattern, index) => (
+                <PremiumInsightCard
+                  key={index}
+                  icon={pattern.icon}
+                  title={pattern.label}
+                  value={pattern.value}
+                  color={pattern.color}
+                  delay={index * 50}
+                />
+              ))}
+            </View>
+          )}
         </>
       )}
 
@@ -1093,25 +1735,27 @@ ${comparisonText}
             <BarChart2 size={16} color="#6366F1" strokeWidth={1.5} />
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('stats.comparison')}</Text>
           </View>
-          <View style={styles.insightsList}>
-            <PremiumInsightCard
-              icon={Moon}
-              title="שינה"
-              value={`${comparison.sleepChange >= 0 ? '+' : ''}${comparison.sleepChange}%`}
-              subtitle={comparison.sleepChange >= 0 ? 'יותר שינה' : 'פחות שינה'}
-              trend={comparison.sleepChange >= 0 ? 'up' : 'down'}
-              color="#8B5CF6"
-              delay={0}
-            />
-            <PremiumInsightCard
-              icon={Utensils}
-              title="האכלות"
-              value={`${comparison.feedingChange >= 0 ? '+' : ''}${comparison.feedingChange}%`}
-              trend={comparison.feedingChange >= 0 ? 'up' : 'down'}
-              color="#F59E0B"
-              delay={50}
-            />
-          </View>
+          {renderLockedSection(
+            <View style={styles.insightsList}>
+              <PremiumInsightCard
+                icon={Moon}
+                title="שינה"
+                value={`${comparison.sleepChange >= 0 ? '+' : ''}${comparison.sleepChange}%`}
+                subtitle={comparison.sleepChange >= 0 ? 'יותר שינה' : 'פחות שינה'}
+                trend={comparison.sleepChange >= 0 ? 'up' : 'down'}
+                color="#8B5CF6"
+                delay={0}
+              />
+              <PremiumInsightCard
+                icon={Utensils}
+                title="האכלות"
+                value={`${comparison.feedingChange >= 0 ? '+' : ''}${comparison.feedingChange}%`}
+                trend={comparison.feedingChange >= 0 ? 'up' : 'down'}
+                color="#F59E0B"
+                delay={50}
+              />
+            </View>
+          )}
         </>
       )}
 
@@ -1223,8 +1867,21 @@ ${comparisonText}
       >
         <View style={styles.headerTop}>
           <ChildPicker compact />
-          <TouchableOpacity style={styles.exportBtn} onPress={handleExport}>
-            <Download size={20} color={theme.textSecondary} strokeWidth={1.5} />
+          <TouchableOpacity
+            style={[styles.exportBtn, {
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF',
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.04)',
+              borderWidth: 1,
+              shadowColor: isDarkMode ? '#000' : '#6366F1',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDarkMode ? 0.4 : 0.12,
+              shadowRadius: 10,
+              elevation: 6,
+            }]}
+            onPress={handleExport}
+            activeOpacity={0.7}
+          >
+            <Download size={20} color={isDarkMode ? '#FFF' : theme.textPrimary} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
@@ -1311,6 +1968,17 @@ ${comparisonText}
         childId={activeChild?.childId}
       />
 
+      <PremiumPaywall
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        trigger="reports_screen_blur"
+      />
+
+      <DynamicPromoModal
+        currentScreenName="Reports"
+        onNavigateToPaywall={() => setShowPaywall(true)}
+      />
+
       {/* History Log Modal */}
       <Modal visible={showHistoryModal} animationType="slide" presentationStyle="pageSheet">
         <View style={[styles.historyModalContainer, { backgroundColor: theme.background }]}>
@@ -1383,7 +2051,7 @@ const styles = StyleSheet.create({
   header: { paddingTop: Platform.OS === 'ios' ? 60 : 45, paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   headerTitle: { fontSize: 26, fontWeight: '700', textAlign: 'right', marginBottom: 14 },
-  exportBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  exportBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 
   // Filters
   filterRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 12 },
@@ -1402,7 +2070,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, fontWeight: '600' },
 
   // Content
-  tabContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 100 },
+  tabContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 140 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   emptyText: { fontSize: 16, fontWeight: '500' },
@@ -1411,7 +2079,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20, justifyContent: 'space-between' },
   editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 4 },
   editStatsText: { fontSize: 13 },
-  statCard: { width: (SCREEN_WIDTH - 52) / 2, padding: 16, borderRadius: 20, alignItems: 'flex-end', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  statCard: { width: '100%', minHeight: 150, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
   statIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statValue: { fontSize: 24, fontWeight: '700' },
@@ -1551,6 +2219,8 @@ const styles = StyleSheet.create({
   comparisonLabel: { fontSize: 12, marginBottom: 4 },
   comparisonValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   comparisonValue: { fontSize: 18, fontWeight: '700' },
+  comparisonBar: { width: '80%', height: 4, borderRadius: 2, overflow: 'hidden', marginTop: 6 },
+  comparisonBarFill: { height: '100%', borderRadius: 2 },
 
   // Growth Section
   growthSection: { borderRadius: 20, padding: 20, marginTop: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
@@ -1558,4 +2228,11 @@ const styles = StyleSheet.create({
   growthItem: { alignItems: 'center', flex: 1 },
   growthValue: { fontSize: 22, fontWeight: '700' },
   growthLabel: { fontSize: 12, marginTop: 4 },
+
+  // Premium Streak Badge
+  streakBadgePremium: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 16, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 16, borderWidth: 1, alignSelf: 'center' },
+  streakFireEmoji: { fontSize: 24 },
+  streakTextWrap: { alignItems: 'center' },
+  streakNumber: { fontSize: 22, fontWeight: '800' },
+  streakDaysLabel: { fontSize: 11, fontWeight: '500', marginTop: -2 },
 });

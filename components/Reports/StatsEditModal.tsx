@@ -6,6 +6,7 @@ import { X, GripVertical, RotateCcw, Utensils, Moon, Droplets, Pill } from 'luci
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
+import { logger } from '../../utils/logger';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 

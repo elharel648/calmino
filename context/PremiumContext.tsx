@@ -1,7 +1,8 @@
 // context/PremiumContext.tsx - Premium Subscription State Management
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { PurchasesPackage, PurchasesOfferings, CustomerInfo } from 'react-native-purchases';
-import { auth } from '../services/firebaseConfig';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../services/firebaseConfig';
 import {
     initializeRevenueCat,
     getOfferings,
@@ -58,9 +59,22 @@ interface PremiumProviderProps {
 
 export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) => {
     const [isPremium, setIsPremium] = useState(false);
+    const [globalOverride, setGlobalOverride] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
     const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+
+    // Listen to global system settings for Remote Premium Unlock
+    useEffect(() => {
+        const unsub = onSnapshot(doc(db, 'system', 'settings'), (docSnap) => {
+            if (docSnap.exists() && docSnap.data().globalPremiumUnlock === true) {
+                setGlobalOverride(true);
+            } else {
+                setGlobalOverride(false);
+            }
+        });
+        return () => unsub();
+    }, []);
 
     // Initialize RevenueCat
     useEffect(() => {
@@ -130,7 +144,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
             if (info) {
                 setCustomerInfo(info);
                 setIsPremium(isPremiumUser(info));
-                return isPremiumUser(info);
+                return true;
             }
             return false;
         } finally {
@@ -145,10 +159,12 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
         setIsPremium(isPremiumUser(info));
     }, []);
 
+    const finalIsPremium = isPremium || globalOverride;
+
     // Get limit for a feature
     const getLimit = useCallback((feature: keyof typeof FREE_LIMITS): number | boolean => {
-        return isPremium ? PREMIUM_ACCESS[feature] : FREE_LIMITS[feature];
-    }, [isPremium]);
+        return finalIsPremium ? PREMIUM_ACCESS[feature] : FREE_LIMITS[feature];
+    }, [finalIsPremium]);
 
     // Check if user can use a feature
     const canUseFeature = useCallback((feature: keyof typeof FREE_LIMITS): boolean => {
@@ -159,7 +175,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
     return (
         <PremiumContext.Provider
             value={{
-                isPremium,
+                isPremium: finalIsPremium,
                 isLoading,
                 offerings,
                 customerInfo,

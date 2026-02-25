@@ -2,6 +2,7 @@
 
 import { Alert } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { logger } from './logger';
 
 const MAX_IMAGE_SIZE_BYTES = 500 * 1024; // 500KB for Base64 safety
 const MAX_DIMENSION = 1200; // Max width/height

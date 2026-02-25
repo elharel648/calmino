@@ -1,7 +1,8 @@
-import React, { memo, useState, useRef, useEffect } from 'react';
+import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as Reanimated } from 'react-native-reanimated';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
+
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/ThemeContext';
@@ -70,6 +71,38 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
     // Apple-style Animations
     const slideAnim = useRef(new RNAnimated.Value(400)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+    const customIconPulse = useSharedValue(0);
+    const customIconBounce = useSharedValue(1);
+
+    const customIconPulseStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(customIconPulse.value, [0, 1], [0.4, 0]),
+        transform: [{ scale: interpolate(customIconPulse.value, [0, 1], [1, 1.7]) }],
+    }));
+
+    const customIconBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: customIconBounce.value }],
+    }));
+
+    useEffect(() => {
+        if (visible) {
+            customIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
+            customIconBounce.value = withRepeat(
+                withSequence(
+                    withTiming(1.12, { duration: 300 }),
+                    withTiming(0.94, { duration: 200 }),
+                    withTiming(1.05, { duration: 150 }),
+                    withTiming(1, { duration: 150 }),
+                    withTiming(1, { duration: 2200 }),
+                ),
+                -1,
+                false
+            );
+        } else {
+            customIconPulse.value = 0;
+            customIconBounce.value = 1;
+        }
+    }, [visible]);
 
     useEffect(() => {
         if (visible) {
@@ -205,21 +238,17 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                         <X size={24} color={theme.textSecondary} />
                     </TouchableOpacity>
 
-                    {/* Header - Premium Glass Effect */}
+                    {/* Header */}
                     <View style={styles.header}>
-                        {Platform.OS === 'ios' && (
-                            <BlurView
-                                intensity={80}
-                                tint={isDarkMode ? 'systemMaterialDark' : 'systemMaterialLight'}
-                                style={StyleSheet.absoluteFill}
-                            />
-                        )}
-                        <View style={[styles.headerContent, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.7)' }]}>
-                            <View style={[styles.emojiCircle, { backgroundColor: '#10B98115' }]}>
-                                <Sparkles size={28} color="#10B981" strokeWidth={2.5} />
+                        <View style={{ width: 60, height: 60, alignItems: 'center', justifyContent: 'center' }}>
+                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 30, backgroundColor: '#10B981' }, customIconPulseStyle]} />
+                            <View style={[styles.emojiCircle, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#10B98115' }]}>
+                                <Reanimated.View style={customIconBounceStyle}>
+                                    <Sparkles size={28} color="#10B981" strokeWidth={2.5} />
+                                </Reanimated.View>
                             </View>
-                            <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
                         </View>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
                     </View>
 
                     {/* Content */}
@@ -491,16 +520,6 @@ const styles = StyleSheet.create({
     header: {
         alignItems: 'center',
         paddingVertical: 20,
-        marginHorizontal: -24,
-        marginTop: 0,
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        overflow: 'hidden',
-    },
-    headerContent: {
-        alignItems: 'center',
-        width: '100%',
-        paddingVertical: 16,
     },
     emojiCircle: {
         width: 60,

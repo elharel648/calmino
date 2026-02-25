@@ -88,7 +88,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
         }
         const cleanPhone = sitterData.phone!.replace(/\D/g, '');
         const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
-        const message = `היי ${sitterData.name}, הגעתי דרך CalmParent, אשמח לשמוע פרטים :)`;
+        const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים :)`;
         const url = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
         Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'ואצאפ לא מותקן'));
     };
@@ -132,7 +132,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             try {
                 // Fetch sitter data from Firebase to get isAvailable, createdAt, and videoUri
                 const sitterDoc = await getDoc(doc(db, 'users', sitterData.id));
-                
+
                 let isAvailable = false;
                 let createdAt: Date | undefined = undefined;
                 let videoUri: string | undefined = sitterData.videoUri;
@@ -142,11 +142,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     isAvailable = data.sitterAvailable || data.sitterActive || false;
                     setSitterIsAvailable(isAvailable);
                     setSitterIsVerified(Boolean(data.sitterVerified));
-                    
+
                     if (data.createdAt) {
                         createdAt = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
                     }
-                    
+
                     // Get videoUri from Firebase if not already in sitterData
                     if (!videoUri) {
                         videoUri = data.sitterVideoUri || data.videoUri || undefined;
@@ -597,29 +597,29 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
                                 <TouchableOpacity
                                     style={[styles.filterChip,
-                                        reviewFilter === 'all' && {
-                                            backgroundColor: isDarkMode ? '#fff' : '#000',
-                                            borderColor: isDarkMode ? '#fff' : '#000'
-                                        }
+                                    reviewFilter === 'all' && {
+                                        backgroundColor: isDarkMode ? '#fff' : '#000',
+                                        borderColor: isDarkMode ? '#fff' : '#000'
+                                    }
                                     ]}
                                     onPress={() => setReviewFilter('all')}
                                     activeOpacity={0.7}
                                 >
                                     <Text style={[styles.filterChipText,
-                                        reviewFilter === 'all' && {
-                                            color: isDarkMode ? '#000' : '#fff',
-                                            fontWeight: '700'
-                                        }
+                                    reviewFilter === 'all' && {
+                                        color: isDarkMode ? '#000' : '#fff',
+                                        fontWeight: '700'
+                                    }
                                     ]}>הכל</Text>
                                 </TouchableOpacity>
                                 {[5, 4, 3, 2, 1].map(rating => (
                                     <TouchableOpacity
                                         key={rating}
                                         style={[styles.filterChip,
-                                            reviewFilter === String(rating) && {
-                                                backgroundColor: isDarkMode ? '#fff' : '#000',
-                                                borderColor: isDarkMode ? '#fff' : '#000'
-                                            }
+                                        reviewFilter === String(rating) && {
+                                            backgroundColor: isDarkMode ? '#fff' : '#000',
+                                            borderColor: isDarkMode ? '#fff' : '#000'
+                                        }
                                         ]}
                                         onPress={() => setReviewFilter(String(rating) as any)}
                                         activeOpacity={0.7}
@@ -627,10 +627,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                         <View style={styles.filterChipContent}>
                                             <Star size={14} color={reviewFilter === String(rating) ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} fill={reviewFilter === String(rating) ? (isDarkMode ? '#000' : '#fff') : 'transparent'} strokeWidth={1.5} />
                                             <Text style={[styles.filterChipText,
-                                                reviewFilter === String(rating) && {
-                                                    color: isDarkMode ? '#000' : '#fff',
-                                                    fontWeight: '700'
-                                                }
+                                            reviewFilter === String(rating) && {
+                                                color: isDarkMode ? '#000' : '#fff',
+                                                fontWeight: '700'
+                                            }
                                             ]}>
                                                 {rating}
                                             </Text>
@@ -717,11 +717,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 </View>
 
                                 {/* Text comment - Only show if: verified, 5 stars, and text exists */}
-                                {review.text && 
-                                 review.isVerified && 
-                                 review.rating === 5 && (
-                                    <Text style={[styles.reviewBody, { color: theme.textPrimary }]}>"{review.text}"</Text>
-                                )}
+                                {review.text &&
+                                    review.isVerified &&
+                                    review.rating === 5 && (
+                                        <Text style={[styles.reviewBody, { color: theme.textPrimary }]}>"{review.text}"</Text>
+                                    )}
 
                                 {/* Sitter Response Removed as per user request */}
 

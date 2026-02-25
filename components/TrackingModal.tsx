@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { logger } from '../utils/logger';
+
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder, Dimensions } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
@@ -12,7 +14,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, interpolate } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, interpolate } from 'react-native-reanimated';
 
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -35,6 +37,18 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Premium animations
   const glowAnim = useSharedValue(0);
   const sparkleAnim = useSharedValue(0);
+
+  // Diaper icon animations
+  const diaperPulse = useSharedValue(0);
+  const diaperWiggle = useSharedValue(0);
+
+  // Sleep icon animations
+  const sleepIconPulse = useSharedValue(0);
+  const sleepIconFloat = useSharedValue(0);
+
+  // Food icon animations
+  const foodIconPulse = useSharedValue(0);
+  const foodIconBounce = useSharedValue(1);
 
   // Get translated TYPE_CONFIG
   const TYPE_CONFIG = {
@@ -121,25 +135,32 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Swipe down to dismiss
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: (evt, _) => {
-      const startY = evt.nativeEvent.pageY;
-      dragStartY.current = startY;
-      if (startY < 300) {
+      dragStartY.current = evt.nativeEvent.pageY;
+      return false; // let onMoveShouldSetPanResponder decide
+    },
+    // Capture phase: intercepts BEFORE ScrollView can claim the gesture
+    onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+      if (isDragging.current) return true;
+      const isDraggingDown = gestureState.dy > 6;
+      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.8;
+      const isScrollAtTop = scrollOffsetY.current <= 5;
+
+      if (isDraggingDown && isVerticalSwipe && isScrollAtTop) {
+        isDragging.current = true;
         setIsScrollEnabled(false);
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         return true;
       }
       return false;
     },
     onMoveShouldSetPanResponder: (evt, gestureState) => {
       if (isDragging.current) return true;
-      const currentY = evt.nativeEvent.pageY;
-      const isTopArea = currentY < 300;
-      const isDraggingDown = gestureState.dy > 5;
-      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+      const isDraggingDown = gestureState.dy > 8;
+      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5;
       const isScrollAtTop = scrollOffsetY.current <= 5;
 
-      if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
+      if (isDraggingDown && isVerticalSwipe && isScrollAtTop) {
         isDragging.current = true;
-        dragStartY.current = currentY;
         setIsScrollEnabled(false);
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         return true;
@@ -234,6 +255,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       setShowFoodStartTimePicker(false);
       setShowFoodEndTimePicker(false);
 
+      // Ensure save state is reset
+      setSaveSuccess(false);
+
       slideAnim.setValue(SCREEN_HEIGHT);
       backdropAnim.setValue(0);
 
@@ -250,6 +274,67 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     }
   }, [visible, slideAnim, backdropAnim, glowAnim, sparkleAnim]);
 
+  // Diaper icon animation
+  useEffect(() => {
+    if (visible && type === 'diaper') {
+      diaperPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      diaperWiggle.value = withRepeat(
+        withSequence(
+          withTiming(-14, { duration: 180 }),
+          withTiming(14, { duration: 360 }),
+          withTiming(-8, { duration: 280 }),
+          withTiming(8, { duration: 280 }),
+          withTiming(0, { duration: 180 }),
+          withTiming(0, { duration: 1400 }),
+        ),
+        -1,
+        false
+      );
+    } else {
+      diaperPulse.value = withTiming(0, { duration: 200 });
+      diaperWiggle.value = withTiming(0, { duration: 200 });
+    }
+  }, [visible, type]);
+
+  // Food icon animation
+  useEffect(() => {
+    if (visible && type === 'food') {
+      foodIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
+      foodIconBounce.value = withRepeat(
+        withSequence(
+          withTiming(1.12, { duration: 300 }),
+          withTiming(0.94, { duration: 200 }),
+          withTiming(1.05, { duration: 150 }),
+          withTiming(1, { duration: 150 }),
+          withTiming(1, { duration: 2200 }),
+        ),
+        -1,
+        false
+      );
+    } else {
+      foodIconPulse.value = withTiming(0, { duration: 200 });
+      foodIconBounce.value = withTiming(1, { duration: 200 });
+    }
+  }, [visible, type]);
+
+  // Sleep icon animation
+  useEffect(() => {
+    if (visible && type === 'sleep') {
+      sleepIconPulse.value = withRepeat(withTiming(1, { duration: 2200 }), -1, false);
+      sleepIconFloat.value = withRepeat(
+        withSequence(
+          withTiming(-7, { duration: 1600 }),
+          withTiming(0, { duration: 1600 }),
+        ),
+        -1,
+        false
+      );
+    } else {
+      sleepIconPulse.value = withTiming(0, { duration: 200 });
+      sleepIconFloat.value = withTiming(0, { duration: 200 });
+    }
+  }, [visible, type]);
+
   // Animated styles
   const glowStyle = useAnimatedStyle(() => ({
     opacity: interpolate(glowAnim.value, [0, 1], [0.3, 0.6]),
@@ -258,6 +343,33 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   const sparkleStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${interpolate(sparkleAnim.value, [0, 1], [0, 360])}deg` }],
+  }));
+
+  const diaperPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(diaperPulse.value, [0, 1], [0.45, 0]),
+    transform: [{ scale: interpolate(diaperPulse.value, [0, 1], [1, 1.7]) }],
+  }));
+
+  const diaperWiggleStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${diaperWiggle.value}deg` }],
+  }));
+
+  const foodIconPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(foodIconPulse.value, [0, 1], [0.4, 0]),
+    transform: [{ scale: interpolate(foodIconPulse.value, [0, 1], [1, 1.7]) }],
+  }));
+
+  const foodIconBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: foodIconBounce.value }],
+  }));
+
+  const sleepIconPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(sleepIconPulse.value, [0, 1], [0.35, 0]),
+    transform: [{ scale: interpolate(sleepIconPulse.value, [0, 1], [1, 1.65]) }],
+  }));
+
+  const sleepIconFloatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sleepIconFloat.value }],
   }));
 
   // Calculate duration for Time Range mode (Sleep)
@@ -566,13 +678,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
       // Start Live Activity for food
       if (type === 'food' && activeChild) {
-        quickActionsService.startMeal({
-          babyName: activeChild.childName,
-          babyEmoji: '👶', // Default emoji since ActiveChild doesn't have emoji property
-          mealType: foodType,
-          foodItems: solidsFoodName ? [solidsFoodName] : [],
-          progress: 0.5,
-        }).catch(err => logger.log('Meal activity error:', err));
+        quickActionsService.startMeal(
+          activeChild.childName,
+          '👶', // Default emoji since ActiveChild doesn't have emoji property
+          foodType,
+          solidsFoodName ? [solidsFoodName] : [],
+          0 // Initial progress
+        ).catch(err => logger.log('Meal activity error:', err));
       }
 
       // Reset all food timers after successful save (only here, not on pause!)
@@ -629,7 +741,13 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           }}
         >
           <View style={styles.foodTabIconContainer}>
-            <Milk size={20} color={foodType === 'bottle' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+            {isBottleActive ? (
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>{formatTime(bottleTimer)}</Text>
+            ) : bottleTimer > 0 ? (
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(bottleTimer)}</Text>
+            ) : (
+              <Milk size={20} color={foodType === 'bottle' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+            )}
           </View>
           <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'bottle' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.bottle')}</Text>
         </TouchableOpacity>
@@ -761,7 +879,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 <Text style={[styles.label, { textAlign: 'center', marginBottom: 12 }]}>{t('tracking.howMuch')}</Text>
                 <View style={[styles.amountRow, { marginTop: 0, gap: 12 }]}>
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20 }]}
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
                       if (current >= 5) setBottleAmount((current - 5).toString());
@@ -797,12 +915,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.amountValue, { fontSize: 32 }]}>{bottleAmount || '0'}</Text>
+                    <Text style={[styles.amountValue, { fontSize: 32, color: theme.textPrimary }]}>{bottleAmount || '0'}</Text>
                     <Text style={[styles.amountUnit, { fontSize: 13 }]}>{t('tracking.ml')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20 }]}
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
                       setBottleAmount((current + 5).toString());
@@ -819,7 +937,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 <TouchableOpacity
                   style={[
                     styles.breastTimeCard,
-                    { width: 130, aspectRatio: 1, flex: 0 },
+                    { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
                     isBottleActive && !foodTimerContext.bottleIsPaused && styles.breastTimeCardActive,
                     isBottleActive && foodTimerContext.bottleIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
                   ]}
@@ -827,7 +945,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.breastTimeLabel, isBottleActive && { color: '#fff', opacity: 0.9 }]}>{t('tracking.timer')}</Text>
-                  <Text style={[styles.breastTimeValue, isBottleActive && styles.breastTimeValueActive, { fontSize: 28 }]}>
+                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isBottleActive && styles.breastTimeValueActive]}>
                     {formatTime(bottleTimer)}
                   </Text>
                   <View style={[styles.breastPlayBtn, isBottleActive && styles.breastPlayBtnActive]}>
@@ -851,13 +969,14 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               <TouchableOpacity
                 style={[
                   styles.breastTimeCard,
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
                   activeSide === 'left' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
                   activeSide === 'left' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
                 ]}
                 onPress={() => { toggleBreastTimer('left'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
               >
                 <Text style={[styles.breastTimeLabel, activeSide === 'left' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.left')}</Text>
-                <Text style={[styles.breastTimeValue, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
+                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
                 <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
                   {activeSide === 'left' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'left' ? '#fff' : theme.primary} />}
                 </View>
@@ -870,13 +989,14 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               <TouchableOpacity
                 style={[
                   styles.breastTimeCard,
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
                   activeSide === 'right' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
                   activeSide === 'right' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
                 ]}
                 onPress={() => { toggleBreastTimer('right'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
               >
                 <Text style={[styles.breastTimeLabel, activeSide === 'right' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.right')}</Text>
-                <Text style={[styles.breastTimeValue, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
+                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
                 <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
                   {activeSide === 'right' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'right' ? '#fff' : theme.primary} />}
                 </View>
@@ -884,7 +1004,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             </View>
 
             {/* Total time display */}
-            <Text style={styles.breastTotalLabel}>{t('tracking.total')}: {formatTime(leftTimer + rightTimer)}</Text>
+            <Text style={[styles.breastTotalLabel, { color: theme.textSecondary }]}>{t('tracking.total')}: {formatTime(leftTimer + rightTimer)}</Text>
           </View>
         )
       }
@@ -900,7 +1020,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 <Text style={[styles.label, { textAlign: 'center', marginBottom: 12 }]}>{t('tracking.pumpingAmount')}</Text>
                 <View style={[styles.amountRow, { marginTop: 0, gap: 12 }]}>
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20 }]}
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
                       if (current >= 5) setPumpingAmount((current - 5).toString());
@@ -936,12 +1056,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.amountValue, { fontSize: 32 }]}>{pumpingAmount || '0'}</Text>
+                    <Text style={[styles.amountValue, { fontSize: 32, color: theme.textPrimary }]}>{pumpingAmount || '0'}</Text>
                     <Text style={[styles.amountUnit, { fontSize: 13 }]}>{t('tracking.ml')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20 }]}
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
                       setPumpingAmount((current + 5).toString());
@@ -958,7 +1078,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 <TouchableOpacity
                   style={[
                     styles.breastTimeCard,
-                    { width: 130, aspectRatio: 1, flex: 0 },
+                    { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
                     isPumpingActive && !foodTimerContext.pumpingIsPaused && styles.breastTimeCardActive,
                     isPumpingActive && foodTimerContext.pumpingIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
                   ]}
@@ -966,7 +1086,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.breastTimeLabel, isPumpingActive && { color: '#fff', opacity: 0.9 }]}>{t('tracking.timer')}</Text>
-                  <Text style={[styles.breastTimeValue, isPumpingActive && styles.breastTimeValueActive, { fontSize: 28 }]}>
+                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isPumpingActive && styles.breastTimeValueActive]}>
                     {formatTime(pumpingTimer)}
                   </Text>
                   <View style={[styles.breastPlayBtn, isPumpingActive && styles.breastPlayBtnActive]}>
@@ -987,8 +1107,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           <View style={styles.solidsContainer}>
             <Text style={styles.label}>{t('tracking.whatAte')}</Text>
             <TextInput
-              style={styles.solidsInput}
+              style={[styles.solidsInput, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#E5E7EB', color: theme.textPrimary }]}
               placeholder={`${t('tracking.forExample')}: ...`}
+              placeholderTextColor={theme.textTertiary}
               value={solidsFoodName}
               onChangeText={setSolidsFoodName}
               textAlign="right"
@@ -1004,7 +1125,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </View>
         <View pointerEvents="auto">
           <TextInput
-            style={[styles.sleepNoteInput, { minHeight: 80, color: theme.textPrimary, backgroundColor: theme.inputBackground }]}
+            style={[styles.sleepNoteInput, { minHeight: 80, color: theme.textPrimary, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)' }]}
             placeholder={`${t('tracking.example')}: ...`}
             placeholderTextColor={theme.textTertiary}
             value={foodNote}
@@ -1081,36 +1202,43 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   const renderSleepContent = () => (
     <View style={{ width: '100%' }}>
-      {/* Mode Selector - Icons Above Text */}
-      <View style={styles.sleepModeRow}>
-        <TouchableOpacity
-          style={[styles.sleepModeBtn, sleepMode === 'timerange' && styles.sleepModeBtnActive]}
-          onPress={() => { setSleepMode('timerange'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-        >
-          <Clock size={20} color={sleepMode === 'timerange' ? '#fff' : theme.textTertiary} strokeWidth={2} />
-          <Text style={[styles.sleepModeText, sleepMode === 'timerange' && styles.sleepModeTextActive]}>{t('tracking.hours')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.sleepModeBtn, sleepMode === 'duration' && styles.sleepModeBtnActive]}
-          onPress={() => { setSleepMode('duration'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-        >
-          <Hourglass size={20} color={sleepMode === 'duration' ? '#fff' : theme.textTertiary} strokeWidth={2} />
-          <Text style={[styles.sleepModeText, sleepMode === 'duration' && styles.sleepModeTextActive]}>{t('tracking.duration')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.sleepModeBtn, sleepMode === 'timer' && styles.sleepModeBtnActive]}
-          onPress={() => { setSleepMode('timer'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-        >
-          <Timer size={20} color={sleepMode === 'timer' ? '#fff' : theme.textTertiary} strokeWidth={2} />
-          <Text style={[styles.sleepModeText, sleepMode === 'timer' && styles.sleepModeTextActive]}>{t('tracking.timer')}</Text>
-        </TouchableOpacity>
+      {/* Mode Selector */}
+      <View style={[styles.sleepModeRow, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+        {([
+          { mode: 'timerange', icon: Clock, label: t('tracking.hours') },
+          { mode: 'duration', icon: Hourglass, label: t('tracking.duration') },
+          { mode: 'timer', icon: Timer, label: t('tracking.timer') },
+        ] as const).map(({ mode, icon: Icon, label }) => {
+          const isActive = sleepMode === mode;
+          return (
+            <TouchableOpacity
+              key={mode}
+              style={[
+                styles.sleepModeBtn,
+                isActive && styles.sleepModeBtnActive,
+              ]}
+              onPress={() => { setSleepMode(mode); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Icon size={18} color={isActive ? '#1C1C1E' : theme.textTertiary} strokeWidth={2} />
+              <Text style={[
+                styles.sleepModeText,
+                isActive && styles.sleepModeTextActive,
+                !isActive && { color: theme.textTertiary },
+              ]}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      {/* Timer Mode - Minimalist */}
+      {/* Timer Mode */}
       {sleepMode === 'timer' && (
         <View style={styles.sleepTimerSection}>
           <TouchableOpacity
-            style={[styles.sleepTimerCard, sleepContext.isRunning && styles.sleepTimerCardActive]}
+            style={[
+              styles.sleepTimerCard,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' },
+              sleepContext.isRunning && styles.sleepTimerCardActive,
+            ]}
             onPress={() => {
               if (sleepContext.isRunning) {
                 sleepContext.stop();
@@ -1123,48 +1251,72 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               }
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }}
+            activeOpacity={0.8}
           >
-            <Text style={[styles.sleepTimerValue, sleepContext.isRunning && styles.sleepTimerValueActive]}>
+            <Text style={[
+              styles.sleepTimerValue,
+              { color: isDarkMode ? theme.textPrimary : '#1C1C1E' },
+              sleepContext.isRunning && styles.sleepTimerValueActive,
+            ]}>
               {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
             </Text>
-            <View style={[styles.sleepTimerPlayBtn, sleepContext.isRunning && styles.sleepTimerPlayBtnActive]}>
-              {sleepContext.isRunning ? <Pause size={16} color="#fff" /> : <Play size={16} color={theme.primary} />}
+            <View style={[
+              styles.sleepTimerPlayBtn,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' },
+              sleepContext.isRunning && styles.sleepTimerPlayBtnActive,
+            ]}>
+              {sleepContext.isRunning
+                ? <Pause size={16} color="#fff" strokeWidth={2} />
+                : <Play size={16} color={isDarkMode ? 'rgba(255,255,255,0.7)' : '#1C1C1E'} strokeWidth={2} />
+              }
             </View>
           </TouchableOpacity>
-          <Text style={styles.sleepTimerHint}>
+          <Text style={[styles.sleepTimerHint, { color: theme.textTertiary }]}>
             {sleepContext.isRunning ? t('tracking.pressToStop') : t('tracking.pressToStart')}
           </Text>
         </View>
       )}
 
-      {/* Duration Mode - Modern Sliders */}
+      {/* Duration Mode */}
       {sleepMode === 'duration' && (
         <View style={styles.sleepDurationSection}>
           <View style={styles.sleepDurationRow}>
             <View style={styles.sleepDurationItem}>
-              <Text style={styles.sleepDurationLabel}>שעות</Text>
-              <View style={styles.sleepSlider}>
-                <TouchableOpacity style={styles.sleepSliderBtn} onPress={() => { setSleepHours(Math.max(0, sleepHours - 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                  <Text style={styles.sleepSliderBtnText}>−</Text>
+              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>שעות</Text>
+              <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
+                <TouchableOpacity
+                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                  onPress={() => { setSleepHours(Math.max(0, sleepHours - 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>−</Text>
                 </TouchableOpacity>
-                <Text style={styles.sleepSliderValue}>{sleepHours}</Text>
-                <TouchableOpacity style={styles.sleepSliderBtn} onPress={() => { setSleepHours(Math.min(12, sleepHours + 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                  <Text style={styles.sleepSliderBtnText}>+</Text>
+                <Text style={[styles.sleepSliderValue, { color: theme.textPrimary }]}>{sleepHours}</Text>
+                <TouchableOpacity
+                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                  onPress={() => { setSleepHours(Math.min(12, sleepHours + 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            <Text style={styles.sleepDurationSeparator}>:</Text>
+            <Text style={[styles.sleepDurationSeparator, { color: isDarkMode ? 'rgba(255,255,255,0.2)' : '#C7C7CC' }]}>:</Text>
 
             <View style={styles.sleepDurationItem}>
-              <Text style={styles.sleepDurationLabel}>{t('tracking.minutes')}</Text>
-              <View style={styles.sleepSlider}>
-                <TouchableOpacity style={styles.sleepSliderBtn} onPress={() => { setSleepMinutes(Math.max(0, sleepMinutes - 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                  <Text style={styles.sleepSliderBtnText}>−</Text>
+              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.minutes')}</Text>
+              <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
+                <TouchableOpacity
+                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                  onPress={() => { setSleepMinutes(Math.max(0, sleepMinutes - 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>−</Text>
                 </TouchableOpacity>
-                <Text style={styles.sleepSliderValue}>{String(sleepMinutes).padStart(2, '0')}</Text>
-                <TouchableOpacity style={styles.sleepSliderBtn} onPress={() => { setSleepMinutes(Math.min(55, sleepMinutes + 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                  <Text style={styles.sleepSliderBtnText}>+</Text>
+                <Text style={[styles.sleepSliderValue, { color: theme.textPrimary }]}>{String(sleepMinutes).padStart(2, '0')}</Text>
+                <TouchableOpacity
+                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                  onPress={() => { setSleepMinutes(Math.min(55, sleepMinutes + 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                >
+                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1204,9 +1356,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           {/* Duration Display */}
           {calculatedDuration && (
             <View style={styles.durationContainer}>
-              <View style={[styles.durationPill, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF', borderColor: isDarkMode ? '#6366F1' : '#C7D2FE' }]}>
-                <Clock size={16} color={theme.primary} strokeWidth={2} />
-                <Text style={[styles.durationText, { color: theme.primary }]}>
+              <View style={[styles.durationPill, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }]}>
+                <Clock size={15} color={theme.textSecondary} strokeWidth={2} />
+                <Text style={[styles.durationText, { color: theme.textSecondary }]}>
                   {t('tracking.total')}: {calculatedDuration.hours > 0 ? `${calculatedDuration.hours} ${t('tracking.hours')}` : ''} {calculatedDuration.minutes > 0 ? `${calculatedDuration.minutes} ${t('tracking.minutes')}` : ''}
                   {calculatedDuration.hours === 0 && calculatedDuration.minutes === 0 ? `0 ${t('tracking.minutes')}` : ''}
                 </Text>
@@ -1294,10 +1446,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       <View style={styles.sleepNoteContainer}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
           <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
-          <Text style={styles.sleepNoteLabel}>{t('tracking.note')}</Text>
+          <Text style={[styles.sleepNoteLabel, { color: theme.textTertiary }]}>{t('tracking.note')}</Text>
         </View>
         <TextInput
-          style={styles.sleepNoteInput}
+          style={[
+            styles.sleepNoteInput,
+            {
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+              color: theme.textPrimary,
+            }
+          ]}
           placeholder="לדוגמה: ישן עמוק, התעורר פעם אחת..."
           placeholderTextColor={theme.textTertiary}
           value={sleepNote}
@@ -1315,22 +1474,44 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       <Text style={[styles.subtitle, { textAlign: 'center' }]}>מה היה?</Text>
       <View style={styles.diaperOptions}>
         {[
-          { key: 'pee', label: 'רטוב', color: '#3B82F6', icon: Droplets },
-          { key: 'poop', label: 'מלוכלך', color: '#D97706', icon: Sparkles },
-          { key: 'both', label: 'שניהם', color: '#10B981', icon: Layers },
+          { key: 'pee', label: 'רטוב', icon: Droplets, color: '#3B82F6' },
+          { key: 'poop', label: 'מלוכלך', icon: Sparkles, color: '#F59E0B' },
+          { key: 'both', label: 'שניהם', icon: Layers, color: '#8B5CF6' },
         ].map(opt => {
           const IconComponent = opt.icon;
+          const isSelected = subType === opt.key;
           return (
             <TouchableOpacity
               key={opt.key}
-              style={[styles.diaperBtn, subType === opt.key && { backgroundColor: opt.color }]}
+              style={[
+                styles.diaperBtn,
+                {
+                  backgroundColor: isSelected
+                    ? opt.color
+                    : (isDarkMode ? 'rgba(255,255,255,0.07)' : '#FFFFFF'),
+                  borderColor: isSelected
+                    ? 'transparent'
+                    : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'),
+                }
+              ]}
               onPress={() => {
                 setSubType(opt.key);
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <IconComponent size={22} color={subType === opt.key ? '#fff' : opt.color} strokeWidth={2} />
-              <Text style={[styles.diaperBtnText, subType === opt.key && { color: '#fff' }]}>{opt.label}</Text>
+              <IconComponent
+                size={22}
+                color={isSelected ? '#FFFFFF' : (isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)')}
+                strokeWidth={2}
+              />
+              <Text style={[
+                styles.diaperBtnText,
+                {
+                  color: isSelected
+                    ? '#FFFFFF'
+                    : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.55)'),
+                }
+              ]}>{opt.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -1390,9 +1571,16 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       )}
 
       <TextInput
-        style={styles.diaperNoteInput}
+        style={[
+          styles.diaperNoteInput,
+          {
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
+            color: theme.textPrimary,
+          }
+        ]}
         placeholder="הערות (אופציונלי)..."
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
         value={diaperNote}
         onChangeText={(text) => setDiaperNote(text)}
         textAlign="right"
@@ -1414,14 +1602,19 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   return (
     <>
       <Modal visible={visible} transparent animationType="none">
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={onClose}>
-            <RNAnimatedView style={[styles.backdrop, { opacity: backdropAnim, backgroundColor: theme.modalOverlay }]}>
-              {Platform.OS === 'ios' && (
-                <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-              )}
-            </RNAnimatedView>
-          </TouchableWithoutFeedback>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
+          <RNAnimatedView style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
+            <BlurView
+              intensity={isDarkMode ? 40 : 20}
+              tint={isDarkMode ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={onClose}
+            />
+          </RNAnimatedView>
 
           <RNAnimatedView
             style={[
@@ -1429,49 +1622,76 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               {
                 backgroundColor: theme.card,
                 transform: [{ translateY: slideAnim }],
-              },
+              }
             ]}
             {...panResponder.panHandlers}
           >
-            {/* Drag Handle - iOS Sheet Style - Swipeable */}
+            {/* Drag Handle */}
             <View style={styles.dragHandle} {...panResponder.panHandlers}>
-              <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
+              <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
             </View>
 
-            {/* Header - Clean Solid Background - Also swipeable */}
-            <View style={[styles.header, { backgroundColor: theme.card }]} {...panResponder.panHandlers}>
-              <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
-                {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
+            {/* Header */}
+            {type && (
+              <View style={styles.header} {...panResponder.panHandlers}>
+                {type === 'diaper' ? (
+                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: config.accent }, diaperPulseStyle]} />
+                    <View style={[styles.emojiCircle, { backgroundColor: config.accent + '22' }]}>
+                      <Animated.View style={diaperWiggleStyle}>
+                        {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
+                      </Animated.View>
+                    </View>
+                  </View>
+                ) : type === 'food' ? (
+                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulseStyle]} />
+                    <View style={[styles.emojiCircle, { backgroundColor: 'rgba(245,158,11,0.14)' }]}>
+                      <Animated.View style={foodIconBounceStyle}>
+                        {React.createElement(config.icon, { size: 26, color: '#F59E0B', strokeWidth: 2 })}
+                      </Animated.View>
+                    </View>
+                  </View>
+                ) : type === 'sleep' ? (
+                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulseStyle]} />
+                    <View style={[styles.emojiCircle, { backgroundColor: 'rgba(129,140,248,0.14)' }]}>
+                      <Animated.View style={sleepIconFloatStyle}>
+                        {React.createElement(config.icon, { size: 26, color: '#6366F1', strokeWidth: 2 })}
+                      </Animated.View>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
+                    {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
+                  </View>
+                )}
+                <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
               </View>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
-            </View>
+            )}
 
-            {/* Content - Wrapped in KeyboardAwareScrollView */}
-            {/* Content - Wrapped in KeyboardAwareScrollView */}
+            {/* Scrollable Content */}
             <KeyboardAwareScrollView
               ref={scrollViewRef}
               style={{ width: '100%' }}
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              extraScrollHeight={120}
               enableOnAndroid={true}
+              extraScrollHeight={100}
+              keyboardShouldPersistTaps="handled"
               scrollEnabled={isScrollEnabled}
+              bounces={false}
+              scrollEventThrottle={16}
               onScroll={(e) => {
                 scrollOffsetY.current = e.nativeEvent.contentOffset.y;
               }}
-              scrollEventThrottle={16}
               onScrollBeginDrag={(e) => {
-                // If trying to scroll down from top, disable scroll
-                if (scrollOffsetY.current <= 0) {
-                  const scrollY = e.nativeEvent.contentOffset.y;
-                  if (scrollY < 0) {
-                    setIsScrollEnabled(false);
-                    setTimeout(() => {
-                      setIsScrollEnabled(true);
-                    }, 100);
-                  }
+                // At the top of scroll - hand off to pan responder for swipe-down dismiss
+                if (scrollOffsetY.current <= 2) {
+                  setIsScrollEnabled(false);
+                  setTimeout(() => {
+                    if (!isDragging.current) setIsScrollEnabled(true);
+                  }, 150);
                 }
               }}
             >
@@ -1643,7 +1863,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               </View>
             )}
           </RNAnimatedView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Calendar Modal */}
@@ -1651,7 +1871,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         visible={showCalendar}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowCalendar(false)}
+        onRequestClose={() => setShowCalendar(false)
+        }
         statusBarTranslucent={true}
       >
         <TouchableOpacity style={[styles.calendarModal, { backgroundColor: theme.modalOverlay }]} activeOpacity={1} onPress={() => setShowCalendar(false)}>
@@ -1749,7 +1970,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
-      </Modal>
+      </Modal >
     </>
   );
 }
@@ -1757,7 +1978,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 const styles = StyleSheet.create({
 
 
-  overlay: { flex: 1, justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   modalCard: {
     borderTopLeftRadius: 28,
@@ -1774,14 +1995,14 @@ const styles = StyleSheet.create({
   // Drag Handle - iOS Sheet Style - larger hit area for swipe
   dragHandle: {
     alignItems: 'center',
-    paddingTop: 14,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 4,
     paddingHorizontal: 50,
     zIndex: 10,
-    minHeight: 60, // Larger touch area for easier swiping
+    minHeight: 40, // Larger touch area for easier swiping
   },
   dragHandleBar: {
-    width: 36,
+    width: 44,
     height: 5,
     borderRadius: 3,
   },
@@ -1812,8 +2033,9 @@ const styles = StyleSheet.create({
   label: { fontSize: 15, fontWeight: '600', textAlign: 'right', marginBottom: 16 },
 
   // Date Picker Button - Minimal
-  datePickerBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
-  datePickerBtnText: { fontSize: 13, fontWeight: '600' },
+  foodTabsScroll: { marginBottom: 16 },
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginBottom: 12 },
+  datePickerBtnText: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
 
   // Calendar Modal - Minimal
   calendarModal: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -1893,8 +2115,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   premiumFoodTabActive: {
-    backgroundColor: '#6366F1',
-    borderColor: '#6366F1',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#1C1C1E',
     borderWidth: 1.5,
   },
   premiumFoodTabIconContainer: {
@@ -1917,7 +2139,7 @@ const styles = StyleSheet.create({
   premiumFoodTabTimer: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#6366F1',
+    color: '#F59E0B',
   },
   premiumFoodTabTimerActive: {
     color: '#fff',
@@ -1958,7 +2180,7 @@ const styles = StyleSheet.create({
 
   presets: { flexDirection: 'row', gap: 10, marginTop: 20 },
   presetBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F3F4F6', borderRadius: 12 },
-  presetBtnActive: { backgroundColor: '#6366F1' },
+  presetBtnActive: { backgroundColor: '#1C1C1E' },
   presetText: { fontWeight: '600', color: '#4B5563' },
   presetTextActive: { color: '#fff' },
 
@@ -1966,7 +2188,7 @@ const styles = StyleSheet.create({
   breastContainer: { alignItems: 'center', paddingHorizontal: 16 },
   breastTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
   breastTimeCard: { flex: 1, alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E5E7EB' },
-  breastTimeCardActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
+  breastTimeCardActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
   breastTimeLabel: { fontSize: 12, color: '#9CA3AF', fontWeight: '600', marginBottom: 8 },
   breastTimeValue: { fontSize: 32, fontWeight: '300', color: '#1F2937', letterSpacing: -1 },
   breastTimeValueActive: { color: '#fff' },
@@ -1978,10 +2200,10 @@ const styles = StyleSheet.create({
 
   // Pumping Timer - Premium Card
   pumpingTimerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#F3F4F6', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, marginBottom: 24 },
-  pumpingTimerBtnActive: { backgroundColor: '#6366F1' },
+  pumpingTimerBtnActive: { backgroundColor: '#F59E0B' },
   pumpingTimerText: { fontSize: 20, fontWeight: '700', color: '#1F2937' },
   premiumPumpingCard: { alignItems: 'center', alignSelf: 'center', backgroundColor: '#F9FAFB', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
-  premiumPumpingCardActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
+  premiumPumpingCardActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
   premiumPumpingLabel: { fontSize: 11, color: '#9CA3AF', marginBottom: 4, fontWeight: '600', letterSpacing: 0.3 },
   premiumPumpingLabelActive: { color: 'rgba(255,255,255,0.8)' },
   premiumPumpingTime: { fontSize: 26, fontWeight: '400', color: '#1F2937', letterSpacing: -0.5, marginBottom: 8 },
@@ -1996,52 +2218,51 @@ const styles = StyleSheet.create({
 
   // Sleep (Manual Entry)
   sleepTimerCompact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#F3F4F6', paddingVertical: 16, paddingHorizontal: 28, borderRadius: 20, marginBottom: 12, alignSelf: 'center' },
-  sleepTimerCompactActive: { backgroundColor: '#6366F1' },
+  sleepTimerCompactActive: { backgroundColor: '#34C759' },
   sleepTimerCompactText: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
   sleepTimerPulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff', opacity: 0.8 },
-  sleepTimerHint: { fontSize: 12, color: '#6366F1', textAlign: 'center', marginBottom: 8, fontWeight: '500' },
+  sleepTimerHint: { fontSize: 12, color: '#34C759', textAlign: 'center', marginBottom: 8, fontWeight: '500' },
   sleepDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, gap: 12 },
   sleepDividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
   sleepDividerText: { fontSize: 12, color: '#9CA3AF', fontWeight: '500' },
   sleepInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 },
   sleepInputGroup: { alignItems: 'center', gap: 8 },
   sleepBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  sleepBtnText: { fontSize: 22, fontWeight: '600', color: '#6366F1' },
+  sleepBtnText: { fontSize: 22, fontWeight: '600', color: '#34C759' },
   sleepValueBox: { alignItems: 'center', minWidth: 60 },
   sleepValue: { fontSize: 36, fontWeight: '800', color: '#1F2937' },
   sleepUnit: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
   sleepSeparator: { fontSize: 32, fontWeight: '700', color: '#D1D5DB' },
   sleepPresets: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   sleepNoteContainer: { marginTop: 16 },
-  sleepNoteLabel: { fontSize: 13, fontWeight: '600', color: '#6B7280', textAlign: 'right' },
-  sleepNoteInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, fontSize: 14, textAlign: 'right', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 60 },
+  sleepNoteLabel: { fontSize: 13, fontWeight: '500', textAlign: 'right' },
+  sleepNoteInput: { width: '100%', borderRadius: 14, padding: 14, fontSize: 14, textAlign: 'right', borderWidth: 1, minHeight: 60 },
 
   // New Modern Sleep UI
-  sleepModeRow: { flexDirection: 'row-reverse', justifyContent: 'center', gap: 8, marginBottom: 20, backgroundColor: '#F3F4F6', borderRadius: 12, padding: 4 },
+  sleepModeRow: { flexDirection: 'row-reverse', justifyContent: 'center', gap: 4, marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 14, padding: 4 },
   sleepModeBtn: { flex: 1, flexDirection: 'column', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 10 },
-  sleepModeBtnActive: { backgroundColor: '#6366F1' },
-  sleepModeText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
-  sleepModeTextActive: { color: '#fff' },
+  sleepModeBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  sleepModeText: { fontSize: 13, fontWeight: '500', color: '#8E8E93' },
+  sleepModeTextActive: { color: '#1C1C1E' },
 
   sleepTimerSection: { alignItems: 'center', marginVertical: 20 },
-  // Minimalist timer card
-  sleepTimerCard: { alignItems: 'center', backgroundColor: '#F9FAFB', paddingVertical: 20, paddingHorizontal: 48, borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB' },
-  sleepTimerCardActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
-  sleepTimerValue: { fontSize: 40, fontWeight: '300', color: '#1F2937', letterSpacing: -1 },
+  sleepTimerCard: { alignItems: 'center', backgroundColor: '#F9FAFB', paddingVertical: 24, paddingHorizontal: 52, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
+  sleepTimerCardActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  sleepTimerValue: { fontSize: 48, fontWeight: '200', color: '#1C1C1E', letterSpacing: -2 },
   sleepTimerValueActive: { color: '#fff' },
-  sleepTimerPlayBtn: { marginTop: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  sleepTimerPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  sleepTimerPlayBtn: { marginTop: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
+  sleepTimerPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.15)' },
 
   sleepDurationSection: { marginVertical: 16 },
   sleepDurationRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 16 },
   sleepDurationItem: { alignItems: 'center' },
-  sleepDurationLabel: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', marginBottom: 8 },
-  sleepDurationSeparator: { fontSize: 28, fontWeight: '700', color: '#D1D5DB', marginTop: 24 },
+  sleepDurationLabel: { fontSize: 12, fontWeight: '600', color: '#8E8E93', marginBottom: 8, letterSpacing: 0.2 },
+  sleepDurationSeparator: { fontSize: 28, fontWeight: '300', color: '#C7C7CC', marginTop: 24 },
 
-  sleepSlider: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 4 },
-  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  sleepSliderBtnText: { fontSize: 20, fontWeight: '600', color: '#6366F1' },
-  sleepSliderValue: { fontSize: 32, fontWeight: '800', color: '#1F2937', minWidth: 50, textAlign: 'center' },
+  sleepSlider: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 4 },
+  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  sleepSliderBtnText: { fontSize: 20, fontWeight: '400', color: '#1C1C1E' },
+  sleepSliderValue: { fontSize: 34, fontWeight: '700', color: '#1C1C1E', minWidth: 54, textAlign: 'center', letterSpacing: -1 },
 
   // Apple-style Time Picker
   appleTimeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 24, marginVertical: 16 },
@@ -2358,8 +2579,8 @@ const styles = StyleSheet.create({
   timeRangeArrow: { fontSize: 24, color: '#9CA3AF', marginTop: 24 },
   timeRangeHint: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 12 },
 
-  sleepTimerNote: { backgroundColor: '#EEF2FF', padding: 12, borderRadius: 12, marginTop: 20 },
-  sleepTimerNoteText: { fontSize: 14, color: '#6366F1', fontWeight: '600', textAlign: 'center' },
+  sleepTimerNote: { backgroundColor: 'rgba(52,199,89,0.08)', padding: 12, borderRadius: 12, marginTop: 20 },
+  sleepTimerNoteText: { fontSize: 14, color: '#34C759', fontWeight: '600', textAlign: 'center' },
 
   // Legacy Sleep Timer (keep for compatibility)
   timerCircle: { marginVertical: 20 },
@@ -2370,10 +2591,10 @@ const styles = StyleSheet.create({
   persistHint: { fontSize: 12, color: '#10B981', textAlign: 'center', marginTop: 12, fontWeight: '600' },
 
   // Diaper
-  diaperOptions: { flexDirection: 'row', gap: 12, justifyContent: 'center', marginTop: 16 },
-  diaperBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 16, backgroundColor: '#F3F4F6', borderRadius: 16 },
-  diaperBtnText: { fontSize: 16, fontWeight: '600', color: '#374151' },
-  diaperNoteInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, fontSize: 14, textAlign: 'right', marginTop: 20, borderWidth: 1, borderColor: '#E5E7EB' },
+  diaperOptions: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 16 },
+  diaperBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 20, borderRadius: 18, borderWidth: 1.5 },
+  diaperBtnText: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
+  diaperNoteInput: { width: '100%', borderRadius: 14, padding: 14, fontSize: 14, textAlign: 'right', marginTop: 20, borderWidth: 1 },
 
   // Save - Premium Full Width
   saveBtn: {
@@ -2381,38 +2602,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    paddingVertical: 16,
+    paddingVertical: 17,
     paddingHorizontal: 32,
-    borderRadius: 16,
+    borderRadius: 18,
     marginTop: 20,
-    backgroundColor: '#6366F1',
-    // Premium shadow
-    shadowColor: '#6366F1',
+    backgroundColor: '#007AFF',
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
-  saveBtnSuccess: { backgroundColor: '#10B981', shadowColor: '#10B981' },
+  saveBtnSuccess: { backgroundColor: '#34C759', shadowColor: '#34C759' },
   saveBtnTextSuccess: { color: '#fff' },
 
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
-  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 48, paddingVertical: 14, backgroundColor: '#6366F1', borderRadius: 14, width: '100%', alignItems: 'center' },
+  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 48, paddingVertical: 14, backgroundColor: '#1C1C1E', borderRadius: 14, width: '100%', alignItems: 'center' },
   timePickerDoneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 
   // Pumping Row Layout (Timer + Amount side by side)
   pumpingRowContainer: { flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: 8, alignItems: 'stretch' },
   pumpingTimerCard: { flex: 1, backgroundColor: '#F3F4F6', borderRadius: 16, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  pumpingTimerCardActive: { backgroundColor: '#EEF2FF', borderColor: '#6366F1' },
+  pumpingTimerCardActive: { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' },
   pumpingTimerLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginBottom: 4 },
-  pumpingTimerLabelActive: { color: '#6366F1' },
+  pumpingTimerLabelActive: { color: '#F59E0B' },
   pumpingTimerValue: { fontSize: 26, fontWeight: '700', color: '#1F2937', marginBottom: 6 },
-  pumpingTimerValueActive: { color: '#6366F1' },
+  pumpingTimerValueActive: { color: '#F59E0B' },
   pumpingTimerIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  pumpingTimerIconActive: { backgroundColor: '#6366F1' },
+  pumpingTimerIconActive: { backgroundColor: '#F59E0B' },
   pumpingAmountSection: { flex: 1, alignItems: 'center' },
   pumpingAmountLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginBottom: 8 },
   pumpingAmountRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

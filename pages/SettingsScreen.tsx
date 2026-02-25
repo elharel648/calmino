@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download } from 'lucide-react-native';
+import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download, Lock } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
@@ -20,6 +20,8 @@ import { useFamily } from '../hooks/useFamily';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useBabyProfile } from '../hooks/useBabyProfile';
 import { auth, db } from '../services/firebaseConfig';
+import { logger } from '../utils/logger';
+import { usePremium } from '../context/PremiumContext';
 
 // Components
 import { FamilyMembersCard } from '../components/Family/FamilyMembersCard';
@@ -27,6 +29,8 @@ import { InviteFamilyModal } from '../components/Family/InviteFamilyModal';
 import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import GuestInviteModal from '../components/Family/GuestInviteModal';
 import { EditBasicInfoModal } from '../components/Profile';
+import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
+import PremiumPaywall from '../components/Premium/PremiumPaywall';
 
 const getInitials = (name: string) => {
   if (!name) return '';
@@ -43,6 +47,7 @@ export default function SettingsScreen() {
   const { activeChild, refreshChildren } = useActiveChild();
   const { baby, updateBasicInfo, updatePhoto, refresh } = useBabyProfile(activeChild?.childId);
   const { family, members, rename: renameFamily, isAdmin, remove: removeMember, leave: leaveFamily } = useFamily();
+  const { isPremium } = usePremium();
   const user = auth.currentUser;
 
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
@@ -53,6 +58,7 @@ export default function SettingsScreen() {
   const [userName, setUserName] = useState<string>(user?.displayName || '');
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const handleSettingsPress = () => {
     if (Platform.OS !== 'web') {
@@ -74,6 +80,46 @@ export default function SettingsScreen() {
     const years = Math.floor(babyAgeMonths / 12);
     const months = babyAgeMonths % 12;
     return months > 0 ? t('age.yearsMonths', { count: years, months }) : t('age.years', { count: years });
+  };
+
+  const renderLockedSection = (children: React.ReactNode, title: string = "תכונת Premium") => {
+    if (isPremium) return children;
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => setIsPaywallOpen(true)}
+        style={{ overflow: 'hidden', borderRadius: 16, marginTop: 0 }}
+      >
+        <View style={{ opacity: 0.4 }} pointerEvents="none">
+          {children}
+        </View>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 40 : 100}
+          tint={isDarkMode ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', padding: 12 }]}
+        >
+          <View style={{
+            backgroundColor: theme.textPrimary,
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius: 100, // Keep as pill as user wanted!
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 8,
+          }}>
+            <Lock size={16} color={theme.card} strokeWidth={2} />
+            <Text style={{ color: theme.card, fontWeight: '700', fontSize: 14 }}>{title}</Text>
+          </View>
+        </BlurView>
+      </TouchableOpacity>
+    );
   };
 
   const handleEditPhoto = useCallback(async () => {
@@ -315,27 +361,29 @@ export default function SettingsScreen() {
         {/* Premium Card - Highlighted Premium Design */}
         <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.section}>
           <TouchableOpacity
-            style={[styles.premiumCardMinimal, {
-              backgroundColor: isDarkMode ? 'rgba(255,107,53,0.08)' : '#FFF7ED',
-              borderColor: isDarkMode ? 'rgba(255,107,53,0.2)' : '#FFE4CC',
-              borderWidth: 1,
-            }]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setIsPremiumModalOpen(true);
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.premiumContentMinimal}>
-              <View style={[styles.premiumIconMinimal, { backgroundColor: isDarkMode ? 'rgba(255,107,53,0.25)' : '#FFE4CC' }]}>
-                <Crown size={20} color="#FF6B35" strokeWidth={2.5} />
+            <LinearGradient
+              colors={['#FF6B35', '#F7931E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.premiumCardMinimal, { borderWidth: 0 }]}
+            >
+              <View style={styles.premiumContentMinimal}>
+                <View style={[styles.premiumIconMinimal, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                  <Crown size={20} color="#FFFFFF" strokeWidth={2.5} />
+                </View>
+                <View style={styles.premiumTextMinimal}>
+                  <Text style={[styles.premiumTitleMinimal, { color: '#ffffff', fontWeight: '800' }]}>{t('account.upgradePremium')}</Text>
+                  <Text style={[styles.premiumSubtitleMinimal, { color: 'rgba(255,255,255,0.85)' }]}>{t('account.premiumSubtitle')}</Text>
+                </View>
               </View>
-              <View style={styles.premiumTextMinimal}>
-                <Text style={[styles.premiumTitleMinimal, { color: theme.textPrimary, fontWeight: '700' }]}>{t('account.upgradePremium')}</Text>
-                <Text style={[styles.premiumSubtitleMinimal, { color: theme.textSecondary }]}>{t('account.premiumSubtitle')}</Text>
-              </View>
-            </View>
-            <ChevronLeft size={18} color="#FF6B35" strokeWidth={2.5} />
+              <ChevronLeft size={18} color="rgba(255,255,255,0.6)" strokeWidth={2.5} />
+            </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
 
@@ -419,94 +467,93 @@ export default function SettingsScreen() {
           )}
 
           {/* Family Actions - Premium Design with Visual Hierarchy */}
+          {renderLockedSection(
+            <Animated.View entering={ANIMATIONS.fadeInDown(500)} style={{ gap: 12 }}>
+              {/* PRIMARY: Create/Invite Family - Minimalist Design */}
+              {(isAdmin || !family) && (
+                <TouchableOpacity
+                  style={[styles.familyActionMinimal, { backgroundColor: theme.card, borderColor: theme.divider }]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setInviteModalVisible(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.familyActionContent}>
+                    <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                      <UserPlus size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                    </View>
+                    <View style={styles.familyActionText}>
+                      <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
+                        {family ? t('account.inviteFamily') : t('account.createFamily')}
+                      </Text>
+                      <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
+                        {family ? t('account.inviteFamily.subtitle') : t('account.createFamily.subtitle')}
+                      </Text>
+                    </View>
+                  </View>
+                  <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
+                </TouchableOpacity>
+              )}
 
-          {/* PRIMARY: Create/Invite Family - Minimalist Design */}
-          {(isAdmin || !family) && (
-            <Animated.View entering={ANIMATIONS.fadeInDown(500)}>
+              {/* Guest invite */}
               <TouchableOpacity
                 style={[styles.familyActionMinimal, { backgroundColor: theme.card, borderColor: theme.divider }]}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setInviteModalVisible(true);
+                  setIsGuestInviteOpen(true);
                 }}
                 activeOpacity={0.7}
               >
                 <View style={styles.familyActionContent}>
                   <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                    <UserPlus size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                    <Users size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
                   </View>
                   <View style={styles.familyActionText}>
-                    <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
-                      {family ? t('account.inviteFamily') : t('account.createFamily')}
-                    </Text>
+                    <View style={styles.familyActionTitleRow}>
+                      <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
+                      <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>זמני</Text>
+                      </View>
+                    </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                      {family ? t('account.inviteFamily.subtitle') : t('account.createFamily.subtitle')}
+                      {t('account.inviteGuest.subtitle')}
                     </Text>
                   </View>
                 </View>
                 <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
               </TouchableOpacity>
-            </Animated.View>
+
+              {/* Join with code */}
+              <TouchableOpacity
+                style={[styles.familyActionMinimal, { backgroundColor: theme.card, borderColor: theme.divider }]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setJoinModalVisible(true);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.familyActionContent}>
+                  <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                    <LinkIcon size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                  </View>
+                  <View style={styles.familyActionText}>
+                    <View style={styles.familyActionTitleRow}>
+                      <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
+                      <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
+                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>אוטומטי</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
+                      {t('account.joinWithCode.subtitle')}
+                    </Text>
+                  </View>
+                </View>
+                <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
+              </TouchableOpacity>
+            </Animated.View>,
+            "ניהול משפחה שיתופית"
           )}
-
-          {/* SECONDARY: Guest & Join Actions - Minimalist */}
-          <Animated.View entering={ANIMATIONS.fadeInDown(600)} style={styles.familyActionsMinimal}>
-            {/* Guest invite */}
-            <TouchableOpacity
-              style={[styles.familyActionMinimal, styles.familyActionFirst, { backgroundColor: theme.card, borderColor: theme.divider }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsGuestInviteOpen(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.familyActionContent}>
-                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                  <Users size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
-                </View>
-                <View style={styles.familyActionText}>
-                  <View style={styles.familyActionTitleRow}>
-                    <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                    <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                      <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>24h</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                    {t('account.inviteGuest.subtitle')}
-                  </Text>
-                </View>
-              </View>
-              <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
-            </TouchableOpacity>
-
-            {/* Join with code */}
-            <TouchableOpacity
-              style={[styles.familyActionMinimal, styles.familyActionLast, { backgroundColor: theme.card, borderColor: theme.divider }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setJoinModalVisible(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.familyActionContent}>
-                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                  <LinkIcon size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
-                </View>
-                <View style={styles.familyActionText}>
-                  <View style={styles.familyActionTitleRow}>
-                    <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                    <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                      <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>אוטומטי</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                    {t('account.joinWithCode.subtitle')}
-                  </Text>
-                </View>
-              </View>
-              <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
-            </TouchableOpacity>
-          </Animated.View>
 
           {/* Leave Family - for non-admin members only */}
           {family && !isAdmin && (
@@ -752,6 +799,17 @@ export default function SettingsScreen() {
           </Animated.View>
         </View>
       </Modal>
+
+      <DynamicPromoModal
+        currentScreenName="Settings"
+        onNavigateToPaywall={() => setIsPaywallOpen(true)}
+      />
+
+      <PremiumPaywall
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        trigger="promo_modal_settings"
+      />
     </SafeAreaView>
   );
 }

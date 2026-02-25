@@ -55,6 +55,8 @@ import { navigationRef, navigateFromNotification } from './services/navigationSe
 import { registerForPushNotifications } from './services/pushNotificationService';
 import * as Notifications from 'expo-notifications';
 import { notificationStorageService } from './services/notificationStorageService';
+import { notificationService } from './services/notificationService';
+import { logger } from './utils/logger';
 
 
 
@@ -88,17 +90,21 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
 };
 
 const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
+  const activeColor = '#007AFF';
+  const inactiveColor = 'rgba(0,0,0,0.3)';
+  const iconColor = focused ? activeColor : inactiveColor;
   return (
     <View style={{
       alignItems: 'center',
       justifyContent: 'center',
-      top: Platform.OS === 'ios' ? 14 : 0,
-      width: 60
+      width: 72,
     }}>
-      <Icon color={color} size={24} strokeWidth={focused ? 2.5 : 2} />
-      <Text numberOfLines={1} style={{
-        color: color, fontSize: 10, marginTop: 6,
-        fontWeight: focused ? '600' : '400', textAlign: 'center', width: '100%'
+      <Icon color={iconColor} size={25} strokeWidth={focused ? 2.0 : 1.5} />
+      <Text numberOfLines={2} style={{
+        color: iconColor, fontSize: 9, marginTop: 2,
+        fontWeight: focused ? '600' : '400', textAlign: 'center',
+        letterSpacing: -0.1,
+        lineHeight: 12,
       }}>
         {label}
       </Text>
@@ -121,12 +127,12 @@ function MainAppNavigator() {
     <Tab.Navigator
       id="MainTabs"
       initialRouteName={homeTabName}
+      tabBar={(props) => <LiquidGlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: theme.textPrimary,
         tabBarInactiveTintColor: theme.textSecondary,
-        tabBar: (props) => <LiquidGlassTabBar {...props} />,
       }}
     >
       {/* Account - always visible (renamed from Settings) */}
@@ -171,8 +177,7 @@ function HomeStackScreen() {
       id="HomeStack"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' },
-        cardStyle: { backgroundColor: '#FFFFFF' }
+        contentStyle: { backgroundColor: '#FFFFFF' }
       }}
     >
       <HomeStack.Screen name="Home" component={HomeScreen} />
@@ -189,8 +194,7 @@ function AccountStackScreen() {
       id="AccountStack"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' },
-        cardStyle: { backgroundColor: '#FFFFFF' }
+        contentStyle: { backgroundColor: '#FFFFFF' }
       }}
     >
       <AccountStack.Screen name="Account" component={SettingsScreen} />
@@ -223,8 +227,7 @@ function BabysitterStackScreen() {
       id="BabysitterStack"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' },
-        cardStyle: { backgroundColor: '#FFFFFF' }
+        contentStyle: { backgroundColor: '#FFFFFF' }
       }}
     >
       <BabysitterStack.Screen name="SitterList" component={BabySitterScreen} />
@@ -359,6 +362,8 @@ export default function App() {
           shouldShowAlert: true,
           shouldPlaySound: true,
           shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
         };
 
         // Try to save to Firebase (but don't block notification if it fails)
@@ -367,7 +372,8 @@ export default function App() {
           // Use setTimeout to not block the notification handler
           setTimeout(async () => {
             try {
-              const notificationType = notification.request.content.data?.type || 'reminder';
+              const notificationData = notification.request.content.data as any;
+              const notificationType = notificationData?.type || 'reminder';
               const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
                 'feeding_reminder': 'feed',
                 'sleep_reminder': 'sleep',
@@ -405,7 +411,7 @@ export default function App() {
     // Handle notification taps (when user taps on notification)
     // This listener is set here in App.tsx to ensure it works globally
     const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const type = response.notification.request.content.data?.type as string;
+      const type = (response.notification.request.content.data as any)?.type as string;
       const data = response.notification.request.content.data;
 
       // Navigate based on notification type
@@ -456,6 +462,17 @@ export default function App() {
         registerForPushNotifications().catch((err) => {
           logger.log('Push registration:', err);
         });
+
+        // Initialize notification service and schedule recurring reminders (once per login)
+        notificationService.initialize().then((success) => {
+          if (success) {
+            notificationService.scheduleSupplementReminder();
+            notificationService.scheduleSleepReminder();
+            notificationService.scheduleDailySummary();
+          }
+        }).catch((err) => {
+          logger.log('Notification init:', err);
+        });
       } else {
         setUser(null);
         setHasBabyProfile(false);
@@ -497,7 +514,7 @@ export default function App() {
       if (!hasHardware) { setIsLocked(false); return; }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'ברוך שובך ל-CalmParent',
+        promptMessage: 'ברוך שובך ל-Calmino',
         fallbackLabel: 'השתמש בסיסמה',
         disableDeviceFallback: false,
       });
@@ -588,7 +605,7 @@ export default function App() {
                               <NavigationContainer
                                 ref={navigationRef}
                                 linking={{
-                                  prefixes: ['calmparent://', 'calmparentapp://', 'https://calmparent.app'],
+                                  prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
                                   config: {
                                     screens: {
                                       // Hebrew routes (for deep linking)

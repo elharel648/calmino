@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Share, Image } from 'react-native';
 import { Utensils, Moon, Droplets, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { getRecentHistory, deleteEvent } from '../services/firebaseService';
@@ -14,6 +14,7 @@ import { auth } from '../services/firebaseConfig';
 import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
+import { logger } from '../utils/logger';
 
 // Custom Tooth Icon from QuickActions
 const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: string; strokeWidth?: number }) => (
@@ -49,6 +50,14 @@ interface DailyTimelineProps {
 
 const INITIAL_VISIBLE_COUNT = 4;
 
+const hexToRgba = (hex: string, alpha: number): string => {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return hex;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
 const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false }) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
@@ -59,32 +68,32 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const TYPE_CONFIG = {
     food: {
       icon: Utensils,
-      color: theme.actionColors.food.color,
+      color: theme.actionColors.food.accentColor,
       label: t('actions.food'),
     },
     sleep: {
       icon: Moon,
-      color: theme.actionColors.sleep.color,
+      color: theme.actionColors.sleep.accentColor,
       label: t('actions.sleep'),
     },
     diaper: {
       icon: Droplets,
-      color: theme.actionColors.diaper.color,
+      color: theme.actionColors.diaper.accentColor,
       label: t('actions.diaper'),
     },
     supplements: {
       icon: Pill,
-      color: theme.actionColors.supplements.color,
+      color: theme.actionColors.supplements.accentColor,
       label: t('actions.supplements'),
     },
     custom: {
       icon: Plus,
-      color: theme.actionColors.custom.color,
+      color: theme.actionColors.custom.accentColor,
       label: t('actions.custom'),
     },
     teeth: {
       icon: TeethIcon,
-      color: theme.actionColors.teeth.color,
+      color: theme.actionColors.teeth.accentColor,
       label: 'שיניים',
     },
   };
@@ -456,6 +465,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         <View style={styles.header}>
           <View style={styles.titleSection}>
             <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
+            <View style={[styles.accentLine, { backgroundColor: theme.accent }]} />
           </View>
 
           {/* Stats Pills */}
@@ -465,9 +475,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
               if (!config) return null; // Skip if type not in config
               const Icon = config.icon;
               return (
-                <View key={type} style={[styles.statPill, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-                  <Text style={[styles.statCount, { color: theme.textPrimary }]}>{count}</Text>
-                  <Icon size={11} color={theme.textSecondary} strokeWidth={2.5} />
+                <View key={type} style={[styles.statPill, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.18 : 0.1) }]}>
+                  <Text style={[styles.statCount, { color: config.color }]}>{count}</Text>
+                  <Icon size={11} color={config.color} strokeWidth={1.5} />
                 </View>
               );
             })}
@@ -596,16 +606,18 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                         {/* Timeline icon + line */}
                         <View style={styles.timelineTrack}>
-                          <View style={[styles.timelineIcon, { backgroundColor: config.color + '20' }]}>
-                            <Icon size={14} color={config.color} strokeWidth={2} />
+                          <View style={[styles.timelineIcon, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.22 : 0.12) }]}>
+                            <Icon size={13} color={config.color} strokeWidth={2} />
                           </View>
                           {/* Line connector */}
-                          {!isLast && <View style={[styles.connector, { backgroundColor: theme.border }]} />}
+                          {!isLast && <View style={[styles.connector, { backgroundColor: config.color, opacity: 0.2 }]} />}
                         </View>
 
                         {/* Right side: Content */}
                         <View style={styles.eventCardContainer}>
                           <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            {/* Right accent strip - type color */}
+                            <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, backgroundColor: config.color, borderTopRightRadius: 18, borderBottomRightRadius: 18 }} />
                             <View style={styles.cardContent}>
                               <View style={styles.eventHeader}>
                                 <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
@@ -616,25 +628,27 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             </View>
 
                             {/* Reporter Badge */}
-                            {event.reporterName && (
-                              <View style={styles.reporterBadge}>
-                                {event.reporterPhotoUrl ? (
-                                  <Image
-                                    source={{ uri: event.reporterPhotoUrl }}
-                                    style={styles.reporterAvatar}
-                                    onError={() => {
-                                      // Image failed to load, will fallback to placeholder
-                                    }}
-                                  />
-                                ) : (
-                                  <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: config.color + '30' }]}>
-                                    <Text style={[styles.reporterInitial, { color: config.color }]}>
+                            {event.reporterName && (() => {
+                              const memberId = event.creatorId || event.userId;
+                              const member = family?.members[memberId];
+                              const photoUrl = member?.photoURL || event.reporterPhotoUrl;
+
+                              return (
+                                <View style={styles.reporterBadge}>
+                                  <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8E8ED' }]}>
+                                    <Text style={[styles.reporterInitial, { color: theme.textSecondary }]}>
                                       {event.reporterName.charAt(0)}
                                     </Text>
                                   </View>
-                                )}
-                              </View>
-                            )}
+                                  {photoUrl && (
+                                    <Image
+                                      source={{ uri: photoUrl }}
+                                      style={[styles.reporterAvatar, { position: 'absolute' }]}
+                                    />
+                                  )}
+                                </View>
+                              );
+                            })()}
                           </View>
                         </View>
                       </View>
@@ -653,6 +667,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const details = getEventDetails(event);
             const subtext = getEventSubtext(event);
             const isRecent = isRecentEvent(event.timestamp);
+            const isFirst = index === 0;
 
             return (
               <Animated.View
@@ -678,17 +693,36 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                     {/* Timeline icon + line */}
                     <View style={styles.timelineTrack}>
-                      <View style={[styles.timelineIcon, { backgroundColor: config.color + '20' }]}>
+                      <View style={[styles.timelineIcon, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.22 : 0.12) }]}>
                         <Icon size={14} color={config.color} strokeWidth={2} />
                       </View>
                       {/* Line connector */}
-                      {!isLast && <View style={[styles.connector, { backgroundColor: theme.border }]} />}
+                      {!isLast && <View style={[styles.connector, { backgroundColor: config.color, opacity: 0.2 }]} />}
                     </View>
 
                     {/* Right side: Content */}
-                    <View style={styles.eventCardContainer}>
-                      <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <View style={[styles.eventCardContainer, isFirst && { shadowOpacity: 0.1, shadowRadius: 14 }]}>
+                      <View style={[styles.eventCard, {
+                        backgroundColor: isFirst
+                          ? hexToRgba(config.color, isDarkMode ? 0.1 : 0.05)
+                          : theme.card,
+                        borderColor: isFirst ? hexToRgba(config.color, 0.28) : theme.border,
+                      }]}>
+                        {/* Right accent strip - only for latest event */}
+                        {isFirst && (
+                          <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, backgroundColor: config.color, borderTopRightRadius: 18, borderBottomRightRadius: 18, opacity: 0.75 }} />
+                        )}
+                        {/* "עכשיו" / "אחרון" badge for latest event */}
+                        {isFirst && (
+                          <View style={{ position: 'absolute', top: 8, left: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: isRecent ? '#34D399' : config.color }} />
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: isRecent ? '#34D399' : config.color, letterSpacing: 0.3 }}>
+                              {isRecent ? 'עכשיו' : 'אחרון'}
+                            </Text>
+                          </View>
+                        )}
                         <View style={styles.cardContent}>
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: config.color, marginBottom: 1, textAlign: 'right', opacity: 0.75 }}>{config.label}</Text>
                           <View style={styles.eventHeader}>
                             <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
                           </View>
@@ -698,25 +732,27 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         </View>
 
                         {/* Reporter Badge - Small avatar showing who reported */}
-                        {event.reporterName && (
-                          <View style={styles.reporterBadge}>
-                            {event.reporterPhotoUrl ? (
-                              <Image
-                                source={{ uri: event.reporterPhotoUrl }}
-                                style={styles.reporterAvatar}
-                                onError={() => {
-                                  // Image failed to load, will fallback to placeholder
-                                }}
-                              />
-                            ) : (
-                              <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: config.color + '30' }]}>
-                                <Text style={[styles.reporterInitial, { color: config.color }]}>
+                        {event.reporterName && (() => {
+                          const memberId = event.creatorId || event.userId;
+                          const member = family?.members[memberId];
+                          const photoUrl = member?.photoURL || event.reporterPhotoUrl;
+
+                          return (
+                            <View style={styles.reporterBadge}>
+                              <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8E8ED' }]}>
+                                <Text style={[styles.reporterInitial, { color: theme.textSecondary }]}>
                                   {event.reporterName.charAt(0)}
                                 </Text>
                               </View>
-                            )}
-                          </View>
-                        )}
+                              {photoUrl && (
+                                <Image
+                                  source={{ uri: photoUrl }}
+                                  style={[styles.reporterAvatar, { position: 'absolute' }]}
+                                />
+                              )}
+                            </View>
+                          );
+                        })()}
                       </View>
                     </View>
                   </View>
@@ -731,7 +767,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {hasMore && (
         <Animated.View entering={ANIMATIONS.fadeIn(ANIMATIONS.stagger(visibleEvents.length, 80), 300)}>
           <TouchableOpacity
-            style={[styles.expandButton, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
+            style={styles.expandButton}
             onPress={() => {
               setIsExpanded(!isExpanded);
               if (Platform.OS !== 'web') {
@@ -742,13 +778,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           >
             {isExpanded ? (
               <>
-                <ChevronUp size={14} color={theme.textSecondary} strokeWidth={2.5} />
+                <ChevronUp size={14} color={theme.textSecondary} strokeWidth={2} />
                 <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showLess')}</Text>
               </>
             ) : (
               <>
                 <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
-                <ChevronDown size={14} color={theme.textSecondary} strokeWidth={2.5} />
+                <ChevronDown size={14} color={theme.textSecondary} strokeWidth={2} />
               </>
             )}
           </TouchableOpacity>
@@ -784,8 +820,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   title: {
-    ...TYPOGRAPHY.body,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '600',
+    letterSpacing: -0.4,
   },
   statsContainer: {
     flexDirection: 'row-reverse',
@@ -795,10 +832,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
+    // Floating shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 12,
+    elevation: 1,
   },
   statCount: {
     ...TYPOGRAPHY.caption,
@@ -872,19 +915,25 @@ const styles = StyleSheet.create({
 
   // Center: Timeline
   timelineTrack: {
-    width: 36,
+    width: 40,
     alignItems: 'center',
     position: 'relative',
     paddingHorizontal: 4,
   },
   timelineIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
+    width: 28,
+    height: 28,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
     marginTop: 3,
+    // Floating premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
   },
   dot: {
     width: 8,
@@ -895,31 +944,30 @@ const styles = StyleSheet.create({
   },
   connector: {
     position: 'absolute',
-    top: 30,
-    width: 1.5,
+    top: 28,
+    width: 1,
     height: '100%',
     zIndex: 1,
+    opacity: 0.4,
   },
 
   // Right: Content - Premium Card Style
   eventCardContainer: {
     flex: 1,
-    borderRadius: 16,
-    // Enhanced premium shadow
+    borderRadius: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.03,
+    shadowRadius: 18,
+    elevation: 1,
   },
   eventCard: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 68,
-    // Subtle border for depth
-    borderWidth: 1,
+    minHeight: 60,
+    borderWidth: 0.5,
     flexDirection: 'row-reverse',
     alignItems: 'center',
   },
@@ -941,6 +989,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     flex: 1,
     ...TYPOGRAPHY.bodySmall,
+    fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
     textAlign: 'right',
@@ -954,27 +1003,34 @@ const styles = StyleSheet.create({
   },
   eventSubtext: {
     ...TYPOGRAPHY.caption,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     textAlign: 'right',
-    marginTop: 2,
-    opacity: 0.75,
+    marginTop: 3,
+    opacity: 0.55,
   },
 
   // Empty
   emptyCard: {
-    padding: 40,
-    borderRadius: 16,
+    padding: 44,
+    borderRadius: 20,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
+    // Floating shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 24,
+    elevation: 2,
   },
   emptyIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
+    marginBottom: 18,
+    borderWidth: 0,
   },
   emptyEmoji: {
     ...TYPOGRAPHY.h1,
@@ -994,16 +1050,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
+    gap: 4,
+    marginTop: 12,
+    paddingVertical: 14,
   },
   expandText: {
-    ...TYPOGRAPHY.caption,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
 
   // Reporter Badge - Enhanced with glow
@@ -1031,11 +1085,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2.5,
+    borderWidth: 1.5,
   },
   reporterInitial: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 });
 

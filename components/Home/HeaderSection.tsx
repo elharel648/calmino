@@ -1,7 +1,6 @@
-import React, { memo, useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert, ScrollView, Modal, Pressable, Animated as RNAnimated } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { Camera, Cloud, Plus, X, Link2, UserPlus, Moon, Utensils, Baby as BabyIcon, Pill, Bell, Award, Heart, TrendingUp } from 'lucide-react-native';
+import React, { memo, useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert, ScrollView, Modal, Pressable } from 'react-native';
+import { Cloud, Plus, X, Link2, UserPlus, Utensils, Pill, Bell } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
@@ -46,9 +45,6 @@ interface HeaderSectionProps {
     onEditChild?: (child: ActiveChild) => void;
 }
 
-// Module-level flag to prevent double animation on tab switch
-let hasInitialAnimationRun = false;
-
 /**
  * Premium Minimalist Header - With child avatars row
  */
@@ -74,8 +70,6 @@ const HeaderSection = memo<HeaderSectionProps>(({
     const [showAddModal, setShowAddModal] = useState(false);
     const { weather } = useWeather();
     const [unreadCount, setUnreadCount] = useState(0);
-    const bellScale = useRef(new RNAnimated.Value(1)).current;
-    const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
     // Calculate age - Better format with "בן" or "בת"
     const ageText = useMemo(() => {
@@ -199,190 +193,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
         ? `${Math.floor(dailyStats.sleepMinutes / 60)}:${String(dailyStats.sleepMinutes % 60).padStart(2, '0')}`
         : '0:00';
 
-    // Smart Reminders & Achievements Cards - Only show 1-2 most relevant
-    const smartCards = useMemo(() => {
-        const cards: Array<{
-            type: string;
-            icon: any;
-            color: string;
-            bgColor: string;
-            title: string;
-            subtitle: string;
-            isUrgent?: boolean;
-            priority: number; // Lower = higher priority
-        }> = [];
-
-        // Calculate time since last feed
-        const getTimeSinceLastFeed = () => {
-            if (!lastFeedTime || lastFeedTime === '--:--') return null;
-            const [hours, minutes] = lastFeedTime.split(':').map(Number);
-            const now = new Date();
-            const lastFeed = new Date();
-            lastFeed.setHours(hours, minutes, 0, 0);
-            if (lastFeed > now) lastFeed.setDate(lastFeed.getDate() - 1);
-            const diffMs = now.getTime() - lastFeed.getTime();
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            return { hours: diffHours, mins: diffMins };
-        };
-
-        // Priority: Show supplements first if missing, then feed reminders
-
-        // 1. Vitamin D Reminder (Priority 1 - Always show if missing)
-        if (!meds?.vitaminD) {
-            cards.push({
-                type: 'vitamin_reminder',
-                icon: Pill,
-                color: theme.primary,
-                bgColor: theme.actionColors.supplements.lightColor,
-                title: t('notifications.vitaminD'),
-                subtitle: t('notifications.notYetToday'),
-                isUrgent: true,
-                priority: 1,
-            });
-        }
-
-        // 2. Iron Reminder (Priority 2 - Show if missing)
-        if (!meds?.iron) {
-            cards.push({
-                type: 'iron_reminder',
-                icon: Pill,
-                color: theme.danger,
-                bgColor: theme.actionColors.sos.lightColor,
-                title: t('notifications.iron'),
-                subtitle: t('notifications.notYetToday'),
-                isUrgent: true,
-                priority: 2,
-            });
-        }
-
-        // 3. Next Feed Reminder (Priority 3 - Only if no supplements missing)
-        if (cards.length === 0) {
-            const feedTime = getTimeSinceLastFeed();
-            if (feedTime) {
-                const isOverdue = feedTime.hours >= 3;
-                cards.push({
-                    type: 'feed_reminder',
-                    icon: Utensils,
-                    color: theme.actionColors.food.color,
-                    bgColor: isOverdue ? theme.actionColors.sos.lightColor : theme.actionColors.food.lightColor,
-                    title: isOverdue ? t('notifications.feedReminder') : t('notifications.lastFeed'),
-                    subtitle: feedTime.hours > 0
-                        ? t('time.hoursAgo', { count: feedTime.hours }) + ' ' + t('time.minutesAgo', { count: feedTime.mins })
-                        : t('time.minutesAgo', { count: feedTime.mins }),
-                    isUrgent: isOverdue,
-                    priority: 3,
-                });
-            } else {
-                cards.push({
-                    type: 'feed_reminder',
-                    icon: Utensils,
-                    color: theme.actionColors.food.color,
-                    bgColor: theme.actionColors.food.lightColor,
-                    title: t('notifications.firstFeed'),
-                    subtitle: t('notifications.notYetToday'),
-                    priority: 3,
-                });
-            }
-        }
-
-        // Return all cards sorted by priority
-        const sortedCards = cards.sort((a, b) => {
-            // Urgent cards first
-            if (a.isUrgent && !b.isUrgent) return -1;
-            if (!a.isUrgent && b.isUrgent) return 1;
-            // Then by priority
-            return a.priority - b.priority;
-        });
-        return sortedCards;
-    }, [lastFeedTime, meds, dailyStats]);
-
-    // Toast notification - show if there are any cards
-    const hasNotifications = smartCards.length > 0;
-    
-    // Rotate between notifications every 4 seconds
-    const [currentNotificationIndex, setCurrentNotificationIndex] = useState(0);
-    const notificationSlideAnim = useRef(new RNAnimated.Value(0)).current;
-    const notificationOpacity = useRef(new RNAnimated.Value(1)).current;
-    
-    useEffect(() => {
-        if (smartCards.length <= 1) {
-            setCurrentNotificationIndex(0);
-            notificationSlideAnim.setValue(0);
-            notificationOpacity.setValue(1);
-            return;
-        }
-        
-        const interval = setInterval(() => {
-            // Slide out down and fade out
-            RNAnimated.parallel([
-                RNAnimated.timing(notificationSlideAnim, {
-                    toValue: 100,
-                    duration: 400,
-                    useNativeDriver: true,
-                }),
-                RNAnimated.timing(notificationOpacity, {
-                    toValue: 0,
-                    duration: 400,
-                    useNativeDriver: true,
-                }),
-            ]).start(() => {
-                // Change notification
-                setCurrentNotificationIndex((prev) => (prev + 1) % smartCards.length);
-                // Reset position (start from top, slide down)
-                notificationSlideAnim.setValue(-30);
-                notificationOpacity.setValue(0);
-                // Slide in from top and fade in (smooth animation)
-                RNAnimated.parallel([
-                    RNAnimated.spring(notificationSlideAnim, {
-                        toValue: 0,
-                        tension: 50,
-                        friction: 8,
-                        useNativeDriver: true,
-                    }),
-                    RNAnimated.timing(notificationOpacity, {
-                        toValue: 1,
-                        duration: 400,
-                        useNativeDriver: true,
-                    }),
-                ]).start();
-            });
-        }, 4000); // Change every 4 seconds
-        
-        return () => clearInterval(interval);
-    }, [smartCards.length, notificationSlideAnim, notificationOpacity]);
-    
-    const currentNotification = smartCards[currentNotificationIndex] || smartCards[0];
-
-    // Initial entry animation for toast notifications
-    useEffect(() => {
-        if (!hasNotifications) {
-            return;
-        }
-
-        // Only run initial entry animation once (not on every tab switch)
-        if (!hasInitialAnimationRun) {
-            hasInitialAnimationRun = true;
-            // Start from slightly above, fade in
-            notificationSlideAnim.setValue(-20);
-            notificationOpacity.setValue(0);
-            RNAnimated.parallel([
-                RNAnimated.spring(notificationSlideAnim, {
-                    toValue: 0,
-                    tension: 50,
-                    friction: 8,
-                    useNativeDriver: true,
-                }),
-                RNAnimated.timing(notificationOpacity, {
-                    toValue: 1,
-                    duration: 400,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-        }
-    }, [hasNotifications, notificationSlideAnim, notificationOpacity]);
-
-    const NotificationIcon = currentNotification?.icon;
+    // Simple reminder data - inline format
+    const pendingSupplements = useMemo(() => {
+        const items: string[] = [];
+        if (!meds?.vitaminD) items.push(t('notifications.vitaminD'));
+        if (!meds?.iron) items.push(t('notifications.iron'));
+        return items;
+    }, [meds, t]);
 
     // Fetch unread notification count
     useEffect(() => {
@@ -396,9 +213,9 @@ const HeaderSection = memo<HeaderSectionProps>(({
         };
 
         fetchUnreadCount();
-        
-        // Refresh every 10 seconds (more frequent for better UX)
-        const interval = setInterval(fetchUnreadCount, 10000);
+
+        // Refresh every 60 seconds — new notifications trigger immediate update via listener below
+        const interval = setInterval(fetchUnreadCount, 60000);
         return () => clearInterval(interval);
     }, []);
 
@@ -415,29 +232,6 @@ const HeaderSection = memo<HeaderSectionProps>(({
         };
     }, []);
 
-    // Pulse animation when there are unread notifications
-    useEffect(() => {
-        if (unreadCount > 0) {
-            const pulse = RNAnimated.loop(
-                RNAnimated.sequence([
-                    RNAnimated.timing(pulseAnim, {
-                        toValue: 1.15,
-                        duration: 1000,
-                        useNativeDriver: true,
-                    }),
-                    RNAnimated.timing(pulseAnim, {
-                        toValue: 1,
-                        duration: 1000,
-                        useNativeDriver: true,
-                    }),
-                ])
-            );
-            pulse.start();
-            return () => pulse.stop();
-        } else {
-            pulseAnim.setValue(1);
-        }
-    }, [unreadCount, pulseAnim]);
 
     return (
         <View style={styles.container}>
@@ -454,71 +248,29 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     ) : null}
                 </View>
 
-                {/* Weather + Notification Group */}
+                {/* Notification + Weather */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {/* Premium Notification Bell */}
+                    {/* Simple Bell */}
                     <TouchableOpacity
                         style={styles.notificationBell}
-                        activeOpacity={0.7}
+                        activeOpacity={0.6}
                         onPress={() => {
                             if (Platform.OS !== 'web') {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             }
-                            // Animate bell press
-                            RNAnimated.sequence([
-                                RNAnimated.timing(bellScale, {
-                                    toValue: 0.9,
-                                    duration: 100,
-                                    useNativeDriver: true,
-                                }),
-                                RNAnimated.timing(bellScale, {
-                                    toValue: 1,
-                                    duration: 100,
-                                    useNativeDriver: true,
-                                }),
-                            ]).start();
                             navigation?.navigate('Notifications');
                         }}
                     >
-                        <RNAnimated.View style={{ transform: [{ scale: bellScale }] }}>
-                            <View style={[
-                                styles.bellContainer, 
-                                { backgroundColor: theme.inputBackground },
-                                unreadCount > 0 && [styles.bellContainerActive, { backgroundColor: isDarkMode ? 'rgba(139,92,246,0.2)' : theme.primaryLight }]
-                            ]}>
-                                <Bell 
-                                    size={22} 
-                                    color={unreadCount > 0 ? theme.primary : theme.textTertiary} 
-                                    strokeWidth={2.5}
-                                    fill={unreadCount > 0 ? (isDarkMode ? 'rgba(59,130,246,0.2)' : '#3B82F620') : "none"}
-                                />
-                            </View>
-                        </RNAnimated.View>
-                        {/* Badge with count */}
+                        <Bell size={22} color={theme.textSecondary} strokeWidth={1.5} />
                         {unreadCount > 0 && (
-                            <RNAnimated.View 
-                                style={[
-                                    styles.notificationBadge,
-                                    { 
-                                        backgroundColor: theme.danger,
-                                        borderColor: theme.card,
-                                        shadowColor: theme.danger,
-                                        transform: [{ scale: pulseAnim }] 
-                                    }
-                                ]}
-                            >
-                                <Text style={[styles.badgeText, { color: theme.card }]}>
-                                    {unreadCount > 99 ? '99+' : unreadCount}
-                                </Text>
-                            </RNAnimated.View>
+                            <View style={[styles.notificationDot, { backgroundColor: '#007AFF' }]} />
                         )}
                     </TouchableOpacity>
 
                     {weather && (
-                        <View style={[styles.weatherBadge, { backgroundColor: theme.cardSecondary }]}>
-                            <Cloud size={14} color={theme.textTertiary} />
-                            <Text style={[styles.weatherText, { color: theme.textSecondary }]}>{weather.city} {weather.temp}°</Text>
-                        </View>
+                        <Text style={[styles.weatherText, { color: theme.textTertiary }]}>
+                            <Cloud size={13} color={theme.textTertiary} /> {weather.temp}°
+                        </Text>
                     )}
                 </View>
             </View>
@@ -548,8 +300,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         activeOpacity={0.7}
                                     >
                                         {child.photoUrl ? (
-                                            <Image 
-                                                source={{ uri: child.photoUrl }} 
+                                            <Image
+                                                source={{ uri: child.photoUrl }}
                                                 style={styles.childAvatarImage}
                                                 onError={() => {
                                                     // Image failed to load - will show placeholder
@@ -600,49 +352,17 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 </TouchableOpacity>
             )}
 
-            {/* Toast-Style Notification - Rotating between cards */}
-            {hasNotifications && currentNotification && (
-                <RNAnimated.View
-                    style={[
-                        styles.toastNotification,
-                        {
-                            opacity: notificationOpacity,
-                            transform: [
-                                { translateY: notificationSlideAnim }
-                            ],
-                            backgroundColor: theme.card,
-                            borderColor: theme.border,
-                        }
-                    ]}
-                >
-                    {/* Icon */}
-                    <View style={[styles.toastIcon, { backgroundColor: currentNotification.bgColor, borderColor: theme.border || '#E5E7EB', borderWidth: 1.5 }]}>
-                        {Platform.OS === 'ios' && (
-                            <BlurView
-                                intensity={60}
-                                tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
-                                style={StyleSheet.absoluteFill}
-                            />
-                        )}
-                        <View style={[
-                            styles.toastIconGlass,
-                            { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)' }
-                        ]} />
-                        <NotificationIcon size={16} color={currentNotification.color} strokeWidth={2} />
-                    </View>
-
-                    {/* Content */}
-                    <View style={styles.toastContent}>
-                        <Text style={[styles.toastTitle, { color: theme.textPrimary }]} numberOfLines={1}>
-                            {currentNotification.title}
-                        </Text>
-                    </View>
-
-                    {/* Time Badge */}
-                    <Text style={[styles.toastTime, { color: theme.textSecondary }]} numberOfLines={1}>
-                        {currentNotification.subtitle}
+            {/* Inline reminder — single clean row */}
+            {pendingSupplements.length > 0 && (
+                <View style={[styles.reminderRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Pill size={14} color={theme.accent} strokeWidth={1.5} />
+                    <Text style={[styles.reminderText, { color: theme.textSecondary }]}>
+                        {pendingSupplements.join('  ·  ')}
                     </Text>
-                </RNAnimated.View>
+                    <Text style={[styles.reminderHint, { color: theme.textTertiary }]}>
+                        {t('notifications.notYetToday')}
+                    </Text>
+                </View>
             )}
 
 
@@ -663,28 +383,10 @@ const HeaderSection = memo<HeaderSectionProps>(({
                         <TouchableOpacity
                             style={[styles.modalOption, { backgroundColor: theme.cardSecondary }]}
                             onPress={handleAddNewChild}
-                            activeOpacity={0.7}
+                            activeOpacity={0.6}
                         >
-                            <View style={[
-                                styles.modalOptionIcon, 
-                                { 
-                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
-                                    borderColor: theme.border || '#E5E7EB',
-                                    borderWidth: 1.5
-                                }
-                            ]}>
-                                {Platform.OS === 'ios' && (
-                                    <BlurView
-                                        intensity={60}
-                                        tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-                                )}
-                                <View style={[
-                                    styles.modalOptionIconGlass,
-                                    { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)' }
-                                ]} />
-                                <UserPlus size={24} color={theme.primary} />
+                            <View style={[styles.modalOptionIcon, { backgroundColor: theme.primaryLight }]}>
+                                <UserPlus size={22} color={theme.primary} strokeWidth={1.8} />
                             </View>
                             <View style={styles.modalOptionText}>
                                 <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.registerNewChild')}</Text>
@@ -696,28 +398,10 @@ const HeaderSection = memo<HeaderSectionProps>(({
                         <TouchableOpacity
                             style={[styles.modalOption, { backgroundColor: theme.cardSecondary }]}
                             onPress={handleJoinWithCode}
-                            activeOpacity={0.7}
+                            activeOpacity={0.6}
                         >
-                            <View style={[
-                                styles.modalOptionIcon, 
-                                { 
-                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
-                                    borderColor: theme.border || '#E5E7EB',
-                                    borderWidth: 1.5
-                                }
-                            ]}>
-                                {Platform.OS === 'ios' && (
-                                    <BlurView
-                                        intensity={60}
-                                        tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-                                )}
-                                <View style={[
-                                    styles.modalOptionIconGlass,
-                                    { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)' }
-                                ]} />
-                                <Link2 size={24} color={theme.success} />
+                            <View style={[styles.modalOptionIcon, { backgroundColor: theme.successLight }]}>
+                                <Link2 size={22} color={theme.success} strokeWidth={1.8} />
                             </View>
                             <View style={styles.modalOptionText}>
                                 <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.joinWithCode')}</Text>
@@ -750,35 +434,18 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     greetingLarge: {
-        ...TYPOGRAPHY.bodyLarge,
+        fontSize: 22,
         fontWeight: '600',
-        marginBottom: 0,
+        letterSpacing: -0.4,
     },
     ageText: {
-        ...TYPOGRAPHY.label,
+        fontSize: 15,
         fontWeight: '400',
         marginTop: 2,
     },
-    greetingSubtitle: {
-        ...TYPOGRAPHY.bodySmall,
-        fontWeight: '400',
-    },
-    greeting: {
-        ...TYPOGRAPHY.label,
-        fontWeight: '500',
-    },
-
-    // Weather
-    weatherBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: SPACING.xs,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 20,
-    },
     weatherText: {
-        ...TYPOGRAPHY.labelSmall,
+        fontSize: 13,
+        fontWeight: '400',
     },
 
     // Children Row - RTL aligned to right side
@@ -830,7 +497,7 @@ const styles = StyleSheet.create({
     },
     childAvatarActive: {
         borderWidth: 2,
-        borderColor: '#374151',
+        borderColor: '#1C1C1E',
     },
     childAvatarImage: {
         width: '100%',
@@ -850,13 +517,16 @@ const styles = StyleSheet.create({
     },
     activeIndicator: {
         position: 'absolute',
-        bottom: -3,
+        bottom: -4,
+        alignSelf: 'center',
         left: '50%',
-        marginLeft: -3,
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#10B981',
+        marginLeft: -5,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#34C759',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
     },
     addChildBtn: {
         width: 42,
@@ -869,76 +539,45 @@ const styles = StyleSheet.create({
         marginLeft: SPACING.sm,
     },
 
-    // Toast Notification - Single Pill Style
-    toastNotification: {
+    // Reminder Row - Simple inline
+    reminderRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         paddingVertical: 10,
         paddingHorizontal: 14,
-        borderRadius: 24,
-        borderWidth: 1,
-        gap: 10,
-    },
-    toastIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    toastIconGlass: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
-    },
-    toastContent: {
-        flex: 1,
-        alignItems: 'flex-end',
-    },
-    toastTitle: {
-        ...TYPOGRAPHY.label,
-    },
-    toastTime: {
-        ...TYPOGRAPHY.caption,
-    },
-    notificationBell: {
-        padding: 8,
-        position: 'relative',
-    },
-    bellContainer: {
-        width: 40,
-        height: 40,
         borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
+        gap: 8,
+        marginBottom: 4,
+        borderWidth: 0.5,
     },
-    bellContainerActive: {
+    reminderText: {
+        fontSize: 13,
+        fontWeight: '500',
+        flex: 1,
+        textAlign: 'right',
+        letterSpacing: -0.2,
     },
-    notificationBadge: {
+    reminderHint: {
+        fontSize: 12,
+        fontWeight: '400',
+    },
+    // Notification Bell
+    notificationBell: {
+        padding: 6,
+        position: 'relative',
+    },
+    notificationDot: {
         position: 'absolute',
-        top: 2,
-        right: 2,
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 6,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
+        top: 3,
+        right: 3,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
     },
     badgeText: {
-        ...TYPOGRAPHY.captionSmall,
+        fontSize: 10,
         fontWeight: '700',
+        color: '#FFFFFF',
         textAlign: 'center',
     },
 
@@ -979,22 +618,11 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     modalOptionIcon: {
-        width: 52,
-        height: 52,
+        width: 48,
+        height: 48,
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    modalOptionIconGlass: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 14,
     },
     modalOptionText: {
         flex: 1,

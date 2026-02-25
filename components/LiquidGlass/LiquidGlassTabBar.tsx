@@ -1,24 +1,122 @@
 /**
- * LiquidGlassTabBar - Apple iOS 18 Style Liquid Glass Tab Bar
- * Premium tab bar with glass effect matching iOS design
+ * LiquidGlassTabBar - Premium Apple iOS 26 Liquid Glass Tab Bar
+ * Features:
+ * - Smooth spring-animated glass bubble that slides between tabs
+ * - Prismatic rainbow edge refraction effect
+ * - Native UIGlassEffect when available, BlurView fallback
+ * - Haptic feedback on tab press
  */
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
     TouchableOpacity,
-    Text,
     StyleSheet,
     Platform,
+    Dimensions,
+    Animated,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useTheme } from '../../context/ThemeContext';
 
-const LiquidGlassTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
-    const activeTabPayload = state.routes[state.index];
-    const activeTabName = activeTabPayload.name;
+// Try to load native glass effect
+let GlassView: any = null;
+let GlassContainer: any = null;
+let glassAPIAvailable = false;
+
+try {
+    const glassModule = require('expo-glass-effect');
+    GlassView = glassModule.GlassView;
+    GlassContainer = glassModule.GlassContainer;
+    try {
+        glassAPIAvailable = glassModule.isGlassEffectAPIAvailable();
+    } catch (e: any) {
+        glassAPIAvailable = false;
+    }
+} catch (e: any) {
+    // Module not available
+}
+
+const useNativeGlass = GlassView != null && GlassContainer != null && glassAPIAvailable;
+
+const ACTIVE_COLOR = '#007AFF';
+const SCREEN_W = Dimensions.get('window').width;
+const BAR_MARGIN_H = 14;
+const BAR_PADDING_H = 8;
+const BAR_W = SCREEN_W - BAR_MARGIN_H * 2;
+const BAR_H = 102;
+const BAR_R = 40;
+const BUBBLE_SIZE = 56;
+const BUBBLE_R = 20;
+
+// Screens that should be displayed full-screen without the tab bar
+const FULLSCREEN_SCREENS = ['ChatScreen'];
+
+const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(({ state, descriptors, navigation }) => {
+    const { isDarkMode } = useTheme();
+    const numTabs = state.routes.length;
+
+    // Hide tab bar when a fullscreen screen is active in any nested stack
+    const activeRoute = state.routes[state.index];
+    const nestedState = activeRoute.state as { index?: number; routes?: { name: string }[] } | undefined;
+    if (nestedState?.routes && nestedState.index !== undefined) {
+        const activeNestedRoute = nestedState.routes[nestedState.index];
+        if (activeNestedRoute && FULLSCREEN_SCREENS.includes(activeNestedRoute.name)) {
+            return null;
+        }
+    }
+
+    // Calculate tab width and bubble position
+    const tabWidth = (BAR_W - BAR_PADDING_H * 2) / numTabs;
+    const getBubbleX = (index: number) => BAR_PADDING_H + tabWidth * index + (tabWidth - BUBBLE_SIZE) / 2;
+
+    // Animated sliding bubble position
+    const slideAnim = useRef(new Animated.Value(getBubbleX(state.index))).current;
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const prismaticOpacity = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        // Spring animation for smooth, natural glass sliding
+        Animated.parallel([
+            // Slide to new position
+            Animated.spring(slideAnim, {
+                toValue: getBubbleX(state.index),
+                useNativeDriver: true,
+                tension: 68,
+                friction: 12,
+            }),
+            // Subtle bounce scale
+            Animated.sequence([
+                Animated.timing(scaleAnim, {
+                    toValue: 0.9,
+                    duration: 80,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    useNativeDriver: true,
+                    tension: 120,
+                    friction: 8,
+                }),
+            ]),
+            // Prismatic flash during transition
+            Animated.sequence([
+                Animated.timing(prismaticOpacity, {
+                    toValue: 1,
+                    duration: 150,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(prismaticOpacity, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+            ]),
+        ]).start();
+    }, [state.index]);
 
     const handleTabPress = (route: any, isFocused: boolean) => {
         const event = navigation.emit({
@@ -26,7 +124,6 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, na
             target: route.key,
             canPreventDefault: true,
         });
-
         if (!isFocused && !event.defaultPrevented) {
             if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -35,198 +132,250 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, na
         }
     };
 
-    return (
-        <View style={styles.container}>
-            {/* Glow Effect */}
-            <LinearGradient
-                colors={['rgba(255, 255, 255, 0.2)', 'transparent']}
-                style={styles.topGlow}
-            />
+    // Sliding glass bubble (rendered once, animated position)
+    const renderSlidingBubble = () => (
+        <Animated.View
+            style={[
+                styles.slidingBubble,
+                {
+                    transform: [
+                        { translateX: slideAnim },
+                        { scale: scaleAnim },
+                    ],
+                },
+            ]}
+        >
+            {/* Glass bubble background */}
+            {useNativeGlass ? (
+                <GlassView
+                    style={styles.activeBubble}
+                    glassEffectStyle="regular"
+                    isInteractive
+                    colorScheme={isDarkMode ? 'dark' : 'light'}
+                />
+            ) : (
+                <View style={[
+                    styles.activeBubble,
+                    {
+                        backgroundColor: isDarkMode
+                            ? 'rgba(255,255,255,0.12)'
+                            : 'rgba(0,0,0,0.06)',
+                    },
+                ]} />
+            )}
 
-            {/* Glass Tab Bar */}
-            <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+            {/* Prismatic rainbow edge - appears during slide */}
+            <Animated.View style={[styles.prismaticRing, { opacity: prismaticOpacity }]}>
                 <LinearGradient
                     colors={[
-                        'rgba(255, 255, 255, 0.35)',
-                        'rgba(255, 255, 255, 0.2)',
-                        'rgba(255, 255, 255, 0.15)',
+                        'rgba(255,0,0,0.15)',
+                        'rgba(255,165,0,0.15)',
+                        'rgba(255,255,0,0.12)',
+                        'rgba(0,255,0,0.12)',
+                        'rgba(0,191,255,0.15)',
+                        'rgba(128,0,255,0.15)',
+                        'rgba(255,0,128,0.12)',
                     ]}
                     start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.gradientContainer}
-                >
-                    {/* Top Border Highlight */}
-                    <View style={styles.topBorder} />
+                    end={{ x: 1, y: 1 }}
+                    style={styles.prismaticGradient}
+                />
+            </Animated.View>
+        </Animated.View>
+    );
 
-                    {/* Tabs */}
-                    <View style={styles.tabsContainer}>
-                        {state.routes.map((route, index) => {
-                            const { options } = descriptors[route.key];
-                            const label =
-                                options.tabBarLabel !== undefined
-                                    ? options.tabBarLabel
-                                    : options.title !== undefined
-                                        ? options.title
-                                        : route.name;
+    // Top indicator line (animated)
+    const renderTopIndicator = () => (
+        <Animated.View
+            style={[
+                styles.topIndicator,
+                {
+                    transform: [
+                        { translateX: Animated.add(slideAnim, new Animated.Value((BUBBLE_SIZE - 28) / 2)) },
+                    ],
+                },
+            ]}
+        />
+    );
 
-                            const isFocused = state.index === index;
+    const renderTabs = () => (
+        <View style={styles.tabsRow}>
+            {state.routes.map((route: any, index: number) => {
+                const { options } = descriptors[route.key];
+                const isFocused = state.index === index;
+                const IconComponent = options.tabBarIcon;
 
-                            // Extract the icon from options (we assume tabBarIcon is provided)
-                            const IconComponent = options.tabBarIcon;
-
-                            return (
-                                <TouchableOpacity
-                                    key={route.key}
-                                    onPress={() => handleTabPress(route, isFocused)}
-                                    activeOpacity={0.7}
-                                    style={[
-                                        styles.tab,
-                                        index === 0 && styles.firstTab,
-                                        index === state.routes.length - 1 && styles.lastTab,
-                                    ]}
-                                >
-                                    {isFocused && (
-                                        <BlurView
-                                            intensity={70}
-                                            tint="light"
-                                            style={styles.activeTabBackground}
-                                        >
-                                            <LinearGradient
-                                                colors={[
-                                                    'rgba(0, 122, 255, 0.4)',
-                                                    'rgba(88, 86, 214, 0.3)',
-                                                ]}
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 1 }}
-                                                style={styles.activeGradient}
-                                            >
-                                                <View style={styles.activeBorder} />
-                                            </LinearGradient>
-                                        </BlurView>
-                                    )}
-
-                                    <View style={styles.iconContainer}>
-                                        {IconComponent && IconComponent({
-                                            focused: isFocused,
-                                            color: isFocused ? '#FFFFFF' : 'rgba(0, 0, 0, 0.6)',
-                                            size: 24
-                                        })}
-                                    </View>
-
-                                    {/* Optional: Show label if needed, but the custom icon usually handles it.
-                                        If CustomTabIcon is used in App.tsx, it renders both icon and label.
-                                        We might need to adjust this to avoid double labels if CustomTabIcon is doing both.
-                                        
-                                        However, looking at App.tsx, `tabBarIcon` renders `CustomTabIcon` which renders both Icon and Text.
-                                        So we just need to render `IconComponent`.
-                                     */}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </LinearGradient>
-            </BlurView>
-
-            {/* Bottom Shadow */}
-            <View style={styles.bottomShadow} />
+                return (
+                    <TouchableOpacity
+                        key={route.key}
+                        onPress={() => handleTabPress(route, isFocused)}
+                        activeOpacity={0.7}
+                        style={styles.tab}
+                    >
+                        <View style={styles.iconWrap}>
+                            {IconComponent && IconComponent({
+                                focused: isFocused,
+                                color: isFocused
+                                    ? ACTIVE_COLOR
+                                    : (isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'),
+                                size: 24,
+                            })}
+                        </View>
+                    </TouchableOpacity>
+                );
+            })}
         </View>
     );
-};
+
+    // Native glass path (dev build on iOS 26+)
+    if (useNativeGlass) {
+        return (
+            <View style={styles.outer}>
+                <GlassContainer spacing={12} style={styles.container}>
+                    <GlassView
+                        style={styles.barBackground}
+                        glassEffectStyle="regular"
+                        colorScheme={isDarkMode ? 'dark' : 'light'}
+                    />
+                    {renderTopIndicator()}
+                    {renderSlidingBubble()}
+                    {renderTabs()}
+                </GlassContainer>
+            </View>
+        );
+    }
+
+    // Fallback path (Expo Go or non-iOS 26)
+    return (
+        <View style={styles.outer}>
+            {/* Bottom fill - extends tab bar background to screen edge */}
+            <View style={[styles.bottomFill, {
+                backgroundColor: isDarkMode ? 'rgba(40,40,50,0.95)' : 'rgba(255,255,255,0.95)',
+            }]} />
+            <View style={[styles.container, styles.fallbackShadow]}>
+                <BlurView
+                    style={styles.blurFill}
+                    tint={isDarkMode ? 'dark' : 'systemChromeMaterialLight' as any}
+                    intensity={isDarkMode ? 60 : 90}
+                />
+                {/* Tint overlay for frosted premium look */}
+                <View style={[
+                    styles.blurFill,
+                    {
+                        backgroundColor: isDarkMode
+                            ? 'rgba(40,40,50,0.5)'
+                            : 'rgba(255,255,255,0.7)',
+                    },
+                ]} />
+                {/* Subtle top border */}
+                <View style={[
+                    styles.blurFill,
+                    {
+                        borderWidth: 0.5,
+                        borderColor: isDarkMode
+                            ? 'rgba(255,255,255,0.08)'
+                            : 'rgba(0,0,0,0.04)',
+                        borderRadius: BAR_R,
+                    },
+                ]} />
+                {renderTopIndicator()}
+                {renderSlidingBubble()}
+                {renderTabs()}
+            </View>
+        </View>
+    );
+});
 
 const styles = StyleSheet.create({
-    container: {
+    outer: {
         position: 'absolute',
-        bottom: 24,
-        left: 16,
-        right: 16,
-        borderRadius: 32, // More rounded for modern look
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.15,
-        shadowRadius: 20,
-        elevation: 10,
-    },
-    topGlow: {
-        position: 'absolute',
-        top: -8,
+        bottom: 0,
         left: 0,
         right: 0,
-        height: 16,
-        zIndex: 1,
-        borderRadius: 32,
+        paddingBottom: 32,
+        paddingHorizontal: BAR_MARGIN_H,
     },
-    blurContainer: {
-        borderRadius: 32,
+    container: {
+        borderRadius: BAR_R,
         overflow: 'hidden',
     },
-    gradientContainer: {
-        borderRadius: 32,
-        padding: 4, // Inner padding for floating effect
-    },
-    topBorder: {
+    bottomFill: {
         position: 'absolute',
-        top: 0,
+        bottom: 0,
         left: 0,
         right: 0,
-        height: 1.5,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        height: 34,
     },
-    tabsContainer: {
+    fallbackShadow: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 24,
+        elevation: 8,
+    },
+    barBackground: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: BAR_R,
+    },
+    blurFill: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    tabsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        height: BAR_H,
+        paddingHorizontal: BAR_PADDING_H,
     },
     tab: {
         flex: 1,
-        height: 64, // Taller touch target
+        height: BAR_H - 10,
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        borderRadius: 24,
     },
-    firstTab: {
-        marginLeft: 0,
-    },
-    lastTab: {
-        marginRight: 0,
-    },
-    activeTabBackground: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 24,
-        overflow: 'hidden',
-        margin: 4, // Spacing for current tab
-    },
-    activeGradient: {
-        flex: 1,
-    },
-    activeBorder: {
+    // Sliding glass bubble
+    slidingBubble: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.5)',
+        top: (BAR_H - BUBBLE_SIZE) / 2,
+        width: BUBBLE_SIZE,
+        height: BUBBLE_SIZE,
+        borderRadius: BUBBLE_R,
+        zIndex: 5,
     },
-    iconContainer: {
+    activeBubble: {
+        width: '100%',
+        height: '100%',
+        borderRadius: BUBBLE_R,
+    },
+    // Top blue indicator line
+    topIndicator: {
+        position: 'absolute',
+        top: 8,
+        width: 28,
+        height: 3,
+        borderRadius: 1.5,
+        backgroundColor: ACTIVE_COLOR,
+        zIndex: 15,
+    },
+    // Prismatic rainbow ring
+    prismaticRing: {
+        position: 'absolute',
+        top: -2,
+        left: -2,
+        right: -2,
+        bottom: -2,
+        borderRadius: BUBBLE_R + 2,
+        overflow: 'hidden',
+    },
+    prismaticGradient: {
+        width: '100%',
+        height: '100%',
+        borderRadius: BUBBLE_R + 2,
+    },
+    iconWrap: {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 10,
-    },
-    bottomShadow: {
-        position: 'absolute',
-        bottom: -4,
-        left: 8,
-        right: 8,
-        height: 8,
-        backgroundColor: 'rgba(0, 0, 0, 0.05)',
-        borderRadius: 32,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
     },
 });
 

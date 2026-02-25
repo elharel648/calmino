@@ -1,10 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, Dimensions, TouchableOpacity, Text, Animated, Easing } from 'react-native';
+import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { ANIMATIONS } from '../utils/designSystem';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 
 // Hooks
 import { useHomeData } from '../hooks/useHomeData';
@@ -40,7 +37,8 @@ import AddCustomActionModal, { CustomAction } from '../components/Home/AddCustom
 import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import MagicMomentsModal from '../components/Home/MagicMomentsModal';
 import { EditBasicInfoModal } from '../components/Profile';
-
+import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
+import PremiumPaywall from '../components/Premium/PremiumPaywall';
 // Services
 import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -69,8 +67,6 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'H
  * Reduced from 535 lines to ~180 lines
  */
 export default function HomeScreen({ navigation }: { navigation: HomeScreenNavigationProp }) {
-    // Fix: Use useRef instead of module-level flag for animation state
-    const hasAnimationsRun = useRef(false);
     // --- Theme & Language ---
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
@@ -187,6 +183,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isGrowthOpen, setIsGrowthOpen] = useState(false);
     const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
     const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+    const [isPaywallOpen, setIsPaywallOpen] = useState(false);
     const [isMagicMomentsOpen, setIsMagicMomentsOpen] = useState(false);
     const [customActions, setCustomActions] = useState<CustomAction[]>([]);
     const [trackingModalType, setTrackingModalType] = useState<TrackingType>(null);
@@ -238,16 +235,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         }, [profile.id, refreshHomeData, refreshMeds])
     );
 
-    // Mark animations as run after first render
-    useEffect(() => {
-        if (!hasAnimationsRun.current) {
-            // Delay to allow animations to complete
-            const timer = setTimeout(() => {
-                hasAnimationsRun.current = true;
-            }, 600);
-            return () => clearTimeout(timer);
-        }
-    }, []);
 
     // --- Handlers ---
     const { showToast, showSuccess, showError } = useToast();
@@ -311,7 +298,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     }, [user, profile.id, refreshHomeData, scheduleFeedingReminder]);
 
     const shareMessage = useMemo(() =>
-        `עדכון מ-CalmParent:\n👶 ${profile.name}\n🍼 אכל/ה לאחרונה: ${lastFeedTime}\n😴 ישן/ה לאחרונה: ${lastSleepTime}`,
+        `עדכון מ-Calmino:\n👶 ${profile.name}\n🍼 אכל/ה לאחרונה: ${lastFeedTime}\n😴 ישן/ה לאחרונה: ${lastSleepTime}`,
         [profile.name, lastFeedTime, lastSleepTime]
     );
 
@@ -319,149 +306,19 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         await Share.share({ message: shareMessage });
     }, [shareMessage]);
 
-    // --- Animations (MUST be before any early returns) ---
-    // Use global scroll tracking for parallax tab bar effect
+    // --- Scroll tracking for tab bar ---
     const { scrollY, scrollX } = useScrollTracking();
-    const localScrollY = useRef(new Animated.Value(0)).current; // Keep local for HomeScreen-specific parallax
-    const floatingOffset = useRef(new Animated.Value(0)).current;
 
-    // Floating animation for background elements
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(floatingOffset, {
-                    toValue: 20,
-                    duration: 3000,
-                    easing: Easing.inOut(Easing.sin),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(floatingOffset, {
-                    toValue: 0,
-                    duration: 3000,
-                    easing: Easing.inOut(Easing.sin),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-    }, [floatingOffset]);
-
-    // Scroll handler using standard Animated
     const scrollHandler = Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }], // Sync global scrollY
-        {
-            useNativeDriver: true,
-            listener: (event: any) => {
-                // Also update local for background (or just use scrollY for both?)
-                // We can just setValue on localScrollY if we want separate control, 
-                // or simpler: just use scrollY for everything. 
-                // But let's keep localScrollY distinct if logic diverged.
-                // Actually, simpler to just map to ONE value if possible. 
-                // Animated.event can map to one.
-                // We'll map to scrollY (global). And we'll just use scrollY for the background too.
-                // But we need to verify scrollY is an Animated.Value (it is from our new Context).
-                localScrollY.setValue(event.nativeEvent.contentOffset.y);
-                scrollX.setValue(event.nativeEvent.contentOffset.x || 0);
-            }
-        }
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        { useNativeDriver: true }
     );
-
-    // Parallax background style
-    const parallaxBackgroundStyle = {
-        transform: [{
-            translateY: localScrollY.interpolate({
-                inputRange: [0, 500],
-                outputRange: [0, -100],
-                extrapolate: 'clamp'
-            })
-        }],
-    };
-
-    // Floating glow style
-    const floatingGlowStyle = {
-        transform: [{
-            translateY: floatingOffset.interpolate({
-                inputRange: [0, 20],
-                outputRange: [0, 10],
-                extrapolate: 'clamp'
-            })
-        }],
-        opacity: floatingOffset.interpolate({
-            inputRange: [0, 20],
-            outputRange: [0.6, 1],
-            extrapolate: 'clamp'
-        }),
-    };
 
     // Get loading state from context (but don't show loading screen)
     const { isLoading: contextLoading } = useActiveChild();
 
-    // --- Render ---
-    const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
     return (
-        <View style={styles.container}>
-            {/* Enhanced Background - Parallax */}
-            <Animated.View style={[
-                StyleSheet.absoluteFill,
-                { height: SCREEN_HEIGHT + 120 }, // Extend height to cover parallax movement
-                parallaxBackgroundStyle
-            ]}>
-                <LinearGradient
-                    colors={isDarkMode
-                        ? ['#0F0F0F', '#1C1C1E', '#0A0A0A', '#0F0F0F']
-                        : ['#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF']
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    locations={[0, 0.3, 0.7, 1]}
-                    style={StyleSheet.absoluteFill}
-                />
-            </Animated.View>
-
-            {/* Dot Pattern Texture - Parallax */}
-            <Animated.View style={[
-                StyleSheet.absoluteFill,
-                { height: SCREEN_HEIGHT + 120 }, // Extend height to cover parallax movement
-                parallaxBackgroundStyle
-            ]}>
-                <Svg
-                    style={StyleSheet.absoluteFill}
-                    width={SCREEN_WIDTH}
-                    height={SCREEN_HEIGHT + 120}
-                    preserveAspectRatio="none"
-                >
-                    <Defs>
-                        <Pattern
-                            id="dotPattern"
-                            patternUnits="userSpaceOnUse"
-                            width={28}
-                            height={28}
-                        >
-                            <Circle
-                                cx={14}
-                                cy={14}
-                                r={1.5}
-                                fill={isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.035)'}
-                            />
-                        </Pattern>
-                    </Defs>
-                    <Rect width={SCREEN_WIDTH} height={SCREEN_HEIGHT + 120} fill="url(#dotPattern)" />
-                </Svg>
-            </Animated.View>
-
-            {/* Radial Glow at Top - Floating */}
-            <Animated.View style={[StyleSheet.absoluteFill, floatingGlowStyle]}>
-                <LinearGradient
-                    colors={isDarkMode
-                        ? ['rgba(79, 70, 229, 0.15)', 'transparent']
-                        : ['rgba(79, 70, 229, 0.08)', 'transparent']
-                    }
-                    start={{ x: 0.5, y: 0 }}
-                    end={{ x: 0.5, y: 0.6 }}
-                    style={StyleSheet.absoluteFill}
-                />
-            </Animated.View>
-
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
@@ -488,10 +345,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                     {/* When HAVE baby profile - show full home screen */}
                     {profile.id && (
                         <>
-                            {/* Staggered Entry Header - Enhanced */}
-                            <Animated.View
-                                collapsable={false}
-                            >
+                            <View>
                                 <HeaderSection
                                     greeting={greeting}
                                     profile={profile}
@@ -510,13 +364,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                         setIsEditChildModalOpen(true);
                                     }}
                                 />
-                            </Animated.View>
+                            </View>
 
-
-                            {/* Staggered Entry Quick Actions - Enhanced */}
-                            <Animated.View
-                                collapsable={false}
-                            >
+                            <View>
                                 <QuickActions
                                     lastFeedTime={lastFeedTime}
                                     lastSleepTime={lastSleepTime}
@@ -568,22 +418,13 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     meds={meds}
                                     dynamicStyles={dynamicStyles}
                                 />
-                            </Animated.View>
+                            </View>
 
                             <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => setIsHealthOpen(false)} />
 
-                            {/* Staggered Entry Timeline - Enhanced */}
-                            <Animated.View
-                                collapsable={false}
-                            >
-                                <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} showOnlyToday={true} />
-                            </Animated.View>
+                            <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} showOnlyToday={true} />
 
-                            {/* Share Button - Enhanced Animation */}
-                            <Animated.View
-                            >
-                                <ShareStatusButton onShare={shareStatus} message={shareMessage} />
-                            </Animated.View>
+                            <ShareStatusButton onShare={shareStatus} message={shareMessage} />
                         </>
                     )}
                 </Animated.ScrollView>
@@ -686,6 +527,15 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                         }
                     }}
                 />
+                <DynamicPromoModal
+                    currentScreenName="Home"
+                    onNavigateToPaywall={() => setIsPaywallOpen(true)}
+                />
+                <PremiumPaywall
+                    visible={isPaywallOpen}
+                    onClose={() => setIsPaywallOpen(false)}
+                    trigger="promo_modal_home"
+                />
             </SafeAreaView>
         </View>
     );
@@ -698,17 +548,13 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
     },
-    patternOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        opacity: 0.4,
-    },
     loadingContainer: {
         justifyContent: 'center',
         alignItems: 'center',
     },
     scrollContent: {
         padding: 20,
-        paddingBottom: 100,
+        paddingBottom: 140,
     },
     scrollContentCentered: {
         flex: 1,

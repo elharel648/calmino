@@ -1,17 +1,20 @@
-import React, { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback } from 'react-native';
+import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Slider from '@react-native-community/slider';
+import { BlurView } from 'expo-blur';
 import { auth, db } from '../../services/firebaseConfig';
 import { saveEventToFirebase } from '../../services/firebaseService';
 import { doc, getDoc, updateDoc, arrayUnion, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { VACCINE_SCHEDULE, CustomVaccine } from '../../types/profile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
+import { logger } from '../../utils/logger';
+import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as ReAnimated } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -60,6 +63,39 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     // Swipe down animations
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new Animated.Value(0)).current;
+
+    // Health icon animation
+    const healthIconPulse = useSharedValue(0);
+    const healthIconBounce = useSharedValue(1);
+
+    const healthIconPulseStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(healthIconPulse.value, [0, 1], [0.4, 0]),
+        transform: [{ scale: interpolate(healthIconPulse.value, [0, 1], [1, 1.7]) }],
+    }));
+
+    const healthIconBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: healthIconBounce.value }],
+    }));
+
+    useEffect(() => {
+        if (isModalOpen) {
+            healthIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
+            healthIconBounce.value = withRepeat(
+                withSequence(
+                    withTiming(1.12, { duration: 300 }),
+                    withTiming(0.94, { duration: 200 }),
+                    withTiming(1.05, { duration: 150 }),
+                    withTiming(1, { duration: 150 }),
+                    withTiming(1, { duration: 2200 }),
+                ),
+                -1,
+                false
+            );
+        } else {
+            healthIconPulse.value = 0;
+            healthIconBounce.value = 1;
+        }
+    }, [isModalOpen]);
 
     // Vaccine state
     const [vaccines, setVaccines] = useState<Record<string, boolean>>({});
@@ -315,81 +351,60 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         setIsModalOpen(true);
     };
 
-    const closeModal = () => {
+    const resetForms = useCallback(() => {
+        setTemperature(37.0);
+        setTempNote('');
+        setSelectedIllness(null);
+        setIllnessNote('');
+        setSelectedMed(null);
+        setMedNote('');
+        setDoctorReason('');
+        setDoctorNote('');
+        setDoctorPhoto(null);
+        setDoctorDocument(null);
+    }, []);
+
+    const closeModal = useCallback(() => {
         setIsModalOpen(false);
         setCurrentScreen('menu');
         resetForms();
         onClose?.();
-    };
+    }, [onClose, resetForms]);
 
-    // Track if we're dragging
-    const isDragging = useRef(false);
+    // Tracking scroll refs
     const scrollViewRef = useRef<ScrollView>(null);
     const scrollOffsetY = useRef(0);
-    const dragStartY = useRef(0);
 
-    // Swipe down to dismiss - Exact same as TrackingModal
+    // Swipe down to dismiss - exact perfect logic from QuickReminderModal!
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: (evt, gestureState) => {
-            const startY = evt.nativeEvent.pageY;
-            dragStartY.current = startY;
-            if (startY < 300) {
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                return true;
-            }
-            return false;
-        },
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-            if (isDragging.current) return true;
-            const currentY = evt.nativeEvent.pageY;
-            const isTopArea = currentY < 300;
-            const isDraggingDown = gestureState.dy > 5;
-            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
-            const isScrollAtTop = scrollOffsetY.current <= 5;
-
-            if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-                isDragging.current = true;
-                dragStartY.current = currentY;
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                return true;
-            }
-            return false;
-        },
-        onPanResponderGrant: () => {
-            isDragging.current = true;
-            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            const { dy, dx } = gestureState;
+            return dy > 10 && Math.abs(dy) > Math.abs(dx);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
                 slideAnim.setValue(gestureState.dy);
-                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                const opacity = Math.max(0, 1 - gestureState.dy / 300);
                 backdropAnim.setValue(opacity);
             }
         },
         onPanResponderRelease: (_, gestureState) => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-
-            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
-            if (shouldDismiss) {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Animated.parallel([
-                    Animated.spring(slideAnim, {
+                    Animated.timing(slideAnim, {
                         toValue: SCREEN_HEIGHT,
+                        duration: 250,
                         useNativeDriver: true,
-                        tension: 65,
-                        friction: 11,
                     }),
                     Animated.timing(backdropAnim, {
                         toValue: 0,
-                        duration: 200,
+                        duration: 250,
                         useNativeDriver: true,
                     }),
                 ]).start(() => {
                     closeModal();
-                    slideAnim.setValue(SCREEN_HEIGHT);
-                    backdropAnim.setValue(0);
                 });
             } else {
                 Animated.parallel([
@@ -399,17 +414,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         tension: 65,
                         friction: 11,
                     }),
-                    Animated.timing(backdropAnim, {
+                    Animated.spring(backdropAnim, {
                         toValue: 1,
-                        duration: 200,
                         useNativeDriver: true,
                     }),
                 ]).start();
             }
-        },
-        onPanResponderTerminate: () => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
         },
     }), [slideAnim, backdropAnim, closeModal]);
 
@@ -444,18 +454,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         }
     }, [isModalOpen, slideAnim, backdropAnim]);
 
-    const resetForms = () => {
-        setTemperature(37.0);
-        setTempNote('');
-        setSelectedIllness(null);
-        setIllnessNote('');
-        setSelectedMed(null);
-        setMedNote('');
-        setDoctorReason('');
-        setDoctorNote('');
-        setDoctorPhoto(null);
-        setDoctorDocument(null);
-    };
+    // (resetForms moved to top level)
 
     const goBack = () => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1145,57 +1144,74 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     };
 
     return (
-        <Modal visible={isModalOpen} transparent animationType="none" onRequestClose={closeModal}>
-            <TouchableWithoutFeedback onPress={closeModal}>
-                <Animated.View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay || 'rgba(0,0,0,0.5)', opacity: backdropAnim }]} />
-            </TouchableWithoutFeedback>
-            <Animated.View
-                style={[
-                    styles.modalContent,
-                    {
-                        backgroundColor: theme.card,
-                        transform: [{ translateY: slideAnim }],
-                    }
-                ]}
-                {...panResponder.panHandlers}
-            >
-                {/* Drag Handle */}
-                <View style={styles.dragHandle} {...panResponder.panHandlers}>
-                    <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
-                </View>
-
-                {/* Minimal Header */}
-                <View style={[styles.modalHeader, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
-                    {currentScreen !== 'menu' ? (
-                        <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
-                            <ChevronRight size={22} color={theme.textPrimary} />
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={{ width: 40 }} />
-                    )}
-                    <View style={styles.headerTitleContainer}>
-                        {currentScreen === 'menu' && (
-                            <View style={styles.headerIconWrapper}>
-                                <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB' }]}>
-                                    <HeartPulse size={20} color="#14B8A6" strokeWidth={2} />
-                                </View>
-                            </View>
+        <Modal visible={isModalOpen} transparent animationType="none" onRequestClose={closeModal} statusBarTranslucent>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' }}>
+                <TouchableWithoutFeedback onPress={closeModal}>
+                    <Animated.View style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
+                        {Platform.OS === 'ios' ? (
+                            <BlurView
+                                intensity={isDarkMode ? 40 : 20}
+                                tint={isDarkMode ? 'dark' : 'dark'}
+                                style={StyleSheet.absoluteFill}
+                                blurReductionFactor={4}
+                            />
+                        ) : (
+                            <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.modalOverlay || 'rgba(0,0,0,0.5)' }]} />
                         )}
-                        <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
+                    </Animated.View>
+                </TouchableWithoutFeedback>
+                <Animated.View
+                    style={[
+                        styles.modalContent,
+                        {
+                            backgroundColor: theme.card,
+                            transform: [{ translateY: slideAnim }],
+                        }
+                    ]}
+                >
+                    {/* Drag Handle */}
+                    <View style={styles.dragHandle} {...panResponder.panHandlers}>
+                        <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
                     </View>
-                    <View style={{ width: 40 }} />
-                </View>
 
-                <View style={[styles.modalBody, { backgroundColor: theme.background }]}>
-                    {currentScreen === 'menu' && renderMenu()}
-                    {currentScreen === 'vaccines' && renderVaccines()}
-                    {currentScreen === 'doctor' && renderDoctor()}
-                    {currentScreen === 'illness' && renderIllness()}
-                    {currentScreen === 'temperature' && renderTemperature()}
-                    {currentScreen === 'medications' && renderMedications()}
-                    {currentScreen === 'history' && renderHistory()}
-                </View>
-            </Animated.View>
+                    {/* Minimal Header */}
+                    <View style={[styles.modalHeader, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
+                        {currentScreen !== 'menu' ? (
+                            <TouchableOpacity onPress={goBack} style={[styles.headerBtn, { backgroundColor: theme.inputBackground }]}>
+                                <ChevronRight size={22} color={theme.textPrimary} />
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={{ width: 40 }} />
+                        )}
+                        <View style={styles.headerTitleContainer}>
+                            {currentScreen === 'menu' && (
+                                <View style={styles.headerIconWrapper}>
+                                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#14B8A6' }, healthIconPulseStyle]} />
+                                        <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB' }]}>
+                                            <ReAnimated.View style={healthIconBounceStyle}>
+                                                <HeartPulse size={20} color="#14B8A6" strokeWidth={2} />
+                                            </ReAnimated.View>
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
+                        </View>
+                        <View style={{ width: 40 }} />
+                    </View>
+
+                    <View style={[styles.modalBody, { backgroundColor: 'transparent' }]}>
+                        {currentScreen === 'menu' && renderMenu()}
+                        {currentScreen === 'vaccines' && renderVaccines()}
+                        {currentScreen === 'doctor' && renderDoctor()}
+                        {currentScreen === 'illness' && renderIllness()}
+                        {currentScreen === 'temperature' && renderTemperature()}
+                        {currentScreen === 'medications' && renderMedications()}
+                        {currentScreen === 'history' && renderHistory()}
+                    </View>
+                </Animated.View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 });
@@ -1229,9 +1245,9 @@ const styles = StyleSheet.create({
     cardArrow: { opacity: 0.6 },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '90%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 12 },
-    dragHandle: { alignItems: 'center', paddingTop: 14, paddingBottom: 12, zIndex: 10 },
-    dragHandleBar: { width: 36, height: 5, borderRadius: 3 },
+    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 44, maxHeight: '92%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 12, flex: 1, width: '100%' },
+    dragHandle: { alignItems: 'center', paddingTop: 16, paddingBottom: 4, paddingHorizontal: 50, zIndex: 10, minHeight: 40 },
+    dragHandleBar: { width: 36, height: 4, borderRadius: 2 },
     modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
     headerBtn: { padding: 8, backgroundColor: '#F3F4F6', borderRadius: 10 },
     headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'column' },

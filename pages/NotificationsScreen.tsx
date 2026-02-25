@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, Animated } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Bell, ChevronRight, Clock, Utensils, Moon, Pill, CheckCircle2, X, Trash2, Sparkles } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { notificationStorageService, StoredNotification } from '../services/noti
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { logger } from '../utils/logger';
 
 export default function NotificationsScreen() {
     const navigation = useNavigation();
@@ -150,94 +151,101 @@ export default function NotificationsScreen() {
             </View>
 
             {/* Notifications List */}
-            <ScrollView
+            <FlatList
+                data={notifications}
+                keyExtractor={(item) => item.id}
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    notifications.length > 0 && styles.listContainer,
+                    { backgroundColor: notifications.length > 0 ? theme.card : 'transparent' }
+                ]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
-            >
-                {notifications.length === 0 ? (
+                ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Bell size={48} color={theme.textTertiary} strokeWidth={1.5} />
-                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין התראות</Text>
+                        <View style={{
+                            width: 80, height: 80, borderRadius: 40,
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F3F4F6',
+                            alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+                            borderWidth: 1, borderColor: theme.border
+                        }}>
+                            <Bell size={32} color={theme.textSecondary} strokeWidth={1.5} />
+                        </View>
+                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין התראות מיוחדות</Text>
                         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                            כאן יופיעו התראות ותזכורות
+                            ההתראות שלך יופיעו כאן כשיגיעו
                         </Text>
                     </View>
-                ) : (
-                    <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
-                        {notifications.map((notification, index) => {
-                            const Icon = getIcon(notification.type);
-                            const iconColor = getIconColor();
+                }
+                renderItem={({ item: notification, index }) => {
+                    const Icon = getIcon(notification.type);
+                    const iconColor = getIconColor();
 
-                            return (
-                                <React.Fragment key={notification.id}>
-                                    <Animated.View
-                                        style={[
-                                            styles.notificationCard,
-                                            !notification.isRead && styles.notificationUnread,
-                                            notification.isUrgent && styles.notificationUrgent,
-                                            { backgroundColor: theme.card, borderBottomColor: theme.border },
-                                            index === 0 && { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-                                            index === notifications.length - 1 && { borderBottomLeftRadius: 20, borderBottomRightRadius: 20, borderBottomWidth: 0 },
-                                        ]}
-                                    >
-                                        <TouchableOpacity
-                                            style={styles.notificationTouchable}
-                                            onPress={() => markAsRead(notification.id)}
-                                            activeOpacity={0.7}
-                                        >
-                                            {/* Icon - Monochromatic */}
-                                            <View style={[
-                                                styles.iconContainer,
-                                                { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' },
-                                            ]}>
-                                                <Icon size={18} color={iconColor} strokeWidth={2} />
-                                            </View>
+                    return (
+                        <Animated.View
+                            style={[
+                                styles.notificationCard,
+                                !notification.isRead && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#F0F9FF' },
+                                notification.isUrgent && styles.notificationUrgent,
+                                { backgroundColor: theme.card, borderBottomColor: theme.border },
+                                index === 0 && { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+                                index === notifications.length - 1 && { borderBottomLeftRadius: 20, borderBottomRightRadius: 20, borderBottomWidth: 0 },
+                            ]}
+                        >
+                            <TouchableOpacity
+                                style={styles.notificationTouchable}
+                                onPress={() => markAsRead(notification.id)}
+                                activeOpacity={0.7}
+                            >
+                                {/* Icon - Monochromatic */}
+                                <View style={[
+                                    styles.iconContainer,
+                                    { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' },
+                                ]}>
+                                    <Icon size={18} color={iconColor} strokeWidth={2} />
+                                </View>
 
-                                            {/* Content */}
-                                            <View style={styles.notificationContent}>
-                                                <View style={styles.notificationTitleRow}>
-                                                    {!notification.isRead && (
-                                                        <View style={[styles.unreadDot, { backgroundColor: isDarkMode ? '#fff' : '#000' }]} />
-                                                    )}
-                                                    <Text style={[styles.notificationTitle, { color: theme.textPrimary }]}>
-                                                        {notification.title}
-                                                    </Text>
-                                                </View>
-                                                <Text style={[styles.notificationMessage, { color: theme.textSecondary }]}>
-                                                    {notification.message}
-                                                </Text>
-                                                <View style={styles.notificationMeta}>
-                                                    <Text style={[styles.notificationTime, { color: theme.textTertiary }]}>
-                                                        {formatTime(notification.timestamp)}
-                                                    </Text>
-                                                    <Clock size={12} color={theme.textTertiary} />
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity>
+                                {/* Content */}
+                                <View style={styles.notificationContent}>
+                                    <View style={styles.notificationTitleRow}>
+                                        {!notification.isRead && (
+                                            <View style={[styles.unreadDot, { backgroundColor: isDarkMode ? '#fff' : '#000' }]} />
+                                        )}
+                                        <Text style={[styles.notificationTitle, { color: theme.textPrimary }]}>
+                                            {notification.title}
+                                        </Text>
+                                    </View>
+                                    <Text style={[styles.notificationMessage, { color: theme.textSecondary }]}>
+                                        {notification.message}
+                                    </Text>
+                                    <View style={styles.notificationMeta}>
+                                        <Text style={[styles.notificationTime, { color: theme.textTertiary }]}>
+                                            {formatTime(notification.timestamp)}
+                                        </Text>
+                                        <Clock size={12} color={theme.textTertiary} />
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
 
-                                        {/* Dismiss button */}
-                                        <TouchableOpacity
-                                            style={styles.dismissBtn}
-                                            onPress={() => {
-                                                if (Platform.OS !== 'web') {
-                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                }
-                                                dismissNotification(notification.id);
-                                            }}
-                                            activeOpacity={0.7}
-                                        >
-                                            <X size={18} color={theme.textTertiary} />
-                                        </TouchableOpacity>
-                                    </Animated.View>
-                                </React.Fragment>
-                            );
-                        })}
-                    </View>
-                )}
-            </ScrollView>
+                            {/* Dismiss button */}
+                            <TouchableOpacity
+                                style={styles.dismissBtn}
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }
+                                    dismissNotification(notification.id);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <X size={18} color={theme.textTertiary} />
+                            </TouchableOpacity>
+                        </Animated.View>
+                    );
+                }}
+            />
         </SafeAreaView>
     );
 }

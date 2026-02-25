@@ -8,12 +8,15 @@ import {
     Share,
     Platform,
     ActivityIndicator,
+    Alert,
+    Linking,
 } from 'react-native';
-import { X, Copy, Share2, RefreshCw, Users, Check } from 'lucide-react-native';
+import { X, Copy, Share2, RefreshCw, Users, Check, Info, MessageCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { useFamily } from '../../hooks/useFamily';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface InviteFamilyModalProps {
     visible: boolean;
@@ -28,33 +31,18 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
     babyId,
     babyName,
 }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const { family, inviteCode, create, refreshInviteCode, isLoading } = useFamily();
     const [copied, setCopied] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [creatingFamily, setCreatingFamily] = useState(false);
 
-    // DEBUG
-    React.useEffect(() => {
-        if (__DEV__ && visible) {
-            console.log('📋 InviteFamilyModal Debug:', {
-                visible,
-                family: !!family,
-                familyId: family?.id,
-                inviteCode,
-                isLoading,
-                creatingFamily,
-            });
-        }
-    }, [visible, family, inviteCode, isLoading, creatingFamily]);
-
     // Create family if doesn't exist
     const handleCreateFamily = React.useCallback(async () => {
         if (!family && !creatingFamily) {
             setCreatingFamily(true);
-            console.log('📋 Creating family for:', babyId, babyName);
             const success = await create(babyId, babyName);
-            console.log('📋 Family creation result:', success);
             setCreatingFamily(false);
         }
     }, [family, creatingFamily, babyId, babyName, create]);
@@ -64,6 +52,16 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
             handleCreateFamily();
         }
     }, [visible, family, isLoading, creatingFamily, handleCreateFamily]);
+
+    // Show help tooltip
+    const showHelp = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Alert.alert(
+            t('familyInvite.helpTitle'),
+            t('familyInvite.helpBody'),
+            [{ text: t('familyInvite.helpOk'), style: 'default' }]
+        );
+    };
 
     const handleCopyCode = async () => {
         if (!inviteCode) return;
@@ -77,15 +75,30 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
         setTimeout(() => setCopied(false), 2000);
     };
 
+    // Direct WhatsApp share with fallback
     const handleShare = async () => {
         if (!inviteCode) return;
 
-        const message = `🍼 הצטרף/י למשפחת ${babyName} באפליקציית CalmParent!\n\nקוד ההצטרפות: ${inviteCode}\n\nהורד/י את האפליקציה והזן/י את הקוד כדי לראות את התיעודים בזמן אמת!`;
+        const message = t('familyInvite.shareMessage', { name: babyName, code: inviteCode });
 
+        // Try WhatsApp first
+        const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
         try {
-            await Share.share({
-                message,
-            });
+            const canOpenWhatsApp = await Linking.canOpenURL(whatsappUrl);
+            if (canOpenWhatsApp) {
+                await Linking.openURL(whatsappUrl);
+                if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                return;
+            }
+        } catch (e) {
+            // Fall through to generic share
+        }
+
+        // Fallback to generic share
+        try {
+            await Share.share({ message });
             if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
@@ -106,45 +119,49 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <View style={styles.overlay}>
-                <View style={styles.modalContent}>
+                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
                     {/* Header */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                            <X size={22} color="#9CA3AF" />
+                            <X size={22} color={theme.textSecondary} />
                         </TouchableOpacity>
-                        <Text style={styles.title}>הזמן למשפחה</Text>
-                        <Users size={22} color="#6366F1" />
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>{t('familyInvite.title')}</Text>
+                        <TouchableOpacity onPress={showHelp} style={styles.closeBtn}>
+                            <Info size={20} color={theme.textSecondary} />
+                        </TouchableOpacity>
                     </View>
 
                     {(isLoading || creatingFamily) ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="large" color={theme.textPrimary} />
-                            <Text style={styles.loadingText}>
-                                {creatingFamily ? 'יוצר משפחה...' : 'טוען...'}
+                            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                                {creatingFamily ? t('familyInvite.creatingFamily') : t('familyInvite.loading')}
                             </Text>
                         </View>
                     ) : (
                         <>
                             {/* Description */}
-                            <Text style={styles.description}>
-                                שתף/י את הקוד עם בן/בת הזוג או בני משפחה כדי שיוכלו לראות ולתעד יחד
+                            <Text style={[styles.description, { color: theme.textSecondary }]}>
+                                {t('familyInvite.description')}
                             </Text>
 
                             {/* Invite Code Box */}
-                            <View style={styles.codeBox}>
-                                <Text style={styles.codeLabel}>קוד ההזמנה</Text>
+                            <View style={[styles.codeBox, {
+                                backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.1)' : '#F5F3FF',
+                            }]}>
+                                <Text style={[styles.codeLabel, { color: theme.textSecondary }]}>{t('familyInvite.codeLabel')}</Text>
                                 {inviteCode ? (
                                     <Text style={styles.code}>{inviteCode}</Text>
                                 ) : (
                                     <View style={styles.noCodeContainer}>
-                                        <Text style={styles.noCodeText}>אין קוד זמין</Text>
+                                        <Text style={[styles.noCodeText, { color: theme.textSecondary }]}>{t('familyInvite.noCode')}</Text>
                                         <TouchableOpacity
                                             style={styles.generateCodeBtn}
                                             onPress={handleRefreshCode}
                                             disabled={refreshing}
                                         >
                                             <RefreshCw size={16} color="#fff" />
-                                            <Text style={styles.generateCodeText}>צור קוד חדש</Text>
+                                            <Text style={styles.generateCodeText}>{t('familyInvite.generateCode')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
@@ -152,7 +169,10 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                 {inviteCode && (
                                     <View style={styles.codeActions}>
                                         <TouchableOpacity
-                                            style={[styles.codeBtn, copied && styles.codeBtnSuccess]}
+                                            style={[styles.codeBtn, {
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#fff',
+                                                borderColor: copied ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
+                                            }, copied && { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}
                                             onPress={handleCopyCode}
                                         >
                                             {copied ? (
@@ -161,35 +181,38 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                                 <Copy size={18} color="#6366F1" />
                                             )}
                                             <Text style={[styles.codeBtnText, copied && { color: '#10B981' }]}>
-                                                {copied ? 'הועתק!' : 'העתק'}
+                                                {copied ? t('familyInvite.copied') : t('familyInvite.copy')}
                                             </Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
-                                            style={styles.codeBtn}
+                                            style={[styles.codeBtn, {
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#fff',
+                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB',
+                                            }]}
                                             onPress={handleRefreshCode}
                                             disabled={refreshing}
                                         >
                                             <RefreshCw size={18} color="#6366F1" style={refreshing ? { opacity: 0.5 } : {}} />
-                                            <Text style={styles.codeBtnText}>חדש</Text>
+                                            <Text style={styles.codeBtnText}>{t('familyInvite.refresh')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
                             </View>
 
-                            {/* Share Button */}
+                            {/* WhatsApp Share Button */}
                             <TouchableOpacity
                                 style={[styles.shareBtn, !inviteCode && styles.shareBtnDisabled]}
                                 onPress={handleShare}
                                 disabled={!inviteCode}
                             >
-                                <Share2 size={20} color="#fff" />
-                                <Text style={styles.shareBtnText}>שתף בוואטסאפ</Text>
+                                <MessageCircle size={20} color="#fff" />
+                                <Text style={styles.shareBtnText}>{t('familyInvite.shareWhatsapp')}</Text>
                             </TouchableOpacity>
 
                             {/* Tip */}
-                            <Text style={styles.tip}>
-                                💡 מי שמצטרף יוכל לראות את כל התיעודים ולהוסיף חדשים
+                            <Text style={[styles.tip, { color: theme.textSecondary }]}>
+                                {t('familyInvite.tip')}
                             </Text>
                         </>
                     )}
@@ -206,7 +229,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#fff',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         padding: 24,
@@ -224,7 +246,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: '800',
-        color: '#1F2937',
     },
     loadingContainer: {
         alignItems: 'center',
@@ -233,17 +254,14 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: '#6B7280',
     },
     description: {
         fontSize: 14,
-        color: '#6B7280',
         textAlign: 'center',
         marginBottom: 24,
         lineHeight: 22,
     },
     codeBox: {
-        backgroundColor: '#F5F3FF',
         borderRadius: 16,
         padding: 20,
         alignItems: 'center',
@@ -251,7 +269,6 @@ const styles = StyleSheet.create({
     },
     codeLabel: {
         fontSize: 12,
-        color: '#6B7280',
         marginBottom: 8,
     },
     code: {
@@ -269,16 +286,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: '#fff',
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    codeBtnSuccess: {
-        borderColor: '#10B981',
-        backgroundColor: '#ECFDF5',
     },
     codeBtnText: {
         fontSize: 14,
@@ -302,7 +313,6 @@ const styles = StyleSheet.create({
     },
     tip: {
         fontSize: 12,
-        color: '#9CA3AF',
         textAlign: 'center',
     },
     noCodeContainer: {
@@ -311,7 +321,6 @@ const styles = StyleSheet.create({
     },
     noCodeText: {
         fontSize: 16,
-        color: '#9CA3AF',
         marginBottom: 12,
     },
     generateCodeBtn: {

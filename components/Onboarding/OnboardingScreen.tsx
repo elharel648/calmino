@@ -29,7 +29,7 @@ interface OnboardingSlide {
 const slides: OnboardingSlide[] = [
     {
         icon: Baby,
-        title: 'ברוכים הבאים ל-CalmParent',
+        title: 'ברוכים הבאים ל-Calmino',
         description: 'אפליקציה אחת לכל מה שצריך כדי לטפל בתינוק שלך',
         gradientColors: ['#6366F1', '#8B5CF6'],
         backgroundColor: '#EEF2FF',

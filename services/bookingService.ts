@@ -136,6 +136,7 @@ export async function updateBookingStatus(
         if (notifyToken) {
             const statusMessages: Record<BookingStatus, string> = {
                 pending: 'ההזמנה נוצרה',
+                accepted: 'ההזמנה התקבלה (ממתינה לאישור סופי)',
                 confirmed: '✅ ההזמנה אושרה!',
                 completed: '🎉 ההזמנה הסתיימה',
                 cancelled: '❌ ההזמנה בוטלה',

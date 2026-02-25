@@ -35,13 +35,13 @@ export const TYPOGRAPHY = {
   // Headers
   h1: {
     fontSize: 28,
-    fontWeight: '800' as const,
+    fontWeight: '700' as const,
     letterSpacing: -0.4,
     lineHeight: 36,
   },
   h2: {
     fontSize: 24,
-    fontWeight: '800' as const,
+    fontWeight: '700' as const,
     letterSpacing: -0.3,
     lineHeight: 32,
   },
@@ -61,13 +61,13 @@ export const TYPOGRAPHY = {
   // Body
   body: {
     fontSize: 16,
-    fontWeight: '500' as const,
+    fontWeight: '400' as const,
     letterSpacing: -0.2,
     lineHeight: 24,
   },
   bodyLarge: {
     fontSize: 17,
-    fontWeight: '500' as const,
+    fontWeight: '400' as const,
     letterSpacing: -0.25,
     lineHeight: 26,
   },
@@ -139,59 +139,30 @@ export const SHADOWS = {
   subtle: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 1,
   },
   medium: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
   elevated: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
   prominent: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 6,
-  },
-  // Special shadows for colored elements
-  primary: {
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  success: {
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  warning: {
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  danger: {
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
+    elevation: 4,
   },
 } as const;
 
@@ -259,16 +230,16 @@ export const HAPTIC = {
 // ACTION COLORS (Specific actions - keep as is)
 // ============================================
 export const ACTION_COLORS = {
-  food: '#F59E0B',
-  sleep: '#6366F1',
-  diaper: '#10B981',
-  supplements: '#EC4899',
-  custom: '#8B5CF6',
-  whiteNoise: '#0EA5E9',
-  health: '#EF4444',
-  growth: '#10B981',
-  milestones: '#8B5CF6',
-  magicMoments: '#EC4899',
+  food: '#1C1C1E',
+  sleep: '#1C1C1E',
+  diaper: '#1C1C1E',
+  supplements: '#1C1C1E',
+  custom: '#1C1C1E',
+  whiteNoise: '#1C1C1E',
+  health: '#1C1C1E',
+  growth: '#1C1C1E',
+  milestones: '#1C1C1E',
+  magicMoments: '#1C1C1E',
 } as const;
 
 // ============================================

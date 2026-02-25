@@ -1,4 +1,4 @@
-# CalmParent 👶
+# Calmino 👶
 
 > אפליקציית מעקב תינוקות מודרנית ואינטואיטיבית
 
@@ -230,4 +230,4 @@ Private - All Rights Reserved
 
 ## 👨‍💻 Author
 
-**Harel** - CalmParent App
+**Harel** - Calmino App

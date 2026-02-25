@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions, PanResponder } from 'react-native';
 import { Check, Sparkles, X, Calendar, TrendingUp, Award, Clock } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,7 +12,7 @@ import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { doc, getDoc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
 import { saveEventToFirebase } from '../../services/firebaseService';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Animated from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate } from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -68,6 +68,38 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
     const [currentDate, setCurrentDate] = useState(new Date());
     const slideAnim = React.useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = React.useRef(new RNAnimated.Value(0)).current;
+
+    const teethIconPulse = useSharedValue(0);
+    const teethIconBounce = useSharedValue(1);
+
+    const teethIconPulseStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(teethIconPulse.value, [0, 1], [0.4, 0]),
+        transform: [{ scale: interpolate(teethIconPulse.value, [0, 1], [1, 1.7]) }],
+    }));
+
+    const teethIconBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: teethIconBounce.value }],
+    }));
+
+    useEffect(() => {
+        if (visible) {
+            teethIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
+            teethIconBounce.value = withRepeat(
+                withSequence(
+                    withTiming(1.12, { duration: 300 }),
+                    withTiming(0.94, { duration: 200 }),
+                    withTiming(1.05, { duration: 150 }),
+                    withTiming(1, { duration: 150 }),
+                    withTiming(1, { duration: 2200 }),
+                ),
+                -1,
+                false
+            );
+        } else {
+            teethIconPulse.value = 0;
+            teethIconBounce.value = 1;
+        }
+    }, [visible]);
 
     useEffect(() => {
         if (visible && activeChild?.childId) {
@@ -197,6 +229,41 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
         });
     };
 
+    // Pan responder for perfect swipe dismiss (matching QuickReminderModal "בול"!)
+    const panResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            const { dy, dx } = gestureState;
+            return dy > 10 && Math.abs(dy) > Math.abs(dx);
+        },
+        onPanResponderMove: (_, gestureState) => {
+            if (gestureState.dy > 0) {
+                slideAnim.setValue(gestureState.dy);
+                const opacity = Math.max(0, 1 - gestureState.dy / 300);
+                backdropAnim.setValue(opacity);
+            }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                handleClose();
+            } else {
+                RNAnimated.parallel([
+                    RNAnimated.spring(slideAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }),
+                    RNAnimated.spring(backdropAnim, {
+                        toValue: 1,
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+            }
+        },
+    }), [slideAnim, backdropAnim, handleClose]);
+
     const formatToothDate = (date: Date | null): string => {
         if (!date) return '';
         return date.toLocaleDateString('he-IL', {
@@ -295,11 +362,10 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
             statusBarTranslucent
         >
             <RNAnimated.View style={[styles.overlay, { opacity: backdropAnim }]}>
-                <TouchableOpacity
-                    style={StyleSheet.absoluteFill}
-                    activeOpacity={1}
-                    onPress={handleClose}
-                />
+                <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose}>
+                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                </TouchableOpacity>
+
                 <RNAnimated.View
                     style={[
                         styles.modalContent,
@@ -310,19 +376,24 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                     ]}
                 >
                     {/* Close Button */}
-                    <View style={styles.swipeHandle}>
+                    <View style={styles.swipeHandle} {...panResponder.panHandlers}>
                         <View style={[styles.swipeBar, { backgroundColor: theme.textTertiary }]} />
                     </View>
 
-                        {/* Header */}
-                        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                            <View style={styles.headerContent}>
+                    {/* Header */}
+                    <View style={[styles.header, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
+                        <View style={styles.headerContent}>
+                            <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
+                                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#8B5CF6' }, teethIconPulseStyle]} />
                                 <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                                    <MaterialCommunityIcons name="tooth" size={28} color="#8B5CF6" />
+                                    <Animated.View style={teethIconBounceStyle}>
+                                        <MaterialCommunityIcons name="tooth" size={28} color="#8B5CF6" />
+                                    </Animated.View>
                                 </View>
-                                <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
                             </View>
+                            <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
                         </View>
+                    </View>
 
                     {/* Scrollable Content */}
                     <ScrollFadeWrapper fadeHeight={80}>
@@ -331,156 +402,156 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
                         >
-                        {/* Main Chart */}
-                        <Animated.View
-                            entering={ANIMATIONS.fadeInDown(100)}
-                            style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
-                        >
-                            <View style={styles.centerLabels}>
-                                <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>שיניים עליונות</Text>
-                                <Text style={[styles.jawLabel, { color: theme.textSecondary }]}>שיניים תחתונות</Text>
-                            </View>
-                            {TEETH_CONFIG.map(renderTooth)}
-                            <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>שמאל</Text>
-                            <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>ימין</Text>
-                        </Animated.View>
+                            {/* Main Chart */}
+                            <Animated.View
+                                entering={ANIMATIONS.fadeInDown(100)}
+                                style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            >
+                                <View style={styles.centerLabels}>
+                                    <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>שיניים עליונות</Text>
+                                    <Text style={[styles.jawLabel, { color: theme.textSecondary }]}>שיניים תחתונות</Text>
+                                </View>
+                                {TEETH_CONFIG.map(renderTooth)}
+                                <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>שמאל</Text>
+                                <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>ימין</Text>
+                            </Animated.View>
 
-                        {/* Legend */}
-                        <Animated.View
-                            entering={ANIMATIONS.fadeInDown(200)}
-                            style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-                        >
-                            <View style={styles.legendRow}>
-                                <View style={[styles.legendDot, { backgroundColor: '#F87171' }]} />
-                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת מרכזית</Text>
-                            </View>
-                            <View style={styles.legendRow}>
-                                <View style={[styles.legendDot, { backgroundColor: '#A3E635' }]} />
-                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת צידית</Text>
-                            </View>
-                            <View style={styles.legendRow}>
-                                <View style={[styles.legendDot, { backgroundColor: '#34D399' }]} />
-                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>ניב</Text>
-                            </View>
-                            <View style={styles.legendRow}>
-                                <View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} />
-                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת ראשונה</Text>
-                            </View>
-                            <View style={styles.legendRow}>
-                                <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
-                                <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת שנייה</Text>
-                            </View>
-                        </Animated.View>
+                            {/* Legend */}
+                            <Animated.View
+                                entering={ANIMATIONS.fadeInDown(200)}
+                                style={[styles.legendCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            >
+                                <View style={styles.legendRow}>
+                                    <View style={[styles.legendDot, { backgroundColor: '#F87171' }]} />
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת מרכזית</Text>
+                                </View>
+                                <View style={styles.legendRow}>
+                                    <View style={[styles.legendDot, { backgroundColor: '#A3E635' }]} />
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת צידית</Text>
+                                </View>
+                                <View style={styles.legendRow}>
+                                    <View style={[styles.legendDot, { backgroundColor: '#34D399' }]} />
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>ניב</Text>
+                                </View>
+                                <View style={styles.legendRow}>
+                                    <View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} />
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת ראשונה</Text>
+                                </View>
+                                <View style={styles.legendRow}>
+                                    <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת שנייה</Text>
+                                </View>
+                            </Animated.View>
 
-                        {/* Advanced Stats */}
-                        {(() => {
-                            const stats = getStatistics();
-                            return (
-                                <Animated.View
-                                    entering={ANIMATIONS.fadeInDown(300)}
-                                    style={styles.statsRow}
-                                >
-                                    <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
-                                        <Text style={[styles.statsText, { color: theme.textPrimary, marginBottom: 16 }]}>
-                                            סה"כ שיניים שבקעו: {stats.total} / 20
-                                        </Text>
-
-                                        {/* Advanced Statistics */}
-                                        <View style={styles.advancedStats}>
-                                            <View style={[styles.statItem, { backgroundColor: theme.card }]}>
-                                                <Calendar size={18} color={theme.primary} strokeWidth={2} />
-                                                <View style={styles.statItemContent}>
-                                                    <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>החודש</Text>
-                                                    <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.thisMonth}</Text>
-                                                </View>
-                                            </View>
-
-                                            {stats.first && (
-                                                <View style={[styles.statItem, { backgroundColor: theme.card }]}>
-                                                    <Award size={18} color="#F87171" strokeWidth={2} />
-                                                    <View style={styles.statItemContent}>
-                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>ראשונה</Text>
-                                                        <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.first.label}</Text>
-                                                        <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
-                                                            {formatToothDate(stats.first.date)}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-                                            )}
-
-                                            {stats.last && (
-                                                <View style={[styles.statItem, { backgroundColor: theme.card }]}>
-                                                    <Clock size={18} color="#34D399" strokeWidth={2} />
-                                                    <View style={styles.statItemContent}>
-                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>אחרונה</Text>
-                                                        <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.last.label}</Text>
-                                                        <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
-                                                            {formatToothDate(stats.last.date)}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        {stats.total === 20 && (
-                                            <View style={styles.completeBadge}>
-                                                <Sparkles size={16} color={theme.primary} strokeWidth={2} />
-                                                <Text style={[styles.completeText, { color: theme.primary }]}>כל השיניים בקעו! 🎉</Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                </Animated.View>
-                            );
-                        })()}
-
-                        {/* Chronological History */}
-                        {(() => {
-                            const chronological = getChronologicalTeeth();
-                            if (chronological.length === 0) return null;
-
-                            return (
-                                <Animated.View
-                                    entering={ANIMATIONS.fadeInDown(400)}
-                                    style={styles.historySection}
-                                >
-                                    <View style={[styles.historyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                                        <View style={[styles.historyHeader, { borderBottomColor: theme.border }]}>
-                                            <TrendingUp size={20} color={theme.primary} strokeWidth={2} />
-                                            <Text style={[styles.historyTitle, { color: theme.textPrimary }]}>
-                                                היסטוריה כרונולוגית
+                            {/* Advanced Stats */}
+                            {(() => {
+                                const stats = getStatistics();
+                                return (
+                                    <Animated.View
+                                        entering={ANIMATIONS.fadeInDown(300)}
+                                        style={styles.statsRow}
+                                    >
+                                        <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
+                                            <Text style={[styles.statsText, { color: theme.textPrimary, marginBottom: 16 }]}>
+                                                סה"כ שיניים שבקעו: {stats.total} / 20
                                             </Text>
-                                        </View>
-                                        <ScrollView
-                                            style={styles.historyList}
-                                            showsVerticalScrollIndicator={false}
-                                            nestedScrollEnabled
-                                        >
-                                            {chronological.map((tooth, index) => (
-                                                <View
-                                                    key={tooth.id}
-                                                    style={[styles.historyItem, { borderBottomColor: theme.border }]}
-                                                >
-                                                    <View style={[styles.historyItemLeft, { backgroundColor: tooth.color + '20' }]}>
-                                                        <View style={[styles.historyItemDot, { backgroundColor: tooth.color }]} />
-                                                        <Text style={[styles.historyItemNumber, { color: theme.textSecondary }]}>
-                                                            #{index + 1}
-                                                        </Text>
-                                                    </View>
-                                                    <View style={styles.historyItemContent}>
-                                                        <Text style={[styles.historyItemLabel, { color: theme.textPrimary }]}>
-                                                            {tooth.label}
-                                                        </Text>
-                                                        <Text style={[styles.historyItemDate, { color: theme.textSecondary }]}>
-                                                            {formatToothDate(tooth.date)}
-                                                        </Text>
+
+                                            {/* Advanced Statistics */}
+                                            <View style={styles.advancedStats}>
+                                                <View style={[styles.statItem, { backgroundColor: theme.card }]}>
+                                                    <Calendar size={18} color={theme.primary} strokeWidth={2} />
+                                                    <View style={styles.statItemContent}>
+                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>החודש</Text>
+                                                        <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.thisMonth}</Text>
                                                     </View>
                                                 </View>
-                                            ))}
-                                        </ScrollView>
-                                    </View>
-                                </Animated.View>
-                            );
-                        })()}
+
+                                                {stats.first && (
+                                                    <View style={[styles.statItem, { backgroundColor: theme.card }]}>
+                                                        <Award size={18} color="#F87171" strokeWidth={2} />
+                                                        <View style={styles.statItemContent}>
+                                                            <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>ראשונה</Text>
+                                                            <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.first.label}</Text>
+                                                            <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
+                                                                {formatToothDate(stats.first.date)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                )}
+
+                                                {stats.last && (
+                                                    <View style={[styles.statItem, { backgroundColor: theme.card }]}>
+                                                        <Clock size={18} color="#34D399" strokeWidth={2} />
+                                                        <View style={styles.statItemContent}>
+                                                            <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>אחרונה</Text>
+                                                            <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.last.label}</Text>
+                                                            <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
+                                                                {formatToothDate(stats.last.date)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                )}
+                                            </View>
+
+                                            {stats.total === 20 && (
+                                                <View style={styles.completeBadge}>
+                                                    <Sparkles size={16} color={theme.primary} strokeWidth={2} />
+                                                    <Text style={[styles.completeText, { color: theme.primary }]}>כל השיניים בקעו! 🎉</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </Animated.View>
+                                );
+                            })()}
+
+                            {/* Chronological History */}
+                            {(() => {
+                                const chronological = getChronologicalTeeth();
+                                if (chronological.length === 0) return null;
+
+                                return (
+                                    <Animated.View
+                                        entering={ANIMATIONS.fadeInDown(400)}
+                                        style={styles.historySection}
+                                    >
+                                        <View style={[styles.historyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                            <View style={[styles.historyHeader, { borderBottomColor: theme.border }]}>
+                                                <TrendingUp size={20} color={theme.primary} strokeWidth={2} />
+                                                <Text style={[styles.historyTitle, { color: theme.textPrimary }]}>
+                                                    היסטוריה כרונולוגית
+                                                </Text>
+                                            </View>
+                                            <ScrollView
+                                                style={styles.historyList}
+                                                showsVerticalScrollIndicator={false}
+                                                nestedScrollEnabled
+                                            >
+                                                {chronological.map((tooth, index) => (
+                                                    <View
+                                                        key={tooth.id}
+                                                        style={[styles.historyItem, { borderBottomColor: theme.border }]}
+                                                    >
+                                                        <View style={[styles.historyItemLeft, { backgroundColor: tooth.color + '20' }]}>
+                                                            <View style={[styles.historyItemDot, { backgroundColor: tooth.color }]} />
+                                                            <Text style={[styles.historyItemNumber, { color: theme.textSecondary }]}>
+                                                                #{index + 1}
+                                                            </Text>
+                                                        </View>
+                                                        <View style={styles.historyItemContent}>
+                                                            <Text style={[styles.historyItemLabel, { color: theme.textPrimary }]}>
+                                                                {tooth.label}
+                                                            </Text>
+                                                            <Text style={[styles.historyItemDate, { color: theme.textSecondary }]}>
+                                                                {formatToothDate(tooth.date)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                ))}
+                                            </ScrollView>
+                                        </View>
+                                    </Animated.View>
+                                );
+                            })()}
                         </ScrollView>
                     </ScrollFadeWrapper>
 

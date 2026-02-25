@@ -7,7 +7,10 @@ import { Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 import { logger } from '../utils/logger';
 
-const ActivityKitManager = Platform.OS === 'ios' ? requireNativeModule('ActivityKitManager') : null;
+let ActivityKitManager: any = null;
+if (Platform.OS === 'ios') {
+    try { ActivityKitManager = requireNativeModule('ActivityKitManager'); } catch { /* native module not available */ }
+}
 
 class QuickActionsService {
     private mealActivityId: string | null = null;
@@ -25,11 +28,21 @@ class QuickActionsService {
      * @param foodItems - Array of food items
      * @returns Activity ID if successful
      */
+    /**
+     * Start a meal Live Activity
+     * @param babyName - Name of the baby
+     * @param babyEmoji - Emoji representing the baby
+     * @param mealType - Type of meal (e.g., "ארוחת בוקר", "צהריים", "ערב")
+     * @param foodItems - Array of food items
+     * @param progress - Initial progress (0.0 to 1.0)
+     * @returns Activity ID if successful
+     */
     async startMeal(
         babyName: string,
         babyEmoji: string,
         mealType: string,
-        foodItems: string[]
+        foodItems: string[],
+        progress: number = 0
     ): Promise<string | null> {
         if (Platform.OS !== 'ios') {
             logger.warn('Live Activities are only supported on iOS');
@@ -41,7 +54,8 @@ class QuickActionsService {
                 babyName,
                 babyEmoji,
                 mealType,
-                foodItems
+                foodItems,
+                progress
             );
             this.mealActivityId = activityId;
             logger.info('🍽️ Meal Live Activity started:', activityId);

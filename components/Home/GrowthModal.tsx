@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -35,6 +35,7 @@ import { he } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { addGrowthMeasurement, updateGrowthMeasurement, deleteGrowthMeasurement, GrowthMeasurement } from '../../services/growthService';
+import { logger } from '../../utils/logger';
 import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { Timestamp } from 'firebase/firestore';
 
@@ -79,7 +80,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
     const iconRotation = useSharedValue(0);
     const iconScale = useSharedValue(1);
     const headerOpacity = useSharedValue(0);
-    const contentOpacity = useSharedValue(0);
+    const contentOpacity = useSharedValue(1);
 
     useEffect(() => {
         if (visible) {
@@ -101,7 +102,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
             ]).start();
 
             headerOpacity.value = withTiming(1, { duration: 300 });
-            contentOpacity.value = withDelay(150, withTiming(1, { duration: 300 }));
+            contentOpacity.value = 1;
 
             // Icon animation - rotation and pulse
             iconRotation.value = withRepeat(
@@ -122,7 +123,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
             );
         } else {
             headerOpacity.value = 0;
-            contentOpacity.value = 0;
+            contentOpacity.value = 1;
             iconRotation.value = 0;
             iconScale.value = 1;
             slideAnim.setValue(SCREEN_HEIGHT);
@@ -130,74 +131,47 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
         }
     }, [visible]);
 
+    const resetAndClose = useCallback(() => {
+        setWeight('');
+        setHeight('');
+        setHeadCircumference('');
+        setNotes('');
+        setShowNotes(false);
+        setMeasurementDate(new Date());
+        setIsSaving(false);
+        onClose();
+    }, [onClose]);
+
     // Pan responder for swipe dismiss
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: (evt) => {
-            const startY = evt.nativeEvent.pageY;
-            dragStartY.current = startY;
-            if (startY < 300) {
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                return true;
-            }
-            return false;
-        },
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-            if (isDragging.current) return true;
-            const currentY = evt.nativeEvent.pageY;
-            const isTopArea = currentY < 300;
-            const isDraggingDown = gestureState.dy > 8;
-            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.3;
-            const isScrollAtTop = scrollOffsetY.current <= 5;
-
-            if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-                isDragging.current = true;
-                dragStartY.current = currentY;
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                return true;
-            }
-            return false;
-        },
-        onPanResponderGrant: () => {
-            isDragging.current = true;
-            if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            const { dy, dx } = gestureState;
+            return dy > 10 && Math.abs(dy) > Math.abs(dx);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
                 slideAnim.setValue(gestureState.dy);
-                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                const opacity = Math.max(0, 1 - gestureState.dy / 300);
                 backdropAnim.setValue(opacity);
             }
         },
         onPanResponderRelease: (_, gestureState) => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-
-            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
-            if (shouldDismiss) {
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 RNAnimated.parallel([
-                    RNAnimated.spring(slideAnim, {
+                    RNAnimated.timing(slideAnim, {
                         toValue: SCREEN_HEIGHT,
+                        duration: 250,
                         useNativeDriver: true,
-                        tension: 65,
-                        friction: 11,
                     }),
                     RNAnimated.timing(backdropAnim, {
                         toValue: 0,
-                        duration: 200,
+                        duration: 250,
                         useNativeDriver: true,
                     }),
                 ]).start(() => {
                     resetAndClose();
-                    slideAnim.setValue(SCREEN_HEIGHT);
-                    backdropAnim.setValue(0);
                 });
             } else {
                 RNAnimated.parallel([
@@ -207,25 +181,20 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                         tension: 65,
                         friction: 11,
                     }),
-                    RNAnimated.timing(backdropAnim, {
+                    RNAnimated.spring(backdropAnim, {
                         toValue: 1,
-                        duration: 200,
                         useNativeDriver: true,
                     }),
                 ]).start();
             }
         },
-        onPanResponderTerminate: () => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-        },
-    }), [slideAnim, backdropAnim]);
+    }), [slideAnim, backdropAnim, resetAndClose]);
 
     // Animated styles
     const iconStyle = useAnimatedStyle(() => ({
         transform: [
-            { rotate: `${iconRotation.value}deg` },
-            { scale: iconScale.value },
+            { rotate: `${iconRotation.value}deg` } as any,
+            { scale: iconScale.value } as any,
         ],
     }));
 
@@ -322,17 +291,6 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
         resetAndClose();
     };
 
-    const resetAndClose = () => {
-        setWeight('');
-        setHeight('');
-        setHeadCircumference('');
-        setNotes('');
-        setShowNotes(false);
-        setMeasurementDate(new Date());
-        setIsSaving(false);
-        onClose();
-    };
-
     const handleClose = () => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -355,13 +313,18 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
     return (
         <Modal visible={visible} transparent animationType="none">
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
-                <TouchableWithoutFeedback onPress={handleClose}>
-                    <RNAnimatedView style={[styles.backdrop, { opacity: backdropAnim, backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-                        {Platform.OS === 'ios' && (
-                            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                        )}
-                    </RNAnimatedView>
-                </TouchableWithoutFeedback>
+                <RNAnimatedView style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
+                    <BlurView
+                        intensity={isDarkMode ? 40 : 20}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
+                    />
+                    <TouchableOpacity
+                        style={StyleSheet.absoluteFill}
+                        activeOpacity={1}
+                        onPress={handleClose}
+                    />
+                </RNAnimatedView>
 
                 <RNAnimatedView
                     style={[
@@ -401,190 +364,217 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                         </Text>
                     </Animated.View>
 
-                    <ScrollFadeWrapper fadeHeight={80}>
+                    <ScrollFadeWrapper fadeHeight={80} topFade={false}>
                         <ScrollView
                             ref={scrollViewRef}
                             style={styles.scrollView}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                        onScroll={(e) => {
-                            scrollOffsetY.current = e.nativeEvent.contentOffset.y;
-                        }}
-                        scrollEventThrottle={16}
-                    >
-                        <Animated.View style={contentStyle}>
-                            {/* Date Picker - Simple */}
-                            <TouchableOpacity
-                                style={[
-                                    styles.dateRow,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }
-                                ]}
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <Calendar size={18} color={theme.textSecondary} strokeWidth={1.5} />
-                                <Text style={[styles.dateText, { color: theme.textPrimary }]}>
-                                    {isToday ? 'היום' : format(measurementDate, 'd בMMMM yyyy', { locale: he })}
-                                </Text>
-                                <ChevronDown size={16} color={theme.textTertiary} strokeWidth={1.5} />
-                            </TouchableOpacity>
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            onScroll={(e) => {
+                                scrollOffsetY.current = e.nativeEvent.contentOffset.y;
+                            }}
+                            scrollEventThrottle={16}
+                        >
+                            <Animated.View style={contentStyle}>
+                                {/* Date Picker */}
+                                <TouchableOpacity
+                                    style={styles.dateRow}
+                                    onPress={() => setShowDatePicker(!showDatePicker)}
+                                >
+                                    <Calendar size={18} color={theme.textPrimary} strokeWidth={2} />
+                                    <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
+                                        {isToday ? 'היום' : format(measurementDate, 'd בMMMM yyyy', { locale: he })}
+                                    </Text>
+                                    {showDatePicker ? (
+                                        <ChevronUp size={16} color={theme.textSecondary} strokeWidth={2} />
+                                    ) : (
+                                        <ChevronDown size={16} color={theme.textSecondary} strokeWidth={2} />
+                                    )}
+                                </TouchableOpacity>
 
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    value={measurementDate}
-                                    mode="date"
-                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                    onChange={handleDateChange}
-                                    maximumDate={new Date()}
-                                />
-                            )}
-
-                            {/* Simple Input Fields */}
-                            <View style={styles.inputsContainer}>
-                                {/* Weight */}
-                                <View style={[
-                                    styles.inputRow,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }
-                                ]}>
-                                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>משקל</Text>
-                                    <View style={styles.inputValueRow}>
-                                        <TextInput
-                                            style={[styles.input, { color: theme.textPrimary }]}
-                                            value={weight}
-                                            onChangeText={setWeight}
-                                            placeholder={baby?.stats?.weight || "0.0"}
-                                            placeholderTextColor={theme.textTertiary}
-                                            keyboardType="decimal-pad"
-                                            textAlign="left"
+                                {showDatePicker && (
+                                    <View>
+                                        <DateTimePicker
+                                            value={measurementDate}
+                                            mode="date"
+                                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                            onChange={handleDateChange}
+                                            maximumDate={new Date()}
                                         />
-                                        <Text style={[styles.unit, { color: theme.textTertiary }]}>ק"ג</Text>
+                                        {Platform.OS === 'ios' && (
+                                            <TouchableOpacity
+                                                style={[styles.dateConfirmBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}
+                                                onPress={() => setShowDatePicker(false)}
+                                            >
+                                                <Text style={{ color: '#007AFF', fontWeight: '600', fontSize: 15 }}>אישור</Text>
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
-                                </View>
-
-                                {/* Height */}
-                                <View style={[
-                                    styles.inputRow,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }
-                                ]}>
-                                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>גובה</Text>
-                                    <View style={styles.inputValueRow}>
-                                        <TextInput
-                                            style={[styles.input, { color: theme.textPrimary }]}
-                                            value={height}
-                                            onChangeText={setHeight}
-                                            placeholder={baby?.stats?.height || "0"}
-                                            placeholderTextColor={theme.textTertiary}
-                                            keyboardType="decimal-pad"
-                                            textAlign="left"
-                                        />
-                                        <Text style={[styles.unit, { color: theme.textTertiary }]}>ס"מ</Text>
-                                    </View>
-                                </View>
-
-                                {/* Head Circumference */}
-                                <View style={[
-                                    styles.inputRow,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }
-                                ]}>
-                                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>היקף ראש</Text>
-                                    <View style={styles.inputValueRow}>
-                                        <TextInput
-                                            style={[styles.input, { color: theme.textPrimary }]}
-                                            value={headCircumference}
-                                            onChangeText={setHeadCircumference}
-                                            placeholder={baby?.stats?.headCircumference || "0"}
-                                            placeholderTextColor={theme.textTertiary}
-                                            keyboardType="decimal-pad"
-                                            textAlign="left"
-                                        />
-                                        <Text style={[styles.unit, { color: theme.textTertiary }]}>ס"מ</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            {/* Notes Toggle - Simple */}
-                            <TouchableOpacity
-                                style={[
-                                    styles.notesToggle,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }
-                                ]}
-                                onPress={() => {
-                                    setShowNotes(!showNotes);
-                                    if (Platform.OS !== 'web') {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    }
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                {showNotes ? (
-                                    <ChevronUp size={16} color={theme.textSecondary} strokeWidth={1.5} />
-                                ) : (
-                                    <ChevronDown size={16} color={theme.textSecondary} strokeWidth={1.5} />
                                 )}
-                                <FileText size={16} color={theme.textSecondary} strokeWidth={1.5} />
-                                <Text style={[styles.notesToggleText, { color: theme.textSecondary }]}>
-                                    {showNotes ? 'הסתר הערות' : 'הוסף הערה'}
-                                </Text>
-                            </TouchableOpacity>
 
-                            {/* Notes Field */}
-                            {showNotes && (
-                                <TextInput
-                                    style={[
-                                        styles.notesInput,
+                                {/* Simple Input Fields */}
+                                <View style={styles.inputsContainer}>
+                                    {/* Weight */}
+                                    <View style={[
+                                        styles.inputRow,
                                         {
-                                            color: theme.textPrimary,
-                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+                                            borderWidth: 1.5,
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
+                                        }
+                                    ]}>
+                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>משקל</Text>
+                                        <View style={styles.inputValueRow}>
+                                            <TextInput
+                                                style={[styles.input, { color: theme.textPrimary }]}
+                                                value={weight}
+                                                onChangeText={setWeight}
+                                                placeholder={baby?.stats?.weight || "0.0"}
+                                                placeholderTextColor={theme.textTertiary}
+                                                keyboardType="decimal-pad"
+                                                textAlign="left"
+                                            />
+                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>ק"ג</Text>
+                                        </View>
+                                    </View>
+
+                                    {/* Height */}
+                                    <View style={[
+                                        styles.inputRow,
+                                        {
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+                                            borderWidth: 1.5,
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
+                                        }
+                                    ]}>
+                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>גובה</Text>
+                                        <View style={styles.inputValueRow}>
+                                            <TextInput
+                                                style={[styles.input, { color: theme.textPrimary }]}
+                                                value={height}
+                                                onChangeText={setHeight}
+                                                placeholder={baby?.stats?.height || "0"}
+                                                placeholderTextColor={theme.textTertiary}
+                                                keyboardType="decimal-pad"
+                                                textAlign="left"
+                                            />
+                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>ס"מ</Text>
+                                        </View>
+                                    </View>
+
+                                    {/* Head Circumference */}
+                                    <View style={[
+                                        styles.inputRow,
+                                        {
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+                                            borderWidth: 1.5,
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
+                                        }
+                                    ]}>
+                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>היקף ראש</Text>
+                                        <View style={styles.inputValueRow}>
+                                            <TextInput
+                                                style={[styles.input, { color: theme.textPrimary }]}
+                                                value={headCircumference}
+                                                onChangeText={setHeadCircumference}
+                                                placeholder={baby?.stats?.headCircumference || "0"}
+                                                placeholderTextColor={theme.textTertiary}
+                                                keyboardType="decimal-pad"
+                                                textAlign="left"
+                                            />
+                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>ס"מ</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                {/* Notes Toggle - Simple */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.notesToggle,
+                                        {
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF',
+                                            borderWidth: 1.5,
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
                                         }
                                     ]}
-                                    value={notes}
-                                    onChangeText={setNotes}
-                                    placeholder="הערות נוספות..."
-                                    placeholderTextColor={theme.textTertiary}
-                                    textAlign="right"
-                                    multiline
-                                    numberOfLines={3}
-                                />
-                            )}
-
-                            {/* Save Button */}
-                            <TouchableOpacity
-                                style={[styles.saveButton, { opacity: !hasValues ? 0.5 : 1 }]}
-                                onPress={handleSave}
-                                disabled={!hasValues || isSaving}
-                                activeOpacity={0.8}
-                            >
-                                <LinearGradient
-                                    colors={[ACCENT, '#059669']}
-                                    style={styles.saveButtonGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                >
-                                    {isSaving ? (
-                                        <ActivityIndicator color="#fff" size="small" />
-                                    ) : (
-                                        <>
-                                            <TrendingUp size={18} color="#fff" strokeWidth={2} />
-                                            <Text style={styles.saveButtonText}>
-                                                {isEditMode ? 'עדכן מדידה' : 'שמור מדידה'}
-                                            </Text>
-                                        </>
-                                    )}
-                                </LinearGradient>
-                            </TouchableOpacity>
-
-                            {/* Delete Button (Edit Mode) */}
-                            {isEditMode && (
-                                <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={handleDelete}
+                                    onPress={() => {
+                                        setShowNotes(!showNotes);
+                                        if (Platform.OS !== 'web') {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }
+                                    }}
                                     activeOpacity={0.7}
                                 >
-                                    <Trash2 size={16} color="#EF4444" strokeWidth={1.5} />
-                                    <Text style={styles.deleteButtonText}>מחק מדידה</Text>
+                                    {showNotes ? (
+                                        <ChevronUp size={16} color={theme.textSecondary} strokeWidth={1.5} />
+                                    ) : (
+                                        <ChevronDown size={16} color={theme.textSecondary} strokeWidth={1.5} />
+                                    )}
+                                    <FileText size={16} color={theme.textSecondary} strokeWidth={1.5} />
+                                    <Text style={[styles.notesToggleText, { color: theme.textSecondary }]}>
+                                        {showNotes ? 'הסתר הערות' : 'הוסף הערה'}
+                                    </Text>
                                 </TouchableOpacity>
-                            )}
-                        </Animated.View>
+
+                                {/* Notes Field */}
+                                {showNotes && (
+                                    <TextInput
+                                        style={[
+                                            styles.notesInput,
+                                            {
+                                                color: theme.textPrimary,
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                            }
+                                        ]}
+                                        value={notes}
+                                        onChangeText={setNotes}
+                                        placeholder="הערות נוספות..."
+                                        placeholderTextColor={theme.textTertiary}
+                                        textAlign="right"
+                                        multiline
+                                        numberOfLines={3}
+                                    />
+                                )}
+
+                                {/* Save Button */}
+                                <TouchableOpacity
+                                    style={[styles.saveButton, { opacity: !hasValues ? 0.5 : 1 }]}
+                                    onPress={handleSave}
+                                    disabled={!hasValues || isSaving}
+                                    activeOpacity={0.8}
+                                >
+                                    <LinearGradient
+                                        colors={[ACCENT, '#059669']}
+                                        style={styles.saveButtonGradient}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                    >
+                                        {isSaving ? (
+                                            <ActivityIndicator color="#fff" size="small" />
+                                        ) : (
+                                            <>
+                                                <TrendingUp size={18} color="#fff" strokeWidth={2} />
+                                                <Text style={styles.saveButtonText}>
+                                                    {isEditMode ? 'עדכן מדידה' : 'שמור מדידה'}
+                                                </Text>
+                                            </>
+                                        )}
+                                    </LinearGradient>
+                                </TouchableOpacity>
+
+                                {/* Delete Button (Edit Mode) */}
+                                {isEditMode && (
+                                    <TouchableOpacity
+                                        style={styles.deleteButton}
+                                        onPress={handleDelete}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Trash2 size={16} color="#EF4444" strokeWidth={1.5} />
+                                        <Text style={styles.deleteButtonText}>מחק מדידה</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </Animated.View>
                         </ScrollView>
                     </ScrollFadeWrapper>
                 </RNAnimatedView>
@@ -596,6 +586,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
+        backgroundColor: 'transparent',
         justifyContent: 'flex-end',
     },
     backdrop: {
@@ -677,6 +668,12 @@ const styles = StyleSheet.create({
         padding: 14,
         borderRadius: 14,
         marginBottom: 20,
+    },
+    dateConfirmBtn: {
+        alignItems: 'center' as const,
+        paddingVertical: 10,
+        marginBottom: 12,
+        borderRadius: 10,
     },
     dateText: {
         fontSize: 16,

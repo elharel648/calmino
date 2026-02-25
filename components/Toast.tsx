@@ -190,8 +190,12 @@ const Toast: React.FC<ToastProps> = ({
                     {action ? (
                         <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={() => {
-                                action.onPress();
+                            onPress={async () => {
+                                // Cancel auto-hide timer so toast stays while undo runs
+                                if (timeoutRef.current) {
+                                    clearTimeout(timeoutRef.current);
+                                }
+                                await action.onPress();
                                 hide();
                             }}
                             activeOpacity={0.85}

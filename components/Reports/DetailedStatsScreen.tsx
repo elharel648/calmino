@@ -22,6 +22,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import GlassBarChartPerfect from './GlassBarChart';
+import { logger } from '../../utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -296,9 +297,9 @@ export default function DetailedStatsScreen({
 
                 // Calculate previous week data for comparison
                 if (timeRange === 'week' && metricType === 'sleep' && prevWeekEvents.length > 0) {
-                    const prevDays = eachDayOfInterval({ 
-                        start: subWeeks(dateRange.start, 1), 
-                        end: subWeeks(dateRange.end, 1) 
+                    const prevDays = eachDayOfInterval({
+                        start: subWeeks(dateRange.start, 1),
+                        end: subWeeks(dateRange.end, 1)
                     });
                     const prevDayData: DayData[] = prevDays.map(day => {
                         const dayStart = startOfDay(day);

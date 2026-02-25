@@ -89,8 +89,8 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                     );
 
                     enrichedBookings.sort((a, b) => {
-                        const dateA = a.date?.toDate?.() || new Date(a.date);
-                        const dateB = b.date?.toDate?.() || new Date(b.date);
+                        const dateA = a.date?.toDate?.() || new Date(a.date as any);
+                        const dateB = b.date?.toDate?.() || new Date(b.date as any);
                         return dateB.getTime() - dateA.getTime();
                     });
 

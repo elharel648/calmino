@@ -57,7 +57,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     staysActiveInBackground: true,
                     shouldDuckAndroid: true,
                     playThroughEarpieceAndroid: false,
-                });
+                } as any);
             } catch (error) {
                 logger.log('Error setting up audio mode:', error);
             }

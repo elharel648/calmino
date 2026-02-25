@@ -367,7 +367,7 @@ export default function DetailedGrowthScreen({
             });
         }
 
-        reportText += `\n📱 נוצר באפליקציית CalmParent`;
+        reportText += `\n📱 נוצר באפליקציית Calmino`;
 
         try {
             await Share.share({

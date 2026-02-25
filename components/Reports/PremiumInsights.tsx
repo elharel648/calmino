@@ -255,7 +255,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
 🧷 חיתולים: ${dailyStats.diapers}
 💊 תוספים: ${dailyStats.supplements}
 
-נשלח מאפליקציית CalmParent 💜`;
+נשלח מאפליקציית Calmino 💜`;
 
         try {
             await Share.share({

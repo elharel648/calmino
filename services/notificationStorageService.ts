@@ -10,6 +10,7 @@ import {
     query,
     where,
     orderBy,
+    limit,
     Timestamp,
     writeBatch
 } from 'firebase/firestore';
@@ -30,26 +31,26 @@ class NotificationStorageService {
 
     /**
      * Save a new notification to Firebase
-     * Prevents duplicates by checking if same notification was saved in last 5 seconds
+     * Prevents duplicates by checking if same notification was saved in last 30 seconds
+     * Auto-cleans old notifications beyond 50 cap
      */
     async saveNotification(notification: Omit<StoredNotification, 'id'>): Promise<string | null> {
         try {
-            // Prevent duplicate notifications (same title + message within 5 seconds)
-            const fiveSecondsAgo = new Date();
-            fiveSecondsAgo.setSeconds(fiveSecondsAgo.getSeconds() - 5);
+            // Prevent duplicate notifications (same title + message within 30 seconds)
+            const thirtySecondsAgo = new Date();
+            thirtySecondsAgo.setSeconds(thirtySecondsAgo.getSeconds() - 30);
 
             const duplicateCheck = query(
                 collection(db, this.collectionName),
                 where('userId', '==', notification.userId),
                 where('title', '==', notification.title),
                 where('message', '==', notification.message),
-                where('timestamp', '>=', Timestamp.fromDate(fiveSecondsAgo)),
+                where('timestamp', '>=', Timestamp.fromDate(thirtySecondsAgo)),
                 orderBy('timestamp', 'desc')
             );
 
             const duplicateSnapshot = await getDocs(duplicateCheck);
             if (!duplicateSnapshot.empty) {
-                // Duplicate found - don't save again
                 logger.log('🔔 Duplicate notification prevented:', notification.title);
                 return null;
             }
@@ -58,6 +59,10 @@ class NotificationStorageService {
                 ...notification,
                 timestamp: Timestamp.fromDate(notification.timestamp),
             });
+
+            // Async cleanup — keeps only the latest 50, doesn't block the caller
+            this.cleanupOldNotifications(50).catch(() => {});
+
             return docRef.id;
         } catch (error) {
             logger.log('Failed to save notification:', error);
@@ -66,7 +71,34 @@ class NotificationStorageService {
     }
 
     /**
-     * Get all notifications for current user
+     * Remove oldest notifications beyond maxCount cap
+     */
+    private async cleanupOldNotifications(maxCount: number): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        try {
+            const q = query(
+                collection(db, this.collectionName),
+                where('userId', '==', userId),
+                orderBy('timestamp', 'desc')
+            );
+
+            const snapshot = await getDocs(q);
+            if (snapshot.size <= maxCount) return;
+
+            const toDelete = snapshot.docs.slice(maxCount);
+            const batch = writeBatch(db);
+            toDelete.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            logger.log(`🗑️ Cleaned up ${toDelete.length} old notification(s)`);
+        } catch (error) {
+            logger.log('Notification cleanup failed:', error);
+        }
+    }
+
+    /**
+     * Get notifications for current user (latest 50)
      */
     async getNotifications(): Promise<StoredNotification[]> {
         const userId = auth.currentUser?.uid;
@@ -76,7 +108,8 @@ class NotificationStorageService {
             const q = query(
                 collection(db, this.collectionName),
                 where('userId', '==', userId),
-                orderBy('timestamp', 'desc')
+                orderBy('timestamp', 'desc'),
+                limit(50)
             );
 
             const snapshot = await getDocs(q);

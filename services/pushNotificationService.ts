@@ -53,7 +53,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
         // Android notification channel
         if (Platform.OS === 'android') {
             await Notifications.setNotificationChannelAsync('default', {
-                name: 'CalmParent',
+                name: 'Calmino',
                 importance: Notifications.AndroidImportance.MAX,
                 vibrationPattern: [0, 250, 250, 250],
                 lightColor: '#6366F1',
@@ -167,13 +167,13 @@ export async function sendPushNotification(
         });
 
         const result = await response.json();
-        
+
         // Check if there are any errors
         if (result.data && result.data.status === 'error') {
             logger.error('📤 Push error:', result.data.message);
             return false;
         }
-        
+
         logger.log('📤 Push sent successfully:', result);
         return true;
     } catch (error) {

@@ -145,7 +145,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Baby Profile
     'baby.welcome': 'איזה כיף! 🎉',
-    'baby.welcomeMessage': 'ברוכים הבאים {name} למשפחת CalmParent!',
+    'baby.welcomeMessage': 'ברוכים הבאים {name} למשפחת Calmino!',
     'baby.letsStart': 'בואו נתחיל!',
     'baby.nameRequired': 'אופס...',
     'baby.nameRequiredMessage': 'שכחת לכתוב את השם 😊',
@@ -238,8 +238,8 @@ const translations: Record<Language, Record<string, string>> = {
     'weekday.sat': 'ש',
 
     // Premium Features
-    'premium.detailedReports': 'דוחות מפורטים ותובנות חכמות',
-    'premium.exportData': 'ייצוא נתונים ל-PDF ואקסל',
+    'premium.detailedReports': 'דוחות מפורטים ותובנות',
+    'premium.exportData': 'ייצוא נתונים ל-PDF',
     'premium.unlimitedSharing': 'שיתוף ללא הגבלה למשפחה ובייביסיטר',
     'premium.autoBackup': 'גיבוי אוטומטי ותמיכה VIP',
     'premium.noAds': 'ללא פרסומות לעולם',
@@ -331,6 +331,64 @@ const translations: Record<Language, Record<string, string>> = {
     'guestInvite.invitedToView': 'הוזמנת לצפות ב{names}! 👶',
     'guestInvite.inviteCode': 'קוד ההזמנה שלך: {code}',
     'guestInvite.downloadApp': 'הורד את האפליקציה והזן את הקוד.',
+    'guestInvite.title': 'הזמן אורח',
+    'guestInvite.helpTitle': 'מה זה הזמנת אורח? 🤔',
+    'guestInvite.helpBody': 'אורח מקבל גישה זמנית לצפייה בלבד — אין לו אפשרות לערוך, למחוק, או לגשת לדוחות ובייביסיטר.\n\nלגישה מלאה (עריכה + תיעוד), השתמש/י ב"הזמן למשפחה" בהגדרות.',
+    'guestInvite.helpOk': 'הבנתי 👍',
+    'guestInvite.selectChildren': 'בחר אילו ילדים האורח יוכל לצפות',
+    'guestInvite.allChildren': 'כל הילדים',
+    'guestInvite.allChildrenSub': 'גישה לכל הילדים במשפחה',
+    'guestInvite.expiryLabel': 'זמן תוקף',
+    'guestInvite.viewOnly': 'האורח יוכל לצפות במעקב בלבד.',
+    'guestInvite.noReports': 'ללא גישה לדוחות ובייביסיטר.',
+    'guestInvite.activeInvites': 'הזמנות פעילות',
+    'guestInvite.loadingInvites': 'טוען הזמנות...',
+    'guestInvite.createCode': 'צור קוד הזמנה',
+    'guestInvite.codesCreated': '{count} קודים נוצרו בהצלחה!',
+    'guestInvite.codeCreated': 'הקוד נוצר בהצלחה!',
+    'guestInvite.validFor': 'תקף ל-{time}',
+    'guestInvite.copyAll': 'העתק הכל',
+    'guestInvite.copied': 'הועתק!',
+    'guestInvite.shareWhatsapp': 'שתף בוואטסאפ',
+    'guestInvite.cancelYes': 'כן, בטל',
+    'guestInvite.cancel': 'ביטול',
+    'guestInvite.hours6': '6 שעות',
+    'guestInvite.hours12': '12 שעות',
+    'guestInvite.hours24': '24 שעות',
+    'guestInvite.hours48': '48 שעות',
+    'guestInvite.minutes': '{count} דקות',
+    'guestInvite.hoursLeft': '{count} שעות',
+    'guestInvite.code': 'קוד:',
+    'guestInvite.expiryNotifTitle': '⏰ הזמנת אורח הסתיימה',
+    'guestInvite.expiryNotifBody': 'ההזמנה של {name} פגה. האורח כבר לא יכול לצפות.',
+    // Family invite
+    'familyInvite.title': 'הזמן למשפחה',
+    'familyInvite.helpTitle': 'מה זה הזמנה למשפחה? 👨\u200d👩\u200d👧\u200d👦',
+    'familyInvite.helpBody': 'בן/בת משפחה מקבלים גישה מלאה וקבועה — יכולים לצפות, לתעד, לערוך ולמחוק.\n\nלגישה זמנית בלבד (צפייה ל-24 שעות), השתמש/י ב"הזמן אורח" בהגדרות.',
+    'familyInvite.helpOk': 'הבנתי 👍',
+    'familyInvite.description': 'שתף/י את הקוד עם בן/בת הזוג או בני משפחה כדי שיוכלו לראות ולתעד יחד',
+    'familyInvite.codeLabel': 'קוד ההזמנה',
+    'familyInvite.noCode': 'אין קוד זמין',
+    'familyInvite.generateCode': 'צור קוד חדש',
+    'familyInvite.copy': 'העתק',
+    'familyInvite.copied': 'הועתק!',
+    'familyInvite.refresh': 'חדש',
+    'familyInvite.shareWhatsapp': 'שתף בוואטסאפ',
+    'familyInvite.tip': '💡 מי שמצטרף יוכל לראות את כל התיעודים ולהוסיף חדשים',
+    'familyInvite.creatingFamily': 'יוצר משפחה...',
+    'familyInvite.loading': 'טוען...',
+    'familyInvite.shareMessage': '🍼 הצטרף/י למשפחת {name} באפליקציית Calmino!\n\nקוד ההצטרפות: {code}\n\nהורד/י את האפליקציה והזן/י את הקוד כדי לראות את התיעודים בזמן אמת!',
+    // Join family
+    'joinFamily.title': 'הצטרף למשפחה',
+    'joinFamily.description': 'הזן את קוד ההזמנה שקיבלת',
+    'joinFamily.autoDetect': 'המערכת תזהה אוטומטית אם זה קוד למשפחה (גישה מלאה) או קוד לאורח (24 שעות)',
+    'joinFamily.codeLabel': 'קוד הזמנה',
+    'joinFamily.codeMustBe6': 'הקוד צריך להיות 6 ספרות',
+    'joinFamily.join': 'הצטרף',
+    'joinFamily.success': 'הצטרפת בהצלחה! 🎉',
+    'joinFamily.error': 'שגיאה בהצטרפות. נסה שוב.',
+    'joinFamily.tipFamily': '💡 קוד משפחה: גישה מלאה לכל הילדים',
+    'joinFamily.tipGuest': '💡 קוד אורח: גישה ל-24 שעות בלבד',
 
     // Login Screen
     'login.welcomeBack': 'ברוכים השבים',
@@ -361,6 +419,11 @@ const translations: Record<Language, Record<string, string>> = {
     'login.passwordStrength.medium': 'סיסמה בינונית',
     'login.passwordStrength.good': 'סיסמה טובה',
     'login.passwordStrength.strong': 'סיסמה חזקה 💪',
+    'login.fullName': 'שם מלא',
+    'login.fullNamePlaceholder': 'שם פרטי ושם משפחה',
+    'login.confirmPassword': 'אימות סיסמה',
+    'login.errors.enterName': 'אנא הזן את שמך המלא',
+    'login.errors.passwordsDoNotMatch': 'הסיסמאות אינן תואמות',
     'login.errors.enterEmail': 'אנא הזן את כתובת האימייל שלך',
     'login.errors.invalidEmail': 'כתובת אימייל לא תקינה',
     'login.errors.enterPassword': 'נא להזין סיסמה',
@@ -397,9 +460,9 @@ const translations: Record<Language, Record<string, string>> = {
     'login.babysitter.subtitle': 'הצטרפ/י לרשת הבייביסיטרים שלנו',
     'login.babysitter.registeredSubtitle': 'תוכל/י לקבל הזמנות משפחות',
     'login.agreement.terms': 'אני מסכים/ה ל',
-    'login.agreement.termsLink': ' תנאי השימוש',
+    'login.agreement.termsLink': 'תנאי השימוש',
     'login.agreement.privacy': 'אני מסכים/ה ל',
-    'login.agreement.privacyLink': ' מדיניות הפרטיות',
+    'login.agreement.privacyLink': 'מדיניות הפרטיות',
     'login.security': 'חיבור מאובטח',
     'login.switchToSignup': 'מעבר למסך הרשמה',
     'login.switchToLogin': 'מעבר למסך התחברות',
@@ -416,7 +479,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.closeWindow': 'סגור חלון',
     'login.lockout.title': 'יותר מדי ניסיונות',
     'login.lockout.message': 'נחסמת ל-30 שניות מסיבות אבטחה',
-    'login.appName': 'הורה רגוע',
+    'login.appName': 'Calmino',
     'login.appSubtitle': 'ניהול חכם ושקט להורים',
 
     // Alerts
@@ -493,7 +556,7 @@ const translations: Record<Language, Record<string, string>> = {
     'header.joinWithCodeSubtitle': 'קיבלת קוד מהשותף?',
 
     // Share
-    'share.message': 'היי! אני משתמש/ת ב-CalmParent וזה ממש עוזר לי לנהל את הטיפול בבייבי. ממליץ/ה בחום! 👶📱',
+    'share.message': 'היי! אני משתמש/ת ב-Calmino וזה ממש עוזר לי לנהל את הטיפול בבייבי. ממליץ/ה בחום! 👶📱',
 
     // Babysitter
     'babysitter.findSitter': 'מצא סיטר',
@@ -518,8 +581,6 @@ const translations: Record<Language, Record<string, string>> = {
     'babysitter.openDashboard': 'עבור לדשבורד →',
     'babysitter.rating': 'דירוג',
     'babysitter.price': 'מחיר',
-    'babysitter.distanceFilter': 'טווח חיפוש',
-    'units.km': 'ק"מ',
 
   },
   en: {
@@ -640,7 +701,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Baby Profile
     'baby.welcome': 'How Fun! 🎉',
-    'baby.welcomeMessage': 'Welcome {name} to the CalmParent family!',
+    'baby.welcomeMessage': 'Welcome {name} to the Calmino family!',
     'baby.letsStart': 'Let\'s Start!',
     'baby.nameRequired': 'Oops...',
     'baby.nameRequiredMessage': 'You forgot to write the name 😊',
@@ -810,6 +871,11 @@ const translations: Record<Language, Record<string, string>> = {
     'login.passwordStrength.medium': 'Medium password',
     'login.passwordStrength.good': 'Good password',
     'login.passwordStrength.strong': 'Strong password 💪',
+    'login.fullName': 'Full Name',
+    'login.fullNamePlaceholder': 'First and last name',
+    'login.confirmPassword': 'Confirm Password',
+    'login.errors.enterName': 'Please enter your full name',
+    'login.errors.passwordsDoNotMatch': 'Passwords do not match',
     'login.errors.enterEmail': 'Please enter your email address',
     'login.errors.invalidEmail': 'Invalid email address',
     'login.errors.enterPassword': 'Please enter password',
@@ -846,9 +912,9 @@ const translations: Record<Language, Record<string, string>> = {
     'login.babysitter.subtitle': 'Join our babysitter network',
     'login.babysitter.registeredSubtitle': 'You can receive booking requests from families',
     'login.agreement.terms': 'I agree to',
-    'login.agreement.termsLink': ' Terms of Service',
+    'login.agreement.termsLink': 'Terms of Service',
     'login.agreement.privacy': 'I agree to',
-    'login.agreement.privacyLink': ' Privacy Policy',
+    'login.agreement.privacyLink': 'Privacy Policy',
     'login.security': 'Secure Connection',
     'login.switchToSignup': 'Switch to Sign Up Screen',
     'login.switchToLogin': 'Switch to Login Screen',
@@ -865,7 +931,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.closeWindow': 'Close window',
     'login.lockout.title': 'Too Many Attempts',
     'login.lockout.message': 'Locked for 30 seconds for security reasons',
-    'login.appName': 'Calm Parent',
+    'login.appName': 'Calmino',
     'login.appSubtitle': 'Smart and quiet management for new parents',
 
     // Alerts
@@ -942,7 +1008,7 @@ const translations: Record<Language, Record<string, string>> = {
     'header.joinWithCodeSubtitle': 'Received a code from partner?',
 
     // Share
-    'share.message': 'Hey! I\'m using CalmParent and it really helps me manage baby care. Highly recommend! 👶📱',
+    'share.message': 'Hey! I\'m using Calmino and it really helps me manage baby care. Highly recommend! 👶📱',
 
     // Babysitter
     'babysitter.findSitter': 'Find Sitter',
@@ -1010,6 +1076,62 @@ const translations: Record<Language, Record<string, string>> = {
     'guestInvite.invitedToView': 'You have been invited to view {names}! 👶',
     'guestInvite.inviteCode': 'Your invite code: {code}',
     'guestInvite.downloadApp': 'Download the app and enter the code.',
+    'guestInvite.title': 'Invite Guest',
+    'guestInvite.helpTitle': 'What is a guest invite? 🤔',
+    'guestInvite.helpBody': 'A guest gets temporary view-only access — they cannot edit, delete, or access reports and babysitter.\n\nFor full access (edit + track), use "Invite to Family" in settings.',
+    'guestInvite.helpOk': 'Got it 👍',
+    'guestInvite.selectChildren': 'Select which children the guest can view',
+    'guestInvite.allChildren': 'All Children',
+    'guestInvite.allChildrenSub': 'Access to all children in the family',
+    'guestInvite.expiryLabel': 'Duration',
+    'guestInvite.viewOnly': 'The guest can only view tracking.',
+    'guestInvite.noReports': 'No access to reports and babysitter.',
+    'guestInvite.activeInvites': 'Active Invites',
+    'guestInvite.loadingInvites': 'Loading invites...',
+    'guestInvite.createCode': 'Create Invite Code',
+    'guestInvite.codesCreated': '{count} codes created successfully!',
+    'guestInvite.codeCreated': 'Code created successfully!',
+    'guestInvite.validFor': 'Valid for {time}',
+    'guestInvite.copyAll': 'Copy All',
+    'guestInvite.copied': 'Copied!',
+    'guestInvite.shareWhatsapp': 'Share on WhatsApp',
+    'guestInvite.cancelYes': 'Yes, cancel',
+    'guestInvite.cancel': 'Cancel',
+    'guestInvite.hours6': '6 hours',
+    'guestInvite.hours12': '12 hours',
+    'guestInvite.hours24': '24 hours',
+    'guestInvite.hours48': '48 hours',
+    'guestInvite.minutes': '{count} minutes',
+    'guestInvite.hoursLeft': '{count} hours',
+    'guestInvite.code': 'Code:',
+    'guestInvite.expiryNotifTitle': '⏰ Guest invite expired',
+    'guestInvite.expiryNotifBody': 'The invite for {name} has expired. The guest can no longer view.',
+    'familyInvite.title': 'Invite to Family',
+    'familyInvite.helpTitle': 'What is a family invite? 👨‍👩‍👧‍👦',
+    'familyInvite.helpBody': 'Family members get full permanent access — they can view, track, edit and delete.\n\nFor temporary access only (24h view), use "Invite Guest" in settings.',
+    'familyInvite.helpOk': 'Got it 👍',
+    'familyInvite.description': 'Share the code with your partner or family members so they can view and track together',
+    'familyInvite.codeLabel': 'Invite Code',
+    'familyInvite.noCode': 'No code available',
+    'familyInvite.generateCode': 'Generate New Code',
+    'familyInvite.copy': 'Copy',
+    'familyInvite.copied': 'Copied!',
+    'familyInvite.refresh': 'New',
+    'familyInvite.shareWhatsapp': 'Share on WhatsApp',
+    'familyInvite.tip': '💡 Anyone who joins can view all records and add new ones',
+    'familyInvite.creatingFamily': 'Creating family...',
+    'familyInvite.loading': 'Loading...',
+    'familyInvite.shareMessage': '🍼 Join {name}\'s family on Calmino!\n\nJoin code: {code}\n\nDownload the app and enter the code to see records in real time!',
+    'joinFamily.title': 'Join Family',
+    'joinFamily.description': 'Enter the invite code you received',
+    'joinFamily.autoDetect': 'The system will automatically detect if this is a family code (full access) or guest code (24 hours)',
+    'joinFamily.codeLabel': 'Invite Code',
+    'joinFamily.codeMustBe6': 'Code must be 6 digits',
+    'joinFamily.join': 'Join',
+    'joinFamily.success': 'Joined successfully! 🎉',
+    'joinFamily.error': 'Error joining. Try again.',
+    'joinFamily.tipFamily': '💡 Family code: full access to all children',
+    'joinFamily.tipGuest': '💡 Guest code: access for 24 hours only',
 
     // Time Labels
     'time.every': 'Every',
@@ -1088,11 +1210,13 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Save language to storage and DB
   const setLanguage = useCallback(async (lang: Language) => {
+    setLanguageState(lang);
     try {
-      setLanguageState(lang);
       await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
-
-      // Save to Firebase
+    } catch {
+      // AsyncStorage write can fail on simulator - non-critical
+    }
+    try {
       const user = auth.currentUser;
       if (user) {
         const userRef = doc(db, 'users', user.uid);
@@ -1102,8 +1226,8 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
           },
         }, { merge: true });
       }
-    } catch (error) {
-      logger.error('Error saving language:', error);
+    } catch {
+      // Firebase save failed - non-critical, language is already set in state
     }
   }, []);
 

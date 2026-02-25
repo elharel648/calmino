@@ -2,7 +2,10 @@ import { Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 import { logger } from '../utils/logger';
 
-const ActivityKitManager = Platform.OS === 'ios' ? requireNativeModule('ActivityKitManager') : null;
+let ActivityKitManager: any = null;
+if (Platform.OS === 'ios') {
+    try { ActivityKitManager = requireNativeModule('ActivityKitManager'); } catch { /* native module not available */ }
+}
 
 interface LiveActivityService {
     // Pumping

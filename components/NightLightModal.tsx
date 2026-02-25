@@ -6,7 +6,6 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withRepeat, interpolate } from 'react-native-reanimated';
-import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -171,11 +170,13 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
     }));
 
     const getBackgroundColor = () => {
-        const opacity = Math.max(0.15, brightness);
+        // Use solid dark base + colored overlay for the light effect
+        // brightness controls how much color shows on top of the dark base
+        const colorIntensity = Math.max(0.3, brightness);
         switch (colorTemp) {
-            case 'warm': return `rgba(255, 149, 0, ${opacity})`;
-            case 'white': return `rgba(255, 255, 255, ${opacity})`;
-            case 'red': return `rgba(255, 59, 48, ${opacity})`;
+            case 'warm': return `rgba(255, 149, 0, ${colorIntensity})`;
+            case 'white': return `rgba(255, 255, 255, ${colorIntensity})`;
+            case 'red': return `rgba(255, 59, 48, ${colorIntensity})`;
         }
     };
 
@@ -231,7 +232,8 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
     if (!visible) return null;
 
     return (
-        <Modal visible={visible} animationType="none" transparent={true}>
+        <Modal visible={visible} animationType="none" transparent={false} statusBarTranslucent>
+            <View style={styles.modalBlackBase}>
             <RNAnimatedView
                 style={[
                     styles.container,
@@ -250,7 +252,6 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                 <TouchableWithoutFeedback onPress={() => setControlsVisible(!controlsVisible)}>
                     <View style={StyleSheet.absoluteFill}>
                         <Animated.View style={[styles.controlsOverlay, animatedControlsStyle]} pointerEvents={controlsVisible ? 'auto' : 'none'}>
-                            <ScrollFadeWrapper fadeHeight={80}>
                                 <ScrollView
                                 ref={scrollViewRef}
                                 contentContainerStyle={styles.scrollContent}
@@ -381,16 +382,20 @@ export default function NightLightModal({ visible, onClose }: NightLightModalPro
                                     </View>
                                 </View>
                                 </ScrollView>
-                            </ScrollFadeWrapper>
                         </Animated.View>
                     </View>
                 </TouchableWithoutFeedback>
             </RNAnimatedView>
+            </View>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
+    modalBlackBase: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
     container: {
         flex: 1,
         justifyContent: 'center',

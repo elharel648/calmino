@@ -2,9 +2,6 @@ import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { notificationService, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/notificationService';
-import { notificationStorageService } from '../services/notificationStorageService';
-import { auth } from '../services/firebaseConfig';
-import { navigateFromNotification } from '../services/navigationService';
 
 interface UseNotificationsReturn {
     settings: NotificationSettings;
@@ -23,23 +20,17 @@ export const useNotifications = (): UseNotificationsReturn => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
 
-    const notificationListener = useRef<Notifications.Subscription>();
-    const responseListener = useRef<Notifications.Subscription>();
+    const notificationListener = useRef<Notifications.Subscription | null>(null);
+    const responseListener = useRef<Notifications.Subscription | null>(null);
 
-    // Initialize on mount
+    // Initialize on mount — load settings and permission state only
+    // Recurring notification scheduling is done once in App.tsx on login
     useEffect(() => {
         const init = async () => {
             const success = await notificationService.initialize();
             setHasPermission(success);
             setSettings(notificationService.getSettings());
             setIsInitialized(true);
-
-            // Schedule recurring notifications
-            if (success) {
-                await notificationService.scheduleSupplementReminder();
-                await notificationService.scheduleSleepReminder();
-                await notificationService.scheduleDailySummary();
-            }
         };
 
         init();

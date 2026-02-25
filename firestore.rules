@@ -13,6 +13,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Check if the current user is the direct parent of the baby
+    function isParentOfBaby(babyId) {
+      let babyDoc = get(/databases/$(database)/documents/babies/$(babyId));
+      return babyDoc != null && babyDoc.data.parentId == request.auth.uid;
+    }
+
     // Check if the current user is a member of the family that owns the baby
     function hasFamilyAccessToBaby(babyId) {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
@@ -111,6 +117,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || 
         resource.data.parentId == request.auth.uid ||
+        isParentOfBaby(resource.data.childId) ||
         hasFamilyAccessToBaby(resource.data.childId)
       );
       
@@ -270,10 +277,10 @@ service cloud.firestore {
     // GROWTH MEASUREMENTS COLLECTION
     // ===================
     match /growthMeasurements/{measurementId} {
-      // Read: access via family logic
+      // Read: access via family logic or direct parent
       allow read: if isAuthenticated() && (
         resource.data.createdBy == request.auth.uid ||
-        (resource.data.get('babyId', null) != null && hasFamilyAccessToBaby(resource.data.babyId))
+        (resource.data.get('babyId', null) != null && (isParentOfBaby(resource.data.babyId) || hasFamilyAccessToBaby(resource.data.babyId)))
       );
       
       // Create: any authenticated user
@@ -295,10 +302,34 @@ service cloud.firestore {
     }
 
     // ===================
+    // CONTACT MESSAGES COLLECTION
+    // ===================
+    match /contactMessages/{msgId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
+
+    // ===================
+    // MAIL COLLECTION (Firebase "Trigger Email" Extension)
+    // ===================
+    match /mail/{msgId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
+
+    // ===================
     // SYSTEM COLLECTION
     // ===================
     match /system/{docId} {
       allow read: if true; // Allow all users (even unauthenticated) to read system settings like premium override
+      allow write: if false; // Only admin via console can modify
+    }
+
+    // ===================
+    // APP SETTINGS COLLECTION (Remote Config Alternative)
+    // ===================
+    match /app_settings/{docId} {
+      allow read: if true; // Must be public so app can fetch config before login
       allow write: if false; // Only admin via console can modify
     }
 

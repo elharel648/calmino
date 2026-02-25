@@ -1,52 +1,53 @@
 import { logger } from '../utils/logger';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 // --- צבעים ---
 export const COLORS = {
     light: {
-        background: '#FFFFFF',
+        background: '#F5F7FA', // Premium subtle off-white
         card: '#FFFFFF',
-        cardSecondary: '#F5F3FF',
+        cardSecondary: '#F2F2F7',
         textPrimary: '#000000',
-        textSecondary: '#6B7280',
-        textTertiary: '#9CA3AF',
-        divider: '#EDE9FE',
-        border: '#EDE9FE',
-        danger: '#EF4444',
-        success: '#10B981',
-        successLight: '#D1FAE5',
-        warning: '#F59E0B',
-        primary: '#8B5CF6',
-        primaryLight: '#EDE9FE',
-        accent: '#A78BFA',
+        textSecondary: '#8E8E93',
+        textTertiary: '#AEAEB2',
+        divider: '#E5E5EA',
+        border: '#E5E5EA',
+        danger: '#FF3B30',
+        success: '#34C759',
+        successLight: 'rgba(52, 199, 89, 0.12)',
+        warning: '#FF9500',
+        primary: '#007AFF',
+        primaryLight: 'rgba(0, 122, 255, 0.12)',
+        accent: '#34D399',
+        accentLight: 'rgba(52, 211, 153, 0.10)',
         // Specific UI elements
-        headerGradient: ['#A78BFA', '#C4B5FD'] as [string, string],
+        headerGradient: ['#FFFFFF', '#FFFFFF'] as [string, string],
         tabBar: '#FFFFFF',
-        tabBarBorder: '#EDE9FE',
-        inputBackground: '#F5F3FF',
+        tabBarBorder: '#E5E5EA',
+        inputBackground: '#F2F2F7',
         modalOverlay: 'rgba(0,0,0,0.5)',
         shadow: '#000000',
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
-        // Action colors for Quick Actions
+        // Action colors for Quick Actions - white bg, dark icon, category accentColor for live states
         actionColors: {
-            food: { color: '#FF9F1C', lightColor: 'rgba(255, 159, 28, 0.08)' },
-            sleep: { color: '#9F7AEA', lightColor: 'rgba(139, 92, 246, 0.08)' },
-            diaper: { color: '#34D399', lightColor: 'rgba(52, 211, 153, 0.08)' },
-            supplements: { color: '#3B82F6', lightColor: 'rgba(59, 130, 246, 0.08)' },
-            whiteNoise: { color: '#A78BFA', lightColor: 'rgba(167, 139, 250, 0.08)' },
-            sos: { color: '#F87171', lightColor: 'rgba(248, 113, 113, 0.08)' },
-            custom: { color: '#64748B', lightColor: 'rgba(148, 163, 184, 0.08)' },
-            health: { color: '#2DD4BF', lightColor: 'rgba(45, 212, 191, 0.08)' },
-            growth: { color: '#34D399', lightColor: 'rgba(52, 211, 153, 0.08)' },
-            milestones: { color: '#FF9F1C', lightColor: 'rgba(255, 159, 28, 0.08)' },
-            magicMoments: { color: '#A78BFA', lightColor: 'rgba(167, 139, 250, 0.08)' },
-            tools: { color: '#9F7AEA', lightColor: 'rgba(139, 92, 246, 0.08)' },
-            teeth: { color: '#EC4899', lightColor: 'rgba(236, 72, 153, 0.08)' },
-            nightLight: { color: '#FF9F1C', lightColor: 'rgba(255, 159, 28, 0.08)' },
-            quickReminder: { color: '#64748B', lightColor: 'rgba(148, 163, 184, 0.08)' },
+            food: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#F59E0B' },
+            sleep: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#8B5CF6' },
+            diaper: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#3B82F6' },
+            supplements: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#34C759' },
+            whiteNoise: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#14B8A6' },
+            sos: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#FF3B30' },
+            custom: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#8E8E93' },
+            health: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#14B8A6' }, // Updated to Teal
+            growth: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#10B981' }, // Updated to Green
+            milestones: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#D97706' },
+            magicMoments: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#BF5AF2' },
+            tools: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#8E8E93' },
+            teeth: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#EC4899' }, // Updated to Pink
+            nightLight: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#F59E0B' },
+            quickReminder: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#007AFF' },
         },
     },
     dark: {
@@ -62,9 +63,10 @@ export const COLORS = {
         success: '#30D158',
         successLight: 'rgba(48, 209, 88, 0.2)',
         warning: '#FFD60A',
-        primary: '#8B5CF6',
-        primaryLight: '#3A2E5C',
-        accent: '#A78BFA',
+        primary: '#0A84FF',
+        primaryLight: 'rgba(10, 132, 255, 0.2)',
+        accent: '#6EE7B7',
+        accentLight: 'rgba(110, 231, 183, 0.15)',
         // Specific UI elements
         headerGradient: ['#1C1C1E', '#2C2C2E'] as [string, string],
         tabBar: '#1C1C1E',
@@ -74,23 +76,23 @@ export const COLORS = {
         shadow: '#000000',
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
-        // Action colors for Quick Actions (Dark Mode optimized)
+        // Action colors for Quick Actions - Dark Mode (white icon, dark bg, vivid accent)
         actionColors: {
-            food: { color: '#FFB84D', lightColor: 'rgba(255, 184, 77, 0.12)' },
-            sleep: { color: '#A78BFA', lightColor: 'rgba(167, 139, 250, 0.12)' },
-            diaper: { color: '#6EE7B7', lightColor: 'rgba(110, 231, 183, 0.12)' },
-            supplements: { color: '#60A5FA', lightColor: 'rgba(96, 165, 250, 0.12)' },
-            whiteNoise: { color: '#C4B5FD', lightColor: 'rgba(196, 181, 253, 0.12)' },
-            sos: { color: '#FCA5A5', lightColor: 'rgba(252, 165, 165, 0.12)' },
-            custom: { color: '#94A3B8', lightColor: 'rgba(148, 163, 184, 0.12)' },
-            health: { color: '#5EEAD4', lightColor: 'rgba(94, 234, 212, 0.12)' },
-            growth: { color: '#6EE7B7', lightColor: 'rgba(110, 231, 183, 0.12)' },
-            milestones: { color: '#FFB84D', lightColor: 'rgba(255, 184, 77, 0.12)' },
-            magicMoments: { color: '#C4B5FD', lightColor: 'rgba(196, 181, 253, 0.12)' },
-            tools: { color: '#A78BFA', lightColor: 'rgba(167, 139, 250, 0.12)' },
-            teeth: { color: '#F9A8D4', lightColor: 'rgba(249, 168, 212, 0.12)' },
-            nightLight: { color: '#FFB84D', lightColor: 'rgba(255, 184, 77, 0.12)' },
-            quickReminder: { color: '#94A3B8', lightColor: 'rgba(148, 163, 184, 0.12)' },
+            food: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FBBF24' },
+            sleep: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#A78BFA' },
+            diaper: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#60A5FA' },
+            supplements: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#34D158' },
+            whiteNoise: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#2DD4BF' },
+            sos: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FF6B6B' },
+            custom: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#A8A8AD' },
+            health: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#2DD4BF' }, // Teal
+            growth: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#34D158' }, // Green
+            milestones: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FFD060' },
+            magicMoments: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#D08EF5' },
+            tools: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#A8A8AD' },
+            teeth: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#EC4899' }, // Pink
+            nightLight: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FBBF24' },
+            quickReminder: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#60A5FA' },
         },
     }
 };
@@ -158,8 +160,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     const theme = isDarkMode ? COLORS.dark : COLORS.light;
 
+    const contextValue = useMemo(() => ({
+        isDarkMode,
+        theme,
+        toggleTheme,
+        setDarkMode
+    }), [isDarkMode, theme]);
+
     return (
-        <ThemeContext.Provider value={{ isDarkMode, theme, toggleTheme, setDarkMode }}>
+        <ThemeContext.Provider value={contextValue}>
             {children}
         </ThemeContext.Provider>
     );

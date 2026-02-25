@@ -4,8 +4,8 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Switch,
   Alert,
+  Switch,
   ScrollView,
   ActivityIndicator,
   Modal,
@@ -17,7 +17,8 @@ import {
   Keyboard,
   Share,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MotiView } from 'moti';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
@@ -44,8 +45,11 @@ import {
   Pill,
   ChevronLeft,
   ChevronRight,
+  Mail,
+  Instagram,
 } from 'lucide-react-native';
 import { auth, db } from '../services/firebaseConfig';
+import LegalModal from '../components/Legal/LegalModal';
 import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
@@ -65,6 +69,7 @@ const LANGUAGES = [
   { key: 'en', labelKey: 'settings.english', flag: '🇺🇸' },
 ];
 
+
 export default function SettingsScreen() {
   const { isDarkMode, setDarkMode, theme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
@@ -83,6 +88,8 @@ export default function SettingsScreen() {
   const [isPrivacyModalVisible, setPrivacyModalVisible] = useState(false);
   const [isTermsModalVisible, setTermsModalVisible] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
+  const [messageSent, setMessageSent] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -243,10 +250,32 @@ export default function SettingsScreen() {
           status: 'pending'
         });
 
+        // שלח מייל דרך Firebase "Trigger Email from Firestore" Extension
+        const mailRef = doc(collection(db, 'mail'));
+        await setDoc(mailRef, {
+          to: ['calminogroup@gmail.com'],
+          message: {
+            subject: `📩 פנייה חדשה מ-${userData.name || 'משתמש'}`,
+            html: `
+              <div dir="rtl" style="font-family: sans-serif; max-width: 500px;">
+                <h2 style="color: #007AFF;">פנייה חדשה מהאפליקציה</h2>
+                <p><strong>שם:</strong> ${userData.name || 'לא ידוע'}</p>
+                <p><strong>מייל:</strong> ${user.email || 'לא ידוע'}</p>
+                <hr/>
+                <p><strong>הודעה:</strong></p>
+                <p style="background: #f5f5f5; padding: 12px; border-radius: 8px;">${contactMessage}</p>
+              </div>
+            `,
+          },
+        });
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert(t('alerts.sentSuccessfully') + ' ✅', t('alerts.messageSent'));
         setContactMessage('');
-        setContactModalVisible(false);
+        setMessageSent(true);
+        setTimeout(() => {
+          setMessageSent(false);
+          setContactModalVisible(false);
+        }, 2800);
       }
     } catch (error) {
       Alert.alert(t('common.error'), t('alerts.couldNotSendMessage'));
@@ -561,7 +590,7 @@ export default function SettingsScreen() {
       {/* Minimal Header - Apple Style */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>הגדרות</Text>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('settings.title', { defaultValue: 'הגדרות' })}</Text>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -581,8 +610,8 @@ export default function SettingsScreen() {
         {/* התראות ותזכורות - Premium Design */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(255, 159, 28, 0.12)' : 'rgba(255, 159, 28, 0.08)' }]}>
-              <Bell size={18} color={isDarkMode ? '#FFB84D' : '#FF9F1C'} strokeWidth={1.5} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? '#E68A00' : '#FF9F1C' }]}>
+              <Bell size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.notifications')}</Text>
           </View>
@@ -593,8 +622,8 @@ export default function SettingsScreen() {
         {/* תצוגה והתנהגות */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.08)' }]}>
-              <Moon size={18} color={isDarkMode ? '#A78BFA' : '#9F7AEA'} strokeWidth={1.5} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? '#7C3AED' : '#8B5CF6' }]}>
+              <Moon size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.display')}</Text>
           </View>
@@ -602,16 +631,17 @@ export default function SettingsScreen() {
           <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
             <View style={[styles.listItem, styles.listItemFirst]}>
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.08)' }]}>
-                  <Moon size={18} color={isDarkMode ? '#A78BFA' : '#9F7AEA'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#7C3AED' : '#8B5CF6' }]}>
+                  <Moon size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.nightMode')}</Text>
                 </View>
               </View>
               <Switch
-                trackColor={{ false: theme.divider, true: theme.primary }}
-                thumbColor="#fff"
+                trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+                thumbColor={isDarkMode ? (isDarkMode ? '#000' : '#999') : '#fff'}
+                ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                 onValueChange={handleDarkModeToggle}
                 value={isDarkMode}
               />
@@ -625,8 +655,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)' }]}>
-                  <Globe size={18} color={isDarkMode ? '#6EE7B7' : '#34D399'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#059669' : '#10B981' }]}>
+                  <Globe size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>שפה</Text>
@@ -642,8 +672,8 @@ export default function SettingsScreen() {
 
             <View style={[styles.listItem, styles.listItemLast]}>
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)' }]}>
-                  <Lock size={18} color={isDarkMode ? '#6EE7B7' : '#34D399'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#059669' : '#10B981' }]}>
+                  <Lock size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.biometric')}</Text>
@@ -651,8 +681,9 @@ export default function SettingsScreen() {
                 </View>
               </View>
               <Switch
-                trackColor={{ false: theme.divider, true: '#10B981' }}
-                thumbColor="#fff"
+                trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+                thumbColor={isDarkMode ? (biometricsEnabled ? '#000' : '#999') : '#fff'}
+                ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                 onValueChange={handleBiometricsToggle}
                 value={biometricsEnabled}
               />
@@ -663,8 +694,8 @@ export default function SettingsScreen() {
         {/* פרטיות ותמיכה */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)' }]}>
-              <Shield size={18} color={isDarkMode ? '#6EE7B7' : '#34D399'} strokeWidth={1.5} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? '#059669' : '#10B981' }]}>
+              <Shield size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.privacy')}</Text>
           </View>
@@ -676,8 +707,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.08)' }]}>
-                  <FileText size={18} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#475569' : '#64748B' }]}>
+                  <FileText size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.privacyPolicy')}</Text>
               </View>
@@ -692,8 +723,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.08)' }]}>
-                  <FileText size={18} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#475569' : '#64748B' }]}>
+                  <FileText size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.termsOfService')}</Text>
               </View>
@@ -704,16 +735,36 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               style={styles.listItem}
-              onPress={() => Linking.openURL('mailto:Calmperent@Gmail.com?subject=פנייה מאפליקציית CalmParent')}
+              onPress={() => setContactModalVisible(true)}
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)' }]}>
-                  <MessageCircle size={18} color={isDarkMode ? '#60A5FA' : '#3B82F6'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#2563EB' : '#3B82F6' }]}>
+                  <MessageCircle size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.contact')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>{t('settings.contactSubtitle')}</Text>
+                </View>
+              </View>
+              <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+
+            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
+
+            {/* Instagram Link */}
+            <TouchableOpacity
+              style={styles.listItem}
+              onPress={() => Linking.openURL('https://www.instagram.com/calmino_app?igsh=ZjB3NnNrcXVzZGU2')}
+              activeOpacity={0.6}
+            >
+              <View style={styles.listItemContent}>
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#E1306C' : '#E1306C' }]}>
+                  <Instagram size={18} color="#FFFFFF" strokeWidth={2.5} />
+                </View>
+                <View style={styles.listItemTextContainer}>
+                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>עקבו אחרינו באינסטגרם</Text>
+                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>הצטרפו לקהילה שלנו</Text>
                 </View>
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
@@ -727,8 +778,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.12)' : 'rgba(167, 139, 250, 0.08)' }]}>
-                  <Share2 size={18} color={isDarkMode ? '#C4B5FD' : '#A78BFA'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#7C3AED' : '#8B5CF6' }]}>
+                  <Share2 size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.shareFriends')}</Text>
               </View>
@@ -740,8 +791,8 @@ export default function SettingsScreen() {
         {/* אזור מסוכן */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
-              <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
+            <View style={[styles.sectionIconContainer, { backgroundColor: isDarkMode ? '#DC2626' : '#EF4444' }]}>
+              <Trash2 size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.dangerZone')}</Text>
           </View>
@@ -753,8 +804,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)' }]}>
-                  <Key size={18} color={isDarkMode ? '#60A5FA' : '#3B82F6'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#2563EB' : '#3B82F6' }]}>
+                  <Key size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.changePassword')}</Text>
@@ -772,8 +823,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
-                  <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#DC2626' : '#EF4444' }]}>
+                  <Trash2 size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.deleteCurrentChild')}</Text>
@@ -793,8 +844,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
-                  <LogOut size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#DC2626' : '#EF4444' }]}>
+                  <LogOut size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.logout')}</Text>
               </View>
@@ -809,8 +860,8 @@ export default function SettingsScreen() {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(248, 113, 113, 0.12)' : 'rgba(248, 113, 113, 0.08)' }]}>
-                  <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#F87171'} strokeWidth={1.5} />
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? '#DC2626' : '#EF4444' }]}>
+                  <Trash2 size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('account.deleteAccount')}</Text>
@@ -824,7 +875,7 @@ export default function SettingsScreen() {
 
         {/* Version */}
         {/* Version */}
-        <Text style={[styles.version, { color: theme.textSecondary }]}>CalmParent v{Constants.expoConfig?.version}</Text>
+        <Text style={[styles.version, { color: theme.textSecondary }]}>Calmino v{Constants.expoConfig?.version}</Text>
       </ScrollView>
 
       {/* Language Modal */}
@@ -868,205 +919,156 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* Privacy Policy Modal */}
-      <Modal visible={isPrivacyModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: theme.card, maxHeight: '85%' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>מדיניות פרטיות</Text>
-              <TouchableOpacity
-                onPress={() => setPrivacyModalVisible(false)}
-                style={styles.modalClose}
-                activeOpacity={0.6}
-              >
-                <X size={24} color={theme.textSecondary} strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
+      <LegalModal
+        visible={isPrivacyModalVisible}
+        type="privacy"
+        onClose={() => setPrivacyModalVisible(false)}
+      />
 
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              <Text style={[styles.policyText, { color: theme.textPrimary }]}>
-                <Text style={styles.policyTitle}>עודכן לאחרונה: 20 בינואר 2026{'\n\n'}</Text>
-
-                <Text style={styles.policySubtitle}>{t('privacy.intro')}{'\n'}</Text>
-                ברוכים הבאים לאפליקציית CalmParent. אנו מחויבים להגן על פרטיותכם ולשמור על המידע האישי שלכם בצורה מאובטחת. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים ומגנים על המידע שלכם.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('privacy.collection')}{'\n'}</Text>
-                אנו אוספים את המידע הבא:{'\n'}
-                • פרטי חשבון: שם, כתובת אימייל, תמונת פרופיל{'\n'}
-                • נתוני ילדים: שם, תאריך לידה, מגדר{'\n'}
-                • נתוני מעקב: זמני שינה, האכלה, החתלה ותרופות{'\n'}
-                • נתונים טכניים: סוג מכשיר, גרסת מערכת הפעלה{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('privacy.usage')}{'\n'}</Text>
-                המידע שלכם משמש אותנו ל:{'\n'}
-                • מתן שירותי האפליקציה והתאמה אישית{'\n'}
-                • שליחת תזכורות והתראות{'\n'}
-                • שיפור חוויית המשתמש{'\n'}
-                • תמיכה טכנית{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('privacy.security')}{'\n'}</Text>
-                אנו משתמשים בטכנולוגיות אבטחה מתקדמות כולל הצפנת נתונים, אחסון מאובטח בענן (Firebase), וגיבוי אוטומטי. המידע שלכם מאוחסן בשרתים מאובטחים וזמין רק לכם ולמי שתבחרו לשתף עמו.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('privacy.sharing')}{'\n'}</Text>
-                אנו לא מוכרים או משתפים את המידע האישי שלכם עם צדדים שלישיים למטרות שיווק. המידע עשוי להיות משותף רק עם בני משפחה שהוזמנו על ידכם לאפליקציה. אנו משתמשים בשירותי ענן (Firebase/Google) לאחסון הנתונים, אשר כפופים למדיניות הפרטיות שלהם.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>7. זכויות המשתמש{'\n'}</Text>
-                יש לכם זכות:{'\n'}
-                • לגשת למידע האישי שלכם{'\n'}
-                • לבקש תיקון או עדכון של מידע לא מדויק{'\n'}
-                • לבקש מחיקה של המידע האישי שלכם{'\n'}
-                • לבקש העתק של המידע שלכם{'\n'}
-                • להתנגד לעיבוד המידע שלכם{'\n'}
-                • לבטל את הסכמתכם בכל עת{'\n\n'}
-
-                <Text style={styles.policySubtitle}>8. שמירת נתונים{'\n'}</Text>
-                אנו שומרים את המידע שלכם כל עוד החשבון פעיל. לאחר מחיקת החשבון, המידע יימחק תוך 30 יום, למעט מידע שנדרש לשמירה על פי דין.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>9. קטינים{'\n'}</Text>
-                האפליקציה מיועדת להורים ומטפלים. אנו לא אוספים מידע ישירות מקטינים. כל המידע על ילדים נאסף על ידי הורים או מטפלים מורשים בלבד.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>10. שימוש בנתונים אנונימיים{'\n'}</Text>
-                אנו רשאים להשתמש בנתונים אנונימיים ומוסווים (ללא זיהוי אישי) למטרות סטטיסטיקה, מחקר ושיפור השירות.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>11. העברת נתונים{'\n'}</Text>
-                הנתונים מאוחסנים בשרתי Google Cloud/Firebase אשר עשויים להיות ממוקמים מחוץ לישראל. אנו נוקטים באמצעים מתאימים להבטיח הגנה על המידע בהתאם לתקנות הגנת הפרטיות.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('privacy.contact')}{'\n'}</Text>
-                לשאלות, בקשות או תלונות בנוגע למדיניות הפרטיות או למימוש זכויותיכם, אנא פנו אלינו בכתובת: Calmperent@Gmail.com{'\n\n'}
-
-                <Text style={styles.policySubtitle}>12. שינויים במדיניות{'\n'}</Text>
-                אנו שומרים לעצמנו את הזכות לעדכן מדיניות זו מעת לעת. שינויים משמעותיים יפורסמו באפליקציה. המשך השימוש באפליקציה לאחר שינוי מהווה הסכמה למדיניות המעודכנת.
-              </Text>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Terms of Service Modal */}
-      <Modal visible={isTermsModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: theme.card, maxHeight: '85%' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('settings.termsOfService')}</Text>
-              <TouchableOpacity
-                onPress={() => setTermsModalVisible(false)}
-                style={styles.modalClose}
-                activeOpacity={0.6}
-              >
-                <X size={24} color={theme.textSecondary} strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              <Text style={[styles.policyText, { color: theme.textPrimary }]}>
-                <Text style={styles.policyTitle}>עודכן לאחרונה: 20 בינואר 2026{'\n\n'}</Text>
-
-                <Text style={styles.policySubtitle}>{t('terms.agreement')}{'\n'}</Text>
-                בשימוש באפליקציית CalmParent, הנכם מסכימים לתנאי שימוש אלה. אם אינכם מסכימים לתנאים, אנא הימנעו משימוש באפליקציה.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.serviceDescription')}{'\n'}</Text>
-                CalmParent היא אפליקציה למעקב אחר פעילויות תינוקות וילדים. האפליקציה מאפשרת רישום שינה, האכלה, החתלה, תרופות ושיתוף מידע עם בני משפחה.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.userAccount')}{'\n'}</Text>
-                • הנכם אחראים לשמירה על סודיות פרטי החשבון{'\n'}
-                • יש לספק מידע מדויק ועדכני{'\n'}
-                • אתם האחראים הבלעדיים לכל הפעילות בחשבונכם{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.allowedUse')}{'\n'}</Text>
-                האפליקציה מיועדת לשימוש אישי ומשפחתי בלבד. אסור להשתמש באפליקציה לכל מטרה בלתי חוקית או לא מורשית.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.liability')}{'\n'}</Text>
-                האפליקציה מסופקת "כמות שהיא" (AS IS) וללא כל אחריות מפורשת או משתמעת. אנו לא נושאים באחריות לכל נזק ישיר, עקיף, מקרי, מיוחד או תוצאתי הנובע משימוש או אי יכולת להשתמש באפליקציה, כולל אך לא רק: אובדן נתונים, אובדן רווחים, הפרעה לעסקים או נזק אחר. האפליקציה אינה מהווה תחליף לייעוץ רפואי, אבחון או טיפול מקצועי. יש להתייעץ תמיד עם רופא או איש מקצוע רפואי מוסמך לפני קבלת החלטות רפואיות.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>6. שירותים של צד שלישי{'\n'}</Text>
-                האפליקציה משתמשת בשירותים של צדדים שלישיים (כגון Firebase, Google Cloud) לאחסון ועיבוד נתונים. אנו לא נושאים באחריות לזמינות, ביצועים או אבטחה של שירותים אלה. השימוש בשירותים אלה כפוף לתנאי השימוש ומדיניות הפרטיות שלהם.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.intellectualProperty')}{'\n'}</Text>
-                כל הזכויות באפליקציה, כולל אך לא רק: עיצוב, קוד, לוגו, סימני מסחר, תמונות ותוכן, שייכות ל-CalmParent או לבעליהם החוקיים. אין לשכפל, להפיץ, לשנות, ליצור יצירות נגזרות, להציג בפומבי או להשתמש מסחרית בתוכן ללא אישור מפורש בכתב מאתנו. כל הפרה של זכויות יוצרים או קניין רוחני תוביל לפעולה משפטית.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>7. תוכן המשתמש{'\n'}</Text>
-                אתם אחראים לכל התוכן שאתם מעלים לאפליקציה (תמונות, הערות, נתונים). אתם מתחייבים שהתוכן אינו מפר זכויות של צדדים שלישיים, אינו בלתי חוקי, פוגעני או מפר כל חוק או תקנה. אנו שומרים לעצמנו את הזכות להסיר תוכן מפר או לא הולם ללא התראה מוקדמת.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>8. ביטול והשעיה{'\n'}</Text>
-                אנו שומרים לעצמנו את הזכות לבטל, להשעות או להגביל את הגישה לחשבון שלכם בכל עת, ללא התראה מוקדמת, אם נדע או נחשוד שהפרתם תנאים אלה, או מסיבות אחרות לפי שיקול דעתנו הבלעדי. ביטול החשבון יוביל למחיקת כל הנתונים הקשורים לחשבון.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>9. שינויים בשירות{'\n'}</Text>
-                אנו שומרים לעצמנו את הזכות לשנות, להפסיק או להשהות את השירות או חלקים ממנו בכל עת, ללא התראה מוקדמת. אנו לא נהיה אחראים כלפיכם או כלפי צד שלישי כלשהו על כל שינוי, השעיה או הפסקה של השירות.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>10. פיצוי{'\n'}</Text>
-                אתם מסכימים לפצות ולהגן על CalmParent, עובדיה, מנהליה ושותפיה מפני כל תביעה, נזק, אחריות, הוצאה או אובדן (כולל שכר טרחה משפטי) הנובעים משימוש שלכם באפליקציה, הפרת תנאים אלה, או הפרת זכויות של צד שלישי.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>11. חוק ישראלי ובוררות{'\n'}</Text>
-                תנאים אלה כפופים לחוקי מדינת ישראל. כל סכסוך הנובע מתנאים אלה או קשור אליהם ייפתר בבית המשפט המוסמך בתל אביב-יפו בלבד. במקרה של סכסוך, הצדדים יפעלו תחילה לפתרון בדרכי שלום באמצעות מגעים ישירים.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>12. היפרדות{'\n'}</Text>
-                אם סעיף כלשהו בתנאים אלה יימצא כבלתי תקף או לא ניתן לאכיפה, הסעיף ייפרד מתנאים אלה והשאר יישארו בתוקף מלא.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.changes')}{'\n'}</Text>
-                אנו שומרים לעצמנו את הזכות לעדכן תנאים אלה בכל עת. שינויים משמעותיים יפורסמו באפליקציה. שימוש מתמשך באפליקציה לאחר עדכון מהווה הסכמה לתנאים המעודכנים. אם אינכם מסכימים לתנאים המעודכנים, עליכם להפסיק את השימוש באפליקציה ולמחוק את החשבון.{'\n\n'}
-
-                <Text style={styles.policySubtitle}>{t('terms.contact')}{'\n'}</Text>
-                לשאלות, תלונות או בקשות בנוגע לתנאי השימוש, אנא פנו אלינו בכתובת: Calmperent@Gmail.com
-              </Text>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <LegalModal
+        visible={isTermsModalVisible}
+        type="terms"
+        onClose={() => setTermsModalVisible(false)}
+      />
 
       {/* Contact Modal */}
       <Modal visible={isContactModalVisible} transparent animationType="slide">
-        <TouchableWithoutFeedback onPress={() => setContactModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={[styles.modalContainer, { backgroundColor: theme.card }]}
-              >
-                <View style={styles.modalHeader}>
-                  <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('settings.contact')}</Text>
-                  <TouchableOpacity
-                    onPress={() => setContactModalVisible(false)}
-                    style={styles.modalClose}
-                    activeOpacity={0.6}
-                  >
-                    <X size={24} color={theme.textSecondary} strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setContactModalVisible(false); }}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={[
+                  styles.contactSheetContainer,
+                  { backgroundColor: theme.card, paddingBottom: insets.bottom + 16 }
+                ]}>
+                  {/* Handle */}
+                  <View style={[styles.contactHandle, { backgroundColor: theme.divider }]} />
 
-                <Text style={[styles.contactHint, { color: theme.textSecondary }]}>
-                  יש לך שאלה או הצעה? נשמח לשמוע ממך!
-                </Text>
+                  {messageSent ? (
+                    /* ─── Success state ─── */
+                    <MotiView
+                      from={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ type: 'timing', duration: 300 }}
+                      style={styles.successContainer}
+                    >
+                      {/* Floating envelope */}
+                      <MotiView
+                        from={{ translateY: 0 }}
+                        animate={{ translateY: -10 }}
+                        transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: true }}
+                      >
+                        <MotiView
+                          from={{ scale: 0.4, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: 'spring', damping: 14, stiffness: 120 }}
+                          style={[styles.successIconCircle, { backgroundColor: theme.primaryLight }]}
+                        >
+                          <Mail size={44} color={theme.primary} strokeWidth={1.5} />
+                        </MotiView>
+                      </MotiView>
 
-                <TextInput
-                  style={[styles.textArea, { backgroundColor: theme.background, color: theme.textPrimary }]}
-                  value={contactMessage}
-                  onChangeText={setContactMessage}
-                  textAlign="right"
-                  multiline
-                  numberOfLines={5}
-                  placeholder="כתוב את ההודעה שלך..."
-                  placeholderTextColor={theme.textSecondary}
-                  textAlignVertical="top"
-                />
+                      {/* Checkmark pop */}
+                      <MotiView
+                        from={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: 'spring', damping: 12, delay: 300 }}
+                        style={[styles.successCheck, { backgroundColor: theme.success }]}
+                      >
+                        <Check size={14} color="#fff" strokeWidth={3} />
+                      </MotiView>
 
-                <TouchableOpacity
-                  style={[styles.sendButton, { backgroundColor: theme.primary }]}
-                  onPress={handleSendContactMessage}
-                  activeOpacity={0.9}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
+                      <MotiView
+                        from={{ opacity: 0, translateY: 10 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'timing', duration: 400, delay: 200 }}
+                      >
+                        <Text style={[styles.successTitle, { color: theme.textPrimary }]}>ההודעה נשלחה!</Text>
+                        <Text style={[styles.successDesc, { color: theme.textSecondary }]}>נחזור אליך בהקדם 🙏</Text>
+                      </MotiView>
+                    </MotiView>
                   ) : (
-                    <View style={styles.sendButtonContent}>
-                      <Send size={18} color="#fff" strokeWidth={2.5} />
-                      <Text style={styles.sendButtonText}>{t('settings.sendMessage')}</Text>
-                    </View>
+                    /* ─── Form state ─── */
+                    <>
+                      {/* Close button */}
+                      <TouchableOpacity
+                        onPress={() => setContactModalVisible(false)}
+                        style={[styles.contactCloseBtn, { backgroundColor: theme.cardSecondary }]}
+                        activeOpacity={0.6}
+                      >
+                        <X size={18} color={theme.textSecondary} strokeWidth={2.5} />
+                      </TouchableOpacity>
+
+                      {/* Icon */}
+                      <View style={[styles.contactIconCircle, { backgroundColor: theme.primaryLight }]}>
+                        <Mail size={28} color={theme.primary} strokeWidth={2} />
+                      </View>
+
+                      {/* Title */}
+                      <Text style={[styles.contactSheetTitle, { color: theme.textPrimary }]}>
+                        {t('settings.contact')}
+                      </Text>
+
+                      {/* Subtitle */}
+                      <Text style={[styles.contactSheetDesc, { color: theme.textSecondary }]}>
+                        יש לך שאלה או הצעה? נשמח לשמוע ממך!
+                      </Text>
+
+                      {/* Text area */}
+                      <View style={[
+                        styles.contactInputWrapper,
+                        {
+                          backgroundColor: theme.background,
+                          borderColor: contactMessage.length > 0 ? theme.primary : theme.border,
+                        }
+                      ]}>
+                        <TextInput
+                          style={[styles.contactInput, { color: theme.textPrimary }]}
+                          value={contactMessage}
+                          onChangeText={(text) => text.length <= 500 && setContactMessage(text)}
+                          textAlign="right"
+                          multiline
+                          numberOfLines={5}
+                          placeholder="כתוב את ההודעה שלך..."
+                          placeholderTextColor={theme.textSecondary}
+                          textAlignVertical="top"
+                        />
+                      </View>
+
+                      {/* Character counter */}
+                      <Text style={[
+                        styles.contactCharCount,
+                        { color: contactMessage.length > 450 ? theme.warning : theme.textTertiary }
+                      ]}>
+                        {contactMessage.length}/500
+                      </Text>
+
+                      {/* Send button */}
+                      <TouchableOpacity
+                        style={[styles.contactSendBtn, { backgroundColor: theme.primary, opacity: loading ? 0.7 : 1 }]}
+                        onPress={handleSendContactMessage}
+                        activeOpacity={0.85}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <View style={styles.sendButtonContent}>
+                            <Send size={18} color="#fff" strokeWidth={2.5} />
+                            <Text style={styles.sendButtonText}>{t('settings.sendMessage')}</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    </>
                   )}
-                </TouchableOpacity>
-              </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -1088,14 +1090,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerTitle: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: 0.37,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    fontWeight: '400',
-    letterSpacing: -0.24,
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   backButton: {
     padding: 4,
@@ -1103,10 +1100,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 8,
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   section: {
-    marginBottom: 40,
+    marginBottom: 32,
   },
   sectionHeader: {
     flexDirection: 'row-reverse',
@@ -1116,19 +1113,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionIconContainer: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    letterSpacing: 0.35,
+    letterSpacing: -0.3,
   },
   listContainer: {
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -1142,13 +1139,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 20,
-    minHeight: 56,
+    minHeight: 60,
   },
   listItemFirst: {
-    paddingTop: 18,
+    paddingTop: 16,
   },
   listItemLast: {
-    paddingBottom: 18,
+    paddingBottom: 16,
   },
   listDivider: {
     height: StyleSheet.hairlineWidth,
@@ -1162,8 +1159,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listItemIcon: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1193,12 +1190,12 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     maxHeight: '90%',
@@ -1210,9 +1207,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    letterSpacing: 0.36,
+    letterSpacing: -0.3,
   },
   modalClose: {
     padding: 4,
@@ -1225,7 +1222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 14,
   },
   languageContent: {
     flexDirection: 'row-reverse',
@@ -1248,7 +1245,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
   },
   textArea: {
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     fontSize: 16,
     marginBottom: 20,
@@ -1256,13 +1253,13 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   sendButton: {
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 5,
   },
@@ -1276,6 +1273,118 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     letterSpacing: -0.41,
+  },
+  // ─── Contact Modal (redesigned) ─────────────────────────────────────
+  contactSheetContainer: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 14,
+    paddingBottom: Platform.OS === 'ios' ? 48 : 28,
+    alignItems: 'center',
+  },
+  contactHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 20,
+  },
+  contactCloseBtn: {
+    position: 'absolute',
+    top: 18,
+    left: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  contactSheetTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  contactSheetDesc: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 22,
+    letterSpacing: -0.2,
+  },
+  contactInputWrapper: {
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 14,
+    minHeight: 130,
+    marginBottom: 8,
+  },
+  contactInput: {
+    fontSize: 16,
+    textAlign: 'right',
+    minHeight: 100,
+    letterSpacing: -0.2,
+  },
+  contactCharCount: {
+    fontSize: 13,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+    letterSpacing: -0.1,
+  },
+  contactSendBtn: {
+    width: '100%',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  // ─── Success state ───────────────────────────────────────────────────
+  successContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  successIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successCheck: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -20,
+    marginBottom: 8,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+  successDesc: {
+    fontSize: 15,
+    textAlign: 'center',
+    letterSpacing: -0.2,
   },
   policyText: {
     fontSize: 15,

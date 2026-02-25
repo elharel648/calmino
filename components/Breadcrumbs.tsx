@@ -37,7 +37,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                             <TouchableOpacity
                                 onPress={() => {
                                     if (item.route) {
-                                        navigation.navigate(item.route as any);
+                                        navigation.navigate(item.route as never);
                                     } else {
                                         navigation.goBack();
                                     }

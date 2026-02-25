@@ -9,11 +9,8 @@ interface ShareStatusButtonProps {
     message?: string;
 }
 
-/**
- * Minimalist Share Button - Simple inline design
- */
 const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) => {
-    const { theme, isDarkMode } = useTheme();
+    const { theme } = useTheme();
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handlePress = useCallback(async () => {
@@ -22,7 +19,7 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
         }
 
         try {
-            const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message || 'עדכון מ-CalmParent')}`;
+            const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message || 'עדכון מ-Calmino')}`;
             const canOpen = await Linking.canOpenURL(whatsappUrl);
 
             if (canOpen) {
@@ -42,17 +39,23 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
         }
     }, [onShare, message]);
 
+    const iconColor = showSuccess ? theme.success : '#007AFF';
+    const textColor = showSuccess ? theme.success : theme.textSecondary;
+
     return (
         <TouchableOpacity
-            style={[styles.container, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }]}
+            style={[styles.container, { backgroundColor: theme.card }]}
             onPress={handlePress}
             activeOpacity={0.6}
         >
-            <Share2 size={16} color={theme.textTertiary} strokeWidth={2} />
-            <Text style={[styles.text, { color: theme.textSecondary }]}>
+            {showSuccess ? (
+                <Check size={15} color={iconColor} strokeWidth={2} />
+            ) : (
+                <Share2 size={15} color={iconColor} strokeWidth={1.8} />
+            )}
+            <Text style={[styles.text, { color: textColor }]}>
                 {showSuccess ? 'נשלח!' : 'שתף סיכום יומי'}
             </Text>
-            {showSuccess && <Check size={14} color={theme.success} strokeWidth={2.5} />}
         </TouchableOpacity>
     );
 });
@@ -66,14 +69,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         marginTop: 20,
-        marginBottom: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 20,
+        marginBottom: 16,
+        marginHorizontal: 16,
+        paddingVertical: 14,
         borderRadius: 16,
+        // Floating shadow
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 2,
     },
     text: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '500',
         letterSpacing: -0.2,
     },
 });

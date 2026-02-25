@@ -20,7 +20,7 @@ import { Award, Calendar, FileText, Plus, Trash2, Clock, Sparkles } from 'lucide
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, interpolate } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, interpolate } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -100,7 +100,10 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                 true
             );
             awardAnim.value = withRepeat(
-                withTiming(1, { duration: 2500 }),
+                withSequence(
+                    withTiming(1.08, { duration: 1500 }),
+                    withTiming(1, { duration: 1500 })
+                ),
                 -1,
                 true
             );
@@ -109,78 +112,42 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
             backdropAnim.setValue(0);
             glowAnim.value = 0;
             sparkleAnim.value = 0;
-            awardAnim.value = 0;
+            awardAnim.value = 1;
         }
     }, [visible]);
 
     // Swipe down to dismiss
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: (evt) => {
-            const startY = evt.nativeEvent.pageY;
-            dragStartY.current = startY;
-            if (startY < 300) {
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                return true;
-            }
-            return false;
-        },
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-            if (isDragging.current) return true;
-            const currentY = evt.nativeEvent.pageY;
-            const isTopArea = currentY < 300;
-            const isDraggingDown = gestureState.dy > 8;
-            const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.3;
-            const isScrollAtTop = scrollOffsetY.current <= 5;
-
-            if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-                isDragging.current = true;
-                dragStartY.current = currentY;
-                scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-                if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                return true;
-            }
-            return false;
-        },
-        onPanResponderGrant: () => {
-            isDragging.current = true;
-            if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            const { dy, dx } = gestureState;
+            return dy > 10 && Math.abs(dy) > Math.abs(dx);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
                 slideAnim.setValue(gestureState.dy);
-                const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+                const opacity = Math.max(0, 1 - gestureState.dy / 300);
                 backdropAnim.setValue(opacity);
             }
         },
         onPanResponderRelease: (_, gestureState) => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-
-            const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
-            if (shouldDismiss) {
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
                 if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
                 RNAnimated.parallel([
-                    RNAnimated.spring(slideAnim, {
+                    RNAnimated.timing(slideAnim, {
                         toValue: SCREEN_HEIGHT,
+                        duration: 250,
                         useNativeDriver: true,
-                        tension: 65,
-                        friction: 11,
                     }),
                     RNAnimated.timing(backdropAnim, {
                         toValue: 0,
-                        duration: 200,
+                        duration: 250,
                         useNativeDriver: true,
                     }),
                 ]).start(() => {
                     handleClose();
-                    slideAnim.setValue(SCREEN_HEIGHT);
-                    backdropAnim.setValue(0);
                 });
             } else {
                 RNAnimated.parallel([
@@ -190,17 +157,12 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                         tension: 65,
                         friction: 11,
                     }),
-                    RNAnimated.timing(backdropAnim, {
+                    RNAnimated.spring(backdropAnim, {
                         toValue: 1,
-                        duration: 200,
                         useNativeDriver: true,
                     }),
                 ]).start();
             }
-        },
-        onPanResponderTerminate: () => {
-            isDragging.current = false;
-            scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
         },
     }), [slideAnim, backdropAnim]);
 
@@ -238,10 +200,8 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
     });
 
     const awardStyle = useAnimatedStyle(() => {
-        const scale = interpolate(awardAnim.value, [0, 0.5, 1], [1, 1.15, 1]);
-        const rotate = interpolate(awardAnim.value, [0, 0.25, 0.5, 0.75, 1], [0, -8, 0, 8, 0]);
         return {
-            transform: [{ scale }, { rotate: `${rotate}deg` }],
+            transform: [{ scale: awardAnim.value }],
         };
     });
 
@@ -364,11 +324,16 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                         )}
 
                         <View style={styles.headerContent}>
-                            <View style={[styles.iconCircleBorder, { borderColor: '#F59E0B' }]}>
-                                <Animated.View style={awardStyle}>
-                                    <Award size={32} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
-                                </Animated.View>
-                            </View>
+                            <Animated.View style={[styles.iconContainer, awardStyle]}>
+                                <LinearGradient
+                                    colors={['#F59E0B', '#FBBF24']}
+                                    style={styles.iconGradient}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                >
+                                    <Award size={28} color="#fff" strokeWidth={2} />
+                                </LinearGradient>
+                            </Animated.View>
                             <Text style={[styles.title, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>אבני דרך</Text>
                             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>תעדו את הרגעים המיוחדים</Text>
                         </View>
@@ -427,216 +392,197 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                         </View>
                     </View>
 
-                    <ScrollFadeWrapper fadeHeight={80}>
+                    <ScrollFadeWrapper fadeHeight={80} topFade={false}>
                         <ScrollView
-                        ref={scrollViewRef}
-                        showsVerticalScrollIndicator={false}
-                        style={styles.content}
-                        contentContainerStyle={styles.scrollContent}
-                        keyboardShouldPersistTaps="handled"
-                        onScroll={(e) => {
-                            scrollOffsetY.current = e.nativeEvent.contentOffset.y;
-                        }}
-                        scrollEventThrottle={16}
-                    >
-                        {activeTab === 'add' ? (
-                            /* Add Tab - Minimalist */
-                            <View style={styles.inputSection}>
-                                {/* Title Row - Premium */}
-                                <View style={styles.rowMinimal}>
-                                    <View style={styles.inputWrapper}>
-                                        {Platform.OS === 'ios' && (
-                                            <BlurView intensity={15} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                                        )}
-                                        <LinearGradient
-                                            colors={isDarkMode
-                                                ? ['rgba(44, 44, 46, 0.8)', 'rgba(44, 44, 46, 0.6)']
-                                                : ['rgba(245, 245, 245, 0.9)', 'rgba(245, 245, 245, 0.7)']
-                                            }
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                        <TextInput
-                                            style={[styles.inputMinimal, { color: theme.textPrimary }]}
-                                            value={title}
-                                            onChangeText={setTitle}
-                                            placeholder="למשל: צעד ראשון"
-                                            placeholderTextColor={theme.textSecondary}
-                                            textAlign="center"
-                                        />
+                            ref={scrollViewRef}
+                            showsVerticalScrollIndicator={false}
+                            style={styles.content}
+                            contentContainerStyle={styles.scrollContent}
+                            keyboardShouldPersistTaps="handled"
+                            onScroll={(e) => {
+                                scrollOffsetY.current = e.nativeEvent.contentOffset.y;
+                            }}
+                            scrollEventThrottle={16}
+                        >
+                            {activeTab === 'add' ? (
+                                /* Add Tab - Minimalist */
+                                <View style={styles.inputSection}>
+                                    {/* Title Row - Premium */}
+                                    <View style={styles.rowMinimal}>
+                                        <View style={[styles.inputWrapper, {
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'
+                                        }]}>
+                                            <TextInput
+                                                style={[styles.inputMinimal, { color: theme.textPrimary }]}
+                                                value={title}
+                                                onChangeText={setTitle}
+                                                placeholder="למשל: צעד ראשון"
+                                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'}
+                                                textAlign="center"
+                                            />
+                                        </View>
+                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>כותרת</Text>
                                     </View>
-                                    <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>כותרת</Text>
-                                </View>
 
-                                {/* Date Row - Premium */}
-                                <View style={styles.rowMinimal}>
+                                    {/* Date Row - Premium */}
+                                    <View style={styles.rowMinimal}>
+                                        <TouchableOpacity
+                                            style={[styles.inputWrapper, {
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'
+                                            }]}
+                                            onPress={() => {
+                                                setShowDatePicker(true);
+                                                if (Platform.OS !== 'web') {
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                }
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <View style={styles.dateInputContent}>
+                                                <Calendar size={18} color={theme.textSecondary} strokeWidth={2} />
+                                                <Text style={[styles.dateTextMinimal, { color: theme.textPrimary }]}>
+                                                    {formatDate(date)}
+                                                </Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>תאריך</Text>
+                                    </View>
+
+                                    {/* Notes Row - Premium */}
+                                    <View style={styles.rowMinimal}>
+                                        <View style={[styles.inputWrapper, {
+                                            height: 'auto',
+                                            minHeight: 80,
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'
+                                        }]}>
+                                            <TextInput
+                                                style={[styles.notesInputMinimal, { color: theme.textPrimary }]}
+                                                value={notes}
+                                                onChangeText={setNotes}
+                                                placeholder="הערות..."
+                                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'}
+                                                textAlign="right"
+                                                multiline
+                                                numberOfLines={2}
+                                            />
+                                        </View>
+                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>הערות</Text>
+                                    </View>
+
+                                    {/* Save Button - Minimalist Yellow Border */}
                                     <TouchableOpacity
-                                        style={styles.inputWrapper}
-                                        onPress={() => {
-                                            setShowDatePicker(true);
-                                            if (Platform.OS !== 'web') {
-                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        style={[
+                                            styles.saveBtnMinimal,
+                                            {
+                                                borderColor: '#F59E0B',
+                                                backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.05)',
+                                                opacity: !title.trim() || loading ? 0.5 : 1
                                             }
-                                        }}
+                                        ]}
+                                        onPress={handleSave}
+                                        disabled={!title.trim() || loading}
                                         activeOpacity={0.7}
                                     >
-                                        {Platform.OS === 'ios' && (
-                                            <BlurView intensity={15} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                                        {loading ? (
+                                            <ActivityIndicator color="#F59E0B" />
+                                        ) : (
+                                            <>
+                                                <Award size={20} color="#F59E0B" strokeWidth={2.5} />
+                                                <Text style={styles.saveBtnTextMinimal}>שמור אבן דרך</Text>
+                                            </>
                                         )}
-                                        <LinearGradient
-                                            colors={isDarkMode
-                                                ? ['rgba(44, 44, 46, 0.8)', 'rgba(44, 44, 46, 0.6)']
-                                                : ['rgba(245, 245, 245, 0.9)', 'rgba(245, 245, 245, 0.7)']
-                                            }
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                        <View style={styles.dateInputContent}>
-                                            <Calendar size={18} color={theme.textSecondary} strokeWidth={2} />
-                                            <Text style={[styles.dateTextMinimal, { color: theme.textPrimary }]}>
-                                                {formatDate(date)}
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                /* History Tab */
+                                <View style={styles.historySection}>
+                                    {milestones.length === 0 ? (
+                                        <View style={styles.emptyState}>
+                                            {Platform.OS === 'ios' && (
+                                                <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                                            )}
+                                            <LinearGradient
+                                                colors={isDarkMode
+                                                    ? ['rgba(254, 243, 199, 0.1)', 'rgba(254, 243, 199, 0.05)']
+                                                    : ['rgba(254, 243, 199, 0.3)', 'rgba(254, 243, 199, 0.1)']
+                                                }
+                                                style={styles.emptyIconGradient}
+                                            >
+                                                <Animated.View style={sparkleStyle}>
+                                                    <Sparkles size={24} color="#F59E0B" strokeWidth={2} style={{ position: 'absolute', top: -8, right: -8 }} />
+                                                </Animated.View>
+                                                <Award size={40} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
+                                            </LinearGradient>
+                                            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                                                אין אבני דרך עדיין
+                                            </Text>
+                                            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                                                לחץ על "הוסף חדש" כדי לתעד את הרגעים המיוחדים
                                             </Text>
                                         </View>
-                                    </TouchableOpacity>
-                                    <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>תאריך</Text>
-                                </View>
-
-                                {/* Notes Row - Premium */}
-                                <View style={styles.rowMinimal}>
-                                    <View style={styles.inputWrapper}>
-                                        {Platform.OS === 'ios' && (
-                                            <BlurView intensity={15} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                                        )}
-                                        <LinearGradient
-                                            colors={isDarkMode
-                                                ? ['rgba(44, 44, 46, 0.8)', 'rgba(44, 44, 46, 0.6)']
-                                                : ['rgba(245, 245, 245, 0.9)', 'rgba(245, 245, 245, 0.7)']
-                                            }
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                        <TextInput
-                                            style={[styles.notesInputMinimal, { color: theme.textPrimary }]}
-                                            value={notes}
-                                            onChangeText={setNotes}
-                                            placeholder="הערות..."
-                                            placeholderTextColor={theme.textSecondary}
-                                            textAlign="right"
-                                            multiline
-                                            numberOfLines={2}
-                                        />
-                                    </View>
-                                    <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>הערות</Text>
-                                </View>
-
-                                {/* Save Button - Minimalist Yellow Border */}
-                                <TouchableOpacity
-                                    style={[
-                                        styles.saveBtnMinimal,
-                                        {
-                                            borderColor: '#F59E0B',
-                                            backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.05)',
-                                            opacity: !title.trim() || loading ? 0.5 : 1
-                                        }
-                                    ]}
-                                    onPress={handleSave}
-                                    disabled={!title.trim() || loading}
-                                    activeOpacity={0.7}
-                                >
-                                    {loading ? (
-                                        <ActivityIndicator color="#F59E0B" />
                                     ) : (
-                                        <>
-                                            <Award size={20} color="#F59E0B" strokeWidth={2.5} />
-                                            <Text style={styles.saveBtnTextMinimal}>שמור אבן דרך</Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            /* History Tab */
-                            <View style={styles.historySection}>
-                                {milestones.length === 0 ? (
-                                    <View style={styles.emptyState}>
-                                        {Platform.OS === 'ios' && (
-                                            <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                                        )}
-                                        <LinearGradient
-                                            colors={isDarkMode
-                                                ? ['rgba(254, 243, 199, 0.1)', 'rgba(254, 243, 199, 0.05)']
-                                                : ['rgba(254, 243, 199, 0.3)', 'rgba(254, 243, 199, 0.1)']
-                                            }
-                                            style={styles.emptyIconGradient}
-                                        >
-                                            <Animated.View style={sparkleStyle}>
-                                                <Sparkles size={24} color="#F59E0B" strokeWidth={2} style={{ position: 'absolute', top: -8, right: -8 }} />
-                                            </Animated.View>
-                                            <Award size={40} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
-                                        </LinearGradient>
-                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
-                                            אין אבני דרך עדיין
-                                        </Text>
-                                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                                            לחץ על "הוסף חדש" כדי לתעד את הרגעים המיוחדים
-                                        </Text>
-                                    </View>
-                                ) : (
-                                    Object.values(groupedMilestones).map((group, groupIndex) => (
-                                        <View key={groupIndex} style={styles.monthGroup}>
-                                            <Text style={[styles.monthLabel, { color: theme.textSecondary }]}>
-                                                {group.label}
-                                            </Text>
-                                            {group.items.map((milestone, index) => (
-                                                <SwipeableRow key={index} onDelete={() => handleDelete(milestone)}>
-                                                    <View style={styles.milestoneCardWrapper}>
-                                                        {Platform.OS === 'ios' && (
-                                                            <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                                                        )}
-                                                        <LinearGradient
-                                                            colors={isDarkMode
-                                                                ? ['rgba(44, 44, 46, 0.9)', 'rgba(44, 44, 46, 0.7)']
-                                                                : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)']
-                                                            }
-                                                            style={StyleSheet.absoluteFill}
-                                                        />
-                                                        <View style={styles.milestoneCard}>
-                                                            <View style={styles.milestoneHeader}>
-                                                                <View style={styles.milestoneInfo}>
-                                                                    <LinearGradient
-                                                                        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-                                                                        style={styles.milestoneBadgeGradient}
-                                                                        start={{ x: 0, y: 0 }}
-                                                                        end={{ x: 1, y: 1 }}
-                                                                    >
-                                                                        <Award size={18} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
-                                                                    </LinearGradient>
-                                                                    <View style={styles.milestoneTexts}>
-                                                                        <Text style={[styles.milestoneTitle, { color: theme.textPrimary }]}>
-                                                                            {milestone.title}
-                                                                        </Text>
-                                                                        <View style={styles.milestoneDateRow}>
-                                                                            <Calendar size={12} color={theme.textSecondary} strokeWidth={2} />
-                                                                            <Text style={[styles.milestoneDate, { color: theme.textSecondary }]}>
-                                                                                {formatDate(milestone.date)} • {formatRelativeDate(milestone.date)}
+                                        Object.values(groupedMilestones).map((group, groupIndex) => (
+                                            <View key={groupIndex} style={styles.monthGroup}>
+                                                <Text style={[styles.monthLabel, { color: theme.textSecondary }]}>
+                                                    {group.label}
+                                                </Text>
+                                                {group.items.map((milestone, index) => (
+                                                    <SwipeableRow key={index} onDelete={() => handleDelete(milestone)}>
+                                                        <View style={styles.milestoneCardWrapper}>
+                                                            {Platform.OS === 'ios' && (
+                                                                <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                                                            )}
+                                                            <LinearGradient
+                                                                colors={isDarkMode
+                                                                    ? ['rgba(44, 44, 46, 0.9)', 'rgba(44, 44, 46, 0.7)']
+                                                                    : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)']
+                                                                }
+                                                                style={StyleSheet.absoluteFill}
+                                                            />
+                                                            <View style={styles.milestoneCard}>
+                                                                <View style={styles.milestoneHeader}>
+                                                                    <View style={styles.milestoneInfo}>
+                                                                        <LinearGradient
+                                                                            colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+                                                                            style={styles.milestoneBadgeGradient}
+                                                                            start={{ x: 0, y: 0 }}
+                                                                            end={{ x: 1, y: 1 }}
+                                                                        >
+                                                                            <Award size={18} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
+                                                                        </LinearGradient>
+                                                                        <View style={styles.milestoneTexts}>
+                                                                            <Text style={[styles.milestoneTitle, { color: theme.textPrimary }]}>
+                                                                                {milestone.title}
                                                                             </Text>
+                                                                            <View style={styles.milestoneDateRow}>
+                                                                                <Calendar size={12} color={theme.textSecondary} strokeWidth={2} />
+                                                                                <Text style={[styles.milestoneDate, { color: theme.textSecondary }]}>
+                                                                                    {formatDate(milestone.date)} • {formatRelativeDate(milestone.date)}
+                                                                                </Text>
+                                                                            </View>
                                                                         </View>
                                                                     </View>
                                                                 </View>
+                                                                {milestone.notes ? (
+                                                                    <View style={[styles.milestoneNotesContainer, { borderTopColor: theme.border }]}>
+                                                                        <FileText size={14} color={theme.textSecondary} strokeWidth={2} />
+                                                                        <Text style={[styles.milestoneNotes, { color: theme.textSecondary }]}>
+                                                                            {milestone.notes}
+                                                                        </Text>
+                                                                    </View>
+                                                                ) : null}
                                                             </View>
-                                                            {milestone.notes ? (
-                                                                <View style={[styles.milestoneNotesContainer, { borderTopColor: theme.border }]}>
-                                                                    <FileText size={14} color={theme.textSecondary} strokeWidth={2} />
-                                                                    <Text style={[styles.milestoneNotes, { color: theme.textSecondary }]}>
-                                                                        {milestone.notes}
-                                                                    </Text>
-                                                                </View>
-                                                            ) : null}
                                                         </View>
-                                                    </View>
-                                                </SwipeableRow>
-                                            ))}
-                                        </View>
-                                    ))
-                                )}
-                            </View>
-                        )}
+                                                    </SwipeableRow>
+                                                ))}
+                                            </View>
+                                        ))
+                                    )}
+                                </View>
+                            )}
                         </ScrollView>
                     </ScrollFadeWrapper>
 
@@ -708,18 +654,22 @@ const styles = StyleSheet.create({
         gap: 12,
         zIndex: 1,
     },
-    iconCircleBorder: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+    iconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2.5,
+        marginBottom: 4,
+    },
+    iconGradient: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
         shadowColor: '#F59E0B',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 8,
     },
     title: {
         fontSize: 32,

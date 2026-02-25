@@ -62,11 +62,8 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     const [sitterUnavailable, setSitterUnavailable] = useState(false);
     const insets = useSafeAreaInsets();
     const flatListRef = useRef<FlatList>(null);
-    const markAsReadTimeoutRef = useRef<NodeJS.Timeout>();
+    const markAsReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const inputRef = useRef<TextInput>(null);
-
-    // Tab bar height: 90px on iOS, 72px on Android
-    const tabBarHeight = Platform.OS === 'ios' ? 90 : 72;
 
     const { messages, loading: messagesLoading } = useMessages(chatId);
 
@@ -235,17 +232,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
-                </TouchableOpacity>
-                <View style={styles.headerInfo}>
-                    <Text style={[styles.headerName, { color: theme.textPrimary }]}>{sitterName}</Text>
-                    <View style={styles.statusContainer}>
-                        <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
-                        <Text style={[styles.statusText, { color: theme.textSecondary }]}>מחובר/ת</Text>
-                    </View>
-                </View>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, paddingTop: insets.top + 8 }]}>
                 {!imageError && sitterImage ? (
                     <Image
                         source={{ uri: sitterImage }}
@@ -257,6 +244,16 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         <Ionicons name="person" size={20} color={theme.textSecondary} />
                     </View>
                 )}
+                <View style={styles.headerInfo}>
+                    <Text style={[styles.headerName, { color: theme.textPrimary }]}>{sitterName}</Text>
+                    <View style={styles.statusContainer}>
+                        <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
+                        <Text style={[styles.statusText, { color: theme.textSecondary }]}>מחובר/ת</Text>
+                    </View>
+                </View>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
+                </TouchableOpacity>
             </View>
 
             {initLoading || messagesLoading ? (
@@ -298,7 +295,7 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
             {/* Input Area */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? tabBarHeight + insets.bottom : tabBarHeight}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + insets.bottom : 0}
             >
                 {sitterUnavailable ? (
                     <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 8, backgroundColor: theme.card, borderTopColor: theme.border, justifyContent: 'center' }]}>
@@ -307,33 +304,33 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
                         </Text>
                     </View>
                 ) : (
-                <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 8, backgroundColor: theme.card, borderTopColor: theme.border }]}>
-                    <TouchableOpacity
-                        style={[styles.sendBtn, (!messageText.trim() || sending) && styles.sendBtnDisabled, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}
-                        onPress={handleSendMessage}
-                        disabled={!messageText.trim() || sending}
-                    >
-                        {sending ? (
-                            <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
-                        ) : (
-                            <Ionicons name="send" size={18} color={isDarkMode ? '#000' : '#fff'} />
-                        )}
-                    </TouchableOpacity>
-                    <TextInput
-                        ref={inputRef}
-                        style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                        placeholder="כתוב הודעה..."
-                        placeholderTextColor={theme.textSecondary}
-                        value={messageText}
-                        onChangeText={setMessageText}
-                        textAlign="right"
-                        multiline
-                        maxLength={500}
-                        returnKeyType="send"
-                        onSubmitEditing={handleSendMessage}
-                        blurOnSubmit={false}
-                    />
-                </View>
+                    <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 8, backgroundColor: theme.card, borderTopColor: theme.border }]}>
+                        <TouchableOpacity
+                            style={[styles.sendBtn, (!messageText.trim() || sending) && styles.sendBtnDisabled, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}
+                            onPress={handleSendMessage}
+                            disabled={!messageText.trim() || sending}
+                        >
+                            {sending ? (
+                                <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                            ) : (
+                                <Ionicons name="send" size={18} color={isDarkMode ? '#000' : '#fff'} />
+                            )}
+                        </TouchableOpacity>
+                        <TextInput
+                            ref={inputRef}
+                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
+                            placeholder="כתוב הודעה..."
+                            placeholderTextColor={theme.textSecondary}
+                            value={messageText}
+                            onChangeText={setMessageText}
+                            textAlign="right"
+                            multiline
+                            maxLength={500}
+                            returnKeyType="send"
+                            onSubmitEditing={handleSendMessage}
+                            blurOnSubmit={false}
+                        />
+                    </View>
                 )}
             </KeyboardAvoidingView>
         </View>
@@ -370,7 +367,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 60,
         paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: 1,
@@ -417,12 +413,12 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     myBubble: {
-        alignSelf: 'flex-start',
-        borderBottomLeftRadius: 4,
-    },
-    otherBubble: {
         alignSelf: 'flex-end',
         borderBottomRightRadius: 4,
+    },
+    otherBubble: {
+        alignSelf: 'flex-start',
+        borderBottomLeftRadius: 4,
         borderWidth: 1,
     },
 
@@ -440,10 +436,10 @@ const styles = StyleSheet.create({
     },
     myTimeText: {
         color: 'rgba(255,255,255,0.7)',
-        textAlign: 'left',
+        textAlign: 'right',
     },
     otherTimeText: {
-        textAlign: 'right',
+        textAlign: 'left',
     },
 
     inputContainer: {

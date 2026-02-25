@@ -10,7 +10,6 @@ import Animated, {
     withTiming,
     withDelay,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { MedicationsState } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
@@ -158,9 +157,9 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                     <View style={styles.header}>
                         <View style={[
                             styles.iconCircle,
-                            { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : theme.primaryLight }
+                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }
                         ]}>
-                            <Pill size={20} color={theme.primary} strokeWidth={2} />
+                            <Pill size={20} color={isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)'} strokeWidth={2} />
                         </View>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
                             תוספים יומיים
@@ -183,39 +182,34 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                             <TouchableOpacity
                                 style={[
                                     styles.medBtn,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB' },
+                                    {
+                                        backgroundColor: meds.vitaminD
+                                            ? (isDarkMode ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.08)')
+                                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB'),
+                                        borderColor: meds.vitaminD
+                                            ? (isDarkMode ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.25)')
+                                            : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
+                                    },
                                     meds.vitaminD && styles.medBtnDone
                                 ]}
                                 onPress={() => handleToggle('vitaminD')}
-                                activeOpacity={0.85}
+                                activeOpacity={0.8}
                             >
                                 <View style={styles.medIconWrapper}>
                                     {meds.vitaminD ? (
-                                        <LinearGradient
-                                            colors={[theme.success, theme.success]}
-                                            style={styles.medIconGradient}
-                                        >
-                                            <Check size={24} color="#fff" strokeWidth={2.5} />
-                                        </LinearGradient>
+                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(52,199,89,0.35)' : '#34C759' }]}>
+                                            <Check size={26} color="#fff" strokeWidth={2.5} />
+                                        </View>
                                     ) : (
-                                        <View style={[
-                                            styles.medIcon,
-                                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
-                                        ]}>
-                                            <Sun size={22} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
+                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                                            <Sun size={24} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={1.5} />
                                         </View>
                                     )}
                                 </View>
-                                <Text style={[
-                                    styles.medText,
-                                    { color: meds.vitaminD ? theme.primary : theme.textPrimary }
-                                ]}>
+                                <Text style={[styles.medText, { color: theme.textPrimary }]}>
                                     ויטמין D
                                 </Text>
-                                <Text style={[
-                                    styles.medStatus,
-                                    { color: meds.vitaminD ? theme.primary : theme.textSecondary }
-                                ]}>
+                                <Text style={[styles.medStatus, { color: meds.vitaminD ? theme.textSecondary : theme.textTertiary }]}>
                                     {meds.vitaminD ? 'ניתן' : 'לא ניתן'}
                                 </Text>
                             </TouchableOpacity>
@@ -226,39 +220,34 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                             <TouchableOpacity
                                 style={[
                                     styles.medBtn,
-                                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB' },
+                                    {
+                                        backgroundColor: meds.iron
+                                            ? (isDarkMode ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.08)')
+                                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB'),
+                                        borderColor: meds.iron
+                                            ? (isDarkMode ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.25)')
+                                            : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
+                                    },
                                     meds.iron && styles.medBtnDone
                                 ]}
                                 onPress={() => handleToggle('iron')}
-                                activeOpacity={0.85}
+                                activeOpacity={0.8}
                             >
                                 <View style={styles.medIconWrapper}>
                                     {meds.iron ? (
-                                        <LinearGradient
-                                            colors={[theme.success, theme.success]}
-                                            style={styles.medIconGradient}
-                                        >
-                                            <Check size={24} color="#fff" strokeWidth={2.5} />
-                                        </LinearGradient>
+                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(52,199,89,0.35)' : '#34C759' }]}>
+                                            <Check size={26} color="#fff" strokeWidth={2.5} />
+                                        </View>
                                     ) : (
-                                        <View style={[
-                                            styles.medIcon,
-                                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
-                                        ]}>
-                                            <Droplet size={22} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
+                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                                            <Droplet size={24} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={1.5} />
                                         </View>
                                     )}
                                 </View>
-                                <Text style={[
-                                    styles.medText,
-                                    { color: meds.iron ? theme.primary : theme.textPrimary }
-                                ]}>
+                                <Text style={[styles.medText, { color: theme.textPrimary }]}>
                                     ברזל
                                 </Text>
-                                <Text style={[
-                                    styles.medStatus,
-                                    { color: meds.iron ? theme.primary : theme.textSecondary }
-                                ]}>
+                                <Text style={[styles.medStatus, { color: meds.iron ? theme.textSecondary : theme.textTertiary }]}>
                                     {meds.iron ? 'ניתן' : 'לא ניתן'}
                                 </Text>
                             </TouchableOpacity>
@@ -274,13 +263,13 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                             styles.progressTrack,
                             { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
                         ]}>
-                            <LinearGradient
-                                colors={['#8B5CF6', '#A78BFA']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
+                            <View
                                 style={[
                                     styles.progressFill,
-                                    { width: `${((meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)) * 50}%` }
+                                    {
+                                        width: `${((meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)) * 50}%`,
+                                        backgroundColor: '#007AFF',
+                                    }
                                 ]}
                             />
                         </View>
@@ -326,9 +315,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(139, 92, 246, 0.1)',
         borderWidth: 1.5,
-        borderColor: 'rgba(139, 92, 246, 0.2)',
     },
     title: {
         flex: 1,
@@ -346,23 +333,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.03)',
     },
-    celebrationBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 16,
-        backgroundColor: 'rgba(34, 197, 94, 0.1)', // Very subtle green
-        gap: 6,
-        alignSelf: 'center',
-        marginBottom: 20,
-    },
-    celebrationText: {
-        color: '#16A34A', // Darker green text
-        fontSize: 13,
-        fontWeight: '600',
-    },
     buttonsRow: {
         flexDirection: 'row-reverse',
         justifyContent: 'center',
@@ -372,61 +342,41 @@ const styles = StyleSheet.create({
         width: 140,
         paddingVertical: 24,
         paddingHorizontal: 16,
-        borderRadius: 20,
+        borderRadius: 22,
         alignItems: 'center',
-        backgroundColor: 'transparent',
         borderWidth: 1.5,
-        borderColor: 'rgba(0,0,0,0.06)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
-        elevation: 1,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 2,
     },
     medBtnDone: {
-        backgroundColor: 'rgba(139, 92, 246, 0.06)',
-        borderColor: 'rgba(139, 92, 246, 0.2)',
-        shadowColor: '#8B5CF6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 3,
+        shadowOpacity: 0.10,
+        shadowRadius: 14,
+        elevation: 4,
     },
     medIconWrapper: {
         marginBottom: 10,
     },
     medIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 18,
+        width: 60,
+        height: 60,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    medIconGradient: {
-        width: 56,
-        height: 56,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#8B5CF6',
-        shadowColor: '#8B5CF6',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 6,
     },
     medText: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
         letterSpacing: -0.3,
         textAlign: 'center',
-        marginTop: 4,
+        marginTop: 6,
     },
     medStatus: {
         fontSize: 13,
-        fontWeight: '500',
-        marginTop: 4,
-        opacity: 0.5,
+        fontWeight: '600',
+        marginTop: 3,
     },
     progressContainer: {
         marginTop: 28,

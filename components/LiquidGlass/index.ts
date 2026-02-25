@@ -4,6 +4,7 @@
  */
 
 export { LiquidGlassCard } from './LiquidGlassCard';
+export { LiquidGlassSwitch } from './LiquidGlassSwitch';
 export { LiquidGlassButton } from './LiquidGlassButton';
 export { LiquidGlassModal } from './LiquidGlassModal';
 export { default as LiquidGlassTabBar } from './LiquidGlassTabBar';

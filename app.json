@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CalmParentApp",
+    "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
     "version": "1.0.7",
@@ -46,8 +46,6 @@
         "NSFaceIDUsageDescription": "אפשר כניסה מהירה ומאובטחת באמצעות Face ID",
         "NSLocationWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
-        "NSCalendarsUsageDescription": "האפליקציה צריכה גישה ליומן כדי לשמור את התזכורות שלך",
-        "NSRemindersUsageDescription": "האפליקציה צריכה גישה לתזכורות כדי לשמור את התזכורות שלך",
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
         "CFBundleURLTypes": [

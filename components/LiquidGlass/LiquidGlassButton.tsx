@@ -90,7 +90,7 @@ export const LiquidGlassButton: React.FC<LiquidGlassButtonProps> = ({
             {/* Glass Button */}
             <BlurView intensity={60} tint="light" style={styles.blurContainer}>
                 <LinearGradient
-                    colors={colors.gradient}
+                    colors={colors.gradient as any}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.gradientContainer}

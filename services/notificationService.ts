@@ -5,7 +5,6 @@ import { Platform, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, auth } from './firebaseConfig';
 import { collection, query, where, getDocs, orderBy, Timestamp, addDoc, deleteDoc, doc } from 'firebase/firestore';
-import { notificationStorageService } from './notificationStorageService';
 import { logger } from '../utils/logger';
 
 // --- Pattern Analysis Types ---
@@ -252,7 +251,7 @@ class NotificationService {
         // Android specific channel
         if (Platform.OS === 'android') {
             await Notifications.setNotificationChannelAsync('default', {
-                name: 'CalmParent',
+                name: 'Calmino',
                 importance: Notifications.AndroidImportance.HIGH,
                 vibrationPattern: [0, 250, 250, 250],
                 lightColor: '#6366F1',
@@ -422,54 +421,37 @@ class NotificationService {
     }
 
     // Send immediate notification
+    // Note: saving to Firestore is handled by the App.tsx setNotificationHandler — no need to save here
     async sendImmediate(type: NotificationType, customBody?: string): Promise<void> {
         const content = NOTIFICATION_CONTENT[type];
-        const userId = auth.currentUser?.uid;
-
-        // Save to Firebase immediately
-        if (userId) {
-            const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
-                'feeding_reminder': 'feed',
-                'sleep_reminder': 'sleep',
-                'supplement_reminder': 'medication',
-                'vaccine_reminder': 'medication',
-                'daily_summary': 'reminder',
-            };
-
-            await notificationStorageService.saveNotification({
-                userId,
-                type: typeMap[type] || 'reminder',
-                title: content.title,
-                message: customBody || content.body,
-                timestamp: new Date(),
-                isRead: false,
-                isUrgent: type === 'vaccine_reminder',
-            });
-        }
 
         await Notifications.scheduleNotificationAsync({
             content: {
                 title: content.title,
                 body: customBody || content.body,
                 data: { type },
+                sound: 'default',
             },
             trigger: null, // Immediate
         });
     }
 
     // Cancel specific notification
-    async cancelNotification(type: NotificationType): Promise<void> {
-        const id = this.scheduledNotifications.get(type);
-        if (id) {
-            try {
-                await Notifications.cancelScheduledNotificationAsync(id);
-                this.scheduledNotifications.delete(type);
-                logger.debug('🔔 Cancelled notification:', type);
-            } catch (error) {
-                logger.warn('Failed to cancel notification:', type, error);
-                // Still remove from map even if cancel fails
-                this.scheduledNotifications.delete(type);
+    // Uses getAllScheduledNotificationsAsync to find by data.type — survives app restarts
+    async cancelNotification(type: string): Promise<void> {
+        try {
+            const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+            const toCancel = scheduled.filter(n => n.content.data?.type === type);
+            for (const n of toCancel) {
+                await Notifications.cancelScheduledNotificationAsync(n.identifier);
             }
+            this.scheduledNotifications.delete(type);
+            if (toCancel.length > 0) {
+                logger.debug('🔔 Cancelled', toCancel.length, 'notification(s) of type:', type);
+            }
+        } catch (error) {
+            logger.warn('Failed to cancel notification:', type, error);
+            this.scheduledNotifications.delete(type);
         }
     }
 
@@ -670,7 +652,7 @@ class NotificationService {
                 endDate,
                 notes,
                 timeZone: 'Asia/Jerusalem',
-                location: 'CalmParent App',
+                location: 'Calmino App',
                 alarms: [{ relativeOffset: -15 }] // Alert 15 min before
             });
 

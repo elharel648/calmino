@@ -35,6 +35,7 @@ import Reanimated, {
     useSharedValue,
     withRepeat,
     withTiming,
+    withSequence,
     useAnimatedStyle,
     withSpring,
     interpolate,
@@ -79,8 +80,9 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
     // Slide Animation (RN Animated for PanResponder)
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
 
-    // Premium Glow Animation (Reanimated)
-    const pulseAnim = useSharedValue(1);
+    // Bell icon animations
+    const bellIconPulse = useSharedValue(0);
+    const bellIconBounce = useSharedValue(1);
 
     useEffect(() => {
         if (visible) {
@@ -92,13 +94,24 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                 friction: 11,
             }).start();
 
-            // Start Pulse
-            pulseAnim.value = withRepeat(withTiming(1.1, { duration: 1500 }), -1, true);
+            bellIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
+            bellIconBounce.value = withRepeat(
+                withSequence(
+                    withTiming(1.12, { duration: 300 }),
+                    withTiming(0.94, { duration: 200 }),
+                    withTiming(1.05, { duration: 150 }),
+                    withTiming(1, { duration: 150 }),
+                    withTiming(1, { duration: 2200 }),
+                ),
+                -1,
+                false
+            );
 
             loadReminders();
             resetForm();
         } else {
-            pulseAnim.value = 1;
+            bellIconPulse.value = 0;
+            bellIconBounce.value = 1;
         }
     }, [visible]);
 
@@ -162,18 +175,34 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
         if (!message.trim()) return;
 
         setSaving(true);
-        // Haptic Feedback
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         try {
+            // Ensure notifications are enabled before saving
+            if (!notificationService.getSettings().enabled) {
+                await notificationService.saveSettings({ enabled: true });
+            }
+
+            // Request notification permissions
+            const hasPermission = await notificationService.requestPermissions();
+            if (!hasPermission) {
+                Alert.alert(
+                    'התראות כבויות',
+                    'יש לאפשר התראות בהגדרות המכשיר כדי לקבל תזכורות',
+                    [{ text: 'הבנתי' }]
+                );
+                setSaving(false);
+                return;
+            }
+
             let date = getReminderDateTime();
             const now = new Date();
 
             // If date is in the past or very close to now, add a buffer
             if (date.getTime() <= now.getTime()) {
-                // If it's within the last minute, just bump it to 10 seconds from now
-                if (now.getTime() - date.getTime() < 60000) {
-                    date = new Date(now.getTime() + 5000); // 5 seconds from now
+                if (now.getTime() - date.getTime() < 120000) {
+                    // Within 2 minutes — bump to 10 seconds from now
+                    date = new Date(now.getTime() + 10000);
                 } else if (reminderType === 'once') {
                     Alert.alert('שגיאה', 'לא ניתן לקבוע תזכורת לעבר');
                     setSaving(false);
@@ -181,21 +210,19 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                 }
             }
 
-            let result;
             if (reminderType === 'once') {
-                result = await notificationService.createCustomReminder({
+                const result = await notificationService.createCustomReminder({
                     title: 'תזכורת',
                     body: message.trim(),
                     date: date,
                 });
 
-                // Add to Calendar if checked
                 if (addToCalendar && result) {
                     try {
                         const calendarSuccess = await notificationService.addToCalendar(
                             'תזכורת: ' + message.trim(),
                             date,
-                            'נוצר באפליקציית CalmParent'
+                            'נוצר באפליקציית Calmino'
                         );
 
                         if (calendarSuccess) {
@@ -204,7 +231,6 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                             Alert.alert('נשמר', 'התזכורת נשמרה באפליקציה, אך השמירה ביומן נכשלה');
                         }
 
-                        // Return early since we already alerted
                         setViewMode('list');
                         loadReminders();
                         setMessage('');
@@ -234,10 +260,6 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                         weekday: date.getDay(),
                     });
                 }
-                // Note: Calendar API doesn't easily support recurrence in one simple call in this implementation, 
-                // but we could expand notificationService.addToCalendar to handle it if needed.
-                // For now, we only sync 'once' reminders mostly, or just the first occurrence if we wanted.
-                // The current addToCalendar implementation is for single events.
             }
 
             setViewMode('list');
@@ -245,9 +267,13 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
             setMessage('');
             setAddToCalendar(false);
             Alert.alert('נשמר!', 'התזכורת הוגדרה בהצלחה');
-        } catch (e) {
+        } catch (e: any) {
             logger.error('Failed to save reminder', e);
-            Alert.alert('שגיאה', 'לא ניתן לשמור את התזכורת. אנא וודא שהתאריך עתידי.');
+            if (e?.message?.includes('disabled')) {
+                Alert.alert('התראות כבויות', 'יש לאפשר התראות בהגדרות כדי ליצור תזכורות');
+            } else {
+                Alert.alert('שגיאה', 'לא ניתן לשמור את התזכורת. נסה שוב.');
+            }
         } finally {
             setSaving(false);
         }
@@ -284,8 +310,13 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
         Haptics.selectionAsync();
     };
 
-    const pulseStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: pulseAnim.value }],
+    const bellIconPulseStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(bellIconPulse.value, [0, 1], [0.4, 0]),
+        transform: [{ scale: interpolate(bellIconPulse.value, [0, 1], [1, 1.7]) }],
+    }));
+
+    const bellIconBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: bellIconBounce.value }],
     }));
 
     // Minimalist Theme Colors
@@ -318,36 +349,45 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <View style={[styles.headerIconContainer, { shadowColor: primaryColor }]}>
-                            <View style={[styles.headerIconBg, { backgroundColor: '#EEF2FF' }]}>
-                                <Bell size={24} color={theme.primary} />
+                        {/* Centered icon + title */}
+                        <View style={styles.headerCenter}>
+                            <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                                <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: isDarkMode ? '#E5E7EB' : '#1C1C1E' }, bellIconPulseStyle]} />
+                                <View style={[styles.headerIconBg, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                                    <Reanimated.View style={bellIconBounceStyle}>
+                                        <Bell size={24} color={isDarkMode ? '#E5E7EB' : '#1C1C1E'} />
+                                    </Reanimated.View>
+                                </View>
                             </View>
+                            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+                                {viewMode === 'list' ? 'התזכורות שלי' : 'תזכורת חדשה'}
+                            </Text>
                         </View>
-                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                            {viewMode === 'list' ? 'התזכורות שלי' : 'תזכורת חדשה'}
-                        </Text>
 
-                        {viewMode === 'list' ? (
-                            <TouchableOpacity
-                                style={[styles.actionButton, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}
-                                onPress={() => {
-                                    setViewMode('create');
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                }}
-                            >
-                                <Plus size={24} color={theme.textPrimary} />
-                            </TouchableOpacity>
-                        ) : (
-                            <TouchableOpacity
-                                style={[styles.actionButton, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}
-                                onPress={() => {
-                                    setViewMode('list');
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                }}
-                            >
-                                <List size={24} color={theme.textSecondary} />
-                            </TouchableOpacity>
-                        )}
+                        {/* Action button - absolute left */}
+                        <View style={styles.headerActionBtn}>
+                            {viewMode === 'list' ? (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}
+                                    onPress={() => {
+                                        setViewMode('create');
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
+                                >
+                                    <Plus size={24} color={theme.textPrimary} />
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]}
+                                    onPress={() => {
+                                        setViewMode('list');
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
+                                >
+                                    <List size={24} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
 
 
@@ -716,32 +756,31 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     },
     header: {
-        flexDirection: 'row-reverse',
         alignItems: 'center',
         paddingHorizontal: 24,
         marginBottom: 20,
         zIndex: 1,
+        position: 'relative',
     },
-    headerIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        marginLeft: 16,
+    headerCenter: {
         alignItems: 'center',
-        justifyContent: 'center',
+    },
+    headerActionBtn: {
+        position: 'absolute',
+        left: 24,
+        top: 10,
     },
     headerIconBg: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '800',
-        flex: 1,
-        textAlign: 'right',
+        textAlign: 'center',
     },
     actionButton: {
         width: 44,

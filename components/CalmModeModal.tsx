@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated as RNAnimated, PanResponder, Dimensions } from 'react-native';
 import { Phone, Siren, Shield, Skull, AlertTriangle } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
 import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
 interface CalmModeModalProps {
   visible: boolean;
@@ -18,10 +20,12 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
   const { theme, isDarkMode } = useTheme();
 
   // Animations
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
+  const fadeAnim = useRef(new RNAnimated.Value(0)).current;
+  const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+  // Premium animation
+  const iconScaleAnim = useSharedValue(1);
 
   // Track if we're dragging and scroll position
   const isDragging = useRef(false);
@@ -34,132 +38,94 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
       slideAnim.setValue(SCREEN_HEIGHT);
       fadeAnim.setValue(0);
       backdropAnim.setValue(0);
-      Animated.parallel([
-        Animated.spring(slideAnim, {
+      RNAnimated.parallel([
+        RNAnimated.spring(slideAnim, {
           toValue: 0,
           useNativeDriver: true,
           tension: 65,
           friction: 11,
         }),
-        Animated.timing(fadeAnim, {
+        RNAnimated.timing(fadeAnim, {
           toValue: 1,
           duration: 250,
           useNativeDriver: true,
         }),
-        Animated.timing(backdropAnim, {
+        RNAnimated.timing(backdropAnim, {
           toValue: 1,
           duration: 250,
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Start pulse animation for icon
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.15,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
+      // Start premium breathing animation for icon
+      iconScaleAnim.value = withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 1500 }),
+          withTiming(1, { duration: 1500 })
+        ),
+        -1,
+        true
+      );
     } else {
       slideAnim.setValue(SCREEN_HEIGHT);
       fadeAnim.setValue(0);
       backdropAnim.setValue(0);
-      pulseAnim.setValue(1);
+      iconScaleAnim.value = 1;
     }
   }, [visible]);
 
-  // Swipe down to dismiss - Exact same as TrackingModal
+  // Swipe down to dismiss - exact premium equivalent
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: (evt, gestureState) => {
-      const startY = evt.nativeEvent.pageY;
-      dragStartY.current = startY;
-      if (startY < 300) {
-        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-        return true;
-      }
-      return false;
-    },
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      if (isDragging.current) return true;
-      const currentY = evt.nativeEvent.pageY;
-      const isTopArea = currentY < 300;
-      const isDraggingDown = gestureState.dy > 5;
-      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
-      const isScrollAtTop = scrollOffsetY.current <= 5;
-
-      if (isTopArea && isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-        isDragging.current = true;
-        dragStartY.current = currentY;
-        scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        return true;
-      }
-      return false;
-    },
-    onPanResponderGrant: () => {
-      isDragging.current = true;
-      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      return gestureState.dy > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
     },
     onPanResponderMove: (_, gestureState) => {
       if (gestureState.dy > 0) {
         slideAnim.setValue(gestureState.dy);
-        const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
+        const opacity = Math.max(0, 1 - gestureState.dy / 300);
         backdropAnim.setValue(opacity);
       }
     },
     onPanResponderRelease: (_, gestureState) => {
-      isDragging.current = false;
-      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-
-      const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
-      if (shouldDismiss) {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Animated.parallel([
-          Animated.spring(slideAnim, {
+      if (gestureState.dy > 120 || gestureState.vy > 0.5) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        RNAnimated.parallel([
+          RNAnimated.timing(slideAnim, {
             toValue: SCREEN_HEIGHT,
+            duration: 250,
             useNativeDriver: true,
-            tension: 65,
-            friction: 11,
           }),
-          Animated.timing(backdropAnim, {
+          RNAnimated.timing(backdropAnim, {
             toValue: 0,
-            duration: 200,
+            duration: 250,
             useNativeDriver: true,
           }),
         ]).start(() => {
           onClose();
-          slideAnim.setValue(SCREEN_HEIGHT);
-          backdropAnim.setValue(0);
         });
       } else {
-        Animated.parallel([
-          Animated.spring(slideAnim, {
+        RNAnimated.parallel([
+          RNAnimated.spring(slideAnim, {
             toValue: 0,
             useNativeDriver: true,
             tension: 65,
             friction: 11,
           }),
-          Animated.timing(backdropAnim, {
+          RNAnimated.spring(backdropAnim, {
             toValue: 1,
-            duration: 200,
             useNativeDriver: true,
           }),
         ]).start();
       }
     },
-    onPanResponderTerminate: () => {
-      isDragging.current = false;
-      scrollViewRef.current?.setNativeProps({ scrollEnabled: true });
-    },
   }), [slideAnim, backdropAnim, onClose]);
+
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScaleAnim.value }]
+  }));
 
   const makeCall = async (phoneNumber: string, name: string) => {
     if (Platform.OS !== 'web') {
@@ -197,19 +163,18 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
     <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
       <View style={styles.modalWrapper}>
         <TouchableOpacity activeOpacity={1} onPress={onClose} style={StyleSheet.absoluteFill}>
-          <Animated.View style={[styles.overlay, { opacity: backdropAnim }]} />
+          <RNAnimatedView style={[styles.overlay, { opacity: backdropAnim }]} />
         </TouchableOpacity>
-        <Animated.View
+        <RNAnimatedView
           style={[
             styles.container,
             {
               transform: [{ translateY: slideAnim }],
               opacity: fadeAnim,
-              backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+              backgroundColor: theme.card,
               zIndex: 1000,
             }
           ]}
-          {...panResponder.panHandlers}
         >
           {/* Drag Handle */}
           <View style={styles.dragHandle} {...panResponder.panHandlers}>
@@ -223,17 +188,24 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
           <View style={styles.header} {...panResponder.panHandlers}>
             {Platform.OS === 'ios' && (
               <BlurView
-                intensity={60}
+                intensity={30}
                 tint={isDarkMode ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
               />
             )}
             <View style={[
               styles.headerContent,
-              { backgroundColor: isDarkMode ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.85)' }
+              { backgroundColor: theme.card }
             ]}>
-              <Animated.View style={[styles.titleIcon, { transform: [{ scale: pulseAnim }] }]}>
-                <AlertTriangle size={36} color="#EF4444" strokeWidth={2.5} />
+              <Animated.View style={[styles.titleIcon, iconAnimatedStyle]}>
+                <LinearGradient
+                  colors={['#EF4444', '#FCA5A5']}
+                  style={styles.iconGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <AlertTriangle size={32} color="#fff" strokeWidth={2.5} />
+                </LinearGradient>
               </Animated.View>
               <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>מצב חירום</Text>
             </View>
@@ -241,89 +213,95 @@ export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) 
 
           {/* Content */}
           <ScrollFadeWrapper fadeHeight={80}>
-              <ScrollView
-            ref={scrollViewRef}
-            style={styles.content}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            onScroll={(e) => {
-              scrollOffsetY.current = e.nativeEvent.contentOffset.y;
-            }}
-            scrollEventThrottle={16}
-          >
-            {/* Emergency - Premium Row */}
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
-            <View style={styles.emergencyRow}>
-              {emergencyContacts.map((contact, index) => {
-                const { Icon } = contact;
-                return (
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.content}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              onScroll={(e) => {
+                scrollOffsetY.current = e.nativeEvent.contentOffset.y;
+              }}
+              scrollEventThrottle={16}
+            >
+              {/* Emergency - Premium Row */}
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
+              <View style={styles.emergencyRow}>
+                {emergencyContacts.map((contact, index) => {
+                  const { Icon } = contact;
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.emergencyCard,
+                        {
+                          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                          borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        }
+                      ]}
+                      onPress={() => makeCall(contact.number, contact.name)}
+                      activeOpacity={0.7}
+                    >
+                      {/* Icon with color */}
+                      <View style={[styles.emergencyIcon, { backgroundColor: contact.bgColor }]}>
+                        <Icon size={22} color={contact.color} strokeWidth={2} />
+                      </View>
+                      <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
+                        {contact.name}
+                      </Text>
+                      <Text
+                        style={[styles.emergencyNumber, { color: contact.color }]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit={true}
+                        minimumFontScale={0.8}
+                      >
+                        {contact.number}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* HMO - Clean List */}
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
+              <View style={[
+                styles.hmoContainer,
+                {
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF',
+                  borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                }
+              ]}>
+                {hmoContacts.map((hmo, index) => (
                   <TouchableOpacity
                     key={index}
                     style={[
-                      styles.emergencyCard,
-                      { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB' }
+                      styles.hmoRow,
+                      index < hmoContacts.length - 1 && {
+                        borderBottomWidth: 1,
+                        borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
+                      }
                     ]}
-                    onPress={() => makeCall(contact.number, contact.name)}
+                    onPress={() => makeCall(hmo.number, hmo.name)}
                     activeOpacity={0.7}
                   >
-                    {/* Icon with color */}
-                    <View style={[styles.emergencyIcon, { backgroundColor: contact.bgColor }]}>
-                      <Icon size={22} color={contact.color} strokeWidth={2} />
+                    <View style={styles.hmoInfo}>
+                      <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
+                      <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
                     </View>
-                    <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
-                      {contact.name}
-                    </Text>
-                    <Text 
-                      style={[styles.emergencyNumber, { color: contact.color }]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit={true}
-                      minimumFontScale={0.8}
-                    >
-                      {contact.number}
-                    </Text>
+                    <View style={styles.hmoCall}>
+                      <View style={[
+                        styles.phoneIcon,
+                        { backgroundColor: isDarkMode ? 'rgba(59,130,246,0.2)' : '#DBEAFE' }
+                      ]}>
+                        <Phone size={14} color="#3B82F6" strokeWidth={2} />
+                      </View>
+                      <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
+                    </View>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* HMO - Clean List */}
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
-            <View style={[
-              styles.hmoContainer,
-              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }
-            ]}>
-              {hmoContacts.map((hmo, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.hmoRow,
-                    index < hmoContacts.length - 1 && {
-                      borderBottomWidth: 1,
-                      borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
-                    }
-                  ]}
-                  onPress={() => makeCall(hmo.number, hmo.name)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.hmoInfo}>
-                    <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
-                    <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
-                  </View>
-                  <View style={styles.hmoCall}>
-                    <View style={[
-                      styles.phoneIcon,
-                      { backgroundColor: isDarkMode ? 'rgba(59,130,246,0.2)' : '#DBEAFE' }
-                    ]}>
-                      <Phone size={14} color="#3B82F6" strokeWidth={2} />
-                    </View>
-                    <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-              </ScrollView>
+                ))}
+              </View>
+            </ScrollView>
           </ScrollFadeWrapper>
-        </Animated.View>
+        </RNAnimatedView>
       </View>
     </Modal>
   );
@@ -391,12 +369,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   titleIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
+  },
+  iconGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
   mainTitle: {
     fontSize: 24,
@@ -434,6 +421,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 140,
     justifyContent: 'flex-start',
+    borderWidth: 1,
   },
   emergencyIcon: {
     width: 52,
@@ -459,6 +447,7 @@ const styles = StyleSheet.create({
   hmoContainer: {
     borderRadius: 16,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   hmoRow: {
     flexDirection: 'row-reverse',

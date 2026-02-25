@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, LayoutAnimation, UIManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Animated, Platform, LayoutAnimation, UIManager } from 'react-native';
 import { Bell, Utensils, Pill, FileText, ChevronDown, ChevronUp, Play, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -12,7 +12,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Unified accent color for all toggles
 const ACCENT_COLOR = '#6366F1';
 
 interface NotificationCardConfig {
@@ -34,9 +33,8 @@ interface PremiumNotificationCardProps {
 }
 
 const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ config, isLast = false }) => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const [expanded, setExpanded] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const {
     icon: Icon,
@@ -55,20 +53,6 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.97,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     onToggle(value);
   };
 
@@ -81,77 +65,61 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.card,
-        { transform: [{ scale: scaleAnim }] },
-        isLast && styles.cardLast,
-      ]}
-    >
-      {/* Header Row */}
+    <View style={[styles.card, isLast && styles.cardLast]}>
       <View style={styles.cardHeader}>
-        {/* Icon Container - Right side (RTL) */}
-        <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
-          <Icon size={18} color={iconColor} strokeWidth={1.5} />
+        {/* Right side: Icon + Title (RTL) */}
+        <View style={styles.cardMainContent}>
+          <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
+            <Icon size={18} color={iconColor} strokeWidth={1.5} />
+          </View>
+          <TouchableOpacity
+            style={styles.cardTextContent}
+            onPress={children && enabled ? toggleExpand : undefined}
+            activeOpacity={children && enabled ? 0.7 : 1}
+            disabled={disabled || !enabled || !children}
+          >
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{title}</Text>
+            <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
+              {getSubtitle()}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Title & Subtitle */}
-        <TouchableOpacity
-          style={styles.cardContent}
-          onPress={toggleExpand}
-          activeOpacity={0.7}
-          disabled={disabled || !enabled || !children}
-        >
-          <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{title}</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
-            {getSubtitle()}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Actions: Test + Expand */}
+        {/* Left side: Actions (RTL) */}
         <View style={styles.cardActions}>
+          {children && enabled && (
+            <TouchableOpacity
+              style={styles.expandButton}
+              onPress={toggleExpand}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              {expanded ? (
+                <ChevronUp size={18} color={theme.textTertiary} />
+              ) : (
+                <ChevronDown size={18} color={theme.textTertiary} />
+              )}
+            </TouchableOpacity>
+          )}
           {onTest && enabled && (
             <TouchableOpacity
               style={[styles.testButton, { backgroundColor: `${iconColor}15` }]}
               onPress={onTest}
               activeOpacity={0.7}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <Play size={12} color={iconColor} fill={iconColor} />
+              <Play size={11} color={iconColor} fill={iconColor} />
             </TouchableOpacity>
           )}
-          {children && (
-            <TouchableOpacity
-              style={styles.expandButton}
-              onPress={toggleExpand}
-              activeOpacity={0.7}
-              disabled={disabled || !enabled}
-            >
-              {expanded ? (
-                <ChevronUp size={18} color={theme.textSecondary} />
-              ) : (
-                <ChevronDown size={18} color={theme.textSecondary} />
-              )}
-            </TouchableOpacity>
-          )}
-
-          {/* Toggle Switch - Left side (RTL) - placed last in row-reverse */}
-          <TouchableOpacity
-            style={[
-              styles.switchTrack,
-              { backgroundColor: enabled ? ACCENT_COLOR : theme.divider },
-              disabled && styles.switchDisabled,
-            ]}
-            onPress={() => !disabled && handleToggle(!enabled)}
-            activeOpacity={0.8}
+          <Switch
+            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+            thumbColor='#fff'
+            ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
+            onValueChange={handleToggle}
+            value={enabled}
             disabled={disabled}
-          >
-            <Animated.View
-              style={[
-                styles.switchThumb,
-                enabled && styles.switchThumbActive,
-              ]}
-            />
-          </TouchableOpacity>
+            style={disabled ? { opacity: 0.4 } : undefined}
+          />
         </View>
       </View>
 
@@ -161,7 +129,7 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
           {children}
         </View>
       )}
-    </Animated.View>
+    </View>
   );
 };
 
@@ -176,12 +144,11 @@ export default function PremiumNotificationSettings() {
     await sendTestNotification();
   };
 
-  // Card configurations
   const notificationCards: NotificationCardConfig[] = [
     {
       icon: Utensils,
-      iconColor: isDarkMode ? '#FFB84D' : '#FF9F1C',
-      iconBg: isDarkMode ? 'rgba(255, 159, 28, 0.12)' : 'rgba(255, 159, 28, 0.08)',
+      iconColor: "#FFFFFF",
+      iconBg: isDarkMode ? '#E68A00' : '#FF9F1C',
       title: 'תזכורת אוכל',
       getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
       enabled: settings.feedingReminder,
@@ -209,8 +176,8 @@ export default function PremiumNotificationSettings() {
     },
     {
       icon: Pill,
-      iconColor: isDarkMode ? '#6EE7B7' : '#34D399',
-      iconBg: isDarkMode ? 'rgba(52, 211, 153, 0.12)' : 'rgba(52, 211, 153, 0.08)',
+      iconColor: "#FFFFFF",
+      iconBg: isDarkMode ? '#059669' : '#10B981',
       title: 'תזכורת תוספים',
       getSubtitle: () => `כל יום בשעה ${settings.supplementTime}`,
       enabled: settings.supplementReminder,
@@ -230,8 +197,8 @@ export default function PremiumNotificationSettings() {
     },
     {
       icon: FileText,
-      iconColor: isDarkMode ? '#F9A8D4' : '#EC4899',
-      iconBg: isDarkMode ? 'rgba(236, 72, 153, 0.12)' : 'rgba(236, 72, 153, 0.08)',
+      iconColor: "#FFFFFF",
+      iconBg: isDarkMode ? '#DB2777' : '#EC4899',
       title: 'סיכום יומי',
       getSubtitle: () => `כל יום בשעה ${settings.dailySummaryTime}`,
       enabled: settings.dailySummary,
@@ -253,12 +220,12 @@ export default function PremiumNotificationSettings() {
 
   return (
     <View style={styles.container}>
-      {/* Master Toggle Card */}
+      {/* Master Toggle */}
       <View style={[styles.masterCard, { backgroundColor: theme.card }]}>
         <View style={styles.masterCardRow}>
           <View style={styles.masterContent}>
-            <View style={[styles.masterIcon, { backgroundColor: '#EDE9FE' }]}>
-              <Bell size={18} color={ACCENT_COLOR} strokeWidth={2} />
+            <View style={[styles.masterIcon, { backgroundColor: isDarkMode ? '#4F46E5' : '#6366F1' }]}>
+              <Bell size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <View style={styles.masterTextContainer}>
               <Text style={[styles.masterTitle, { color: theme.textPrimary }]}>
@@ -270,31 +237,23 @@ export default function PremiumNotificationSettings() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={[
-              styles.masterSwitch,
-              { backgroundColor: settings.enabled ? ACCENT_COLOR : theme.divider },
-            ]}
-            onPress={() => {
+          <Switch
+            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+            thumbColor='#fff'
+            ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
+            onValueChange={(val) => {
               if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }
-              updateSettings({ enabled: !settings.enabled });
+              updateSettings({ enabled: val });
             }}
-            activeOpacity={0.8}
-          >
-            <Animated.View
-              style={[
-                styles.switchThumb,
-                settings.enabled && styles.switchThumbActive,
-              ]}
-            />
-          </TouchableOpacity>
+            value={settings.enabled}
+          />
         </View>
       </View>
 
-      {/* Notification Type Cards */}
-      <View style={[styles.cardsContainer, { backgroundColor: theme.card }]}>
+      {/* Notification Cards */}
+      <View style={[styles.cardsContainer, { backgroundColor: theme.card }, !settings.enabled && { opacity: 0.45 }]}>
         {notificationCards.map((config, index) => (
           <React.Fragment key={config.title}>
             <PremiumNotificationCard
@@ -308,15 +267,7 @@ export default function PremiumNotificationSettings() {
         ))}
       </View>
 
-      {/* Info Banner */}
-      {settings.enabled && (
-        <View style={[styles.infoBanner, { backgroundColor: `${ACCENT_COLOR}10`, borderColor: `${ACCENT_COLOR}30` }]}>
-          <Sparkles size={16} color={ACCENT_COLOR} />
-          <Text style={[styles.infoText, { color: theme.textPrimary }]}>
-            ההתראות יישלחו בהתאם להגדרות שלך
-          </Text>
-        </View>
-      )}
+
     </View>
   );
 }
@@ -325,23 +276,22 @@ const styles = StyleSheet.create({
   container: {
     gap: 12,
   },
-  // Master Card Styles
   masterCard: {
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
   masterCardRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    minHeight: 64,
+    minHeight: 60,
   },
   masterContent: {
     flexDirection: 'row-reverse',
@@ -352,7 +302,7 @@ const styles = StyleSheet.create({
   masterIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -362,7 +312,7 @@ const styles = StyleSheet.create({
   },
   masterTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: -0.4,
   },
   masterSubtitle: {
@@ -370,48 +320,40 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 2,
   },
-  masterSwitch: {
-    width: 51,
-    height: 31,
-    borderRadius: 15.5,
-    padding: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  // Cards Container
   cardsContainer: {
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
-  // Individual Card Styles
-  card: {
-    borderWidth: 0,
-  },
-  cardLast: {
-    // No special styling needed
-  },
+  card: {},
+  cardLast: {},
   cardHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 20,
     minHeight: 60,
+  },
+  cardMainContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   iconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  cardContent: {
+  cardTextContent: {
     flex: 1,
     alignItems: 'flex-end',
     minWidth: 0,
@@ -442,34 +384,6 @@ const styles = StyleSheet.create({
   expandButton: {
     padding: 4,
   },
-  // Switch Styles
-  switchTrack: {
-    width: 51,
-    height: 31,
-    borderRadius: 15.5,
-    padding: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  switchDisabled: {
-    opacity: 0.4,
-  },
-  switchThumb: {
-    width: 27,
-    height: 27,
-    borderRadius: 13.5,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  switchThumbActive: {
-    marginLeft: 20, // Move to the right side when active
-  },
-  // Expanded Content
   expandedContent: {
     borderTopWidth: StyleSheet.hairlineWidth,
   },
@@ -479,19 +393,17 @@ const styles = StyleSheet.create({
   spacer: {
     height: 4,
   },
-  // Divider
   divider: {
     height: StyleSheet.hairlineWidth,
     marginHorizontal: 20,
   },
-  // Info Banner
   infoBanner: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 10,
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 12,
-    borderWidth: 1,
   },
   infoText: {
     flex: 1,

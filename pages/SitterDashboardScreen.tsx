@@ -945,9 +945,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     : '';
                                 const cityLine = sitterCity ? `📍 ${sitterCity}\n` : '';
                                 // TODO: Replace with actual App Store / Play Store link
-                                const appLink = 'https://apps.apple.com/app/calmparent';
+                                const appLink = 'https://apps.apple.com/app/calmino';
                                 await Share.share({
-                                    message: `היי 👋\nאני ${name}, בייביסיטר באפליקציית CalmParent.\n\n${ratingLine}${cityLine}\nרוצה לראות את הפרופיל שלי? הורידו את CalmParent:\n${appLink}`,
+                                    message: `היי 👋\nאני ${name}, בייביסיטר באפליקציית Calmino.\n\n${ratingLine}${cityLine}\nרוצה לראות את הפרופיל שלי? הורידו את Calmino:\n${appLink}`,
                                 });
                             } catch (error) {
                                 logger.error('Share error:', error);
@@ -1392,7 +1392,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Switch
                                         value={notificationsEnabled}
                                         onValueChange={(v) => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setNotificationsEnabled(v); }}
-                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: isDarkMode ? '#fff' : '#000' }}
+                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
                                         thumbColor={isDarkMode ? (notificationsEnabled ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
@@ -1403,7 +1403,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Switch
                                         value={availableForBookings}
                                         onValueChange={(v) => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAvailableForBookings(v); }}
-                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: isDarkMode ? '#fff' : '#000' }}
+                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
                                         thumbColor={isDarkMode ? (availableForBookings ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />

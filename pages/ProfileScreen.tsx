@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 110, // Account for glass header
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   // Profile Card
   profileCard: {

@@ -29,6 +29,7 @@ export interface FamilyMember {
     historyAccessDays?: number; // -1 or undefined for unlimited, otherwise number of days back
     invitedBy?: string; // userId of who invited this member
     expiresAt?: Date; // Optional expiration for temporary guest access
+    photoURL?: string | null; // Added for profile consistency
 }
 
 export interface Family {
@@ -85,6 +86,7 @@ export const createFamily = async (babyId: string, babyName: string): Promise<Fa
                     role: 'admin',
                     name: user.displayName || 'Admin',
                     email: user.email || '',
+                    photoURL: user.photoURL || null,
                     joinedAt: new Date(),
                     accessLevel: 'full',
                 }
@@ -213,6 +215,7 @@ export const joinFamily = async (inviteCode: string, role: FamilyRole = 'member'
                     role: 'guest',
                     name: user.displayName || 'אורח',
                     email: user.email || '',
+                    photoURL: user.photoURL || null,
                     joinedAt: serverTimestamp(),
                     accessLevel: 'actions_only',
                     historyAccessDays: 1, // Only 24 hours of history
@@ -285,6 +288,7 @@ export const joinFamily = async (inviteCode: string, role: FamilyRole = 'member'
                 role,
                 name: user.displayName || 'משתמש חדש',
                 email: user.email || '',
+                photoURL: user.photoURL || null,
                 joinedAt: serverTimestamp(),
                 accessLevel: 'full', // Full access to all children
             }

@@ -6,12 +6,14 @@ import {
     TouchableOpacity,
     Alert,
     Platform,
+    Image,
 } from 'react-native';
-import { Users, UserPlus, Crown, Eye, Trash2, LogOut, Link, ChevronLeft, Pencil, Plus } from 'lucide-react-native';
+import { Users, UserPlus, Crown, Eye, Trash2, LogOut, Link, ChevronLeft, Pencil, UserCheck, Clock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useFamily } from '../../hooks/useFamily';
 import { FamilyRole } from '../../services/familyService';
 import { auth } from '../../services/firebaseConfig';
+import { useTheme } from '../../context/ThemeContext';
 
 interface FamilyMembersCardProps {
     onInvitePress: () => void;
@@ -20,11 +22,11 @@ interface FamilyMembersCardProps {
     onEditFamilyName?: () => void;
 }
 
-const ROLE_CONFIG: Record<FamilyRole, { label: string; color: string }> = {
-    admin: { label: 'מנהל', color: '#F59E0B' },
-    member: { label: 'חבר', color: '#6366F1' },
-    viewer: { label: 'צופה', color: '#10B981' },
-    guest: { label: 'אורח', color: '#F59E0B' },
+const ROLE_CONFIG: Record<FamilyRole, { label: string; color: string; icon: any; bgLight: string; bgDark: string }> = {
+    admin: { label: 'מנהל', color: '#F59E0B', icon: Crown, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
+    member: { label: 'חבר', color: '#6366F1', icon: UserCheck, bgLight: '#EEF2FF', bgDark: 'rgba(99,102,241,0.15)' },
+    viewer: { label: 'צופה', color: '#10B981', icon: Eye, bgLight: '#ECFDF5', bgDark: 'rgba(16,185,129,0.15)' },
+    guest: { label: 'אורח', color: '#F59E0B', icon: Clock, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
 };
 
 export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
@@ -33,7 +35,13 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
     onGuestInvitePress,
     onEditFamilyName,
 }) => {
+    const { theme, isDarkMode } = useTheme();
     const { family, members, isAdmin, remove, leave } = useFamily();
+
+    const getMemberCountText = (count: number) => {
+        if (count === 1) return 'חבר 1';
+        return `${count} חברים`;
+    };
 
     const handleRemoveMember = (memberId: string, memberName: string) => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -80,15 +88,15 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
     // No family yet - simple options
     if (!family) {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.card }]}>
                 <TouchableOpacity
                     style={styles.simpleRow}
                     onPress={onInvitePress}
                     activeOpacity={0.7}
                 >
-                    <ChevronLeft size={16} color="#D1D5DB" />
-                    <Text style={styles.simpleRowText}>צור משפחה</Text>
-                    <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
+                    <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
+                    <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>צור משפחה</Text>
+                    <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
                         <UserPlus size={16} color="#6366F1" />
                     </View>
                 </TouchableOpacity>
@@ -98,9 +106,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     onPress={onJoinPress}
                     activeOpacity={0.7}
                 >
-                    <ChevronLeft size={16} color="#D1D5DB" />
-                    <Text style={styles.simpleRowText}>הצטרף עם קוד</Text>
-                    <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5' }]}>
+                    <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
+                    <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>הצטרף עם קוד</Text>
+                    <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
                         <Link size={16} color="#10B981" />
                     </View>
                 </TouchableOpacity>
@@ -108,52 +116,83 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
         );
     }
 
-    // Has family - clean minimal view
+    // Has family - premium view
     return (
-        <View style={styles.container}>
-            {/* Family Header - Simple */}
+        <View style={[styles.container, { backgroundColor: theme.card }]}>
+            {/* Family Header */}
             <View style={styles.header}>
                 <View style={styles.headerRight}>
-                    <Text style={styles.familyName}>משפחת {family.babyName}</Text>
-                    <Text style={styles.memberCount}>{members.length} חברים</Text>
+                    <View style={styles.headerTitleRow}>
+                        <View style={[styles.familyIconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
+                            <Users size={16} color="#6366F1" />
+                        </View>
+                        <Text style={[styles.familyName, { color: theme.textPrimary }]}>משפחת {family.babyName}</Text>
+                    </View>
+                    <Text style={[styles.memberCount, { color: theme.textSecondary }]}>{getMemberCountText(members.length)}</Text>
                 </View>
                 {isAdmin && onEditFamilyName && (
                     <TouchableOpacity
                         onPress={onEditFamilyName}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        style={styles.editBtn}
+                        style={[styles.editBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6' }]}
                     >
-                        <Pencil size={14} color="#9CA3AF" />
+                        <Pencil size={14} color={theme.textSecondary} />
                     </TouchableOpacity>
                 )}
             </View>
 
-            {/* Members - Compact chips */}
+            {/* Members */}
             <View style={styles.membersSection}>
                 {members.map((member, index) => {
                     const config = ROLE_CONFIG[member.role];
                     const isMe = member.id === auth.currentUser?.uid;
                     const initial = (member.name || 'מ').charAt(0).toUpperCase();
+                    const RoleIcon = config.icon;
 
                     return (
-                        <View key={member.id || index} style={styles.memberChip}>
-                            <View style={[styles.chipAvatar, { backgroundColor: config.color + '20' }]}>
-                                <Text style={[styles.chipInitial, { color: config.color }]}>
-                                    {initial}
-                                </Text>
-                            </View>
+                        <View
+                            key={member.id || index}
+                            style={[styles.memberChip, {
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#F9FAFB',
+                                borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6',
+                            }]}
+                        >
+                            {/* Avatar */}
+                            {member.photoURL ? (
+                                <Image source={{ uri: member.photoURL }} style={styles.chipAvatarImg} />
+                            ) : (
+                                <View style={[styles.chipAvatar, { backgroundColor: isDarkMode ? config.bgDark : config.bgLight }]}>
+                                    <Text style={[styles.chipInitial, { color: config.color }]}>
+                                        {initial}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {/* Info */}
                             <View style={styles.chipInfo}>
-                                <Text style={styles.chipName} numberOfLines={1}>
+                                <Text style={[styles.chipName, { color: theme.textPrimary }]} numberOfLines={1}>
                                     {member.name || 'משתמש'}{isMe ? ' (אני)' : ''}
                                 </Text>
-                                <Text style={[styles.chipRole, { color: config.color }]}>
+                                {member.email && (
+                                    <Text style={[styles.chipEmail, { color: theme.textSecondary }]} numberOfLines={1}>
+                                        {member.email}
+                                    </Text>
+                                )}
+                            </View>
+
+                            {/* Role Badge */}
+                            <View style={[styles.roleBadge, { backgroundColor: isDarkMode ? config.bgDark : config.bgLight }]}>
+                                <Text style={[styles.roleBadgeText, { color: config.color }]}>
                                     {config.label}
                                 </Text>
                             </View>
+
+                            {/* Remove button */}
                             {isAdmin && !isMe && (
                                 <TouchableOpacity
                                     onPress={() => handleRemoveMember(member.id!, member.name)}
                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    style={styles.removeBtn}
                                 >
                                     <Trash2 size={14} color="#EF4444" />
                                 </TouchableOpacity>
@@ -164,9 +203,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
             </View>
 
             {/* Divider */}
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6' }]} />
 
-            {/* Actions Section - Separate from family display */}
+            {/* Actions Section */}
             <View style={styles.actionsSection}>
                 {isAdmin && (
                     <TouchableOpacity
@@ -174,9 +213,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         onPress={onInvitePress}
                         activeOpacity={0.7}
                     >
-                        <ChevronLeft size={16} color="#D1D5DB" />
-                        <Text style={styles.actionText}>הזמנה למשפחה</Text>
-                        <View style={[styles.actionIcon, { backgroundColor: '#EEF2FF' }]}>
+                        <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
+                        <Text style={[styles.actionText, { color: theme.textPrimary }]}>הזמנה למשפחה</Text>
+                        <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
                             <UserPlus size={14} color="#6366F1" />
                         </View>
                     </TouchableOpacity>
@@ -188,9 +227,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         onPress={onGuestInvitePress}
                         activeOpacity={0.7}
                     >
-                        <ChevronLeft size={16} color="#D1D5DB" />
-                        <Text style={styles.actionText}>הזמן אורח</Text>
-                        <View style={[styles.actionIcon, { backgroundColor: '#ECFDF5' }]}>
+                        <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
+                        <Text style={[styles.actionText, { color: theme.textPrimary }]}>הזמן אורח</Text>
+                        <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
                             <Users size={14} color="#10B981" />
                         </View>
                     </TouchableOpacity>
@@ -201,9 +240,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     onPress={onJoinPress}
                     activeOpacity={0.7}
                 >
-                    <ChevronLeft size={16} color="#D1D5DB" />
-                    <Text style={styles.actionText}>הצטרף עם קוד</Text>
-                    <View style={[styles.actionIcon, { backgroundColor: '#FFF7ED' }]}>
+                    <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
+                    <Text style={[styles.actionText, { color: theme.textPrimary }]}>הצטרף עם קוד</Text>
+                    <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FFF7ED' }]}>
                         <Link size={14} color="#F59E0B" />
                     </View>
                 </TouchableOpacity>
@@ -214,9 +253,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         onPress={handleLeaveFamily}
                         activeOpacity={0.7}
                     >
-                        <ChevronLeft size={16} color="#D1D5DB" />
+                        <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                         <Text style={[styles.actionText, { color: '#EF4444' }]}>עזוב משפחה</Text>
-                        <View style={[styles.actionIcon, { backgroundColor: '#FEE2E2' }]}>
+                        <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.15)' : '#FEE2E2' }]}>
                             <LogOut size={14} color="#EF4444" />
                         </View>
                     </TouchableOpacity>
@@ -228,7 +267,6 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 16,
     },
@@ -244,7 +282,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         fontWeight: '600',
-        color: '#111827',
         textAlign: 'right',
     },
     iconCircle: {
@@ -264,19 +301,32 @@ const styles = StyleSheet.create({
     },
     headerRight: {
         alignItems: 'flex-end',
+        flex: 1,
+    },
+    headerTitleRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+    },
+    familyIconCircle: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     familyName: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '700',
-        color: '#111827',
     },
     memberCount: {
         fontSize: 12,
-        color: '#9CA3AF',
-        marginTop: 2,
+        marginTop: 4,
+        marginRight: 36, // align with text after icon
     },
     editBtn: {
         padding: 8,
+        borderRadius: 10,
     },
 
     // Members section
@@ -287,20 +337,25 @@ const styles = StyleSheet.create({
     memberChip: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        padding: 10,
+        borderRadius: 14,
+        padding: 12,
         gap: 10,
+        borderWidth: 1,
     },
     chipAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    chipAvatarImg: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+    },
     chipInitial: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '700',
     },
     chipInfo: {
@@ -310,18 +365,27 @@ const styles = StyleSheet.create({
     chipName: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#111827',
     },
-    chipRole: {
+    chipEmail: {
         fontSize: 11,
-        fontWeight: '500',
-        marginTop: 1,
+        marginTop: 2,
+    },
+    roleBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    roleBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    removeBtn: {
+        padding: 6,
     },
 
     // Divider
     divider: {
         height: 1,
-        backgroundColor: '#F3F4F6',
         marginVertical: 12,
     },
 
@@ -346,7 +410,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         fontWeight: '500',
-        color: '#374151',
         textAlign: 'right',
     },
 });

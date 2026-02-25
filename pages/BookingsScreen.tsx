@@ -22,6 +22,7 @@ import { getParentBookings, updateBookingStatus } from '../services/babysitterSe
 import { Booking } from '../services/bookingService';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
+import { logger } from '../utils/logger';
 
 type BookingTab = 'upcoming' | 'past' | 'all';
 
@@ -42,7 +43,7 @@ const BookingsScreen = ({ navigation }: any) => {
         try {
             setLoading(true);
             const result = await getParentBookings(userId);
-            setBookings(result);
+            setBookings(result as Booking[]);
         } catch (error) {
             logger.error('Error loading bookings:', error);
         } finally {
@@ -217,8 +218,8 @@ const BookingsScreen = ({ navigation }: any) => {
                             <Calendar size={48} color={theme.textTertiary} />
                             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                                 {activeTab === 'upcoming' ? 'אין הזמנות עתידיות' :
-                                 activeTab === 'past' ? 'אין הזמנות עבר' :
-                                 'אין הזמנות'}
+                                    activeTab === 'past' ? 'אין הזמנות עבר' :
+                                        'אין הזמנות'}
                             </Text>
                             <Text style={[styles.emptySubtext, { color: theme.textTertiary }]}>
                                 ההזמנות שלך יופיעו כאן

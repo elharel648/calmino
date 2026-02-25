@@ -104,7 +104,7 @@ export const LiquidGlassModal: React.FC<LiquidGlassModalProps> = ({
             <Animated.View
                 style={[
                     styles.modalContainer,
-                    { height, transform: [{ translateY: slideAnim }] },
+                    { height: height as any, transform: [{ translateY: slideAnim }] },
                 ]}
             >
                 {/* Glow Effect */}
