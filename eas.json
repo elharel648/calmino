@@ -26,6 +26,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "zivtothani@gmail.com",
+        "ascAppId": "6756817719"
+      }
+    }
   }
 }
