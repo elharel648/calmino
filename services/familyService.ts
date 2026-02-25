@@ -3,6 +3,7 @@ import {
     getDoc,
     setDoc,
     updateDoc,
+    deleteDoc,
     collection,
     query,
     where,
@@ -10,6 +11,7 @@ import {
     deleteField,
     serverTimestamp,
     onSnapshot,
+    runTransaction,
     Unsubscribe
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
@@ -312,7 +314,7 @@ export const joinFamily = async (inviteCode: string, role: FamilyRole = 'member'
 };
 
 /**
- * Leave a family
+ * Leave a family (atomic transaction to prevent losing all admins)
  */
 export const leaveFamily = async (): Promise<boolean> => {
     const userId = getCurrentUserId();
@@ -322,27 +324,32 @@ export const leaveFamily = async (): Promise<boolean> => {
         const family = await getMyFamily();
         if (!family) return false;
 
-        // Can't leave if you're the only admin
-        const admins = Object.entries(family.members).filter(([_, m]) => m.role === 'admin');
-        if (admins.length === 1 && admins[0][0] === userId) {
-            // Transfer admin to another member or delete family
-            const otherMembers = Object.keys(family.members).filter(id => id !== userId);
-            if (otherMembers.length > 0) {
-                // Transfer admin to first other member
-                await updateDoc(doc(db, 'families', family.id), {
-                    [`members.${otherMembers[0]}.role`]: 'admin',
-                });
+        const familyRef = doc(db, 'families', family.id);
+        const userRef = doc(db, 'users', userId);
+
+        await runTransaction(db, async (transaction) => {
+            const familySnap = await transaction.get(familyRef);
+            if (!familySnap.exists()) throw new Error('Family not found');
+
+            const familyData = familySnap.data();
+            const admins = Object.entries(familyData.members).filter(
+                ([_, m]: [string, any]) => m.role === 'admin'
+            );
+
+            const familyUpdates: Record<string, any> = {
+                [`members.${userId}`]: deleteField(),
+            };
+
+            // If this user is the last admin, promote another member first
+            if (admins.length === 1 && admins[0][0] === userId) {
+                const otherMembers = Object.keys(familyData.members).filter(id => id !== userId);
+                if (otherMembers.length > 0) {
+                    familyUpdates[`members.${otherMembers[0]}.role`] = 'admin';
+                }
             }
-        }
 
-        // Remove user from family
-        await updateDoc(doc(db, 'families', family.id), {
-            [`members.${userId}`]: deleteField(),
-        });
-
-        // Remove familyId from user
-        await updateDoc(doc(db, 'users', userId), {
-            familyId: deleteField(),
+            transaction.update(familyRef, familyUpdates);
+            transaction.update(userRef, { familyId: deleteField() });
         });
 
         return true;
@@ -814,9 +821,7 @@ export const cancelGuestInvite = async (inviteCode: string): Promise<boolean> =>
             return false;
         }
 
-        // Delete the invite document (deleteDoc is already imported at top)
-        const { deleteDoc: deleteDocument } = require('firebase/firestore');
-        await deleteDocument(doc(db, 'invites', inviteCode));
+        await deleteDoc(doc(db, 'invites', inviteCode));
 
         return true;
     } catch (error) {

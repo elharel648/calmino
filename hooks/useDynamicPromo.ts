@@ -20,14 +20,18 @@ export const useDynamicPromo = (currentScreenName: string) => {
                 const config = getPromoConfig();
                 setPromoData(config);
 
+                logger.info(`[DynamicPromo] Fetched config: isActive=${config.isActive}, id=${config.id}, targetScreen=${config.targetScreen}, currentScreen=${currentScreenName}`);
+
                 // 1. Check if the promo is globally active
                 if (config.isActive !== true) {
+                    logger.info(`[DynamicPromo] Promo is not active globally.`);
                     setIsReady(true);
                     return;
                 }
 
                 // 2. Check if the current screen targets this promo
                 if (config.targetScreen !== 'All' && config.targetScreen !== currentScreenName) {
+                    logger.info(`[DynamicPromo] Target screen mismatch. Expected ${config.targetScreen}, strictly matched ${currentScreenName}`);
                     setIsReady(true);
                     return;
                 }
@@ -37,11 +41,13 @@ export const useDynamicPromo = (currentScreenName: string) => {
                 const seenPromos = seenPromosStr ? JSON.parse(seenPromosStr) : [];
 
                 if (seenPromos.includes(config.id)) {
+                    logger.info(`[DynamicPromo] Promo ${config.id} was already seen by user.`);
                     setIsReady(true);
                     return;
                 }
 
                 // All checks passed!
+                logger.info(`[DynamicPromo] All checks passed! Showing promo ${config.id}`);
                 setShowPromo(true);
             } catch (e) {
                 logger.error('Error checking dynamic promo', e);

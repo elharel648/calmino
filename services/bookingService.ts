@@ -113,16 +113,17 @@ export async function updateBookingStatus(
     bookingId: string,
     status: BookingStatus
 ): Promise<void> {
-    const updateData: any = { status };
+    // Fetch booking data FIRST — before updating — to avoid a second read
+    // and to minimize the race-condition window
+    const bookingDoc = await getDoc(doc(db, 'bookings', bookingId));
 
+    const updateData: any = { status };
     if (status === 'confirmed') {
         updateData.confirmedAt = serverTimestamp();
     }
-
     await updateDoc(doc(db, 'bookings', bookingId), updateData);
 
-    // Send push notification
-    const bookingDoc = await getDoc(doc(db, 'bookings', bookingId));
+    // Send push notification using pre-fetched data
     if (bookingDoc.exists()) {
         const booking = bookingDoc.data();
         const currentUserId = auth.currentUser?.uid;
@@ -131,6 +132,8 @@ export async function updateBookingStatus(
         const notifyUserId = currentUserId === booking.babysitterId
             ? booking.parentId
             : booking.babysitterId;
+
+        if (!notifyUserId) return;
 
         const notifyToken = await getUserPushToken(notifyUserId);
         if (notifyToken) {
@@ -142,10 +145,11 @@ export async function updateBookingStatus(
                 cancelled: '❌ ההזמנה בוטלה',
             };
 
+            const dateStr = booking.date?.toDate?.()?.toLocaleDateString('he-IL') ?? '';
             await sendPushNotification(
                 notifyToken,
                 statusMessages[status],
-                `הזמנה ב-${booking.date.toDate().toLocaleDateString('he-IL')} ב-${booking.startTime}`,
+                `הזמנה ב-${dateStr} ב-${booking.startTime}`,
                 { type: 'booking_update', bookingId }
             );
         }

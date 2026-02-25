@@ -42,10 +42,19 @@ interface LiveActivityService {
 class LiveActivityServiceClass implements LiveActivityService {
     private isSupported: boolean = false;
     private activityId: string | null = null;
+    private initPromise: Promise<void> | null = null;
 
     constructor() {
         if (Platform.OS === 'ios') {
-            this.checkSupport();
+            // Store the promise so callers can await initialization
+            this.initPromise = this.checkSupport();
+        }
+    }
+
+    /** Ensures checkSupport() has completed before checking isSupported */
+    async ensureInitialized(): Promise<void> {
+        if (this.initPromise) {
+            await this.initPromise;
         }
     }
 
@@ -62,6 +71,7 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Pumping Timer
     async startPumpingTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
         }
@@ -100,6 +110,7 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Bottle Timer
     async startBottleTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
         }
@@ -138,6 +149,7 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Sleep Timer
     async startSleepTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
         }
@@ -176,6 +188,7 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Breastfeeding Timer
     async startBreastfeedingTimer(parentName: string = 'הורה', childName: string = 'תינוק', side: 'left' | 'right' = 'left'): Promise<string> {
+        await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
         }
@@ -194,15 +207,14 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async updateBreastfeedingTimer(elapsedSeconds: number, side?: 'left' | 'right'): Promise<boolean> {
-        // For breastfeeding, we can use the same update mechanism
-        // The Swift code will handle the side display
+        await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager || !this.activityId) {
             return false;
         }
 
         try {
-            // Use updatePumpingTimer as a generic update method
-            await ActivityKitManager.updatePumpingTimer(elapsedSeconds);
+            // Use the meal update method (breastfeeding uses the same meal Live Activity)
+            await ActivityKitManager.updateMeal(elapsedSeconds);
             return true;
         } catch (error: any) {
             logger.error('Failed to update Breastfeeding Live Activity:', error);

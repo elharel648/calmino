@@ -205,11 +205,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         const timestamp = date ? Timestamp.fromDate(date) : Timestamp.now();
         const valueToSave = newVal ? { isDone: true, date: timestamp } : false;
 
+        // Optimistically update UI
         const updated = { ...vaccines, [key]: valueToSave };
         // @ts-ignore
         setVaccines(updated);
 
-        // Optimistically update UI
         try {
             await updateDoc(doc(db, 'babies', babyId), { [`vaccines.${key}`]: valueToSave });
 
@@ -237,6 +237,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             }
         } catch (error) {
             logger.log('Error updating vaccine:', error);
+            // Rollback optimistic update on failure
+            setVaccines(prev => ({ ...prev, [key]: currentStatus }));
         }
     };
 

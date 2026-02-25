@@ -899,9 +899,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                         return;
                       }
 
-                      // Generate a random nonce
-                      const rawNonce = Math.random().toString(36).substring(2, 15) +
-                        Math.random().toString(36).substring(2, 15);
+                      // Generate a cryptographically secure nonce
+                      const randomBytes = await Crypto.getRandomBytesAsync(32);
+                      const rawNonce = Array.from(randomBytes)
+                        .map(b => b.toString(16).padStart(2, '0'))
+                        .join('');
 
                       // Hash the nonce using SHA256
                       const hashedNonce = await Crypto.digestStringAsync(

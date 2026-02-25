@@ -49,6 +49,11 @@ class QuickActionsService {
             return null;
         }
 
+        if (!ActivityKitManager) {
+            logger.warn('ActivityKitManager native module not available');
+            return null;
+        }
+
         try {
             const activityId = await ActivityKitManager.startMeal(
                 babyName,

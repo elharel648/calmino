@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 export interface UndoableAction {
@@ -15,7 +15,7 @@ class UndoService {
 
     setLastAction(action: UndoableAction) {
         this.lastAction = action;
-        // Auto clear after 5 seconds
+        // Auto clear after 10 seconds
         if (this.undoTimeout) {
             clearTimeout(this.undoTimeout);
         }
@@ -36,9 +36,13 @@ class UndoService {
                 // Delete the created event
                 const eventRef = doc(db, 'events', this.lastAction.eventId);
                 await deleteDoc(eventRef);
+            } else if (this.lastAction.type === 'delete' && this.lastAction.data) {
+                // Restore the deleted event from stored data
+                await addDoc(collection(db, 'events'), this.lastAction.data);
             } else if (this.lastAction.type === 'delete') {
-                // Recreate the deleted event (would need to store full data)
-                // For now, we only support undo for create
+                // No data stored — cannot restore
+                logger.warn('Undo for delete: no event data stored, cannot restore');
+                return false;
             }
 
             this.lastAction = null;

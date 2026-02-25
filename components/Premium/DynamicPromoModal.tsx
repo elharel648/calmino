@@ -15,6 +15,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { Sparkles } from 'lucide-react-native';
 import { useDynamicPromo } from '../../hooks/useDynamicPromo';
 
 const { width } = Dimensions.get('window');
@@ -87,23 +88,23 @@ const DynamicPromoModal: React.FC<DynamicPromoModalProps> = ({ currentScreenName
                         </View>
                     </TouchableOpacity>
 
-                    {/* Image Banner (Optional) */}
-                    {promoData.imageUrl ? (
-                        <Image
-                            source={{ uri: promoData.imageUrl }}
-                            style={styles.bannerImage}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <View style={styles.imagePlaceholder}>
-                            <LinearGradient
-                                colors={['#6366F1', '#8B5CF6']}
-                                style={styles.gradientPlaceholder}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
+                    {/* Header Icon / Image */}
+                    <Animated.View entering={FadeInDown.delay(100)} style={styles.headerIconWrapper}>
+                        {promoData.imageUrl ? (
+                            <Image
+                                source={{ uri: promoData.imageUrl }}
+                                style={styles.bannerImage}
+                                resizeMode="cover"
                             />
-                        </View>
-                    )}
+                        ) : (
+                            <LinearGradient
+                                colors={['#FF6B35', '#F7931E']}
+                                style={styles.modalIconContainer}
+                            >
+                                <Sparkles size={28} color="#fff" strokeWidth={2} />
+                            </LinearGradient>
+                        )}
+                    </Animated.View>
 
                     {/* Content */}
                     <View style={styles.contentContainer}>
@@ -112,7 +113,7 @@ const DynamicPromoModal: React.FC<DynamicPromoModalProps> = ({ currentScreenName
                         </Animated.Text>
 
                         <Animated.Text entering={FadeInDown.delay(300)} style={[styles.body, { color: theme.textSecondary }]}>
-                            {promoData.body}
+                            {promoData.body.replace(/\\n/g, '\n')}
                         </Animated.Text>
 
                         {/* CTA Button */}
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         width: '100%',
-        maxWidth: 400,
+        maxWidth: 340,
         borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1,
@@ -180,33 +181,45 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    headerIconWrapper: {
+        alignItems: 'center',
+        marginTop: 32,
+    },
+    modalIconContainer: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#FF6B35',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 5,
+    },
     bannerImage: {
-        width: '100%',
-        height: 180,
-    },
-    imagePlaceholder: {
-        width: '100%',
-        height: 120,
-    },
-    gradientPlaceholder: {
-        flex: 1,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
     },
     contentContainer: {
         padding: 24,
         alignItems: 'center',
     },
     title: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: '800',
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
         letterSpacing: -0.5,
     },
     body: {
-        fontSize: 15,
+        fontSize: 16,
         textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: 24,
+        lineHeight: 24,
+        marginBottom: 28,
+        fontWeight: '400',
+        paddingHorizontal: 10,
     },
     btnContainer: {
         width: '100%',
@@ -218,7 +231,7 @@ const styles = StyleSheet.create({
     },
     ctaButton: {
         width: '100%',
-        borderRadius: 16,
+        borderRadius: 18,
         overflow: 'hidden',
     },
     ctaGradient: {
@@ -228,9 +241,9 @@ const styles = StyleSheet.create({
     },
     ctaText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '700',
-        letterSpacing: -0.2,
+        letterSpacing: -0.41,
     },
     laterBtn: {
         marginTop: 16,

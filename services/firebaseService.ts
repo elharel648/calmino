@@ -324,7 +324,7 @@ export const saveGardenReport = async (reportData: {
     await addDoc(reportsRef, {
       ...reportData,
       reportDate: Timestamp.fromDate(reportData.reportDate),
-      createdAt: new Date(),
+      createdAt: Timestamp.now(),
     });
     return true;
   } catch (e) {

@@ -106,16 +106,9 @@ class PatternAnalyzer {
     getReminderTime(avgHour: number | null): { hour: number; minute: number } | null {
         if (avgHour === null) return null;
 
-        // 30 minutes before
-        let reminderHour = avgHour;
-        let reminderMinute = 30;
-
-        if (reminderMinute < 30) {
-            reminderHour = (reminderHour - 1 + 24) % 24;
-            reminderMinute = 30;
-        } else {
-            reminderMinute = 0;
-        }
+        // 30 minutes before avgHour:00 → (avgHour-1):30
+        const reminderHour = (avgHour - 1 + 24) % 24;
+        const reminderMinute = 30;
 
         return { hour: reminderHour, minute: reminderMinute };
     }

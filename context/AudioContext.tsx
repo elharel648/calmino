@@ -46,6 +46,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
+    const isMountedRef = useRef(true);
 
     // Setup audio mode for background playback
     useEffect(() => {
@@ -66,6 +67,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Cleanup on unmount
         return () => {
+            isMountedRef.current = false;
             if (soundRef.current) {
                 soundRef.current.unloadAsync();
             }
@@ -113,7 +115,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 soundRef.current = null;
             }
 
-            const { sound } = activeSound === id && soundRef.current ? { sound: soundRef.current } : await Audio.Sound.createAsync(
+            const { sound } = await Audio.Sound.createAsync(
                 soundFiles[id],
                 {
                     isLooping: true,
@@ -122,6 +124,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
             );
 
+            // Guard against unmount during async load
+            if (!isMountedRef.current) {
+                sound.unloadAsync().catch(() => {});
+                return;
+            }
 
             soundRef.current = sound;
             setActiveSound(id);

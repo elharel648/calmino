@@ -40,7 +40,8 @@ export async function exportTimelineToPDF(options: ExportOptions): Promise<boole
         let growthData: any[] = [];
         if (includeGrowth) {
             const growthQuery = query(
-                collection(db, 'children', childId, 'growth'),
+                collection(db, 'growthMeasurements'),
+                where('babyId', '==', childId),
                 orderBy('date', 'desc')
             );
             const growthSnapshot = await getDocs(growthQuery);

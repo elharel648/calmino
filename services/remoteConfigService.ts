@@ -90,10 +90,14 @@ export const initRemoteConfig = async (): Promise<void> => {
     if (configSnap.exists()) {
       const data = configSnap.data();
 
-      // Parse the new config
+      // Parse the new config — only accept scalar values (string, number, boolean)
+      // Reject objects/arrays to prevent "[object Object]" strings breaking the UI
       const newConfig: Record<string, string> = {};
       Object.keys(data).forEach(key => {
-        newConfig[key] = String(data[key]); // ALWAYS take what's in Firestore
+        const val = data[key];
+        if (val !== null && val !== undefined && typeof val !== 'object') {
+          newConfig[key] = String(val);
+        }
       });
 
       // Merge with existing defaults (Firestore takes precedence)

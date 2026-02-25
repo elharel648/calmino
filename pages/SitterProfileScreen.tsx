@@ -89,8 +89,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
         const cleanPhone = sitterData.phone!.replace(/\D/g, '');
         const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
         const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים :)`;
-        const url = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
-        Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'ואצאפ לא מותקן'));
+        const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
     };
 
     const handleChat = () => {
@@ -240,7 +240,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: 134 + 80 }]}>
                 {/* Hero Section - Static image or video */}
                 <View style={styles.heroContainer}>
                     {hasVideo && sitterVideoUri ? (
@@ -739,7 +739,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
             {/* Sticky Footer */}
             <View style={[styles.stickyFooter, {
-                paddingBottom: insets.bottom + 8,
+                bottom: 134,
+                paddingBottom: 8,
                 backgroundColor: isDarkMode ? theme.background : '#fff',
                 borderTopColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
             }]}>
@@ -1315,7 +1316,6 @@ const styles = StyleSheet.create({
     // Footer - True Sticky (Fixed at bottom during scroll)
     stickyFooter: {
         position: 'absolute',
-        bottom: 0,
         left: 0,
         right: 0,
         paddingHorizontal: 16,

@@ -54,6 +54,12 @@
               "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
               "calmparentapp"
             ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
+              "calmparentapp"
+            ]
           }
         ]
       }
@@ -71,6 +77,12 @@
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -81,6 +93,10 @@
       "eas": {
         "projectId": "0af00389-5a5c-48ad-aa91-1b083f8e494e"
       }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/0af00389-5a5c-48ad-aa91-1b083f8e494e"
     }
   }
 }
