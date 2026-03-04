@@ -9,23 +9,7 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Attributes
 
-@available(iOS 16.2, *)
-struct BabysitterShiftAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var startTime: Date
-        var isPaused: Bool
-        var totalPausedSeconds: TimeInterval
-        var hourlyRate: Double
-    }
-    
-    // Static attributes
-    var babysitterName: String
-    var babysitterPhoto: String? // URL or emoji
-}
-
-// MARK: - Widget
 
 @available(iOS 16.2, *)
 struct BabysitterShiftLiveActivity: Widget {

@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { logger } from '../../utils/logger';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { Sparkles } from 'lucide-react-native';
 import { useDynamicPromo } from '../../hooks/useDynamicPromo';
@@ -52,10 +53,10 @@ const DynamicPromoModal: React.FC<DynamicPromoModalProps> = ({ currentScreenName
                 if (supported) {
                     await Linking.openURL(promoData.linkUrl);
                 } else {
-                    console.log("Don't know how to open this URL:", promoData.linkUrl);
+                    logger.log("Don't know how to open this URL:", promoData.linkUrl);
                 }
             } catch (e) {
-                console.error("Failed to open URL:", e);
+                logger.error("Failed to open URL:", e);
             }
         }
     };

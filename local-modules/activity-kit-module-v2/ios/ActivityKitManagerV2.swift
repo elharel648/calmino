@@ -9,11 +9,13 @@ import ExpoModulesCore
 import ActivityKit
 import Foundation
 import SharedAttributes
+import WidgetKit
 
 public class ActivityKitManager: Module {
     private var babysitterActivity: Any?
     private var mealActivity: Any?
     private var sleepActivity: Any?
+    private var breastfeedingActivity: Any?
     
     public func definition() -> ModuleDefinition {
         Name("ActivityKitManager")
@@ -166,6 +168,8 @@ public class ActivityKitManager: Module {
                     babyName: babyName,
                     sleepType: sleepType,
                     isAwake: isAwake,
+                    isPaused: false,
+                    activeSeconds: 0,
                     quality: nil
                 )
                 do {
@@ -182,28 +186,134 @@ public class ActivityKitManager: Module {
             }
             return ""
         }
-        
-        AsyncFunction("wakeUp") { () -> Bool in
+
+        AsyncFunction("pauseSleep") { () -> Bool in
             if #available(iOS 16.2, *) {
                 guard let activity = self.sleepActivity as? Activity<SleepActivityAttributes> else { return false }
-                let updatedState = SleepActivityAttributes.ContentState(
-                    startTime: activity.content.state.startTime,
-                    babyName: activity.content.state.babyName,
-                    sleepType: activity.content.state.sleepType,
-                    isAwake: true,
-                    quality: activity.content.state.quality
-                )
-                Task { await activity.update(.init(state: updatedState, staleDate: nil)) }
+                var state = activity.content.state
+                let elapsed = Int(Date().timeIntervalSince(state.startTime))
+                state.activeSeconds = elapsed
+                state.isPaused = true
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
                 return true
             }
             return false
         }
-        
+
+        AsyncFunction("resumeSleep") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.sleepActivity as? Activity<SleepActivityAttributes> else { return false }
+                var state = activity.content.state
+                state.startTime = Date().addingTimeInterval(-TimeInterval(state.activeSeconds))
+                state.isPaused = false
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                return true
+            }
+            return false
+        }
+
+        AsyncFunction("wakeUp") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.sleepActivity as? Activity<SleepActivityAttributes> else { return false }
+                var state = activity.content.state
+                state.isAwake = true
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                return true
+            }
+            return false
+        }
+
         AsyncFunction("stopSleep") { () -> Bool in
             if #available(iOS 16.2, *) {
                 guard let activity = self.sleepActivity as? Activity<SleepActivityAttributes> else { return false }
                 Task { await activity.end(dismissalPolicy: .immediate) }
                 self.sleepActivity = nil
+                return true
+            }
+            return false
+        }
+
+        // MARK: - Breastfeeding Methods
+
+        AsyncFunction("startBreastfeeding") { (babyName: String, side: String) -> String in
+            if #available(iOS 16.2, *) {
+                let attributes = BreastfeedingActivityAttributes(babyName: babyName)
+                let initialState = BreastfeedingActivityAttributes.ContentState(
+                    leftSideSeconds: 0,
+                    rightSideSeconds: 0,
+                    activeSide: side,
+                    sideStartTime: Date(),
+                    isPaused: false
+                )
+                do {
+                    let activity = try Activity<BreastfeedingActivityAttributes>.request(
+                        attributes: attributes,
+                        content: .init(state: initialState, staleDate: nil),
+                        pushType: nil
+                    )
+                    self.breastfeedingActivity = activity
+                    return activity.id
+                } catch {
+                    throw Exception(name: "ACTIVITY_ERROR", description: error.localizedDescription)
+                }
+            }
+            return ""
+        }
+
+        AsyncFunction("pauseBreastfeeding") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.breastfeedingActivity as? Activity<BreastfeedingActivityAttributes> else { return false }
+                var state = activity.content.state
+                let now = Date()
+                if let sideStart = state.sideStartTime, let side = state.activeSide {
+                    let elapsed = Int(now.timeIntervalSince(sideStart))
+                    if side == "left" { state.leftSideSeconds += elapsed }
+                    else { state.rightSideSeconds += elapsed }
+                }
+                state.isPaused = true
+                state.sideStartTime = nil
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                return true
+            }
+            return false
+        }
+
+        AsyncFunction("resumeBreastfeeding") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.breastfeedingActivity as? Activity<BreastfeedingActivityAttributes> else { return false }
+                var state = activity.content.state
+                state.isPaused = false
+                state.sideStartTime = Date()
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                return true
+            }
+            return false
+        }
+
+        AsyncFunction("switchBreastSide") { (newSide: String) -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.breastfeedingActivity as? Activity<BreastfeedingActivityAttributes> else { return false }
+                var state = activity.content.state
+                let now = Date()
+                if let sideStart = state.sideStartTime, let side = state.activeSide {
+                    let elapsed = Int(now.timeIntervalSince(sideStart))
+                    if side == "left" { state.leftSideSeconds += elapsed }
+                    else { state.rightSideSeconds += elapsed }
+                }
+                state.activeSide = newSide
+                state.sideStartTime = now
+                state.isPaused = false
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                return true
+            }
+            return false
+        }
+
+        AsyncFunction("stopBreastfeeding") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.breastfeedingActivity as? Activity<BreastfeedingActivityAttributes> else { return false }
+                Task { await activity.end(dismissalPolicy: .immediate) }
+                self.breastfeedingActivity = nil
                 return true
             }
             return false
@@ -214,6 +324,22 @@ public class ActivityKitManager: Module {
                 return ActivityAuthorizationInfo().areActivitiesEnabled
             }
             return false
+        }
+
+        // MARK: - Widget Data
+
+        AsyncFunction("updateWidgetData") { (babyName: String, lastFeedTime: String, lastFeedAgo: String, lastSleepTime: String, lastSleepAgo: String, babyStatus: String) -> Bool in
+            let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
+            defaults?.set(babyName, forKey: "widget_babyName")
+            defaults?.set(lastFeedTime, forKey: "widget_lastFeedTime")
+            defaults?.set(lastFeedAgo, forKey: "widget_lastFeedAgo")
+            defaults?.set(lastSleepTime, forKey: "widget_lastSleepTime")
+            defaults?.set(lastSleepAgo, forKey: "widget_lastSleepAgo")
+            defaults?.set(babyStatus, forKey: "widget_babyStatus")
+            if #available(iOS 14.0, *) {
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+            return true
         }
     }
 }

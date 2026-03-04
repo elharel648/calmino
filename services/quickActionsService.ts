@@ -15,6 +15,7 @@ if (Platform.OS === 'ios') {
 class QuickActionsService {
     private mealActivityId: string | null = null;
     private sleepActivityId: string | null = null;
+    private breastfeedingActivityId: string | null = null;
 
     // ===========================
     // Meal Methods
@@ -170,6 +171,36 @@ class QuickActionsService {
     }
 
     /**
+     * Pause the sleep Live Activity
+     */
+    async pauseSleep(): Promise<boolean> {
+        if (!this.sleepActivityId) return false;
+        try {
+            await ActivityKitManager.pauseSleep();
+            logger.info('😴 Sleep Live Activity paused');
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to pause Sleep:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Resume the sleep Live Activity
+     */
+    async resumeSleep(): Promise<boolean> {
+        if (!this.sleepActivityId) return false;
+        try {
+            await ActivityKitManager.resumeSleep();
+            logger.info('😴 Sleep Live Activity resumed');
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to resume Sleep:', error);
+            return false;
+        }
+    }
+
+    /**
      * Stop the sleep Live Activity
      */
     async stopSleep(): Promise<boolean> {
@@ -187,6 +218,76 @@ class QuickActionsService {
             logger.error('Failed to stop Sleep:', error);
             return false;
         }
+    }
+
+    // ===========================
+    // Breastfeeding Methods
+    // ===========================
+
+    async startBreastfeeding(babyName: string, side: 'left' | 'right' = 'left'): Promise<string | null> {
+        if (Platform.OS !== 'ios') return null;
+        try {
+            const activityId = await ActivityKitManager.startBreastfeeding(babyName, side);
+            this.breastfeedingActivityId = activityId;
+            logger.info('🤱 Breastfeeding Live Activity started:', activityId, side);
+            return activityId;
+        } catch (error: any) {
+            logger.error('Failed to start Breastfeeding Live Activity:', error);
+            return null;
+        }
+    }
+
+    async pauseBreastfeeding(): Promise<boolean> {
+        if (!this.breastfeedingActivityId) return false;
+        try {
+            await ActivityKitManager.pauseBreastfeeding();
+            logger.info('🤱 Breastfeeding paused');
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to pause Breastfeeding:', error);
+            return false;
+        }
+    }
+
+    async resumeBreastfeeding(): Promise<boolean> {
+        if (!this.breastfeedingActivityId) return false;
+        try {
+            await ActivityKitManager.resumeBreastfeeding();
+            logger.info('🤱 Breastfeeding resumed');
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to resume Breastfeeding:', error);
+            return false;
+        }
+    }
+
+    async switchBreastSide(newSide: 'left' | 'right'): Promise<boolean> {
+        if (!this.breastfeedingActivityId) return false;
+        try {
+            await ActivityKitManager.switchBreastSide(newSide);
+            logger.info('🤱 Switched breast side to:', newSide);
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to switch breast side:', error);
+            return false;
+        }
+    }
+
+    async stopBreastfeeding(): Promise<boolean> {
+        if (!this.breastfeedingActivityId) return false;
+        try {
+            await ActivityKitManager.stopBreastfeeding();
+            this.breastfeedingActivityId = null;
+            logger.info('🤱 Breastfeeding Live Activity stopped');
+            return true;
+        } catch (error: any) {
+            logger.error('Failed to stop Breastfeeding:', error);
+            return false;
+        }
+    }
+
+    isBreastfeedingActive(): boolean {
+        return this.breastfeedingActivityId !== null;
     }
 
     // ===========================

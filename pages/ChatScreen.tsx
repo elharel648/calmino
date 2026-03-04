@@ -22,6 +22,7 @@ import { getDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
 import { getOrCreateChat, sendMessage, markMessagesAsRead } from '../services/chatService';
 import { useMessages } from '../hooks/useMessages';
+import { useGlobalPresence } from '../hooks/useGlobalPresence';
 import { useTheme } from '../context/ThemeContext';
 import { logger } from '../utils/logger';
 
@@ -34,6 +35,9 @@ type RootStackParamList = {
         sitterId?: string;
         // Option 2: Pass chatId directly (from notification)
         chatId?: string;
+    };
+    SitterProfile: {
+        sitterId: string;
     };
 };
 
@@ -71,6 +75,27 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     const sitterName = chatData?.sitterName || paramSitterName || 'בייביסיטר';
     const sitterImage = chatData?.sitterImage || paramSitterImage || '';
     const sitterId = chatData?.sitterId || paramSitterId || '';
+
+    // Real-time presence
+    const { isOnline, lastActive } = useGlobalPresence(sitterId);
+
+    // Format last seen time
+    const formatLastSeen = () => {
+        if (!lastActive) return 'לא נראה/תה לאחרונה';
+
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+
+        const timeStr = lastActive.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+        if (diffDays === 0 && now.getDate() === lastActive.getDate()) {
+            return `התחבר/ה לאחרונה: היום ב-${timeStr}`;
+        } else if (diffDays === 1 || (diffDays === 0 && now.getDate() !== lastActive.getDate())) {
+            return `התחבר/ה לאחרונה: אתמול ב-${timeStr}`;
+        } else {
+            return `התחבר/ה לאחרונה: ${lastActive.toLocaleDateString('he-IL')} ב-${timeStr}`;
+        }
+    };
 
     // Fetch chat data when chatId is provided (from notification)
     useEffect(() => {
@@ -230,27 +255,40 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     const [imageError, setImageError] = useState(false);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
             <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, paddingTop: insets.top + 8 }]}>
-                {!imageError && sitterImage ? (
-                    <Image
-                        source={{ uri: sitterImage }}
-                        style={styles.avatar}
-                        onError={() => setImageError(true)}
-                    />
-                ) : (
-                    <View style={[styles.avatar, { backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' }]}>
-                        <Ionicons name="person" size={20} color={theme.textSecondary} />
+                <TouchableOpacity
+                    style={styles.headerProfileContent}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                        if (sitterId) {
+                            // If we came from SitterProfile it's fine to push again or replace, but navigate handles routing.
+                            navigation.navigate('SitterProfile', { sitterId });
+                        }
+                    }}
+                >
+                    {!imageError && sitterImage ? (
+                        <Image
+                            source={{ uri: sitterImage }}
+                            style={styles.avatar}
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <View style={[styles.avatar, { backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' }]}>
+                            <Ionicons name="person" size={20} color={theme.textSecondary} />
+                        </View>
+                    )}
+                    <View style={styles.headerInfo}>
+                        <Text style={[styles.headerName, { color: theme.textPrimary }]}>{sitterName}</Text>
+                        <View style={styles.statusContainer}>
+                            <View style={[styles.statusDot, { backgroundColor: isOnline ? theme.success : theme.textTertiary, opacity: isOnline ? 1 : 0.5 }]} />
+                            <Text style={[styles.statusText, { color: isOnline ? theme.success : theme.textSecondary }]}>
+                                {isOnline ? 'מחובר/ת' : formatLastSeen()}
+                            </Text>
+                        </View>
                     </View>
-                )}
-                <View style={styles.headerInfo}>
-                    <Text style={[styles.headerName, { color: theme.textPrimary }]}>{sitterName}</Text>
-                    <View style={styles.statusContainer}>
-                        <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
-                        <Text style={[styles.statusText, { color: theme.textSecondary }]}>מחובר/ת</Text>
-                    </View>
-                </View>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
@@ -364,22 +402,30 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     header: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: 1,
     },
+    headerProfileContent: {
+        flex: 1,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 12,
+    },
     backButton: {
         padding: 8,
     },
     headerInfo: {
-        alignItems: 'center',
+        alignItems: 'flex-end',
+        flex: 1,
     },
     headerName: {
         fontSize: 17,
         fontWeight: '600',
+        textAlign: 'right',
     },
     statusContainer: {
         flexDirection: 'row-reverse',

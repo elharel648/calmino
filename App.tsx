@@ -56,6 +56,7 @@ import { registerForPushNotifications } from './services/pushNotificationService
 import * as Notifications from 'expo-notifications';
 import { notificationStorageService } from './services/notificationStorageService';
 import { notificationService } from './services/notificationService';
+import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
 
 
@@ -113,10 +114,10 @@ const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
 };
 
 // --- Main App Navigator (uses theme and role-based permissions) ---
-function MainAppNavigator() {
+function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
-  const { canAccessProfile, canAccessReports, canAccessBabysitter } = useActiveChild();
+  const { canAccessProfile, canAccessReports, canAccessBabysitter, allChildren } = useActiveChild();
 
   const homeTabName = t('navigation.home');
   const accountTabName = t('navigation.account');
@@ -126,7 +127,7 @@ function MainAppNavigator() {
   return (
     <Tab.Navigator
       id="MainTabs"
-      initialRouteName={homeTabName}
+      initialRouteName={isAppSitter ? babysitterTabName : homeTabName}
       tabBar={(props) => <LiquidGlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -142,7 +143,7 @@ function MainAppNavigator() {
 
 
 
-      {/* Reports - only for parents */}
+      {/* Reports - only for users with children */}
       {
         canAccessReports && (
           <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
@@ -151,16 +152,16 @@ function MainAppNavigator() {
         )
       }
 
-      {/* Babysitter - only for parents */}
+      {/* Babysitter - for parents AND sitters */}
       {
-        canAccessBabysitter && (
+        (canAccessBabysitter || isAppSitter) && (
           <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
             tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label={t('navigation.babysitter')} />
           }} />
         )
       }
 
-      {/* Home - always visible */}
+      {/* Home - always visible for everyone (parents, sitters crossing over, etc.) */}
       <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
         tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={Home} label={t('navigation.home')} />
       }} />
@@ -258,21 +259,29 @@ function LiveActivityURLHandler() {
 
         if (path === 'pause-timer' || url.href.includes('pause-timer')) {
           // Pause timer based on current activity
-          if (foodTimer.pumpingIsRunning && !foodTimer.pumpingIsPaused) {
-            await foodTimer.pausePumping();
-          } else if (foodTimer.breastIsRunning && !foodTimer.breastIsPaused) {
-            await foodTimer.pauseBreast();
-          } else if (sleepTimer.isRunning && !sleepTimer.isPaused) {
-            await sleepTimer.pause();
+          try {
+            if (foodTimer.pumpingIsRunning && !foodTimer.pumpingIsPaused) {
+              await foodTimer.pausePumping();
+            } else if (foodTimer.breastIsRunning && !foodTimer.breastIsPaused) {
+              await foodTimer.pauseBreast();
+            } else if (sleepTimer.isRunning && !sleepTimer.isPaused) {
+              await sleepTimer.pause();
+            }
+          } catch (error) {
+            logger.error('Error pausing timer from Live Activity:', error);
           }
         } else if (path === 'resume-timer' || url.href.includes('resume-timer')) {
           // Resume timer
-          if (foodTimer.pumpingIsRunning && foodTimer.pumpingIsPaused) {
-            await foodTimer.resumePumping();
-          } else if (foodTimer.breastIsRunning && foodTimer.breastIsPaused) {
-            await foodTimer.resumeBreast();
-          } else if (sleepTimer.isRunning && sleepTimer.isPaused) {
-            await sleepTimer.resume();
+          try {
+            if (foodTimer.pumpingIsRunning && foodTimer.pumpingIsPaused) {
+              await foodTimer.resumePumping();
+            } else if (foodTimer.breastIsRunning && foodTimer.breastIsPaused) {
+              await foodTimer.resumeBreast();
+            } else if (sleepTimer.isRunning && sleepTimer.isPaused) {
+              await sleepTimer.resume();
+            }
+          } catch (error) {
+            logger.error('Error resuming timer from Live Activity:', error);
           }
         } else if (path === 'save-timer' || url.href.includes('save-timer')) {
           // Save timer data
@@ -281,7 +290,10 @@ function LiveActivityURLHandler() {
           const childName = url.searchParams.get('childName') || '';
           const side = url.searchParams.get('side') || '';
 
-          if (!auth.currentUser || !activeChild?.childId) return;
+          if (!auth.currentUser || !activeChild?.childId) {
+            logger.warn('⚠️ Cannot save timer: no user or active child');
+            return;
+          }
 
           try {
             const mins = Math.floor(elapsedSeconds / 60);
@@ -309,17 +321,47 @@ function LiveActivityURLHandler() {
 
             // Stop Live Activity
             if (Platform.OS === 'ios') {
-              const { liveActivityService } = await import('./services/liveActivityService');
-              if (type.includes('הנקה') || type.includes('breast')) {
-                await liveActivityService.stopBreastfeedingTimer();
-              } else if (type.includes('שאיבה') || type.includes('pump')) {
-                await liveActivityService.stopPumpingTimer();
-              } else if (type.includes('שינה') || type.includes('sleep')) {
-                await liveActivityService.stopSleepTimer();
+              try {
+                const { liveActivityService } = await import('./services/liveActivityService');
+                if (type.includes('הנקה') || type.includes('breast')) {
+                  await liveActivityService.stopBreastfeedingTimer();
+                } else if (type.includes('שאיבה') || type.includes('pump')) {
+                  await liveActivityService.stopPumpingTimer();
+                } else if (type.includes('שינה') || type.includes('sleep')) {
+                  await liveActivityService.stopSleepTimer();
+                }
+              } catch (laError) {
+                logger.error('Error stopping Live Activity:', laError);
               }
             }
           } catch (error) {
             logger.error('Error saving timer from Live Activity:', error);
+          }
+        } else if (path === 'pause-breastfeeding' || url.href.includes('pause-breastfeeding')) {
+          try {
+            if (foodTimer.breastIsRunning && !foodTimer.breastIsPaused) {
+              await foodTimer.pauseBreast();
+            }
+          } catch (error) {
+            logger.error('Error pausing breastfeeding from Live Activity:', error);
+          }
+        } else if (path === 'resume-breastfeeding' || url.href.includes('resume-breastfeeding')) {
+          try {
+            if (foodTimer.breastIsRunning && foodTimer.breastIsPaused) {
+              await foodTimer.resumeBreast();
+            }
+          } catch (error) {
+            logger.error('Error resuming breastfeeding from Live Activity:', error);
+          }
+        } else if (path === 'switch-side' || url.href.includes('switch-side')) {
+          try {
+            const newSide = url.searchParams.get('side') as 'left' | 'right';
+            if (newSide && foodTimer.breastIsRunning) {
+              // Start the new side (this handles switching internally)
+              foodTimer.startBreast(newSide);
+            }
+          } catch (error) {
+            logger.error('Error switching breastfeeding side from Live Activity:', error);
           }
         }
       } catch (error) {
@@ -347,6 +389,7 @@ function LiveActivityURLHandler() {
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [hasBabyProfile, setHasBabyProfile] = useState<boolean | null>(null);
+  const [isAppSitter, setIsAppSitter] = useState<boolean>(false);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
@@ -408,20 +451,96 @@ export default function App() {
       },
     });
 
-    // Handle notification taps (when user taps on notification)
+    // Handle notification taps (when user taps on notification from background/closed)
     // This listener is set here in App.tsx to ensure it works globally
     const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const type = (response.notification.request.content.data as any)?.type as string;
       const data = response.notification.request.content.data;
 
+      // Save to Firebase so it appears in NotificationsScreen (covers background/closed case)
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+          'feeding_reminder': 'feed',
+          'sleep_reminder': 'sleep',
+          'supplement_reminder': 'medication',
+          'vaccine_reminder': 'medication',
+          'daily_summary': 'reminder',
+          'custom_reminder': 'reminder',
+          'booking_new': 'reminder',
+          'booking_update': 'reminder',
+          'booking_cancelled': 'reminder',
+          'chat_message': 'reminder',
+        };
+        notificationStorageService.saveNotification({
+          userId,
+          type: typeMap[type] || 'reminder',
+          title: response.notification.request.content.title || 'התראה',
+          message: response.notification.request.content.body || '',
+          timestamp: new Date(),
+          isRead: false,
+          isUrgent: type === 'vaccine_reminder' || type === 'booking_new',
+        }).catch(() => { });
+      }
+
       // Navigate based on notification type
       if (type) {
-        // Small delay to ensure navigation is ready
+        // Delay to ensure navigation container is mounted after cold start
         setTimeout(() => {
           navigateFromNotification(type, data);
-        }, 100);
+        }, 500);
       }
     });
+
+    // Sync missed background notifications on app resume
+    // When notifications arrive while app is in background, the foreground handler
+    // doesn't fire. This catches them by reading the OS notification tray.
+    const syncBackgroundNotifications = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        if (presented.length === 0) return;
+
+        const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+          'feeding_reminder': 'feed',
+          'sleep_reminder': 'sleep',
+          'supplement_reminder': 'medication',
+          'vaccine_reminder': 'medication',
+          'daily_summary': 'reminder',
+          'custom_reminder': 'reminder',
+          'booking_new': 'reminder',
+          'booking_update': 'reminder',
+          'booking_cancelled': 'reminder',
+          'chat_message': 'reminder',
+        };
+
+        for (const notification of presented) {
+          const content = notification.request.content;
+          const notificationData = content.data as any;
+          const notificationType = notificationData?.type || 'reminder';
+
+          // Save each missed notification (duplicate check in service prevents re-saves)
+          await notificationStorageService.saveNotification({
+            userId,
+            type: typeMap[notificationType] || 'reminder',
+            title: content.title || 'התראה',
+            message: content.body || '',
+            timestamp: notification.date ? new Date(notification.date * 1000) : new Date(),
+            isRead: false,
+            isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
+          });
+        }
+
+        logger.log(`🔔 Synced ${presented.length} background notification(s)`);
+      } catch (error) {
+        logger.log('Failed to sync background notifications:', error);
+      }
+    };
+
+    // Run sync immediately and also on app returning from background
+    syncBackgroundNotifications();
 
     return () => {
       responseSubscription.remove();
@@ -454,7 +573,12 @@ export default function App() {
         }
       }
 
-      if (currentUser && currentUser.emailVerified) {
+      // OAuth providers (Apple, Google) verify identity at provider level
+      // Only require emailVerified for email/password accounts
+      const isOAuthUser = currentUser.providerData.some(
+        p => p.providerId === 'apple.com' || p.providerId === 'google.com'
+      );
+      if (currentUser && (currentUser.emailVerified || isOAuthUser)) {
         setUser(currentUser);
         await checkBiometricSettingsAndProfile(currentUser.uid);
 
@@ -474,6 +598,7 @@ export default function App() {
           logger.log('Notification init:', err);
         });
       } else {
+        setChildrenReady(false);
         setUser(null);
         setHasBabyProfile(false);
         setIsLocked(false);
@@ -483,14 +608,30 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // Set up global presence tracking when user is logged in
+  useEffect(() => {
+    if (user && user.emailVerified) {
+      const cleanupPresence = setupGlobalPresenceListener();
+      return () => {
+        cleanupPresence();
+      };
+    }
+  }, [user]);
+
   const checkBiometricSettingsAndProfile = async (uid: string) => {
     try {
       const userRef = doc(db, 'users', uid);
       const userSnap = await getDoc(userRef);
 
       let needsUnlock = false;
+      let sitterFlag = false;
+
       if (userSnap.exists()) {
-        const settings = userSnap.data().settings;
+        const data = userSnap.data();
+        sitterFlag = data.isSitter === true;
+        setIsAppSitter(sitterFlag);
+
+        const settings = data.settings;
         if (settings && settings.biometricsEnabled) {
           needsUnlock = true;
           setIsLocked(true);
@@ -549,10 +690,12 @@ export default function App() {
         <LanguageProvider>
           <ThemeProvider>
             <SafeAreaProvider>
-              <LoginScreen onLoginSuccess={() => {
-                // Trigger auth state check - onAuthStateChanged will handle the rest
-                setIsAppLoading(true);
-              }} />
+              <ToastProvider>
+                <LoginScreen onLoginSuccess={() => {
+                  // Trigger auth state check - onAuthStateChanged will handle the rest
+                  setIsAppLoading(true);
+                }} />
+              </ToastProvider>
             </SafeAreaProvider>
           </ThemeProvider>
         </LanguageProvider>
@@ -565,9 +708,8 @@ export default function App() {
     return null; // Keep splash visible
   }
 
-
-
-  if (user && hasBabyProfile === false) {
+  // Only force BabyProfileScreen for parents (non-sitters)
+  if (user && hasBabyProfile === false && !isAppSitter) {
     return (
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <LanguageProvider>
@@ -639,7 +781,7 @@ export default function App() {
                                   },
                                 }}
                               >
-                                <MainAppNavigator />
+                                <MainAppNavigator isAppSitter={isAppSitter} />
                               </NavigationContainer>
                             </SafeAreaProvider>
                           </PremiumProvider>

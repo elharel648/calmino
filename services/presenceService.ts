@@ -137,9 +137,66 @@ export const setupPresenceListener = (familyId: string): (() => void) => {
     };
 };
 
+// --- Global User Presence (For Chat/Sitters outside of families) ---
+export const setGlobalUserOnline = async (): Promise<void> => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            isOnline: true,
+            lastActive: serverTimestamp(),
+        });
+    } catch (e) {
+        logger.error('setGlobalUserOnline error:', e);
+    }
+};
+
+export const setGlobalUserOffline = async (): Promise<void> => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            isOnline: false,
+            lastActive: serverTimestamp(),
+        });
+    } catch (e) {
+        logger.error('setGlobalUserOffline error:', e);
+    }
+};
+
+export const setupGlobalPresenceListener = (): (() => void) => {
+    // Set online immediately
+    setGlobalUserOnline();
+
+    // Listen to app state changes
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+        if (nextAppState === 'active') {
+            setGlobalUserOnline();
+        } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+            setGlobalUserOffline();
+        }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Return cleanup function
+    return () => {
+        subscription.remove();
+        setGlobalUserOffline();
+    };
+};
+
 export default {
     setUserOnline,
     setUserOffline,
     subscribeToFamilyPresence,
     setupPresenceListener,
+    setGlobalUserOnline,
+    setGlobalUserOffline,
+    setupGlobalPresenceListener,
 };
+

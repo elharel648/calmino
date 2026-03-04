@@ -142,8 +142,11 @@ const QuickActions = memo<QuickActionsProps>(({
         }
     }, [sleepIsRunning, sleepTimer, sleepElapsed, onSleepPress, onSleepTimerStop]);
 
-    const takenCount = (meds?.vitaminD ? 1 : 0) + (meds?.iron ? 1 : 0);
-    const allTaken = takenCount === 2;
+    const customTakenCount = Object.values(meds?.custom || {}).filter(Boolean).length;
+    const customTotalCount = Object.keys(meds?.custom || {}).length;
+    const takenCount = (meds?.vitaminD ? 1 : 0) + (meds?.iron ? 1 : 0) + customTakenCount;
+    const totalSupplements = 2 + customTotalCount;
+    const allTaken = takenCount === totalSupplements;
 
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -158,7 +161,7 @@ const QuickActions = memo<QuickActionsProps>(({
         food: { onPress: handleFoodPress, isActive: foodIsRunning, activeTime: foodIsRunning ? foodFormatTime(foodElapsed) : undefined, lastTime: !foodIsRunning ? lastFeedTime : undefined },
         sleep: { onPress: handleSleepPress, isActive: sleepIsRunning, activeTime: sleepIsRunning ? sleepFormatTime(sleepElapsed) : undefined, lastTime: !sleepIsRunning ? lastSleepTime : undefined },
         diaper: { onPress: onDiaperPress },
-        supplements: { onPress: onSupplementsPress, badge: `${takenCount}/2` },
+        supplements: { onPress: onSupplementsPress, badge: `${takenCount}/${totalSupplements}` },
         whiteNoise: { onPress: onWhiteNoisePress },
         sos: { onPress: onSOSPress },
         health: { onPress: onHealthPress || (() => { }) },
@@ -169,7 +172,7 @@ const QuickActions = memo<QuickActionsProps>(({
         nightLight: { onPress: onNightLightPress || (() => { }) },
         custom: { onPress: onCustomPress || (() => { }) },
         quickReminder: { onPress: onQuickReminderPress || (() => { }) },
-    }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount]);
+    }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount, totalSupplements]);
 
     const visibleActions = useMemo(() =>
         actionOrder.filter(key => !hiddenActions.includes(key)),

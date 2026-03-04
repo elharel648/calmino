@@ -59,10 +59,9 @@ service cloud.firestore {
     // FAMILIES COLLECTION
     // ===================
     match /families/{familyId} {
-      // Read: any authenticated user (needed to query by inviteCode for joining)
-      // Note: Ideal would be to restrict this, but it breaks the 'join by code' flow unless we have a separate public lookup.
-      // Keeping open for READ but strict for WRITE is a common pattern for invite systems.
-      allow read: if isAuthenticated();
+      // Read: members only. Joining is handled by the joinFamilyByCode Cloud Function
+      // (admin SDK — bypasses these rules), so we can safely lock down client reads.
+      allow read: if isAuthenticated() && resource.data.members[request.auth.uid] != null;
       
       // Create: any authenticated
       allow create: if isAuthenticated();
@@ -136,14 +135,16 @@ service cloud.firestore {
     // INVITES COLLECTION
     // ===================
     match /invites/{inviteCode} {
-      allow read: if isAuthenticated();
+      // Read: only the creator (to display/share their own invite).
+      // Joining by code is handled server-side via the joinFamilyByCode Cloud Function.
+      allow read: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
       allow create: if isAuthenticated();
       // Allow creator to update, OR allow anyone to mark as used (system action)
       allow update: if isAuthenticated() && (
         resource.data.createdBy == request.auth.uid ||
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedBy', 'usedAt'])
       );
-      allow delete: if false;
+      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
     }
 
     // ===================
@@ -192,13 +193,10 @@ service cloud.firestore {
     // BOOKINGS COLLECTION
     // ===================
     match /bookings/{bookingId} {
-      // Read: 
-      // - Parent or babysitter involved in the booking (any status)
-      // - OR any authenticated user can read confirmed/active bookings (for availability checks)
+      // Read: only parent or babysitter involved in the booking
       allow read: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
-        resource.data.babysitterId == request.auth.uid ||
-        (resource.data.status == 'confirmed' || resource.data.status == 'active')
+        resource.data.babysitterId == request.auth.uid
       );
       
       allow create: if isAuthenticated();
@@ -337,13 +335,18 @@ service cloud.firestore {
     // TEETH TRACKER COLLECTION
     // ===================
     match /teeth/{toothId} {
-      // Read: access via family logic (assuming tooth records link to childId)
-      allow read: if isAuthenticated(); // Teeth data is low sensitivity, but strictly should be secured. 
-      // Keeping open for regression safety unless childId is guaranteed on all records.
-      
+      // Read: creator OR parent/family member of the child
+      allow read: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        (resource.data.get('childId', null) != null && (
+          isParentOfBaby(resource.data.childId) ||
+          hasFamilyAccessToBaby(resource.data.childId)
+        ))
+      );
+
       // Create: any authenticated user
       allow create: if isAuthenticated();
-      
+
       // Update/Delete: creator only
       allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
     }

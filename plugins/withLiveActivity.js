@@ -30,6 +30,7 @@ const withLiveActivity = (config) => {
         'ActivityAttributes.swift',
         'BabysitterShiftLiveActivity.swift',
         'SleepLiveActivity.swift',
+        'FeedingLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
         'Info.plist',
         'CalmParentLiveActivity.entitlements',
@@ -57,8 +58,7 @@ const withLiveActivity = (config) => {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.developer.usernotifications.live-activities</key>
-	<true/>
+
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.harel.calmparentapp</string>
@@ -94,17 +94,43 @@ const withLiveActivity = (config) => {
     const mainGroupKey = pbxProjectSection[projectUuid].mainGroup;
     const target = xcodeProject.addTarget(widgetName, 'app_extension', widgetName);
 
+    // FIX node-xcode BUG: Build phases must be explicitly added to a new target
+    xcodeProject.addBuildPhase([], 'PBXSourcesBuildPhase', 'Sources', target.uuid);
+    xcodeProject.addBuildPhase([], 'PBXFrameworksBuildPhase', 'Frameworks', target.uuid);
+    xcodeProject.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', target.uuid);
+
     // הוספת קבצי ה-Widget ל-Target של ה-Widget
     const widgetFiles = [
       'BabysitterShiftLiveActivity.swift',
       'SleepLiveActivity.swift',
+      'FeedingLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
       'ActivityAttributes.swift', // הכרחי שיהיה בשניהם!
+      'GlassComponents.swift', // הכרחי שיהיה בשניהם!
     ];
+
+    const sourcesPhase = target.pbxNativeTarget.buildPhases.find(p => p && p.comment && p.comment.includes('Sources'));
+    const widgetSourcesPhaseUuid = sourcesPhase ? sourcesPhase.value : null;
+    const widgetSourcesPhase = widgetSourcesPhaseUuid ? xcodeProject.hash.project.objects.PBXSourcesBuildPhase[widgetSourcesPhaseUuid] : null;
 
     widgetFiles.forEach(file => {
       const filePath = path.join(widgetName, file);
-      xcodeProject.addSourceFile(filePath, { target: target.uuid }, mainGroupKey);
+      // node-xcode returns the file object which contains the uuid in the PBXBuildFile section
+      const addedFile = xcodeProject.addSourceFile(filePath, { target: target.uuid }, mainGroupKey);
+
+      // FIX node-xcode BUG: Manually push the file to the Widget's Sources phase!
+      if (addedFile && addedFile.uuid && widgetSourcesPhase) {
+        if (!widgetSourcesPhase.files) widgetSourcesPhase.files = [];
+
+        // Only push if not already present
+        const isPresent = widgetSourcesPhase.files.some(f => f.value === addedFile.uuid);
+        if (!isPresent) {
+          widgetSourcesPhase.files.push({
+            value: addedFile.uuid,
+            comment: `${file} in Sources`
+          });
+        }
+      }
     });
 
     // הוספת Frameworks ל-Widget
@@ -120,6 +146,23 @@ const withLiveActivity = (config) => {
 
       const attributesPath = path.join(widgetName, 'ActivityAttributes.swift');
       xcodeProject.addSourceFile(attributesPath, { target: mainTargetKey }, mainGroupKey);
+
+      // FIX node-xcode BUG: Remove widget-only files leaked into the main target!
+      const mainSourcesPhase = xcodeProject.pbxSourcesBuildPhaseObj(mainTargetKey);
+      if (mainSourcesPhase && mainSourcesPhase.files) {
+        mainSourcesPhase.files = mainSourcesPhase.files.filter(f => {
+          const comment = f.comment || '';
+          if (
+            comment.includes('BabysitterShiftLiveActivity.swift') ||
+            comment.includes('SleepLiveActivity.swift') ||
+            comment.includes('FeedingLiveActivity.swift') ||
+            comment.includes('CalmParentLiveActivityBundle.swift')
+          ) {
+            return false; // strip them from Calmino target
+          }
+          return true;
+        });
+      }
     }
 
     // הגדרות Build

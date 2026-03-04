@@ -10,6 +10,7 @@ import {
     Platform,
     KeyboardAvoidingView,
     Animated,
+    Alert,
 } from 'react-native';
 import { X, Users, LogIn, CheckCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -69,17 +70,12 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         }, 1500);
     };
 
-    const handleJoin = async () => {
-        if (code.length !== 6) {
-            setError(t('joinFamily.codeMustBe6'));
-            return;
-        }
-
+    const doJoin = async (force: boolean) => {
         setLoading(true);
         setError('');
 
         try {
-            const result = await joinFamily(code);
+            const result = await joinFamily(code, force);
             setLoading(false);
 
             if (result.success) {
@@ -87,19 +83,45 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
                 playSuccessAndClose(t('joinFamily.success'));
-            } else {
-                if (Platform.OS !== 'web') {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                }
-                setError(result.message);
+                return;
             }
-        } catch (error) {
+
+            // Server signals that user must leave current family first
+            if (result.requiresLeave) {
+                Alert.alert(
+                    'שים לב',
+                    `אתה כבר חלק ממשפחת "${result.currentFamilyName}".\nאם תמשיך, תאבד את הגישה לנתוניה.\n\nלהמשיך ולהצטרף?`,
+                    [
+                        { text: 'ביטול', style: 'cancel' },
+                        {
+                            text: 'כן, הצטרף',
+                            style: 'destructive',
+                            onPress: () => doJoin(true),
+                        },
+                    ]
+                );
+                return;
+            }
+
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            setError(result.message);
+        } catch (err) {
             setLoading(false);
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             }
             setError(t('joinFamily.error'));
         }
+    };
+
+    const handleJoin = () => {
+        if (code.length !== 6) {
+            setError(t('joinFamily.codeMustBe6'));
+            return;
+        }
+        doJoin(false);
     };
 
     const handleCodeChange = (text: string) => {

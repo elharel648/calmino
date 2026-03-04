@@ -73,27 +73,58 @@ public struct MealActivityAttributes: ActivityAttributes {
 @available(iOS 16.2, *)
 public struct SleepActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        public var startTime: Date
+        public var startTime: Date        // Timer anchor (adjusted on resume to keep elapsed accurate)
         public var babyName: String
-        public var sleepType: String // "תנומת צהריים", "שינת לילה"
+        public var sleepType: String      // "תנומת צהריים", "שינת לילה"
         public var isAwake: Bool
-        public var quality: String? // "טוב", "רגיל", "לא טוב"
-        
-        public init(startTime: Date, babyName: String, sleepType: String, isAwake: Bool, quality: String? = nil) {
+        public var isPaused: Bool
+        public var activeSeconds: Int     // Accumulated active seconds (used to restore timer on resume)
+        public var quality: String?       // "טוב", "רגיל", "לא טוב"
+
+        public init(startTime: Date, babyName: String, sleepType: String, isAwake: Bool, isPaused: Bool = false, activeSeconds: Int = 0, quality: String? = nil) {
             self.startTime = startTime
             self.babyName = babyName
             self.sleepType = sleepType
             self.isAwake = isAwake
+            self.isPaused = isPaused
+            self.activeSeconds = activeSeconds
             self.quality = quality
         }
     }
-    
+
     public var babyName: String
     public var babyEmoji: String
-    
+
     public init(babyName: String, babyEmoji: String) {
         self.babyName = babyName
         self.babyEmoji = babyEmoji
+    }
+}
+
+// MARK: - Breastfeeding Activity Attributes
+
+@available(iOS 16.2, *)
+public struct BreastfeedingActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var leftSideSeconds: Int     // Accumulated left side active seconds
+        public var rightSideSeconds: Int    // Accumulated right side active seconds
+        public var activeSide: String?      // "left", "right", nil = between sides
+        public var sideStartTime: Date?     // When current active side timer started
+        public var isPaused: Bool
+
+        public init(leftSideSeconds: Int = 0, rightSideSeconds: Int = 0, activeSide: String? = nil, sideStartTime: Date? = nil, isPaused: Bool = false) {
+            self.leftSideSeconds = leftSideSeconds
+            self.rightSideSeconds = rightSideSeconds
+            self.activeSide = activeSide
+            self.sideStartTime = sideStartTime
+            self.isPaused = isPaused
+        }
+    }
+
+    public var babyName: String
+
+    public init(babyName: String) {
+        self.babyName = babyName
     }
 }
 

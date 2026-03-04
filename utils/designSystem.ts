@@ -1,9 +1,36 @@
 /**
  * Design System - CalmParent App
- * 
+ *
  * מערכת עיצוב אחידה לכל האפליקצייה
  * כולל: Spacing, Typography, Shadows, Animations, Icons, Border Radius
  */
+
+import { Dimensions } from 'react-native';
+
+// ============================================
+// RESPONSIVE UTILITIES
+// ============================================
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+/** Base design width (iPhone 15 / 14) */
+const BASE_WIDTH = 390;
+
+/** true on iPhone SE, mini, and older small iPhones */
+export const IS_SMALL_SCREEN = SCREEN_W < 390;
+
+/** Screen dimensions (use sparingly — prefer flex layouts) */
+export const SCREEN_WIDTH = SCREEN_W;
+export const SCREEN_HEIGHT = SCREEN_H;
+
+/**
+ * Responsive scale — scales a size proportionally to screen width.
+ * Caps the scale so very large screens don't blow up sizes.
+ *
+ * @example
+ * fontSize: rs(16)  // 15 on SE, 16 on 390pt, 18 on Pro Max
+ */
+export const rs = (size: number): number =>
+    Math.round(size * Math.min(SCREEN_W / BASE_WIDTH, 1.12));
 
 // ============================================
 // SPACING SYSTEM

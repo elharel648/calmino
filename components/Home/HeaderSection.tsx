@@ -193,13 +193,6 @@ const HeaderSection = memo<HeaderSectionProps>(({
         ? `${Math.floor(dailyStats.sleepMinutes / 60)}:${String(dailyStats.sleepMinutes % 60).padStart(2, '0')}`
         : '0:00';
 
-    // Simple reminder data - inline format
-    const pendingSupplements = useMemo(() => {
-        const items: string[] = [];
-        if (!meds?.vitaminD) items.push(t('notifications.vitaminD'));
-        if (!meds?.iron) items.push(t('notifications.iron'));
-        return items;
-    }, [meds, t]);
 
     // Fetch unread notification count
     useEffect(() => {
@@ -352,18 +345,6 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 </TouchableOpacity>
             )}
 
-            {/* Inline reminder — single clean row */}
-            {pendingSupplements.length > 0 && (
-                <View style={[styles.reminderRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                    <Pill size={14} color={theme.accent} strokeWidth={1.5} />
-                    <Text style={[styles.reminderText, { color: theme.textSecondary }]}>
-                        {pendingSupplements.join('  ·  ')}
-                    </Text>
-                    <Text style={[styles.reminderHint, { color: theme.textTertiary }]}>
-                        {t('notifications.notYetToday')}
-                    </Text>
-                </View>
-            )}
 
 
             {/* Add Child Modal */}
@@ -539,28 +520,6 @@ const styles = StyleSheet.create({
         marginLeft: SPACING.sm,
     },
 
-    // Reminder Row - Simple inline
-    reminderRow: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 12,
-        gap: 8,
-        marginBottom: 4,
-        borderWidth: 0.5,
-    },
-    reminderText: {
-        fontSize: 13,
-        fontWeight: '500',
-        flex: 1,
-        textAlign: 'right',
-        letterSpacing: -0.2,
-    },
-    reminderHint: {
-        fontSize: 12,
-        fontWeight: '400',
-    },
     // Notification Bell
     notificationBell: {
         padding: 6,
@@ -568,11 +527,13 @@ const styles = StyleSheet.create({
     },
     notificationDot: {
         position: 'absolute',
-        top: 3,
-        right: 3,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        top: 2,
+        right: 2,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
     },
     badgeText: {
         fontSize: 10,

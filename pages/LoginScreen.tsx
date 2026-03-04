@@ -42,11 +42,68 @@ import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { joinFamily } from '../services/familyService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
+import { BlurView } from 'expo-blur';
 import { logger } from '../utils/logger';
 
 type LoginScreenProps = {
   onLoginSuccess: () => void;
 };
+
+// Custom password input that avoids iOS AutoFill entirely (no secureTextEntry)
+const MaskedPasswordInput = React.forwardRef<TextInput, any>(
+  ({ realValue, onRealChange, showRaw = false, isLoginMode = false, ...props }, ref) => {
+    const BULLET = '•';
+
+    const handleChange = (text: string) => {
+      if (isLoginMode || showRaw) {
+        onRealChange(text);
+        return;
+      }
+      const prevLen = realValue.length;
+      const newLen = text.length;
+      if (newLen < prevLen) {
+        onRealChange(realValue.slice(0, newLen));
+      } else if (newLen > prevLen) {
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] !== BULLET) {
+            onRealChange(realValue.slice(0, i) + text[i] + realValue.slice(i));
+            return;
+          }
+        }
+      }
+    };
+
+    if (isLoginMode) {
+      return (
+        <TextInput
+          ref={ref}
+          {...props}
+          value={realValue}
+          onChangeText={handleChange}
+          secureTextEntry={!showRaw}
+          textContentType="password"
+          autoComplete="current-password"
+          autoCorrect={false}
+        />
+      );
+    }
+
+    return (
+      <TextInput
+        ref={ref}
+        {...props}
+        value={showRaw ? realValue : BULLET.repeat(realValue.length)}
+        onChangeText={handleChange}
+        secureTextEntry={false}
+        textContentType={"none" as any}
+        autoComplete="off"
+        autoCorrect={false}
+        spellCheck={false}
+      />
+    );
+  }
+);
 
 // --- Validation Helpers ---
 const validateEmail = (email: string): boolean => {
@@ -70,7 +127,8 @@ const getPasswordStrengthColor = (password: string): string => {
 
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const { theme, isDarkMode } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
+  const { showSuccess } = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -359,7 +417,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         if (pendingInviteCode.trim().length === 6) {
           const result = await joinFamily(pendingInviteCode.trim());
           if (result.success) {
-            logger.debug('✅', 'Joined family:', result.family?.babyName);
+            logger.debug('✅', 'Joined family:', result.currentFamilyName);
+            showSuccess(`הצטרפת בהצלחה למשפחת ${result.currentFamilyName || 'החדשה'}!`, 3000);
           }
         }
 
@@ -578,14 +637,15 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
                   <Lock size={16} color={passwordError ? '#EF4444' : theme.textTertiary} />
                 </View>
-                <TextInput
+                <MaskedPasswordInput
                   ref={passwordRef}
                   style={[styles.input, { color: theme.textPrimary }]}
                   placeholder={t('login.password')}
                   placeholderTextColor={theme.textTertiary}
-                  value={password}
-                  onChangeText={(text) => { setPassword(text); setPasswordError(''); }}
-                  secureTextEntry={!showPassword}
+                  realValue={password}
+                  onRealChange={(text: string) => { setPassword(text); setPasswordError(''); }}
+                  showRaw={showPassword}
+                  isLoginMode={isLogin}
                   returnKeyType="done"
                   onSubmitEditing={handleAuth}
                   accessibilityLabel={t('login.passwordField')}
@@ -643,14 +703,15 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
                     <Lock size={16} color={confirmPasswordError ? '#EF4444' : theme.textTertiary} />
                   </View>
-                  <TextInput
+                  <MaskedPasswordInput
                     ref={confirmPasswordRef}
                     style={[styles.input, { color: theme.textPrimary }]}
                     placeholder={t('login.confirmPassword')}
                     placeholderTextColor={theme.textTertiary}
-                    value={confirmPassword}
-                    onChangeText={(text) => { setConfirmPassword(text); setConfirmPasswordError(''); }}
-                    secureTextEntry={!showConfirmPassword}
+                    realValue={confirmPassword}
+                    onRealChange={(text: string) => { setConfirmPassword(text); setConfirmPasswordError(''); }}
+                    showRaw={showConfirmPassword}
+                    isLoginMode={false}
                     returnKeyType="done"
                     onSubmitEditing={handleAuth}
                   />

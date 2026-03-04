@@ -5,8 +5,7 @@ import { LanguageContext } from '../context/LanguageContext';
 import Constants from 'expo-constants';
 import { logger } from '../utils/logger';
 
-// Crashlytics temporarily disabled
-let crashlytics: any = null;
+import crashlytics from '@react-native-firebase/crashlytics';
 
 interface Props {
     children: ReactNode;

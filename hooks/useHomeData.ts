@@ -1,9 +1,11 @@
 import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { Platform } from 'react-native';
+import { doc, updateDoc, getDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
 import { db, auth } from '../services/firebaseConfig';
 import { getLastEvent, formatTimeFromTimestamp, getRecentHistory } from '../services/firebaseService';
 import { HomeDataState } from '../types/home';
+import { liveActivityService } from '../services/liveActivityService';
 
 interface DailyStats {
     feedCount: number;
@@ -24,6 +26,8 @@ interface UseHomeDataReturn extends HomeDataState {
     generateInsight: () => Promise<void>;
     refresh: () => Promise<void>;
     isLoading: boolean;
+    isError: boolean;
+    guestExpiresAt: Date | null;
 }
 
 /**
@@ -41,6 +45,8 @@ export const useHomeData = (
     const [aiTip, setAiTip] = useState('אוסף נתונים לניתוח...');
     const [loadingAI, setLoadingAI] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
+    const [guestExpiresAt, setGuestExpiresAt] = useState<Date | null>(null);
     const [dailyStats, setDailyStats] = useState<DailyStats>({
         feedCount: 0,
         sleepMinutes: 0,
@@ -131,13 +137,27 @@ export const useHomeData = (
             return;
         }
 
+        const formatAgo = (timestamp: any): string => {
+            if (!timestamp) return '';
+            const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+            const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
+            if (diffMins < 1) return 'עכשיו';
+            if (diffMins < 60) return `לפני ${diffMins} דק'`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `לפני ${diffHours} שע'`;
+            return `לפני ${Math.floor(diffHours / 24)} ימים`;
+        };
+
         try {
+            setIsError(false);
             // Fetch last events (passing creatorId for legacy support)
             const lastFeed = await getLastEvent(childId, 'food', creatorId);
             const lastSleep = await getLastEvent(childId, 'sleep', creatorId);
 
-            setLastFeedTime(formatTimeFromTimestamp(lastFeed?.timestamp));
-            setLastSleepTime(formatTimeFromTimestamp(lastSleep?.timestamp));
+            const feedTimeStr = formatTimeFromTimestamp(lastFeed?.timestamp);
+            const sleepTimeStr = formatTimeFromTimestamp(lastSleep?.timestamp);
+            setLastFeedTime(feedTimeStr);
+            setLastSleepTime(sleepTimeStr);
 
             // Fetch current status
             const childRef = doc(db, 'babies', childId);
@@ -150,6 +170,7 @@ export const useHomeData = (
 
             // Calculate daily stats from history - check if user is guest
             // Get user's family and access level
+            const currentUserId = auth.currentUser?.uid;
             const userDoc = await getDoc(doc(db, 'users', creatorId || ''));
             const familyId = userDoc.exists() ? userDoc.data()?.familyId : null;
             let historyAccessDays: number | undefined;
@@ -160,6 +181,21 @@ export const useHomeData = (
                     const familyData = familyDoc.data();
                     const memberData = familyData.members?.[creatorId || ''];
                     historyAccessDays = memberData?.historyAccessDays;
+
+                    // Check if the current logged-in user is a guest with an expiry
+                    if (currentUserId && currentUserId !== creatorId) {
+                        const currentMember = familyData.members?.[currentUserId];
+                        if (currentMember?.role === 'guest' && currentMember?.expiresAt) {
+                            const expiry = currentMember.expiresAt?.toDate
+                                ? currentMember.expiresAt.toDate()
+                                : new Date(currentMember.expiresAt);
+                            setGuestExpiresAt(expiry);
+                        } else {
+                            setGuestExpiresAt(null);
+                        }
+                    } else {
+                        setGuestExpiresAt(null);
+                    }
                 }
             }
 
@@ -211,8 +247,22 @@ export const useHomeData = (
                 }
             }
 
+            // Push latest data to iOS homescreen widget
+            if (Platform.OS === 'ios') {
+                const currentStatus = snap.exists() ? (snap.data().status || 'awake') : 'awake';
+                liveActivityService.updateWidgetData(
+                    childName,
+                    feedTimeStr,
+                    formatAgo(lastFeed?.timestamp),
+                    sleepTimeStr,
+                    formatAgo(lastSleep?.timestamp),
+                    currentStatus
+                ).catch(() => {});
+            }
+
         } catch (e) {
             logger.error('Home data refresh error:', e);
+            setIsError(true);
         }
     }, [childId, creatorId, calculateDailyStats]);
 
@@ -220,6 +270,25 @@ export const useHomeData = (
     useEffect(() => {
         refresh();
     }, [childId, refresh]);
+
+    // Real-time listener: refresh when any family member logs a new event for this child
+    const refreshRef = useRef(refresh);
+    useEffect(() => { refreshRef.current = refresh; }, [refresh]);
+
+    useEffect(() => {
+        if (!childId) return;
+        let isFirst = true;
+        const q = query(
+            collection(db, 'events'),
+            where('childId', '==', childId),
+            limit(1)
+        );
+        const unsub = onSnapshot(q, () => {
+            if (isFirst) { isFirst = false; return; } // skip initial snapshot
+            refreshRef.current();
+        }, () => {}); // ignore listener errors silently
+        return () => unsub();
+    }, [childId]);
 
     return {
         lastFeedTime,
@@ -230,6 +299,8 @@ export const useHomeData = (
         dailyStats,
         growthStats,
         isLoading,
+        isError,
+        guestExpiresAt,
         toggleBabyStatus,
         generateInsight,
         refresh,

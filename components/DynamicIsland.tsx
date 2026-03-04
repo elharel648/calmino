@@ -25,10 +25,10 @@ const EXPANDED_HEIGHT = 88; // Slightly taller for better content display
 export default function DynamicIsland() {
     const { theme, isDarkMode } = useTheme();
     const { isRunning: sleepRunning, elapsedSeconds: sleepSeconds, formatTime: formatSleepTime, start: startSleep, stop: stopSleep } = useSleepTimer();
-    const { 
-        pumpingIsRunning, 
-        pumpingElapsedSeconds, 
-        breastIsRunning, 
+    const {
+        pumpingIsRunning,
+        pumpingElapsedSeconds,
+        breastIsRunning,
         breastActiveSide,
         leftBreastTime,
         rightBreastTime,
@@ -40,17 +40,18 @@ export default function DynamicIsland() {
     } = useFoodTimer();
     const { content, isVisible, onDismiss } = useDynamicIsland();
     const { sendTimer, sendClock, stop: stopWatch } = useAppleWatch();
-    
+
     // Real-time clock
     const [currentTime, setCurrentTime] = useState(new Date());
-    
+
     useEffect(() => {
+        // Only need minute-level updates for clock; timers get their own intervals via context
         const timer = setInterval(() => {
             setCurrentTime(new Date());
-        }, 1000);
+        }, 30000);
         return () => clearInterval(timer);
     }, []);
-    
+
     const formatClockTime = (date: Date) => {
         return date.toLocaleTimeString('he-IL', {
             hour: '2-digit',
@@ -144,7 +145,7 @@ export default function DynamicIsland() {
                     color: content.color || theme.primary,
                 });
             }
-            
+
             return {
                 icon: content.icon || Clock,
                 title: content.title,
@@ -162,7 +163,7 @@ export default function DynamicIsland() {
                 isRunning: true,
                 color: '#8B5CF6',
             });
-            
+
             return {
                 icon: Moon,
                 title: 'שינה',
@@ -180,7 +181,7 @@ export default function DynamicIsland() {
                 isRunning: true,
                 color: '#F59E0B',
             });
-            
+
             return {
                 icon: Droplets,
                 title: 'שאיבה',
@@ -193,7 +194,7 @@ export default function DynamicIsland() {
             const sideText = breastActiveSide === 'left' ? 'שמאל' : 'ימין';
             const currentTime = breastActiveSide === 'left' ? leftBreastTime : rightBreastTime;
             const breastTime = formatFoodTime(currentTime);
-            
+
             // Sync timer to Apple Watch
             sendTimer({
                 title: `הנקה - ${sideText}`,
@@ -201,7 +202,7 @@ export default function DynamicIsland() {
                 isRunning: true,
                 color: '#10B981',
             });
-            
+
             return {
                 icon: Utensils,
                 title: `הנקה - ${sideText}`,
@@ -213,10 +214,10 @@ export default function DynamicIsland() {
         // Default: Show clock
         const clockTime = formatClockTime(currentTime);
         const clockDate = new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
-        
+
         // Sync clock to Apple Watch
         sendClock(clockTime, clockDate);
-        
+
         return {
             icon: Clock,
             title: clockTime,
@@ -226,7 +227,7 @@ export default function DynamicIsland() {
     };
 
     const contentData = getContent();
-    
+
     // Always render for debugging - will be hidden with opacity if not active
     // if (!contentData && !isActive) return null;
 
@@ -261,7 +262,7 @@ export default function DynamicIsland() {
                                     </Text>
                                 )}
                             </View>
-                            
+
                             {/* Control Buttons for Active Timers */}
                             {!content && (sleepRunning || pumpingIsRunning || breastIsRunning) && (
                                 <TouchableOpacity

@@ -17,7 +17,6 @@ import {
     Animated,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../../context/ThemeContext';
@@ -76,19 +75,15 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(({ state, desc
     // Animated sliding bubble position
     const slideAnim = useRef(new Animated.Value(getBubbleX(state.index))).current;
     const scaleAnim = useRef(new Animated.Value(1)).current;
-    const prismaticOpacity = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        // Spring animation for smooth, natural glass sliding
         Animated.parallel([
-            // Slide to new position
             Animated.spring(slideAnim, {
                 toValue: getBubbleX(state.index),
                 useNativeDriver: true,
                 tension: 68,
                 friction: 12,
             }),
-            // Subtle bounce scale
             Animated.sequence([
                 Animated.timing(scaleAnim, {
                     toValue: 0.9,
@@ -100,19 +95,6 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(({ state, desc
                     useNativeDriver: true,
                     tension: 120,
                     friction: 8,
-                }),
-            ]),
-            // Prismatic flash during transition
-            Animated.sequence([
-                Animated.timing(prismaticOpacity, {
-                    toValue: 1,
-                    duration: 150,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(prismaticOpacity, {
-                    toValue: 0,
-                    duration: 400,
-                    useNativeDriver: true,
                 }),
             ]),
         ]).start();
@@ -164,23 +146,6 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(({ state, desc
                 ]} />
             )}
 
-            {/* Prismatic rainbow edge - appears during slide */}
-            <Animated.View style={[styles.prismaticRing, { opacity: prismaticOpacity }]}>
-                <LinearGradient
-                    colors={[
-                        'rgba(255,0,0,0.15)',
-                        'rgba(255,165,0,0.15)',
-                        'rgba(255,255,0,0.12)',
-                        'rgba(0,255,0,0.12)',
-                        'rgba(0,191,255,0.15)',
-                        'rgba(128,0,255,0.15)',
-                        'rgba(255,0,128,0.12)',
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.prismaticGradient}
-                />
-            </Animated.View>
         </Animated.View>
     );
 
@@ -356,21 +321,6 @@ const styles = StyleSheet.create({
         borderRadius: 1.5,
         backgroundColor: ACTIVE_COLOR,
         zIndex: 15,
-    },
-    // Prismatic rainbow ring
-    prismaticRing: {
-        position: 'absolute',
-        top: -2,
-        left: -2,
-        right: -2,
-        bottom: -2,
-        borderRadius: BUBBLE_R + 2,
-        overflow: 'hidden',
-    },
-    prismaticGradient: {
-        width: '100%',
-        height: '100%',
-        borderRadius: BUBBLE_R + 2,
     },
     iconWrap: {
         alignItems: 'center',

@@ -9,7 +9,7 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Widget
+
 
 @available(iOS 16.2, *)
 struct BabysitterShiftLiveActivity: Widget {
@@ -99,75 +99,30 @@ struct BabysitterShiftLiveActivity: Widget {
 @available(iOS 16.2, *)
 struct BabysitterShiftLockScreenView: View {
     let context: ActivityViewContext<BabysitterShiftAttributes>
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
-            HStack {
-                if let photo = context.attributes.babysitterPhoto, photo.count == 1 {
-                    Text(photo)
-                        .font(.title)
-                } else {
-                    Image(systemName: "person.fill.checkmark")
-                        .font(.title2)
-                        .foregroundColor(.purple)
-                }
-                
-                VStack(alignment: .leading) {
-                    Text(context.attributes.babysitterName)
-                        .font(.headline)
-                    Text("בייביסיטר פעילה")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                // Status badge
-                Text(context.state.isPaused ? "⏸️ מושהה" : "✅ פעיל")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        context.state.isPaused 
-                            ? Color.orange.opacity(0.2) 
-                            : Color.green.opacity(0.2)
-                    )
-                    .cornerRadius(8)
-            }
-            
-            Divider()
-            
-            // Timer (BIG)
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("זמן")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text(timerText(start: context.state.startTime, paused: context.state.totalPausedSeconds))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("לתשלום")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text(costText(start: context.state.startTime, rate: context.state.hourlyRate, paused: context.state.totalPausedSeconds))
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.green)
-                }
-            }
-            
-            // Rate
-            Text("₪\(String(format: "%.2f", context.state.hourlyRate))/שעה")
+        VStack(spacing: 10) {
+            // Name - Clean and centered
+            Text(context.attributes.babysitterName)
+                .font(.system(size: 18, weight: .bold))
+
+            Text("בייביסיטר פעילה")
                 .font(.caption)
                 .foregroundColor(.secondary)
+
+            Divider()
+                .padding(.vertical, 2)
+
+            // Timer - Large and prominent
+            VStack(spacing: 4) {
+                Text("זמן")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Text(timerText(start: context.state.startTime, paused: context.state.totalPausedSeconds))
+                    .font(.system(size: 42, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+            }
         }
         .padding()
     }

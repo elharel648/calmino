@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { liveActivityService } from '../services/liveActivityService';
+import quickActionsService from '../services/quickActionsService';
 import { useActiveChild } from '../context/ActiveChildContext';
 
 interface FoodTimerContextType {
@@ -235,7 +236,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, activityId: undefined });
 
         if (Platform.OS === 'ios' && activityId) {
-            try { await liveActivityService.stopPumpingTimer(); } catch (e) { }
+            try { await liveActivityService.stopPumpingTimer(); } catch (e) { logger.warn('liveActivityService.stopPumpingTimer error', e); }
         }
     }, [activeChildId, currentState.pumping.activityId, updateNestedState]);
 
@@ -284,7 +285,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         updateNestedState(activeChildId, 'bottle', { isRunning: false, isPaused: false, activityId: undefined });
 
         if (Platform.OS === 'ios' && activityId) {
-            try { await liveActivityService.stopBottleTimer(); } catch (e) { }
+            try { await liveActivityService.stopBottleTimer(); } catch (e) { logger.warn('liveActivityService.stopBottleTimer error', e); }
         }
     }, [activeChildId, currentState.bottle.activityId, updateNestedState]);
 
@@ -325,9 +326,14 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         if (Platform.OS === 'ios') {
             try {
-                const activityId = await liveActivityService.startBreastfeedingTimer('הורה', activeChild?.childName || 'תינוק', side);
-                if (activityId) updates.activityId = activityId;
-            } catch (e) { }
+                // If already running, switch side in the existing LA; otherwise start fresh
+                if (currentBreast.isRunning && currentBreast.activityId) {
+                    await quickActionsService.switchBreastSide(side);
+                } else {
+                    const activityId = await quickActionsService.startBreastfeeding(activeChild?.childName || 'תינוק', side);
+                    if (activityId) updates.activityId = activityId;
+                }
+            } catch (e) { logger.warn('liveActivityService.stopBreastfeeding error', e); }
         }
 
         updateNestedState(activeChildId, 'breast', updates);
@@ -349,20 +355,20 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         updateNestedState(activeChildId, 'breast', updates);
 
         if (Platform.OS === 'ios' && currentBreast.activityId) {
-            try { await liveActivityService.stopBreastfeedingTimer(); } catch (e) { }
+            try { await quickActionsService.stopBreastfeeding(); } catch (e) { logger.warn('quickActionsService.stopBreastfeeding error', e); }
         }
     }, [activeChildId, currentState.breast, updateNestedState]);
 
     const pauseBreast = useCallback(async () => {
         if (!activeChildId || !currentState.breast.isRunning || currentState.breast.isPaused) return;
         updateNestedState(activeChildId, 'breast', { isPaused: true });
-        if (Platform.OS === 'ios' && currentState.breast.activityId) await liveActivityService.pauseTimer();
+        if (Platform.OS === 'ios' && currentState.breast.activityId) await quickActionsService.pauseBreastfeeding();
     }, [activeChildId, currentState.breast, updateNestedState]);
 
     const resumeBreast = useCallback(async () => {
         if (!activeChildId || !currentState.breast.isRunning || !currentState.breast.isPaused) return;
         updateNestedState(activeChildId, 'breast', { isPaused: false });
-        if (Platform.OS === 'ios' && currentState.breast.activityId) await liveActivityService.resumeTimer();
+        if (Platform.OS === 'ios' && currentState.breast.activityId) await quickActionsService.resumeBreastfeeding();
     }, [activeChildId, currentState.breast, updateNestedState]);
 
     const resetBreast = useCallback(() => {

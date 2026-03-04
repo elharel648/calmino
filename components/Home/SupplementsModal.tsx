@@ -1,7 +1,6 @@
-import React, { memo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Modal, Animated as RNAnimated } from 'react-native';
-import { Sun, Droplet, Check, Pill, Sparkles, X } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
+import React, { memo, useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Modal, Animated as RNAnimated, ScrollView, TextInput, Alert } from 'react-native';
+import { Sun, Droplet, Check, Pill, X, Plus, Trash2, Fish, Heart, Star, Zap, Flame, Apple, Leaf, Bean, Egg, CircleDot, Pencil } from 'lucide-react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -9,47 +8,268 @@ import Animated, {
     withSequence,
     withTiming,
     withDelay,
+    FadeIn,
+    FadeOut,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { MedicationsState } from '../../types/home';
+import { MedicationsState, CustomSupplement } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
+
+// Icon map for custom supplements
+const ICON_MAP: Record<string, any> = {
+    pill: Pill,
+    fish: Fish,
+    heart: Heart,
+    star: Star,
+    zap: Zap,
+    flame: Flame,
+    apple: Apple,
+    leaf: Leaf,
+    bean: Bean,
+    egg: Egg,
+    droplet: Droplet,
+    sun: Sun,
+    circle: CircleDot,
+};
+
+const ICON_OPTIONS = Object.keys(ICON_MAP);
 
 interface SupplementsModalProps {
     visible: boolean;
     onClose: () => void;
     meds: MedicationsState;
-    onToggle: (type: 'vitaminD' | 'iron') => void;
+    onToggle: (type: string) => void;
     onRefresh?: () => void;
+    customSupplements: CustomSupplement[];
+    onAddCustom: (name: string, icon: string) => Promise<void>;
+    onRemoveCustom: (id: string) => Promise<void>;
+    takenCount: number;
+    totalCount: number;
 }
 
-const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: SupplementsModalProps) => {
-    const { theme, isDarkMode } = useTheme();
+// Individual supplement card component
+const SupplementCard = memo(({
+    id,
+    name,
+    icon,
+    taken,
+    isDefault,
+    isEditMode,
+    isDarkMode,
+    theme,
+    onToggle,
+    onRemove,
+}: {
+    id: string;
+    name: string;
+    icon: string;
+    taken: boolean;
+    isDefault: boolean;
+    isEditMode: boolean;
+    isDarkMode: boolean;
+    theme: any;
+    onToggle: (id: string) => void;
+    onRemove: (id: string) => void;
+}) => {
+    const scale = useSharedValue(1);
+    const animStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
 
-    // Animation values - MUST be before any early return
-    const vitaminDScale = useSharedValue(1);
-    const ironScale = useSharedValue(1);
-    const checkVitaminD = useSharedValue(meds.vitaminD ? 1 : 0);
-    const checkIron = useSharedValue(meds.iron ? 1 : 0);
+    const handlePress = () => {
+        if (isEditMode) return;
+
+        scale.value = withSequence(
+            withSpring(0.9, { damping: 5, stiffness: 400 }),
+            withSpring(1.1, { damping: 5, stiffness: 400 }),
+            withSpring(1, { damping: 10, stiffness: 300 })
+        );
+
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(
+                taken ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
+            );
+        }
+
+        onToggle(id);
+    };
+
+    const IconComponent = ICON_MAP[icon] || Pill;
+
+    return (
+        <Animated.View style={animStyle} entering={FadeIn.duration(300)}>
+            <TouchableOpacity
+                style={[
+                    styles.medBtn,
+                    {
+                        backgroundColor: taken
+                            ? (isDarkMode ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.08)')
+                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB'),
+                        borderColor: taken
+                            ? (isDarkMode ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.25)')
+                            : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
+                        opacity: isEditMode ? 0.7 : 1,
+                    },
+                    taken && styles.medBtnDone
+                ]}
+                onPress={handlePress}
+                activeOpacity={0.8}
+                disabled={isEditMode}
+            >
+                {/* Delete badge for custom supplements in edit mode */}
+                {isEditMode && !isDefault && (
+                    <TouchableOpacity
+                        style={styles.deleteBadge}
+                        onPress={() => onRemove(id)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Trash2 size={14} color="#fff" strokeWidth={2.5} />
+                    </TouchableOpacity>
+                )}
+
+                <View style={styles.medIconWrapper}>
+                    {taken ? (
+                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(52,199,89,0.35)' : '#34C759' }]}>
+                            <Check size={26} color="#fff" strokeWidth={2.5} />
+                        </View>
+                    ) : (
+                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                            <IconComponent size={24} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={1.5} />
+                        </View>
+                    )}
+                </View>
+                <Text style={[styles.medText, { color: theme.textPrimary }]}>
+                    {name}
+                </Text>
+                <Text style={[styles.medStatus, { color: taken ? theme.textSecondary : theme.textTertiary }]}>
+                    {taken ? 'ניתן' : 'לא ניתן'}
+                </Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+});
+
+SupplementCard.displayName = 'SupplementCard';
+
+// Add supplement mini form
+const AddSupplementForm = memo(({
+    isDarkMode,
+    theme,
+    onAdd,
+    onCancel,
+}: {
+    isDarkMode: boolean;
+    theme: any;
+    onAdd: (name: string, icon: string) => void;
+    onCancel: () => void;
+}) => {
+    const [name, setName] = useState('');
+    const [selectedIcon, setSelectedIcon] = useState('pill');
+
+    const handleAdd = () => {
+        const trimmed = name.trim();
+        if (!trimmed) {
+            Alert.alert('שגיאה', 'נא להזין שם לתוסף');
+            return;
+        }
+        onAdd(trimmed, selectedIcon);
+        setName('');
+        setSelectedIcon('pill');
+    };
+
+    return (
+        <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)} style={[
+            styles.addForm,
+            {
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
+                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+            }
+        ]}>
+            <Text style={[styles.addFormTitle, { color: theme.textPrimary }]}>
+                הוספת תוסף חדש
+            </Text>
+
+            <TextInput
+                style={[
+                    styles.input,
+                    {
+                        color: theme.textPrimary,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#fff',
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                    }
+                ]}
+                placeholder="שם התוסף (לדוגמה: אומגה 3)"
+                placeholderTextColor={theme.textTertiary}
+                value={name}
+                onChangeText={setName}
+                textAlign="right"
+                maxLength={20}
+            />
+
+            <Text style={[styles.iconPickerLabel, { color: theme.textSecondary }]}>
+                בחר אייקון:
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.iconPicker} contentContainerStyle={styles.iconPickerContent}>
+                {ICON_OPTIONS.map((iconKey) => {
+                    const Icon = ICON_MAP[iconKey];
+                    const isSelected = selectedIcon === iconKey;
+                    return (
+                        <TouchableOpacity
+                            key={iconKey}
+                            style={[
+                                styles.iconOption,
+                                {
+                                    backgroundColor: isSelected
+                                        ? (isDarkMode ? 'rgba(0,122,255,0.25)' : 'rgba(0,122,255,0.1)')
+                                        : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'),
+                                    borderColor: isSelected
+                                        ? '#007AFF'
+                                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
+                                }
+                            ]}
+                            onPress={() => setSelectedIcon(iconKey)}
+                        >
+                            <Icon size={20} color={isSelected ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)')} strokeWidth={1.5} />
+                        </TouchableOpacity>
+                    );
+                })}
+            </ScrollView>
+
+            <View style={styles.addFormButtons}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
+                    <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>ביטול</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.confirmBtn, { opacity: name.trim() ? 1 : 0.5 }]}
+                    onPress={handleAdd}
+                    disabled={!name.trim()}
+                >
+                    <Text style={styles.confirmBtnText}>הוסף</Text>
+                </TouchableOpacity>
+            </View>
+        </Animated.View>
+    );
+});
+
+AddSupplementForm.displayName = 'AddSupplementForm';
+
+const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, customSupplements, onAddCustom, onRemoveCustom, takenCount, totalCount }: SupplementsModalProps) => {
+    const { theme, isDarkMode } = useTheme();
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+
+    // Animation values
     const celebrationScale = useSharedValue(0);
     const celebrationOpacity = useSharedValue(0);
     const fadeAnim = useRef(new RNAnimated.Value(0)).current;
     const scaleAnim = useRef(new RNAnimated.Value(0.9)).current;
-
-    // Animated styles - MUST be before any early return
-    const vitaminDStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: vitaminDScale.value }],
-    }));
-
-    const ironStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: ironScale.value }],
-    }));
 
     const celebrationStyle = useAnimatedStyle(() => ({
         transform: [{ scale: celebrationScale.value }],
         opacity: celebrationOpacity.value,
     }));
 
-    // Modal animations - popup in center
+    // Modal animations
     useEffect(() => {
         if (visible) {
             RNAnimated.parallel([
@@ -61,16 +281,15 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                 RNAnimated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
                 RNAnimated.timing(scaleAnim, { toValue: 0.9, duration: 200, useNativeDriver: true }),
             ]).start();
+            // Reset edit mode when modal closes
+            setIsEditMode(false);
+            setShowAddForm(false);
         }
     }, [visible]);
 
-    // Sync animation state with meds prop
+    // Celebration when all are done
     useEffect(() => {
-        checkVitaminD.value = withSpring(meds.vitaminD ? 1 : 0, { damping: 12 });
-        checkIron.value = withSpring(meds.iron ? 1 : 0, { damping: 12 });
-
-        // Celebration when both are done
-        if (meds.vitaminD && meds.iron) {
+        if (takenCount === totalCount && totalCount > 0) {
             celebrationScale.value = withSequence(
                 withSpring(1.2, { damping: 8, stiffness: 200 }),
                 withSpring(1, { damping: 10 })
@@ -80,7 +299,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                 withDelay(1500, withTiming(0, { duration: 300 }))
             );
         }
-    }, [meds.vitaminD, meds.iron]);
+    }, [takenCount, totalCount]);
 
     const handleClose = () => {
         RNAnimated.parallel([
@@ -91,43 +310,55 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
         });
     };
 
-    const handleToggle = (type: 'vitaminD' | 'iron') => {
-        const isCurrentlyTaken = meds[type];
-
-        // Bounce animation
-        if (type === 'vitaminD') {
-            vitaminDScale.value = withSequence(
-                withSpring(0.9, { damping: 5, stiffness: 400 }),
-                withSpring(1.1, { damping: 5, stiffness: 400 }),
-                withSpring(1, { damping: 10, stiffness: 300 })
-            );
-        } else {
-            ironScale.value = withSequence(
-                withSpring(0.9, { damping: 5, stiffness: 400 }),
-                withSpring(1.1, { damping: 5, stiffness: 400 }),
-                withSpring(1, { damping: 10, stiffness: 300 })
-            );
-        }
-
-        if (Platform.OS !== 'web') {
-            Haptics.impactAsync(
-                isCurrentlyTaken
-                    ? Haptics.ImpactFeedbackStyle.Light
-                    : Haptics.ImpactFeedbackStyle.Medium
-            );
-        }
-
-        onToggle(type);
-
-        if (!isCurrentlyTaken && onRefresh) {
+    const handleToggle = useCallback((id: string) => {
+        onToggle(id);
+        // Check if it was previously not taken (meaning we're marking it as taken)
+        const wasTaken = id === 'vitaminD' ? meds.vitaminD : id === 'iron' ? meds.iron : (meds.custom?.[id] || false);
+        if (!wasTaken && onRefresh) {
             setTimeout(onRefresh, 300);
         }
-    };
+    }, [onToggle, meds, onRefresh]);
 
-    // Early return AFTER all hooks
+    const handleAddCustom = useCallback(async (name: string, icon: string) => {
+        await onAddCustom(name, icon);
+        setShowAddForm(false);
+        if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+    }, [onAddCustom]);
+
+    const handleRemoveCustom = useCallback((id: string) => {
+        Alert.alert(
+            'הסרת תוסף',
+            'האם למחוק את התוסף הזה?',
+            [
+                { text: 'ביטול', style: 'cancel' },
+                {
+                    text: 'מחק', style: 'destructive', onPress: async () => {
+                        await onRemoveCustom(id);
+                        if (Platform.OS !== 'web') {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                        }
+                    }
+                },
+            ]
+        );
+    }, [onRemoveCustom]);
+
     if (!visible) return null;
 
-    const allDone = meds.vitaminD && meds.iron;
+    // Build supplement list: defaults + custom
+    const allSupplements = [
+        { id: 'vitaminD', name: 'ויטמין D', icon: 'sun', taken: meds.vitaminD, isDefault: true },
+        { id: 'iron', name: 'ברזל', icon: 'droplet', taken: meds.iron, isDefault: true },
+        ...customSupplements.map(s => ({
+            id: s.id,
+            name: s.name,
+            icon: s.icon,
+            taken: meds.custom?.[s.id] || false,
+            isDefault: false,
+        })),
+    ];
 
     return (
         <Modal
@@ -155,125 +386,147 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh }: 
                 >
                     {/* Header */}
                     <View style={styles.header}>
-                        <View style={[
-                            styles.iconCircle,
-                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }
-                        ]}>
-                            <Pill size={20} color={isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)'} strokeWidth={2} />
-                        </View>
+                        <TouchableOpacity
+                            style={[
+                                styles.iconCircle,
+                                {
+                                    backgroundColor: isEditMode
+                                        ? (isDarkMode ? 'rgba(0,122,255,0.2)' : 'rgba(0,122,255,0.1)')
+                                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
+                                    borderColor: isEditMode
+                                        ? 'rgba(0,122,255,0.4)'
+                                        : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'),
+                                }
+                            ]}
+                            onPress={() => {
+                                setIsEditMode(!isEditMode);
+                                if (isEditMode) setShowAddForm(false);
+                                if (Platform.OS !== 'web') {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                }
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Pill size={20} color={isEditMode ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)')} strokeWidth={2} />
+                        </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
-                            תוספים יומיים
+                            {isEditMode ? 'עריכת תוספים' : 'תוספים יומיים'}
                         </Text>
                         <TouchableOpacity
                             style={styles.closeBtn}
-                            onPress={onClose}
+                            onPress={isEditMode ? () => { setIsEditMode(false); setShowAddForm(false); } : onClose}
                             activeOpacity={0.7}
                         >
                             <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Removed celebration badge for minimalist design */}
+                    {/* Supplements grid */}
+                    <ScrollView
+                        style={styles.scrollArea}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.buttonsGrid}>
+                            {allSupplements.map((supp) => (
+                                <SupplementCard
+                                    key={supp.id}
+                                    id={supp.id}
+                                    name={supp.name}
+                                    icon={supp.icon}
+                                    taken={supp.taken}
+                                    isDefault={supp.isDefault}
+                                    isEditMode={isEditMode}
+                                    isDarkMode={isDarkMode}
+                                    theme={theme}
+                                    onToggle={handleToggle}
+                                    onRemove={handleRemoveCustom}
+                                />
+                            ))}
 
-                    {/* Supplements */}
-                    <View style={styles.buttonsRow}>
-                        {/* Vitamin D */}
-                        <Animated.View style={vitaminDStyle}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.medBtn,
-                                    {
-                                        backgroundColor: meds.vitaminD
-                                            ? (isDarkMode ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.08)')
-                                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB'),
-                                        borderColor: meds.vitaminD
-                                            ? (isDarkMode ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.25)')
-                                            : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
-                                    },
-                                    meds.vitaminD && styles.medBtnDone
-                                ]}
-                                onPress={() => handleToggle('vitaminD')}
-                                activeOpacity={0.8}
-                            >
-                                <View style={styles.medIconWrapper}>
-                                    {meds.vitaminD ? (
-                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(52,199,89,0.35)' : '#34C759' }]}>
-                                            <Check size={26} color="#fff" strokeWidth={2.5} />
+                            {/* Add button — always shown in edit mode */}
+                            {isEditMode && !showAddForm && (
+                                <Animated.View entering={FadeIn.duration(300)}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.medBtn,
+                                            styles.addBtn,
+                                            {
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                                                borderStyle: 'dashed',
+                                            },
+                                        ]}
+                                        onPress={() => setShowAddForm(true)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.medIconWrapper}>
+                                            <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(0,122,255,0.15)' : 'rgba(0,122,255,0.08)' }]}>
+                                                <Plus size={26} color="#007AFF" strokeWidth={2} />
+                                            </View>
                                         </View>
-                                    ) : (
-                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                                            <Sun size={24} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={1.5} />
-                                        </View>
-                                    )}
-                                </View>
-                                <Text style={[styles.medText, { color: theme.textPrimary }]}>
-                                    ויטמין D
-                                </Text>
-                                <Text style={[styles.medStatus, { color: meds.vitaminD ? theme.textSecondary : theme.textTertiary }]}>
-                                    {meds.vitaminD ? 'ניתן' : 'לא ניתן'}
-                                </Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                                        <Text style={[styles.medText, { color: '#007AFF' }]}>
+                                            הוסף תוסף
+                                        </Text>
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            )}
+                        </View>
 
-                        {/* Iron */}
-                        <Animated.View style={ironStyle}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.medBtn,
-                                    {
-                                        backgroundColor: meds.iron
-                                            ? (isDarkMode ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.08)')
-                                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB'),
-                                        borderColor: meds.iron
-                                            ? (isDarkMode ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.25)')
-                                            : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
-                                    },
-                                    meds.iron && styles.medBtnDone
-                                ]}
-                                onPress={() => handleToggle('iron')}
-                                activeOpacity={0.8}
-                            >
-                                <View style={styles.medIconWrapper}>
-                                    {meds.iron ? (
-                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(52,199,89,0.35)' : '#34C759' }]}>
-                                            <Check size={26} color="#fff" strokeWidth={2.5} />
-                                        </View>
-                                    ) : (
-                                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                                            <Droplet size={24} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={1.5} />
-                                        </View>
-                                    )}
-                                </View>
-                                <Text style={[styles.medText, { color: theme.textPrimary }]}>
-                                    ברזל
-                                </Text>
-                                <Text style={[styles.medStatus, { color: meds.iron ? theme.textSecondary : theme.textTertiary }]}>
-                                    {meds.iron ? 'ניתן' : 'לא ניתן'}
-                                </Text>
-                            </TouchableOpacity>
-                        </Animated.View>
-                    </View>
+                        {/* Add form */}
+                        {showAddForm && (
+                            <AddSupplementForm
+                                isDarkMode={isDarkMode}
+                                theme={theme}
+                                onAdd={handleAddCustom}
+                                onCancel={() => setShowAddForm(false)}
+                            />
+                        )}
+                    </ScrollView>
 
                     {/* Progress indicator */}
-                    <View style={styles.progressContainer}>
-                        <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                            {(meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)}/2 ניתנו היום
-                        </Text>
-                        <View style={[
-                            styles.progressTrack,
-                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
-                        ]}>
-                            <View
-                                style={[
-                                    styles.progressFill,
-                                    {
-                                        width: `${((meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0)) * 50}%`,
-                                        backgroundColor: '#007AFF',
-                                    }
-                                ]}
-                            />
+                    {!isEditMode && (
+                        <View style={styles.progressContainer}>
+                            <Text style={[styles.progressText, { color: theme.textSecondary }]}>
+                                {takenCount}/{totalCount} ניתנו היום
+                            </Text>
+                            <View style={[
+                                styles.progressTrack,
+                                { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
+                            ]}>
+                                <View
+                                    style={[
+                                        styles.progressFill,
+                                        {
+                                            width: totalCount > 0 ? `${(takenCount / totalCount) * 100}%` : '0%',
+                                            backgroundColor: '#007AFF',
+                                        }
+                                    ]}
+                                />
+                            </View>
                         </View>
-                    </View>
+                    )}
+
+                    {/* Edit mode hint */}
+                    {!isEditMode && (
+                        <TouchableOpacity
+                            style={styles.editHint}
+                            onPress={() => {
+                                setIsEditMode(true);
+                                if (Platform.OS !== 'web') {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                }
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.editHintRow}>
+                                <Pencil size={14} color="#007AFF" strokeWidth={2} />
+                                <Text style={[styles.editHintText, { color: '#007AFF' }]}>
+                                    ערוך תוספים
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    )}
                 </RNAnimated.View>
             </RNAnimated.View>
         </Modal>
@@ -287,12 +540,13 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)', // Slightly darker overlay for focus
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         padding: 24,
     },
     modalContent: {
         width: '100%',
         maxWidth: 380,
+        maxHeight: '80%',
         borderRadius: 28,
         paddingVertical: 32,
         paddingHorizontal: 28,
@@ -333,8 +587,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.03)',
     },
-    buttonsRow: {
+    scrollArea: {
+        flexGrow: 0,
+    },
+    scrollContent: {
+        paddingBottom: 4,
+    },
+    buttonsGrid: {
         flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
         justifyContent: 'center',
         gap: 12,
     },
@@ -350,6 +611,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.06,
         shadowRadius: 10,
         elevation: 2,
+    },
+    addBtn: {
+        justifyContent: 'center',
     },
     medBtnDone: {
         shadowOpacity: 0.10,
@@ -378,6 +642,23 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginTop: 3,
     },
+    deleteBadge: {
+        position: 'absolute',
+        top: -6,
+        left: -6,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#EF4444',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10,
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
     progressContainer: {
         marginTop: 28,
         alignItems: 'center',
@@ -398,6 +679,87 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         opacity: 0.6,
         letterSpacing: -0.2,
+    },
+    editHintRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 6,
+    },
+    editHint: {
+        marginTop: 16,
+        alignItems: 'center',
+        paddingVertical: 6,
+    },
+    editHintText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    // Add form styles
+    addForm: {
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 18,
+        borderWidth: 1,
+    },
+    addFormTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        textAlign: 'right',
+        marginBottom: 12,
+    },
+    input: {
+        height: 46,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        fontSize: 16,
+        borderWidth: 1,
+        marginBottom: 12,
+    },
+    iconPickerLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        textAlign: 'right',
+        marginBottom: 8,
+    },
+    iconPicker: {
+        marginBottom: 14,
+    },
+    iconPickerContent: {
+        gap: 8,
+        flexDirection: 'row-reverse',
+    },
+    iconOption: {
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+    },
+    addFormButtons: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'flex-start',
+        gap: 10,
+    },
+    confirmBtn: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 24,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    confirmBtnText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    cancelBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    cancelBtnText: {
+        fontSize: 15,
+        fontWeight: '600',
     },
 });
 

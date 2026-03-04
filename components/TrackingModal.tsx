@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Animated as RNAnimated, ScrollView, Alert, PanResponder, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, InteractionManager } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
-import { useSwipeDismiss } from '../hooks/useSwipeDismiss';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../context/SleepTimerContext';
@@ -14,12 +13,10 @@ import { useLanguage } from '../context/LanguageContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, interpolate } from 'react-native-reanimated';
-
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
+import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
 interface TrackingModalProps {
   visible: boolean;
@@ -121,158 +118,113 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Save success state for checkmark animation
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Apple-style Animations
-  const slideAnim = useRef(new RNAnimated.Value(400)).current;
-  const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+  // Reanimated shared values for modal slide + backdrop
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const scrollY = useSharedValue(0);
 
-  // Track if we're dragging and scroll position
-  const isDragging = useRef(false);
-  const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
-  const scrollOffsetY = useRef(0);
-  const dragStartY = useRef(0);
-  const [isScrollEnabled, setIsScrollEnabled] = useState(true);
+  const scrollViewRef = useRef<Animated.ScrollView>(null);
+  const nativeScrollRef = useRef(null);
 
-  // Swipe down to dismiss
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: (evt, _) => {
-      dragStartY.current = evt.nativeEvent.pageY;
-      return false; // let onMoveShouldSetPanResponder decide
-    },
-    // Capture phase: intercepts BEFORE ScrollView can claim the gesture
-    onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-      if (isDragging.current) return true;
-      const isDraggingDown = gestureState.dy > 6;
-      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.8;
-      const isScrollAtTop = scrollOffsetY.current <= 5;
+  const modalAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
-      if (isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-        isDragging.current = true;
-        setIsScrollEnabled(false);
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        return true;
+  const backdropAnimStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  const scrollHandler = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+
+  const triggerHaptic = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+  const triggerMediumHaptic = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
+  const panGesture = Gesture.Pan()
+    .activeOffsetY([-2, 2])
+    .simultaneousWithExternalGesture(nativeScrollRef)
+    .onStart(() => {
+      runOnJS(triggerHaptic)();
+    })
+    .onUpdate((e) => {
+      // Only drag down when scroll is at top
+      if (e.translationY > 0 && scrollY.value <= 5) {
+        translateY.value = e.translationY;
+        backdropOpacity.value = 1 - Math.min(e.translationY / 300, 0.7);
       }
-      return false;
-    },
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      if (isDragging.current) return true;
-      const isDraggingDown = gestureState.dy > 8;
-      const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5;
-      const isScrollAtTop = scrollOffsetY.current <= 5;
-
-      if (isDraggingDown && isVerticalSwipe && isScrollAtTop) {
-        isDragging.current = true;
-        setIsScrollEnabled(false);
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        return true;
-      }
-      return false;
-    },
-    onPanResponderGrant: () => {
-      isDragging.current = true;
-      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    },
-    onPanResponderMove: (_, gestureState) => {
-      if (gestureState.dy > 0) {
-        slideAnim.setValue(gestureState.dy);
-        const opacity = 1 - Math.min(gestureState.dy / 300, 0.7);
-        backdropAnim.setValue(opacity);
-      }
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      isDragging.current = false;
-      setIsScrollEnabled(true);
-
-      const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 0.5;
+    })
+    .onEnd((e) => {
+      const shouldDismiss = e.translationY > 120 || e.velocityY > 500;
       if (shouldDismiss) {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        RNAnimated.parallel([
-          RNAnimated.spring(slideAnim, {
-            toValue: SCREEN_HEIGHT,
-            useNativeDriver: true,
-            tension: 65,
-            friction: 11,
-          }),
-          RNAnimated.timing(backdropAnim, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          onClose();
-          slideAnim.setValue(SCREEN_HEIGHT);
-          backdropAnim.setValue(0);
+        runOnJS(triggerMediumHaptic)();
+        backdropOpacity.value = withTiming(0, { duration: 200 });
+        translateY.value = withSpring(SCREEN_HEIGHT, { stiffness: 120, damping: 20 }, () => {
+          runOnJS(onClose)();
+          translateY.value = SCREEN_HEIGHT;
+          backdropOpacity.value = 0;
         });
       } else {
-        RNAnimated.parallel([
-          RNAnimated.spring(slideAnim, {
-            toValue: 0,
-            useNativeDriver: true,
-            tension: 65,
-            friction: 11,
-          }),
-          RNAnimated.timing(backdropAnim, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        translateY.value = withSpring(0, { stiffness: 300, damping: 30 });
+        backdropOpacity.value = withTiming(1, { duration: 200 });
       }
-    },
-    onPanResponderTerminate: () => {
-      isDragging.current = false;
-      setIsScrollEnabled(true);
-    },
-  }), [slideAnim, backdropAnim, onClose]);
+    });
 
   useEffect(() => {
     if (visible) {
-      setSubType(null);
-      setBottleAmount('');
-      setPumpingAmount('');
-      setSolidsFoodName('');
-      setFoodNote('');
-      setSleepHours(0);
-      setSleepMinutes(30);
-      setSleepNote('');
-      setDiaperNote('');
-      setDiaperTime(new Date());
-      setShowDiaperTimePicker(false);
-      // Reset logic...
-      setSleepMode('timer');
-      const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      setSleepStartTime(timeStr);
-      setSleepEndTime(timeStr);
-      setSleepStartTimeDate(new Date(now));
-      setSleepEndTimeDate(new Date(now));
-      setShowSleepStartPicker(false);
-      setShowSleepEndPicker(false);
-      setSelectedDate(new Date());
-      setFoodMode('normal');
-      const nowForFood = new Date();
-      setFoodStartTime(new Date(nowForFood));
-      setFoodEndTime(new Date(nowForFood));
-      setShowFoodStartTimePicker(false);
-      setShowFoodEndTimePicker(false);
-
-      // Ensure save state is reset
+      // Reset critical states immediately
       setSaveSuccess(false);
+      setSubType(null);
 
-      slideAnim.setValue(SCREEN_HEIGHT);
-      backdropAnim.setValue(0);
+      // Defer non-critical state resets to avoid freeze
+      InteractionManager.runAfterInteractions(() => {
+        setBottleAmount('');
+        setPumpingAmount('');
+        setSolidsFoodName('');
+        setFoodNote('');
+        setSleepHours(0);
+        setSleepMinutes(30);
+        setSleepNote('');
+        setDiaperNote('');
+        setDiaperTime(new Date());
+        setShowDiaperTimePicker(false);
+        setSleepMode('timer');
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        setSleepStartTime(timeStr);
+        setSleepEndTime(timeStr);
+        setSleepStartTimeDate(new Date(now));
+        setSleepEndTimeDate(new Date(now));
+        setShowSleepStartPicker(false);
+        setShowSleepEndPicker(false);
+        setSelectedDate(new Date());
+        setFoodMode('normal');
+        const nowForFood = new Date();
+        setFoodStartTime(new Date(nowForFood));
+        setFoodEndTime(new Date(nowForFood));
+        setShowFoodStartTimePicker(false);
+        setShowFoodEndTimePicker(false);
+      });
+
+      translateY.value = SCREEN_HEIGHT;
+      backdropOpacity.value = 0;
 
       glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
       sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
 
-      RNAnimated.parallel([
-        RNAnimated.timing(backdropAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-        RNAnimated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
-      ]).start();
+      backdropOpacity.value = withTiming(1, { duration: 300 });
+      // Smooth slide-up without bounce
+      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
     } else {
       glowAnim.value = 0;
       sparkleAnim.value = 0;
     }
-  }, [visible, slideAnim, backdropAnim, glowAnim, sparkleAnim]);
+  }, [visible]);
 
   // Diaper icon animation
   useEffect(() => {
@@ -299,18 +251,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Food icon animation
   useEffect(() => {
     if (visible && type === 'food') {
-      foodIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
-      foodIconBounce.value = withRepeat(
-        withSequence(
-          withTiming(1.12, { duration: 300 }),
-          withTiming(0.94, { duration: 200 }),
-          withTiming(1.05, { duration: 150 }),
-          withTiming(1, { duration: 150 }),
-          withTiming(1, { duration: 2200 }),
-        ),
-        -1,
-        false
-      );
+      foodIconPulse.value = withTiming(0, { duration: 200 });
+      foodIconBounce.value = withTiming(1, { duration: 200 });
     } else {
       foodIconPulse.value = withTiming(0, { duration: 200 });
       foodIconBounce.value = withTiming(1, { duration: 200 });
@@ -320,15 +262,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Sleep icon animation
   useEffect(() => {
     if (visible && type === 'sleep') {
-      sleepIconPulse.value = withRepeat(withTiming(1, { duration: 2200 }), -1, false);
-      sleepIconFloat.value = withRepeat(
-        withSequence(
-          withTiming(-7, { duration: 1600 }),
-          withTiming(0, { duration: 1600 }),
-        ),
-        -1,
-        false
-      );
+      sleepIconPulse.value = withTiming(0, { duration: 200 });
+      sleepIconFloat.value = withTiming(0, { duration: 200 });
     } else {
       sleepIconPulse.value = withTiming(0, { duration: 200 });
       sleepIconFloat.value = withTiming(0, { duration: 200 });
@@ -1602,8 +1537,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   return (
     <>
       <Modal visible={visible} transparent animationType="none">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
-          <RNAnimatedView style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'height' : 'height'} style={styles.overlay}>
+          <Animated.View style={[StyleSheet.absoluteFill, backdropAnimStyle]}>
             <BlurView
               intensity={isDarkMode ? 40 : 20}
               tint={isDarkMode ? 'dark' : 'light'}
@@ -1614,255 +1549,242 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               activeOpacity={1}
               onPress={onClose}
             />
-          </RNAnimatedView>
+          </Animated.View>
 
-          <RNAnimatedView
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: theme.card,
-                transform: [{ translateY: slideAnim }],
-              }
-            ]}
-            {...panResponder.panHandlers}
-          >
-            {/* Drag Handle */}
-            <View style={styles.dragHandle} {...panResponder.panHandlers}>
-              <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
-            </View>
-
-            {/* Header */}
-            {type && (
-              <View style={styles.header} {...panResponder.panHandlers}>
-                {type === 'diaper' ? (
-                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: config.accent }, diaperPulseStyle]} />
-                    <View style={[styles.emojiCircle, { backgroundColor: config.accent + '22' }]}>
-                      <Animated.View style={diaperWiggleStyle}>
-                        {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
-                      </Animated.View>
-                    </View>
-                  </View>
-                ) : type === 'food' ? (
-                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulseStyle]} />
-                    <View style={[styles.emojiCircle, { backgroundColor: 'rgba(245,158,11,0.14)' }]}>
-                      <Animated.View style={foodIconBounceStyle}>
-                        {React.createElement(config.icon, { size: 26, color: '#F59E0B', strokeWidth: 2 })}
-                      </Animated.View>
-                    </View>
-                  </View>
-                ) : type === 'sleep' ? (
-                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulseStyle]} />
-                    <View style={[styles.emojiCircle, { backgroundColor: 'rgba(129,140,248,0.14)' }]}>
-                      <Animated.View style={sleepIconFloatStyle}>
-                        {React.createElement(config.icon, { size: 26, color: '#6366F1', strokeWidth: 2 })}
-                      </Animated.View>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
-                    {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
-                  </View>
-                )}
-                <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
+          <GestureDetector gesture={panGesture}>
+            <Animated.View
+              style={[
+                styles.modalCard,
+                { backgroundColor: theme.card },
+                modalAnimStyle,
+              ]}
+            >
+              {/* Drag Handle */}
+              <View style={styles.dragHandle}>
+                <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
               </View>
-            )}
 
-            {/* Scrollable Content */}
-            <KeyboardAwareScrollView
-              ref={scrollViewRef}
-              style={{ width: '100%' }}
-              contentContainerStyle={styles.content}
-              showsVerticalScrollIndicator={false}
-              enableOnAndroid={true}
-              extraScrollHeight={100}
-              keyboardShouldPersistTaps="handled"
-              scrollEnabled={isScrollEnabled}
-              bounces={false}
-              scrollEventThrottle={16}
-              onScroll={(e) => {
-                scrollOffsetY.current = e.nativeEvent.contentOffset.y;
-              }}
-              onScrollBeginDrag={(e) => {
-                // At the top of scroll - hand off to pan responder for swipe-down dismiss
-                if (scrollOffsetY.current <= 2) {
-                  setIsScrollEnabled(false);
-                  setTimeout(() => {
-                    if (!isDragging.current) setIsScrollEnabled(true);
-                  }, 150);
-                }
-              }}
-            >
-              {renderContent()}
-            </KeyboardAwareScrollView>
-
-            {/* Save Button - Premium Full Width */}
-            <TouchableOpacity
-              style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess]}
-              onPress={handleSave}
-              disabled={saveSuccess}
-              accessibilityRole="button"
-              accessibilityLabel={saveSuccess ? 'נשמר בהצלחה' : 'שמור תיעוד'}
-              accessibilityState={{ disabled: saveSuccess }}
-            >
-              <Check size={18} color="#fff" strokeWidth={2.5} />
-              <Text style={[styles.saveBtnText, saveSuccess && styles.saveBtnTextSuccess]}>
-                {saveSuccess ? 'נשמר!' : 'שמור תיעוד'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Calendar Overlay - Inline */}
-            {showCalendar && (
-              <View style={styles.calendarInlineOverlay}>
-                <TouchableOpacity style={styles.calendarInlineBackdrop} activeOpacity={1} onPress={() => { setShowCalendar(false); setCalendarView('days'); }} />
-                <View style={styles.calendarCard}>
-                  {/* Month Header - Clickable for drill-up */}
-                  <View style={styles.calendarHeader}>
-                    <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
-                      const newDate = new Date(selectedDate);
-                      if (calendarView === 'days') {
-                        newDate.setMonth(newDate.getMonth() + 1);
-                      } else {
-                        newDate.setFullYear(newDate.getFullYear() + 1);
-                      }
-                      setSelectedDate(newDate);
-                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}>
-                      <ChevronLeft size={18} color="#374151" strokeWidth={1.5} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => {
-                      setCalendarView(calendarView === 'days' ? 'months' : 'days');
-                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Text style={styles.calendarMonthText}>
-                          {calendarView === 'days'
-                            ? selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
-                            : selectedDate.getFullYear().toString()
-                          }
-                        </Text>
-                        <ChevronUp size={14} color="#374151" strokeWidth={1.5} style={{ transform: [{ rotate: calendarView === 'months' ? '180deg' : '0deg' }] }} />
+              {/* Header */}
+              {type && (
+                <View style={styles.header}>
+                  {type === 'diaper' ? (
+                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: config.accent }, diaperPulseStyle]} />
+                      <View style={[styles.emojiCircle, { backgroundColor: config.accent + '22' }]}>
+                        <Animated.View style={diaperWiggleStyle}>
+                          {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
+                        </Animated.View>
                       </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
-                      const newDate = new Date(selectedDate);
-                      if (calendarView === 'days') {
-                        newDate.setMonth(newDate.getMonth() - 1);
-                      } else {
-                        newDate.setFullYear(newDate.getFullYear() - 1);
-                      }
-                      setSelectedDate(newDate);
-                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}>
-                      <ChevronRight size={18} color="#374151" strokeWidth={1.5} />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Days View */}
-                  {calendarView === 'days' && (
-                    <>
-                      {/* Week Days */}
-                      <View style={styles.calendarWeekRow}>
-                        {[t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')].map((day, i) => (
-                          <Text key={i} style={styles.calendarWeekDay}>{day}</Text>
-                        ))}
+                    </View>
+                  ) : type === 'food' ? (
+                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulseStyle]} />
+                      <View style={[styles.emojiCircle, { backgroundColor: 'rgba(245,158,11,0.14)' }]}>
+                        <Animated.View style={foodIconBounceStyle}>
+                          {React.createElement(config.icon, { size: 26, color: '#F59E0B', strokeWidth: 2 })}
+                        </Animated.View>
                       </View>
-
-                      {/* Days Grid */}
-                      <View style={styles.calendarDaysGrid}>
-                        {(() => {
-                          const year = selectedDate.getFullYear();
-                          const month = selectedDate.getMonth();
-                          const firstDay = new Date(year, month, 1).getDay();
-                          const daysInMonth = new Date(year, month + 1, 0).getDate();
-                          const today = new Date();
-                          const days = [];
-
-                          for (let i = 0; i < firstDay; i++) {
-                            days.push(<View key={`e-${i}`} style={styles.calendarDay} />);
-                          }
-
-                          for (let d = 1; d <= daysInMonth; d++) {
-                            const date = new Date(year, month, d);
-                            const isToday = date.toDateString() === today.toDateString();
-                            const isSelected = date.toDateString() === selectedDate.toDateString();
-                            const isFuture = date > today;
-
-                            days.push(
-                              <TouchableOpacity
-                                key={d}
-                                style={[styles.calendarDay, isToday && styles.calendarDayToday, isSelected && styles.calendarDaySelected, isFuture && styles.calendarDayDisabled]}
-                                onPress={() => { if (!isFuture) { setSelectedDate(date); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } }}
-                                disabled={isFuture}
-                              >
-                                <Text style={[styles.calendarDayText, isSelected && styles.calendarDaySelectedText]}>{d}</Text>
-                              </TouchableOpacity>
-                            );
-                          }
-                          return days;
-                        })()}
+                    </View>
+                  ) : type === 'sleep' ? (
+                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulseStyle]} />
+                      <View style={[styles.emojiCircle, { backgroundColor: 'rgba(129,140,248,0.14)' }]}>
+                        <Animated.View style={sleepIconFloatStyle}>
+                          {React.createElement(config.icon, { size: 26, color: '#6366F1', strokeWidth: 2 })}
+                        </Animated.View>
                       </View>
-                    </>
-                  )}
-
-                  {/* Months View */}
-                  {calendarView === 'months' && (
-                    <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', marginTop: 8 }}>
-                      {['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'].map((month, i) => {
-                        const isCurrentMonth = selectedDate.getMonth() === i;
-                        const today = new Date();
-                        const isFutureMonth = selectedDate.getFullYear() > today.getFullYear() ||
-                          (selectedDate.getFullYear() === today.getFullYear() && i > today.getMonth());
-
-                        return (
-                          <TouchableOpacity
-                            key={i}
-                            style={{
-                              width: '33.33%',
-                              padding: 12,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: isCurrentMonth ? '#7C3AED' : 'transparent',
-                              borderRadius: 12,
-                              opacity: isFutureMonth ? 0.4 : 1,
-                            }}
-                            onPress={() => {
-                              if (!isFutureMonth) {
-                                const newDate = new Date(selectedDate);
-                                newDate.setMonth(i);
-                                // If selected day doesn't exist in new month, set to last day
-                                const daysInNewMonth = new Date(newDate.getFullYear(), i + 1, 0).getDate();
-                                if (newDate.getDate() > daysInNewMonth) {
-                                  newDate.setDate(daysInNewMonth);
-                                }
-                                setSelectedDate(newDate);
-                                setCalendarView('days');
-                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                              }
-                            }}
-                            disabled={isFutureMonth}
-                          >
-                            <Text style={{
-                              fontSize: 14,
-                              fontWeight: '600',
-                              color: isCurrentMonth ? '#fff' : '#374151',
-                            }}>{month}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                    </View>
+                  ) : (
+                    <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
+                      {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
                     </View>
                   )}
-
-                  {/* Today Button */}
-                  <TouchableOpacity style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0 }]} onPress={() => { setSelectedDate(new Date()); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                    <Text style={styles.datePickerBtnText}>{t('tracking.today')}</Text>
-                  </TouchableOpacity>
+                  <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
                 </View>
-              </View>
-            )}
-          </RNAnimatedView>
+              )}
+
+              {/* Scrollable Content */}
+              <NativeViewGestureHandler ref={nativeScrollRef}>
+                <Animated.ScrollView
+                  ref={scrollViewRef}
+                  style={{ width: '100%' }}
+                  contentContainerStyle={styles.content}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  bounces={false}
+                  scrollEventThrottle={16}
+                  onScroll={scrollHandler}
+                >
+                  {renderContent()}
+                </Animated.ScrollView>
+              </NativeViewGestureHandler>
+
+              {/* Save Button - Premium Full Width */}
+              <TouchableOpacity
+                style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess]}
+                onPress={handleSave}
+                disabled={saveSuccess}
+                accessibilityRole="button"
+                accessibilityLabel={saveSuccess ? 'נשמר בהצלחה' : 'שמור תיעוד'}
+                accessibilityState={{ disabled: saveSuccess }}
+              >
+                <Check size={18} color="#fff" strokeWidth={2.5} />
+                <Text style={[styles.saveBtnText, saveSuccess && styles.saveBtnTextSuccess]}>
+                  {saveSuccess ? 'נשמר!' : 'שמור תיעוד'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Calendar Overlay - Inline */}
+              {showCalendar && (
+                <View style={styles.calendarInlineOverlay}>
+                  <TouchableOpacity style={styles.calendarInlineBackdrop} activeOpacity={1} onPress={() => { setShowCalendar(false); setCalendarView('days'); }} />
+                  <View style={styles.calendarCard}>
+                    {/* Month Header - Clickable for drill-up */}
+                    <View style={styles.calendarHeader}>
+                      <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
+                        const newDate = new Date(selectedDate);
+                        if (calendarView === 'days') {
+                          newDate.setMonth(newDate.getMonth() + 1);
+                        } else {
+                          newDate.setFullYear(newDate.getFullYear() + 1);
+                        }
+                        setSelectedDate(newDate);
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}>
+                        <ChevronLeft size={18} color="#374151" strokeWidth={1.5} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => {
+                        setCalendarView(calendarView === 'days' ? 'months' : 'days');
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={styles.calendarMonthText}>
+                            {calendarView === 'days'
+                              ? selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+                              : selectedDate.getFullYear().toString()
+                            }
+                          </Text>
+                          <ChevronUp size={14} color="#374151" strokeWidth={1.5} style={{ transform: [{ rotate: calendarView === 'months' ? '180deg' : '0deg' }] }} />
+                        </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
+                        const newDate = new Date(selectedDate);
+                        if (calendarView === 'days') {
+                          newDate.setMonth(newDate.getMonth() - 1);
+                        } else {
+                          newDate.setFullYear(newDate.getFullYear() - 1);
+                        }
+                        setSelectedDate(newDate);
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}>
+                        <ChevronRight size={18} color="#374151" strokeWidth={1.5} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Days View */}
+                    {calendarView === 'days' && (
+                      <>
+                        {/* Week Days */}
+                        <View style={styles.calendarWeekRow}>
+                          {[t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')].map((day, i) => (
+                            <Text key={i} style={styles.calendarWeekDay}>{day}</Text>
+                          ))}
+                        </View>
+
+                        {/* Days Grid */}
+                        <View style={styles.calendarDaysGrid}>
+                          {(() => {
+                            const year = selectedDate.getFullYear();
+                            const month = selectedDate.getMonth();
+                            const firstDay = new Date(year, month, 1).getDay();
+                            const daysInMonth = new Date(year, month + 1, 0).getDate();
+                            const today = new Date();
+                            const days = [];
+
+                            for (let i = 0; i < firstDay; i++) {
+                              days.push(<View key={`e-${i}`} style={styles.calendarDay} />);
+                            }
+
+                            for (let d = 1; d <= daysInMonth; d++) {
+                              const date = new Date(year, month, d);
+                              const isToday = date.toDateString() === today.toDateString();
+                              const isSelected = date.toDateString() === selectedDate.toDateString();
+                              const isFuture = date > today;
+
+                              days.push(
+                                <TouchableOpacity
+                                  key={d}
+                                  style={[styles.calendarDay, isToday && styles.calendarDayToday, isSelected && styles.calendarDaySelected, isFuture && styles.calendarDayDisabled]}
+                                  onPress={() => { if (!isFuture) { setSelectedDate(date); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } }}
+                                  disabled={isFuture}
+                                >
+                                  <Text style={[styles.calendarDayText, isSelected && styles.calendarDaySelectedText]}>{d}</Text>
+                                </TouchableOpacity>
+                              );
+                            }
+                            return days;
+                          })()}
+                        </View>
+                      </>
+                    )}
+
+                    {/* Months View */}
+                    {calendarView === 'months' && (
+                      <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', marginTop: 8 }}>
+                        {['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'].map((month, i) => {
+                          const isCurrentMonth = selectedDate.getMonth() === i;
+                          const today = new Date();
+                          const isFutureMonth = selectedDate.getFullYear() > today.getFullYear() ||
+                            (selectedDate.getFullYear() === today.getFullYear() && i > today.getMonth());
+
+                          return (
+                            <TouchableOpacity
+                              key={i}
+                              style={{
+                                width: '33.33%',
+                                padding: 12,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isCurrentMonth ? '#7C3AED' : 'transparent',
+                                borderRadius: 12,
+                                opacity: isFutureMonth ? 0.4 : 1,
+                              }}
+                              onPress={() => {
+                                if (!isFutureMonth) {
+                                  const newDate = new Date(selectedDate);
+                                  newDate.setMonth(i);
+                                  // If selected day doesn't exist in new month, set to last day
+                                  const daysInNewMonth = new Date(newDate.getFullYear(), i + 1, 0).getDate();
+                                  if (newDate.getDate() > daysInNewMonth) {
+                                    newDate.setDate(daysInNewMonth);
+                                  }
+                                  setSelectedDate(newDate);
+                                  setCalendarView('days');
+                                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                }
+                              }}
+                              disabled={isFutureMonth}
+                            >
+                              <Text style={{
+                                fontSize: 14,
+                                fontWeight: '600',
+                                color: isCurrentMonth ? '#fff' : '#374151',
+                              }}>{month}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+
+                    {/* Today Button */}
+                    <TouchableOpacity style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0 }]} onPress={() => { setSelectedDate(new Date()); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                      <Text style={styles.datePickerBtnText}>{t('tracking.today')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </Animated.View>
+          </GestureDetector>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -1991,6 +1913,20 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     shadowOffset: { width: 0, height: -8 },
     elevation: 12,
+  },
+  // Mid swipe zone - between header and scroll content
+  midSwipeZone: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    marginBottom: 4,
+    zIndex: 10,
+  },
+  midSwipeBar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
   },
   // Drag Handle - iOS Sheet Style - larger hit area for swipe
   dragHandle: {

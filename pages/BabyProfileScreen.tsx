@@ -22,6 +22,7 @@ import { saveBabyProfile } from '../services/babyService';
 import { LiquidGlassBackground } from '../components/LiquidGlass';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import JoinFamilyModal from '../components/Family/JoinFamilyModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,6 +40,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const [gender, setGender] = useState<'boy' | 'girl'>('boy');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   // Subtle pulse animation for button
   const buttonScale = useSharedValue(1);
@@ -278,17 +280,37 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             <Text style={styles.tipText}>אפשר לערוך את הפרופיל בהמשך בכל עת</Text>
           </Animated.View>
 
-          {/* Skip Button */}
-          {onSkip && (
-            <Animated.View>
+          {/* Bottom Actions for Guest/Sitter/Skip */}
+          <Animated.View style={styles.secondaryActions}>
+            <TouchableOpacity
+              style={styles.joinButton}
+              onPress={() => setShowJoinModal(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.joinText}>יש לך קוד הזמנה? הצטרף כאורח/בייביסיטר</Text>
+            </TouchableOpacity>
+
+            {onSkip && (
               <TouchableOpacity style={styles.skipButton} onPress={onSkip} activeOpacity={0.7}>
-                <Text style={styles.skipText}>דלג לעכשיו</Text>
+                <Text style={styles.skipText}>דלג לעכשיו (אפשר למלא אחר כך)</Text>
               </TouchableOpacity>
-            </Animated.View>
-          )}
+            )}
+          </Animated.View>
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Join Family / Sitter Guest Modal */}
+      <JoinFamilyModal
+        visible={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        onSuccess={() => {
+          setShowJoinModal(false);
+          if (onProfileSaved) {
+            onProfileSaved(); // Triggers app refresh to show new guest tabs
+          }
+        }}
+      />
     </View>
   );
 }
@@ -546,14 +568,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Skip
+  // Secondary Actions
+  secondaryActions: {
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 8,
+    paddingBottom: 20,
+  },
+  joinButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.15)',
+  },
+  joinText: {
+    fontSize: 14,
+    color: '#6366F1',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   skipButton: {
-    paddingVertical: 16,
+    paddingVertical: 8,
     alignItems: 'center',
   },
   skipText: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: 13,
+    color: '#9CA3AF',
     textDecorationLine: 'underline',
   },
 });

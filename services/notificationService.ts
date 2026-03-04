@@ -1,10 +1,11 @@
 import * as Notifications from 'expo-notifications';
+import messaging from '@react-native-firebase/messaging';
 import * as Device from 'expo-device';
 import * as Calendar from 'expo-calendar';
 import { Platform, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, auth } from './firebaseConfig';
-import { collection, query, where, getDocs, orderBy, Timestamp, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Timestamp, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { logger } from '../utils/logger';
 
 // --- Pattern Analysis Types ---
@@ -163,7 +164,7 @@ const NOTIFICATION_CONTENT = {
     },
     supplement_reminder: {
         title: '💊 תזכורת תוספים',
-        body: 'לא לשכוח ויטמין D וברזל!',
+        body: 'לא לשכוח את התוספים היומיים!',
     },
     vaccine_reminder: {
         title: '💉 תזכורת חיסון',
@@ -199,6 +200,9 @@ class NotificationService {
 
             // CLEANUP: Cancel any legacy diaper notifications (feature removed)
             await this.cancelLegacyDiaperNotifications();
+
+            // FCM: Sync Push Token asynchronously in the background
+            this.syncPushTokenToFirestore();
 
             return true;
         } catch (error) {
@@ -848,6 +852,60 @@ class NotificationService {
         } catch (error) {
             logger.error('Failed to cancel reminder:', error);
             return false;
+        }
+    }
+
+    // --- Firebase Cloud Messaging (Push Notifications) ---
+
+    // Get the Native FCM Token for remote notifications via Firebase Console
+    async getExpoPushToken(): Promise<string | null> {
+        if (!Device.isDevice) {
+            logger.warn('Push Notifications are not supported in Simulator.');
+            return null;
+        }
+
+        try {
+            const hasPermission = await this.requestPermissions();
+            if (!hasPermission) return null;
+
+            // Register APNs if on iOS for true FCM support
+            if (Platform.OS === 'ios') {
+                await messaging().registerDeviceForRemoteMessages();
+            }
+
+            // Fetch the native FCM token
+            const token = await messaging().getToken();
+
+            logger.info('📱 FCM Push Token retrieved:', token);
+            return token;
+        } catch (error) {
+            logger.error('Error getting FCM push token:', error);
+            return null;
+        }
+    }
+
+    // Sync the Expo Push Token to the user's Firestore document
+    async syncPushTokenToFirestore(): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            logger.debug('Cannot sync Push Token: No authenticated user.');
+            return;
+        }
+
+        try {
+            const token = await this.getExpoPushToken();
+            if (!token) return;
+
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {
+                pushToken: token,
+                pushTokenUpdatedAt: new Date().toISOString(),
+                platform: Platform.OS
+            });
+
+            logger.log(`✅ Synced Push Token for user ${userId}`);
+        } catch (error) {
+            logger.error('Failed to sync push token to Firestore:', error);
         }
     }
 }

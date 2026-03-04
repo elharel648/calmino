@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import {
     View, Text, StyleSheet, Modal, TouchableOpacity,
-    Platform, Animated as RNAnimated, PanResponder, Dimensions, StyleSheet as RNStyleSheet
+    Platform, Animated as RNAnimated, PanResponder, Dimensions, useWindowDimensions, StyleSheet as RNStyleSheet
 } from 'react-native';
-import { CloudRain, Wind, Heart, Fan, Volume2, Volume1, VolumeX, Clock, Music } from 'lucide-react-native';
+import { CloudRain, Wind, Heart, Fan, Volume2, Volume1, VolumeX, Clock, Music, Music2, Star, Sparkles, Baby } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
@@ -21,15 +21,25 @@ interface WhiteNoiseModalProps {
 }
 
 const SOUNDS = [
-    { id: 'rain',      label: 'גשם עדין',  Icon: CloudRain, color: '#38BDF8', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.12)'  },
-    { id: 'shh',       label: 'רעש לבן',   Icon: Wind,      color: '#A78BFA', bgLight: '#F5F3FF', bgDark: 'rgba(167,139,250,0.12)' },
-    { id: 'heartbeat', label: 'לב אמא',    Icon: Heart,     color: '#F472B6', bgLight: '#FDF2F8', bgDark: 'rgba(244,114,182,0.12)' },
-    { id: 'dryer',     label: 'מייבש',     Icon: Fan,       color: '#34D399', bgLight: '#ECFDF5', bgDark: 'rgba(52,211,153,0.12)'  },
+    { id: 'lullaby1',  label: 'שיר ערש',      Icon: Music2,    color: '#818CF8', bgLight: '#EEF2FF', bgDark: 'rgba(129,140,248,0.14)' },
+    { id: 'lullaby2',  label: 'מוזיקה עדינה',  Icon: Star,      color: '#F472B6', bgLight: '#FDF2F8', bgDark: 'rgba(244,114,182,0.14)' },
+    { id: 'lullaby3',  label: 'ניגון שלווה',   Icon: Sparkles,  color: '#FB923C', bgLight: '#FFF7ED', bgDark: 'rgba(251,146,60,0.14)'  },
+    { id: 'lullaby4',  label: 'שיר לילה',      Icon: Baby,      color: '#34D399', bgLight: '#ECFDF5', bgDark: 'rgba(52,211,153,0.14)'  },
+    { id: 'rain',      label: 'גשם עדין',      Icon: CloudRain, color: '#38BDF8', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.12)'  },
+    { id: 'shh',       label: 'רעש לבן',       Icon: Wind,      color: '#A78BFA', bgLight: '#F5F3FF', bgDark: 'rgba(167,139,250,0.12)' },
+    { id: 'heartbeat', label: 'לב אמא',        Icon: Heart,     color: '#F9A8D4', bgLight: '#FDF2F8', bgDark: 'rgba(249,168,212,0.12)' },
+    { id: 'dryer',     label: 'מייבש',         Icon: Fan,       color: '#6EE7B7', bgLight: '#ECFDF5', bgDark: 'rgba(110,231,183,0.12)' },
 ] as const;
 
 export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalProps) {
     const { theme, isDarkMode } = useTheme();
     const { activeSound, volume, isLoading, toggleSound, setVolume, sleepTimer, timeRemaining, startTimer, stopTimer } = useAudio();
+    const { width: screenW } = useWindowDimensions();
+    const isSmall = screenW < 390;
+    // 2 columns on small screens, 3 on large
+    const cardWidth = isSmall ? '47%' : '30%';
+    const gridPad  = isSmall ? 16 : 20;
+    const titleSize = isSmall ? 23 : 28;
 
     const slideAnim  = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
@@ -139,7 +149,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
 
                 {/* Header */}
                 <View style={styles.header} {...panResponder.panHandlers}>
-                    <Text style={[styles.title, { color: theme.textPrimary }]}>רעש לבן</Text>
+                    <Text style={[styles.title, { color: theme.textPrimary, fontSize: titleSize }]}>מוזיקה לשינה</Text>
                     {/* Waveform + active sound name */}
                     {activeSound ? (
                         <View style={styles.waveformArea}>
@@ -161,7 +171,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                 </View>
 
                 {/* Sound grid */}
-                <View style={styles.grid}>
+                <View style={[styles.grid, { paddingHorizontal: gridPad }]}>
                     {SOUNDS.map(sound => {
                         const isActive = activeSound === sound.id;
                         const { Icon } = sound;
@@ -171,6 +181,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                 style={[
                                     styles.card,
                                     {
+                                        width: cardWidth,
                                         backgroundColor: isActive
                                             ? sound.color
                                             : isDarkMode ? 'rgba(255,255,255,0.06)' : sound.bgLight,
@@ -194,7 +205,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                             : isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)'
                                     }
                                 ]}>
-                                    <Icon size={22} color={isActive ? '#fff' : sound.color} strokeWidth={1.8} />
+                                    <Icon size={18} color={isActive ? '#fff' : sound.color} strokeWidth={1.8} />
                                 </View>
                                 <Text style={[styles.cardLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>
                                     {sound.label}
@@ -347,28 +358,28 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row-reverse',
         flexWrap: 'wrap',
-        gap: 14,
+        gap: 10,
         paddingHorizontal: 20,
         marginBottom: 20,
     },
     card: {
-        width: '47%',
-        paddingVertical: 22,
-        paddingHorizontal: 16,
+        width: '30%',
+        paddingVertical: 18,
+        paddingHorizontal: 10,
         borderRadius: 22,
         alignItems: 'center',
         borderWidth: 1,
         gap: 10,
     },
     cardIcon: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
     },
     cardLabel: {
-        fontSize: 15,
+        fontSize: 12,
         fontWeight: '700',
         letterSpacing: -0.2,
     },

@@ -22,6 +22,7 @@ import { useBabyProfile } from '../hooks/useBabyProfile';
 import { auth, db } from '../services/firebaseConfig';
 import { logger } from '../utils/logger';
 import { usePremium } from '../context/PremiumContext';
+import { getShowPremiumUpgrade } from '../services/remoteConfigService';
 
 // Components
 import { FamilyMembersCard } from '../components/Family/FamilyMembersCard';
@@ -59,6 +60,9 @@ export default function SettingsScreen() {
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
+  // Read remote config switch globally
+  const showPremiumUpgrade = getShowPremiumUpgrade();
 
   const handleSettingsPress = () => {
     if (Platform.OS !== 'web') {
@@ -332,13 +336,8 @@ export default function SettingsScreen() {
                 </View>
               </>
             ) : (
-              <View style={styles.avatarMinimal}>
-                <View style={[styles.iconCircleMinimal, { borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                  <User size={32} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
-                </View>
-                <View style={[styles.cameraBadgeSmall, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}>
-                  <Camera size={12} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                </View>
+              <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                <Camera size={28} color={isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
               </View>
             )}
           </TouchableOpacity>
@@ -358,34 +357,36 @@ export default function SettingsScreen() {
             <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user.email}</Text>
           )}
         </Animated.View>
-        {/* Premium Card - Highlighted Premium Design */}
-        <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.section}>
-          <TouchableOpacity
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsPremiumModalOpen(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#FF6B35', '#F7931E']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.premiumCardMinimal, { borderWidth: 0 }]}
+        {/* Premium Card - Highlighted Premium Design - Remote Config controlled */}
+        {showPremiumUpgrade && (
+          <Animated.View entering={ANIMATIONS.fadeInDown(200)} style={styles.section}>
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsPremiumModalOpen(true);
+              }}
+              activeOpacity={0.8}
             >
-              <View style={styles.premiumContentMinimal}>
-                <View style={[styles.premiumIconMinimal, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
-                  <Crown size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <LinearGradient
+                colors={['#FF6B35', '#F7931E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.premiumCardMinimal, { borderWidth: 0 }]}
+              >
+                <View style={styles.premiumContentMinimal}>
+                  <View style={[styles.premiumIconMinimal, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                    <Crown size={20} color="#FFFFFF" strokeWidth={2.5} />
+                  </View>
+                  <View style={styles.premiumTextMinimal}>
+                    <Text style={[styles.premiumTitleMinimal, { color: '#ffffff', fontWeight: '800' }]}>{t('account.upgradePremium')}</Text>
+                    <Text style={[styles.premiumSubtitleMinimal, { color: 'rgba(255,255,255,0.85)' }]}>{t('account.premiumSubtitle')}</Text>
+                  </View>
                 </View>
-                <View style={styles.premiumTextMinimal}>
-                  <Text style={[styles.premiumTitleMinimal, { color: '#ffffff', fontWeight: '800' }]}>{t('account.upgradePremium')}</Text>
-                  <Text style={[styles.premiumSubtitleMinimal, { color: 'rgba(255,255,255,0.85)' }]}>{t('account.premiumSubtitle')}</Text>
-                </View>
-              </View>
-              <ChevronLeft size={18} color="rgba(255,255,255,0.6)" strokeWidth={2.5} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
+                <ChevronLeft size={18} color="rgba(255,255,255,0.6)" strokeWidth={2.5} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         {/* Family Section - Unified, Clean Design */}
         <Animated.View entering={ANIMATIONS.fadeInDown(300)} style={styles.section}>
@@ -574,7 +575,9 @@ export default function SettingsScreen() {
                     </Text>
                   </View>
                 </View>
-                <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
+                <View style={styles.chevronWrap}>
+                  <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
+                </View>
               </TouchableOpacity>
             </Animated.View>
           )}
@@ -1186,7 +1189,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 18,
+    marginLeft: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -1196,6 +1199,12 @@ const styles = StyleSheet.create({
   listItemTextContainer: {
     flex: 1,
     alignItems: 'flex-end',
+  },
+  chevronWrap: {
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   listItemText: {
     fontSize: 18,

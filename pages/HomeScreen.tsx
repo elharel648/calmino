@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions } from 'react-native';
+import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -70,6 +71,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     // --- Theme & Language ---
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
+    const { height: screenH } = useWindowDimensions();
 
     // --- Active Child from Context ---
     const { activeChild, allChildren } = useActiveChild();
@@ -165,8 +167,10 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         dailyStats,
         growthStats,
         refresh: refreshHomeData,
+        isError: homeDataError,
+        guestExpiresAt,
     } = useHomeData(profile.id, profile.name, profile.ageMonths, profile.parentId);
-    const { meds, toggleMed, syncStatus, refresh: refreshMeds } = useMedications(profile.id);
+    const { meds, toggleMed, syncStatus, refresh: refreshMeds, customSupplements, addCustomSupplement, removeCustomSupplement, totalCount, takenCount } = useMedications(profile.id);
     const { currentGuardian, setCurrentGuardian, availableRoles, isPremium } = useGuardian();
     const { scheduleFeedingReminder } = useNotifications();
 
@@ -297,10 +301,45 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         setTimelineRefresh(prev => prev + 1);
     }, [user, profile.id, refreshHomeData, scheduleFeedingReminder]);
 
-    const shareMessage = useMemo(() =>
-        `עדכון מ-Calmino:\n👶 ${profile.name}\n🍼 אכל/ה לאחרונה: ${lastFeedTime}\n😴 ישן/ה לאחרונה: ${lastSleepTime}`,
-        [profile.name, lastFeedTime, lastSleepTime]
-    );
+    const shareMessage = useMemo(() => {
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+
+        // Age formatting
+        const ageStr = profile.ageMonths < 12
+            ? `${profile.ageMonths} חודשים`
+            : `${Math.floor(profile.ageMonths / 12)} שנה${profile.ageMonths % 12 > 0 ? ` ו-${profile.ageMonths % 12} חודשים` : ''}`;
+
+        // Sleep duration formatting
+        const sleepH = Math.floor(dailyStats.sleepMinutes / 60);
+        const sleepM = dailyStats.sleepMinutes % 60;
+        const sleepStr = sleepH > 0
+            ? `${sleepH} שעות${sleepM > 0 ? ` ו-${sleepM} דקות` : ''}`
+            : sleepM > 0 ? `${sleepM} דקות` : 'לא תועד';
+
+        let msg = `🌟 *סיכום יומי — ${profile.name}*\n`;
+        msg += `📅 ${dateStr}`;
+        if (ageStr) msg += ` · גיל: ${ageStr}`;
+        msg += `\n\n`;
+
+        msg += `📊 *סטטיסטיקות היום:*\n`;
+        msg += `🍼 האכלות: ${dailyStats.feedCount > 0 ? `${dailyStats.feedCount} פעם` : 'לא תועדה'}\n`;
+        msg += `💤 שינה כוללת: ${sleepStr}\n`;
+        msg += `🫧 החלפות חיתול: ${dailyStats.diaperCount > 0 ? `${dailyStats.diaperCount} פעמים` : 'לא תועד'}\n`;
+
+        msg += `\n⏱️ *פעילות אחרונה:*\n`;
+        msg += `🍼 האכלה אחרונה: ${lastFeedTime}\n`;
+        msg += `😴 שינה אחרונה: ${lastSleepTime}\n`;
+
+        if (growthStats?.currentWeight || growthStats?.currentHeight) {
+            msg += `\n📏 *מדידות:*\n`;
+            if (growthStats.currentHeight) msg += `📐 גובה: ${growthStats.currentHeight}\n`;
+            if (growthStats.currentWeight) msg += `⚖️ משקל: ${growthStats.currentWeight}\n`;
+        }
+
+        msg += `\n_נשלח מ-Calmino 💙_`;
+        return msg;
+    }, [profile.name, profile.ageMonths, lastFeedTime, lastSleepTime, dailyStats, growthStats]);
 
     const shareStatus = useCallback(async () => {
         await Share.share({ message: shareMessage });
@@ -317,6 +356,18 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     // Get loading state from context (but don't show loading screen)
     const { isLoading: contextLoading } = useActiveChild();
 
+    // Format guest time remaining for banner
+    const guestTimeRemaining = useMemo(() => {
+        if (!guestExpiresAt) return null;
+        const now = new Date();
+        const diffMs = guestExpiresAt.getTime() - now.getTime();
+        if (diffMs <= 0) return null;
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        if (hours > 0) return `נותרו ${hours} שעות לגישתך כאורח`;
+        return `נותרו ${minutes} דקות לגישתך כאורח`;
+    }, [guestExpiresAt]);
+
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -325,6 +376,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 <Animated.ScrollView
                     contentContainerStyle={[
                         styles.scrollContent,
+                        { paddingBottom: screenH < 700 ? 100 : 140 },
                         !profile.id && !contextLoading && styles.scrollContentCentered
                     ]}
                     showsVerticalScrollIndicator={false}
@@ -365,6 +417,22 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     }}
                                 />
                             </View>
+
+                            {/* Network error banner */}
+                            {homeDataError && (
+                                <View style={styles.errorBanner}>
+                                    <WifiOff size={14} color="#fff" strokeWidth={2} />
+                                    <Text style={styles.errorBannerText}>בעיית חיבור — משוך למטה לרענון</Text>
+                                </View>
+                            )}
+
+                            {/* Guest expiry countdown banner */}
+                            {guestTimeRemaining && (
+                                <View style={styles.guestBanner}>
+                                    <Clock size={14} color="#fff" strokeWidth={2} />
+                                    <Text style={styles.guestBannerText}>{guestTimeRemaining}</Text>
+                                </View>
+                            )}
 
                             <View>
                                 <QuickActions
@@ -447,6 +515,11 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                     meds={meds}
                     onToggle={toggleMed}
                     onRefresh={() => setTimelineRefresh(prev => prev + 1)}
+                    customSupplements={customSupplements}
+                    onAddCustom={addCustomSupplement}
+                    onRemoveCustom={removeCustomSupplement}
+                    takenCount={takenCount}
+                    totalCount={totalCount}
                 />
                 <GrowthModal
                     visible={isGrowthOpen}
@@ -545,6 +618,40 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    errorBanner: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#EF4444',
+        borderRadius: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        marginBottom: 12,
+    },
+    errorBannerText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '600',
+        flex: 1,
+        textAlign: 'right',
+    },
+    guestBanner: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#6366F1',
+        borderRadius: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        marginBottom: 12,
+    },
+    guestBannerText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '600',
+        flex: 1,
+        textAlign: 'right',
+    },
     safeArea: {
         flex: 1,
     },
@@ -554,7 +661,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
-        paddingBottom: 140,
     },
     scrollContentCentered: {
         flex: 1,

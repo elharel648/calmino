@@ -37,6 +37,7 @@ interface LiveActivityService {
     stopBabysitterShift: () => Promise<boolean>;
 
     isLiveActivitySupported: () => Promise<boolean>;
+    updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string) => Promise<boolean>;
 }
 
 class LiveActivityServiceClass implements LiveActivityService {
@@ -77,7 +78,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            const id = await ActivityKitManager.startMeal(childName, '🍼', 'pumping', [], 0);
+            const id = await ActivityKitManager.startMeal(childName, '', 'שאיבה', [], 0);
             this.activityId = id;
             logger.log('✅ Pumping Live Activity started:', id);
             return id;
@@ -116,7 +117,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            const id = await ActivityKitManager.startMeal(childName, '🍼', 'bottle', [], 0);
+            const id = await ActivityKitManager.startMeal(childName, '', 'בקבוק', [], 0);
             this.activityId = id;
             logger.log('✅ Bottle Live Activity started:', id);
             return id;
@@ -156,7 +157,7 @@ class LiveActivityServiceClass implements LiveActivityService {
 
         try {
             // Updated to match ActivityKitModule.swift signature: (babyName, babyEmoji, sleepType, isAwake)
-            const id = await ActivityKitManager.startSleep(childName, '😴', 'שינה', false);
+            const id = await ActivityKitManager.startSleep(childName, '', 'שינה', false);
             this.activityId = id;
             logger.log('✅ Sleep Live Activity started:', id);
             return id;
@@ -194,9 +195,8 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         try {
-            const sideEmoji = side === 'left' ? '👈' : '👉';
             const mealType = side === 'left' ? 'breastfeeding-left' : 'breastfeeding-right';
-            const id = await ActivityKitManager.startMeal(childName, sideEmoji, mealType, [], 0);
+            const id = await ActivityKitManager.startMeal(childName, '', mealType, [], 0);
             this.activityId = id;
             logger.log('✅ Breastfeeding Live Activity started:', id, side);
             return id;
@@ -324,6 +324,16 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     get currentActivityId(): string | null {
         return this.activityId;
+    }
+
+    // MARK: - Widget Data
+    async updateWidgetData(babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string): Promise<boolean> {
+        if (!ActivityKitManager || Platform.OS !== 'ios') return false;
+        try {
+            return await ActivityKitManager.updateWidgetData(babyName, lastFeedTime, lastFeedAgo, lastSleepTime, lastSleepAgo, babyStatus);
+        } catch {
+            return false;
+        }
     }
 }
 

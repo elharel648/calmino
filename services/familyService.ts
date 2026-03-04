@@ -14,6 +14,7 @@ import {
     runTransaction,
     Unsubscribe
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db, auth } from './firebaseConfig';
 import { logger } from '../utils/logger';
 
@@ -153,163 +154,38 @@ export const getMyFamily = async (): Promise<Family | null> => {
 };
 
 /**
- * Join a family using invite code - Smart detection: automatically detects if code is for family or guest
- * If user is already in a family, they will leave it and join the new one
+ * Join a family using invite code — delegates to Cloud Function (server-side).
+ * The Cloud Function handles both guest codes (invites collection) and
+ * family codes (families collection query) without exposing family data to the client.
+ *
+ * @param inviteCode  6-digit invite code
+ * @param force       true = confirmed leave of current family (user already acknowledged)
  */
-export const joinFamily = async (inviteCode: string, role: FamilyRole = 'member'): Promise<{ success: boolean; message: string; family?: Family; isGuest?: boolean }> => {
-    const userId = getCurrentUserId();
-    if (!userId) return { success: false, message: 'יש להתחבר למערכת' };
-
-    const user = auth.currentUser;
-    if (!user) return { success: false, message: 'יש להתחבר למערכת' };
-
-    const trimmedCode = inviteCode.trim();
+export const joinFamily = async (
+    inviteCode: string,
+    force: boolean = false,
+): Promise<{
+    success: boolean;
+    message: string;
+    requiresLeave?: boolean;
+    currentFamilyName?: string;
+    isGuest?: boolean;
+}> => {
+    if (!auth.currentUser) return { success: false, message: 'יש להתחבר למערכת' };
 
     try {
-        // FIRST: Check if it's a guest invite code (in 'invites' collection)
-        const inviteDoc = await getDoc(doc(db, 'invites', trimmedCode));
+        const functions = getFunctions();
+        const callJoin = httpsCallable<
+            { code: string; force: boolean },
+            { success: boolean; message: string; familyId?: string; isGuest?: boolean; requiresLeave?: boolean; currentFamilyName?: string }
+        >(functions, 'joinFamilyByCode');
 
-        if (inviteDoc.exists()) {
-            const inviteData = inviteDoc.data();
-
-            // Check if invite is expired
-            const expiresAt = inviteData.expiresAt?.toDate ? inviteData.expiresAt.toDate() : new Date(inviteData.expiresAt);
-            if (new Date() > expiresAt) {
-                return { success: false, message: 'קוד ההזמנה פג תוקף' };
-            }
-
-            // Check if invite was already used
-            if (inviteData.used) {
-                return { success: false, message: 'קוד ההזמנה כבר נוצל' };
-            }
-
-            // SECURITY: Prevent self-invite
-            if (inviteData.createdBy === userId) {
-                return { success: false, message: 'לא ניתן להצטרף להזמנה שיצרת בעצמך' };
-            }
-
-            const { familyId, childId } = inviteData;
-
-            // SECURITY: Verify family exists
-            const familyDoc = await getDoc(doc(db, 'families', familyId));
-            if (!familyDoc.exists()) {
-                return { success: false, message: 'המשפחה לא נמצאה' };
-            }
-
-            const familyData = familyDoc.data();
-
-            // SECURITY: Check if already a member
-            if (familyData.members?.[userId]) {
-                return { success: false, message: 'אתה כבר חלק מהמשפחה הזו' };
-            }
-
-            // Check if in a different family - leave it first
-            const existingFamily = await getMyFamily();
-            if (existingFamily && existingFamily.id !== familyId) {
-                await leaveFamily();
-            }
-
-            // Add guest to family with limited access (24 hours)
-            const expiresAt24h = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-            await updateDoc(doc(db, 'families', familyId), {
-                [`members.${userId}`]: {
-                    role: 'guest',
-                    name: user.displayName || 'אורח',
-                    email: user.email || '',
-                    photoURL: user.photoURL || null,
-                    joinedAt: serverTimestamp(),
-                    accessLevel: 'actions_only',
-                    historyAccessDays: 1, // Only 24 hours of history
-                    invitedBy: inviteData.createdBy,
-                    expiresAt: expiresAt24h,
-                }
-            });
-
-            // Update user's guestAccess field
-            await setDoc(doc(db, 'users', userId), {
-                guestAccess: {
-                    [familyId]: {
-                        role: 'guest',
-                        childId,
-                        accessLevel: 'actions_only',
-                        joinedAt: serverTimestamp(),
-                        expiresAt: expiresAt24h,
-                    }
-                }
-            }, { merge: true });
-
-            // Mark invite as used
-            await updateDoc(doc(db, 'invites', trimmedCode), {
-                used: true,
-                usedBy: userId,
-                usedAt: serverTimestamp(),
-            });
-
-            // Get child name for success message
-            const childDoc = await getDoc(doc(db, 'babies', childId));
-            const childName = childDoc.exists() ? childDoc.data()?.name || 'התינוק' : 'התינוק';
-
-            return {
-                success: true,
-                message: `הצטרפת כאורח ל${childName}! גישה ל-24 שעות בלבד 🎉`,
-                family: { id: familyId, ...familyData } as Family,
-                isGuest: true,
-            };
-        }
-
-        // SECOND: Check if it's a family invite code (in 'families' collection)
-        const q = query(
-            collection(db, 'families'),
-            where('inviteCode', '==', trimmedCode)
-        );
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            return { success: false, message: 'קוד הזמנה לא תקין' };
-        }
-
-        const familyDoc = snapshot.docs[0];
-        const familyId = familyDoc.id;
-        const familyData = familyDoc.data() as Family;
-
-        // Check if already a member of THIS family
-        if (familyData.members && familyData.members[userId]) {
-            return { success: false, message: 'אתה כבר חלק מהמשפחה הזו' };
-        }
-
-        // Check if in a different family - leave it first
-        const existingFamily = await getMyFamily();
-        if (existingFamily && existingFamily.id !== familyId) {
-            await leaveFamily();
-        }
-
-        // Add user to new family with full access
-        await updateDoc(doc(db, 'families', familyId), {
-            [`members.${userId}`]: {
-                role,
-                name: user.displayName || 'משתמש חדש',
-                email: user.email || '',
-                photoURL: user.photoURL || null,
-                joinedAt: serverTimestamp(),
-                accessLevel: 'full', // Full access to all children
-            }
-        });
-
-        // Update user's familyId (use setDoc with merge in case user doc doesn't exist)
-        await setDoc(doc(db, 'users', userId), {
-            familyId,
-        }, { merge: true });
-
-        return {
-            success: true,
-            message: `הצטרפת למשפחת ${familyData.babyName}! גישה מלאה לכל הילדים 🎉`,
-            family: { id: familyId, ...familyData },
-            isGuest: false,
-        };
+        const { data } = await callJoin({ code: inviteCode.trim(), force });
+        return data;
     } catch (error: any) {
-        logger.log('Error joining family:', error?.code, error?.message);
-        return { success: false, message: `שגיאה בהצטרפות למשפחה: ${error?.code || error?.message || 'unknown'}` };
+        const msg: string = error?.message || 'שגיאה בהצטרפות למשפחה';
+        logger.log('joinFamily Cloud Function error:', error?.code, msg);
+        return { success: false, message: msg };
     }
 };
 
@@ -564,23 +440,8 @@ export const createGuestInvite = async (
             return null;
         }
 
-        // Generate a unique 6-digit code with collision check
-        let code = generateInviteCode();
-        let attempts = 0;
-        const maxAttempts = 5;
-
-        while (attempts < maxAttempts) {
-            const existingInvite = await getDoc(doc(db, 'invites', code));
-            if (!existingInvite.exists()) break;
-            code = generateInviteCode();
-            attempts++;
-        }
-
-        if (attempts >= maxAttempts) {
-            logger.log('Failed to generate unique invite code');
-            return null;
-        }
-
+        // Generate a unique code — timestamp suffix makes collisions virtually impossible
+        const code = generateInviteCode();
         const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
         // Store the invite in Firestore

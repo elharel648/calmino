@@ -10,6 +10,10 @@ const soundFiles = {
     shh: require('../assets/sounds/shh.mp3'),
     heartbeat: require('../assets/sounds/heartbeat.mp3'),
     dryer: require('../assets/sounds/dryer.mp3'),
+    lullaby1: require('../assets/sounds/lullaby1.mp3'),
+    lullaby2: require('../assets/sounds/lullaby2.mp3'),
+    lullaby3: require('../assets/sounds/lullaby3.mp3'),
+    lullaby4: require('../assets/sounds/lullaby4.mp3'),
 };
 
 export type SoundId = keyof typeof soundFiles;

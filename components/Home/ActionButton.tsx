@@ -53,26 +53,45 @@ const ActionButton = memo(({
             accessibilityState={{ selected: isActive }}
         >
             {/* Icon Container — Premium rounded square with per-category color tint */}
-            <View style={[
-                styles.iconContainer,
-                {
-                    backgroundColor: config.lightColor,
-                    shadowColor: isDarkMode ? 'transparent' : '#000',
-                },
-                isActive && {
-                    backgroundColor: config.accentColor,
-                    shadowColor: config.accentColor,
-                    shadowOpacity: 0.3,
-                    shadowRadius: 10,
-                    shadowOffset: { width: 0, height: 4 },
-                },
-                config.hasBorder && styles.iconContainerDashed,
-            ]}>
-                {isActive ? (
-                    <Pause size={19} color="#FFFFFF" strokeWidth={1.5} />
-                ) : (
-                    <Icon size={19} color={config.color} strokeWidth={1.5} />
-                )}
+            <View style={styles.iconWrapper}>
+                <View style={[
+                    styles.iconContainer,
+                    {
+                        backgroundColor: config.lightColor,
+                        shadowColor: isDarkMode ? 'transparent' : '#000',
+                    },
+                    isActive && {
+                        backgroundColor: config.accentColor,
+                        shadowColor: config.accentColor,
+                        shadowOpacity: 0.3,
+                        shadowRadius: 10,
+                        shadowOffset: { width: 0, height: 4 },
+                    },
+                    config.hasBorder && styles.iconContainerDashed,
+                ]}>
+                    {isActive ? (
+                        <Pause size={19} color="#FFFFFF" strokeWidth={1.5} />
+                    ) : (
+                        <Icon size={19} color={config.color} strokeWidth={1.5} />
+                    )}
+                </View>
+                {/* Badge dot — shown when badge has pending items (e.g. "0/2", "1/2") */}
+                {badge && (() => {
+                    const parts = badge.split('/');
+                    if (parts.length === 2) {
+                        const done = parseInt(parts[0]);
+                        const total = parseInt(parts[1]);
+                        if (done < total) {
+                            const remaining = total - done;
+                            return (
+                                <View style={styles.badgeDot}>
+                                    <Text style={styles.badgeDotText}>{remaining}</Text>
+                                </View>
+                            );
+                        }
+                    }
+                    return null;
+                })()}
             </View>
 
             {/* Label */}
@@ -91,13 +110,8 @@ const ActionButton = memo(({
                     {lastTime}
                 </Text>
             ) : badge ? (
-                <Text style={[styles.badgeText, {
-                    color: badge.includes('/') && badge.split('/')[0] === badge.split('/')[1]
-                        ? '#34C759'
-                        : theme.textSecondary
-                }]}>
-                    {badge}
-                </Text>
+                // Badge info shown as dot on icon — show empty placeholder here
+                <View style={styles.subPlaceholder} />
             ) : (
                 <View style={styles.subPlaceholder} />
             )}
@@ -116,13 +130,35 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: 72,
     },
+    iconWrapper: {
+        position: 'relative',
+        marginBottom: 8,
+    },
+    badgeDot: {
+        position: 'absolute',
+        bottom: -4,
+        right: -4,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: '#FF3B30',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
+    },
+    badgeDotText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
     iconContainer: {
         width: 54,
         height: 54,
         borderRadius: 17,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 8,
         // Diffused premium floating shadow
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.04,
@@ -160,10 +196,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#FFFFFF',
         letterSpacing: 0.2,
-    },
-    badgeText: {
-        fontSize: 10,
-        fontWeight: '600',
     },
 });
 

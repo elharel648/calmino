@@ -124,7 +124,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                                 </View>
                             ) : (
                                 <Text style={[styles.statValue, { color: theme.textPrimary }]}>
-                                    {latestWeight}
+                                    {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>ק"ג</Text>
                                 </Text>
                             )}
 
@@ -160,8 +160,8 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                 {/* Label */}
                 <Text style={[styles.statLabel, { color: theme.textSecondary }]}>גדילה</Text>
 
-                {/* Sub value */}
-                {hasData && latestWeight && (
+                {/* Sub value - only shown when sparkline is visible (multiple measurements) */}
+                {hasData && latestWeight && weightData.length >= 2 && (
                     <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>
                         {latestWeight} ק"ג
                     </Text>

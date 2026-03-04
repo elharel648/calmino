@@ -111,7 +111,7 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
                 await quickActionsService.startSleep(
                     activeChild.childName,
                     '👶',
-                    'night'
+                    'שינה'
                 );
                 logger.log('✅ Sleep Live Activity started for child:', activeChildId);
             } catch (error) {
@@ -156,8 +156,13 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
 
         updateChildState(activeChildId, { isPaused: true });
 
-        // Note: quickActionsService doesn't support pause/resume yet
-        // Could be added in the future if needed
+        if (Platform.OS === 'ios') {
+            try {
+                await quickActionsService.pauseSleep();
+            } catch (error) {
+                logger.warn('⚠️ Error pausing Sleep Live Activity:', error);
+            }
+        }
     }, [activeChildId, timers, updateChildState]);
 
     const resume = useCallback(async () => {
@@ -167,8 +172,13 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
 
         updateChildState(activeChildId, { isPaused: false });
 
-        // Note: quickActionsService doesn't support pause/resume yet
-        // Could be added in the future if needed
+        if (Platform.OS === 'ios') {
+            try {
+                await quickActionsService.resumeSleep();
+            } catch (error) {
+                logger.warn('⚠️ Error resuming Sleep Live Activity:', error);
+            }
+        }
     }, [activeChildId, timers, updateChildState]);
 
     // Note: Live Activity updates automatically via iOS system

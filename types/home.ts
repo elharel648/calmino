@@ -21,9 +21,16 @@ export interface WeatherData {
     error?: string;
 }
 
+export interface CustomSupplement {
+    id: string;
+    name: string;
+    icon: string; // lucide icon name
+}
+
 export interface MedicationsState {
     vitaminD: boolean;
     iron: boolean;
+    custom?: Record<string, boolean>;
 }
 
 export interface HomeDataState {

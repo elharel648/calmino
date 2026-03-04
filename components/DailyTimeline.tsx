@@ -117,6 +117,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const [isExpanded, setIsExpanded] = useState(false);
   const [lineHeight, setLineHeight] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Per-day "show more" state for grouped/history view
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const EVENTS_PER_DAY = 5;
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -173,33 +176,41 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
   // ... (keeping existing handlers)
 
-  // Group events by date
+  // Group events by date — returns a sorted array of [label, events] pairs (newest first)
   const groupedEvents = React.useMemo(() => {
     if (!useGrouping || events.length === 0) return null;
 
-    const groups: { [key: string]: TimelineEvent[] } = {};
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
 
+    // Map: dateString → { label, events, dateObj }
+    const map = new Map<string, { label: string; dateObj: Date; events: TimelineEvent[] }>();
+
     events.forEach(event => {
       const date = new Date(event.timestamp);
-      let dateKey = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+      // Use midnight of the day as stable map key
+      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 
-      // Check for Today/Yesterday
+      let label: string;
       if (date.toDateString() === today.toDateString()) {
-        dateKey = 'היום';
+        label = 'היום';
       } else if (date.toDateString() === yesterday.toDateString()) {
-        dateKey = 'אתמול';
+        label = 'אתמול';
+      } else {
+        label = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
       }
 
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
+      if (!map.has(dayKey)) {
+        map.set(dayKey, { label, dateObj: date, events: [] });
       }
-      groups[dateKey].push(event);
+      map.get(dayKey)!.events.push(event);
     });
 
-    return groups;
+    // Sort groups: newest first
+    return Array.from(map.values()).sort(
+      (a, b) => b.dateObj.getTime() - a.dateObj.getTime()
+    );
   }, [events, useGrouping]);
 
   // ... (render logic update below) ...
@@ -346,7 +357,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         return '';
       }
       if (event.subType === 'breast') return event.note || '';
-      if (event.subType === 'solids') return t('tracking.solidsFood');
+      if (event.subType === 'solids') {
+        // Don't show the category name as subtext — only a real user-typed note
+        const solidLabel = t('tracking.solidsFood');
+        return (event.note && event.note !== solidLabel && event.note !== 'מזון מוצקים') ? event.note : '';
+      }
       if (event.subType === 'pumping') return event.note || t('timeline.pumping');
     } else if (event.type === 'sleep') {
       // For timerange mode: show total duration in subtext (handled in grouped view separately)
@@ -489,85 +504,84 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       <View style={[styles.timeline, useGrouping && styles.timelineGrouped]}>
         {/* Grouped Rendering */}
         {useGrouping && groupedEvents ? (
-          Object.entries(groupedEvents).map(([dateLabel, groupEvents], groupIndex) => (
-            <View key={dateLabel} style={{ marginBottom: 12 }}>
-              {/* DATE SEPARATOR - Clean and minimal */}
-              {groupIndex > 0 && (
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginVertical: 28,
-                  paddingHorizontal: 0
-                }}>
-                  <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.2 }} />
-                  <View style={{
-                    backgroundColor: theme.cardSecondary,
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    marginHorizontal: 16,
-                  }}>
-                    <Text style={{ ...TYPOGRAPHY.labelSmall, color: theme.textSecondary }}>{dateLabel}</Text>
-                  </View>
-                  <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.2 }} />
-                </View>
-              )}
-              {groupIndex === 0 && (
-                <View style={{
-                  alignItems: 'flex-end',
-                  marginBottom: 20,
-                  marginTop: 8,
-                }}>
-                  <View style={{
-                    backgroundColor: theme.cardSecondary,
-                    paddingHorizontal: 14,
-                    paddingVertical: 6,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                  }}>
-                    <Text style={{ ...TYPOGRAPHY.caption, fontWeight: '600', color: theme.textSecondary }}>{dateLabel}</Text>
-                  </View>
-                </View>
-              )}
+          groupedEvents.map(({ label: dateLabel, events: groupEvents }, groupIndex) => {
+            const isDayExpanded = expandedDays[dateLabel] ?? false;
+            const visibleDayEvents = isDayExpanded ? groupEvents : groupEvents.slice(0, EVENTS_PER_DAY);
+            const hiddenCount = groupEvents.length - EVENTS_PER_DAY;
 
-              {/* Events for this date */}
-              {groupEvents.map((event, index) => {
+            return (
+            <View key={dateLabel} style={{ marginBottom: 4 }}>
+              {/* DATE HEADER */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: groupIndex === 0 ? 8 : 28,
+                marginBottom: 10,
+              }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.15 }} />
+                <View style={{
+                  backgroundColor: theme.primary,
+                  paddingHorizontal: 14,
+                  paddingVertical: 5,
+                  borderRadius: 20,
+                  marginHorizontal: 12,
+                }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.2 }}>
+                    {dateLabel} · {groupEvents.length}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.15 }} />
+              </View>
+
+              {/* Events for this date — limited to EVENTS_PER_DAY unless expanded */}
+              {visibleDayEvents.map((event, index) => {
                 const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
                 const Icon = config.icon;
-                const isLast = index === groupEvents.length - 1;
                 const details = getEventDetails(event);
                 let subtext = getEventSubtext(event);
 
-                // For grouped view, format subtext consistently (without date - already in header)
+                // For grouped view, format subtext for timerange events
                 if (useGrouping) {
                   const isTimerangeEvent = event.startTime && event.endTime;
                   if (isTimerangeEvent && event.duration) {
-                    // For timerange events, show only duration (date is in group header)
                     const h = Math.floor(event.duration / 3600);
                     const m = Math.floor((event.duration % 3600) / 60);
                     let durationText = '';
                     if (h > 0) {
                       durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
-                    } else {
+                    } else if (m > 0) {
                       durationText = `${m} דקות`;
                     }
-                    // Add amount/note if exists, but not date
-                    if (event.amount && event.type === 'food') {
-                      subtext = `${durationText} • ${event.amount}`;
-                    } else if (event.note && event.note.includes(' | ')) {
-                      const parts = event.note.split(' | ');
-                      subtext = parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
-                    } else {
-                      subtext = durationText;
+                    if (durationText) {
+                      if (event.amount && event.type === 'food') {
+                        subtext = `${durationText} • ${event.amount}`;
+                      } else if (event.note && event.note.includes(' | ')) {
+                        const parts = event.note.split(' | ');
+                        subtext = parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+                      } else {
+                        subtext = durationText;
+                      }
                     }
                   }
-                  // For non-timerange events, keep subtext but remove date if present
-                  // Date is already shown in the group header, no need to repeat
                 }
+
+                const memberId = event.creatorId || event.userId;
+                const member = family?.members[memberId];
+                const photoUrl = member?.photoURL || event.reporterPhotoUrl;
+                const timeStr = event.timestamp.toLocaleTimeString('he-IL', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                });
+
+                // Build subtitle: show "אוכל · 120מ"ל" when there's extra info, or just "אוכל" if the
+                // details text alone doesn't make the type obvious (i.e. details === config.label)
+                const detailsIsJustLabel = details === config.label;
+                const subtitle = subtext
+                  ? `${config.label} · ${subtext}`
+                  : detailsIsJustLabel
+                    ? config.label   // title already IS "שינה"/"חיתול" etc. — still show label for clarity
+                    : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
                 return (
                   <Animated.View
@@ -578,86 +592,70 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       onDelete={() => handleDelete(event.id)}
                       onShare={() => handleShare(event)}
                     >
-                      <View style={styles.eventRow} collapsable={false}>
-                        {/* Left side: Time */}
-                        <View style={styles.leftSection}>
-                          <Text style={[styles.time, { color: theme.textPrimary }]}>
-                            {event.timestamp.toLocaleTimeString('he-IL', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: false
-                            })}
+                      {/* Simple 3-part RTL row: [time] [content] [icon] */}
+                      <View style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]} collapsable={false}>
+
+                        {/* LEFT (RTL: last in JSX): time */}
+                        <Text style={[styles.historyTime, { color: theme.textSecondary }]}>{timeStr}</Text>
+
+                        {/* CENTER: title + subtitle */}
+                        <View style={styles.historyContent}>
+                          <Text style={[styles.historyTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+                            {details}
                           </Text>
-                          {/* Only show relative time for recent events in grouped view */}
-                          {useGrouping && (() => {
-                            const now = new Date();
-                            const diffMs = now.getTime() - event.timestamp.getTime();
-                            const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                            // Only show "X hours ago" for events within last 24 hours
-                            if (hours < 24 && hours > 0) {
-                              return <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>;
-                            }
-                            return null;
-                          })()}
-                          {!useGrouping && (
-                            <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>
-                          )}
+                          {subtitle ? (
+                            <Text style={[styles.historySubtext, { color: config.color }]} numberOfLines={1}>
+                              {subtitle}
+                            </Text>
+                          ) : null}
                         </View>
 
-                        {/* Timeline icon + line */}
-                        <View style={styles.timelineTrack}>
-                          <View style={[styles.timelineIcon, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.22 : 0.12) }]}>
-                            <Icon size={13} color={config.color} strokeWidth={2} />
-                          </View>
-                          {/* Line connector */}
-                          {!isLast && <View style={[styles.connector, { backgroundColor: config.color, opacity: 0.2 }]} />}
+                        {/* RIGHT (RTL: first in JSX): icon badge */}
+                        <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.1) }]}>
+                          <Icon size={17} color={config.color} strokeWidth={2} />
                         </View>
 
-                        {/* Right side: Content */}
-                        <View style={styles.eventCardContainer}>
-                          <View style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                            {/* Right accent strip - type color */}
-                            <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, backgroundColor: config.color, borderTopRightRadius: 18, borderBottomRightRadius: 18 }} />
-                            <View style={styles.cardContent}>
-                              <View style={styles.eventHeader}>
-                                <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
-                              </View>
-                              {subtext && (
-                                <Text style={[styles.eventSubtext, { color: theme.textSecondary }]}>{subtext}</Text>
-                              )}
-                            </View>
-
-                            {/* Reporter Badge */}
-                            {event.reporterName && (() => {
-                              const memberId = event.creatorId || event.userId;
-                              const member = family?.members[memberId];
-                              const photoUrl = member?.photoURL || event.reporterPhotoUrl;
-
-                              return (
-                                <View style={styles.reporterBadge}>
-                                  <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8E8ED' }]}>
-                                    <Text style={[styles.reporterInitial, { color: theme.textSecondary }]}>
-                                      {event.reporterName.charAt(0)}
-                                    </Text>
-                                  </View>
-                                  {photoUrl && (
-                                    <Image
-                                      source={{ uri: photoUrl }}
-                                      style={[styles.reporterAvatar, { position: 'absolute' }]}
-                                    />
-                                  )}
-                                </View>
-                              );
-                            })()}
-                          </View>
-                        </View>
                       </View>
                     </SwipeableRow>
                   </Animated.View>
                 );
               })}
+
+              {/* Show More / Show Less button per day */}
+              {groupEvents.length > EVENTS_PER_DAY && (
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setExpandedDays(prev => ({ ...prev, [dateLabel]: !isDayExpanded }));
+                  }}
+                  style={{
+                    flexDirection: 'row-reverse',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    paddingVertical: 12,
+                    marginBottom: 4,
+                  }}
+                  activeOpacity={0.6}
+                >
+                  {isDayExpanded ? (
+                    <>
+                      <ChevronUp size={14} color={theme.primary} strokeWidth={2.5} />
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>הצג פחות</Text>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={14} color={theme.primary} strokeWidth={2.5} />
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>
+                        {`עוד ${hiddenCount} רשומות`}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
-          ))
+            );
+          })
         ) : (
           /* Regular Flat Rendering (Fallback or Today View) */
           visibleEvents.map((event, index) => {
@@ -1089,6 +1087,99 @@ const styles = StyleSheet.create({
   },
   reporterInitial: {
     fontSize: 10,
+    fontWeight: '700',
+  },
+
+  // ── Grouped / History view ──────────────────────────────────────────────
+  historyRow: {
+    // RTL: first element in JSX is visually rightmost
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  historyIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  historyContent: {
+    flex: 1,
+    gap: 3,
+  },
+  historyTitleRow: {
+    // unused — kept for safety
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  historyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  historyTypePill: {
+    // unused — kept for safety
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  historyTypeText: {
+    // unused — kept for safety
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  historySubtext: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'right',
+    opacity: 0.75,
+  },
+  historyRight: {
+    // unused — kept for safety
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+    minWidth: 36,
+  },
+  historyTime: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+    flexShrink: 0,
+    minWidth: 38,
+    textAlign: 'left',
+  },
+  historyAvatar: {
+    // unused — kept for safety
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  historyAvatarImg: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
+  historyAvatarText: {
+    fontSize: 9,
     fontWeight: '700',
   },
 });

@@ -16,12 +16,14 @@ import {
 } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
-import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock } from 'lucide-react-native';
+import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame } from 'lucide-react-native';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -491,6 +493,18 @@ export default function ReportsScreen() {
       });
     }
 
+    // Load app logo as base64 for PDF embedding
+    let logoBase64 = '';
+    try {
+      const asset = Asset.fromModule(require('../assets/icon.png'));
+      await asset.downloadAsync();
+      if (asset.localUri) {
+        logoBase64 = await FileSystem.readAsStringAsync(asset.localUri, {
+          encoding: 'base64',
+        });
+      }
+    } catch (_) { }
+
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -499,110 +513,114 @@ export default function ReportsScreen() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>דוח התפתחות מקיף - ${activeChild?.childName || 'התינוק'}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap');
-        
         body {
-            font-family: 'Assistant', sans-serif;
+            font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
             background-color: #F8FAFC;
             color: #1E293B;
             margin: 0;
-            padding: 40px;
+            padding: 24px 28px;
             direction: rtl;
         }
-        
-        .header {
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-            border-radius: 24px;
-            padding: 40px;
-            color: white;
-            text-align: center;
-            margin-bottom: 40px;
-            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-            pointer-events: none;
-        }
 
-        .title {
-            font-size: 38px;
-            font-weight: 800;
-            margin: 0 0 12px 0;
-            line-height: 1.2;
+        .report-header {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 14px;
+            padding: 0 0 10px 0;
+            margin-bottom: 14px;
+            border-bottom: 3px solid #4F46E5;
         }
-        
-        .subtitle {
-            font-size: 20px;
-            opacity: 0.9;
+        .report-header-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            flex-shrink: 0;
+        }
+        .report-header-text h1 {
+            margin: 0 0 4px 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: #1E293B;
+        }
+        .report-header-text p {
             margin: 0;
+            font-size: 13px;
+            color: #64748B;
             font-weight: 600;
         }
-        
+
         .section-title {
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 700;
             color: #0F172A;
-            margin: 40px 0 20px 0;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #E2E8F0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            margin: 18px 0 10px 0;
+            padding: 2px 12px 8px 0;
+            border-bottom: 1px solid #E2E8F0;
+            border-right: 4px solid #4F46E5;
+            letter-spacing: -0.3px;
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+        .section-title-summary { border-right-color: #334155; }
+        .section-title-trends  { border-right-color: #10B981; }
+        .section-title-daily   { border-right-color: #3B82F6; }
+
+        .section-block {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-            margin-bottom: 30px;
+            gap: 14px;
+            margin-bottom: 16px;
         }
-        
+
         .card {
             background: white;
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
             border: 1px solid #F1F5F9;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
-        
+
         .card-header {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
-            gap: 16px;
+            margin-bottom: 10px;
+            gap: 12px;
         }
-        
+
         .icon {
-            font-size: 26px;
-            background: #F8FAFC;
-            width: 52px;
-            height: 52px;
-            border-radius: 16px;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            flex-shrink: 0;
+            background: #F8FAFC;
             border: 1px solid #F1F5F9;
         }
-        
+        .icon-food        { background: #FFF7ED; border-color: #FED7AA; }
+        .icon-sleep       { background: #F5F3FF; border-color: #DDD6FE; }
+        .icon-diaper      { background: #ECFEFF; border-color: #A5F3FC; }
+        .icon-supplements { background: #F0FDF4; border-color: #BBF7D0; }
+        .icon-trends      { background: #F0FDF4; border-color: #BBF7D0; }
+
         h3 {
             margin: 0;
-            font-size: 20px;
+            font-size: 16px;
             color: #334155;
             font-weight: 700;
         }
-        
+
         .stat-main {
-            font-size: 36px;
+            font-size: 28px;
             font-weight: 800;
             color: #0F172A;
             margin-bottom: 4px;
@@ -610,74 +628,74 @@ export default function ReportsScreen() {
             align-items: baseline;
             gap: 6px;
         }
-        
+
         .stat-unit {
-            font-size: 16px;
+            font-size: 13px;
             color: #64748B;
             font-weight: 600;
         }
 
         .stat-sub {
-            font-size: 15px;
+            font-size: 13px;
             color: #64748B;
             font-weight: 600;
             background: #F8FAFC;
-            padding: 8px 12px;
-            border-radius: 8px;
+            padding: 5px 10px;
+            border-radius: 6px;
             display: inline-block;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
         }
-        
+
         .details-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding-top: 16px;
+            gap: 7px;
+            padding-top: 10px;
             border-top: 1px dashed #E2E8F0;
         }
-        
+
         .detail-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 15px;
+            font-size: 13px;
             color: #475569;
         }
-        
+
         .detail-value {
             font-weight: 700;
             color: #1E293B;
             background: #F1F5F9;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 14px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
         }
 
         .trends-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-top: 24px;
+            gap: 12px;
+            margin-top: 14px;
         }
 
         .trend-card {
             background: #F8FAFC;
-            padding: 16px;
-            border-radius: 16px;
+            padding: 12px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             border: 1px solid #F1F5F9;
         }
 
         .trend-label {
             color: #64748B;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
         }
 
         .trend-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             color: #0F172A;
         }
@@ -687,11 +705,10 @@ export default function ReportsScreen() {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 20px;
+            margin-top: 12px;
             background: white;
-            border-radius: 20px;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             border: 1px solid #E2E8F0;
         }
 
@@ -700,14 +717,16 @@ export default function ReportsScreen() {
             color: #475569;
             font-weight: 700;
             text-align: right;
-            padding: 16px;
+            padding: 10px 12px;
             border-bottom: 2px solid #E2E8F0;
+            font-size: 13px;
         }
 
         .data-table td {
-            padding: 16px;
+            padding: 9px 12px;
             border-bottom: 1px solid #F1F5F9;
             color: #1E293B;
+            font-size: 13px;
         }
 
         .data-table tr:last-child td {
@@ -716,62 +735,64 @@ export default function ReportsScreen() {
 
         .footer {
             text-align: center;
-            margin-top: 60px;
-            padding-top: 40px;
-            border-top: 2px solid #E2E8F0;
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 1px solid #E2E8F0;
             color: #94A3B8;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
         }
-        
+
         .brand {
             font-weight: 800;
             color: #4F46E5;
-            font-size: 18px;
+            font-size: 14px;
         }
 
         /* Goals styles */
         .goals-container {
             display: flex;
-            gap: 24px;
-            margin-bottom: 40px;
+            gap: 14px;
+            margin-bottom: 16px;
         }
 
         .goal-item {
             flex: 1;
             background: white;
-            padding: 24px;
-            border-radius: 24px;
+            padding: 16px;
+            border-radius: 16px;
             text-align: center;
             border: 1px solid #F1F5F9;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
         .goal-circle {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: #EEF2FF;
             color: #4F46E5;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 800;
-            margin: 0 auto 16px auto;
-            border: 4px solid #DFE7FF;
+            margin: 0 auto 10px auto;
+            border: 3px solid #DFE7FF;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1 class="title">דוח מעקב מלא - ${activeChild?.childName || 'התינוק'}</h1>
-        <p class="subtitle">${dateText} | ${periodText}</p>
+    <div class="report-header">
+        ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" class="report-header-logo" />` : ''}
+        <div class="report-header-text">
+            <h1>דוח מעקב - ${activeChild?.childName || 'התינוק'}</h1>
+            <p>${dateText} | ${periodText}</p>
+        </div>
     </div>
 
     <!-- Goals & Consistency -->
-    <div class="section-title">✨ עקביות ומטרות</div>
+    <div class="section-title">עקביות ומטרות</div>
     <div class="goals-container">
         <div class="goal-item">
             <div class="goal-circle">${weeklyGoals.streak}</div>
@@ -794,12 +815,12 @@ export default function ReportsScreen() {
         </div>
     </div>
 
-    <div class="section-title">📊 סיכום כולל</div>
+    <div class="section-title section-title-summary">סיכום כולל</div>
     <div class="grid">
         <!-- Feeding Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon">🍼</div>
+                <div class="icon icon-food"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
                 <h3>תזונה והאכלה</h3>
             </div>
             <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">ארוחות בסך הכל</span></div>
@@ -824,7 +845,7 @@ export default function ReportsScreen() {
         <!-- Sleep Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon">😴</div>
+                <div class="icon icon-sleep"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
                 <h3>שינה ומנוחה</h3>
             </div>
             <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">שעות שינה מצטברות</span></div>
@@ -849,7 +870,7 @@ export default function ReportsScreen() {
         <!-- Diapers Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon">🧷</div>
+                <div class="icon icon-diaper"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
                 <h3>החתלה והיגיינה</h3>
             </div>
             <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">החלפות חיתול</span></div>
@@ -859,7 +880,7 @@ export default function ReportsScreen() {
         <!-- Supplements Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon">💊</div>
+                <div class="icon icon-supplements"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
                 <h3>תוספים ותרופות</h3>
             </div>
             <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">מנות שניתנו</span></div>
@@ -869,10 +890,11 @@ export default function ReportsScreen() {
 
     <!-- Analytics & Comparisons -->
     ${comparison && (comparison.sleepChange !== 0 || comparison.feedingChange !== 0 || comparison.diaperChange !== 0) ? `
-    <div class="section-title">📈 מגמות ותובנות שבועיות</div>
-    <div class="card" style="margin-bottom: 40px;">
+    <div class="section-block">
+    <div class="section-title section-title-trends">מגמות ותובנות שבועיות</div>
+    <div class="card">
         <div class="card-header">
-            <div class="icon" style="background:#EFF6FF; border:none; box-shadow:none;">✨</div>
+            <div class="icon icon-trends"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
             <h3>השוואה לתקופה מקבילה קודמת</h3>
         </div>
         <p style="color:#64748B; margin-top:0; font-size:16px;">זיהוי דפוסים אל מול הנתונים מהתקופה שעברה.</p>
@@ -900,11 +922,13 @@ export default function ReportsScreen() {
             </div>
         </div>
     </div>
+    </div>
     ` : ''}
 
     <!-- Daily Breakdown Table -->
     ${dailyRows ? `
-    <div class="section-title">📅 פירוט נתונים יומי</div>
+    <div class="section-block">
+    <div class="section-title section-title-daily">פירוט נתונים יומי</div>
     <table class="data-table">
         <thead>
             <tr>
@@ -919,10 +943,11 @@ export default function ReportsScreen() {
             ${dailyRows}
         </tbody>
     </table>
+    </div>
     ` : ''}
 
     <div class="footer">
-        הופק באהבה באמצעות מערכת <span class="brand">Calmino 💜</span>
+        הופק באמצעות מערכת <span class="brand">Calmino</span>
         <br>
         <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">כל זכויות הנתונים שמורות להורים בלבד.</span>
     </div>
@@ -979,9 +1004,10 @@ export default function ReportsScreen() {
   // ========== COMPONENTS ==========
 
   // ✨ Premium Stat Card with Category Colors, Sparkline & Smart Trends
-  const StatCard = ({ icon: Icon, value, label, subValue, change, iconColor, iconBg, accentColor, sparklineData, onPress }: any) => {
-    // Smart trend color: green = positive, red = negative, gray = neutral
+  const StatCard = ({ icon: Icon, value, label, subValue, change, iconColor, iconBg, accentColor, sparklineData, onPress, neutralTrend }: any) => {
+    // Smart trend color: green = positive, red = negative, amber = neutral metric (e.g. diapers), gray = no change
     const getTrendColor = (val: number) => {
+      if (neutralTrend) return '#F59E0B'; // Amber - neither good nor bad
       if (val > 0) return '#10B981'; // Green
       if (val < 0) return '#EF4444'; // Red
       return theme.textSecondary;
@@ -1364,6 +1390,7 @@ export default function ReportsScreen() {
                 iconColor="#F59E0B"
                 iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
                 sparklineData={weeklyData.diapers}
+                neutralTrend
                 onPress={() => isPremium ? setSelectedMetric('diapers') : setShowPaywall(true)}
               />
             </AnimatedCard>
@@ -1488,7 +1515,7 @@ export default function ReportsScreen() {
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
-                  ? (comparison.diaperChange > 0 ? '#10B981' : '#EF4444')
+                  ? '#F59E0B'
                   : theme.textSecondary
               }]}>
                 {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
@@ -1558,19 +1585,23 @@ export default function ReportsScreen() {
             </View>
           </View>
 
-          {/* 🔥 Premium Streak Badge */}
+          {/* Streak — same visual language as the goal rows above */}
           {weeklyGoals.streak > 0 && (
-            <View style={[styles.streakBadgePremium, {
-              backgroundColor: isDarkMode ? 'rgba(251, 146, 60, 0.12)' : 'rgba(251, 146, 60, 0.08)',
-              borderColor: isDarkMode ? 'rgba(251, 146, 60, 0.25)' : 'rgba(251, 146, 60, 0.15)',
+            <View style={[styles.goalItem, {
+              marginTop: 6,
+              paddingTop: 14,
+              borderTopWidth: 1,
+              borderTopColor: theme.border,
             }]}>
-              <Text style={styles.streakFireEmoji}>🔥</Text>
-              <View style={styles.streakTextWrap}>
-                <Text style={[styles.streakNumber, { color: '#F97316' }]}>
-                  {weeklyGoals.streak}
-                </Text>
-                <Text style={[styles.streakDaysLabel, { color: theme.textSecondary }]}>
-                  ימים רצופים
+              <View style={styles.goalItemHeader}>
+                {/* Right side: flame icon + label (flex:1 to fill available space) */}
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Flame size={15} color="#F97316" strokeWidth={2.5} />
+                  <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>רצף תיעוד</Text>
+                </View>
+                {/* Left side: count */}
+                <Text style={[styles.goalItemProgress, { color: '#F97316', fontWeight: '600' }]}>
+                  {weeklyGoals.streak} {weeklyGoals.streak === 1 ? 'יום' : 'ימים'}
                 </Text>
               </View>
             </View>
@@ -2231,7 +2262,7 @@ const styles = StyleSheet.create({
 
   // Premium Streak Badge
   streakBadgePremium: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 16, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 16, borderWidth: 1, alignSelf: 'center' },
-  streakFireEmoji: { fontSize: 24 },
+  streakIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   streakTextWrap: { alignItems: 'center' },
   streakNumber: { fontSize: 22, fontWeight: '800' },
   streakDaysLabel: { fontSize: 11, fontWeight: '500', marginTop: -2 },

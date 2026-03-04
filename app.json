@@ -3,12 +3,15 @@
     "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/app-check",
+      "@react-native-firebase/crashlytics",
       [
         "expo-image-picker",
         {
@@ -23,7 +26,8 @@
         {
           "ios": {
             "useFrameworks": "static",
-            "deploymentTarget": "16.1"
+            "deploymentTarget": "16.1",
+            "buildReactNativeFromSource": true
           }
         }
       ],
@@ -94,9 +98,8 @@
         "projectId": "0af00389-5a5c-48ad-aa91-1b083f8e494e"
       }
     },
-    "runtimeVersion": "1.0.0",
     "updates": {
-      "url": "https://u.expo.dev/0af00389-5a5c-48ad-aa91-1b083f8e494e"
+      "enabled": false
     }
   }
 }

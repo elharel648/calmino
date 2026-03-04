@@ -45,6 +45,14 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
     const [allChildren, setAllChildren] = useState<ActiveChild[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const hasCalledOnReady = useRef(false);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     // Ref to track activeChild without causing refreshChildren to recreate
     // This fixes the infinite loop when joining with code
@@ -68,9 +76,11 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
     const refreshChildren = useCallback(async () => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
-            setAllChildren([]);
-            setActiveChildState(null);
-            setIsLoading(false);
+            if (isMountedRef.current) {
+                setAllChildren([]);
+                setActiveChildState(null);
+                setIsLoading(false);
+            }
             return;
         }
 
@@ -171,6 +181,8 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                 }
             }
 
+            if (!isMountedRef.current) return;
+
             setAllChildren(childrenList);
 
             // Set active child to first one if not already set
@@ -183,6 +195,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
         } catch (error) {
             logger.log('Error loading children:', error);
         } finally {
+            if (!isMountedRef.current) return;
             setIsLoading(false);
             // Notify App.tsx that initial load is complete
             if (!hasCalledOnReady.current && onReady) {

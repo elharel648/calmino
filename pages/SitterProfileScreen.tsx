@@ -16,6 +16,7 @@ import { calculateSitterBadges } from '../services/babysitterService';
 import { auth as firebaseAuth } from '../services/firebaseConfig';
 import { useTheme } from '../context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGlobalPresence } from '../hooks/useGlobalPresence';
 import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send } from 'lucide-react-native';
 
@@ -110,6 +111,27 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [respondingToReview, setRespondingToReview] = useState<string | null>(null);
     const [responseText, setResponseText] = useState('');
     const [badges, setBadges] = useState<SitterBadge[]>([]);
+
+    // Live Presence
+    const { isOnline, lastActive } = useGlobalPresence(sitterData.id);
+
+    // Format last seen time
+    const formatLastSeen = () => {
+        if (!lastActive) return 'לא נראה/תה לאחרונה';
+
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+
+        const timeStr = lastActive.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+        if (diffDays === 0 && now.getDate() === lastActive.getDate()) {
+            return `התחברות אחרונה: היום ב-${timeStr}`;
+        } else if (diffDays === 1 || (diffDays === 0 && now.getDate() !== lastActive.getDate())) {
+            return `התחברות אחרונה: אתמול ב-${timeStr}`;
+        } else {
+            return `התחברות אחרונה: ${lastActive.toLocaleDateString('he-IL')} ב-${timeStr}`;
+        }
+    };
 
     useEffect(() => {
         const fetchReviews = async () => {
@@ -324,21 +346,38 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         </View>
 
                         {/* Available Now - Clean Pill */}
-                        {sitterIsAvailable && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {sitterIsAvailable && (
+                                <View style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 6,
+                                    borderRadius: 20,
+                                }}>
+                                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' }} />
+                                    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>זמין עכשיו</Text>
+                                </View>
+                            )}
+
+                            {/* Online / Last Seen Presence Pill */}
                             <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
                                 gap: 6,
-                                backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                                backgroundColor: isOnline ? 'rgba(37, 99, 235, 0.9)' : 'rgba(0, 0, 0, 0.6)',
                                 paddingHorizontal: 14,
                                 paddingVertical: 6,
                                 borderRadius: 20,
-                                marginTop: 10,
                             }}>
-                                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' }} />
-                                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>זמין עכשיו</Text>
+                                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: isOnline ? '#fff' : 'rgba(255,255,255,0.7)' }} />
+                                <Text style={{ color: isOnline ? '#fff' : 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '600' }}>
+                                    {isOnline ? 'מחובר/ת' : formatLastSeen()}
+                                </Text>
                             </View>
-                        )}
+                        </View>
 
                         {/* Sitter Badges */}
                         {badges.filter(b => b !== 'available_now').length > 0 && (

@@ -8,19 +8,40 @@ export const navigationRef = createNavigationContainerRef();
 
 /**
  * Navigate to a screen from anywhere (e.g., notification handler)
+ * Retries up to 3 seconds with 300ms intervals for cold-start scenarios
  */
 export function navigate(name: string, params?: object) {
-    if (navigationRef.isReady()) {
+    const doNavigate = () => {
         navigationRef.dispatch(
             CommonActions.navigate({
                 name,
                 params,
             })
         );
+    };
+
+    if (navigationRef.isReady()) {
+        doNavigate();
     } else {
-        // Navigation not ready, queue the navigation
-        logger.log('Navigation not ready, queuing:', name);
-        setTimeout(() => navigate(name, params), 100);
+        // Navigation not ready (cold start from notification tap)
+        // Retry with 300ms intervals, up to 10 attempts (3 seconds total)
+        logger.log('⏳ Navigation not ready, will retry:', name);
+        let retryCount = 0;
+        const maxRetries = 10;
+        const retryInterval = 300;
+
+        const retry = () => {
+            if (navigationRef.isReady()) {
+                logger.log('✅ Navigation ready after', retryCount, 'retries, navigating to:', name);
+                doNavigate();
+            } else if (retryCount < maxRetries) {
+                retryCount++;
+                setTimeout(retry, retryInterval);
+            } else {
+                logger.log('❌ Navigation still not ready after', maxRetries, 'retries');
+            }
+        };
+        setTimeout(retry, retryInterval);
     }
 }
 

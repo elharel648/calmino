@@ -25,6 +25,9 @@ let currentConfig: Record<string, string> = {
   paywall_title: 'Calmino Premium',
   paywall_subtitle: 'גישה מלאה לכל התכונות המתקדמות',
 
+  // Master switch for upgrade banners
+  show_premium_upgrade: 'true',
+
   // כפתורי רכישה
   paywall_annual_cta: 'הירשם ל-Premium שנתי',
   paywall_monthly_cta: 'הירשם ל-Premium חודשי',
@@ -159,3 +162,5 @@ export const getPromoConfig = () => ({
   ctaAction: getVal('promo_cta_action'),
   linkUrl: getVal('promo_link_url'),
 });
+
+export const getShowPremiumUpgrade = () => getBool('show_premium_upgrade');
