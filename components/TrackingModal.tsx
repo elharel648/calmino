@@ -181,7 +181,20 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       setSaveSuccess(false);
       setSubType(null);
 
-      // Defer non-critical state resets to avoid freeze
+      translateY.value = SCREEN_HEIGHT;
+      backdropOpacity.value = 0;
+
+      glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
+      sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
+
+      backdropOpacity.value = withTiming(1, { duration: 300 });
+      // Smooth slide-up without bounce
+      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
+    } else {
+      glowAnim.value = 0;
+      sparkleAnim.value = 0;
+
+      // Defer non-critical state resets to when modal is closed, avoiding freeze on open
       InteractionManager.runAfterInteractions(() => {
         setBottleAmount('');
         setPumpingAmount('');
@@ -210,19 +223,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         setShowFoodStartTimePicker(false);
         setShowFoodEndTimePicker(false);
       });
-
-      translateY.value = SCREEN_HEIGHT;
-      backdropOpacity.value = 0;
-
-      glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
-      sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
-
-      backdropOpacity.value = withTiming(1, { duration: 300 });
-      // Smooth slide-up without bounce
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
-    } else {
-      glowAnim.value = 0;
-      sparkleAnim.value = 0;
     }
   }, [visible]);
 

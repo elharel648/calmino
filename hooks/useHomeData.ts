@@ -39,6 +39,7 @@ export const useHomeData = (
     ageMonths: number,
     creatorId?: string
 ): UseHomeDataReturn => {
+    // DEMO MODE removed
     const [lastFeedTime, setLastFeedTime] = useState('--:--');
     const [lastSleepTime, setLastSleepTime] = useState('--:--');
     const [babyStatus, setBabyStatus] = useState<'sleeping' | 'awake'>('awake');
@@ -257,7 +258,7 @@ export const useHomeData = (
                     sleepTimeStr,
                     formatAgo(lastSleep?.timestamp),
                     currentStatus
-                ).catch(() => {});
+                ).catch(() => { });
             }
 
         } catch (e) {
@@ -286,7 +287,7 @@ export const useHomeData = (
         const unsub = onSnapshot(q, () => {
             if (isFirst) { isFirst = false; return; } // skip initial snapshot
             refreshRef.current();
-        }, () => {}); // ignore listener errors silently
+        }, () => { }); // ignore listener errors silently
         return () => unsub();
     }, [childId]);
 

@@ -510,150 +510,150 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const hiddenCount = groupEvents.length - EVENTS_PER_DAY;
 
             return (
-            <View key={dateLabel} style={{ marginBottom: 4 }}>
-              {/* DATE HEADER */}
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginTop: groupIndex === 0 ? 8 : 28,
-                marginBottom: 10,
-              }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.15 }} />
+              <View key={dateLabel} style={{ marginBottom: 4 }}>
+                {/* DATE HEADER */}
                 <View style={{
-                  backgroundColor: theme.primary,
-                  paddingHorizontal: 14,
-                  paddingVertical: 5,
-                  borderRadius: 20,
-                  marginHorizontal: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginTop: groupIndex === 0 ? 8 : 28,
+                  marginBottom: 10,
                 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.2 }}>
-                    {dateLabel} · {groupEvents.length}
-                  </Text>
+                  <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.15 }} />
+                  <View style={{
+                    backgroundColor: theme.primary,
+                    paddingHorizontal: 14,
+                    paddingVertical: 5,
+                    borderRadius: 20,
+                    marginHorizontal: 12,
+                  }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.2 }}>
+                      {dateLabel} · {groupEvents.length}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.15 }} />
                 </View>
-                <View style={{ flex: 1, height: 1, backgroundColor: theme.border, opacity: 0.15 }} />
-              </View>
 
-              {/* Events for this date — limited to EVENTS_PER_DAY unless expanded */}
-              {visibleDayEvents.map((event, index) => {
-                const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
-                const Icon = config.icon;
-                const details = getEventDetails(event);
-                let subtext = getEventSubtext(event);
+                {/* Events for this date — limited to EVENTS_PER_DAY unless expanded */}
+                {visibleDayEvents.map((event, index) => {
+                  const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+                  const Icon = config.icon;
+                  const details = getEventDetails(event);
+                  let subtext = getEventSubtext(event);
 
-                // For grouped view, format subtext for timerange events
-                if (useGrouping) {
-                  const isTimerangeEvent = event.startTime && event.endTime;
-                  if (isTimerangeEvent && event.duration) {
-                    const h = Math.floor(event.duration / 3600);
-                    const m = Math.floor((event.duration % 3600) / 60);
-                    let durationText = '';
-                    if (h > 0) {
-                      durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
-                    } else if (m > 0) {
-                      durationText = `${m} דקות`;
-                    }
-                    if (durationText) {
-                      if (event.amount && event.type === 'food') {
-                        subtext = `${durationText} • ${event.amount}`;
-                      } else if (event.note && event.note.includes(' | ')) {
-                        const parts = event.note.split(' | ');
-                        subtext = parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
-                      } else {
-                        subtext = durationText;
+                  // For grouped view, format subtext for timerange events
+                  if (useGrouping) {
+                    const isTimerangeEvent = event.startTime && event.endTime;
+                    if (isTimerangeEvent && event.duration) {
+                      const h = Math.floor(event.duration / 3600);
+                      const m = Math.floor((event.duration % 3600) / 60);
+                      let durationText = '';
+                      if (h > 0) {
+                        durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+                      } else if (m > 0) {
+                        durationText = `${m} דקות`;
+                      }
+                      if (durationText) {
+                        if (event.amount && event.type === 'food') {
+                          subtext = `${durationText} • ${event.amount}`;
+                        } else if (event.note && event.note.includes(' | ')) {
+                          const parts = event.note.split(' | ');
+                          subtext = parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+                        } else {
+                          subtext = durationText;
+                        }
                       }
                     }
                   }
-                }
 
-                const memberId = event.creatorId || event.userId;
-                const member = family?.members[memberId];
-                const photoUrl = member?.photoURL || event.reporterPhotoUrl;
-                const timeStr = event.timestamp.toLocaleTimeString('he-IL', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false
-                });
+                  const memberId = event.creatorId || event.userId;
+                  const member = family?.members[memberId];
+                  const photoUrl = member?.photoURL || event.reporterPhotoUrl;
+                  const timeStr = event.timestamp.toLocaleTimeString('he-IL', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  });
 
-                // Build subtitle: show "אוכל · 120מ"ל" when there's extra info, or just "אוכל" if the
-                // details text alone doesn't make the type obvious (i.e. details === config.label)
-                const detailsIsJustLabel = details === config.label;
-                const subtitle = subtext
-                  ? `${config.label} · ${subtext}`
-                  : detailsIsJustLabel
-                    ? config.label   // title already IS "שינה"/"חיתול" etc. — still show label for clarity
-                    : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
+                  // Build subtitle: show "אוכל · 120מ"ל" when there's extra info, or just "אוכל" if the
+                  // details text alone doesn't make the type obvious (i.e. details === config.label)
+                  const detailsIsJustLabel = details === config.label;
+                  const subtitle = subtext
+                    ? `${config.label} · ${subtext}`
+                    : detailsIsJustLabel
+                      ? config.label   // title already IS "שינה"/"חיתול" etc. — still show label for clarity
+                      : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
-                return (
-                  <Animated.View
-                    key={event.id}
-                    entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 50), 300)}
-                  >
-                    <SwipeableRow
-                      onDelete={() => handleDelete(event.id)}
-                      onShare={() => handleShare(event)}
+                  return (
+                    <Animated.View
+                      key={event.id}
+                      entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 50), 300)}
                     >
-                      {/* Simple 3-part RTL row: [time] [content] [icon] */}
-                      <View style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]} collapsable={false}>
+                      <SwipeableRow
+                        onDelete={() => handleDelete(event.id)}
+                        onShare={() => handleShare(event)}
+                      >
+                        {/* Simple 3-part RTL row: [time] [content] [icon] */}
+                        <View style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]} collapsable={false}>
 
-                        {/* LEFT (RTL: last in JSX): time */}
-                        <Text style={[styles.historyTime, { color: theme.textSecondary }]}>{timeStr}</Text>
+                          {/* LEFT (RTL: last in JSX): time */}
+                          <Text style={[styles.historyTime, { color: theme.textSecondary }]}>{timeStr}</Text>
 
-                        {/* CENTER: title + subtitle */}
-                        <View style={styles.historyContent}>
-                          <Text style={[styles.historyTitle, { color: theme.textPrimary }]} numberOfLines={1}>
-                            {details}
-                          </Text>
-                          {subtitle ? (
-                            <Text style={[styles.historySubtext, { color: config.color }]} numberOfLines={1}>
-                              {subtitle}
+                          {/* CENTER: title + subtitle */}
+                          <View style={styles.historyContent}>
+                            <Text style={[styles.historyTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+                              {details}
                             </Text>
-                          ) : null}
+                            {subtitle ? (
+                              <Text style={[styles.historySubtext, { color: config.color }]} numberOfLines={1}>
+                                {subtitle}
+                              </Text>
+                            ) : null}
+                          </View>
+
+                          {/* RIGHT (RTL: first in JSX): icon badge */}
+                          <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.1) }]}>
+                            <Icon size={17} color={config.color} strokeWidth={2} />
+                          </View>
+
                         </View>
+                      </SwipeableRow>
+                    </Animated.View>
+                  );
+                })}
 
-                        {/* RIGHT (RTL: first in JSX): icon badge */}
-                        <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.1) }]}>
-                          <Icon size={17} color={config.color} strokeWidth={2} />
-                        </View>
-
-                      </View>
-                    </SwipeableRow>
-                  </Animated.View>
-                );
-              })}
-
-              {/* Show More / Show Less button per day */}
-              {groupEvents.length > EVENTS_PER_DAY && (
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setExpandedDays(prev => ({ ...prev, [dateLabel]: !isDayExpanded }));
-                  }}
-                  style={{
-                    flexDirection: 'row-reverse',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    paddingVertical: 12,
-                    marginBottom: 4,
-                  }}
-                  activeOpacity={0.6}
-                >
-                  {isDayExpanded ? (
-                    <>
-                      <ChevronUp size={14} color={theme.primary} strokeWidth={2.5} />
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>הצג פחות</Text>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown size={14} color={theme.primary} strokeWidth={2.5} />
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>
-                        {`עוד ${hiddenCount} רשומות`}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
+                {/* Show More / Show Less button per day */}
+                {groupEvents.length > EVENTS_PER_DAY && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setExpandedDays(prev => ({ ...prev, [dateLabel]: !isDayExpanded }));
+                    }}
+                    style={{
+                      flexDirection: 'row-reverse',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      paddingVertical: 12,
+                      marginBottom: 4,
+                    }}
+                    activeOpacity={0.6}
+                  >
+                    {isDayExpanded ? (
+                      <>
+                        <ChevronUp size={14} color={theme.primary} strokeWidth={2.5} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>הצג פחות</Text>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} color={theme.primary} strokeWidth={2.5} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>
+                          {`עוד ${hiddenCount} רשומות`}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
             );
           })
         ) : (

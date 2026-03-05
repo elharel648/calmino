@@ -250,7 +250,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
 
         const message = `📊 סיכום יומי${childName ? ` - ${childName}` : ''}
 
-🍼 האכלות: ${dailyStats.foodCount} פעמים (${dailyStats.food} מ"ל)
+🍼 האכלה: ${dailyStats.foodCount} פעמים (${dailyStats.food} מ"ל)
 😴 שינה: ${dailyStats.sleep.toFixed(1)} שעות (${dailyStats.sleepCount} תנומות)
 🧷 חיתולים: ${dailyStats.diapers}
 💊 תוספים: ${dailyStats.supplements}
@@ -323,14 +323,14 @@ export function generateAIInsights(data: InsightData): {
 
         if (avgFeeding > 150) {
             tips.push({
-                tip: `האכלות גדולות (ממוצע ${Math.round(avgFeeding)} מ"ל). התינוק אוכל היטב!`,
+                tip: `האכלה גדולות (ממוצע ${Math.round(avgFeeding)} מ"ל). התינוק אוכל היטב!`,
                 category: 'feeding',
             });
         }
 
         if (timeInsights?.avgFeedingInterval && timeInsights.avgFeedingInterval > 4) {
             tips.push({
-                tip: `מרווח ארוך בין האכלות (${timeInsights.avgFeedingInterval.toFixed(1)} שעות). הבטן מתרחבת!`,
+                tip: `מרווח ארוך בין האכלה (${timeInsights.avgFeedingInterval.toFixed(1)} שעות). הבטן מתרחבת!`,
                 category: 'feeding',
             });
         }
@@ -432,7 +432,7 @@ export function generateAIInsights(data: InsightData): {
     // Consistent feeding
     const consistentFeedingDays = weeklyData.food.filter(f => f > 0).length;
     milestones.push({
-        title: 'עקביות בהאכלות',
+        title: 'עקביות בהאכלה',
         current: consistentFeedingDays,
         target: 7,
         unit: 'ימים עם תיעוד',

@@ -24,7 +24,7 @@ const ICONS: Record<StatKey, any> = {
 };
 
 const STAT_LABELS: Record<StatKey, { label: string; color: string }> = {
-    food: { label: 'האכלות', color: '#F59E0B' },
+    food: { label: 'האכלה', color: '#F59E0B' },
     sleep: { label: 'שינה', color: '#6366F1' },
     diapers: { label: 'חיתולים', color: '#10B981' },
     supplements: { label: 'תוספים', color: '#EC4899' },

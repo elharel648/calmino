@@ -118,16 +118,7 @@ export function navigateFromNotification(type: string, data?: any) {
             break;
 
         case 'chat_message':
-            // Go to chat
-            if (data?.chatId) {
-                const babysitterTab = getTranslation ? getTranslation('navigation.babysitter') : 'בייביסיטר';
-                navigate(babysitterTab, {
-                    screen: 'ChatScreen',
-                    params: { chatId: data.chatId },
-                });
-            } else {
-                navigateToBabysitter();
-            }
+            navigateToBabysitter();
             break;
 
         case 'booking_new':

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { User, Award, Star, MapPin } from 'lucide-react-native';
+import { User, Award, Star, MapPin, Heart } from 'lucide-react-native';
 import { Sitter } from '../../hooks/useSitters';
 
 interface SitterCardProps {
@@ -8,9 +8,11 @@ interface SitterCardProps {
     theme: any;
     isDarkMode: boolean;
     onPress: (sitter: Sitter) => void;
+    isFavorite?: boolean;
+    onToggleFavorite?: (sitterId: string) => void;
 }
 
-const SitterCard = ({ sitter, theme, isDarkMode, onPress }: SitterCardProps) => {
+const SitterCard = ({ sitter, theme, isDarkMode, onPress, isFavorite, onToggleFavorite }: SitterCardProps) => {
     const [imageError, setImageError] = useState(false);
 
     const rating = typeof sitter.rating === 'number' && !isNaN(sitter.rating) && sitter.rating > 0
@@ -66,6 +68,25 @@ const SitterCard = ({ sitter, theme, isDarkMode, onPress }: SitterCardProps) => 
                             <View style={[styles.verifiedDot, { backgroundColor: isDarkMode ? '#fff' : '#111' }]}>
                                 <Award size={9} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                             </View>
+                        )}
+                        {sitter.isAvailableTonight && (
+                            <View style={[styles.tonightBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                                <Text style={[styles.tonightText, { color: '#10B981' }]}>פנוי/ה להערב</Text>
+                            </View>
+                        )}
+                        {onToggleFavorite && (
+                            <TouchableOpacity
+                                onPress={() => onToggleFavorite(sitter.id!)}
+                                style={{ marginLeft: 6, padding: 4 }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Heart
+                                    size={18}
+                                    color={isFavorite ? '#F43F5E' : theme.textSecondary}
+                                    fill={isFavorite ? '#F43F5E' : 'transparent'}
+                                    strokeWidth={isFavorite ? 0 : 1.5}
+                                />
+                            </TouchableOpacity>
                         )}
                     </View>
 
@@ -167,12 +188,13 @@ const styles = StyleSheet.create({
     sitterInfo: {
         flex: 1,
         alignItems: 'flex-end',
-        gap: 3,
     },
     sitterHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
+        flexWrap: 'wrap',
+        marginBottom: 2,
     },
     verifiedDot: {
         width: 17,
@@ -237,6 +259,18 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '400',
         opacity: 0.6,
+    },
+    tonightBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginLeft: 6,
+    },
+    tonightText: {
+        fontSize: 10,
+        fontWeight: '600',
     },
 });
 

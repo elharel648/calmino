@@ -93,6 +93,7 @@ export interface BabysitterBooking {
     id: string;
     parentId: string;
     parentName?: string; // Parent display name
+    parentPhone?: string; // Parent phone number for contact
     babysitterId: string;
     sitterName?: string; // Sitter display name
     childIds?: string[]; // Child IDs involved in booking
@@ -118,7 +119,7 @@ export interface BabysitterBooking {
     // Meta
     location?: string;
     notes?: string;
-    rated?: boolean; // Has parent rated this booking?
+    isRated?: boolean; // Has parent rated this booking?
     ratedAt?: Timestamp; // When was it rated?
     createdAt: Timestamp;
     updatedAt?: Timestamp;

@@ -42,6 +42,9 @@ export interface Booking {
     totalMinutes?: number;
     totalAmount?: number;
     updatedAt?: Timestamp;
+
+    // Rating
+    isRated?: boolean;
 }
 
 /**
@@ -141,15 +144,23 @@ export async function updateBookingStatus(
                 pending: 'ההזמנה נוצרה',
                 accepted: 'ההזמנה התקבלה (ממתינה לאישור סופי)',
                 confirmed: '✅ ההזמנה אושרה!',
-                completed: '🎉 ההזמנה הסתיימה',
+                completed: '🎉 איך היה?',
                 cancelled: '❌ ההזמנה בוטלה',
+            };
+
+            const statusBody: Record<BookingStatus, string> = {
+                pending: `הזמנה ב-${booking.startTime}`,
+                accepted: `הזמנה ב-${booking.startTime}`,
+                confirmed: `הזמנה ב-${booking.startTime}`,
+                completed: `נשמח אם תקדישו דקה לדרג את החוויה שלכם עם ${booking.sitterName || 'הבייביסיטר'}!`,
+                cancelled: `הזמנה ב-${booking.startTime}`,
             };
 
             const dateStr = booking.date?.toDate?.()?.toLocaleDateString('he-IL') ?? '';
             await sendPushNotification(
                 notifyToken,
                 statusMessages[status],
-                `הזמנה ב-${dateStr} ב-${booking.startTime}`,
+                status === 'completed' ? statusBody.completed : `הזמנה ב-${dateStr} ב-${booking.startTime}`,
                 { type: 'booking_update', bookingId }
             );
         }

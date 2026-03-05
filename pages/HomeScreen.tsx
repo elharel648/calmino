@@ -323,7 +323,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         msg += `\n\n`;
 
         msg += `📊 *סטטיסטיקות היום:*\n`;
-        msg += `🍼 האכלות: ${dailyStats.feedCount > 0 ? `${dailyStats.feedCount} פעם` : 'לא תועדה'}\n`;
+        msg += `🍼 האכלה: ${dailyStats.feedCount > 0 ? `${dailyStats.feedCount} פעם` : 'לא תועדה'}\n`;
         msg += `💤 שינה כוללת: ${sleepStr}\n`;
         msg += `🫧 החלפות חיתול: ${dailyStats.diaperCount > 0 ? `${dailyStats.diaperCount} פעמים` : 'לא תועד'}\n`;
 

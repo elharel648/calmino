@@ -39,7 +39,7 @@ class WeatherKitService {
         }
 
         if (!WeatherKitManager) {
-            logger.error('WeatherKitManager native module not found');
+            // Expected when native module isn't installed - not an error
             return false;
         }
 

@@ -933,7 +933,7 @@ export default function ReportsScreen() {
         <thead>
             <tr>
                 <th>תאריך</th>
-                <th>האכלות (כמות / ארוחות)</th>
+                <th>האכלה (כמות / ארוחות)</th>
                 <th>שעות שינה</th>
                 <th>חיתולים</th>
                 <th>תוספים</th>
@@ -1261,7 +1261,7 @@ export default function ReportsScreen() {
 
     return (
       <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
-        <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>התפלגות האכלות</Text>
+        <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>התפלגות האכלה</Text>
 
         <View style={styles.donutContainer}>
           {/* Simple circular indicator */}
@@ -1352,7 +1352,7 @@ export default function ReportsScreen() {
               <StatCard
                 icon={Utensils}
                 value={dailyStats.foodCount}
-                label="האכלות"
+                label="האכלה"
                 subValue={dailyStats.food > 0 ? `${dailyStats.food} מ"ל` : undefined}
                 change={comparison?.feedingChange}
                 accentColor="#10B981"
@@ -1490,7 +1490,7 @@ export default function ReportsScreen() {
               <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
                 <Utensils size={16} color="#10B981" strokeWidth={2} />
               </View>
-              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלות</Text>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלה</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
                   ? (comparison.feedingChange > 0 ? '#10B981' : '#EF4444')
@@ -1711,7 +1711,7 @@ export default function ReportsScreen() {
           />
           <PremiumInsightCard
             icon={Clock}
-            title="זמן ממוצע בין האכלות"
+            title="זמן ממוצע בין האכלה"
             value={`${timeInsights?.avgFeedingInterval || 0} שעות`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={100}
@@ -1779,7 +1779,7 @@ export default function ReportsScreen() {
               />
               <PremiumInsightCard
                 icon={Utensils}
-                title="האכלות"
+                title="האכלה"
                 value={`${comparison.feedingChange >= 0 ? '+' : ''}${comparison.feedingChange}%`}
                 trend={comparison.feedingChange >= 0 ? 'up' : 'down'}
                 color="#F59E0B"

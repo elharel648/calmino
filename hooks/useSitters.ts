@@ -45,6 +45,7 @@ export interface Sitter {
     mutualFriends?: MutualFriend[]; // Facebook mutual friends
     badges?: string[]; // Sitter badges
     isAvailable?: boolean; // Currently available
+    isAvailableTonight?: boolean; // Available tonight
     createdAt?: Date | any; // Account creation date
     // Location fields for city + GPS search
     city?: string; // City name (e.g., "תל אביב")
@@ -61,6 +62,7 @@ export interface Sitter {
  */
 const useSitters = () => {
     logger.log('🔧 useSitters: HOOK CALLED');
+    // DEMO MODE removed
     const [sitters, setSitters] = useState<Sitter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -168,6 +170,7 @@ const useSitters = () => {
                     phone: (data.phone && typeof data.phone === 'string') ? data.phone : undefined,
                     distance: 0, // Will be calculated based on user location
                     availability: Array.isArray(data.sitterAvailability) ? data.sitterAvailability : [],
+                    isAvailableTonight: Boolean(data.isAvailableTonight),
                     languages: Array.isArray(data.sitterLanguages) && data.sitterLanguages.length > 0 ? data.sitterLanguages : ['עברית'],
                     certifications: Array.isArray(data.sitterCertifications) ? data.sitterCertifications : [],
                     // Location fields

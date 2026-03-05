@@ -39,7 +39,6 @@ import { he } from 'date-fns/locale';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import { uploadSitterPhoto } from '../services/imageUploadService';
 import { Camera } from 'lucide-react-native';
-import { useChats } from '../hooks/useChats';
 import { useBookings } from '../hooks/useBookings';
 import { startShift, getProfileViewStats, getResponseRateStats } from '../services/babysitterService';
 import { Play } from 'lucide-react-native';
@@ -65,6 +64,7 @@ interface Booking {
     parentId: string;
     parentName: string;
     parentPhoto: string | null;
+    parentPhone?: string;
     date: Date;
     startTime: string;
     endTime: string;
@@ -108,10 +108,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [availableForBookings, setAvailableForBookings] = useState(true);
+    const [isAvailableTonight, setIsAvailableTonight] = useState(false);
     const [availabilityModalVisible, setAvailabilityModalVisible] = useState(false);
-    const [messagesModalVisible, setMessagesModalVisible] = useState(false);
-    const [activeChatId, setActiveChatId] = useState<string | null>(null);
-    const [chatInput, setChatInput] = useState('');
     const [availableDays, setAvailableDays] = useState<string[]>(['0', '1', '2', '3', '4']); // Sun-Thu
     const [availableHours, setAvailableHours] = useState<Record<string, { start: string; end: string }>>({
         '0': { start: '09:00', end: '18:00' }, '1': { start: '09:00', end: '18:00' },
@@ -179,11 +177,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [uploadingVideo, setUploadingVideo] = useState(false);
     const [newLanguage, setNewLanguage] = useState('');
     const [newCertification, setNewCertification] = useState('');
-
-    // Real-time chats from Firebase
-    const { chats } = useChats();
-
-    const activeChat = chats.find(c => c.id === activeChatId);
 
     const [sitterProfile, setSitterProfile] = useState<SitterProfile | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -463,6 +456,19 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         const profile = await fetchSitterProfile();
         setSitterProfile(profile);
 
+        // Fetch isAvailableTonight directly if fetchSitterProfile doesn't have it
+        try {
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                    setIsAvailableTonight(Boolean(userDoc.data().isAvailableTonight));
+                }
+            }
+        } catch (e) {
+            logger.error('Failed to load isAvailableTonight', e);
+        }
+
         const fetchedBookings = await fetchBookings();
         setBookings(fetchedBookings);
         setStats(calculateStats(fetchedBookings));
@@ -619,6 +625,46 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
         const statusConfig = getStatusConfig();
 
+        const handleRequestRatingWhatsApp = async () => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+            let phone = booking.parentPhone;
+            if (!phone || phone.trim() === '') {
+                try {
+                    const parentDoc = await getDoc(doc(db, 'users', booking.parentId));
+                    if (parentDoc.exists()) {
+                        phone = parentDoc.data().phone || parentDoc.data().phoneNumber;
+                    }
+                } catch (e) {
+                    logger.error('Could not fetch parent phone', e);
+                }
+            }
+
+            if (!phone) {
+                Alert.alert('שגיאה', 'מספר טלפון לא זמין עבור הורה זה');
+                return;
+            }
+
+            // Format phone number (remove leading 0 and add +972)
+            let formattedPhone = phone.replace(/[^0-9]/g, '');
+            if (formattedPhone.startsWith('0')) {
+                formattedPhone = '972' + formattedPhone.substring(1);
+            }
+
+            const message = `היי ${booking.parentName}! תודה רבה שבחרת בי לבייביסיטר. אשמח מאוד אם תוכל/י להקדיש דקה לדרג אותי באפליקציה, זה ממש עוזר לי! ⭐️`;
+            const url = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+
+            Linking.canOpenURL(url)
+                .then((supported) => {
+                    if (!supported) {
+                        Alert.alert('שגיאה', 'וואטסאפ לא מותקן על המכשיר');
+                    } else {
+                        return Linking.openURL(url);
+                    }
+                })
+                .catch((err) => logger.error('WhatsApp Error:', err));
+        };
+
         return (
             <View style={[styles.bookingCardGlass, {
                 backgroundColor: isDarkMode ? 'rgba(28, 28, 30, 0.6)' : 'rgba(255, 255, 255, 0.7)',
@@ -756,6 +802,22 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         >
                             <Play size={18} color={isDarkMode ? '#000' : '#fff'} fill={isDarkMode ? '#000' : '#fff'} strokeWidth={2} />
                             <Text style={[styles.startShiftTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>התחל משמרת</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Ask for Rating WhatsApp Button */}
+                    {booking.status === 'completed' && (
+                        <TouchableOpacity
+                            style={[styles.startShiftBtnGlass, {
+                                backgroundColor: isDarkMode ? 'rgba(37, 211, 102, 0.15)' : '#dcf8c6',
+                                shadowColor: '#25D366',
+                                marginTop: 12, // Space from bottom details
+                            }]}
+                            onPress={handleRequestRatingWhatsApp}
+                            activeOpacity={0.8}
+                        >
+                            <MessageSquare size={18} color="#25D366" strokeWidth={2.5} />
+                            <Text style={[styles.startShiftTextGlass, { color: '#25D366' }]}>בקש דירוג בוואטסאפ</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -920,6 +982,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     languages: languages.length > 0 ? languages : undefined,
                                     certifications: certifications.length > 0 ? certifications : undefined,
                                     city: sitterCity.trim() || undefined,
+                                    isVerified: sitterProfile?.isVerified || false,
                                 },
                             });
                         }}
@@ -961,6 +1024,36 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         </Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Rating Button */}
+                <TouchableOpacity
+                    style={[styles.profileActionBtn, {
+                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                        marginTop: 12,
+                        marginBottom: 20,
+                        marginHorizontal: 20,
+                        justifyContent: 'center'
+                    }]}
+                    onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        try {
+                            const sitterId = auth.currentUser?.uid;
+                            const msg = `היי! אשמח ממש אם תוכלי להקדיש דקה לדרג אותי באפליקציית Calmino, זה עוזר לי מאוד 😊\n\nלחצי כאן:\ncalmparentapp://babysitter/${sitterId}`;
+                            Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
+                                Alert.alert('שגיאה', 'וואטסאפ לא מותקן על המכשיר.');
+                            });
+                        } catch (error) {
+                            logger.error('WhatsApp rating error:', error);
+                        }
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <MessageSquare size={16} color={theme.textPrimary} strokeWidth={2} />
+                    <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
+                        בקש דירוג בוואטסאפ
+                    </Text>
+                </TouchableOpacity>
 
                 {/* ✨ MINIMALIST Reviews Card - Monochrome */}
                 <View style={styles.reviewsSection}>
@@ -1009,6 +1102,47 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                 {/* ✨ MINIMALIST Quick Actions - Monochrome */}
                 <View style={styles.quickActionsGlass}>
+                    {/* Available Tonight Toggle Container */}
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                            <View style={[styles.quickActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' }]}>
+                                <Zap size={20} color="#10B981" strokeWidth={2} />
+                            </View>
+                            <View>
+                                <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary }]}>פנוי/ה להערב</Text>
+                                <Text style={[styles.quickActionDesc, { color: theme.textSecondary }]}>הורים יראו שאת/ה זמין/ה עכשיו</Text>
+                            </View>
+                        </View>
+                        <Switch
+                            value={isAvailableTonight}
+                            onValueChange={async (val) => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setIsAvailableTonight(val);
+                                try {
+                                    const userId = auth.currentUser?.uid;
+                                    if (userId) {
+                                        await updateDoc(doc(db, 'users', userId), {
+                                            isAvailableTonight: val
+                                        });
+                                    }
+                                } catch (error) {
+                                    setIsAvailableTonight(!val);
+                                    logger.error('Toggle available tonight failed:', error);
+                                }
+                            }}
+                            trackColor={{ false: isDarkMode ? '#333' : '#E5E7EB', true: '#10B981' }}
+                            thumbColor={isDarkMode ? '#fff' : '#fff'}
+                        />
+                    </View>
+
                     <TouchableOpacity
                         style={[styles.quickActionCardGlass, {
                             backgroundColor: 'transparent',
@@ -1033,46 +1167,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </Text>
                             <Text style={[styles.quickActionSubtextGlass, { color: theme.textSecondary }]}>
                                 {availableDays.length} ימים • {availableHours[availableDays[0]]?.start || '09:00'}-{availableHours[availableDays[0]]?.end || '18:00'}
-                            </Text>
-                        </View>
-                        <ChevronLeft size={18} color={theme.textSecondary} strokeWidth={2} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.quickActionCardGlass, {
-                            backgroundColor: 'transparent',
-                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                        }]}
-                        onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            setMessagesModalVisible(true);
-                        }}
-                        activeOpacity={0.7}
-                    >
-                        <View style={[styles.quickActionIconCircle, {
-                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
-                            borderWidth: StyleSheet.hairlineWidth,
-                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                        }]}>
-                            <View>
-                                <MessageSquare size={22} color={theme.textSecondary} strokeWidth={1.5} />
-                                {chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length > 0 && (
-                                    <View style={[styles.unreadBadgeGlass, {
-                                        backgroundColor: '#3B82F6',
-                                    }]}>
-                                        <Text style={[styles.unreadBadgeTextGlass, { color: '#fff' }]}>
-                                            {chats.filter(c => (c.unreadCount[auth.currentUser?.uid || ''] || 0) > 0).length}
-                                        </Text>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                        <View style={styles.quickActionContent}>
-                            <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary }]}>
-                                הודעות
-                            </Text>
-                            <Text style={[styles.quickActionSubtextGlass, { color: theme.textSecondary }]}>
-                                {chats.length > 0 ? `${chats.length} שיחות פעילות` : 'אין הודעות חדשות'}
                             </Text>
                         </View>
                         <ChevronLeft size={18} color={theme.textSecondary} strokeWidth={2} />
@@ -2934,93 +3028,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     </View>
                 </Modal>
             </Modal>
-
-            {/* Messages Modal */}
-            <Modal
-                visible={messagesModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setMessagesModalVisible(false)}
-            >
-                <View style={styles.settingsOverlay}>
-                    <View style={[styles.settingsModal, { backgroundColor: theme.card }]}>
-                        {/* Header */}
-                        <View style={styles.settingsHeader}>
-                            <View style={{ width: 24 }} />
-                            <Text style={[styles.settingsTitle, { color: theme.textPrimary }]}>הודעות</Text>
-                            <TouchableOpacity onPress={() => setMessagesModalVisible(false)}>
-                                <X size={22} color={theme.textSecondary} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContent}>
-                            {chats.length === 0 ? (
-                                <View style={styles.emptyMessages}>
-                                    <MessageSquare size={48} color={theme.textSecondary} strokeWidth={1} />
-                                    <Text style={[styles.emptyMessagesText, { color: theme.textSecondary }]}>
-                                        אין הודעות עדיין
-                                    </Text>
-                                </View>
-                            ) : (
-                                chats.map((chat) => (
-                                    <TouchableOpacity
-                                        key={chat.id}
-                                        style={[
-                                            styles.messageRow,
-                                            {
-                                                backgroundColor: ((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0)
-                                                    ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)')
-                                                    : (isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)')
-                                            }
-                                        ]}
-                                        onPress={() => {
-                                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            setMessagesModalVisible(false);
-                                            navigation.navigate('ChatScreen', {
-                                                sitterId: chat.parentId,
-                                                sitterName: chat.parentName,
-                                                sitterImage: '', // Metadata doesn't include parent image currently
-                                            });
-                                        }}
-                                    >
-                                        {chat.sitterImage ? (
-                                            <Image source={{ uri: chat.sitterImage }} style={styles.messageAvatar} />
-                                        ) : (
-                                            <View style={[styles.messageAvatar, {
-                                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }]}>
-                                                <User size={20} color={theme.textSecondary} />
-                                            </View>
-                                        )}
-                                        <View style={styles.messageContent}>
-                                            <View style={styles.messageHeader}>
-                                                <Text style={[styles.messageName, { color: theme.textPrimary }]}>
-                                                    {chat.parentName}
-                                                </Text>
-                                                <Text style={[styles.messageTime, { color: theme.textSecondary }]}>
-                                                    {chat.lastMessageTime?.toDate?.() ? formatRelativeTime(chat.lastMessageTime.toDate()) : ''}
-                                                </Text>
-                                            </View>
-                                            <Text
-                                                style={[
-                                                    styles.messagePreview,
-                                                    { color: ((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) ? theme.textPrimary : theme.textSecondary }
-                                                ]}
-                                                numberOfLines={1}
-                                            >
-                                                {chat.lastMessage || 'התחל שיחה...'}
-                                            </Text>
-                                        </View>
-                                        {((chat.unreadCount[auth.currentUser?.uid || ''] || 0) > 0) && <View style={[styles.unreadDot, { backgroundColor: theme.textPrimary }]} />}
-                                    </TouchableOpacity>
-                                ))
-                            )}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 };
@@ -3173,9 +3180,20 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     quickActionTitleGlass: {
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: '700',
         marginBottom: 4,
+    },
+    quickActionIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickActionDesc: {
+        fontSize: 13,
+        marginTop: 2,
     },
     quickActionSubtextGlass: {
         fontSize: 13,

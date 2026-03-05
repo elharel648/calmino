@@ -4,7 +4,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
 // @ts-ignore - getReactNativePersistence exists but TypeScript may not recognize it
 import { getReactNativePersistence } from '@firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { initializeAppCheck, CustomProvider } from 'firebase/app-check'; // JS SDK
 import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
@@ -28,27 +28,43 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 
 // App Check Integration
-// We bridge the Native React Native Firebase App Check into the Web Firebase SDK we use for Firestore
-const appCheckCustomProvider = new CustomProvider({
-  getToken: async () => {
-    try {
-      const { token } = await rnAppCheck().getToken(false);
-      // The native SDK doesn't expose the expiration time, so we give the JS SDK a 1-hour validity window.
-      // The JS SDK will auto-refresh the token natively 1 hour from now.
-      const expireTimeMillis = Date.now() + 60 * 60 * 1000;
-      return { token, expireTimeMillis };
-    } catch (e) {
-      console.warn('App Check Native Token Error:', e);
-      return { token: '', expireTimeMillis: 0 };
+// In dev/simulator, debug token exchange is broken and causes an infinite 429/403 loop.
+// We still need to initialize App Check (otherwise Firestore hangs waiting for it),
+// but in dev mode we use a dummy provider that returns immediately.
+if (!__DEV__) {
+  // Production: bridge native App Check tokens to JS SDK
+  const appCheckCustomProvider = new CustomProvider({
+    getToken: async () => {
+      try {
+        const { token } = await rnAppCheck().getToken(false);
+        const expireTimeMillis = Date.now() + 60 * 60 * 1000;
+        return { token, expireTimeMillis };
+      } catch (e) {
+        console.warn('App Check Native Token Error:', e);
+        const backoffMillis = Date.now() + 5 * 60 * 1000;
+        return { token: '', expireTimeMillis: backoffMillis };
+      }
     }
-  }
-});
+  });
 
-// Initialize App Check for the Web SDK BEFORE initializing Firestore/Auth
-const appCheck = initializeAppCheck(app, {
-  provider: appCheckCustomProvider,
-  isTokenAutoRefreshEnabled: true,
-});
+  initializeAppCheck(app, {
+    provider: appCheckCustomProvider,
+    isTokenAutoRefreshEnabled: true,
+  });
+} else {
+  // Development: dummy provider that returns immediately (no native SDK calls)
+  console.log('⚠️ App Check disabled in development mode');
+  const devProvider = new CustomProvider({
+    getToken: async () => {
+      return { token: 'dev-dummy-token', expireTimeMillis: Date.now() + 60 * 60 * 1000 };
+    }
+  });
+
+  initializeAppCheck(app, {
+    provider: devProvider,
+    isTokenAutoRefreshEnabled: false,
+  });
+}
 
 // Auth with AsyncStorage persistence (persists login between app restarts)
 let auth: ReturnType<typeof getAuth>;
@@ -62,5 +78,16 @@ try {
 }
 
 export { auth };
-export const db = getFirestore(app);
+
+let firestoreDb: ReturnType<typeof getFirestore>;
+try {
+  firestoreDb = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (error) {
+  // If already initialized, fallback to getFirestore
+  firestoreDb = getFirestore(app);
+}
+
+export const db = firestoreDb;
 export const storage = getStorage(app);

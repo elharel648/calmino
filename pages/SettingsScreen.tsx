@@ -55,11 +55,16 @@ export default function SettingsScreen() {
   const [joinModalVisible, setJoinModalVisible] = useState(false);
   const [isGuestInviteOpen, setIsGuestInviteOpen] = useState(false);
   const [isEditBasicInfoOpen, setIsEditBasicInfoOpen] = useState(false);
-  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(user?.photoURL || null);
-  const [userName, setUserName] = useState<string>(user?.displayName || '');
+  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(
+    user?.photoURL || null
+  );
+  const [userName, setUserName] = useState<string>(
+    user?.displayName || ''
+  );
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
 
   // Read remote config switch globally
   const showPremiumUpgrade = getShowPremiumUpgrade();
@@ -252,6 +257,7 @@ export default function SettingsScreen() {
         await updateDoc(userRef, { photoURL: newImageUri });
         await updateProfile(user, { photoURL: newImageUri }).catch((e) => { logger.log('Auth profile update error', e); });
         setUserPhotoURL(newImageUri);
+        setPhotoError(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (error) {
         Alert.alert(t('account.error'), t('account.couldNotSavePhoto'));
@@ -326,19 +332,32 @@ export default function SettingsScreen() {
             style={styles.avatarContainer}
             activeOpacity={0.8}
           >
-            {userPhotoURL ? (
+            {userPhotoURL && !photoError ? (
               <>
                 <View style={[styles.avatarGlow, { borderColor: isDarkMode ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)' }]}>
-                  <Image source={{ uri: userPhotoURL }} style={styles.avatar} />
+                  <Image
+                    source={{ uri: userPhotoURL }}
+                    style={styles.avatar}
+                    onError={() => setPhotoError(true)}
+                  />
                 </View>
                 <View style={[styles.cameraBadge, { backgroundColor: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? theme.background : '#fff' }]}>
                   <Camera size={15} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                 </View>
               </>
             ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                <Camera size={28} color={isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
-              </View>
+              <>
+                <View style={[styles.avatarPlaceholder, {
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                  borderWidth: 2,
+                  borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+                }]}>
+                  <User size={46} color={isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)'} strokeWidth={1.5} />
+                </View>
+                <View style={[styles.cameraBadge, { backgroundColor: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? theme.background : '#fff' }]}>
+                  <Camera size={15} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
+                </View>
+              </>
             )}
           </TouchableOpacity>
 
@@ -354,7 +373,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
 
           {user?.email && (
-            <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user.email}</Text>
+            <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user?.email}</Text>
           )}
         </Animated.View>
         {/* Premium Card - Highlighted Premium Design - Remote Config controlled */}

@@ -19,7 +19,7 @@ import {
     increment,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
-import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage, SitterBadge } from '../types/babysitter';
+import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage, SitterBadge, ReviewTag } from '../types/babysitter';
 import { logger } from '../utils/logger';
 import { getUserPushToken, sendPushNotification } from './pushNotificationService';
 
@@ -347,6 +347,74 @@ export async function completeShift(
 // ===================
 // REVIEWS
 // ===================
+
+/**
+ * Submit a new review for a babysitter
+ * This handles writing the review, updating the booking, 
+ * and recalculating the sitter's aggregate rating in their profile.
+ */
+export async function submitReview(
+    bookingId: string | undefined,
+    babysitterId: string,
+    parentId: string,
+    rating: number,
+    tags: ReviewTag[],
+    text: string
+): Promise<string> {
+    try {
+        // 1. Create the review document
+        const reviewRef = await addDoc(collection(db, 'reviews'), {
+            bookingId: bookingId || null,
+            babysitterId,
+            parentId,
+            rating,
+            tags,
+            text,
+            isVerified: !!bookingId, // It's from a verified booking if there is a bookingId
+            helpfulCount: 0,
+            helpfulBy: [],
+            createdAt: serverTimestamp(),
+        });
+
+        // 2. Mark the booking as rated
+        if (bookingId) {
+            await updateDoc(doc(db, 'bookings', bookingId), {
+                isRated: true,
+                ratedAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        }
+
+        // 3. Recalculate sitter's stats and update their profile
+        const stats = await getReviewStats(babysitterId);
+
+        // Wait briefly to ensure the new review is in the stats, though it might not be due to Firestore replication
+        // So we manually calculate the new average to be safe
+        const newTotal = stats.total + 1;
+        const newAverage = Math.round((((stats.average * stats.total) + rating) / newTotal) * 10) / 10;
+
+        await updateDoc(doc(db, 'users', babysitterId), {
+            sitterRating: newAverage,
+            sitterReviewCount: newTotal,
+        });
+
+        // 4. Send push notification to the sitter
+        const sitterToken = await getUserPushToken(babysitterId);
+        if (sitterToken) {
+            await sendPushNotification(
+                sitterToken,
+                '⭐ קיבלת ביקורת חדשה!',
+                `קיבלת ביקורת של ${rating} כוכבים על המשמרת האחרונה שלך!`,
+                { type: 'new_review' }
+            );
+        }
+
+        return reviewRef.id;
+    } catch (error) {
+        logger.error('Error submitting review:', error);
+        throw error;
+    }
+}
 
 /**
  * Get reviews for a babysitter (with parent names)

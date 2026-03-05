@@ -34,7 +34,8 @@ import SitterProfileScreen from './pages/SitterProfileScreen';
 import SitterRegistrationScreen from './pages/SitterRegistrationScreen';
 import SitterDashboardScreen from './pages/SitterDashboardScreen';
 import MyReviewsScreen from './pages/MyReviewsScreen';
-import ChatScreen from './pages/ChatScreen';
+import RatingScreen from './pages/RatingScreen';
+
 import ParentBookingsScreen from './pages/ParentBookingsScreen';
 
 import { checkIfBabyExists } from './services/babyService';
@@ -236,7 +237,8 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="SitterRegistration" component={SitterRegistrationScreen} />
       <BabysitterStack.Screen name="SitterDashboard" component={SitterDashboardScreen} />
       <BabysitterStack.Screen name="MyReviews" component={MyReviewsScreen} />
-      <BabysitterStack.Screen name="ChatScreen" component={ChatScreen} />
+      <BabysitterStack.Screen name="RatingScreen" component={RatingScreen} />
+
       <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
     </BabysitterStack.Navigator>
   );
@@ -575,28 +577,37 @@ export default function App() {
 
       // OAuth providers (Apple, Google) verify identity at provider level
       // Only require emailVerified for email/password accounts
-      const isOAuthUser = currentUser.providerData.some(
-        p => p.providerId === 'apple.com' || p.providerId === 'google.com'
-      );
-      if (currentUser && (currentUser.emailVerified || isOAuthUser)) {
-        setUser(currentUser);
-        await checkBiometricSettingsAndProfile(currentUser.uid);
+      if (currentUser) {
+        const isOAuthUser = currentUser.providerData.some(
+          p => p.providerId === 'apple.com' || p.providerId === 'google.com'
+        );
+        if (currentUser.emailVerified || isOAuthUser) {
+          setUser(currentUser);
+          await checkBiometricSettingsAndProfile(currentUser.uid);
 
-        // Register for push notifications
-        registerForPushNotifications().catch((err) => {
-          logger.log('Push registration:', err);
-        });
+          // Register for push notifications
+          registerForPushNotifications().catch((err) => {
+            logger.log('Push registration:', err);
+          });
 
-        // Initialize notification service and schedule recurring reminders (once per login)
-        notificationService.initialize().then((success) => {
-          if (success) {
-            notificationService.scheduleSupplementReminder();
-            notificationService.scheduleSleepReminder();
-            notificationService.scheduleDailySummary();
-          }
-        }).catch((err) => {
-          logger.log('Notification init:', err);
-        });
+          // Initialize notification service and schedule recurring reminders (once per login)
+          notificationService.initialize().then((success) => {
+            if (success) {
+              notificationService.scheduleSupplementReminder();
+              notificationService.scheduleSleepReminder();
+              notificationService.scheduleDailySummary();
+            }
+          }).catch((err) => {
+            logger.log('Notification init:', err);
+          });
+        } else {
+          // Email/password user who hasn't verified email yet
+          setChildrenReady(false);
+          setUser(null);
+          setHasBabyProfile(false);
+          setIsLocked(false);
+          setIsAppLoading(false);
+        }
       } else {
         setChildrenReady(false);
         setUser(null);

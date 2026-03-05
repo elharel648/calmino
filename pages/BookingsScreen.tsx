@@ -13,11 +13,15 @@ import {
     RefreshControl,
     ActivityIndicator,
     Platform,
+    Linking,
+    Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Calendar, Clock, MapPin, DollarSign, CheckCircle, XCircle, AlertCircle, MessageSquare, Star } from 'lucide-react-native';
-import { auth } from '../services/firebaseConfig';
+import PendingRatingPopup from '../components/PendingRatingPopup';
+import { auth, db } from '../services/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import { getParentBookings, updateBookingStatus } from '../services/babysitterService';
 import { Booking } from '../services/bookingService';
 import * as Haptics from 'expo-haptics';
@@ -74,23 +78,41 @@ const BookingsScreen = ({ navigation }: any) => {
         }
     };
 
-    const handleChatWithSitter = (booking: Booking) => {
+    const handleWhatsAppWithSitter = async (booking: Booking) => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-        navigation.navigate('ChatScreen', {
-            sitterId: booking.babysitterId,
-            sitterName: booking.sitterName,
-            sitterImage: null,
-        });
+        try {
+            const sitterDoc = await getDoc(doc(db, 'users', booking.babysitterId));
+            if (sitterDoc.exists()) {
+                const data = sitterDoc.data();
+                if (data.phone) {
+                    const cleanPhone = data.phone.replace(/\D/g, '');
+                    const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
+                    const message = `היי ${booking.sitterName}, לגבי ההזמנה שלנו ב-${booking.date.toDate().toLocaleDateString('he-IL')}...`;
+                    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+                    Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
+                } else {
+                    Alert.alert('שים לב', 'לספק זה לא מוגדר מספר טלפון.');
+                }
+            } else {
+                Alert.alert('שגיאה', 'לא נמצאו פרטי ספק.');
+            }
+        } catch (error) {
+            logger.error('WhatsApp fetch error:', error);
+            Alert.alert('שגיאה', 'אירעה שגיאה בחיבור לוואטסאפ. נסה שוב.');
+        }
     };
 
     const handleRateBooking = (booking: Booking) => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-        navigation.navigate('RatingScreen', {
-            bookingId: booking.id,
-            sitterId: booking.babysitterId,
-            sitterName: booking.sitterName,
+        navigation.navigate('Babysitter', {
+            screen: 'RatingScreen',
+            params: {
+                bookingId: booking.id,
+                babysitterId: booking.babysitterId,
+                sitterName: booking.sitterName
+            }
         });
     };
 
@@ -294,15 +316,15 @@ const BookingsScreen = ({ navigation }: any) => {
 
                                     {/* Actions */}
                                     <View style={styles.actionsContainer}>
-                                        {/* Chat Button */}
+                                        {/* WhatsApp Button */}
                                         <TouchableOpacity
-                                            style={[styles.actionBtn, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF' }]}
-                                            onPress={() => handleChatWithSitter(booking)}
+                                            style={[styles.actionBtn, { backgroundColor: isDarkMode ? 'rgba(37, 211, 102, 0.15)' : '#dcf8c6' }]}
+                                            onPress={() => handleWhatsAppWithSitter(booking)}
                                             accessibilityRole="button"
-                                            accessibilityLabel={`צ'אט עם ${booking.sitterName}`}
+                                            accessibilityLabel={`וואטסאפ עם ${booking.sitterName}`}
                                         >
-                                            <MessageSquare size={18} color={theme.primary} />
-                                            <Text style={[styles.actionBtnText, { color: theme.primary }]}>צ'אט</Text>
+                                            <MessageSquare size={18} color="#25D366" />
+                                            <Text style={[styles.actionBtnText, { color: '#25D366' }]}>וואטסאפ</Text>
                                         </TouchableOpacity>
 
                                         {/* Cancel Button (only for pending/confirmed) */}
@@ -318,8 +340,8 @@ const BookingsScreen = ({ navigation }: any) => {
                                             </TouchableOpacity>
                                         )}
 
-                                        {/* Rate Button (only for completed) */}
-                                        {booking.status === 'completed' && (
+                                        {/* Rate Button (only for completed and not rated) */}
+                                        {booking.status === 'completed' && !booking.isRated && (
                                             <TouchableOpacity
                                                 style={[styles.actionBtn, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7' }]}
                                                 onPress={() => handleRateBooking(booking)}
@@ -337,6 +359,8 @@ const BookingsScreen = ({ navigation }: any) => {
                     )}
                 </ScrollView>
             )}
+
+            <PendingRatingPopup />
         </View>
     );
 };

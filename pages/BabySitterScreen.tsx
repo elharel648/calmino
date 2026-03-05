@@ -31,6 +31,7 @@ import { logger } from '../utils/logger';
 import SitterCard from '../components/BabySitter/SitterCard';
 import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
 import PremiumPaywall from '../components/Premium/PremiumPaywall';
+import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
 
 const BabySitterScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -38,6 +39,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Hooks
     const { sitters, isLoading, refetch } = useSitters();
+    const { favorites, toggleFavorite } = useFavoriteSitters();
 
     // 🔧 DEBUG: Log when screen loads
     useEffect(() => {
@@ -48,7 +50,7 @@ const BabySitterScreen = ({ navigation }: any) => {
     const [userMode, setUserMode] = useState<'parent' | 'sitter'>('parent');
     const [isPaywallOpen, setIsPaywallOpen] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-    const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance'>('rating');
+    const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance' | 'favorites'>('rating');
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
     const [checkingStatus, setCheckingStatus] = useState(false);
     const [filterCity, setFilterCity] = useState<string>(''); // Manual city filter
@@ -57,7 +59,9 @@ const BabySitterScreen = ({ navigation }: any) => {
     const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // User location state
-    const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
+        null
+    );
     const [userCity, setUserCity] = useState<string | null>(null);
 
     // Get user photo from Auth or Firestore (prioritize sitter photo if user is a sitter)
@@ -390,6 +394,11 @@ const BabySitterScreen = ({ navigation }: any) => {
     const sittersToShow = useMemo(() => {
         let filtered = processedSitters;
 
+        // Apply Favorites Filter
+        if (sortBy === 'favorites') {
+            filtered = filtered.filter(s => s.id && favorites.includes(s.id));
+        }
+
         // 1. Filter by manual city selection
         if (activeCity && activeCity.length > 0) {
             const searchCity = activeCity.toLowerCase().trim();
@@ -404,7 +413,7 @@ const BabySitterScreen = ({ navigation }: any) => {
         }
 
         return filtered;
-    }, [processedSitters, activeCity, userLocation]);
+    }, [processedSitters, activeCity, userLocation, sortBy, favorites]);
 
     // Sort sitters intelligently: prioritize nearby sitters, then by selected sort (memoized)
     const sortedSitters = useMemo(() => {
@@ -517,13 +526,16 @@ const BabySitterScreen = ({ navigation }: any) => {
             theme={theme}
             isDarkMode={isDarkMode}
             onPress={handleSitterPress}
+            isFavorite={item.id ? favorites.includes(item.id) : false}
+            onToggleFavorite={toggleFavorite}
         />
-    ), [theme, isDarkMode, handleSitterPress]);
+    ), [theme, isDarkMode, handleSitterPress, favorites, toggleFavorite]);
 
     // ========== COMPONENTS ==========
 
     // Sort Pills
     const SORT_OPTIONS = [
+        { key: 'favorites' as const, label: 'מועדפים', icon: '❤️' },
         { key: 'rating' as const, label: 'דירוג', icon: '⭐' },
         { key: 'price' as const, label: 'מחיר', icon: '₪' },
         { key: 'distance' as const, label: 'מרחק', icon: '📍' },
@@ -637,17 +649,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>מצא סיטר</Text>
 
                     <View style={styles.headerRight}>
-                        {userMode === 'parent' && (
-                            <TouchableOpacity
-                                onPress={() => navigation.navigate('ParentBookings')}
-                                style={[styles.headerIconBtn, {
-                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                }]}
-                                activeOpacity={0.7}
-                            >
-                                <Calendar size={17} color={theme.textPrimary} strokeWidth={2} />
-                            </TouchableOpacity>
-                        )}
+
                         {userPhoto ? (
                             <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
                         ) : (

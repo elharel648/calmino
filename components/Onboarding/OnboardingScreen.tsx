@@ -37,7 +37,7 @@ const slides: OnboardingSlide[] = [
     {
         icon: BarChart2,
         title: 'עקוב אחרי הכל',
-        description: 'תעד האכלות, שינה, חיתולים וכל מה שחשוב',
+        description: 'תעד האכלה, שינה, חיתולים וכל מה שחשוב',
         gradientColors: ['#8B5CF6', '#A855F7'],
         backgroundColor: '#F5F3FF',
     },

@@ -73,7 +73,7 @@ export const sendWelcomeEmail = onDocumentCreated('users/{userId}', async (event
         
         <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
             <p style="color:#2d3436;font-weight:600;margin:0 0 12px;">הנה כמה דברים שאפשר להתחיל איתם:</p>
-            <p style="color:#636e72;margin:6px 0;">🍼 <strong>מעקב יומי</strong> — תעדו האכלות, שינה, והחתלות בלחיצה</p>
+            <p style="color:#636e72;margin:6px 0;">🍼 <strong>מעקב יומי</strong> — תעדו האכלה, שינה, והחתלות בלחיצה</p>
             <p style="color:#636e72;margin:6px 0;">👶 <strong>פרופיל תינוק</strong> — הוסיפו תמונה ופרטים</p>
             <p style="color:#636e72;margin:6px 0;">👨‍👩‍👧 <strong>שיתוף משפחתי</strong> — הזמינו בן/בת זוג לצפות בזמן אמת</p>
             <p style="color:#636e72;margin:6px 0;">📊 <strong>דו"חות חכמים</strong> — גלו דפוסים ותובנות</p>
@@ -164,7 +164,7 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
         // ── FAMILY MEMBER INVITE ──
         const bodyContent = `
             <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
-            <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלות, שינה, גדילה, ועוד.</p>
+            <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלה, שינה, גדילה, ועוד.</p>
             
             <div style="background:linear-gradient(135deg,#6C5CE7,#a29bfe);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
                 <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד ההצטרפות:</p>

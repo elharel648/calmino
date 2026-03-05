@@ -51,8 +51,7 @@ const BAR_R = 40;
 const BUBBLE_SIZE = 56;
 const BUBBLE_R = 20;
 
-// Screens that should be displayed full-screen without the tab bar
-const FULLSCREEN_SCREENS = ['ChatScreen'];
+const FULLSCREEN_SCREENS: string[] = [];
 
 const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(({ state, descriptors, navigation }) => {
     const { isDarkMode } = useTheme();

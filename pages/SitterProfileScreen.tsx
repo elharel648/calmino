@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert, ActivityIndicator, Platform, Share } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats, trackProfileView } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe } from 'lucide-react-native';
+import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -19,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGlobalPresence } from '../hooks/useGlobalPresence';
 import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send } from 'lucide-react-native';
+import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
 
 interface SocialLinks {
     instagram?: string;
@@ -51,7 +53,6 @@ interface SitterData {
 
 type RootStackParamList = {
     SitterProfile: { sitterData: SitterData };
-    ChatScreen: { sitterName: string; sitterImage: string; sitterId: string };
 };
 
 type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'SitterProfile'>;
@@ -76,7 +77,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
     const handleCall = () => {
         if (hasPhone) {
-            Linking.openURL(`tel:${sitterData.phone}`);
+            Linking.openURL(`tel:${sitterData.phone} `);
         } else {
             Alert.alert('שים לב', 'מספר טלפון לא זמין. נסה ליצור קשר בצ׳אט.');
         }
@@ -84,22 +85,14 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
     const handleWhatsApp = () => {
         if (!hasPhone) {
-            Alert.alert('שים לב', 'מספר טלפון לא זמין. נסה ליצור קשר בצ׳אט.');
+            Alert.alert('שים לב', 'מספר טלפון לא זמין.');
             return;
         }
         const cleanPhone = sitterData.phone!.replace(/\D/g, '');
         const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
-        const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים :)`;
+        const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים:)`;
         const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
         Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
-    };
-
-    const handleChat = () => {
-        navigation.navigate('ChatScreen', {
-            sitterName: sitterData.name,
-            sitterImage: sitterData.image,
-            sitterId: sitterData.id,
-        });
     };
 
     // Fetch reviews from Firebase
@@ -111,9 +104,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [respondingToReview, setRespondingToReview] = useState<string | null>(null);
     const [responseText, setResponseText] = useState('');
     const [badges, setBadges] = useState<SitterBadge[]>([]);
+    const [pendingBookingToRate, setPendingBookingToRate] = useState<string | null>(null);
 
     // Live Presence
     const { isOnline, lastActive } = useGlobalPresence(sitterData.id);
+    const { favorites, toggleFavorite } = useFavoriteSitters();
+    const isFavorite = favorites.includes(sitterData.id);
 
     // Format last seen time
     const formatLastSeen = () => {
@@ -190,17 +186,36 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             }
         };
 
-        if (sitterData.id && !sitterData.id.startsWith('mock_')) {
+        if (sitterData.id) {
             fetchReviews();
             fetchBadges();
             // Track profile view
             const currentUserId = auth.currentUser?.uid;
             if (currentUserId) {
                 trackProfileView(sitterData.id, currentUserId);
+
+                // Check if user has an unrated completed booking with this sitter
+                const checkPendingRatings = async () => {
+                    try {
+                        const q = query(
+                            collection(db, 'bookings'),
+                            where('parentId', '==', currentUserId),
+                            where('babysitterId', '==', sitterData.id),
+                            where('status', '==', 'completed')
+                        );
+
+                        const snapshot = await getDocs(q);
+                        const unratedDoc = snapshot.docs.find(doc => !doc.data().isRated);
+
+                        if (unratedDoc) {
+                            setPendingBookingToRate(unratedDoc.id);
+                        }
+                    } catch (error) {
+                        logger.error('Error checking pending ratings for profile:', error);
+                    }
+                };
+                checkPendingRatings();
             }
-        } else {
-            // Mock data - don't fetch
-            setLoadingReviews(false);
         }
     }, [sitterData.id]);
 
@@ -255,11 +270,54 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
     return (
         <View style={styles.container}>
-            {/* Back button */}
-            <View style={styles.topNav}>
+            {/* Top Navigation */}
+            <View style={[styles.topNav, {
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+            }]}>
                 <TouchableOpacity style={styles.navBtn} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
+
+                {/* Right side actions - Share and Favorite */}
+                {!isCurrentUserSitter && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <TouchableOpacity
+                            style={styles.navBtn}
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                try {
+                                    const msg = `מצאתי בייביסיטר ב-Calmino, הנה הפרופיל של ${sitterData.name}:\n\ncalmparentapp://babysitter/${sitterData.id}`;
+                                    Share.share({
+                                        message: msg,
+                                        url: `calmparentapp://babysitter/${sitterData.id}`,
+                                        title: 'שיתוף פרופיל בייביסיטר'
+                                    });
+                                } catch (error) {
+                                    logger.error('Share error:', error);
+                                }
+                            }}
+                        >
+                            <Share2 size={22} color={theme.textPrimary} strokeWidth={2} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.navBtn}
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                toggleFavorite(sitterData.id);
+                            }}
+                        >
+                            <Heart
+                                size={22}
+                                color={isFavorite ? '#F43F5E' : theme.textPrimary}
+                                fill={isFavorite ? '#F43F5E' : 'transparent'}
+                                strokeWidth={isFavorite ? 0 : 2}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: 134 + 80 }]}>
@@ -789,20 +847,35 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     <Ionicons name="call" size={20} color={theme.textPrimary} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.iconBtn, {
-                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'
-                }]} onPress={handleWhatsApp}>
-                    <Ionicons name="logo-whatsapp" size={20} color={theme.textPrimary} />
-                </TouchableOpacity>
+                {!isCurrentUserSitter && (
+                    <TouchableOpacity
+                        style={[styles.bookBtn, {
+                            backgroundColor: '#FBBF24', // Review yellow
+                            flex: 0.8,
+                            marginRight: 8,
+                        }]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            (navigation as any).navigate('RatingScreen', {
+                                bookingId: pendingBookingToRate || undefined,
+                                babysitterId: sitterData.id,
+                                sitterName: sitterData.name
+                            });
+                        }}
+                    >
+                        <Star size={18} color="#000" fill="#000" />
+                        <Text style={[styles.bookBtnText, { color: '#000', marginLeft: 6 }]}>כתוב ביקורת</Text>
+                    </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                     style={[styles.bookBtn, {
-                        backgroundColor: isDarkMode ? '#fff' : '#000'
+                        backgroundColor: '#25D366' // WhatsApp Green
                     }]}
-                    onPress={handleChat}
+                    onPress={handleWhatsApp}
                 >
-                    <Ionicons name="chatbubble" size={18} color={isDarkMode ? '#000' : '#fff'} />
-                    <Text style={[styles.bookBtnText, { color: isDarkMode ? '#000' : '#fff' }]}>שלח הודעה</Text>
+                    <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+                    <Text style={[styles.bookBtnText, { color: '#fff', marginLeft: 6 }]}>שלח הודעה</Text>
                 </TouchableOpacity>
             </View>
 
@@ -838,6 +911,7 @@ const styles = StyleSheet.create({
     topNav: {
         position: 'absolute',
         top: 54,
+        left: 20,
         right: 20,
         zIndex: 100
     },

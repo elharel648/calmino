@@ -28,6 +28,7 @@ import {
     getGrowthChange,
     GrowthMeasurement
 } from '../../services/growthService';
+import { Timestamp } from 'firebase/firestore';
 import { calculatePercentile, getPercentileStatus } from '../../utils/whoGrowthStandards';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { Svg, Path, Defs, LinearGradient, Stop, Circle, Line } from 'react-native-svg';
@@ -389,14 +390,17 @@ export default function DetailedGrowthScreen({
         // Try baby.stats first, fallback to latest measurement
         const latestMeasurement = measurements.length > 0 ? measurements[measurements.length - 1] : null;
 
-        const weight = baby?.stats?.weight
-            ? parseFloat(baby.stats.weight)
+        // Read current stats from baby profile
+        const stats = baby?.stats;
+
+        const weight = stats?.weight
+            ? parseFloat(stats.weight)
             : latestMeasurement?.weight || null;
-        const height = baby?.stats?.height
-            ? parseFloat(baby.stats.height)
+        const height = stats?.height
+            ? parseFloat(stats.height)
             : latestMeasurement?.height || null;
-        const head = baby?.stats?.headCircumference
-            ? parseFloat(baby.stats.headCircumference)
+        const head = stats?.headCircumference
+            ? parseFloat(stats.headCircumference)
             : latestMeasurement?.headCircumference || null;
 
         return {

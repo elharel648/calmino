@@ -21,6 +21,7 @@ interface UseMedicationsReturn {
  * Supports default supplements (vitaminD, iron) + user-defined custom supplements
  */
 export const useMedications = (childId: string | undefined): UseMedicationsReturn => {
+    // DEMO MODE removed
     const [meds, setMeds] = useState<MedicationsState>({ vitaminD: false, iron: false, custom: {} });
     const [customSupplements, setCustomSupplements] = useState<CustomSupplement[]>([]);
     const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');

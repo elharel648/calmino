@@ -51,7 +51,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Stats
     'stats.title': 'סטטיסטיקות',
-    'stats.feedings': 'האכלות',
+    'stats.feedings': 'האכלה',
     'stats.sleep': 'שעות שינה',
     'stats.diapers': 'חיתולים',
     'stats.supplements': 'תוספים',
