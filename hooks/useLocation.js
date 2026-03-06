@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
+import { logger } from '../utils/logger';
 
 /**
  * Custom Hook לניהול מיקום משתמש
@@ -52,7 +53,7 @@ const useLocation = () => {
                 setAddress('מיקום נוכחי');
             }
         } catch (err) {
-            console.error('Location error:', err);
+            logger.error('Location error:', err);
             setError('שגיאה באיתור מיקום');
             setAddress('לא ניתן לאתר מיקום');
         } finally {

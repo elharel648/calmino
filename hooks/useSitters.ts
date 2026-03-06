@@ -1,8 +1,8 @@
 import { logger } from '../utils/logger';
 // hooks/useSitters.ts - Production Firebase Sitters Hook with Caching
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { db } from '../services/firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../services/firebaseConfig';
+import { collection, query, where, getDocs, doc, getDoc, limit } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHE_KEY = '@sitters_cache';
@@ -115,7 +115,7 @@ const useSitters = () => {
                 setSitters(cachedSitters);
                 setIsLoading(false);
                 // Fetch in background to update cache
-                fetchSitters(true).catch(() => { });
+                fetchSitters(true).catch((e) => logger.warn('useSitters: background refresh failed', e));
                 return;
             }
         }
@@ -128,19 +128,38 @@ const useSitters = () => {
         // Mock data will be used as fallback only when no real sitters found
 
         try {
-            // Query registered sitters from Firebase
+            // 1. Fetch current user's blocked sitters
+            let blockedSitters: string[] = [];
+            if (auth.currentUser) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+                    if (userDoc.exists()) {
+                        blockedSitters = userDoc.data().blockedSitters || [];
+                    }
+                } catch (e) {
+                    logger.warn('useSitters: Could not fetch blocked sitters', e);
+                }
+            }
+
+            // 2. Query registered sitters from Firebase
             const q = query(
                 collection(db, 'users'),
                 where('isSitter', '==', true),
-                where('sitterActive', '==', true)
+                where('sitterActive', '==', true),
+                limit(50)
             );
 
             const snapshot = await getDocs(q);
             logger.log('🔧 useSitters: Found', snapshot.size, 'sitters in Firebase');
             const fetchedSitters: Sitter[] = [];
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
+            snapshot.forEach((sitterDoc) => {
+                // Skip blocked sitters
+                if (blockedSitters.includes(sitterDoc.id)) {
+                    return;
+                }
+
+                const data = sitterDoc.data();
 
                 // Validate and sanitize numeric values
                 const rating = typeof data.sitterRating === 'number' && !isNaN(data.sitterRating) && data.sitterRating >= 0
@@ -158,7 +177,7 @@ const useSitters = () => {
                     : 50;
 
                 fetchedSitters.push({
-                    id: doc.id,
+                    id: sitterDoc.id,
                     name: (data.displayName && typeof data.displayName === 'string') ? data.displayName : 'סיטר',
                     age,
                     photoUrl: (data.photoUrl && typeof data.photoUrl === 'string') ? data.photoUrl : null,

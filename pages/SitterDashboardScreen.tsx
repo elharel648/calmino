@@ -47,6 +47,7 @@ import { logger } from '../utils/logger';
 import * as Location from 'expo-location';
 import { validateUsername, openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -1104,7 +1105,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 <View style={styles.quickActionsGlass}>
                     {/* Available Tonight Toggle Container */}
                     <View style={{
-                        flexDirection: 'row',
+                        flexDirection: 'row-reverse',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         paddingHorizontal: 16,
@@ -1112,13 +1113,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         borderBottomWidth: StyleSheet.hairlineWidth,
                         borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                     }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
                             <View style={[styles.quickActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' }]}>
                                 <Zap size={20} color="#10B981" strokeWidth={2} />
                             </View>
                             <View>
-                                <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary }]}>פנוי/ה להערב</Text>
-                                <Text style={[styles.quickActionDesc, { color: theme.textSecondary }]}>הורים יראו שאת/ה זמין/ה עכשיו</Text>
+                                <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary, textAlign: 'right' }]}>פנוי/ה להערב</Text>
+                                <Text style={[styles.quickActionDesc, { color: theme.textSecondary, textAlign: 'right' }]}>הורים יראו שאת/ה זמין/ה עכשיו</Text>
                             </View>
                         </View>
                         <Switch
@@ -1242,69 +1243,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         )}
                     </View>
 
-                    {/* Response Rate Card */}
-                    <View style={[styles.analyticsCard, {
-                        backgroundColor: 'transparent',
-                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                    }]}>
-                        <View style={styles.analyticsCardHeader}>
-                            <View style={styles.analyticsCardTitleRow}>
-                                <View style={[styles.analyticsIconCircle, {
-                                    backgroundColor: 'transparent',
-                                    borderWidth: 1.5,
-                                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                                }]}>
-                                    <Zap size={18} color={theme.textSecondary} strokeWidth={2} />
-                                </View>
-                                <Text style={[styles.analyticsCardTitle, { color: theme.textPrimary }]}>
-                                    שיעור תגובה
-                                </Text>
-                            </View>
-                        </View>
 
-                        {/* Response Rate Circle */}
-                        <View style={styles.responseRateContainer}>
-                            <View style={styles.responseRateCircleContainer}>
-                                <View style={[styles.responseRateCircle, {
-                                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                                }]}>
-                                    <View style={[styles.responseRateCircleProgress, {
-                                        borderColor: isDarkMode ? 'rgba(74, 222, 128, 0.6)' : 'rgba(34, 197, 94, 0.55)',
-                                        borderRightColor: 'transparent',
-                                        borderBottomColor: (responseRateStats?.responseRate ?? 100) >= 50
-                                            ? (isDarkMode ? 'rgba(74, 222, 128, 0.6)' : 'rgba(34, 197, 94, 0.55)')
-                                            : 'transparent',
-                                        borderTopColor: (responseRateStats?.responseRate ?? 100) >= 75
-                                            ? (isDarkMode ? 'rgba(74, 222, 128, 0.6)' : 'rgba(34, 197, 94, 0.55)')
-                                            : 'transparent',
-                                        transform: [{ rotate: `${((responseRateStats?.responseRate ?? 100) / 100) * 360}deg` }],
-                                    }]} />
-                                    <View style={[styles.responseRateInner, {
-                                        backgroundColor: isDarkMode ? '#1c1c1e' : '#fff',
-                                    }]}>
-                                        <Text style={[styles.responseRateValue, { color: theme.textPrimary }]}>
-                                            {responseRateStats?.responseRate ?? 100}%
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            <View style={styles.responseRateDetails}>
-                                <View style={styles.responseRateRow}>
-                                    <Text style={[styles.responseRateLabel, { color: theme.textSecondary }]}>
-                                        זמן תגובה ממוצע
-                                    </Text>
-                                    <Text style={[styles.responseRateDetailValue, { color: theme.textPrimary }]}>
-                                        {responseRateStats?.avgResponseMinutes
-                                            ? responseRateStats.avgResponseMinutes < 60
-                                                ? `${responseRateStats.avgResponseMinutes} דק׳`
-                                                : `${Math.round(responseRateStats.avgResponseMinutes / 60)} שעות`
-                                            : '—'}
-                                    </Text>
-                                </View>
-                            </View>
-                        </View>
-                    </View>
                 </View>
 
                 <View style={{ height: 100 }} />
@@ -1522,7 +1461,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         { id: 'instagram', icon: Instagram, color: '#E1306C', value: socialInstagram, setValue: setSocialInstagram, placeholder: 'username', prefix: 'instagram.com/', name: 'Instagram' },
                                         { id: 'facebook', icon: Facebook, color: '#1877F2', value: socialFacebook, setValue: setSocialFacebook, placeholder: 'username', prefix: 'facebook.com/', name: 'Facebook' },
                                         { id: 'linkedin', icon: Linkedin, color: '#0077B5', value: socialLinkedin, setValue: setSocialLinkedin, placeholder: 'username', prefix: 'linkedin.com/in/', name: 'LinkedIn' },
-                                        { id: 'whatsapp', icon: MessageCircle, color: '#25D366', value: socialWhatsapp, setValue: setSocialWhatsapp, placeholder: '+972...', prefix: 'wa.me/', name: 'WhatsApp' },
+                                        { id: 'whatsapp', icon: (props: any) => <FontAwesome5 name="whatsapp" {...props} />, color: '#25D366', value: socialWhatsapp, setValue: setSocialWhatsapp, placeholder: '+972...', prefix: 'wa.me/', name: 'WhatsApp' },
 
                                         { id: 'telegram', icon: Send, color: '#0088CC', value: socialTelegram, setValue: setSocialTelegram, placeholder: 'username', prefix: 't.me/', name: 'Telegram' }
                                     ].map((social) => {

@@ -160,7 +160,7 @@ export default function ReportsScreen() {
       if (json) {
         setStatsOrder(JSON.parse(json));
       }
-    }).catch(() => { });
+    }).catch((e) => logger.warn('Failed to load stats order:', e));
   }, []);
 
   const [loading, setLoading] = useState(false);
@@ -1355,9 +1355,9 @@ export default function ReportsScreen() {
                 label="האכלה"
                 subValue={dailyStats.food > 0 ? `${dailyStats.food} מ"ל` : undefined}
                 change={comparison?.feedingChange}
-                accentColor="#10B981"
-                iconColor="#10B981"
-                iconBg={isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)'}
+                accentColor="#F59E0B"
+                iconColor="#F59E0B"
+                iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
                 sparklineData={weeklyData.food}
                 onPress={() => isPremium ? setSelectedMetric('food') : setShowPaywall(true)}
               />
@@ -1386,9 +1386,9 @@ export default function ReportsScreen() {
                 value={dailyStats.diapers}
                 label="חיתולים"
                 change={comparison?.diaperChange}
-                accentColor="#F59E0B"
-                iconColor="#F59E0B"
-                iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
+                accentColor="#10B981"
+                iconColor="#10B981"
+                iconBg={isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)'}
                 sparklineData={weeklyData.diapers}
                 neutralTrend
                 onPress={() => isPremium ? setSelectedMetric('diapers') : setShowPaywall(true)}
@@ -1487,13 +1487,13 @@ export default function ReportsScreen() {
 
             {/* Food Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
-                <Utensils size={16} color="#10B981" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
+                <Utensils size={16} color="#F59E0B" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלה</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
-                  ? (comparison.feedingChange > 0 ? '#10B981' : '#EF4444')
+                  ? (comparison.feedingChange > 0 ? '#F59E0B' : '#EF4444')
                   : theme.textSecondary
               }]}>
                 {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
@@ -1501,21 +1501,21 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: '#10B981' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: '#F59E0B' }]} />
                 </View>
               )}
             </View>
 
             {/* Diapers Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
-                <Droplets size={16} color="#F59E0B" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
+                <Droplets size={16} color="#10B981" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
-                  ? '#F59E0B'
+                  ? '#10B981'
                   : theme.textSecondary
               }]}>
                 {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
@@ -1523,8 +1523,8 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: '#F59E0B' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: '#10B981' }]} />
                 </View>
               )}
             </View>

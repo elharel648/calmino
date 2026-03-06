@@ -14,6 +14,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export type LegalType = 'terms' | 'privacy';
 
@@ -23,15 +24,16 @@ interface LegalModalProps {
   onClose: () => void;
 }
 
-const LAST_UPDATED = '20 בינואר 2026';
+const LAST_UPDATED_HE = '20 בינואר 2026';
+const LAST_UPDATED_EN = 'January 20, 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 // ─────────────────────────────────────────────
-// Privacy Policy Content
+// Privacy Policy Content — Hebrew
 // ─────────────────────────────────────────────
-const PrivacyContent = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
+const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.0 | עדכון אחרון: {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.1 | עדכון אחרון: {LAST_UPDATED_HE}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. מבוא{'\n'}</Text>
     Calmino ("אנחנו", "אנו", "החברה") מחויבת להגן על פרטיות המשתמשים שלה. מדיניות פרטיות זו ("המדיניות") מסבירה אילו נתונים אישיים אנחנו אוספים, כיצד אנחנו משתמשים בהם, ואילו זכויות יש לך עליהם.{'\n'}
@@ -73,10 +75,9 @@ const PrivacyContent = ({ textColor, subtitleColor }: { textColor: string; subti
 
     <Text style={[styles.section, { color: textColor }]}>5. שיתוף מידע עם צדדים שלישיים{'\n'}</Text>
     <Text style={[styles.subsection, { color: textColor }]}>ספקי שירות חיוניים (מעבדי מידע מאושרים):{'\n'}</Text>
-    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — אחסון נתונים, אימות משתמשים ועיבוד בק-אנד. Firebase עומד ב-GDPR ובמסגרת EU-US Data Privacy Framework. מדיניות Firebase: firebase.google.com/support/privacy{'\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — אחסון נתונים, אימות משתמשים ועיבוד בק-אנד. Firebase עומד ב-GDPR ובמסגרת EU-US Data Privacy Framework. חתמנו על הסכם עיבוד נתונים (DPA) מול Google בהתאם לדרישות GDPR Article 28. מדיניות Firebase: firebase.google.com/support/privacy{'\n'}
     • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — אימות משתמשים ושליחת התראות ל-iOS{'\n'}
     • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — פלטפורמת פיתוח ושליחת התראות Push חוצות-פלטפורמות{'\n\n'}
-    כל ספקי השירות כפופים להסכמי עיבוד נתונים (DPA) ולסטנדרטים גבוהים של אבטחה.{'\n\n'}
     אנחנו <Text style={styles.bold}>לא</Text> מוכרים, משכירים, מחליפים, או מסחרים במידע שלך בשום אופן.{'\n'}
     נחשוף מידע לגורם חיצוני רק אם: (1) נדרשנו לכך בצו שיפוטי תקף; (2) נדרש לפי חוק; (3) הכרחי להגנה על בטיחות הציבור.{'\n\n'}
 
@@ -94,12 +95,12 @@ const PrivacyContent = ({ textColor, subtitleColor }: { textColor: string; subti
 
     <Text style={[styles.section, { color: textColor }]}>8. שמירת מידע{'\n'}</Text>
     • נשמור את נתוניך כל עוד חשבונך פעיל{'\n'}
-    • לאחר מחיקת חשבון: מידע אישי יימחק תוך <Text style={styles.bold}>30 יום</Text>{'\n'}
+    • לאחר מחיקת חשבון: מידע אישי <Text style={styles.bold}>יימחק מיידית</Text> עם השלמת תהליך המחיקה{'\n'}
     • גיבויים טכניים עשויים להישמר עד <Text style={styles.bold}>90 יום</Text> נוספים בלבד{'\n'}
     • מידע הנדרש לשמירה על פי חוק (כגון: עסקאות כספיות) יישמר לתקופה הנדרשת בחוק{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. פרטיות ילדים{'\n'}</Text>
-    האפליקציה מיועדת להורים ומטפלים בגירים (18+). מידע על ילדים נאסף אך ורק:{'\n'}
+    האפליקציה מיועדת להורים ומטפלים בגירים (16+). מידע על ילדים נאסף אך ורק:{'\n'}
     • על ידי הוריהם / אפוטרופוסיהם החוקיים{'\n'}
     • למטרות מעקב בריאות אישי בלבד{'\n'}
     • ללא שיתוף עם גורמים מסחריים{'\n'}
@@ -127,11 +128,110 @@ const PrivacyContent = ({ textColor, subtitleColor }: { textColor: string; subti
 );
 
 // ─────────────────────────────────────────────
-// Terms of Service Content
+// Privacy Policy Content — English
 // ─────────────────────────────────────────────
-const TermsContent = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
+const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
+  <Text style={[styles.bodyTextLTR, { color: textColor }]}>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Last Updated: {LAST_UPDATED_EN}{'\n\n'}</Text>
+
+    <Text style={[styles.section, { color: textColor }]}>1. Introduction{'\n'}</Text>
+    Calmino ("we", "us", "the Company") is committed to protecting the privacy of its users. This Privacy Policy ("Policy") explains what personal data we collect, how we use it, and what rights you have over it.{'\n'}
+    This Policy complies with:{'\n'}
+    • Israeli Privacy Protection Law, 5741-1981 and Privacy Protection Regulations (Data Security), 5777-2017{'\n'}
+    • EU General Data Protection Regulation (GDPR) 2016/679{'\n'}
+    • U.S. Children's Online Privacy Protection Act (COPPA){'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>2. Who We Are{'\n'}</Text>
+    Calmino is a baby and child health tracking application, operated and developed by Calmino Group.{'\n'}
+    For privacy inquiries: {CONTACT_EMAIL}{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>3. Information We Collect{'\n'}</Text>
+    <Text style={[styles.subsection, { color: textColor }]}>a. Information you provide directly:{'\n'}</Text>
+    • Account details: full name, email address, encrypted password{'\n'}
+    • Child profile: name, date of birth, gender, profile photo{'\n'}
+    • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, growth measurements (weight, height, head circumference){'\n'}
+    • Notes and records you enter manually{'\n'}
+    • Photos and magic moments you choose to save{'\n\n'}
+    <Text style={[styles.subsection, { color: textColor }]}>b. Information collected automatically:{'\n'}</Text>
+    • Device type, operating system version, and unique device identifier{'\n'}
+    • Push notification token (for sending reminders only){'\n'}
+    • IP address (for security and troubleshooting only — not stored long-term){'\n'}
+    • Anonymous crash reports to improve app stability{'\n\n'}
+    <Text style={[styles.subsection, { color: textColor }]}>c. Information from third parties:{'\n'}</Text>
+    • When signing in with Google: full name and email address from your Google account only{'\n'}
+    • When signing in with Apple: email address (which may be hidden by Apple){'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>4. How We Use Your Information{'\n'}</Text>
+    We use your information solely for these purposes:{'\n'}
+    • Providing, maintaining, and improving the app's services{'\n'}
+    • Displaying personal data, charts, and statistics{'\n'}
+    • Sharing data with family members and babysitters according to permissions you set{'\n'}
+    • Sending notifications and reminders you explicitly requested{'\n'}
+    • Providing technical support{'\n'}
+    • Complying with legal obligations{'\n'}
+    • Improving the service using aggregated and anonymous data only{'\n\n'}
+    We do <Text style={styles.bold}>not</Text> use your information for targeted advertising, and we do not sell data to commercial entities.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>5. Sharing Information with Third Parties{'\n'}</Text>
+    <Text style={[styles.subsection, { color: textColor }]}>Essential service providers (authorized data processors):{'\n'}</Text>
+    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — data storage, user authentication, and backend processing. Firebase complies with GDPR and the EU-US Data Privacy Framework. We have signed a Data Processing Agreement (DPA) with Google in accordance with GDPR Article 28. Firebase policy: firebase.google.com/support/privacy{'\n'}
+    • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — user authentication and sending iOS notifications{'\n'}
+    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — development platform and cross-platform push notifications{'\n\n'}
+    We do <Text style={styles.bold}>not</Text> sell, rent, exchange, or commercialize your information in any way.{'\n'}
+    We will disclose information to an external party only if: (1) required by a valid court order; (2) required by law; (3) necessary to protect public safety.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>6. International Data Transfers{'\n'}</Text>
+    Your data is stored on Google Firebase servers that may be located in the USA and/or Europe. Firebase meets GDPR requirements and provides appropriate safeguards. By using the service, you consent to this transfer.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>7. Data Security{'\n'}</Text>
+    We employ a variety of security measures:{'\n'}
+    • Encryption of all data in transit (TLS 1.2+){'\n'}
+    • Encryption of data at rest via Firebase Security Rules{'\n'}
+    • Strict access controls — each user can only access their own data{'\n'}
+    • Optional two-factor authentication (Face ID / Touch ID){'\n'}
+    • Anomaly monitoring and security event logging{'\n\n'}
+    Important: no digital system is completely secure. If you suspect a security breach, notify us immediately at {CONTACT_EMAIL}.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>8. Data Retention{'\n'}</Text>
+    • We retain your data as long as your account is active{'\n'}
+    • Upon account deletion: personal data is <Text style={styles.bold}>deleted immediately</Text> upon completion of the deletion process{'\n'}
+    • Technical backups may be retained for up to <Text style={styles.bold}>90 days</Text> only{'\n'}
+    • Information required by law (such as financial transactions) will be retained for the legally required period{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>9. Children's Privacy{'\n'}</Text>
+    The app is intended for parents and caregivers aged 16 and above. Information about children is collected exclusively:{'\n'}
+    • By their parents / legal guardians{'\n'}
+    • For personal health tracking purposes only{'\n'}
+    • Without sharing with commercial entities{'\n'}
+    • Without child-related targeted advertising{'\n\n'}
+    We do not collect information directly from children. If you believe a child under 13 has created an account without parental consent, please contact us and we will delete the data immediately.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>10. Your Rights{'\n'}</Text>
+    Under Israeli Privacy Protection Law and GDPR, you have:{'\n'}
+    • <Text style={styles.bold}>Right of Access</Text> — to receive a copy of the information we hold about you{'\n'}
+    • <Text style={styles.bold}>Right to Rectification</Text> — to correct inaccurate or outdated information{'\n'}
+    • <Text style={styles.bold}>Right to Erasure</Text> — the "right to be forgotten" — to delete all your data{'\n'}
+    • <Text style={styles.bold}>Right to Data Portability</Text> — to receive your data in a machine-readable format{'\n'}
+    • <Text style={styles.bold}>Right to Object</Text> — to object to certain processing of your data{'\n'}
+    • <Text style={styles.bold}>Withdrawal of Consent</Text> — to withdraw consent you have given at any time{'\n\n'}
+    To exercise your rights: {CONTACT_EMAIL} — we will respond within <Text style={styles.bold}>30 days</Text>.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>11. Changes to This Policy{'\n'}</Text>
+    We will notify you of material changes via the app and/or email at least <Text style={styles.bold}>30 days</Text> in advance. Continued use after receiving notice constitutes acceptance of the changes.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>12. Contact Us{'\n'}</Text>
+    For questions, requests, or complaints regarding privacy:{'\n'}
+    📧 {CONTACT_EMAIL}{'\n'}
+    🌐 www.calminogroup.co.il
+  </Text>
+);
+
+// ─────────────────────────────────────────────
+// Terms of Service Content — Hebrew
+// ─────────────────────────────────────────────
+const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.0 | עדכון אחרון: {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.1 | עדכון אחרון: {LAST_UPDATED_HE}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. הסכמה לתנאים{'\n'}</Text>
     בהורדה, התקנה, או שימוש באפליקציית Calmino ("האפליקציה" / "השירות"), הנך מסכים לתנאי שימוש אלה ("התנאים"). אם אינך מסכים, הפסק את השימוש באלתר ומחק את האפליקציה.{'\n'}
@@ -146,7 +246,7 @@ const TermsContent = ({ textColor, subtitleColor }: { textColor: string; subtitl
     • תיעוד רגעים קסומים ואבני דרך{'\n'}
     • ניהול תזכורות והתראות מותאמות אישית{'\n'}
     • שירותי איתור בייביסיטרים ותיאום הזמנות{'\n\n'}
-    <Text style={styles.bold}>הגיל המינימלי לשימוש: 18.</Text> השירות אינו מיועד לקטינים.{'\n\n'}
+    <Text style={styles.bold}>הגיל המינימלי לשימוש: 16.</Text> השירות אינו מיועד למשתמשים מתחת לגיל 16.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. חשבון משתמש{'\n'}</Text>
     3.1 <Text style={styles.bold}>רישום:</Text> עליך לספק פרטים אמיתיים, מדויקים ועדכניים.{'\n'}
@@ -197,7 +297,7 @@ const TermsContent = ({ textColor, subtitleColor }: { textColor: string; subtitl
     חל איסור מוחלט על: שכפול, הפצה, שינוי, יצירת נגזרות, הצגה ציבורית, או שימוש מסחרי — ללא אישור מפורש בכתב. הפרה תוביל לתביעה אזרחית ו/או פלילית.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. ביטול חשבון והשעיה{'\n'}</Text>
-    שמורה לנו הזכות להשעות או לסגור חשבון שהפר את התנאים, עם הודעה מוקדמת במידת האפשר. בסגירה מרצון: תוכל לייצא את נתוניך תוך 30 יום לפני המחיקה הסופית.{'\n\n'}
+    שמורה לנו הזכות להשעות או לסגור חשבון שהפר את התנאים, עם הודעה מוקדמת במידת האפשר. בסגירה מרצון: תוכל לייצא את נתוניך לפני המחיקה הסופית באמצעות כפתור "הורד את המידע שלי" בהגדרות.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>11. פיצוי{'\n'}</Text>
     הנך מסכים לשפות ולהגן על Calmino, עובדיה, מנהליה, בעלי מניותיה ושותפיה מפני כל תביעה, נזק, אחריות, הפסד, עלות ושכר טרחה משפטי הנובעים מ: שימושך בשירות; הפרת תנאים אלה; הפרת זכויות צד שלישי; או כל תוכן שהעלית.{'\n\n'}
@@ -220,13 +320,112 @@ const TermsContent = ({ textColor, subtitleColor }: { textColor: string; subtitl
 );
 
 // ─────────────────────────────────────────────
+// Terms of Service Content — English
+// ─────────────────────────────────────────────
+const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
+  <Text style={[styles.bodyTextLTR, { color: textColor }]}>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Last Updated: {LAST_UPDATED_EN}{'\n\n'}</Text>
+
+    <Text style={[styles.section, { color: textColor }]}>1. Acceptance of Terms{'\n'}</Text>
+    By downloading, installing, or using the Calmino application ("the App" / "the Service"), you agree to these Terms of Service ("the Terms"). If you do not agree, discontinue use immediately and delete the app.{'\n'}
+    These Terms constitute a binding legal agreement between you and Calmino. Using the app confirms that you have read, understood, and agree to all Terms outlined below.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>2. Service Description{'\n'}</Text>
+    Calmino is a baby and child health tracking application that enables:{'\n'}
+    • Tracking feeding, sleep, diapers, nutritional supplements, and vaccinations{'\n'}
+    • Measuring growth metrics and growth curves{'\n'}
+    • Sharing data with family members and babysitters{'\n'}
+    • Creating statistics, reports, and insights{'\n'}
+    • Recording magic moments and milestones{'\n'}
+    • Managing customized reminders and notifications{'\n'}
+    • Babysitter discovery and booking coordination services{'\n\n'}
+    <Text style={styles.bold}>Minimum age for use: 16.</Text> The service is not intended for users under the age of 16.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>3. User Account{'\n'}</Text>
+    3.1 <Text style={styles.bold}>Registration:</Text> You must provide truthful, accurate, and current information.{'\n'}
+    3.2 <Text style={styles.bold}>Security:</Text> You are responsible for maintaining the confidentiality of your password and login credentials. Notify us immediately of any unauthorized use.{'\n'}
+    3.3 <Text style={styles.bold}>Single Account:</Text> Each person may hold only one personal account.{'\n'}
+    3.4 <Text style={styles.bold}>Responsibility:</Text> You are solely responsible for all activity conducted through your account.{'\n'}
+    3.5 <Text style={styles.bold}>Deletion:</Text> You may delete your account at any time through the Settings screen.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>4. Permitted and Prohibited Use{'\n'}</Text>
+    <Text style={[styles.subsection, { color: textColor }]}>Permitted:{'\n'}</Text>
+    • Personal and family use for managing care of your children{'\n'}
+    • Sharing data with family members and babysitters you have authorized{'\n\n'}
+    <Text style={[styles.subsection, { color: textColor }]}>Strictly prohibited:{'\n'}</Text>
+    • Commercial use without a written license from us{'\n'}
+    • Uploading illegal, offensive, misleading, or rights-infringing content{'\n'}
+    • Attempting to access other users' data without authorization{'\n'}
+    • Reverse engineering, disassembly, or code duplication of the app{'\n'}
+    • Use of bots, scripts, or automated tools{'\n'}
+    • Distribution of spam, malware, or malicious content{'\n'}
+    • Use for stalking, harassment, or violating others' privacy{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>5. User Content{'\n'}</Text>
+    Information you enter into the app (photos, notes, records) remains yours. By uploading it, you grant us a limited, non-exclusive license to store, back up, and display it solely for the purpose of providing the service.{'\n'}
+    You warrant that content you upload: does not infringe copyright or intellectual property rights; is not illegal, offensive, or misleading; and does not contain sensitive information of others without their consent.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>6. Premium Service{'\n'}</Text>
+    6.1 Calmino offers paid subscription plans ("Premium") with enhanced features.{'\n'}
+    6.2 Payments are processed through <Text style={styles.bold}>Apple App Store</Text> or <Text style={styles.bold}>Google Play Store</Text> only — Calmino does not hold your credit card details.{'\n'}
+    6.3 Subscriptions <Text style={styles.bold}>renew automatically</Text> at the end of each period; you may cancel at any time through store settings.{'\n'}
+    6.4 No refunds will be issued for periods during which the service was used, unless required by law.{'\n'}
+    6.5 We reserve the right to change pricing with <Text style={styles.bold}>30 days</Text> advance notice.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>7. Third-Party Services{'\n'}</Text>
+    The app relies on external services:{'\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> — data storage, authentication, and infrastructure{'\n'}
+    • <Text style={styles.bold}>Apple</Text> — authentication and Push Notifications{'\n'}
+    • <Text style={styles.bold}>Expo</Text> — development platform and updates{'\n\n'}
+    Your use of these services is also subject to their respective policies and terms of service. Calmino is not responsible for the availability, performance, or changes in third-party services.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability and Medical Disclaimer{'\n'}</Text>
+    8.1 The service is provided <Text style={styles.bold}>"AS IS"</Text> and "AS AVAILABLE" without warranty of any kind.{'\n'}
+    8.2 <Text style={styles.bold}>The app does not replace professional medical advice.</Text> The information displayed is for documentation and tracking purposes only. Always consult a qualified pediatrician for any medical questions.{'\n'}
+    8.3 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; or technical failure.{'\n'}
+    8.4 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>9. Intellectual Property{'\n'}</Text>
+    All rights in the app — including source code, design, user interface, logo, the name "Calmino", and all content we created — are the exclusive property of Calmino and are protected by copyright, trademark, and patent laws.{'\n'}
+    Strictly prohibited: duplication, distribution, modification, creation of derivatives, public display, or commercial use — without express written permission. Violation will result in civil and/or criminal action.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>10. Account Termination and Suspension{'\n'}</Text>
+    We reserve the right to suspend or close accounts that violate the Terms, with prior notice where possible. For voluntary closure: you may export your data before final deletion using the "Download My Data" button in Settings.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>11. Indemnification{'\n'}</Text>
+    You agree to indemnify and hold harmless Calmino, its employees, directors, shareholders, and partners from any claim, damage, liability, loss, cost, and legal fees arising from: your use of the service; violation of these Terms; infringement of third-party rights; or any content you uploaded.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>12. Changes to Terms{'\n'}</Text>
+    We will notify you of material changes to the Terms via the app and/or email at least <Text style={styles.bold}>30 days</Text> in advance. Continued use after receiving notice constitutes acceptance of the updated Terms. If you do not agree — you must discontinue use and delete your account.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>13. Severability{'\n'}</Text>
+    If any provision of these Terms is found to be invalid or unenforceable, it shall be severed from the Terms and replaced with a valid provision with similar intent — while the remaining Terms shall remain in full force and effect.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>14. Governing Law and Dispute Resolution{'\n'}</Text>
+    These Terms are governed by the laws of the State of Israel. Any dispute shall be heard in the competent courts <Text style={styles.bold}>in the Tel Aviv-Jaffa district only</Text>.{'\n'}
+    The parties commit to attempting to reach an amicable resolution within 30 days before filing a court action.{'\n\n'}
+
+    <Text style={[styles.section, { color: textColor }]}>15. Contact Us{'\n'}</Text>
+    For questions, complaints, or legal requests:{'\n'}
+    📧 {CONTACT_EMAIL}{'\n'}
+    🌐 www.calminogroup.co.il
+  </Text>
+);
+
+// ─────────────────────────────────────────────
 // Main Modal Component
 // ─────────────────────────────────────────────
 export default function LegalModal({ visible, type, onClose }: LegalModalProps) {
   const { theme } = useTheme();
+  const { language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const isHebrew = language === 'he';
 
-  const title = type === 'privacy' ? 'מדיניות פרטיות' : 'תנאי שימוש';
+  const title = type === 'privacy'
+    ? (isHebrew ? 'מדיניות פרטיות' : 'Privacy Policy')
+    : (isHebrew ? 'תנאי שימוש' : 'Terms of Service');
+
+  const closeLabel = isHebrew ? 'סגור' : 'Close';
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -253,9 +452,13 @@ export default function LegalModal({ visible, type, onClose }: LegalModalProps) 
             showsVerticalScrollIndicator={false}
           >
             {type === 'privacy' ? (
-              <PrivacyContent textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
+              isHebrew
+                ? <PrivacyContentHE textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
+                : <PrivacyContentEN textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
             ) : (
-              <TermsContent textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
+              isHebrew
+                ? <TermsContentHE textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
+                : <TermsContentEN textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
             )}
           </ScrollView>
 
@@ -265,7 +468,7 @@ export default function LegalModal({ visible, type, onClose }: LegalModalProps) 
             onPress={onClose}
             activeOpacity={0.85}
           >
-            <Text style={styles.doneBtnText}>סגור</Text>
+            <Text style={styles.doneBtnText}>{closeLabel}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -312,6 +515,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 24,
     textAlign: 'right',
+  },
+  bodyTextLTR: {
+    fontSize: 14,
+    lineHeight: 24,
+    textAlign: 'left',
   },
   updated: {
     fontSize: 12,

@@ -12,8 +12,9 @@ import {
     Animated,
     Alert,
 } from 'react-native';
-import { X, Users, LogIn, CheckCircle } from 'lucide-react-native';
+import { X, Users, LogIn, CheckCircle, QrCode } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { joinFamily } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -36,6 +37,8 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
     const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [showScanner, setShowScanner] = useState(false);
+    const [permission, requestPermission] = useCameraPermissions();
 
     // Success animation
     const successScale = useRef(new Animated.Value(0)).current;
@@ -70,12 +73,13 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         }, 1500);
     };
 
-    const doJoin = async (force: boolean) => {
+    const doJoin = async (force: boolean, joinCode?: string) => {
+        const codeToUse = joinCode ?? code;
         setLoading(true);
         setError('');
 
         try {
-            const result = await joinFamily(code, force);
+            const result = await joinFamily(codeToUse, force);
             setLoading(false);
 
             if (result.success) {
@@ -96,7 +100,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                         {
                             text: 'כן, הצטרף',
                             style: 'destructive',
-                            onPress: () => doJoin(true),
+                            onPress: () => doJoin(true, codeToUse),
                         },
                     ]
                 );
@@ -130,6 +134,30 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         setError('');
     };
 
+    const handleOpenScanner = async () => {
+        if (!permission?.granted) {
+            const { granted } = await requestPermission();
+            if (!granted) {
+                Alert.alert('הרשאת מצלמה', 'יש לאפשר גישה למצלמה כדי לסרוק קוד QR.');
+                return;
+            }
+        }
+        setShowScanner(true);
+    };
+
+    const handleQRScanned = ({ data }: { data: string }) => {
+        // QR code contains just the 6-digit numeric code
+        const scanned = data.replace(/[^0-9]/g, '').slice(0, 6);
+        if (scanned.length === 6) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setShowScanner(false);
+            setCode(scanned);
+            setError('');
+            // Auto-submit after short delay so user can see the filled code
+            setTimeout(() => doJoin(false, scanned), 300);
+        }
+    };
+
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <KeyboardAvoidingView
@@ -147,6 +175,30 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 {successMessage}
                             </Text>
                         </Animated.View>
+                    ) : showScanner ? (
+                        /* QR Scanner View */
+                        <View style={styles.scannerContainer}>
+                            <View style={styles.scannerHeader}>
+                                <TouchableOpacity onPress={() => setShowScanner(false)} style={styles.closeBtn}>
+                                    <X size={22} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>סרוק קוד QR</Text>
+                                <View style={{ width: 30 }} />
+                            </View>
+                            <Text style={[styles.description, { color: theme.textSecondary }]}>
+                                כוון את המצלמה לקוד ה-QR של המשפחה
+                            </Text>
+                            <View style={styles.cameraWrapper}>
+                                <CameraView
+                                    style={StyleSheet.absoluteFillObject}
+                                    facing="back"
+                                    onBarcodeScanned={handleQRScanned}
+                                    barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                                />
+                                {/* Scan frame overlay */}
+                                <View style={styles.scanFrame} />
+                            </View>
+                        </View>
                     ) : (
                         <>
                             {/* Header */}
@@ -186,6 +238,17 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 />
                                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
                             </View>
+
+                            {/* Divider + QR scan */}
+                            <View style={styles.orRow}>
+                                <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
+                                <Text style={[styles.orText, { color: theme.textSecondary }]}>או</Text>
+                                <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
+                            </View>
+                            <TouchableOpacity style={styles.scanBtn} onPress={handleOpenScanner} activeOpacity={0.6}>
+                                <QrCode size={15} color="#10B981" strokeWidth={1.8} />
+                                <Text style={[styles.scanBtnText, { color: theme.textSecondary }]}>סרוק קוד QR</Text>
+                            </TouchableOpacity>
 
                             {/* Join Button */}
                             <TouchableOpacity
@@ -248,7 +311,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     inputContainer: {
-        marginBottom: 20,
+        marginBottom: 12,
     },
     inputLabel: {
         fontSize: 13,
@@ -271,6 +334,32 @@ const styles = StyleSheet.create({
         color: '#EF4444',
         textAlign: 'center',
         marginTop: 8,
+    },
+    orRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 10,
+    },
+    orLine: {
+        flex: 1,
+        height: 1,
+    },
+    orText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    scanBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        marginBottom: 16,
+    },
+    scanBtnText: {
+        fontSize: 13,
+        fontWeight: '500',
     },
     joinBtn: {
         flexDirection: 'row',
@@ -313,6 +402,34 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '700',
         textAlign: 'center',
+    },
+    // Scanner
+    scannerContainer: {
+        paddingBottom: 8,
+    },
+    scannerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    cameraWrapper: {
+        height: 260,
+        borderRadius: 20,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    scanFrame: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: 160,
+        height: 160,
+        marginTop: -80,
+        marginLeft: -80,
+        borderRadius: 12,
+        borderWidth: 2.5,
+        borderColor: '#10B981',
     },
 });
 

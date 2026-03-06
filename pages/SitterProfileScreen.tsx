@@ -7,8 +7,8 @@ import * as Haptics from 'expo-haptics';
 import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats, trackProfileView } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
-import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart } from 'lucide-react-native';
+import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, Flag, Ban } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -18,6 +18,7 @@ import { auth as firebaseAuth } from '../services/firebaseConfig';
 import { useTheme } from '../context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGlobalPresence } from '../hooks/useGlobalPresence';
+import { blockSitter } from '../services/babysitterService';
 import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send } from 'lucide-react-native';
 import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
@@ -106,6 +107,9 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [badges, setBadges] = useState<SitterBadge[]>([]);
     const [pendingBookingToRate, setPendingBookingToRate] = useState<string | null>(null);
 
+    // Report / Block state
+    const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+
     // Live Presence
     const { isOnline, lastActive } = useGlobalPresence(sitterData.id);
     const { favorites, toggleFavorite } = useFavoriteSitters();
@@ -182,7 +186,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 });
                 setBadges(calculatedBadges);
             } catch (error) {
-                logger.error('Could not fetch badges:', error);
+                logger.warn('Could not fetch badges:', error);
             }
         };
 
@@ -268,6 +272,78 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const isCurrentUserSitter = auth.currentUser?.uid === sitterData.id;
     const currentUserId = auth.currentUser?.uid;
 
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState('');
+    const [submittingReport, setSubmittingReport] = useState(false);
+
+    const handleReportSitter = () => {
+        setShowOptionsMenu(false);
+        setShowReportModal(true);
+    };
+
+    const submitReport = async () => {
+        if (!reportReason.trim()) {
+            Alert.alert('שגיאה', 'אנא הזן את מהות הדיווח כדי שנוכל לטפל בבעיה.');
+            return;
+        }
+
+        setSubmittingReport(true);
+        try {
+            // Save to Firestore
+            await addDoc(collection(db, 'sitter_reports'), {
+                reporterId: currentUserId || 'guest',
+                sitterId: sitterData.id,
+                sitterName: sitterData.name,
+                reason: reportReason.trim(),
+                createdAt: serverTimestamp(),
+                status: 'new'
+            });
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setShowReportModal(false);
+            setReportReason('');
+
+            Alert.alert(
+                'הדיווח נשלח',
+                'תודה על הדיווח. הצוות שלנו קיבל את פנייתך ויטפל בה בהקדם האפשרי.'
+            );
+        } catch (error) {
+            logger.error('Error submitting report:', error);
+            Alert.alert('שגיאה', 'אירעה שגיאה בשליחת הדיווח. אנא נסה שוב.');
+        } finally {
+            setSubmittingReport(false);
+        }
+    };
+
+    const handleBlockSitter = () => {
+        setShowOptionsMenu(false);
+        if (!currentUserId) return;
+
+        Alert.alert(
+            'חסימת משתמש',
+            `האם אתה בטוח שברצונך לחסום את ${sitterData.name}? היא לא תופיע יותר בתוצאות החיפוש שלך.`,
+            [
+                { text: 'ביטול', style: 'cancel' },
+                {
+                    text: 'חסום',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await blockSitter(currentUserId, sitterData.id);
+                            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            Alert.alert('נחסמה', `${sitterData.name} נחסמה בהצלחה ולא תוצג יותר.`);
+                            navigation.goBack();
+                        } catch (error) {
+                            logger.error('Error blocking sitter:', error);
+                            Alert.alert('שגיאה', 'אירעה שגיאה בחסימת המשתמש. נסה שוב.');
+                        }
+                    }
+                }
+            ],
+            { cancelable: true }
+        );
+    };
+
     return (
         <View style={styles.container}>
             {/* Top Navigation */}
@@ -315,6 +391,13 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 fill={isFavorite ? '#F43F5E' : 'transparent'}
                                 strokeWidth={isFavorite ? 0 : 2}
                             />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.navBtn}
+                            onPress={() => setShowOptionsMenu(true)}
+                        >
+                            <MoreVertical size={22} color={theme.textPrimary} strokeWidth={2} />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -400,7 +483,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 style={StyleSheet.absoluteFill}
                             />
                             <Star size={16} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
-                            <Text style={styles.ratingText}>{sitterData.rating ?? 0} ({sitterData.reviews ?? 0} ביקורות)</Text>
+                            <Text style={styles.ratingText}>{sitterData.rating ?? 0} ({reviewStats?.total ?? sitterData.reviews ?? 0} ביקורות)</Text>
                         </View>
 
                         {/* Available Now - Clean Pill */}
@@ -470,7 +553,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 </View>
 
                 {/* Stats Row */}
-                {((sitterData.distance ?? 0) > 0 || (sitterData.reviews ?? 0) > 0) && (
+                {((sitterData.distance ?? 0) > 0 || (reviewStats?.total ?? sitterData.reviews ?? 0) > 0) && (
                     <View style={[styles.trustRow, {
                         backgroundColor: isDarkMode ? theme.card : '#FFFFFF',
                     }]}>
@@ -480,12 +563,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>מרחק ממך</Text>
                             </View>
                         )}
-                        {(sitterData.distance ?? 0) > 0 && (sitterData.reviews ?? 0) > 0 && (
+                        {(sitterData.distance ?? 0) > 0 && (reviewStats?.total ?? sitterData.reviews ?? 0) > 0 && (
                             <View style={[styles.divider, { backgroundColor: theme.border }]} />
                         )}
-                        {(sitterData.reviews ?? 0) > 0 && (
+                        {(reviewStats?.total ?? sitterData.reviews ?? 0) > 0 && (
                             <View style={styles.trustItem}>
-                                <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{sitterData.reviews}</Text>
+                                <Text style={[styles.trustValue, { color: theme.textPrimary }]}>{reviewStats?.total ?? sitterData.reviews}</Text>
                                 <Text style={[styles.trustLabel, { color: theme.textSecondary }]}>ביקורות</Text>
                             </View>
                         )}
@@ -894,6 +977,132 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             shouldPlay={showFullVideo}
                         />
                     )}
+                </View>
+            </Modal>
+
+            {/* Options Menu Modal (Report/Block) — Premium Bottom Sheet */}
+            <Modal
+                visible={showOptionsMenu}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowOptionsMenu(false)}
+            >
+                <View style={styles.optionsSheetContainer}>
+                    <TouchableOpacity
+                        style={StyleSheet.absoluteFillObject}
+                        activeOpacity={1}
+                        onPress={() => setShowOptionsMenu(false)}
+                    />
+                <View style={[styles.optionsBottomSheet, {
+                    backgroundColor: isDarkMode ? '#1C1C1E' : '#F2F2F7',
+                }]}>
+                    {/* Handle */}
+                    <View style={[styles.sheetHandle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+
+                    {/* Sitter context */}
+                    <View style={styles.sheetContext}>
+                        {sitterData.image ? (
+                            <Image source={{ uri: sitterData.image }} style={styles.sheetAvatar} />
+                        ) : null}
+                        <Text style={[styles.sheetContextName, { color: theme.textSecondary }]} numberOfLines={1}>
+                            {sitterData.name}
+                        </Text>
+                    </View>
+
+                    {/* Action card */}
+                    <View style={[styles.sheetActionsCard, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}>
+                        <TouchableOpacity style={styles.sheetActionRow} onPress={handleReportSitter} activeOpacity={0.6}>
+                            <View style={[styles.sheetActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,149,0,0.15)' : 'rgba(255,149,0,0.1)' }]}>
+                                <Flag size={18} color="#FF9500" />
+                            </View>
+                            <Text style={[styles.sheetActionText, { color: theme.textPrimary }]}>דווח על פרופיל</Text>
+                        </TouchableOpacity>
+
+                        <View style={[styles.sheetDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }]} />
+
+                        <TouchableOpacity style={styles.sheetActionRow} onPress={handleBlockSitter} activeOpacity={0.6}>
+                            <View style={[styles.sheetActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,59,48,0.15)' : 'rgba(255,59,48,0.1)' }]}>
+                                <Ban size={18} color="#FF3B30" />
+                            </View>
+                            <Text style={[styles.sheetActionText, { color: '#FF3B30' }]}>חסום את {sitterData.name}</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Cancel */}
+                    <TouchableOpacity
+                        style={[styles.sheetCancelBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                        onPress={() => setShowOptionsMenu(false)}
+                        activeOpacity={0.6}
+                    >
+                        <Text style={[styles.sheetCancelText, { color: theme.primary }]}>ביטול</Text>
+                    </TouchableOpacity>
+                </View>
+                </View>
+            </Modal>
+
+            {/* Report Sitter Modal */}
+            <Modal
+                visible={showReportModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowReportModal(false)}
+            >
+                <View style={styles.optionsModalOverlay}>
+                    <View style={[styles.reportModalContent, {
+                        backgroundColor: isDarkMode ? theme.cardSecondary : theme.card,
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                    }]}>
+                        <Text style={[styles.optionsModalTitle, {
+                            color: theme.textSecondary,
+                            borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                        }]}>
+                            דיווח על בייביסיטר
+                        </Text>
+
+                        <View style={styles.reportFormContainer}>
+                            <Text style={[styles.reportFormLabel, { color: theme.textPrimary }]}>
+                                מה מהות הדיווח בנוגע ל{sitterData.name}?
+                            </Text>
+                            <TextInput
+                                style={[styles.reportInput, {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F5F7FA',
+                                    color: theme.textPrimary,
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0'
+                                }]}
+                                placeholder="פרט כאן את הסיבה השלמה..."
+                                placeholderTextColor={theme.textTertiary}
+                                multiline
+                                textAlignVertical="top"
+                                value={reportReason}
+                                onChangeText={setReportReason}
+                            />
+                        </View>
+
+                        <View style={styles.reportActions}>
+                            <TouchableOpacity
+                                style={[styles.reportActionBtn, styles.reportCancelBtn]}
+                                onPress={() => {
+                                    setShowReportModal(false);
+                                    setReportReason('');
+                                }}
+                                disabled={submittingReport}
+                            >
+                                <Text style={[styles.reportActionText, { color: theme.textSecondary }]}>ביטול</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.reportActionBtn, styles.reportSubmitBtn, { backgroundColor: theme.primary }]}
+                                onPress={submitReport}
+                                disabled={submittingReport || !reportReason.trim()}
+                            >
+                                {submittingReport ? (
+                                    <ActivityIndicator color="#fff" size="small" />
+                                ) : (
+                                    <Text style={[styles.reportActionText, { color: '#fff' }]}>שליחה</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </Modal>
 
@@ -1589,6 +1798,139 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
     },
+    // Options Bottom Sheet
+    optionsSheetContainer: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    optionsModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    optionsModalTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        textAlign: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    optionsBottomSheet: {
+        paddingHorizontal: 16,
+        paddingBottom: 34,
+        paddingTop: 10,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    sheetHandle: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginBottom: 16,
+    },
+    sheetContext: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 16,
+        paddingHorizontal: 4,
+    },
+    sheetAvatar: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+    },
+    sheetContextName: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
+    sheetActionsCard: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        marginBottom: 10,
+    },
+    sheetActionRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        gap: 14,
+    },
+    sheetActionIcon: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sheetActionText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    sheetDivider: {
+        height: StyleSheet.hairlineWidth,
+        marginHorizontal: 16,
+    },
+    sheetCancelBtn: {
+        borderRadius: 14,
+        alignItems: 'center',
+        paddingVertical: 16,
+    },
+    sheetCancelText: {
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    // Report Modal
+    reportModalContent: {
+        width: '100%',
+        maxWidth: 340,
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: StyleSheet.hairlineWidth,
+    },
+    reportFormContainer: {
+        padding: 24,
+    },
+    reportFormLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 12,
+        textAlign: 'right',
+    },
+    reportInput: {
+        height: 120,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        fontSize: 15,
+    },
+    reportActions: {
+        flexDirection: 'row',
+        padding: 16,
+        paddingTop: 0,
+        gap: 12,
+    },
+    reportActionBtn: {
+        flex: 1,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    reportCancelBtn: {
+        backgroundColor: 'rgba(0,0,0,0.05)',
+    },
+    reportSubmitBtn: {
+        // dynamic background color
+    },
+    reportActionText: {
+        fontSize: 16,
+        fontWeight: '600',
+    }
 });
 
 export default SitterProfileScreen;

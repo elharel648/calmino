@@ -50,7 +50,7 @@ export const useDynamicPromo = (currentScreenName: string) => {
                 logger.info(`[DynamicPromo] All checks passed! Showing promo ${config.id}`);
                 setShowPromo(true);
             } catch (e) {
-                logger.error('Error checking dynamic promo', e);
+                logger.warn('Error checking dynamic promo', e);
             } finally {
                 setIsReady(true);
             }

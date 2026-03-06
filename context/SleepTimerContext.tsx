@@ -98,28 +98,20 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         }
 
-        const newState: Partial<SleepTimerState> = {
+        // Update state immediately so UI responds — don't await Live Activity
+        updateChildState(activeChildId, {
             isRunning: true,
             isPaused: false,
             startTime: new Date(),
-            elapsedSeconds: 0
-        };
+            elapsedSeconds: 0,
+        });
 
-        // Start iOS Live Activity
+        // Start iOS Live Activity in background (fire-and-forget)
         if (Platform.OS === 'ios' && activeChild) {
-            try {
-                await quickActionsService.startSleep(
-                    activeChild.childName,
-                    '👶',
-                    'שינה'
-                );
-                logger.log('✅ Sleep Live Activity started for child:', activeChildId);
-            } catch (error) {
-                logger.warn('⚠️ Sleep Live Activity not supported:', error);
-            }
+            quickActionsService.startSleep(activeChild.childName, '👶', 'שינה')
+                .then(() => logger.log('✅ Sleep Live Activity started for child:', activeChildId))
+                .catch(error => logger.warn('⚠️ Sleep Live Activity not supported:', error));
         }
-
-        updateChildState(activeChildId, newState);
     }, [activeChildId, activeChild?.childName, updateChildState]);
 
     const stop = useCallback(async () => {

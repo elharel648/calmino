@@ -258,11 +258,11 @@ export const useHomeData = (
                     sleepTimeStr,
                     formatAgo(lastSleep?.timestamp),
                     currentStatus
-                ).catch(() => { });
+                ).catch((e) => logger.warn('Widget update failed:', e));
             }
 
         } catch (e) {
-            logger.error('Home data refresh error:', e);
+            logger.warn('Home data refresh error:', e);
             setIsError(true);
         }
     }, [childId, creatorId, calculateDailyStats]);

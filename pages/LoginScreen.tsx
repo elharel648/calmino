@@ -19,12 +19,13 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User, QrCode } from 'lucide-react-native';
 import LegalModal, { LegalType } from '../components/Legal/LegalModal';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 import {
   createUserWithEmailAndPassword,
@@ -149,6 +150,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [pendingInviteCode, setPendingInviteCode] = useState('');
   const [joiningFamily, setJoiningFamily] = useState(false);
 
+  // QR Scanner for Join Family
+  const [showScanner, setShowScanner] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+
   // Legal modals
   const [legalModal, setLegalModal] = useState<LegalType | null>(null);
 
@@ -158,6 +163,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   // Terms and Privacy Agreement
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  const [agreedToAge, setAgreedToAge] = useState(false);
 
   // Animation refs
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -224,6 +230,14 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 },
               },
             }, { merge: true });
+
+            // If user has a pending invite code, join the family
+            if (pendingInviteCode.trim().length === 6) {
+              const result = await joinFamily(pendingInviteCode.trim());
+              if (result.success) {
+                logger.debug('✅', 'Joined family via Google Auth:', result.currentFamilyName);
+              }
+            }
           }
 
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -390,6 +404,13 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           return;
         }
 
+        // Check age verification (COPPA/GDPR)
+        if (!agreedToAge) {
+          Alert.alert(t('login.errors.ageRequired'), t('login.errors.confirmAge'));
+          setLoading(false);
+          return;
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: displayName.trim() });
         await sendEmailVerification(userCredential.user);
@@ -408,6 +429,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               agreed: true,
               agreedAt: serverTimestamp(),
               version: '2026-01-20', // Update this date when privacy policy changes
+            },
+            ageVerification: {
+              confirmed: true,
+              confirmedAt: serverTimestamp(),
+              minimumAge: 16,
             },
           },
           ...(registerAsBabysitter ? { isSitter: true, sitterActive: false } : {}),
@@ -493,7 +519,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       displayName.trim().length > 0 &&
       confirmPassword === password &&
       agreedToTerms &&
-      agreedToPrivacy
+      agreedToPrivacy &&
+      agreedToAge
     )
   );
   const passwordStrength = validatePassword(password, t);
@@ -879,6 +906,26 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     >{t('login.agreement.privacyLink')}</Text>
                   </Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setAgreedToAge(!agreedToAge);
+                  }}
+                  style={styles.agreementRow}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.agreementCheckbox,
+                    { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB' },
+                    agreedToAge && { backgroundColor: theme.primary, borderColor: theme.primary }
+                  ]}>
+                    {agreedToAge && <Check size={10} color="#fff" strokeWidth={3} />}
+                  </View>
+                  <Text style={[styles.agreementText, { color: theme.textSecondary }]}>
+                    {t('login.agreement.age')}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -1019,6 +1066,14 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                             },
                           },
                         }, { merge: true });
+
+                        // If user has a pending invite code, join the family
+                        if (pendingInviteCode.trim().length === 6) {
+                          const result = await joinFamily(pendingInviteCode.trim());
+                          if (result.success) {
+                            logger.debug('✅', 'Joined family via Apple Auth:', result.currentFamilyName);
+                          }
+                        }
                       }
 
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -1093,21 +1148,72 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
               {t('login.receivedCode')}
             </Text>
 
-            <TextInput
-              style={[
-                styles.joinModalInput,
-                { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.textPrimary }
-              ]}
-              placeholder={t('login.codePlaceholder')}
-              placeholderTextColor={theme.textTertiary}
-              value={pendingInviteCode}
-              onChangeText={(text) => setPendingInviteCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-              maxLength={6}
-              autoCapitalize="characters"
-              textAlign="center"
-              accessibilityLabel={t('login.enterInviteCodeLabel')}
-              accessibilityHint={t('login.codePlaceholder')}
-            />
+            {showScanner ? (
+              <View style={{ width: 250, height: 250, borderRadius: 16, overflow: 'hidden', marginVertical: 15 }}>
+                <CameraView
+                  style={StyleSheet.absoluteFillObject}
+                  facing="back"
+                  onBarcodeScanned={({ data }) => {
+                    const code = data.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+                    if (code.length === 6) {
+                      setPendingInviteCode(code);
+                      setShowScanner(false);
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    }
+                  }}
+                  barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                />
+                <TouchableOpacity
+                  style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 20 }}
+                  onPress={() => setShowScanner(false)}
+                >
+                  <X size={20} color="#fff" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 10 }}>
+                <TextInput
+                  style={[
+                    styles.joinModalInput,
+                    { flex: 1, backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.textPrimary }
+                  ]}
+                  placeholder={t('login.codePlaceholder')}
+                  placeholderTextColor={theme.textTertiary}
+                  value={pendingInviteCode}
+                  onChangeText={(text) => setPendingInviteCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                  maxLength={6}
+                  autoCapitalize="characters"
+                  textAlign="center"
+                  accessibilityLabel={t('login.enterInviteCodeLabel')}
+                  accessibilityHint={t('login.codePlaceholder')}
+                />
+
+                <TouchableOpacity
+                  style={{
+                    height: 50,
+                    width: 50,
+                    borderRadius: 12,
+                    backgroundColor: isDarkMode ? 'rgba(124, 58, 237, 0.15)' : 'rgba(124, 58, 237, 0.1)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={async () => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (!permission?.granted) {
+                      const result = await requestPermission();
+                      if (!result.granted) {
+                        Alert.alert('שגיאה', 'יש לאשר גישה למצלמה כדי לסרוק את הקוד');
+                        return;
+                      }
+                    }
+                    setShowScanner(true);
+                  }}
+                  accessibilityLabel="סרוק ברקוד"
+                >
+                  <QrCode size={22} color={theme.primary} strokeWidth={2} />
+                </TouchableOpacity>
+              </View>
+            )}
 
             <TouchableOpacity
               style={[

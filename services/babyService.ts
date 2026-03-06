@@ -84,7 +84,7 @@ export const getBabyData = async (): Promise<BabyData | null> => {
       }
     }
   } catch (e) {
-    logger.error('Error fetching baby data from family:', e);
+    logger.warn('Error fetching baby data from family:', e);
   }
 
   return null;

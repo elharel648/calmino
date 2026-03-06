@@ -47,6 +47,8 @@ import {
   ChevronRight,
   Mail,
   Instagram,
+  Download,
+  Ban,
 } from 'lucide-react-native';
 import { auth, db } from '../services/firebaseConfig';
 import LegalModal from '../components/Legal/LegalModal';
@@ -54,6 +56,7 @@ import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'fire
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useDataExport } from '../hooks/useDataExport';
 import { Language } from '../types';
 import { useNotifications } from '../hooks/useNotifications';
 import { useChildProfile } from '../hooks/useChildProfile';
@@ -67,6 +70,10 @@ import { logger } from '../utils/logger';
 const LANGUAGES = [
   { key: 'he', labelKey: 'settings.hebrew', flag: '🇮🇱' },
   { key: 'en', labelKey: 'settings.english', flag: '🇺🇸' },
+  { key: 'es', labelKey: 'settings.spanish', flag: '🇪🇸' },
+  { key: 'ar', labelKey: 'settings.arabic', flag: '🇸🇦' },
+  { key: 'fr', labelKey: 'settings.french', flag: '🇫🇷' },
+  { key: 'de', labelKey: 'settings.german', flag: '🇩🇪' },
 ];
 
 
@@ -76,6 +83,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
   const { settings: notifSettings, updateSettings: updateNotifSettings } = useNotifications();
+  const { exportData, loading: exportLoading } = useDataExport(t);
 
   const [userData, setUserData] = useState({ name: '', email: '', photoURL: null });
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
@@ -359,22 +367,22 @@ export default function SettingsScreen() {
   const handleDeleteAccount = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
-      'מחיקת חשבון לצמיתות ⚠️',
-      'פעולה זו אינה הפיכה ותמחק את כל הנתונים שלך לצמיתות. האם אתה בטוח?',
+      t('settings.deleteAccountTitle'),
+      t('settings.deleteAccountMessage'),
       [
-        { text: 'ביטול', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'כן, מחק הכל',
+          text: t('settings.deleteAccountYes'),
           style: 'destructive',
           onPress: () => {
             // Second confirmation
             Alert.alert(
-              'אישור אחרון',
-              'לאחר המחיקה לא ניתן יהיה לשחזר את החשבון והנתונים. להמשיך?',
+              t('settings.deleteAccountConfirmTitle'),
+              t('settings.deleteAccountConfirmMessage'),
               [
-                { text: 'ביטול', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: 'מחק לצמיתות',
+                  text: t('settings.deleteAccountButton'),
                   style: 'destructive',
                   onPress: async () => {
                     setLoading(true);
@@ -755,6 +763,33 @@ export default function SettingsScreen() {
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.contact')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>{t('settings.contactSubtitle')}</Text>
+                </View>
+              </View>
+              <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+
+
+
+            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
+
+            {/* Data Export Button - GDPR Right to Data Portability */}
+            <TouchableOpacity
+              style={styles.listItem}
+              onPress={exportData}
+              disabled={exportLoading}
+              activeOpacity={0.6}
+            >
+              <View style={styles.listItemContent}>
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
+                  {exportLoading ? (
+                    <ActivityIndicator size="small" color="#10B981" />
+                  ) : (
+                    <Download size={18} color="#10B981" strokeWidth={2} />
+                  )}
+                </View>
+                <View style={styles.listItemTextContainer}>
+                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.exportData')}</Text>
+                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>{t('settings.exportDataSubtitle')}</Text>
                 </View>
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />

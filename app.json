@@ -18,6 +18,12 @@
           "photosPermission": "האפליקציה צריכה גישה לתמונות כדי להגדיר תמונת פרופיל"
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "האפליקציה צריכה גישה למצלמה כדי לסרוק ברקוד ולהצטרף למשפחה"
+        }
+      ],
       "expo-local-authentication",
       "expo-font",
       "@react-native-community/datetimepicker",
@@ -47,6 +53,7 @@
       "infoPlist": {
         "CFBundleIconName": "AppIcon",
         "NSPhotoLibraryUsageDescription": "האפליקציה צריכה גישה לתמונות כדי להגדיר תמונת פרופיל",
+        "NSCameraUsageDescription": "האפליקציה צריכה גישה למצלמה כדי לסרוק ברקוד ולהצטרף למשפחה",
         "NSFaceIDUsageDescription": "אפשר כניסה מהירה ומאובטחת באמצעות Face ID",
         "NSLocationWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
