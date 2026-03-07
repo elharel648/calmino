@@ -2,9 +2,9 @@ import { logger } from '../utils/logger';
 // services/imageUploadService.ts - Firebase Storage Image Upload
 // UPDATED: Using Firebase Storage instead of Base64
 
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import storage from '@react-native-firebase/storage';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
-import { auth, db, storage } from './firebaseConfig';
+import { auth, db } from './firebaseConfig';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 
@@ -33,24 +33,7 @@ async function compressImage(uri: string): Promise<string> {
 }
 
 /**
- * Convert URI to Blob for upload
- * React Native requires XMLHttpRequest to convert local file URIs to blobs
- */
-async function uriToBlob(uri: string): Promise<Blob> {
-    try {
-        logger.debug('🔄 Converting URI to Blob using fetch:', uri.substring(0, 50));
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        logger.debug('✅ Blob created, size:', blob.size, 'bytes');
-        return blob;
-    } catch (error) {
-        logger.error('❌ uriToBlob failed:', error);
-        throw new Error('Failed to convert image to blob');
-    }
-}
-
-/**
- * Upload image to Firebase Storage
+ * Upload image to Firebase Storage using Native SDK
  * @param uri - Local image URI
  * @param path - Storage path (e.g., "sitterPhotos/userId/photo.jpg")
  * @returns Download URL
@@ -62,21 +45,13 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
         // Compress first
         const compressedUri = await compressImage(uri);
 
-        // Convert to blob
-        const blob = await uriToBlob(compressedUri);
-        logger.debug('📸', 'Blob size:', blob.size, 'bytes');
-
-        // Create storage reference
-        const storageRef = ref(storage, path);
-
-        // Upload
+        // Upload using native SDK (no blob conversion needed)
+        const ref = storage().ref(path);
         logger.debug('📸', 'Uploading to:', path);
-        const snapshot = await uploadBytes(storageRef, blob, {
-            contentType: 'image/jpeg',
-        });
+        await ref.putFile(compressedUri, { contentType: 'image/jpeg' });
 
         // Get download URL
-        const downloadURL = await getDownloadURL(snapshot.ref);
+        const downloadURL = await ref.getDownloadURL();
         logger.debug('✅', 'Upload complete:', downloadURL.substring(0, 60));
 
         return downloadURL;

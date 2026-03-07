@@ -1,4 +1,26 @@
 import 'react-native-gesture-handler';
+import { I18nManager } from 'react-native';
+import * as Updates from 'expo-updates';
+
+// EXTREMELY IMPORTANT:
+// React Native 0.76+ auto-enables RTL if the device is in Hebrew.
+// Since this app was built with manual `flexDirection: 'row-reverse'` styles,
+// automatic RTL flips those styles back to LTR!
+// We MUST force the app to stay in LTR so the manual styles work correctly.
+if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
+  I18nManager.allowRTL(false);
+  I18nManager.forceRTL(false);
+  I18nManager.swapLeftAndRightInRTL(false);
+
+  if (__DEV__) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { DevSettings } = require('react-native');
+    try { DevSettings.reload(); } catch (e) { }
+  } else {
+    Updates.reloadAsync().catch(() => { });
+  }
+}
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
