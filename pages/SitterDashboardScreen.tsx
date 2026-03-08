@@ -223,28 +223,41 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         prefix: string;
     } | null>(null);
 
-    // ✨ Auto-fetch Location on Mount (Default On)
+    // ✨ Auto-fetch Location on Mount and silently save to Firestore
     useEffect(() => {
         const fetchLocationOnMount = async () => {
-            // Only auto-fetch if we don't have a saved location yet
-            if (!gpsLocation) {
-                try {
-                    const { status } = await Location.getForegroundPermissionsAsync();
-                    if (status === 'granted') {
-                        setIsLoadingLocation(true);
-                        const location = await Location.getCurrentPositionAsync({
-                            accuracy: Location.Accuracy.Balanced,
-                        });
-                        setGpsLocation({
-                            latitude: location.coords.latitude,
-                            longitude: location.coords.longitude,
-                        });
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') return;
+                setIsLoadingLocation(true);
+                const location = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.High,
+                });
+                if (
+                    location?.coords &&
+                    typeof location.coords.latitude === 'number' &&
+                    typeof location.coords.longitude === 'number' &&
+                    !isNaN(location.coords.latitude) &&
+                    !isNaN(location.coords.longitude)
+                ) {
+                    const coords = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    };
+                    setGpsLocation(coords);
+
+                    // Silently persist to Firestore so distance is always up-to-date
+                    const userId = auth.currentUser?.uid;
+                    if (userId) {
+                        updateDoc(doc(db, 'users', userId), { sitterLocation: coords }).catch(
+                            (e) => logger.debug('Silent location save failed:', e)
+                        );
                     }
-                } catch (e) {
-                    logger.debug('Failed to auto-fetch location', e);
-                } finally {
-                    setIsLoadingLocation(false);
                 }
+            } catch (e) {
+                logger.debug('Failed to auto-fetch location', e);
+            } finally {
+                setIsLoadingLocation(false);
             }
         };
         fetchLocationOnMount();

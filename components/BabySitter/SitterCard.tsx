@@ -61,23 +61,10 @@ const SitterCard = ({ sitter, theme, isDarkMode, onPress, isFavorite, onToggleFa
                 <View style={styles.sitterInfo}>
                     {/* Name row */}
                     <View style={styles.sitterHeader}>
-                        <Text style={[styles.sitterName, { color: theme.textPrimary }]} numberOfLines={1}>
-                            {sitter.name}
-                        </Text>
-                        {sitter.isVerified && (
-                            <View style={[styles.verifiedDot, { backgroundColor: isDarkMode ? '#fff' : '#111' }]}>
-                                <Award size={9} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                            </View>
-                        )}
-                        {sitter.isAvailableTonight && (
-                            <View style={[styles.tonightBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                                <Text style={[styles.tonightText, { color: '#10B981' }]}>פנוי/ה להערב</Text>
-                            </View>
-                        )}
                         {onToggleFavorite && (
                             <TouchableOpacity
                                 onPress={() => onToggleFavorite(sitter.id!)}
-                                style={{ marginLeft: 6, padding: 4 }}
+                                style={{ marginRight: 6, padding: 4 }}
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <Heart
@@ -88,6 +75,19 @@ const SitterCard = ({ sitter, theme, isDarkMode, onPress, isFavorite, onToggleFa
                                 />
                             </TouchableOpacity>
                         )}
+                        {sitter.isAvailableTonight && (
+                            <View style={[styles.tonightBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                                <Text style={[styles.tonightText, { color: '#10B981' }]}>פנוי/ה להערב</Text>
+                            </View>
+                        )}
+                        {sitter.isVerified && (
+                            <View style={[styles.verifiedDot, { backgroundColor: isDarkMode ? '#fff' : '#111' }]}>
+                                <Award size={9} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
+                            </View>
+                        )}
+                        <Text style={[styles.sitterName, { color: theme.textPrimary }]} numberOfLines={1}>
+                            {sitter.name}
+                        </Text>
                     </View>
 
                     {/* Rating + Experience */}

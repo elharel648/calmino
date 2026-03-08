@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronLeft,
-    User, Award, UserPlus, MapPin, Calendar, UserX
+    User, Award, UserPlus, MapPin, Calendar, UserX, Ban
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -162,7 +162,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 }
 
                 const location = await Location.getCurrentPositionAsync({
-                    accuracy: Location.Accuracy.Balanced,
+                    accuracy: Location.Accuracy.High,
                 });
 
                 // Validate coordinates
@@ -575,23 +575,16 @@ const BabySitterScreen = ({ navigation }: any) => {
                 );
             })}
 
-            {/* Blocked Users - always at the end */}
+            {/* Blocked Users pill */}
             <TouchableOpacity
-                style={[
-                    styles.sortPill,
-                    {
-                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                        borderColor: theme.border,
-                    }
-                ]}
+                style={[styles.sortPill, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: theme.border }]}
                 onPress={() => navigation.navigate('BlockedUsers')}
                 activeOpacity={0.7}
             >
-                <Ban size={12} color={theme.textSecondary} strokeWidth={2.5} />
-                <Text style={[styles.sortPillText, { color: theme.textSecondary, fontWeight: '500' }]}>
-                    חסומים
-                </Text>
+                <Text style={{ fontSize: 11 }}>🚫</Text>
+                <Text style={[styles.sortPillText, { color: theme.textSecondary, fontWeight: '500' }]}>חסומים</Text>
             </TouchableOpacity>
+
         </ScrollView>
     );
 
@@ -826,14 +819,6 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 {sortedSitters.length} סיטרים{activeCity ? ` ב${activeCity}` : ' זמינים'}
                             </Text>
                         )}
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('BlockedUsers')}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                            activeOpacity={0.7}
-                        >
-                            <UserX size={13} color={theme.textSecondary} strokeWidth={1.5} />
-                            <Text style={{ fontSize: 12, color: theme.textSecondary }}>חסומים</Text>
-                        </TouchableOpacity>
                     </View>
 
                     {/* Sitters List - Switched to FlatList */}

@@ -2,6 +2,13 @@ import 'react-native-gesture-handler';
 import { I18nManager } from 'react-native';
 import * as Updates from 'expo-updates';
 
+// Global error handler — catches JS errors before they become non-std C++ exceptions
+const originalHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  console.error('[GLOBAL ERROR]', isFatal ? 'FATAL' : 'non-fatal', error?.message, error?.stack);
+  if (originalHandler) originalHandler(error, isFatal);
+});
+
 // EXTREMELY IMPORTANT:
 // React Native 0.76+ auto-enables RTL if the device is in Hebrew.
 // Since this app was built with manual `flexDirection: 'row-reverse'` styles,
@@ -265,7 +272,6 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
 
       <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
-      <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
     </BabysitterStack.Navigator>
   );
 }

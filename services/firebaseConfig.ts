@@ -1,9 +1,7 @@
 // services/firebaseConfig.ts
 import { logger } from '../utils/logger';
-
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
-import { logger } from '../utils/logger';
 // @ts-ignore - getReactNativePersistence exists but TypeScript may not recognize it
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';

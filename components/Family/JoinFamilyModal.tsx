@@ -18,7 +18,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { joinFamily } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { CameraView, useCameraPermissions } from 'expo-camera';
 
 interface JoinFamilyModalProps {
     visible: boolean;
@@ -72,6 +71,17 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
             onClose();
             onSuccess?.();
         }, 1500);
+    };
+
+    const handleOpenScanner = async () => {
+        if (!permission?.granted) {
+            const { status } = await requestPermission();
+            if (status !== 'granted') {
+                Alert.alert('שגיאה', 'יש לאשר גישה למצלמה כדי לסרוק QR');
+                return;
+            }
+        }
+        setScanning(true);
     };
 
     const doJoin = async (force: boolean, joinCode?: string) => {

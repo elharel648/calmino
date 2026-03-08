@@ -13,7 +13,8 @@ import {
     Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Star, X, Send, Sparkles } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -41,10 +42,9 @@ const AVAILABLE_TAGS: ReviewTag[] = [
 const RATING_LABELS = ['', 'לא טוב', 'סביר', 'טוב', 'מצוין', 'מושלם! ⭐'];
 
 export default function RatingScreen({ route, navigation }: Props) {
-    const tabBarHeight = useBottomTabBarHeight();
+    const insets = useSafeAreaInsets();
     const { bookingId, babysitterId, sitterName } = route.params;
     const { theme, isDarkMode } = useTheme();
-    const insets = useSafeAreaInsets();
 
     const [rating, setRating] = useState<number>(0);
     const [selectedTags, setSelectedTags] = useState<ReviewTag[]>([]);
@@ -130,93 +130,12 @@ export default function RatingScreen({ route, navigation }: Props) {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 100 }]} showsVerticalScrollIndicator={false}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ flex: 1 }}
+            >
+                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
 
-                {/* Stars Section */}
-                <View style={styles.starsContainer}>
-                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>דרג/י את החוויה הכללית</Text>
-                    <View style={styles.starsRow}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <TouchableOpacity
-                                key={star}
-                                onPress={() => handleRatingSelect(star)}
-                                style={styles.starBtn}
-                            >
-                                <Star
-                                    size={40}
-                                    color={star <= rating ? '#FBBF24' : (isDarkMode ? '#374151' : '#E5E7EB')}
-                                    fill={star <= rating ? '#FBBF24' : 'transparent'}
-                                />
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-
-                {/* Tags Section */}
-                {rating > 0 && (
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>מה אהבת במיוחד?</Text>
-                        <View style={styles.tagsContainer}>
-                            {AVAILABLE_TAGS.map((tag) => {
-                                const isSelected = selectedTags.includes(tag);
-                                return (
-                                    <TouchableOpacity
-                                        key={tag}
-                                        style={[
-                                            styles.tagBtn,
-                                            {
-                                                backgroundColor: isSelected ? theme.primary : (isDarkMode ? '#374151' : '#F3F4F6'),
-                                                borderColor: isSelected ? theme.primary : 'transparent',
-                                            }
-                                        ]}
-                                        onPress={() => handleTagToggle(tag)}
-                                    >
-                                        <Text style={[
-                                            styles.tagText,
-                                            { color: isSelected ? '#fff' : theme.textPrimary }
-                                        ]}>
-                                            {REVIEW_TAG_LABELS[tag]}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    </View>
-                )}
-
-                {/* Text Section */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-                        מילים חמות (אופציונלי)
-                    </Text>
-                    <TextInput
-                        style={[styles.textInput, {
-                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9FAFB',
-                            borderColor: theme.border,
-                            color: theme.textPrimary
-                        }]}
-                        placeholder="איך הייתה החוויה שלך? ספרי להורים אחרים..."
-                        placeholderTextColor={theme.textTertiary}
-                        multiline
-                        textAlign="right"
-                        maxLength={500}
-                        value={text}
-                        onChangeText={setText}
-                    />
-                </View>
-
-            </ScrollView>
-
-            {/* Footer Action */}
-            <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border, paddingBottom: tabBarHeight + 16 }]}>
-                <TouchableOpacity
-                    style={[
-                        styles.submitBtn,
-                        { backgroundColor: rating > 0 ? theme.primary : (isDarkMode ? '#374151' : '#E5E7EB') }
-                    ]}
-                    onPress={handleSubmit}
-                    disabled={isSubmitting || rating === 0}
-                >
                     {/* Stars Card */}
                     <View style={[styles.card, {
                         backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF',

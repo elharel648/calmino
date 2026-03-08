@@ -3,7 +3,7 @@ import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { db, auth } from '../services/firebaseConfig';
 import { getBlockedUsers } from '../services/blockService';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHE_KEY = '@sitters_cache';
@@ -169,7 +169,7 @@ const useSitters = () => {
                     : 50;
 
                 fetchedSitters.push({
-                    id: sitterDoc.id,
+                    id: doc.id,
                     name: (data.displayName && typeof data.displayName === 'string') ? data.displayName : 'סיטר',
                     age,
                     photoUrl: (data.photoUrl && typeof data.photoUrl === 'string') ? data.photoUrl : null,

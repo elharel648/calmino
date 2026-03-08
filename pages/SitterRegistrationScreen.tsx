@@ -97,6 +97,37 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         };
     }, []);
 
+    // Auto-capture GPS on mount for accurate distance calculations
+    useEffect(() => {
+        const captureLocation = async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') return;
+                setIsLoadingLocation(true);
+                const loc = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.High,
+                });
+                if (
+                    loc?.coords &&
+                    typeof loc.coords.latitude === 'number' &&
+                    typeof loc.coords.longitude === 'number' &&
+                    !isNaN(loc.coords.latitude) &&
+                    !isNaN(loc.coords.longitude)
+                ) {
+                    setGpsLocation({
+                        latitude: loc.coords.latitude,
+                        longitude: loc.coords.longitude,
+                    });
+                }
+            } catch (e) {
+                logger.debug('Auto-capture location failed:', e);
+            } finally {
+                setIsLoadingLocation(false);
+            }
+        };
+        captureLocation();
+    }, []);
+
     // Validation
     const validateCurrentStep = () => {
         switch (currentStep) {

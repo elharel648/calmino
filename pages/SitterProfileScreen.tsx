@@ -8,8 +8,8 @@ import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewSt
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
-import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag } from 'lucide-react-native';
+import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -19,7 +19,6 @@ import { auth as firebaseAuth } from '../services/firebaseConfig';
 import { useTheme } from '../context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGlobalPresence } from '../hooks/useGlobalPresence';
-import { blockSitter } from '../services/babysitterService';
 import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send } from 'lucide-react-native';
 import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
@@ -301,6 +300,24 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 status: 'new'
             });
 
+            // Send email notification via Firebase Trigger Email extension
+            await addDoc(collection(db, 'mail'), {
+                to: 'calminogroup@gmail.com',
+                message: {
+                    subject: `דיווח חדש על סיטר: ${sitterData.name}`,
+                    html: `
+                        <div dir="rtl" style="font-family: Arial, sans-serif;">
+                            <h2>דיווח חדש התקבל</h2>
+                            <p><strong>שם הסיטר:</strong> ${sitterData.name}</p>
+                            <p><strong>מזהה סיטר:</strong> ${sitterData.id}</p>
+                            <p><strong>מזהה מדווח:</strong> ${currentUserId || 'guest'}</p>
+                            <p><strong>סיבת הדיווח:</strong></p>
+                            <p>${reportReason.trim()}</p>
+                        </div>
+                    `,
+                },
+            });
+
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setShowReportModal(false);
             setReportReason('');
@@ -309,8 +326,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 'הדיווח נשלח',
                 'תודה על הדיווח. הצוות שלנו קיבל את פנייתך ויטפל בה בהקדם האפשרי.'
             );
-        } catch (error) {
-            logger.error('Error submitting report:', error);
+        } catch (error: any) {
+            logger.error('Error submitting report:', error?.code, error?.message, error);
             Alert.alert('שגיאה', 'אירעה שגיאה בשליחת הדיווח. אנא נסה שוב.');
         } finally {
             setSubmittingReport(false);
@@ -331,7 +348,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await blockSitter(currentUserId, sitterData.id);
+                            await blockUser(currentUserId, sitterData.id, sitterData.name, sitterData.image, 'sitter');
                             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             Alert.alert('נחסמה', `${sitterData.name} נחסמה בהצלחה ולא תוצג יותר.`);
                             navigation.goBack();
@@ -361,16 +378,6 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {/* Right side actions - Share and Favorite */}
                 {!isCurrentUserSitter && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                        <TouchableOpacity
-                            style={styles.navBtn}
-                            onPress={() => {
-                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setShowOptionsSheet(true);
-                            }}
-                        >
-                            <MoreVertical size={22} color={theme.textPrimary} strokeWidth={2} />
-                        </TouchableOpacity>
-
                         <TouchableOpacity
                             style={styles.navBtn}
                             onPress={() => {
@@ -537,6 +544,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             <View style={styles.badgesContainer}>
                                 {badges.filter(b => b !== 'available_now').map((badgeType) => {
                                     const badge = BADGE_INFO[badgeType];
+                                    const BadgeIcon = badgeType === 'highly_recommended' ? Trophy
+                                        : badgeType === 'vip_sitter' ? Gem
+                                        : badgeType === 'rising_star' ? Sparkles
+                                        : Star;
                                     return (
                                         <View key={badgeType} style={{
                                             flexDirection: 'row',
@@ -547,7 +558,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                             paddingVertical: 5,
                                             borderRadius: 16,
                                         }}>
-                                            {badge.icon ? <Text style={{ fontSize: 12 }}>{badge.icon}</Text> : null}
+                                            <BadgeIcon size={12} color={badge.color} />
                                             <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>{badge.label}</Text>
                                         </View>
                                     );
@@ -908,12 +919,21 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     </View>
                                 </View>
 
-                                {/* Text comment - Only show if: verified, 5 stars, and text exists */}
-                                {review.text &&
-                                    review.isVerified &&
-                                    review.rating === 5 && (
-                                        <Text style={[styles.reviewBody, { color: theme.textPrimary }]}>"{review.text}"</Text>
-                                    )}
+                                {/* Tags */}
+                                {review.tags && review.tags.length > 0 && (
+                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
+                                        {review.tags.map((tag: string) => (
+                                            <View key={tag} style={{ backgroundColor: isDarkMode ? 'rgba(124,58,237,0.15)' : '#F5F3FF', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 }}>
+                                                <Text style={{ fontSize: 12, color: '#7C3AED', fontWeight: '600' }}>{REVIEW_TAG_LABELS[tag as keyof typeof REVIEW_TAG_LABELS] || tag}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+
+                                {/* Text comment */}
+                                {review.text ? (
+                                    <Text style={[styles.reviewBody, { color: theme.textPrimary }]}>"{review.text}"</Text>
+                                ) : null}
 
                                 {/* Sitter Response Removed as per user request */}
 
@@ -1060,63 +1080,58 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 </View>
             </Modal>
 
-            {/* Options Menu Modal (Report/Block) — Premium Bottom Sheet */}
+            {/* Options Menu Modal (Report/Block) */}
             <Modal
                 visible={showOptionsMenu}
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setShowOptionsMenu(false)}
             >
-                <View style={styles.optionsSheetContainer}>
-                    <TouchableOpacity
-                        style={StyleSheet.absoluteFillObject}
-                        activeOpacity={1}
-                        onPress={() => setShowOptionsMenu(false)}
-                    />
-                <View style={[styles.optionsBottomSheet, {
-                    backgroundColor: isDarkMode ? '#1C1C1E' : '#F2F2F7',
-                }]}>
+                <TouchableOpacity
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+                    activeOpacity={1}
+                    onPress={() => setShowOptionsMenu(false)}
+                />
+                <View style={{
+                    backgroundColor: theme.card,
+                    borderTopLeftRadius: 28,
+                    borderTopRightRadius: 28,
+                    paddingBottom: 34,
+                    paddingHorizontal: 20,
+                    paddingTop: 14,
+                }}>
                     {/* Handle */}
-                    <View style={[styles.sheetHandle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+                    <View style={{ width: 32, height: 3, borderRadius: 2, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', alignSelf: 'center', marginBottom: 24 }} />
 
-                    {/* Sitter context */}
-                    <View style={styles.sheetContext}>
-                        {sitterData.image ? (
-                            <Image source={{ uri: sitterData.image }} style={styles.sheetAvatar} />
-                        ) : null}
-                        <Text style={[styles.sheetContextName, { color: theme.textSecondary }]} numberOfLines={1}>
-                            {sitterData.name}
-                        </Text>
-                    </View>
-
-                    {/* Action card */}
-                    <View style={[styles.sheetActionsCard, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}>
-                        <TouchableOpacity style={styles.sheetActionRow} onPress={handleReportSitter} activeOpacity={0.6}>
-                            <View style={[styles.sheetActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,149,0,0.15)' : 'rgba(255,149,0,0.1)' }]}>
-                                <Flag size={18} color="#FF9500" />
-                            </View>
-                            <Text style={[styles.sheetActionText, { color: theme.textPrimary }]}>דווח על פרופיל</Text>
-                        </TouchableOpacity>
-
-                        <View style={[styles.sheetDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }]} />
-
-                        <TouchableOpacity style={styles.sheetActionRow} onPress={handleBlockSitter} activeOpacity={0.6}>
-                            <View style={[styles.sheetActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,59,48,0.15)' : 'rgba(255,59,48,0.1)' }]}>
-                                <Ban size={18} color="#FF3B30" />
-                            </View>
-                            <Text style={[styles.sheetActionText, { color: '#FF3B30' }]}>חסום את {sitterData.name}</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Cancel */}
                     <TouchableOpacity
-                        style={[styles.sheetCancelBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                        onPress={handleReportSitter}
+                        activeOpacity={0.6}
+                        style={{ flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 14, gap: 14 }}
+                    >
+                        <Flag size={18} color={theme.textSecondary} strokeWidth={1.8} />
+                        <Text style={{ flex: 1, fontSize: 16, color: theme.textPrimary, textAlign: 'right' }}>דווח על פרופיל</Text>
+                    </TouchableOpacity>
+
+                    <View style={{ height: 0.5, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }} />
+
+                    <TouchableOpacity
+                        onPress={handleBlockSitter}
+                        activeOpacity={0.6}
+                        style={{ flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 14, gap: 14 }}
+                    >
+                        <Ban size={18} color="#FF3B30" strokeWidth={1.8} />
+                        <Text style={{ flex: 1, fontSize: 16, color: '#FF3B30', textAlign: 'right' }}>חסום את {sitterData.name}</Text>
+                    </TouchableOpacity>
+
+                    <View style={{ height: 0.5, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)', marginBottom: 8 }} />
+
+                    <TouchableOpacity
                         onPress={() => setShowOptionsMenu(false)}
                         activeOpacity={0.6}
+                        style={{ paddingVertical: 14, alignItems: 'center' }}
                     >
-                        <Text style={[styles.sheetCancelText, { color: theme.primary }]}>ביטול</Text>
+                        <Text style={{ fontSize: 16, color: theme.textSecondary }}>ביטול</Text>
                     </TouchableOpacity>
-                </View>
                 </View>
             </Modal>
 

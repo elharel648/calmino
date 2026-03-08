@@ -3,9 +3,7 @@
  * Utilities for opening social media profiles
  */
 import { logger } from './logger';
-
 import { Linking, Alert, Platform } from 'react-native';
-import { logger } from './logger';
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'linkedin' | 'whatsapp' | 'tiktok' | 'telegram';
 
