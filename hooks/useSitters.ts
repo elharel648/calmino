@@ -197,6 +197,7 @@ const useSitters = () => {
                         ? data.sitterLocation
                         : undefined,
                     pricePerHour,
+                    badges: Array.isArray(data.sitterBadges) ? data.sitterBadges : [],
                     socialLinks: (data.socialLinks && typeof data.socialLinks === 'object')
                         ? data.socialLinks
                         : undefined,

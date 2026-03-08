@@ -361,7 +361,8 @@ export async function submitReview(
     parentId: string,
     rating: number,
     tags: ReviewTag[],
-    text: string
+    text: string,
+    isVerified?: boolean
 ): Promise<string> {
     try {
         // 1. Create the review document
@@ -372,7 +373,7 @@ export async function submitReview(
             rating,
             tags,
             text,
-            isVerified: !!bookingId, // It's from a verified booking if there is a bookingId
+            isVerified: isVerified ?? !!bookingId, // Verified if contacted via WhatsApp or from a booking
             helpfulCount: 0,
             helpfulBy: [],
             createdAt: serverTimestamp(),
@@ -395,9 +396,17 @@ export async function submitReview(
         const newTotal = stats.total + 1;
         const newAverage = Math.round((((stats.average * stats.total) + rating) / newTotal) * 10) / 10;
 
+        // Calculate updated badges and cache them in Firestore
+        const updatedBadges = await calculateSitterBadges(babysitterId, {
+            rating: newAverage,
+            reviewCount: newTotal,
+        });
+        const badgesToCache = updatedBadges.filter(b => b !== 'available_now');
+
         await updateDoc(doc(db, 'users', babysitterId), {
             sitterRating: newAverage,
             sitterReviewCount: newTotal,
+            sitterBadges: badgesToCache,
         });
 
         // 4. Send push notification to the sitter

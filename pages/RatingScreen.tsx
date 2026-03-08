@@ -19,7 +19,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Star, X, Send, Sparkles } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { submitReview } from '../services/babysitterService';
-import { auth } from '../services/firebaseConfig';
+import { auth, db } from '../services/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import { ReviewTag, REVIEW_TAG_LABELS } from '../types/babysitter';
 import { logger } from '../utils/logger';
 
@@ -97,7 +98,16 @@ export default function RatingScreen({ route, navigation }: Props) {
 
         try {
             setIsSubmitting(true);
-            await submitReview(bookingId, babysitterId, parentId, rating, selectedTags, text);
+            // Check if parent contacted this sitter via WhatsApp → verified review
+            let isVerified = !!bookingId;
+            if (!isVerified) {
+                try {
+                    const parentDoc = await getDoc(doc(db, 'users', parentId));
+                    const contacted: string[] = parentDoc.data()?.contactedSitters || [];
+                    isVerified = contacted.includes(babysitterId);
+                } catch { /* silent */ }
+            }
+            await submitReview(bookingId, babysitterId, parentId, rating, selectedTags, text, isVerified);
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('תודה רבה! 🎉', 'הדירוג שלך עוזר להורים אחרים למצוא את הבייביסיטר הטוב ביותר.', [

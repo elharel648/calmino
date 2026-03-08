@@ -117,6 +117,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     // Settings state
     const [preferredLocation, setPreferredLocation] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [showPhonePublic, setShowPhonePublic] = useState(true);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [availableForBookings, setAvailableForBookings] = useState(true);
     const [isAvailableTonight, setIsAvailableTonight] = useState(false);
@@ -279,6 +280,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 // Load settings from Firebase
                 setPreferredLocation(data.sitterPreferredLocation || '');
                 setPhoneNumber(data.phone || '');
+                setShowPhonePublic(data.sitterShowPhone !== false);
                 setNotificationsEnabled(data.sitterNotificationsEnabled !== false);
                 setAvailableForBookings(data.sitterActive !== false);
                 setSitterCity(data.sitterCity || '');
@@ -1407,6 +1409,16 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     />
                                     <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>טלפון</Text>
                                 </View>
+                                <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
+                                <View style={styles.settingsCardRow}>
+                                    <Switch
+                                        value={showPhonePublic}
+                                        onValueChange={setShowPhonePublic}
+                                        trackColor={{ false: isDarkMode ? '#3A3A3C' : '#E5E5EA', true: theme.primary }}
+                                        thumbColor="#fff"
+                                    />
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>הצג מספר טלפון למשפחות</Text>
+                                </View>
                             </View>
 
                             {/* ─── Price ─── */}
@@ -1820,6 +1832,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         await updateDoc(doc(db, 'users', userId), {
                                             sitterPreferredLocation: preferredLocation.trim() || null,
                                             phone: phoneNumber.trim() || null,
+                                            sitterShowPhone: showPhonePublic,
                                             sitterNotificationsEnabled: notificationsEnabled,
                                             sitterActive: availableForBookings,
                                             sitterAvailable: availableForBookings, // Also set sitterAvailable for badge consistency
