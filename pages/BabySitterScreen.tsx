@@ -13,7 +13,8 @@ import {
     ActivityIndicator,
     TextInput,
     FlatList,
-    ListRenderItem
+    ListRenderItem,
+    ScrollView,
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronLeft,
@@ -535,42 +536,63 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Sort Pills
     const SORT_OPTIONS = [
-        { key: 'favorites' as const, label: 'מועדפים', icon: '❤️' },
         { key: 'rating' as const, label: 'דירוג', icon: '⭐' },
         { key: 'price' as const, label: 'מחיר', icon: '₪' },
         { key: 'distance' as const, label: 'מרחק', icon: '📍' },
+        { key: 'favorites' as const, label: 'מועדפים', icon: '❤️' },
     ];
 
     const SortPills = () => (
-        <View style={styles.filtersContainer}>
-            <View style={styles.sortRow}>
-                {SORT_OPTIONS.map((opt) => {
-                    const isActive = sortBy === opt.key;
-                    return (
-                        <TouchableOpacity
-                            key={opt.key}
-                            style={[
-                                styles.sortPill,
-                                {
-                                    backgroundColor: isActive ? theme.textPrimary : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
-                                    borderColor: isActive ? theme.textPrimary : theme.border,
-                                }
-                            ]}
-                            onPress={() => {
-                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setSortBy(opt.key);
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={{ fontSize: 11 }}>{opt.icon}</Text>
-                            <Text style={[styles.sortPillText, { color: isActive ? theme.card : theme.textSecondary, fontWeight: isActive ? '700' : '500' }]}>
-                                {opt.label}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        </View>
+        <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sortRow}
+            style={styles.filtersContainer}
+        >
+            {SORT_OPTIONS.map((opt) => {
+                const isActive = sortBy === opt.key;
+                return (
+                    <TouchableOpacity
+                        key={opt.key}
+                        style={[
+                            styles.sortPill,
+                            {
+                                backgroundColor: isActive ? theme.textPrimary : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                                borderColor: isActive ? theme.textPrimary : theme.border,
+                            }
+                        ]}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setSortBy(opt.key);
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={{ fontSize: 11 }}>{opt.icon}</Text>
+                        <Text style={[styles.sortPillText, { color: isActive ? theme.card : theme.textSecondary, fontWeight: isActive ? '700' : '500' }]}>
+                            {opt.label}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
+
+            {/* Blocked Users - always at the end */}
+            <TouchableOpacity
+                style={[
+                    styles.sortPill,
+                    {
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                        borderColor: theme.border,
+                    }
+                ]}
+                onPress={() => navigation.navigate('BlockedUsers')}
+                activeOpacity={0.7}
+            >
+                <Ban size={12} color={theme.textSecondary} strokeWidth={2.5} />
+                <Text style={[styles.sortPillText, { color: theme.textSecondary, fontWeight: '500' }]}>
+                    חסומים
+                </Text>
+            </TouchableOpacity>
+        </ScrollView>
     );
 
     // Sitter Registration CTA (for non-registered users)
@@ -845,12 +867,12 @@ const BabySitterScreen = ({ navigation }: any) => {
             {/* Sitter Mode */}
             {userMode === 'sitter' && (
                 <>
-                    {checkingStatus ? (
+                    {checkingStatus || isSitterRegistered === null ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="large" color={theme.textPrimary} />
                             <Text style={[styles.loadingText, { color: theme.textSecondary }]}>{t('babysitter.checkingStatus')}</Text>
                         </View>
-                    ) : isSitterRegistered ? (
+                    ) : isSitterRegistered === true ? (
                         <SitterDashboardCTA />
                     ) : (
                         <SitterRegistrationCTA />
@@ -977,9 +999,28 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 
+    // Parent Actions Header
+    parentActionsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        paddingHorizontal: 20,
+        marginBottom: 10,
+    },
+    blockedUsersBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        gap: 6,
+    },
+    blockedUsersText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
     // Filter Section
     filterSection: {
-        paddingHorizontal: 20,
         paddingVertical: 10,
     },
     resultsCount: {
@@ -1004,9 +1045,11 @@ const styles = StyleSheet.create({
         letterSpacing: 0.4,
     },
     sortRow: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
         gap: 6,
+        paddingHorizontal: 20,
+        paddingVertical: 2,
     },
     sortPill: {
         flexDirection: 'row',

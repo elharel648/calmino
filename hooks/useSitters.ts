@@ -116,7 +116,7 @@ const useSitters = () => {
                 setSitters(cachedSitters);
                 setIsLoading(false);
                 // Fetch in background to update cache
-                fetchSitters(true).catch(() => { });
+                fetchSitters(true).catch((e) => logger.warn('useSitters: background refresh failed', e));
                 return;
             }
         }
@@ -141,7 +141,8 @@ const useSitters = () => {
             const q = query(
                 collection(db, 'users'),
                 where('isSitter', '==', true),
-                where('sitterActive', '==', true)
+                where('sitterActive', '==', true),
+                limit(50)
             );
 
             const snapshot = await getDocs(q);
@@ -168,7 +169,7 @@ const useSitters = () => {
                     : 50;
 
                 fetchedSitters.push({
-                    id: doc.id,
+                    id: sitterDoc.id,
                     name: (data.displayName && typeof data.displayName === 'string') ? data.displayName : 'סיטר',
                     age,
                     photoUrl: (data.photoUrl && typeof data.photoUrl === 'string') ? data.photoUrl : null,

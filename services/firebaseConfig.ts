@@ -1,4 +1,5 @@
 // services/firebaseConfig.ts
+import { logger } from '../utils/logger';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
@@ -18,7 +19,6 @@ const firebaseConfig = {
   storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-  // measurementId לא חובה במובייל
 };
 
 // אתחול ה-App פעם אחת (Web SDK)

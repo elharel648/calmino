@@ -2,6 +2,7 @@
  * Social Media Utils
  * Utilities for opening social media profiles
  */
+import { logger } from './logger';
 
 import { Linking, Alert, Platform } from 'react-native';
 import { logger } from './logger';
@@ -126,8 +127,10 @@ export const validateUsername = (platform: SocialPlatform, username: string): bo
 
     switch (platform) {
         case 'whatsapp':
-            // Must be phone number with + and digits
-            return /^\+?[0-9]{10,15}$/.test(trimmed.replace(/[^0-9+]/g, ''));
+            // Strict Israeli phone number validation
+            // Accepts: +9725X..., 9725X..., 05X...
+            const cleanPhone = trimmed.replace(/[^0-9+]/g, '');
+            return /^(?:(?:(\+?972)|0)5[0-9]{8})$/.test(cleanPhone);
 
         case 'linkedin':
             // Can be username or full URL
@@ -147,7 +150,14 @@ export const formatUsername = (platform: SocialPlatform, username: string): stri
 
     switch (platform) {
         case 'whatsapp':
-            return trimmed; // Keep phone as is
+            // Format Israeli phone numbers nicely
+            const clean = trimmed.replace(/[^0-9]/g, '');
+            if (clean.length === 10 && clean.startsWith('05')) {
+                return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+            } else if (clean.length === 12 && clean.startsWith('9725')) {
+                return `+972 5${clean.slice(4, 5)}-${clean.slice(5)}`;
+            }
+            return trimmed;
 
         case 'linkedin':
             if (trimmed.startsWith('http')) {

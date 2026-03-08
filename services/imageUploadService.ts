@@ -1,6 +1,5 @@
 import { logger } from '../utils/logger';
-// services/imageUploadService.ts - Firebase Storage Image Upload
-// UPDATED: Using Firebase Storage instead of Base64
+// services/imageUploadService.ts - Firebase Storage Image Upload (Native SDK)
 
 import storage from '@react-native-firebase/storage';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
@@ -56,7 +55,6 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 
         return downloadURL;
     } catch (error: any) {
-        // Storage failed, but we have a fallback - this is expected in some cases
         logger.warn('⚠️ Storage upload failed (will use base64 fallback):', error.code, error.message);
 
         // Provide user-friendly error messages
@@ -67,11 +65,7 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
             errorMessage = 'Storage quota exceeded. Please contact support.';
         } else if (error.code === 'storage/unknown') {
             errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (error.message?.includes('conversion failed')) {
-            errorMessage = 'Failed to process image. Please try a different photo.';
         }
-
-        logger.debug('⚠️', errorMessage, '- Falling back to Base64...');
 
         // Fallback to Base64 if Storage fails
         try {
@@ -85,26 +79,23 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
 
 /**
  * Fallback: Upload as Base64 (if Storage fails)
- * This should be used sparingly as it can cause Firestore size issues
  * Compresses very aggressively to stay under Firestore's 1MB document limit
  */
 async function uploadImageAsBase64(uri: string): Promise<string> {
     try {
-        // Compress VERY aggressively for base64 fallback to avoid Firestore size limit
         const manipResult = await ImageManipulator.manipulateAsync(
             uri,
-            [{ resize: { width: 400 } }], // Small size for base64
-            { compress: 0.3, format: ImageManipulator.SaveFormat.JPEG } // Very low quality
+            [{ resize: { width: 400 } }],
+            { compress: 0.3, format: ImageManipulator.SaveFormat.JPEG }
         );
 
         const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
             encoding: 'base64',
         });
 
-        const base64Size = (base64.length * 3) / 4; // Approximate size in bytes
+        const base64Size = (base64.length * 3) / 4;
         logger.debug('📦 Base64 size:', base64Size, 'bytes');
 
-        // Firestore has 1MB document limit, so base64 must be < 300KB to be safe
         if (base64Size > 300000) {
             throw new Error('Image too large even after compression. Please use a smaller image or check your internet connection.');
         }
@@ -126,11 +117,9 @@ export async function uploadSitterPhoto(uri: string): Promise<string> {
     const path = `sitterPhotos/${userId}/profile_${Date.now()}.jpg`;
     const downloadURL = await uploadImage(uri, path);
 
-    // Update Firestore - use setDoc with merge to handle if doc doesn't exist
     const userRef = doc(db, 'users', userId);
     await setDoc(userRef, { photoUrl: downloadURL }, { merge: true });
 
-    // Also update sitters collection if exists
     try {
         const sitterRef = doc(db, 'sitters', userId);
         await setDoc(sitterRef, { image: downloadURL }, { merge: true });

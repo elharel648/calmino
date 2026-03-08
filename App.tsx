@@ -262,6 +262,7 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="SitterDashboard" component={SitterDashboardScreen} />
       <BabysitterStack.Screen name="MyReviews" component={MyReviewsScreen} />
       <BabysitterStack.Screen name="RatingScreen" component={RatingScreen} />
+      <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
 
       <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
       <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
@@ -507,15 +508,20 @@ export default function App() {
           timestamp: new Date(),
           isRead: false,
           isUrgent: type === 'vaccine_reminder' || type === 'booking_new',
-        }).catch(() => { });
+        }).catch((e) => logger.warn('Failed to save tapped notification:', e));
       }
 
       // Navigate based on notification type
       if (type) {
-        // Delay to ensure navigation container is mounted after cold start
-        setTimeout(() => {
-          navigateFromNotification(type, data);
-        }, 500);
+        // Poll until navigation is ready instead of a fixed delay
+        const tryNavigate = (attempts = 0) => {
+          if (navigationRef.isReady()) {
+            navigateFromNotification(type, data);
+          } else if (attempts < 20) {
+            setTimeout(() => tryNavigate(attempts + 1), 100);
+          }
+        };
+        tryNavigate();
       }
     });
 
@@ -728,8 +734,9 @@ export default function App() {
             <SafeAreaProvider>
               <ToastProvider>
                 <LoginScreen onLoginSuccess={() => {
-                  // Trigger auth state check - onAuthStateChanged will handle the rest
-                  setIsAppLoading(true);
+                  // Removed setIsAppLoading(true) because onAuthStateChanged handles state reactively
+                  // and setting it here caused a race condition resulting in an endless white screen.
+                  logger.debug('✅', 'LoginScreen reported success');
                 }} />
               </ToastProvider>
             </SafeAreaProvider>

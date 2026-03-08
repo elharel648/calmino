@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 // presenceService.ts - Real-time presence tracking for family members
-import { doc, setDoc, onSnapshot, serverTimestamp, getDoc, updateDoc, Unsubscribe } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, collection, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 import { AppState, AppStateStatus } from 'react-native';
 
@@ -61,55 +61,47 @@ export const subscribeToFamilyPresence = (
         return () => { };
     }
 
-    // Listen to the family document's members
-    const familyRef = doc(db, 'families', familyId);
+    let membersMap: Record<string, { name?: string }> = {};
+    let presenceMap: Record<string, { isOnline: boolean; lastSeen: Date | null }> = {};
 
-    return onSnapshot(familyRef, async (snapshot) => {
+    function emitPresence() {
+        const memberIds = Object.keys(membersMap);
+        const presenceList = memberIds.map((memberId) => ({
+            userId: memberId,
+            name: membersMap[memberId]?.name || 'משתמש',
+            isOnline: presenceMap[memberId]?.isOnline || false,
+            lastSeen: presenceMap[memberId]?.lastSeen || null,
+        }));
+        callback(presenceList);
+    }
+
+    // Listen to family members map
+    const familyUnsub = onSnapshot(doc(db, 'families', familyId), (snapshot) => {
         if (!snapshot.exists()) {
             callback([]);
             return;
         }
-
-        const familyData = snapshot.data();
-        const members = familyData.members || {};
-        const memberIds = Object.keys(members);
-
-        // Get presence for each member
-        const presencePromises = memberIds.map(async (memberId) => {
-            try {
-                const presenceRef = doc(db, 'families', familyId, 'presence', memberId);
-                const presenceSnap = await getDoc(presenceRef);
-
-                if (presenceSnap.exists()) {
-                    const data = presenceSnap.data();
-                    return {
-                        userId: memberId,
-                        name: members[memberId]?.name || 'משתמש',
-                        isOnline: data.isOnline || false,
-                        lastSeen: data.lastSeen?.toDate() || null,
-                    };
-                } else {
-                    return {
-                        userId: memberId,
-                        name: members[memberId]?.name || 'משתמש',
-                        isOnline: false,
-                        lastSeen: null,
-                    };
-                }
-            } catch (e) {
-                logger.error('getPresence error:', e);
-                return {
-                    userId: memberId,
-                    name: members[memberId]?.name || 'משתמש',
-                    isOnline: false,
-                    lastSeen: null,
-                };
-            }
-        });
-
-        const presenceList = await Promise.all(presencePromises);
-        callback(presenceList);
+        membersMap = snapshot.data().members || {};
+        emitPresence();
     });
+
+    // Listen to entire presence subcollection - single listener instead of N individual getDoc calls
+    const presenceUnsub = onSnapshot(collection(db, 'families', familyId, 'presence'), (snapshot) => {
+        presenceMap = {};
+        snapshot.forEach((presenceDoc) => {
+            const data = presenceDoc.data();
+            presenceMap[presenceDoc.id] = {
+                isOnline: data.isOnline || false,
+                lastSeen: data.lastSeen?.toDate() || null,
+            };
+        });
+        emitPresence();
+    });
+
+    return () => {
+        familyUnsub();
+        presenceUnsub();
+    };
 };
 
 // --- Auto-manage presence based on app state ---

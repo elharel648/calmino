@@ -45,9 +45,9 @@ service cloud.firestore {
       // Write: only owner
       allow write: if isOwner(userId);
 
-      // Allow any authenticated user to increment profile view counter only
+      // Allow any authenticated user to update profile view counter and rating stats
       allow update: if isAuthenticated() &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews']);
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews', 'sitterRating', 'sitterReviewCount']);
 
       // Reminders subcollection
       match /reminders/{reminderId} {
@@ -181,11 +181,16 @@ service cloud.firestore {
       match /messages/{messageId} {
         // Read: if user is chat participant
         allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-        
+
         // Create: if user is chat participant and is the sender
-        allow create: if isAuthenticated() && 
+        allow create: if isAuthenticated() &&
                          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
                          request.resource.data.senderId == request.auth.uid;
+
+        // Delete: sender can delete their own messages
+        allow delete: if isAuthenticated() &&
+                         request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
+                         resource.data.senderId == request.auth.uid;
       }
     }
 
@@ -292,8 +297,11 @@ service cloud.firestore {
     // PROFILE VIEWS COLLECTION
     // ===================
     match /profileViews/{viewId} {
-      // Read: sitter can read their own profile views
-      allow read: if isAuthenticated(); // KEEP OPEN or restrict? Profile views are generally aggregated. Keeping open for now as low risk.
+      // Read: only the sitter whose profile was viewed, or the viewer themselves
+      allow read: if isAuthenticated() && (
+        resource.data.sitterId == request.auth.uid ||
+        resource.data.viewerId == request.auth.uid
+      );
 
       // Create: any authenticated user can record a view
       allow create: if isAuthenticated() && request.resource.data.viewerId == request.auth.uid;

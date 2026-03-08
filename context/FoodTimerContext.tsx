@@ -239,17 +239,15 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         if (!activeChildId) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        const newState = { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined };
+        // Update state immediately so UI responds — don't await Live Activity
+        updateNestedState(activeChildId, 'pumping', { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined });
 
-        // Start iOS Live Activity
+        // Start iOS Live Activity in background (fire-and-forget)
         if (Platform.OS === 'ios') {
-            try {
-                const activityId = await liveActivityService.startPumpingTimer();
-                if (activityId) newState.activityId = activityId;
-            } catch (error) { logger.warn(error); }
+            liveActivityService.startPumpingTimer()
+                .then(activityId => { if (activityId) updateNestedState(activeChildId, 'pumping', { activityId }); })
+                .catch(e => logger.warn('startPumpingTimer Live Activity failed:', e));
         }
-
-        updateNestedState(activeChildId, 'pumping', newState);
     }, [activeChildId, updateNestedState]);
 
     const stopPumping = useCallback(async () => {
@@ -288,17 +286,15 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         if (!activeChildId) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        const newState = { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined };
+        // Update state immediately so UI responds — don't await Live Activity
+        updateNestedState(activeChildId, 'bottle', { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined });
 
-        // Start iOS Live Activity
+        // Start iOS Live Activity in background (fire-and-forget)
         if (Platform.OS === 'ios') {
-            try {
-                const activityId = await liveActivityService.startBottleTimer(activeChild?.childName || 'תינוק');
-                if (activityId) newState.activityId = activityId;
-            } catch (error) { logger.warn(error); }
+            liveActivityService.startBottleTimer(activeChild?.childName || 'תינוק')
+                .then(activityId => { if (activityId) updateNestedState(activeChildId, 'bottle', { activityId }); })
+                .catch(e => logger.warn('startBottleTimer Live Activity failed:', e));
         }
-
-        updateNestedState(activeChildId, 'bottle', newState);
     }, [activeChildId, activeChild?.childName, updateNestedState]);
 
     const stopBottle = useCallback(async () => {
@@ -348,19 +344,20 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
             }
         }
 
-        if (Platform.OS === 'ios') {
-            try {
-                // If already running, switch side in the existing LA; otherwise start fresh
-                if (currentBreast.isRunning && currentBreast.activityId) {
-                    await quickActionsService.switchBreastSide(side);
-                } else {
-                    const activityId = await quickActionsService.startBreastfeeding(activeChild?.childName || 'תינוק', side);
-                    if (activityId) updates.activityId = activityId;
-                }
-            } catch (e) { logger.warn('liveActivityService.stopBreastfeeding error', e); }
-        }
-
+        // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'breast', updates);
+
+        // Start iOS Live Activity in background (fire-and-forget)
+        if (Platform.OS === 'ios') {
+            if (currentBreast.isRunning && currentBreast.activityId) {
+                quickActionsService.switchBreastSide(side)
+                    .catch(e => logger.warn('switchBreastSide Live Activity failed:', e));
+            } else {
+                quickActionsService.startBreastfeeding(activeChild?.childName || 'תינוק', side)
+                    .then(activityId => { if (activityId) updateNestedState(activeChildId, 'breast', { activityId }); })
+                    .catch(e => logger.warn('startBreastfeeding Live Activity failed:', e));
+            }
+        }
     }, [activeChildId, currentState.breast, updateNestedState, activeChild?.childName]);
 
     const stopBreast = useCallback(async () => {

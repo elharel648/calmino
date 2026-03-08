@@ -1,4 +1,4 @@
-export type Language = 'he' | 'en';
+export type Language = 'he' | 'en' | 'es' | 'ar' | 'fr' | 'de';
 export type UnitSystem = 'metric' | 'imperial';
 export type TemperatureUnit = 'celsius' | 'fahrenheit';
 

@@ -17,6 +17,8 @@ import {
     getDoc,
     Timestamp,
     increment,
+    arrayUnion,
+    arrayRemove,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage, SitterBadge, ReviewTag } from '../types/babysitter';
@@ -1108,5 +1110,77 @@ export async function getResponseRateStats(sitterId: string): Promise<{
     } catch (error) {
         logger.error('Error getting response rate stats:', error);
         return { responseRate: 100, avgResponseMinutes: 0, totalRequests: 0, totalResponded: 0 };
+    }
+}
+
+// ===================
+// TRUST & SAFETY
+// ===================
+
+/**
+ * Block a babysitter so they no longer appear in search results
+ * @param parentId The ID of the parent blocking
+ * @param sitterId The ID of the babysitter being blocked
+ */
+export async function blockSitter(parentId: string, sitterId: string): Promise<void> {
+    try {
+        const userRef = doc(db, 'users', parentId);
+        await updateDoc(userRef, {
+            blockedSitters: arrayUnion(sitterId)
+        });
+        logger.log(`User ${parentId} blocked sitter ${sitterId}`);
+    } catch (error) {
+        logger.error('Error blocking sitter:', error);
+        throw error;
+    }
+}
+
+/**
+ * Unblock a babysitter
+ * @param parentId The ID of the parent unblocking
+ * @param sitterId The ID of the babysitter being unblocked
+ */
+export async function unblockSitter(parentId: string, sitterId: string): Promise<void> {
+    try {
+        const userRef = doc(db, 'users', parentId);
+        // We import arrayRemove at the top or here if needed, but assuming it will be imported via a separate replace call if missing
+        await updateDoc(userRef, {
+            blockedSitters: arrayRemove(sitterId)
+        });
+        logger.log(`User ${parentId} unblocked sitter ${sitterId}`);
+    } catch (error) {
+        logger.error('Error unblocking sitter:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get all blocked sitters for a parent
+ * @param parentId The ID of the parent
+ */
+export async function getBlockedSitters(parentId: string): Promise<any[]> {
+    try {
+        const userRef = doc(db, 'users', parentId);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) return [];
+
+        const userData = userSnap.data();
+        const blockedIds = userData.blockedSitters || [];
+
+        if (blockedIds.length === 0) return [];
+
+        // Fetch sitter profiles for these IDs
+        const sittersRef = collection(db, 'users');
+        const q = query(sittersRef, where('isSitter', '==', true), where('__name__', 'in', blockedIds));
+        const querySnapshot = await getDocs(q);
+
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        logger.error('Error fetching blocked sitters:', error);
+        return [];
     }
 }

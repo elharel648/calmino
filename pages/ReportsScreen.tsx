@@ -160,7 +160,7 @@ export default function ReportsScreen() {
       if (json) {
         setStatsOrder(JSON.parse(json));
       }
-    }).catch(() => { });
+    }).catch((e) => logger.warn('Failed to load stats order:', e));
   }, []);
 
   const [loading, setLoading] = useState(false);
@@ -1493,7 +1493,7 @@ export default function ReportsScreen() {
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלה</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
-                  ? (comparison.feedingChange > 0 ? '#10B981' : '#EF4444')
+                  ? (comparison.feedingChange > 0 ? '#F59E0B' : '#EF4444')
                   : theme.textSecondary
               }]}>
                 {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
@@ -1501,8 +1501,8 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: '#10B981' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: '#F59E0B' }]} />
                 </View>
               )}
             </View>
@@ -1515,7 +1515,7 @@ export default function ReportsScreen() {
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
-                  ? '#F59E0B'
+                  ? '#10B981'
                   : theme.textSecondary
               }]}>
                 {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
@@ -1523,8 +1523,8 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: '#F59E0B' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)' }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: '#10B981' }]} />
                 </View>
               )}
             </View>

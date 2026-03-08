@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { X, Users, LogIn, CheckCircle, QrCode } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { joinFamily } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -73,12 +74,13 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         }, 1500);
     };
 
-    const doJoin = async (force: boolean) => {
+    const doJoin = async (force: boolean, joinCode?: string) => {
+        const codeToUse = joinCode ?? code;
         setLoading(true);
         setError('');
 
         try {
-            const result = await joinFamily(code, force);
+            const result = await joinFamily(codeToUse, force);
             setLoading(false);
 
             if (result.success) {
@@ -99,7 +101,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                         {
                             text: 'כן, הצטרף',
                             style: 'destructive',
-                            onPress: () => doJoin(true),
+                            onPress: () => doJoin(true, codeToUse),
                         },
                     ]
                 );
@@ -240,6 +242,17 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 </TouchableOpacity>
                             </View>
 
+                            {/* Divider + QR scan */}
+                            <View style={styles.orRow}>
+                                <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
+                                <Text style={[styles.orText, { color: theme.textSecondary }]}>או</Text>
+                                <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
+                            </View>
+                            <TouchableOpacity style={styles.scanBtn} onPress={handleOpenScanner} activeOpacity={0.6}>
+                                <QrCode size={15} color="#10B981" strokeWidth={1.8} />
+                                <Text style={[styles.scanBtnText, { color: theme.textSecondary }]}>סרוק קוד QR</Text>
+                            </TouchableOpacity>
+
                             {/* Join Button */}
                             <TouchableOpacity
                                 style={[styles.joinBtn, code.length !== 6 && styles.joinBtnDisabled]}
@@ -301,7 +314,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     inputContainer: {
-        marginBottom: 20,
+        marginBottom: 12,
     },
     inputLabel: {
         fontSize: 13,
@@ -324,6 +337,32 @@ const styles = StyleSheet.create({
         color: '#EF4444',
         textAlign: 'center',
         marginTop: 8,
+    },
+    orRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 10,
+    },
+    orLine: {
+        flex: 1,
+        height: 1,
+    },
+    orText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    scanBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        marginBottom: 16,
+    },
+    scanBtnText: {
+        fontSize: 13,
+        fontWeight: '500',
     },
     joinBtn: {
         flexDirection: 'row',
@@ -366,6 +405,34 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '700',
         textAlign: 'center',
+    },
+    // Scanner
+    scannerContainer: {
+        paddingBottom: 8,
+    },
+    scannerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    cameraWrapper: {
+        height: 260,
+        borderRadius: 20,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    scanFrame: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: 160,
+        height: 160,
+        marginTop: -80,
+        marginLeft: -80,
+        borderRadius: 12,
+        borderWidth: 2.5,
+        borderColor: '#10B981',
     },
 });
 
