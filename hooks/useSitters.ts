@@ -1,7 +1,8 @@
 import { logger } from '../utils/logger';
 // hooks/useSitters.ts - Production Firebase Sitters Hook with Caching
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { db } from '../services/firebaseConfig';
+import { db, auth } from '../services/firebaseConfig';
+import { getBlockedUsers } from '../services/blockService';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -128,6 +129,14 @@ const useSitters = () => {
         // Mock data will be used as fallback only when no real sitters found
 
         try {
+            // Fetch blocked users to exclude them from the discovery
+            let blockedIds: string[] = [];
+            const currentUserId = auth.currentUser?.uid;
+            if (currentUserId) {
+                const blocked = await getBlockedUsers(currentUserId);
+                blockedIds = blocked.map(b => b.id);
+            }
+
             // Query registered sitters from Firebase
             const q = query(
                 collection(db, 'users'),
@@ -140,6 +149,7 @@ const useSitters = () => {
             const fetchedSitters: Sitter[] = [];
 
             snapshot.forEach((doc) => {
+                if (blockedIds.includes(doc.id)) return; // Skip blocked sitters
                 const data = doc.data();
 
                 // Validate and sanitize numeric values

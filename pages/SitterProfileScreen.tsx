@@ -7,8 +7,9 @@ import * as Haptics from 'expo-haptics';
 import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats, trackProfileView } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
+import { blockUser } from '../services/blockService';
 import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -105,6 +106,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [responseText, setResponseText] = useState('');
     const [badges, setBadges] = useState<SitterBadge[]>([]);
     const [pendingBookingToRate, setPendingBookingToRate] = useState<string | null>(null);
+    const [showOptionsSheet, setShowOptionsSheet] = useState(false);
 
     // Live Presence
     const { isOnline, lastActive } = useGlobalPresence(sitterData.id);
@@ -283,6 +285,16 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {/* Right side actions - Share and Favorite */}
                 {!isCurrentUserSitter && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <TouchableOpacity
+                            style={styles.navBtn}
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowOptionsSheet(true);
+                            }}
+                        >
+                            <MoreVertical size={22} color={theme.textPrimary} strokeWidth={2} />
+                        </TouchableOpacity>
+
                         <TouchableOpacity
                             style={styles.navBtn}
                             onPress={() => {
@@ -878,6 +890,74 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     <Text style={[styles.bookBtnText, { color: '#fff', marginLeft: 6 }]}>שלח הודעה</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Options Modal (Premium iOS Bottom Sheet) */}
+            <Modal visible={showOptionsSheet} animationType="slide" transparent={true}>
+                <TouchableOpacity
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                    activeOpacity={1}
+                    onPress={() => setShowOptionsSheet(false)}
+                >
+                    <TouchableOpacity activeOpacity={1} style={{
+                        backgroundColor: isDarkMode ? theme.card : '#fff',
+                        borderTopLeftRadius: 24,
+                        borderTopRightRadius: 24,
+                        paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
+                    }}>
+                        <View style={{ width: 40, height: 5, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)', alignSelf: 'center', marginVertical: 12, borderRadius: 3 }} />
+
+                        <View style={{ padding: 20 }}>
+                            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 20, textAlign: 'center' }}>אפשרויות פרופיל</Text>
+
+                            <TouchableOpacity style={{
+                                flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+                            }} onPress={() => {
+                                setShowOptionsSheet(false);
+                                Alert.alert('חסימה', 'האם אתה בטוח שברצונך לחסום משתמש זה? לא תוכלו לראות אחד את השני באפליקציה.', [
+                                    { text: 'ביטול', style: 'cancel' },
+                                    {
+                                        text: 'חסום', style: 'destructive', onPress: async () => {
+                                            const currentUserId = auth.currentUser?.uid;
+                                            if (currentUserId) {
+                                                const success = await blockUser(currentUserId, sitterData.id, sitterData.name, sitterData.image, 'sitter');
+                                                if (success) {
+                                                    Alert.alert('נחסם', 'המשתמש נחסם בהצלחה.');
+                                                    navigation.goBack();
+                                                } else {
+                                                    Alert.alert('שגיאה', 'אירעה שגיאה בחסימת המשתמש.');
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]);
+                            }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(239, 68, 68, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                                    <ShieldAlert size={20} color="#EF4444" strokeWidth={2} />
+                                </View>
+                                <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>חסום סיטר</Text>
+                                    <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 2 }}>מניעת יצירת קשר וצפייה בפרופיל</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={{
+                                flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16
+                            }} onPress={() => {
+                                setShowOptionsSheet(false);
+                                Alert.alert('דיווח התקבל', 'תודה על הדיווח. הצוות שלנו יבדוק את הנושא בהקדם.', [{ text: 'סגור' }]);
+                            }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(245, 158, 11, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Flag size={20} color="#F59E0B" strokeWidth={2} />
+                                </View>
+                                <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>דיווח מנהלים</Text>
+                                    <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 2 }}>דיווח על תוכן פוגעני או מזויף</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
 
             {/* Video Modal */}
             <Modal visible={showFullVideo} animationType="slide" presentationStyle="fullScreen">

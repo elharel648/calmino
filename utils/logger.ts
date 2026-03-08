@@ -26,6 +26,18 @@ export const logger = {
      * Log errors (always logged, even in production)
      */
     error: (...args: any[]): void => {
+        // Downgrade Firebase offline errors to warnings
+        const isOfflineError = args.some(arg =>
+            (typeof arg === 'string' && (arg.includes('offline') || arg.includes('Failed to get document because the client is offline'))) ||
+            (arg?.message && (arg.message.includes('offline') || arg.message.includes('Failed to get document because the client is offline'))) ||
+            (arg?.code && (arg.code === 'unavailable' || arg.code === 'failed-precondition'))
+        );
+
+        if (isOfflineError) {
+            console.warn('📶 [Offline]', ...args);
+            return;
+        }
+
         console.error(...args);
     },
 

@@ -97,6 +97,9 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const pumpingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const bottleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const breastTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const pumpingLastTick = useRef<number>(Date.now());
+    const bottleLastTick = useRef<number>(Date.now());
+    const breastLastTick = useRef<number>(Date.now());
 
     // Get active child state
     const currentState = activeChildId && timers[activeChildId] ? timers[activeChildId] : INITIAL_STATE;
@@ -129,82 +132,103 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
     // --- Global Interval for Pumping ---
     useEffect(() => {
+        pumpingLastTick.current = Date.now();
         pumpingTimerRef.current = setInterval(() => {
-            setTimers(prev => {
-                const next = { ...prev };
-                let changes = false;
-                Object.keys(next).forEach(id => {
-                    if (next[id].pumping.isRunning && !next[id].pumping.isPaused) {
-                        next[id] = {
-                            ...next[id],
-                            pumping: {
-                                ...next[id].pumping,
-                                elapsedSeconds: next[id].pumping.elapsedSeconds + 1
-                            }
-                        };
-                        changes = true;
+            const now = Date.now();
+            const deltaSeconds = Math.floor((now - pumpingLastTick.current) / 1000);
 
-                        // Update Live Activity (only if this child has one running)
-                        if (Platform.OS === 'ios' && next[id].pumping.activityId) {
-                            liveActivityService.updatePumpingTimer(next[id].pumping.elapsedSeconds).catch(() => { });
+            if (deltaSeconds >= 1) {
+                pumpingLastTick.current += deltaSeconds * 1000;
+                setTimers(prev => {
+                    const next = { ...prev };
+                    let changes = false;
+                    Object.keys(next).forEach(id => {
+                        if (next[id].pumping.isRunning && !next[id].pumping.isPaused) {
+                            next[id] = {
+                                ...next[id],
+                                pumping: {
+                                    ...next[id].pumping,
+                                    elapsedSeconds: next[id].pumping.elapsedSeconds + deltaSeconds
+                                }
+                            };
+                            changes = true;
+
+                            // Update Live Activity (only if this child has one running)
+                            if (Platform.OS === 'ios' && next[id].pumping.activityId) {
+                                liveActivityService.updatePumpingTimer(next[id].pumping.elapsedSeconds).catch(() => { });
+                            }
                         }
-                    }
+                    });
+                    return changes ? next : prev;
                 });
-                return changes ? next : prev;
-            });
+            }
         }, 1000);
         return () => { if (pumpingTimerRef.current) clearInterval(pumpingTimerRef.current); };
     }, []);
 
     // --- Global Interval for Bottle ---
     useEffect(() => {
+        bottleLastTick.current = Date.now();
         bottleTimerRef.current = setInterval(() => {
-            setTimers(prev => {
-                const next = { ...prev };
-                let changes = false;
-                Object.keys(next).forEach(id => {
-                    if (next[id].bottle.isRunning && !next[id].bottle.isPaused) {
-                        next[id] = {
-                            ...next[id],
-                            bottle: {
-                                ...next[id].bottle,
-                                elapsedSeconds: next[id].bottle.elapsedSeconds + 1
-                            }
-                        };
-                        changes = true;
+            const now = Date.now();
+            const deltaSeconds = Math.floor((now - bottleLastTick.current) / 1000);
 
-                        // Update Live Activity (only if this child has one running)
-                        if (Platform.OS === 'ios' && next[id].bottle.activityId) {
-                            liveActivityService.updateBottleTimer(next[id].bottle.elapsedSeconds).catch(() => { });
+            if (deltaSeconds >= 1) {
+                bottleLastTick.current += deltaSeconds * 1000;
+                setTimers(prev => {
+                    const next = { ...prev };
+                    let changes = false;
+                    Object.keys(next).forEach(id => {
+                        if (next[id].bottle.isRunning && !next[id].bottle.isPaused) {
+                            next[id] = {
+                                ...next[id],
+                                bottle: {
+                                    ...next[id].bottle,
+                                    elapsedSeconds: next[id].bottle.elapsedSeconds + deltaSeconds
+                                }
+                            };
+                            changes = true;
+
+                            // Update Live Activity (only if this child has one running)
+                            if (Platform.OS === 'ios' && next[id].bottle.activityId) {
+                                liveActivityService.updateBottleTimer(next[id].bottle.elapsedSeconds).catch(() => { });
+                            }
                         }
-                    }
+                    });
+                    return changes ? next : prev;
                 });
-                return changes ? next : prev;
-            });
+            }
         }, 1000);
         return () => { if (bottleTimerRef.current) clearInterval(bottleTimerRef.current); };
     }, []);
 
     // --- Global Interval for Breastfeeding ---
     useEffect(() => {
+        breastLastTick.current = Date.now();
         breastTimerRef.current = setInterval(() => {
-            setTimers(prev => {
-                const next = { ...prev };
-                let changes = false;
-                Object.keys(next).forEach(id => {
-                    if (next[id].breast.isRunning && !next[id].breast.isPaused) {
-                        next[id] = {
-                            ...next[id],
-                            breast: {
-                                ...next[id].breast,
-                                elapsedSeconds: next[id].breast.elapsedSeconds + 1
-                            }
-                        };
-                        changes = true;
-                    }
+            const now = Date.now();
+            const deltaSeconds = Math.floor((now - breastLastTick.current) / 1000);
+
+            if (deltaSeconds >= 1) {
+                breastLastTick.current += deltaSeconds * 1000;
+                setTimers(prev => {
+                    const next = { ...prev };
+                    let changes = false;
+                    Object.keys(next).forEach(id => {
+                        if (next[id].breast.isRunning && !next[id].breast.isPaused) {
+                            next[id] = {
+                                ...next[id],
+                                breast: {
+                                    ...next[id].breast,
+                                    elapsedSeconds: next[id].breast.elapsedSeconds + deltaSeconds
+                                }
+                            };
+                            changes = true;
+                        }
+                    });
+                    return changes ? next : prev;
                 });
-                return changes ? next : prev;
-            });
+            }
         }, 1000);
         return () => { if (breastTimerRef.current) clearInterval(breastTimerRef.current); };
     }, []);

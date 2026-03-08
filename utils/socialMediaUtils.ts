@@ -4,6 +4,7 @@
  */
 
 import { Linking, Alert, Platform } from 'react-native';
+import { logger } from './logger';
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'linkedin' | 'whatsapp' | 'tiktok' | 'telegram';
 
@@ -79,7 +80,7 @@ export const openSocialLink = async (platform: SocialPlatform, username: string)
         try {
             await Linking.openURL(webUrl);
         } catch {
-            console.error('Error opening social link:', error);
+            logger.error('Error opening social link:', error);
             Alert.alert('שגיאה', 'לא ניתן לפתוח את הקישור');
         }
     }

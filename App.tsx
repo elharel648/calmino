@@ -1,4 +1,26 @@
 import 'react-native-gesture-handler';
+import { I18nManager } from 'react-native';
+import * as Updates from 'expo-updates';
+
+// EXTREMELY IMPORTANT:
+// React Native 0.76+ auto-enables RTL if the device is in Hebrew.
+// Since this app was built with manual `flexDirection: 'row-reverse'` styles,
+// automatic RTL flips those styles back to LTR!
+// We MUST force the app to stay in LTR so the manual styles work correctly.
+if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
+  I18nManager.allowRTL(false);
+  I18nManager.forceRTL(false);
+  I18nManager.swapLeftAndRightInRTL(false);
+
+  if (__DEV__) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { DevSettings } = require('react-native');
+    try { DevSettings.reload(); } catch (e) { }
+  } else {
+    Updates.reloadAsync().catch(() => { });
+  }
+}
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
@@ -24,6 +46,7 @@ import ReportsScreen from './pages/ReportsScreen';
 import ProfileScreen from './pages/ProfileScreen';
 import SettingsScreen from './pages/SettingsScreen';
 import FullSettingsScreen from './pages/FullSettingsScreen';
+import BlockedUsersScreen from './pages/BlockedUsersScreen';
 import LoginScreen from './pages/LoginScreen';
 import BabyProfileScreen from './pages/BabyProfileScreen';
 import NotificationsScreen from './pages/NotificationsScreen';
@@ -201,6 +224,7 @@ function AccountStackScreen() {
     >
       <AccountStack.Screen name="Account" component={SettingsScreen} />
       <AccountStack.Screen name="FullSettings" component={FullSettingsScreen} />
+      <AccountStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
     </AccountStack.Navigator>
   );
 }
@@ -240,6 +264,7 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="RatingScreen" component={RatingScreen} />
 
       <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
+      <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
     </BabysitterStack.Navigator>
   );
 }

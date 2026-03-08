@@ -12,6 +12,7 @@ import {
     Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../context/ThemeContext';
 import { Star, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -37,6 +38,7 @@ const AVAILABLE_TAGS: ReviewTag[] = [
 ];
 
 export default function RatingScreen({ route, navigation }: Props) {
+    const tabBarHeight = useBottomTabBarHeight();
     const { bookingId, babysitterId, sitterName } = route.params;
     const { theme, isDarkMode } = useTheme();
 
@@ -102,7 +104,7 @@ export default function RatingScreen({ route, navigation }: Props) {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 100 }]} showsVerticalScrollIndicator={false}>
 
                 {/* Stars Section */}
                 <View style={styles.starsContainer}>
@@ -180,7 +182,7 @@ export default function RatingScreen({ route, navigation }: Props) {
             </ScrollView>
 
             {/* Footer Action */}
-            <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
+            <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border, paddingBottom: tabBarHeight + 16 }]}>
                 <TouchableOpacity
                     style={[
                         styles.submitBtn,
@@ -281,7 +283,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         padding: 24,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 24,
         borderTopWidth: 1,
     },
     submitBtn: {

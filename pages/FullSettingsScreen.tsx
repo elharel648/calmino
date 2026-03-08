@@ -43,10 +43,12 @@ import {
   Send,
   Utensils,
   Pill,
+  UserX,
   ChevronLeft,
   ChevronRight,
   Mail,
   Instagram,
+  Download,
 } from 'lucide-react-native';
 import { auth, db } from '../services/firebaseConfig';
 import LegalModal from '../components/Legal/LegalModal';
@@ -59,6 +61,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useChildProfile } from '../hooks/useChildProfile';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { deleteChild } from '../services/babyService';
+import { useUserDataExport } from '../hooks/useUserDataExport';
 import { IntervalPicker } from '../components/Settings/IntervalPicker';
 import { TimePicker } from '../components/Settings/TimePicker';
 import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
@@ -75,6 +78,7 @@ export default function SettingsScreen() {
   const { language, setLanguage, t } = useLanguage();
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
+  const { exportUserData, isExporting } = useUserDataExport();
   const { settings: notifSettings, updateSettings: updateNotifSettings } = useNotifications();
 
   const [userData, setUserData] = useState({ name: '', email: '', photoURL: null });
@@ -724,6 +728,30 @@ export default function SettingsScreen() {
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
+
+            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
+
+            <TouchableOpacity
+              style={styles.listItem}
+              onPress={exportUserData}
+              disabled={isExporting}
+              activeOpacity={0.6}
+            >
+              <View style={styles.listItemContent}>
+                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }]}>
+                  {isExporting ? (
+                    <ActivityIndicator size="small" color="#3B82F6" />
+                  ) : (
+                    <Download size={18} color="#3B82F6" strokeWidth={2} />
+                  )}
+                </View>
+                <Text style={[styles.listItemText, { color: theme.textPrimary }]}>ייצוא הנתונים שלי</Text>
+              </View>
+              <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+
+            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
+
 
             <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
 
