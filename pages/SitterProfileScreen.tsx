@@ -8,7 +8,7 @@ import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewSt
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
-import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove } from 'firebase/firestore';
 import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -177,8 +177,18 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     if (videoUri) {
                         setSitterVideoUri(videoUri);
                     }
+
+                    // Read cached badges from Firestore (no extra reads needed)
+                    const cachedBadges: SitterBadge[] = Array.isArray(data.sitterBadges) ? data.sitterBadges : [];
+                    // Append available_now dynamically
+                    const finalBadges = isAvailable ? [...cachedBadges, 'available_now' as SitterBadge] : cachedBadges;
+                    if (cachedBadges.length > 0 || isAvailable) {
+                        setBadges(finalBadges);
+                        return; // Skip expensive on-demand calculation
+                    }
                 }
 
+                // Fallback: calculate on-demand for sitters without cached badges
                 const calculatedBadges = await calculateSitterBadges(sitterData.id, {
                     rating: sitterData.rating,
                     reviewCount: sitterData.reviews,
@@ -349,6 +359,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     onPress: async () => {
                         try {
                             await blockUser(currentUserId, sitterData.id, sitterData.name, sitterData.image, 'sitter');
+                            // Also remove from favorites if present
+                            await updateDoc(doc(db, 'users', currentUserId), {
+                                favoriteSitters: arrayRemove(sitterData.id)
+                            }).catch(() => {}); // Silent — may not exist
                             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             Alert.alert('נחסמה', `${sitterData.name} נחסמה בהצלחה ולא תוצג יותר.`);
                             navigation.goBack();

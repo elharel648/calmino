@@ -395,9 +395,17 @@ export async function submitReview(
         const newTotal = stats.total + 1;
         const newAverage = Math.round((((stats.average * stats.total) + rating) / newTotal) * 10) / 10;
 
+        // Calculate updated badges and cache them in Firestore
+        const updatedBadges = await calculateSitterBadges(babysitterId, {
+            rating: newAverage,
+            reviewCount: newTotal,
+        });
+        const badgesToCache = updatedBadges.filter(b => b !== 'available_now');
+
         await updateDoc(doc(db, 'users', babysitterId), {
             sitterRating: newAverage,
             sitterReviewCount: newTotal,
+            sitterBadges: badgesToCache,
         });
 
         // 4. Send push notification to the sitter
