@@ -1355,9 +1355,9 @@ export default function ReportsScreen() {
                 label="האכלה"
                 subValue={dailyStats.food > 0 ? `${dailyStats.food} מ"ל` : undefined}
                 change={comparison?.feedingChange}
-                accentColor="#10B981"
-                iconColor="#10B981"
-                iconBg={isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)'}
+                accentColor="#F59E0B"
+                iconColor="#F59E0B"
+                iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
                 sparklineData={weeklyData.food}
                 onPress={() => isPremium ? setSelectedMetric('food') : setShowPaywall(true)}
               />
@@ -1386,9 +1386,9 @@ export default function ReportsScreen() {
                 value={dailyStats.diapers}
                 label="חיתולים"
                 change={comparison?.diaperChange}
-                accentColor="#F59E0B"
-                iconColor="#F59E0B"
-                iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
+                accentColor="#0EA5E9"
+                iconColor="#0EA5E9"
+                iconBg={isDarkMode ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)'}
                 sparklineData={weeklyData.diapers}
                 neutralTrend
                 onPress={() => isPremium ? setSelectedMetric('diapers') : setShowPaywall(true)}
@@ -1487,8 +1487,8 @@ export default function ReportsScreen() {
 
             {/* Food Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
-                <Utensils size={16} color="#10B981" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
+                <Utensils size={16} color="#F59E0B" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלה</Text>
               <Text style={[styles.comparisonValue, {
@@ -1509,8 +1509,8 @@ export default function ReportsScreen() {
 
             {/* Diapers Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
-                <Droplets size={16} color="#F59E0B" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)' }]}>
+                <Droplets size={16} color="#0EA5E9" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
               <Text style={[styles.comparisonValue, {

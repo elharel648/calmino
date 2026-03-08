@@ -54,26 +54,36 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
     // Get current child state or initial state
     const currentState = activeChildId && timers[activeChildId] ? timers[activeChildId] : INITIAL_STATE;
 
+    const lastTickRef = useRef<number>(Date.now());
+
     // Global timer effect - iterates all running timers
     useEffect(() => {
+        lastTickRef.current = Date.now();
         timerRef.current = setInterval(() => {
-            setTimers(prevTimers => {
-                const nextTimers = { ...prevTimers };
-                let hasChanges = false;
+            const now = Date.now();
+            const deltaSeconds = Math.floor((now - lastTickRef.current) / 1000);
 
-                Object.keys(nextTimers).forEach(childId => {
-                    const timer = nextTimers[childId];
-                    if (timer.isRunning && !timer.isPaused) {
-                        nextTimers[childId] = {
-                            ...timer,
-                            elapsedSeconds: timer.elapsedSeconds + 1
-                        };
-                        hasChanges = true;
-                    }
+            if (deltaSeconds >= 1) {
+                lastTickRef.current += deltaSeconds * 1000;
+
+                setTimers(prevTimers => {
+                    const nextTimers = { ...prevTimers };
+                    let hasChanges = false;
+
+                    Object.keys(nextTimers).forEach(childId => {
+                        const timer = nextTimers[childId];
+                        if (timer.isRunning && !timer.isPaused) {
+                            nextTimers[childId] = {
+                                ...timer,
+                                elapsedSeconds: timer.elapsedSeconds + deltaSeconds
+                            };
+                            hasChanges = true;
+                        }
+                    });
+
+                    return hasChanges ? nextTimers : prevTimers;
                 });
-
-                return hasChanges ? nextTimers : prevTimers;
-            });
+            }
         }, 1000);
 
         return () => {

@@ -16,8 +16,8 @@ import {
     ListRenderItem
 } from 'react-native';
 import {
-    Search, Briefcase, Star, ChevronRight,
-    User, Award, UserPlus, MapPin, Calendar
+    Search, Briefcase, Star, ChevronLeft,
+    User, Award, UserPlus, MapPin, Calendar, UserX
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -643,7 +643,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         }]}
                         activeOpacity={0.7}
                     >
-                        <ChevronRight size={18} color={theme.textPrimary} strokeWidth={2.5} />
+                        <ChevronLeft size={18} color={theme.textPrimary} strokeWidth={2.5} />
                     </TouchableOpacity>
 
                     <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>מצא סיטר</Text>
@@ -797,14 +797,22 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <SortPills />
                     </View>
 
-                    {/* Sitters Count - slim separator line style */}
-                    {!isLoading && sortedSitters.length > 0 && (
-                        <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth }]}>
+                    {/* Sitters Count + Blocked Users */}
+                    <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+                        {!isLoading && sortedSitters.length > 0 && (
                             <Text style={[styles.sittersHeaderTitle, { color: theme.textSecondary }]}>
                                 {sortedSitters.length} סיטרים{activeCity ? ` ב${activeCity}` : ' זמינים'}
                             </Text>
-                        </View>
-                    )}
+                        )}
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('BlockedUsers')}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                            activeOpacity={0.7}
+                        >
+                            <UserX size={13} color={theme.textSecondary} strokeWidth={1.5} />
+                            <Text style={{ fontSize: 12, color: theme.textSecondary }}>חסומים</Text>
+                        </TouchableOpacity>
+                    </View>
 
                     {/* Sitters List - Switched to FlatList */}
                     {isLoading ? (

@@ -12,11 +12,12 @@ import {
     Animated,
     Alert,
 } from 'react-native';
-import { X, Users, LogIn, CheckCircle } from 'lucide-react-native';
+import { X, Users, LogIn, CheckCircle, QrCode } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { joinFamily } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 interface JoinFamilyModalProps {
     visible: boolean;
@@ -36,6 +37,8 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
     const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [permission, requestPermission] = useCameraPermissions();
+    const [scanning, setScanning] = useState(false);
 
     // Success animation
     const successScale = useRef(new Animated.Value(0)).current;
@@ -130,6 +133,18 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         setError('');
     };
 
+    const handleBarcodeScanned = ({ data }: { data: string }) => {
+        if (!scanning) return;
+        const cleaned = data.replace(/[^0-9]/g, '').slice(0, 6);
+        if (cleaned.length === 6) {
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            setCode(cleaned);
+            setScanning(false);
+        }
+    };
+
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <KeyboardAvoidingView
@@ -147,6 +162,27 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 {successMessage}
                             </Text>
                         </Animated.View>
+                    ) : scanning ? (
+                        <View style={{ height: 400, borderRadius: 20, overflow: 'hidden' }}>
+                            <View style={styles.header}>
+                                <TouchableOpacity onPress={() => setScanning(false)} style={styles.closeBtn}>
+                                    <X size={22} color={theme.textPrimary} />
+                                </TouchableOpacity>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>סורק קוד משפחה</Text>
+                                <View style={{ width: 22 }} />
+                            </View>
+                            <CameraView
+                                style={{ flex: 1 }}
+                                facing="back"
+                                onBarcodeScanned={handleBarcodeScanned}
+                                barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+                            />
+                            <View style={{ position: 'absolute', bottom: 20, left: 0, right: 0, alignItems: 'center' }}>
+                                <View style={{ backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
+                                    <Text style={{ color: '#fff', fontWeight: '600' }}>כוון את המצלמה לברקוד</Text>
+                                </View>
+                            </View>
+                        </View>
                     ) : (
                         <>
                             {/* Header */}
@@ -185,6 +221,23 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                     maxLength={6}
                                 />
                                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+                                <TouchableOpacity
+                                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, gap: 8 }}
+                                    onPress={async () => {
+                                        if (!permission?.granted) {
+                                            const { status } = await requestPermission();
+                                            if (status !== 'granted') {
+                                                Alert.alert('שגיאה', 'יש לאשר גישה למצלמה כדי לסרוק QR');
+                                                return;
+                                            }
+                                        }
+                                        setScanning(true);
+                                    }}
+                                >
+                                    <QrCode size={18} color={theme.textSecondary} />
+                                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>או סרוק קוד QR</Text>
+                                </TouchableOpacity>
                             </View>
 
                             {/* Join Button */}

@@ -2,6 +2,7 @@
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
+import { logger } from '../utils/logger';
 // @ts-ignore - getReactNativePersistence exists but TypeScript may not recognize it
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
@@ -39,7 +40,7 @@ if (!__DEV__) {
         const expireTimeMillis = Date.now() + 60 * 60 * 1000;
         return { token, expireTimeMillis };
       } catch (e) {
-        console.warn('App Check Native Token Error:', e);
+        logger.warn('App Check Native Token Error:', e);
         const backoffMillis = Date.now() + 5 * 60 * 1000;
         return { token: '', expireTimeMillis: backoffMillis };
       }
@@ -52,7 +53,7 @@ if (!__DEV__) {
   });
 } else {
   // Development: dummy provider that returns immediately (no native SDK calls)
-  console.log('⚠️ App Check disabled in development mode');
+  logger.log('⚠️ App Check disabled in development mode');
   const devProvider = new CustomProvider({
     getToken: async () => {
       return { token: 'dev-dummy-token', expireTimeMillis: Date.now() + 60 * 60 * 1000 };

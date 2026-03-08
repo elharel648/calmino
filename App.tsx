@@ -46,6 +46,7 @@ import ReportsScreen from './pages/ReportsScreen';
 import ProfileScreen from './pages/ProfileScreen';
 import SettingsScreen from './pages/SettingsScreen';
 import FullSettingsScreen from './pages/FullSettingsScreen';
+import BlockedUsersScreen from './pages/BlockedUsersScreen';
 import LoginScreen from './pages/LoginScreen';
 import BabyProfileScreen from './pages/BabyProfileScreen';
 import NotificationsScreen from './pages/NotificationsScreen';
@@ -223,6 +224,7 @@ function AccountStackScreen() {
     >
       <AccountStack.Screen name="Account" component={SettingsScreen} />
       <AccountStack.Screen name="FullSettings" component={FullSettingsScreen} />
+      <AccountStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
     </AccountStack.Navigator>
   );
 }
@@ -262,6 +264,7 @@ function BabysitterStackScreen() {
       <BabysitterStack.Screen name="RatingScreen" component={RatingScreen} />
 
       <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
+      <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
     </BabysitterStack.Navigator>
   );
 }
