@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronLeft,
-    User, Award, UserPlus, MapPin, Calendar, UserX, Ban
+    User, Award, UserPlus, MapPin, Calendar, UserX, Ban, Heart
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -828,8 +828,25 @@ const BabySitterScreen = ({ navigation }: any) => {
                         </View>
                     ) : sortedSitters.length === 0 ? (
                         <View style={styles.emptyState}>
-                            <User size={48} color={theme.border} strokeWidth={1} />
-                            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('babysitter.noSitters')}</Text>
+                            {sortBy === 'favorites' ? (
+                                <>
+                                    <Heart size={52} color={theme.border} strokeWidth={1} />
+                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין מועדפות עדיין</Text>
+                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>לחצי על ❤️ על כרטיס של בייביסיטר כדי להוסיף למועדפות</Text>
+                                </>
+                            ) : activeCity ? (
+                                <>
+                                    <MapPin size={52} color={theme.border} strokeWidth={1} />
+                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>לא נמצאו בייביסיטרים ב{activeCity}</Text>
+                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>נסי לחפש עיר אחרת או להרחיב את החיפוש</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <User size={52} color={theme.border} strokeWidth={1} />
+                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין בייביסיטרים זמינים כרגע</Text>
+                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>נסי שוב מאוחר יותר או שני את הפילטרים</Text>
+                                </>
+                            )}
                         </View>
                     ) : (
                         <FlatList
@@ -1071,9 +1088,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 12,
     },
+    emptyTitle: {
+        fontSize: 17,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
     emptyText: {
-        fontSize: 15,
-        fontWeight: '500',
+        fontSize: 14,
+        textAlign: 'center',
+        paddingHorizontal: 32,
+        lineHeight: 20,
     },
 
     // Registration CTA - Enhanced with elevated shadow

@@ -155,6 +155,12 @@ export async function sendPushNotification(
         priority: 'high' as const,
     };
 
+    // Only Expo push tokens are supported (format: ExponentPushToken[...])
+    if (!expoPushToken.startsWith('ExponentPushToken[')) {
+        logger.warn('Push skipped: not a valid Expo push token');
+        return false;
+    }
+
     try {
         const response = await fetch('https://exp.host/--/api/v2/push/send', {
             method: 'POST',

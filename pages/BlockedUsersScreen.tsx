@@ -71,6 +71,18 @@ const BlockedUsersScreen = ({ navigation }: any) => {
                     contentContainerStyle={{ padding: 20 }}
                     renderItem={({ item }) => (
                         <View style={[styles.card, { backgroundColor: isDarkMode ? theme.card : '#fff', borderColor: theme.border }]}>
+                            <TouchableOpacity
+                                style={[styles.unblockBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                                onPress={() => handleUnblock(item)}
+                            >
+                                <Text style={[styles.unblockText, { color: theme.textPrimary }]}>הסר חסימה</Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.info}>
+                                <Text style={[styles.name, { color: theme.textPrimary }]}>{item.name}</Text>
+                                <Text style={[styles.type, { color: theme.textSecondary }]}>{item.type === 'sitter' ? 'בייביסיטר' : 'הורה'}</Text>
+                            </View>
+
                             {item.image ? (
                                 <Image source={{ uri: item.image }} style={styles.avatar} />
                             ) : (
@@ -78,18 +90,6 @@ const BlockedUsersScreen = ({ navigation }: any) => {
                                     <Ionicons name="person" size={24} color={theme.textSecondary} />
                                 </View>
                             )}
-
-                            <View style={styles.info}>
-                                <Text style={[styles.name, { color: theme.textPrimary }]}>{item.name}</Text>
-                                <Text style={[styles.type, { color: theme.textSecondary }]}>{item.type === 'sitter' ? 'בייביסיטר' : 'הורה'}</Text>
-                            </View>
-
-                            <TouchableOpacity
-                                style={[styles.unblockBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
-                                onPress={() => handleUnblock(item)}
-                            >
-                                <Text style={[styles.unblockText, { color: theme.textPrimary }]}>הסר חסימה</Text>
-                            </TouchableOpacity>
                         </View>
                     )}
                 />
@@ -141,14 +141,17 @@ const styles = StyleSheet.create({
     info: {
         flex: 1,
         marginHorizontal: 16,
+        alignItems: 'flex-end',
     },
     name: {
         fontSize: 16,
         fontWeight: '600',
+        textAlign: 'right',
     },
     type: {
         fontSize: 13,
         marginTop: 2,
+        textAlign: 'right',
     },
     unblockBtn: {
         paddingHorizontal: 16,
