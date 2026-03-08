@@ -8,7 +8,7 @@ import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewSt
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
-import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -94,6 +94,14 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
         const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים:)`;
         const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
         Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
+
+        // Track contact — used to verify reviews later
+        const currentUserId = auth.currentUser?.uid;
+        if (currentUserId && sitterData.id) {
+            updateDoc(doc(db, 'users', currentUserId), {
+                contactedSitters: arrayUnion(sitterData.id)
+            }).catch(() => {});
+        }
     };
 
     // Fetch reviews from Firebase
@@ -105,6 +113,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [respondingToReview, setRespondingToReview] = useState<string | null>(null);
     const [responseText, setResponseText] = useState('');
     const [badges, setBadges] = useState<SitterBadge[]>([]);
+    const [phoneVisible, setPhoneVisible] = useState(true);
     const [pendingBookingToRate, setPendingBookingToRate] = useState<string | null>(null);
     const [showOptionsSheet, setShowOptionsSheet] = useState(false);
 
@@ -165,6 +174,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     isAvailable = data.sitterAvailable || data.sitterActive || false;
                     setSitterIsAvailable(isAvailable);
                     setSitterIsVerified(Boolean(data.sitterVerified));
+                    setPhoneVisible(data.sitterShowPhone !== false);
 
                     if (data.createdAt) {
                         createdAt = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
@@ -970,11 +980,13 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 backgroundColor: isDarkMode ? theme.background : '#fff',
                 borderTopColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
             }]}>
-                <TouchableOpacity style={[styles.iconBtn, {
-                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'
-                }]} onPress={handleCall}>
-                    <Ionicons name="call" size={20} color={theme.textPrimary} />
-                </TouchableOpacity>
+                {phoneVisible && (
+                    <TouchableOpacity style={[styles.iconBtn, {
+                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'
+                    }]} onPress={handleCall}>
+                        <Ionicons name="call" size={20} color={theme.textPrimary} />
+                    </TouchableOpacity>
+                )}
 
                 {!isCurrentUserSitter && (
                     <TouchableOpacity

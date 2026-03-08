@@ -361,7 +361,8 @@ export async function submitReview(
     parentId: string,
     rating: number,
     tags: ReviewTag[],
-    text: string
+    text: string,
+    isVerified?: boolean
 ): Promise<string> {
     try {
         // 1. Create the review document
@@ -372,7 +373,7 @@ export async function submitReview(
             rating,
             tags,
             text,
-            isVerified: !!bookingId, // It's from a verified booking if there is a bookingId
+            isVerified: isVerified ?? !!bookingId, // Verified if contacted via WhatsApp or from a booking
             helpfulCount: 0,
             helpfulBy: [],
             createdAt: serverTimestamp(),
