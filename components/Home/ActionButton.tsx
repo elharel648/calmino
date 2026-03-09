@@ -75,7 +75,7 @@ const ActionButton = memo(({
                         <Icon size={19} color={config.color} strokeWidth={1.5} />
                     )}
                 </View>
-                {/* Badge dot — shown when badge has pending items (e.g. "0/2", "1/2") */}
+                {/* Badge dot — shown for X/Y format or plain number */}
                 {badge && (() => {
                     const parts = badge.split('/');
                     if (parts.length === 2) {
@@ -86,6 +86,15 @@ const ActionButton = memo(({
                             return (
                                 <View style={styles.badgeDot}>
                                     <Text style={styles.badgeDotText}>{remaining}</Text>
+                                </View>
+                            );
+                        }
+                    } else {
+                        const num = parseInt(badge);
+                        if (!isNaN(num) && num > 0) {
+                            return (
+                                <View style={styles.badgeDot}>
+                                    <Text style={styles.badgeDotText}>{num}</Text>
                                 </View>
                             );
                         }

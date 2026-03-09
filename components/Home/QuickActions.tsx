@@ -4,6 +4,7 @@ import { Check, Pencil } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../../context/SleepTimerContext';
 import { useFoodTimer } from '../../context/FoodTimerContext';
+import { useAudio } from '../../context/AudioContext';
 import { MedicationsState } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -31,6 +32,7 @@ interface QuickActionsProps {
     onNightLightPress?: () => void;
     onCustomPress?: () => void;
     onQuickReminderPress?: () => void;
+    reminderCount?: number;
     onFoodTimerStop?: (seconds: number, timerType: string) => void;
     onSleepTimerStop?: (seconds: number) => void;
     meds?: MedicationsState;
@@ -54,6 +56,7 @@ const QuickActions = memo<QuickActionsProps>(({
     onNightLightPress,
     onCustomPress,
     onQuickReminderPress,
+    reminderCount,
     onFoodTimerStop,
     onSleepTimerStop,
     meds,
@@ -101,6 +104,33 @@ const QuickActions = memo<QuickActionsProps>(({
 
     const { isRunning: sleepIsRunning, elapsedSeconds: sleepElapsed, formatTime: sleepFormatTime } = sleepTimer;
     const { pumpingIsRunning, pumpingElapsedSeconds, breastIsRunning, breastElapsedSeconds, breastActiveSide, leftBreastTime, rightBreastTime, bottleIsRunning, bottleElapsedSeconds, formatTime: foodFormatTime, stopPumping, stopBreast, stopBottle } = foodTimer;
+    const { activeSound, stopSound } = useAudio();
+
+    // Track white noise elapsed time locally
+    const [whiteNoiseElapsed, setWhiteNoiseElapsed] = useState(0);
+    const whiteNoiseStartRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (activeSound) {
+            whiteNoiseStartRef.current = Date.now();
+            setWhiteNoiseElapsed(0);
+            const interval = setInterval(() => {
+                if (whiteNoiseStartRef.current) {
+                    setWhiteNoiseElapsed(Math.floor((Date.now() - whiteNoiseStartRef.current) / 1000));
+                }
+            }, 1000);
+            return () => clearInterval(interval);
+        } else {
+            whiteNoiseStartRef.current = null;
+            setWhiteNoiseElapsed(0);
+        }
+    }, [activeSound]);
+
+    const formatWhiteNoiseTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    };
 
     const foodIsRunning = pumpingIsRunning || breastIsRunning || bottleIsRunning;
     const foodElapsed = pumpingIsRunning ? pumpingElapsedSeconds : breastIsRunning ? breastElapsedSeconds : bottleIsRunning ? bottleElapsedSeconds : 0;
@@ -162,7 +192,11 @@ const QuickActions = memo<QuickActionsProps>(({
         sleep: { onPress: handleSleepPress, isActive: sleepIsRunning, activeTime: sleepIsRunning ? sleepFormatTime(sleepElapsed) : undefined, lastTime: !sleepIsRunning ? lastSleepTime : undefined },
         diaper: { onPress: onDiaperPress },
         supplements: { onPress: onSupplementsPress, badge: `${takenCount}/${totalSupplements}` },
-        whiteNoise: { onPress: onWhiteNoisePress },
+        whiteNoise: {
+            onPress: activeSound ? () => { stopSound(); if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } : onWhiteNoisePress,
+            isActive: activeSound !== null,
+            activeTime: activeSound ? formatWhiteNoiseTime(whiteNoiseElapsed) : undefined,
+        },
         sos: { onPress: onSOSPress },
         health: { onPress: onHealthPress || (() => { }) },
         growth: { onPress: onGrowthPress || (() => { }) },
@@ -171,8 +205,8 @@ const QuickActions = memo<QuickActionsProps>(({
         teeth: { onPress: onTeethPress || (() => { }) },
         nightLight: { onPress: onNightLightPress || (() => { }) },
         custom: { onPress: onCustomPress || (() => { }) },
-        quickReminder: { onPress: onQuickReminderPress || (() => { }) },
-    }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount, totalSupplements]);
+        quickReminder: { onPress: onQuickReminderPress || (() => { }), badge: reminderCount && reminderCount > 0 ? String(reminderCount) : undefined },
+    }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount, totalSupplements, activeSound, whiteNoiseElapsed, stopSound]);
 
     const visibleActions = useMemo(() =>
         actionOrder.filter(key => !hiddenActions.includes(key)),

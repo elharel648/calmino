@@ -42,7 +42,7 @@ import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
 import PremiumPaywall from '../components/Premium/PremiumPaywall';
 // Services
 import { auth, db } from '../services/firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
 import { saveEventToFirebase, formatTimeFromTimestamp } from '../services/firebaseService';
 import { useToast } from '../context/ToastContext';
 import { undoService } from '../services/undoService';
@@ -158,7 +158,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         if (hour >= 12 && hour < 18) return t('home.greeting.afternoon');
         if (hour >= 18 && hour < 22) return t('home.greeting.evening');
         return t('home.greeting.night');
-    }, []);
+    }, [t]);
 
     // --- Custom Hooks (using active child ID) ---
     const {
@@ -181,6 +181,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isNextNapOpen, setIsNextNapOpen] = useState(false);
     const [isChecklistOpen, setIsChecklistOpen] = useState(false);
     const [isQuickReminderOpen, setIsQuickReminderOpen] = useState(false);
+    const [reminderCount, setReminderCount] = useState(0);
     const [isWhiteNoiseOpen, setIsWhiteNoiseOpen] = useState(false);
     const [isSupplementsOpen, setIsSupplementsOpen] = useState(false);
     const [isHealthOpen, setIsHealthOpen] = useState(false);
@@ -197,6 +198,18 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [editingChild, setEditingChild] = useState<any>(null);
     const [isEditChildModalOpen, setIsEditChildModalOpen] = useState(false);
     const user = auth.currentUser;
+
+    // Fetch reminder count
+    const fetchReminderCount = useCallback(async () => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        try {
+            const snap = await getDocs(collection(db, `users/${uid}/reminders`));
+            setReminderCount(snap.size);
+        } catch { /* silent */ }
+    }, []);
+
+    useEffect(() => { fetchReminderCount(); }, [fetchReminderCount]);
 
     // Refresh data when active child changes
     useEffect(() => {
@@ -454,6 +467,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     onNightLightPress={() => setIsNightLightOpen(true)}
                                     onCustomPress={() => setIsAddCustomOpen(true)}
                                     onQuickReminderPress={() => setIsQuickReminderOpen(true)}
+                                    reminderCount={reminderCount}
                                     onFoodTimerStop={async (seconds, timerType) => {
                                         const mins = Math.floor(seconds / 60);
                                         const secs = seconds % 60;
@@ -507,7 +521,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 <TeethTrackerModal visible={isTeethOpen} onClose={() => setIsTeethOpen(false)} />
                 <SleepCalculatorModal visible={isNextNapOpen} onClose={() => setIsNextNapOpen(false)} />
                 <ChecklistModal visible={isChecklistOpen} onClose={() => setIsChecklistOpen(false)} />
-                <QuickReminderModal visible={isQuickReminderOpen} onClose={() => setIsQuickReminderOpen(false)} />
+                <QuickReminderModal visible={isQuickReminderOpen} onClose={() => { setIsQuickReminderOpen(false); fetchReminderCount(); }} />
                 <WhiteNoiseModal visible={isWhiteNoiseOpen} onClose={() => setIsWhiteNoiseOpen(false)} />
                 <SupplementsModal
                     visible={isSupplementsOpen}
