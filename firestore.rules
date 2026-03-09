@@ -24,13 +24,17 @@ service cloud.firestore {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
       // Ensure user document exists and has a familyId
       let familyId = userDoc != null ? userDoc.data.familyId : null;
-      
-      // If no familyId, return false immediately to save reads (short-circuit logic if supported, otherwise explicit check)
-      return familyId != null && 
-             // Get the family document
+
+      // If no familyId, return false immediately to save reads
+      return familyId != null &&
              get(/databases/$(database)/documents/families/$(familyId)).data.babyId == babyId &&
-             // Ensure user is still in the members list of that family
              get(/databases/$(database)/documents/families/$(familyId)).data.members[request.auth.uid] != null;
+    }
+
+    // Check guest access — guests have guestChildIds array in their user doc (1 get, no family read)
+    function hasGuestAccessToBaby(babyId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data.get('guestChildIds', []).hasAny([babyId]);
     }
 
     // ===================
@@ -47,7 +51,7 @@ service cloud.firestore {
 
       // Allow any authenticated user to update profile view counter and rating stats
       allow update: if isAuthenticated() &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews', 'sitterRating', 'sitterReviewCount']);
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews', 'sitterRating', 'sitterReviewCount', 'sitterBadges']);
 
       // Reminders subcollection
       match /reminders/{reminderId} {
@@ -90,10 +94,11 @@ service cloud.firestore {
     // BABIES COLLECTION
     // ===================
     match /babies/{babyId} {
-      // Read: parent OR family member with verified access
+      // Read: parent OR family member OR guest with access
       allow read: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
-        hasFamilyAccessToBaby(babyId)
+        hasFamilyAccessToBaby(babyId) ||
+        hasGuestAccessToBaby(babyId)
       );
       
       // Create: authenticated with parentId matching
@@ -112,12 +117,13 @@ service cloud.firestore {
     // EVENTS COLLECTION
     // ===================
     match /events/{eventId} {
-      // Read: parent OR family member with verified access
+      // Read: parent OR family member OR guest with access
       allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || 
+        resource.data.userId == request.auth.uid ||
         resource.data.parentId == request.auth.uid ||
         isParentOfBaby(resource.data.childId) ||
-        hasFamilyAccessToBaby(resource.data.childId)
+        hasFamilyAccessToBaby(resource.data.childId) ||
+        hasGuestAccessToBaby(resource.data.childId)
       );
       
       // Create: any authenticated (typically parents or sitters for a child)
@@ -283,7 +289,7 @@ service cloud.firestore {
       // Read: access via family logic or direct parent
       allow read: if isAuthenticated() && (
         resource.data.createdBy == request.auth.uid ||
-        (resource.data.get('babyId', null) != null && (isParentOfBaby(resource.data.babyId) || hasFamilyAccessToBaby(resource.data.babyId)))
+        (resource.data.get('babyId', null) != null && (isParentOfBaby(resource.data.babyId) || hasFamilyAccessToBaby(resource.data.babyId) || hasGuestAccessToBaby(resource.data.babyId)))
       );
       
       // Create: any authenticated user
@@ -348,7 +354,8 @@ service cloud.firestore {
         resource.data.createdBy == request.auth.uid ||
         (resource.data.get('childId', null) != null && (
           isParentOfBaby(resource.data.childId) ||
-          hasFamilyAccessToBaby(resource.data.childId)
+          hasFamilyAccessToBaby(resource.data.childId) ||
+          hasGuestAccessToBaby(resource.data.childId)
         ))
       );
 

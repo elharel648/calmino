@@ -257,6 +257,17 @@ export const REVIEW_TAG_LABELS: Record<ReviewTag, string> = {
     professional: 'מקצועית',
 };
 
+export const REVIEW_TAG_LABELS_MALE: Record<ReviewTag, string> = {
+    reliable: 'אמין',
+    punctual: 'דייקן',
+    great_with_babies: 'מצוין עם תינוקות',
+    great_with_toddlers: 'מצוין עם פעוטות',
+    kids_loved_her: 'הילדים אהבו אותו',
+    clean_organized: 'מסודר ונקי',
+    flexible: 'גמיש',
+    professional: 'מקצועי',
+};
+
 // ===================
 // BADGES
 // ===================

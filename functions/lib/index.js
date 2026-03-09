@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = void 0;
+exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
@@ -43,47 +43,211 @@ const db = admin.firestore();
 // ══════════════════════════════════════════════════════════════════════════════
 // EMAIL TEMPLATES — HTML email generator for branded Calmino emails
 // ══════════════════════════════════════════════════════════════════════════════
-function calminoEmailTemplate(title, bodyContent) {
-    return `
-<!DOCTYPE html>
-<html dir="rtl" lang="he">
+function calminoEmailTemplate(heTitle, heBody, enTitle = '', enBody = '') {
+    const year = new Date().getFullYear();
+    return `<!DOCTYPE html>
+<html lang="he">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="color-scheme" content="light"/>
+  <title>${heTitle} | ${enTitle}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f7;padding:40px 20px;">
-        <tr>
-            <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
-                    <!-- Header -->
-                    <tr>
-                        <td style="background:linear-gradient(135deg,#6C5CE7,#a29bfe);padding:32px;text-align:center;">
-                            <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:700;">Calmino 👶</h1>
-                            <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">ההורות שלך, בקצב שלך</p>
-                        </td>
-                    </tr>
-                    <!-- Body -->
-                    <tr>
-                        <td style="padding:32px;">
-                            <h2 style="color:#2d3436;margin:0 0 16px;font-size:22px;">${title}</h2>
-                            ${bodyContent}
-                        </td>
-                    </tr>
-                    <!-- Footer -->
-                    <tr>
-                        <td style="background-color:#f8f9fa;padding:24px;text-align:center;border-top:1px solid #eee;">
-                            <p style="color:#999;font-size:12px;margin:0;">Calmino © ${new Date().getFullYear()}</p>
-                            <p style="color:#999;font-size:12px;margin:4px 0 0;">calminogroup@gmail.com</p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
+<body style="margin:0;padding:0;background:#f0f0f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f7;padding:40px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(108,92,231,0.12);">
+
+      <!-- HEADER -->
+      <tr>
+        <td style="background:linear-gradient(135deg,#5f50e0 0%,#8c7df7 60%,#b39dfe 100%);padding:36px 32px;text-align:center;" role="banner">
+          <div style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;margin-bottom:12px;" aria-hidden="true">👶</div>
+          <h1 style="color:#ffffff;margin:0;font-size:30px;font-weight:800;letter-spacing:-0.5px;">Calmino</h1>
+          <p style="color:rgba(255,255,255,0.82);margin:6px 0 0;font-size:13px;font-weight:500;" dir="rtl" lang="he">ההורות שלך, בקצב שלך</p>
+          <p style="color:rgba(255,255,255,0.65);margin:2px 0 0;font-size:12px;" dir="ltr" lang="en">Parenting, at your pace</p>
+        </td>
+      </tr>
+
+      <!-- DIVIDER -->
+      <tr><td style="height:4px;background:linear-gradient(90deg,#6C5CE7,#a29bfe,#6C5CE7);"></td></tr>
+
+      <!-- HEBREW SECTION -->
+      <tr>
+        <td dir="rtl" lang="he" style="padding:36px 36px 24px;" role="main">
+          <h2 style="color:#2d3436;margin:0 0 20px;font-size:22px;font-weight:700;text-align:right;">${heTitle}</h2>
+          ${heBody}
+        </td>
+      </tr>
+
+      ${enTitle ? `
+      <!-- SEPARATOR -->
+      <tr>
+        <td style="padding:0 36px;">
+          <div style="border-top:1px dashed #d9d9f0;margin:4px 0;position:relative;text-align:center;">
+            <span style="background:#ffffff;color:#a29bfe;font-size:11px;font-weight:600;padding:0 12px;position:relative;top:-9px;letter-spacing:1px;">✦ ENGLISH BELOW ✦</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- ENGLISH SECTION -->
+      <tr>
+        <td dir="ltr" lang="en" style="padding:24px 36px 36px;">
+          <h2 style="color:#2d3436;margin:0 0 20px;font-size:22px;font-weight:700;text-align:left;">${enTitle}</h2>
+          ${enBody}
+        </td>
+      </tr>` : ''}
+
+      <!-- FOOTER -->
+      <tr>
+        <td style="background:#f7f7fd;padding:24px 32px;text-align:center;border-top:1px solid #ebebf5;" role="contentinfo">
+          <p style="margin:0;color:#b2b2cc;font-size:12px;">Calmino &copy; ${year}</p>
+          <p style="margin:4px 0 0;color:#b2b2cc;font-size:12px;">
+            <a href="mailto:calminogroup@gmail.com" style="color:#8c7df7;text-decoration:none;">calminogroup@gmail.com</a>
+          </p>
+        </td>
+      </tr>
+
     </table>
+  </td></tr>
+</table>
 </body>
 </html>`;
 }
+// ══════════════════════════════════════════════════════════════════════════════
+// 0️⃣ SEND VERIFICATION EMAIL — Branded replacement for Firebase's plain email
+// ══════════════════════════════════════════════════════════════════════════════
+exports.sendVerificationEmail = (0, https_1.onCall)(async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid)
+        throw new https_1.HttpsError('unauthenticated', 'יש להתחבר למערכת');
+    const userRecord = await admin.auth().getUser(uid);
+    const email = userRecord.email;
+    if (!email)
+        throw new https_1.HttpsError('invalid-argument', 'לא נמצאה כתובת מייל');
+    if (userRecord.emailVerified) {
+        return { success: true, alreadyVerified: true };
+    }
+    // Generate a Firebase verification link (valid 1 hour)
+    const verificationLink = await admin.auth().generateEmailVerificationLink(email, {
+        url: 'https://baby-app-42b3b.firebaseapp.com/__/auth/action',
+    });
+    const displayName = userRecord.displayName || 'הורה יקר/ה';
+    const heBodyContent = `
+        <p style="color:#555;line-height:1.9;font-size:15px;text-align:right;">שלום <strong style="color:#2d3436;">${displayName}</strong> 👋</p>
+        <p style="color:#555;line-height:1.9;font-size:15px;text-align:right;">נשאר רק צעד אחד קטן — לחצו על הכפתור למטה כדי לאמת את כתובת המייל שלכם ולהתחיל להשתמש ב-Calmino.</p>
+
+        <div style="text-align:center;margin:28px 0;">
+            <a href="${verificationLink}" role="button"
+               aria-label="אמתו את המייל שלכם ב-Calmino"
+               style="background:linear-gradient(135deg,#5f50e0,#a29bfe);color:#ffffff;text-decoration:none;padding:16px 44px;border-radius:50px;font-size:16px;font-weight:700;display:inline-block;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(108,92,231,0.35);">
+                ✅ אמתו את המייל שלכם
+            </a>
+        </div>
+
+        <p style="color:#aaa;font-size:13px;text-align:center;line-height:1.8;">
+            הקישור תקף לשעה אחת.<br/>
+            לא נרשמתם ל-Calmino? ניתן להתעלם ממייל זה.
+        </p>
+
+        <details style="margin-top:16px;">
+            <summary style="color:#a29bfe;font-size:12px;cursor:pointer;text-align:right;">הכפתור לא עובד? לחצו לקישור ישיר</summary>
+            <p style="color:#aaa;font-size:11px;word-break:break-all;margin-top:8px;text-align:right;direction:ltr;">${verificationLink}</p>
+        </details>`;
+    const enBodyContent = `
+        <p style="color:#555;line-height:1.9;font-size:15px;">Hi <strong style="color:#2d3436;">${displayName}</strong> 👋</p>
+        <p style="color:#555;line-height:1.9;font-size:15px;">Just one small step left — click the button below to verify your email address and start using Calmino.</p>
+
+        <div style="text-align:center;margin:28px 0;">
+            <a href="${verificationLink}" role="button"
+               aria-label="Verify your email address for Calmino"
+               style="background:linear-gradient(135deg,#5f50e0,#a29bfe);color:#ffffff;text-decoration:none;padding:16px 44px;border-radius:50px;font-size:16px;font-weight:700;display:inline-block;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(108,92,231,0.35);">
+                ✅ Verify My Email
+            </a>
+        </div>
+
+        <p style="color:#aaa;font-size:13px;text-align:center;line-height:1.8;">
+            This link expires in 1 hour.<br/>
+            Didn't sign up for Calmino? You can safely ignore this email.
+        </p>
+
+        <details style="margin-top:16px;">
+            <summary style="color:#a29bfe;font-size:12px;cursor:pointer;">Button not working? Click for direct link</summary>
+            <p style="color:#aaa;font-size:11px;word-break:break-all;margin-top:8px;direction:ltr;">${verificationLink}</p>
+        </details>`;
+    await db.collection('mail').add({
+        to: [email],
+        message: {
+            subject: '✅ אמתו את המייל שלכם ל-Calmino | Verify your Calmino email',
+            text: `שלום ${displayName}, לחצו על הקישור הבא כדי לאמת את המייל שלכם: ${verificationLink}\n\nHi ${displayName}, click the link below to verify your email: ${verificationLink}`,
+            html: calminoEmailTemplate('אימות אחד — וסיימנו! 🎉', heBodyContent, 'Almost there — we\'re done! 🎉', enBodyContent),
+        },
+    });
+    console.log(`✅ Branded verification email queued for ${email}`);
+    return { success: true };
+});
+// ══════════════════════════════════════════════════════════════════════════════
+// 0b️⃣ SEND PASSWORD RESET EMAIL — Branded replacement for Firebase's plain reset
+// ══════════════════════════════════════════════════════════════════════════════
+exports.sendPasswordResetEmailBranded = (0, https_1.onCall)(async (request) => {
+    const email = request.data?.email;
+    if (!email)
+        throw new https_1.HttpsError('invalid-argument', 'נדרשת כתובת מייל');
+    // Verify user exists (don't leak info — just silently succeed if not found)
+    let displayName = '';
+    try {
+        const userRecord = await admin.auth().getUserByEmail(email);
+        displayName = userRecord.displayName || '';
+    }
+    catch {
+        // User not found — return success anyway to avoid email enumeration
+        return { success: true };
+    }
+    const resetLink = await admin.auth().generatePasswordResetLink(email);
+    const heBody = `
+        <p style="color:#555;line-height:1.9;font-size:15px;text-align:right;">
+            ${displayName ? `שלום ${displayName},<br/><br/>` : ''}
+            קיבלנו בקשה לאיפוס הסיסמא לחשבון Calmino שלך.<br/>
+            לחצו על הכפתור למטה כדי לבחור סיסמא חדשה:
+        </p>
+        <div style="text-align:center;margin:28px 0;">
+            <a href="${resetLink}"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:700;letter-spacing:-0.3px;"
+               aria-label="איפוס סיסמא עבור Calmino">
+                🔑 אפס את הסיסמא
+            </a>
+        </div>
+        <p style="color:#999;font-size:13px;text-align:right;line-height:1.7;">
+            הקישור תקף ל-24 שעות.<br/>
+            לא ביקשת איפוס סיסמא? אפשר להתעלם מהמייל הזה בבטחה.
+        </p>`;
+    const enBody = `
+        <p style="color:#555;line-height:1.9;font-size:15px;">
+            ${displayName ? `Hi ${displayName},<br/><br/>` : ''}
+            We received a request to reset your Calmino password.<br/>
+            Click the button below to choose a new password:
+        </p>
+        <div style="text-align:center;margin:28px 0;">
+            <a href="${resetLink}"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:700;letter-spacing:-0.3px;"
+               aria-label="Reset your Calmino password">
+                🔑 Reset My Password
+            </a>
+        </div>
+        <p style="color:#999;font-size:13px;line-height:1.7;">
+            This link expires in 24 hours.<br/>
+            Didn't request a password reset? You can safely ignore this email.
+        </p>`;
+    await db.collection('mail').add({
+        to: [email],
+        message: {
+            subject: '🔑 איפוס סיסמא | Reset your Calmino password',
+            text: `לאיפוס הסיסמא לחצו: ${resetLink}\n\nTo reset your password click: ${resetLink}`,
+            html: calminoEmailTemplate('איפוס סיסמא 🔑', heBody, 'Password Reset 🔑', enBody),
+        },
+    });
+    console.log(`✅ Branded password reset email queued for ${email}`);
+    return { success: true };
+});
 // ══════════════════════════════════════════════════════════════════════════════
 // 1️⃣ WELCOME EMAIL — Sent when a new user document is created in Firestore
 // ══════════════════════════════════════════════════════════════════════════════
@@ -102,7 +266,7 @@ exports.sendWelcomeEmail = (0, firestore_2.onDocumentCreated)('users/{userId}', 
         
         <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
             <p style="color:#2d3436;font-weight:600;margin:0 0 12px;">הנה כמה דברים שאפשר להתחיל איתם:</p>
-            <p style="color:#636e72;margin:6px 0;">🍼 <strong>מעקב יומי</strong> — תעדו האכלות, שינה, והחתלות בלחיצה</p>
+            <p style="color:#636e72;margin:6px 0;">🍼 <strong>מעקב יומי</strong> — תעדו האכלה, שינה, והחתלות בלחיצה</p>
             <p style="color:#636e72;margin:6px 0;">👶 <strong>פרופיל תינוק</strong> — הוסיפו תמונה ופרטים</p>
             <p style="color:#636e72;margin:6px 0;">👨‍👩‍👧 <strong>שיתוף משפחתי</strong> — הזמינו בן/בת זוג לצפות בזמן אמת</p>
             <p style="color:#636e72;margin:6px 0;">📊 <strong>דו"חות חכמים</strong> — גלו דפוסים ותובנות</p>
@@ -185,7 +349,7 @@ exports.onFamilyInviteCreated = (0, firestore_2.onDocumentCreated)('invites/{inv
         // ── FAMILY MEMBER INVITE ──
         const bodyContent = `
             <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
-            <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלות, שינה, גדילה, ועוד.</p>
+            <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלה, שינה, גדילה, ועוד.</p>
             
             <div style="background:linear-gradient(135deg,#6C5CE7,#a29bfe);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
                 <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד ההצטרפות:</p>
@@ -340,6 +504,8 @@ exports.joinFamilyByCode = (0, https_1.onCall)(async (request) => {
             },
         });
         await db.doc(`users/${uid}`).set({
+            guestFamilyId: familyId, // Used by Firestore rules for guest read access
+            guestChildIds: firestore_1.FieldValue.arrayUnion(childId), // Used by rules for fast 1-get access check
             guestAccess: {
                 [familyId]: {
                     role: 'guest',

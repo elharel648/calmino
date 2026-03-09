@@ -147,8 +147,8 @@ export default function PremiumNotificationSettings() {
   const notificationCards: NotificationCardConfig[] = [
     {
       icon: Utensils,
-      iconColor: "#FFFFFF",
-      iconBg: isDarkMode ? '#E68A00' : '#FF9F1C',
+      iconColor: isDarkMode ? '#FF9F1C' : '#E68A00',
+      iconBg: isDarkMode ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255, 159, 28, 0.1)',
       title: 'תזכורת אוכל',
       getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
       enabled: settings.feedingReminder,
@@ -176,8 +176,8 @@ export default function PremiumNotificationSettings() {
     },
     {
       icon: Pill,
-      iconColor: "#FFFFFF",
-      iconBg: isDarkMode ? '#059669' : '#10B981',
+      iconColor: isDarkMode ? '#34D399' : '#059669',
+      iconBg: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
       title: 'תזכורת תוספים',
       getSubtitle: () => `כל יום בשעה ${settings.supplementTime}`,
       enabled: settings.supplementReminder,
@@ -197,8 +197,8 @@ export default function PremiumNotificationSettings() {
     },
     {
       icon: FileText,
-      iconColor: "#FFFFFF",
-      iconBg: isDarkMode ? '#DB2777' : '#EC4899',
+      iconColor: isDarkMode ? '#F472B6' : '#DB2777',
+      iconBg: isDarkMode ? 'rgba(236, 72, 153, 0.15)' : 'rgba(236, 72, 153, 0.1)',
       title: 'סיכום יומי',
       getSubtitle: () => `כל יום בשעה ${settings.dailySummaryTime}`,
       enabled: settings.dailySummary,
@@ -224,8 +224,8 @@ export default function PremiumNotificationSettings() {
       <View style={[styles.masterCard, { backgroundColor: theme.card }]}>
         <View style={styles.masterCardRow}>
           <View style={styles.masterContent}>
-            <View style={[styles.masterIcon, { backgroundColor: isDarkMode ? '#4F46E5' : '#6366F1' }]}>
-              <Bell size={18} color="#FFFFFF" strokeWidth={2.5} />
+            <View style={[styles.masterIcon, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
+              <Bell size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
             </View>
             <View style={styles.masterTextContainer}>
               <Text style={[styles.masterTitle, { color: theme.textPrimary }]}>

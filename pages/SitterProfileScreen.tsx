@@ -4,12 +4,12 @@ import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
-import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats, trackProfileView } from '../services/babysitterService';
+import { getBabysitterReviews, markReviewHelpful, addSitterResponse, getReviewStats, trackProfileView, deleteReview } from '../services/babysitterService';
 import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/babysitter';
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
 import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2 } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -50,6 +50,8 @@ interface SitterData {
     languages?: string[];
     certifications?: string[];
     city?: string;
+    sitterAvailableDays?: string[];
+    sitterAvailableHours?: Record<string, { start: string; end: string }>;
 }
 
 type RootStackParamList = {
@@ -116,6 +118,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [phoneVisible, setPhoneVisible] = useState(true);
     const [pendingBookingToRate, setPendingBookingToRate] = useState<string | null>(null);
     const [showOptionsSheet, setShowOptionsSheet] = useState(false);
+    const [availabilityDays, setAvailabilityDays] = useState<string[]>(sitterData.sitterAvailableDays || []);
+    const [availabilityHours, setAvailabilityHours] = useState<Record<string, { start: string; end: string }>>(sitterData.sitterAvailableHours || {});
 
     // Report / Block state
     const [showOptionsMenu, setShowOptionsMenu] = useState(false);
@@ -179,6 +183,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     if (data.createdAt) {
                         createdAt = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
                     }
+
+                    // Load availability
+                    if (data.sitterAvailableDays) setAvailabilityDays(data.sitterAvailableDays);
+                    if (data.sitterAvailableHours) setAvailabilityHours(data.sitterAvailableHours);
 
                     // Get videoUri from Firebase if not already in sitterData
                     if (!videoUri) {
@@ -288,6 +296,25 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             const reviews = await getBabysitterReviews(sitterData.id);
             setReviewsList(reviews);
         }
+    };
+
+    const handleDeleteReview = (reviewId: string) => {
+        Alert.alert('מחיקת ביקורת', 'האם אתה בטוח שברצונך למחוק את הביקורת?', [
+            { text: 'ביטול', style: 'cancel' },
+            {
+                text: 'מחק',
+                style: 'destructive',
+                onPress: async () => {
+                    const uid = auth.currentUser?.uid;
+                    if (!uid) return;
+                    const success = await deleteReview(reviewId, uid);
+                    if (success) {
+                        const reviews = await getBabysitterReviews(sitterData.id);
+                        setReviewsList(reviews);
+                    }
+                },
+            },
+        ]);
     };
 
     const isCurrentUserSitter = auth.currentUser?.uid === sitterData.id;
@@ -686,6 +713,58 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     </View>
                 )}
 
+                {/* Availability */}
+                {availabilityDays.length > 0 && (() => {
+                    const ALL_DAYS = [
+                        { key: '0', short: 'א׳' },
+                        { key: '1', short: 'ב׳' },
+                        { key: '2', short: 'ג׳' },
+                        { key: '3', short: 'ד׳' },
+                        { key: '4', short: 'ה׳' },
+                        { key: '5', short: 'ו׳' },
+                        { key: '6', short: 'ש׳' },
+                    ];
+                    return (
+                        <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>זמינות שבועית</Text>
+                            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', direction: 'rtl' }}>
+                                {ALL_DAYS.map((day) => {
+                                    const isAvailable = availabilityDays.includes(day.key);
+                                    const hours = availabilityHours[day.key];
+                                    return (
+                                        <View key={day.key} style={{ alignItems: 'center', minWidth: 36 }}>
+                                            <View style={{
+                                                width: 38, height: 38, borderRadius: 12,
+                                                backgroundColor: isAvailable
+                                                    ? (isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)')
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+                                                borderWidth: 1,
+                                                borderColor: isAvailable
+                                                    ? (isDarkMode ? 'rgba(16,185,129,0.4)' : 'rgba(16,185,129,0.3)')
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'),
+                                                alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <Text style={{
+                                                    fontSize: 12, fontWeight: '700',
+                                                    color: isAvailable ? '#10B981' : theme.textSecondary,
+                                                    opacity: isAvailable ? 1 : 0.4,
+                                                }}>
+                                                    {day.short}
+                                                </Text>
+                                            </View>
+                                            {isAvailable && hours && (
+                                                <Text style={{ fontSize: 8.5, color: theme.textSecondary, marginTop: 4, textAlign: 'center' }}>
+                                                    {hours.start.replace(':00', '')}–{hours.end.replace(':00', '')}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    );
+                })()}
+
                 {/* Social Media Links */}
                 {sitterData.socialLinks && Object.values(sitterData.socialLinks).some(v => v) && (
                     <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
@@ -923,6 +1002,15 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                                 <CheckCircle size={12} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                                                 <Text style={[styles.verifiedText, { color: isDarkMode ? '#000' : '#fff' }]}>מאומת</Text>
                                             </View>
+                                        )}
+                                        {review.parentId === currentUserId && (
+                                            <TouchableOpacity
+                                                onPress={() => handleDeleteReview(review.id)}
+                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                style={{ marginRight: 4 }}
+                                            >
+                                                <Trash2 size={14} color="#EF4444" strokeWidth={2} />
+                                            </TouchableOpacity>
                                         )}
                                     </View>
                                     <View style={styles.reviewHeaderRight}>

@@ -68,8 +68,10 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         ? new Date(baby.birthDate.seconds * 1000)
         : new Date();
 
-    const babyAgeMonths = Math.floor(
-        (new Date().getTime() - birthDateObj.getTime()) / (1000 * 60 * 60 * 24 * 30)
+    const now = new Date();
+    const babyAgeMonths = Math.max(0,
+        (now.getFullYear() - birthDateObj.getFullYear()) * 12 +
+        (now.getMonth() - birthDateObj.getMonth())
     );
 
     const updateBirthDate = useCallback(async (date: Date) => {
@@ -127,7 +129,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         setBaby(prev => prev ? { ...prev, stats: mergedStats } : null);
     }, [baby?.id, baby?.stats]);
 
-    const updateBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date }) => {
+    const updateBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date; photoUrl?: string }) => {
         if (!baby?.id) return;
 
         if (Platform.OS !== 'web') {
@@ -135,14 +137,17 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         }
 
         const timestamp = Timestamp.fromDate(data.birthDate);
-        const updates = {
+        const updates: Record<string, any> = {
             name: data.name,
             gender: data.gender,
             birthDate: timestamp,
         };
+        if (data.photoUrl !== undefined) {
+            updates.photoUrl = data.photoUrl;
+        }
 
         await updateBabyData(baby.id, updates);
-        setBaby(prev => prev ? { ...prev, ...updates } : null);
+        setBaby(prev => prev ? { ...prev, ...updates, birthDate: timestamp } : null);
     }, [baby?.id]);
 
     const openSettings = useCallback(() => {

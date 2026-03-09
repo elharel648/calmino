@@ -154,26 +154,39 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                         }
 
                         const familyDoc = await getDoc(doc(db, 'families', familyId));
-                        if (familyDoc.exists()) {
-                            const familyData = familyDoc.data();
+                        if (!familyDoc.exists()) continue;
 
-                            // Skip if no babyId in family
-                            if (!familyData?.babyId) {
-                                continue;
+                        const familyData = familyDoc.data();
+
+                        // Use childId from guestInfo if available, otherwise fall back to family's babyId
+                        const childId = guestInfo?.childId || familyData?.babyId;
+                        if (!childId) continue;
+
+                        // Skip if already in list
+                        if (childrenList.find(c => c.childId === childId)) continue;
+
+                        // Try to read baby details — if rules block it, use family name as fallback
+                        let childName = familyData?.babyName || 'תינוק';
+                        let photoUrl: string | undefined;
+                        try {
+                            const babyDoc = await getDoc(doc(db, 'babies', childId));
+                            if (babyDoc.exists()) {
+                                const babyData = babyDoc.data();
+                                childName = babyData?.name || childName;
+                                photoUrl = babyData?.photoUrl;
                             }
-
-                            const babyDoc = await getDoc(doc(db, 'babies', familyData.babyId));
-                            const babyData = babyDoc.exists() ? babyDoc.data() : null;
-
-                            childrenList.push({
-                                childId: familyData.babyId,
-                                childName: babyData?.name || familyData.babyName || 'תינוק',
-                                photoUrl: babyData?.photoUrl,
-                                role: 'guest',
-                                accessLevel: 'actions_only',
-                                familyId,
-                            });
+                        } catch {
+                            // Rules may block baby read until deployed — use fallback name
                         }
+
+                        childrenList.push({
+                            childId,
+                            childName,
+                            photoUrl,
+                            role: 'guest',
+                            accessLevel: 'actions_only',
+                            familyId,
+                        });
                     } catch (err) {
                         logger.warn('Error loading guest family:', familyId, err);
                         // Continue to next family, don't crash
@@ -224,6 +237,8 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
         // Listen to user document changes
         const unsubscribe = onSnapshot(doc(db, 'users', userId), () => {
             refreshChildren();
+        }, (error) => {
+            logger.warn('ActiveChildContext onSnapshot error:', error);
         });
 
         return () => unsubscribe();

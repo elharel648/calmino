@@ -552,6 +552,22 @@ export async function addSitterResponse(reviewId: string, sitterId: string, resp
 }
 
 /**
+ * Delete a review — only allowed if the caller is the review's parentId
+ */
+export async function deleteReview(reviewId: string, parentId: string): Promise<boolean> {
+    try {
+        const reviewRef = doc(db, 'reviews', reviewId);
+        const reviewDoc = await getDoc(reviewRef);
+        if (!reviewDoc.exists() || reviewDoc.data().parentId !== parentId) return false;
+        await deleteDoc(reviewRef);
+        return true;
+    } catch (error) {
+        logger.error('Error deleting review:', error);
+        return false;
+    }
+}
+
+/**
  * Get review statistics for a babysitter
  */
 export async function getReviewStats(babysitterId: string): Promise<{

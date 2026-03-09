@@ -21,7 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { submitReview } from '../services/babysitterService';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import { ReviewTag, REVIEW_TAG_LABELS } from '../types/babysitter';
+import { ReviewTag, REVIEW_TAG_LABELS, REVIEW_TAG_LABELS_MALE } from '../types/babysitter';
 import { logger } from '../utils/logger';
 
 type RootStackParamList = {
@@ -51,6 +51,29 @@ export default function RatingScreen({ route, navigation }: Props) {
     const [selectedTags, setSelectedTags] = useState<ReviewTag[]>([]);
     const [text, setText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [sitterGender, setSitterGender] = useState<'male' | 'female'>('female');
+    const [customTagInput, setCustomTagInput] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
+    const [customTags, setCustomTags] = useState<string[]>([]);
+
+    // Fetch sitter gender
+    React.useEffect(() => {
+        getDoc(doc(db, 'users', babysitterId)).then((snap) => {
+            const g = snap.data()?.gender;
+            if (g === 'male' || g === 'זכר') setSitterGender('male');
+        }).catch(() => {});
+    }, [babysitterId]);
+
+    const tagLabels = sitterGender === 'male' ? REVIEW_TAG_LABELS_MALE : REVIEW_TAG_LABELS;
+
+    const handleAddCustomTag = () => {
+        const trimmed = customTagInput.trim();
+        if (!trimmed || customTags.includes(trimmed)) return;
+        setCustomTags([...customTags, trimmed]);
+        setCustomTagInput('');
+        setShowCustomInput(false);
+        Haptics.selectionAsync();
+    };
 
     // Star animations
     const starScales = useRef([1, 2, 3, 4, 5].map(() => new Animated.Value(1))).current;
@@ -107,7 +130,8 @@ export default function RatingScreen({ route, navigation }: Props) {
                     isVerified = contacted.includes(babysitterId);
                 } catch { /* silent */ }
             }
-            await submitReview(bookingId, babysitterId, parentId, rating, selectedTags, text, isVerified);
+            const allTags = [...selectedTags, ...customTags] as ReviewTag[];
+            await submitReview(bookingId, babysitterId, parentId, rating, allTags, text, isVerified);
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('תודה רבה! 🎉', 'הדירוג שלך עוזר להורים אחרים למצוא את הבייביסיטר הטוב ביותר.', [
@@ -212,11 +236,60 @@ export default function RatingScreen({ route, navigation }: Props) {
                                                 styles.tagText,
                                                 { color: isSelected ? '#fff' : (isDarkMode ? theme.textPrimary : '#6D28D9') }
                                             ]}>
-                                                {REVIEW_TAG_LABELS[tag]}
+                                                {tagLabels[tag]}
                                             </Text>
                                         </TouchableOpacity>
                                     );
                                 })}
+
+                                {/* Custom tags */}
+                                {customTags.map((tag) => (
+                                    <TouchableOpacity
+                                        key={tag}
+                                        style={[styles.tagBtn, { backgroundColor: theme.primary, borderColor: theme.primary }]}
+                                        onPress={() => setCustomTags(customTags.filter(t => t !== tag))}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.tagText, { color: '#fff' }]}>{tag} ✕</Text>
+                                    </TouchableOpacity>
+                                ))}
+
+                                {/* Custom input */}
+                                {showCustomInput ? (
+                                    <View style={[styles.tagBtn, {
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F5F3FF',
+                                        borderColor: theme.primary,
+                                        paddingHorizontal: 8,
+                                        flexDirection: 'row',
+                                        gap: 4,
+                                    }]}>
+                                        <TouchableOpacity onPress={handleAddCustomTag}>
+                                            <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 16 }}>✓</Text>
+                                        </TouchableOpacity>
+                                        <TextInput
+                                            autoFocus
+                                            value={customTagInput}
+                                            onChangeText={setCustomTagInput}
+                                            onSubmitEditing={handleAddCustomTag}
+                                            placeholder="הקלד תג..."
+                                            placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
+                                            style={{ color: theme.textPrimary, fontSize: 14, minWidth: 80, textAlign: 'right' }}
+                                            returnKeyType="done"
+                                        />
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={[styles.tagBtn, {
+                                            backgroundColor: theme.primary,
+                                            borderColor: theme.primary,
+                                            paddingHorizontal: 14,
+                                        }]}
+                                        onPress={() => { setShowCustomInput(true); Haptics.selectionAsync(); }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={{ color: '#fff', fontSize: 20, fontWeight: '300', lineHeight: 24 }}>+</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
                     )}

@@ -77,7 +77,7 @@ export default function ProfileScreen() {
     removeMilestone(baby.id, milestone, refresh);
   }, [baby?.id, removeMilestone, refresh]);
 
-  const handleSaveBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date }) => {
+  const handleSaveBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date; photoUrl?: string }) => {
     await updateBasicInfo(data);
     setIsEditBasicInfoOpen(false);
     refresh();
@@ -230,6 +230,7 @@ export default function ProfileScreen() {
             name: baby?.name || '',
             gender: baby?.gender || 'boy',
             birthDate: birthDateObj,
+            photoUrl: baby?.photoUrl,
           }}
           onSave={handleSaveBasicInfo}
           onClose={() => setIsEditBasicInfoOpen(false)}

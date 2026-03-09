@@ -12,10 +12,10 @@ import {
     serverTimestamp,
     onSnapshot,
     runTransaction,
+    arrayRemove,
     Unsubscribe
 } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { db, auth } from './firebaseConfig';
+import { db, auth, callFirebaseFunction } from './firebaseConfig';
 import { logger } from '../utils/logger';
 
 // --- Types ---
@@ -174,13 +174,8 @@ export const joinFamily = async (
     if (!auth.currentUser) return { success: false, message: 'יש להתחבר למערכת' };
 
     try {
-        const functions = getFunctions();
-        const callJoin = httpsCallable<
-            { code: string; force: boolean },
-            { success: boolean; message: string; familyId?: string; isGuest?: boolean; requiresLeave?: boolean; currentFamilyName?: string }
-        >(functions, 'joinFamilyByCode');
-
-        const { data } = await callJoin({ code: inviteCode.trim(), force });
+        const data = await callFirebaseFunction('joinFamilyByCode', { code: inviteCode.trim(), force }) as
+            { success: boolean; message: string; familyId?: string; isGuest?: boolean; requiresLeave?: boolean; currentFamilyName?: string };
         return data;
     } catch (error: any) {
         const msg: string = error?.message || 'שגיאה בהצטרפות למשפחה';
@@ -536,8 +531,9 @@ export const joinAsGuest = async (
             }
         });
 
-        // Update user's guestAccess field
+        // Update user's guestAccess and guestFamilyId (required by Firestore rules)
         await setDoc(doc(db, 'users', userId), {
+            guestFamilyId: familyId,
             guestAccess: {
                 [familyId]: {
                     role: 'guest',
@@ -590,9 +586,12 @@ export const revokeGuestAccess = async (guestUserId: string, familyId: string): 
             [`members.${guestUserId}`]: deleteField()
         });
 
-        // Remove from user's guestAccess
+        // Remove from user's guestAccess, clear guestFamilyId, and remove from guestChildIds
+        const childId = family.babyId;
         await updateDoc(doc(db, 'users', guestUserId), {
-            [`guestAccess.${familyId}`]: deleteField()
+            [`guestAccess.${familyId}`]: deleteField(),
+            guestFamilyId: deleteField(),
+            ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
         });
 
         return true;

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download, Lock } from 'lucide-react-native';
+import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download, Lock, Baby } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
@@ -508,7 +508,7 @@ export default function SettingsScreen() {
                         {family ? t('account.inviteFamily') : t('account.createFamily')}
                       </Text>
                       <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                        {family ? t('account.inviteFamily.subtitle') : t('account.createFamily.subtitle')}
+                        {family ? t('account.inviteFamily_subtitle') : t('account.createFamily_subtitle')}
                       </Text>
                     </View>
                   </View>
@@ -537,7 +537,7 @@ export default function SettingsScreen() {
                       </View>
                     </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                      {t('account.inviteGuest.subtitle')}
+                      {t('account.inviteGuest_subtitle')}
                     </Text>
                   </View>
                 </View>
@@ -565,7 +565,7 @@ export default function SettingsScreen() {
                       </View>
                     </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                      {t('account.joinWithCode.subtitle')}
+                      {t('account.joinWithCode_subtitle')}
                     </Text>
                   </View>
                 </View>
@@ -601,6 +601,36 @@ export default function SettingsScreen() {
             </Animated.View>
           )}
         </Animated.View>
+
+        {/* Child Profile Section */}
+        {baby?.id && (
+          <Animated.View entering={ANIMATIONS.fadeInDown(800)} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>הילד שלי</Text>
+            <TouchableOpacity
+              style={[styles.familyActionMinimal, { backgroundColor: theme.card, borderColor: theme.divider }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsEditBasicInfoOpen(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.familyActionContent}>
+                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                  <Baby size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                </View>
+                <View style={styles.familyActionText}>
+                  <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
+                    {baby.name || 'הילד שלי'}
+                  </Text>
+                  <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
+                    עריכת שם, מין ותאריך לידה
+                  </Text>
+                </View>
+              </View>
+              <Pencil size={16} color={theme.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         {/* Bottom Spacing */}
         <View style={{ height: 40 }} />
