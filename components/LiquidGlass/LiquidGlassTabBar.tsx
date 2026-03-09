@@ -214,20 +214,26 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(({ state, desc
         <View style={styles.outer}>
             {/* Bottom fill - extends tab bar background to screen edge */}
             <View style={[styles.bottomFill, {
-                backgroundColor: isDarkMode ? 'rgba(40,40,50,0.95)' : 'rgba(255,255,255,0.95)',
+                backgroundColor: isDarkMode ? 'rgb(18,18,22)' : 'rgba(255,255,255,0.95)',
             }]} />
             <View style={[styles.container, styles.fallbackShadow]}>
-                <BlurView
-                    style={styles.blurFill}
-                    tint={isDarkMode ? 'dark' : 'systemChromeMaterialLight' as any}
-                    intensity={isDarkMode ? 60 : 90}
-                />
-                {/* Tint overlay for frosted premium look */}
+                {/* Solid base layer — prevents iOS safe-area white from bleeding through */}
+                <View style={[styles.blurFill, {
+                    backgroundColor: isDarkMode ? 'rgb(18,18,22)' : 'transparent',
+                }]} />
+                {!isDarkMode && (
+                    <BlurView
+                        style={styles.blurFill}
+                        tint="systemChromeMaterialLight"
+                        intensity={90}
+                    />
+                )}
+                {/* Tint overlay */}
                 <View style={[
                     styles.blurFill,
                     {
                         backgroundColor: isDarkMode
-                            ? 'rgba(40,40,50,0.5)'
+                            ? 'rgba(28,28,36,0.96)'
                             : 'rgba(255,255,255,0.7)',
                     },
                 ]} />

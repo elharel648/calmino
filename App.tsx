@@ -28,8 +28,8 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
   }
 }
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -79,7 +79,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ScrollTrackingProvider } from './context/ScrollTrackingContext';
 import { ToastProvider } from './context/ToastContext';
 import { PremiumProvider } from './context/PremiumContext';
-import { AudioProvider } from './context/AudioContext';
+import { AudioProvider, useAudio } from './context/AudioContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import { navigationRef, navigateFromNotification } from './services/navigationService';
@@ -122,8 +122,9 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
 };
 
 const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
+  const { isDarkMode } = useTheme();
   const activeColor = '#007AFF';
-  const inactiveColor = 'rgba(0,0,0,0.3)';
+  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
   const iconColor = focused ? activeColor : inactiveColor;
   return (
     <View style={{
@@ -284,6 +285,7 @@ function LiveActivityURLHandler() {
   const foodTimer = useFoodTimer();
   const sleepTimer = useSleepTimer();
   const { activeChild } = useActiveChild();
+  const audio = useAudio();
 
   useEffect(() => {
     const handleURL = async (event: { url: string }) => {
@@ -318,10 +320,8 @@ function LiveActivityURLHandler() {
             logger.error('Error resuming timer from Live Activity:', error);
           }
         } else if (path === 'save-timer' || url.href.includes('save-timer')) {
-          // Save timer data
+          // Save timer data — use actual RN timer state for accuracy
           const type = url.searchParams.get('type') || '';
-          const elapsedSeconds = parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
-          const childName = url.searchParams.get('childName') || '';
           const side = url.searchParams.get('side') || '';
 
           if (!auth.currentUser || !activeChild?.childId) {
@@ -330,6 +330,18 @@ function LiveActivityURLHandler() {
           }
 
           try {
+            // Use actual elapsed seconds from RN state (more accurate than URL param)
+            let elapsedSeconds = 0;
+            if (type.includes('הנקה') || type.includes('breast')) {
+              elapsedSeconds = foodTimer.breastElapsedSeconds;
+            } else if (type.includes('שאיבה') || type.includes('pump')) {
+              elapsedSeconds = foodTimer.pumpingElapsedSeconds;
+            } else if (type.includes('בקבוק') || type.includes('bottle')) {
+              elapsedSeconds = foodTimer.bottleElapsedSeconds;
+            } else if (type.includes('שינה') || type.includes('sleep')) {
+              elapsedSeconds = sleepTimer.elapsedSeconds ?? parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
+            }
+
             const mins = Math.floor(elapsedSeconds / 60);
             const secs = elapsedSeconds % 60;
             const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -346,12 +358,26 @@ function LiveActivityURLHandler() {
               } else if (type.includes('שאיבה') || type.includes('pump')) {
                 data.subType = 'pumping';
                 data.note = `זמן: ${timeStr}`;
+              } else if (type.includes('בקבוק') || type.includes('bottle')) {
+                data.subType = 'bottle';
+                data.note = `זמן: ${timeStr}`;
               }
             } else if (data.type === 'sleep') {
               data.duration = elapsedSeconds;
             }
 
             await saveEventToFirebase(auth.currentUser.uid, activeChild.childId, data);
+
+            // Stop the in-app timer
+            if (type.includes('הנקה') || type.includes('breast')) {
+              if (foodTimer.breastIsRunning) foodTimer.stopBreast();
+            } else if (type.includes('שאיבה') || type.includes('pump')) {
+              if (foodTimer.pumpingIsRunning) foodTimer.stopPumping();
+            } else if (type.includes('בקבוק') || type.includes('bottle')) {
+              if (foodTimer.bottleIsRunning) foodTimer.stopBottle();
+            } else if (type.includes('שינה') || type.includes('sleep')) {
+              if (sleepTimer.isRunning) sleepTimer.stop();
+            }
 
             // Stop Live Activity
             if (Platform.OS === 'ios') {
@@ -361,6 +387,8 @@ function LiveActivityURLHandler() {
                   await liveActivityService.stopBreastfeedingTimer();
                 } else if (type.includes('שאיבה') || type.includes('pump')) {
                   await liveActivityService.stopPumpingTimer();
+                } else if (type.includes('בקבוק') || type.includes('bottle')) {
+                  await liveActivityService.stopBottleTimer();
                 } else if (type.includes('שינה') || type.includes('sleep')) {
                   await liveActivityService.stopSleepTimer();
                 }
@@ -370,6 +398,12 @@ function LiveActivityURLHandler() {
             }
           } catch (error) {
             logger.error('Error saving timer from Live Activity:', error);
+          }
+        } else if (path === 'stop-whitenoise' || url.href.includes('stop-whitenoise')) {
+          try {
+            await audio.stopSound();
+          } catch (error) {
+            logger.error('Error stopping white noise from Live Activity:', error);
           }
         } else if (path === 'pause-breastfeeding' || url.href.includes('pause-breastfeeding')) {
           try {
@@ -412,8 +446,33 @@ function LiveActivityURLHandler() {
       }
     });
 
+    // Sync timer state when app comes to foreground (from background AppIntent pause/resume)
+    const syncFromIntent = async () => {
+      if (Platform.OS !== 'ios') return;
+      try {
+        const { liveActivityService } = await import('./services/liveActivityService');
+        const intent = await liveActivityService.consumeTimerIntent();
+        if (intent === 'paused') {
+          if (foodTimer.pumpingIsRunning && !foodTimer.pumpingIsPaused) foodTimer.pausePumping();
+          else if (foodTimer.bottleIsRunning && !foodTimer.bottleIsPaused) foodTimer.pauseBottle();
+          else if (foodTimer.breastIsRunning && !foodTimer.breastIsPaused) foodTimer.pauseBreast();
+          else if (sleepTimer.isRunning && !sleepTimer.isPaused) sleepTimer.pause();
+        } else if (intent === 'resumed') {
+          if (foodTimer.pumpingIsRunning && foodTimer.pumpingIsPaused) foodTimer.resumePumping();
+          else if (foodTimer.bottleIsRunning && foodTimer.bottleIsPaused) foodTimer.resumeBottle();
+          else if (foodTimer.breastIsRunning && foodTimer.breastIsPaused) foodTimer.resumeBreast();
+          else if (sleepTimer.isRunning && sleepTimer.isPaused) sleepTimer.resume();
+        }
+      } catch {}
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') syncFromIntent();
+    });
+
     return () => {
       subscription.remove();
+      appStateSubscription.remove();
     };
   }, [foodTimer, sleepTimer, activeChild]);
 
@@ -427,6 +486,17 @@ export default function App() {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
+  const biometricsEnabledRef = useRef(false);
+  const appStateRef = useRef(AppState.currentState);
+
+  // Clean up any stuck Live Activities from previous session on cold launch
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      import('./services/liveActivityService').then(({ liveActivityService }) => {
+        liveActivityService.stopAllLiveActivities().catch(() => {});
+      });
+    }
+  }, []);
 
   // Configure notification handler on app start
   useEffect(() => {
@@ -666,6 +736,23 @@ export default function App() {
     }
   }, [user]);
 
+  // Re-lock app with biometrics every time it comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextState === 'active' &&
+        biometricsEnabledRef.current &&
+        user
+      ) {
+        setIsLocked(true);
+        setTimeout(() => authenticateUser(), 150);
+      }
+      appStateRef.current = nextState;
+    });
+    return () => subscription.remove();
+  }, [user]);
+
   const checkBiometricSettingsAndProfile = async (uid: string) => {
     try {
       const userRef = doc(db, 'users', uid);
@@ -683,6 +770,9 @@ export default function App() {
         if (settings && settings.biometricsEnabled) {
           needsUnlock = true;
           setIsLocked(true);
+          biometricsEnabledRef.current = true;
+        } else {
+          biometricsEnabledRef.current = false;
         }
       }
 
@@ -799,13 +889,6 @@ export default function App() {
                                   prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
                                   config: {
                                     screens: {
-                                      // Hebrew routes (for deep linking)
-                                      'בית': 'home',
-                                      'סטטיסטיקות': 'reports',
-                                      'חשבון': 'account',
-                                      'בייביסיטר': 'babysitter',
-                                      // English routes (for deep linking)
-                                      'Statistics': 'reports',
                                       Home: {
                                         screens: {
                                           Home: 'home',
