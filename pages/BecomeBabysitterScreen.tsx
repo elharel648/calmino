@@ -93,8 +93,9 @@ const BecomeBabysitterScreen = () => {
             const user = auth.currentUser;
             if (!user) throw new Error('User not logged in');
 
-            // 🌍 Capture GPS location for distance calculations
-            let location = null;
+            // 🌍 Capture GPS location + city for distance calculations
+            let location: { latitude: number; longitude: number } | null = null;
+            let sitterCity: string | null = null;
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status === 'granted') {
@@ -115,6 +116,18 @@ const BecomeBabysitterScreen = () => {
                             longitude: currentLocation.coords.longitude,
                         };
                         logger.log('📍 Captured babysitter location:', location);
+
+                        // Reverse geocode to get city name
+                        try {
+                            const addresses = await Location.reverseGeocodeAsync(location);
+                            if (addresses && addresses.length > 0) {
+                                const addr = addresses[0];
+                                sitterCity = addr?.city || addr?.subregion || addr?.region || null;
+                                logger.log('🏙️ Detected city:', sitterCity);
+                            }
+                        } catch (geocodeError) {
+                            logger.warn('⚠️ Reverse geocode failed:', geocodeError);
+                        }
                     }
                 } else {
                     logger.warn('⚠️ Location permission denied');
@@ -125,6 +138,10 @@ const BecomeBabysitterScreen = () => {
 
             await updateDoc(doc(db, 'users', user.uid), {
                 isBabysitter: true,
+                isSitter: true,
+                sitterActive: true,
+                ...(location && { sitterLocation: location }),
+                ...(sitterCity && { sitterCity }),
                 babysitterProfile: {
                     isActive: true,
                     hourlyRate: parseInt(hourlyRate),

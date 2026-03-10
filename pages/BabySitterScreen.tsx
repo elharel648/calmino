@@ -207,22 +207,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                         if (detectedCity) {
                             setUserCity(detectedCity);
-                            // Auto-filter by detected city - try to match with Israeli cities list
-                            const normalizedCity = detectedCity.trim();
-                            // Check exact match first
-                            if (ISRAELI_CITIES.includes(normalizedCity)) {
-                                setFilterCity(normalizedCity);
-                            } else {
-                                // Try to find similar city name (case-insensitive)
-                                const matchedCity = ISRAELI_CITIES.find(city =>
-                                    city.toLowerCase() === normalizedCity.toLowerCase() ||
-                                    city.toLowerCase().includes(normalizedCity.toLowerCase()) ||
-                                    normalizedCity.toLowerCase().includes(city.toLowerCase())
-                                );
-                                if (matchedCity) {
-                                    setFilterCity(matchedCity);
-                                }
-                            }
+                            // Don't auto-filter — just use for proximity sorting and placeholder hint
                         }
                     }
                 } catch (geocodeError) {
@@ -842,9 +827,8 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 </>
                             ) : (
                                 <>
-                                    <User size={52} color={theme.border} strokeWidth={1} />
-                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין בייביסיטרים זמינים כרגע</Text>
-                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>נסי שוב מאוחר יותר או שני את הפילטרים</Text>
+                                    <User size={90} color={theme.border} strokeWidth={0.8} />
+                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary, fontSize: 22 }]}>אין בייביסיטרים כרגע</Text>
                                 </>
                             )}
                         </View>
