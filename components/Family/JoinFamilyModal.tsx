@@ -18,6 +18,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { joinFamily } from '../../services/familyService';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useActiveChild } from '../../context/ActiveChildContext';
 
 interface JoinFamilyModalProps {
     visible: boolean;
@@ -32,6 +33,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
 }) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
+    const { refreshChildren } = useActiveChild();
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -63,6 +65,9 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                 useNativeDriver: true,
             }),
         ]).start();
+
+        // Refresh children list immediately so the guest child appears
+        refreshChildren();
 
         // Auto-close after 1.5 seconds
         setTimeout(() => {
