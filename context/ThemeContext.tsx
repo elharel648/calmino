@@ -2,6 +2,9 @@ import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const THEME_CACHE_KEY = '@calmino_dark_mode';
 
 // --- צבעים ---
 export const COLORS = {
@@ -112,13 +115,20 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // Load theme preference from Firebase on mount
+    // Load theme preference — AsyncStorage first (instant), then Firestore (sync)
     useEffect(() => {
         loadThemePreference();
     }, []);
 
     const loadThemePreference = async () => {
         try {
+            // 1. Load from AsyncStorage immediately (synchronous-like, no network)
+            const cached = await AsyncStorage.getItem(THEME_CACHE_KEY);
+            if (cached !== null) {
+                setIsDarkMode(cached === 'true');
+            }
+
+            // 2. Sync from Firestore in background
             const user = auth.currentUser;
             if (user) {
                 const userRef = doc(db, 'users', user.uid);
@@ -127,6 +137,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
                     const settings = userSnap.data().settings;
                     if (settings?.isDarkMode !== undefined) {
                         setIsDarkMode(settings.isDarkMode);
+                        await AsyncStorage.setItem(THEME_CACHE_KEY, String(settings.isDarkMode));
                     }
                 }
             }
@@ -137,6 +148,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     const saveThemePreference = async (value: boolean) => {
         try {
+            // Save to AsyncStorage immediately so next launch is instant
+            await AsyncStorage.setItem(THEME_CACHE_KEY, String(value));
             const user = auth.currentUser;
             if (user) {
                 const userRef = doc(db, 'users', user.uid);
