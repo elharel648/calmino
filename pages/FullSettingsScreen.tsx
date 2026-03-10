@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Text,
+  Image,
   TouchableOpacity,
   Alert,
   Switch,
@@ -314,6 +315,12 @@ export default function SettingsScreen() {
 
   const handleDeleteChild = async () => {
     if (!activeChild) return Alert.alert(t('common.error'), t('alerts.noChildSelected'));
+
+    // Only the baby's creator (parentUid) can delete the child
+    const currentUid = auth.currentUser?.uid;
+    if (activeChild.parentUid && activeChild.parentUid !== currentUid) {
+      return Alert.alert(t('common.error'), 'רק ההורה שיצר את הפרופיל יכול למחוק אותו');
+    }
 
     const childName = activeChild.childName;
 
@@ -944,9 +951,22 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Version */}
-        {/* Version */}
-        <Text style={[styles.version, { color: theme.textSecondary }]}>Calmino v{Constants.expoConfig?.version}</Text>
+        {/* Logo + version + website link */}
+        <TouchableOpacity
+          style={{ alignItems: 'center', marginTop: 8, marginBottom: 20 }}
+          onPress={() => Linking.openURL('https://www.calmino.co.il')}
+          activeOpacity={0.7}
+        >
+          <Image
+            source={require('../assets/icon.png')}
+            style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 6 }}
+            resizeMode="cover"
+          />
+          <Text style={[styles.version, { color: theme.textSecondary, marginTop: 0, marginBottom: 2 }]}>
+            Calmino v{Constants.expoConfig?.version}
+          </Text>
+          <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '500' }}>www.calmino.co.il</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Language Modal */}

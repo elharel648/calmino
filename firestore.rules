@@ -129,11 +129,12 @@ service cloud.firestore {
       // Create: any authenticated (typically parents or sitters for a child)
       allow create: if isAuthenticated();
       
-      // Update/Delete: creator or parent
+      // Update/Delete: creator, parent field, or actual parent of the baby (for account deletion)
       allow update, delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        resource.data.creatorId == request.auth.uid || 
-        resource.data.parentId == request.auth.uid
+        resource.data.creatorId == request.auth.uid ||
+        resource.data.parentId == request.auth.uid ||
+        isParentOfBaby(resource.data.childId)
       );
     }
 

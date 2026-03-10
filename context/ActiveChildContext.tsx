@@ -12,6 +12,7 @@ export interface ActiveChild {
     role: 'parent' | 'guest';
     accessLevel: AccessLevel;
     familyId?: string;
+    parentUid?: string; // The actual creator/owner UID of the baby
 }
 
 interface ActiveChildContextType {
@@ -106,6 +107,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                             role: 'parent',
                             accessLevel: 'full',
                             familyId: undefined,
+                            parentUid: userId, // current user IS the parent
                         });
                     }
                 });
@@ -134,6 +136,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                             role: isAdmin ? 'parent' : (memberData?.role === 'guest' ? 'guest' : 'parent'),
                             accessLevel: memberData?.accessLevel || (isAdmin ? 'full' : 'actions_only'),
                             familyId: userData.familyId,
+                            parentUid: babyData?.parentId, // actual baby creator UID
                         });
                     }
                 }
