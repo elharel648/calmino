@@ -1044,7 +1044,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        paddingHorizontal: 20,
+        paddingRight: 20,
+        paddingLeft: 8,
         paddingVertical: 2,
     },
     sortPill: {
