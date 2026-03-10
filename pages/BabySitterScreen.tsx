@@ -182,6 +182,8 @@ const BabySitterScreen = ({ navigation }: any) => {
                         latitude: location.coords.latitude,
                         longitude: location.coords.longitude,
                     });
+                    // Auto-switch to distance sort when GPS is available
+                    setSortBy(prev => prev === 'rating' ? 'distance' : prev);
                 }
 
                 // Get city name from coordinates (reverse geocoding)
@@ -797,12 +799,20 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <SortPills />
                     </View>
 
-                    {/* Sitters Count + Blocked Users */}
+                    {/* Sitters Count + GPS indicator */}
                     <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
                         {!isLoading && sortedSitters.length > 0 && (
                             <Text style={[styles.sittersHeaderTitle, { color: theme.textSecondary }]}>
                                 {sortedSitters.length} סיטרים{activeCity ? ` ב${activeCity}` : ' זמינים'}
                             </Text>
+                        )}
+                        {userLocation && !activeCity && (
+                            <View style={[styles.gpsActivePill, {
+                                backgroundColor: isDarkMode ? 'rgba(52,211,153,0.15)' : 'rgba(16,185,129,0.10)',
+                            }]}>
+                                <MapPin size={10} color="#10B981" strokeWidth={2.5} />
+                                <Text style={styles.gpsActiveText}>מיון לפי קרבה</Text>
+                            </View>
                         )}
                     </View>
 
@@ -1169,6 +1179,21 @@ const styles = StyleSheet.create({
     mutualText: {
         fontSize: 11,
         fontWeight: '600',
+    },
+
+    // GPS Active indicator
+    gpsActivePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    gpsActiveText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#10B981',
     },
 
     // Location filter styles - Enhanced with medium shadow
