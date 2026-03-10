@@ -6,14 +6,17 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
 import Reanimated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ChecklistModalProps {
     visible: boolean;
     onClose: () => void;
 }
 
-export default function ChecklistModal({ visible, onClose }: ChecklistModalProps) {
+export default function ChecklistModal({
+    visible, onClose }: ChecklistModalProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
 
     // Animations

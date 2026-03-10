@@ -26,10 +26,13 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
     const [customSupplements, setCustomSupplements] = useState<CustomSupplement[]>([]);
     const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
 
-    // Calculate counts
-    const takenCount = (meds.vitaminD ? 1 : 0) + (meds.iron ? 1 : 0) +
+    // Calculate counts (exclude hidden defaults)
+    const hidden = meds.hiddenDefaults || [];
+    const takenCount =
+        (!hidden.includes('vitaminD') && meds.vitaminD ? 1 : 0) +
+        (!hidden.includes('iron') && meds.iron ? 1 : 0) +
         Object.values(meds.custom || {}).filter(Boolean).length;
-    const totalCount = 2 + customSupplements.length;
+    const totalCount = (2 - hidden.length) + customSupplements.length;
 
     const syncToFirebase = useCallback(async (newMeds: MedicationsState) => {
         if (!childId) return;
@@ -126,6 +129,20 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
 
     const removeCustomSupplement = useCallback(async (id: string) => {
         if (!childId) return;
+
+        // Handle removing a default supplement (vitaminD / iron)
+        if (id === 'vitaminD' || id === 'iron') {
+            const hiddenDefaults = [...(meds.hiddenDefaults || []), id];
+            const newMeds = { ...meds, hiddenDefaults };
+            setMeds(newMeds);
+            try {
+                const childRef = doc(db, 'babies', childId);
+                await updateDoc(childRef, { meds: newMeds, medsDate: new Date().toDateString() });
+            } catch (e) {
+                logger.log('Hide default supplement error:', e);
+            }
+            return;
+        }
 
         const updatedSupplements = customSupplements.filter(s => s.id !== id);
         setCustomSupplements(updatedSupplements);

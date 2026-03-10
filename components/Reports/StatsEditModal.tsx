@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -43,6 +44,7 @@ interface DraggableItem {
 
 const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, currentOrder, onOrderChange }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [localOrder, setLocalOrder] = useState<DraggableItem[]>([]);
 
     useEffect(() => {
@@ -86,6 +88,13 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
     const renderItem = useCallback(({ item, drag, isActive }: RenderItemParams<DraggableItem>) => {
         const Icon = ICONS[item.key];
         const data = STAT_LABELS[item.key];
+        const LABEL_KEYS: Record<StatKey, string> = {
+            food: 'reports.metrics.feeding',
+            sleep: 'reports.metrics.sleep',
+            diapers: 'reports.metrics.diapers',
+            supplements: 'reports.metrics.supplements',
+        };
+        const translatedLabel = t(LABEL_KEYS[item.key]) || data.label;
 
         return (
             <ScaleDecorator>
@@ -108,12 +117,12 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
                     </View>
 
                     <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>
-                        {data.label}
+                        {translatedLabel}
                     </Text>
                 </TouchableOpacity>
             </ScaleDecorator>
         );
-    }, [theme]);
+    }, [theme, t]);
 
     return (
         <Modal
@@ -128,7 +137,7 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
                         <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={onClose}>
                             <X size={22} color={theme.textPrimary} />
                         </TouchableOpacity>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>סדר כרטיסיות</Text>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>{t('reports.tabs.orderTabs')}</Text>
                         <TouchableOpacity style={[styles.resetBtn, { backgroundColor: theme.cardSecondary }]} onPress={handleReset}>
                             <RotateCcw size={18} color="#6366F1" />
                         </TouchableOpacity>
@@ -145,7 +154,7 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
                     </GestureHandlerRootView>
 
                     <TouchableOpacity style={styles.saveBtn} onPress={onClose}>
-                        <Text style={styles.saveBtnText}>סיום</Text>
+                        <Text style={styles.saveBtnText}>{t('common.done')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

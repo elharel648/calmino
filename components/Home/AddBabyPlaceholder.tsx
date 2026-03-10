@@ -4,6 +4,7 @@ import { Plus, Baby, Users, X, UserPlus } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface AddBabyPlaceholderProps {
     onCreateBaby: () => void;
@@ -12,6 +13,7 @@ interface AddBabyPlaceholderProps {
 
 const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, onJoinWithCode }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [showModal, setShowModal] = useState(false);
 
     const handlePress = () => {
@@ -49,9 +51,7 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                         </View>
                     </LinearGradient>
 
-                    <Text style={[styles.title, { color: theme.textPrimary }]}>
-                        הוסף ילד
-                    </Text>
+                    <Text style={[styles.title, { color: theme.textPrimary }]}>{t('child.addChild')}</Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         לחץ כאן כדי ליצור פרופיל לילד שלך
                     </Text>
@@ -67,7 +67,7 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                             <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeBtn}>
                                 <X size={22} color={theme.textSecondary} />
                             </TouchableOpacity>
-                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>הוסף ילד</Text>
+                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('child.addChild')}</Text>
                             <View style={{ width: 30 }} />
                         </View>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react';
 import { logger } from '../utils/logger';
 
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
@@ -177,45 +177,45 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   useEffect(() => {
     if (visible) {
-      // Reset all states synchronously before animating in — avoids race condition
-      // when switching quickly between food/sleep/diaper modals
-      setSaveSuccess(false);
-      setSubType(null);
-      setBottleAmount('');
-      setPumpingAmount('');
-      setSolidsFoodName('');
-      setFoodNote('');
-      setSleepHours(0);
-      setSleepMinutes(30);
-      setSleepNote('');
-      setDiaperNote('');
-      setDiaperTime(new Date());
-      setShowDiaperTimePicker(false);
-      setSleepMode('timer');
-      const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      setSleepStartTime(timeStr);
-      setSleepEndTime(timeStr);
-      setSleepStartTimeDate(new Date(now));
-      setSleepEndTimeDate(new Date(now));
-      setShowSleepStartPicker(false);
-      setShowSleepEndPicker(false);
-      setSelectedDate(new Date());
-      setFoodMode('normal');
-      const nowForFood = new Date();
-      setFoodStartTime(new Date(nowForFood));
-      setFoodEndTime(new Date(nowForFood));
-      setShowFoodStartTimePicker(false);
-      setShowFoodEndTimePicker(false);
-
+      // Start animations immediately on the native thread — no JS re-render needed
       translateY.value = SCREEN_HEIGHT;
       backdropOpacity.value = 0;
-
       glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
       sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
-
       backdropOpacity.value = withTiming(1, { duration: 300 });
       translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
+
+      // Defer all state resets as low-priority so the animation frame renders first.
+      // This eliminates the 5-second JS-thread freeze on modal open.
+      startTransition(() => {
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        setSaveSuccess(false);
+        setSubType(null);
+        setBottleAmount('');
+        setPumpingAmount('');
+        setSolidsFoodName('');
+        setFoodNote('');
+        setSleepHours(0);
+        setSleepMinutes(30);
+        setSleepNote('');
+        setDiaperNote('');
+        setDiaperTime(new Date(now));
+        setShowDiaperTimePicker(false);
+        setSleepMode('timer');
+        setSleepStartTime(timeStr);
+        setSleepEndTime(timeStr);
+        setSleepStartTimeDate(new Date(now));
+        setSleepEndTimeDate(new Date(now));
+        setShowSleepStartPicker(false);
+        setShowSleepEndPicker(false);
+        setSelectedDate(new Date(now));
+        setFoodMode('normal');
+        setFoodStartTime(new Date(now));
+        setFoodEndTime(new Date(now));
+        setShowFoodStartTimePicker(false);
+        setShowFoodEndTimePicker(false);
+      });
     } else {
       glowAnim.value = 0;
       sparkleAnim.value = 0;
@@ -584,22 +584,22 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     // Validate sleep duration > 0
     if (type === 'sleep') {
       if (sleepMode === 'timer' && (!data.duration || data.duration === 0)) {
-        Alert.alert('שגיאה', 'יש להפעיל את הטיימר לפני השמירה.');
+        Alert.alert(t('common.error'), 'יש להפעיל את הטיימר לפני השמירה.');
         return;
       }
       if (sleepMode === 'duration' && (!data.duration || data.duration === 0)) {
-        Alert.alert('שגיאה', 'יש להזין משך שינה גדול מ-0.');
+        Alert.alert(t('common.error'), 'יש להזין משך שינה גדול מ-0.');
         return;
       }
       if (sleepMode === 'timerange' && data.duration === 0) {
-        Alert.alert('שגיאה', 'שעת הסיום חייבת להיות שונה משעת ההתחלה.');
+        Alert.alert(t('common.error'), 'שעת הסיום חייבת להיות שונה משעת ההתחלה.');
         return;
       }
     }
 
     // Validate diaper type selected
     if (type === 'diaper' && !subType) {
-      Alert.alert('שגיאה', 'יש לבחור סוג חיתול לפני השמירה.');
+      Alert.alert(t('common.error'), 'יש לבחור סוג חיתול לפני השמירה.');
       return;
     }
 
@@ -1250,7 +1250,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         <View style={styles.sleepDurationSection}>
           <View style={styles.sleepDurationRow}>
             <View style={styles.sleepDurationItem}>
-              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>שעות</Text>
+              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.hours')}</Text>
               <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
                 <TouchableOpacity
                   style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
@@ -1311,7 +1311,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             </View>
 
             <View style={styles.premiumTimeCard}>
-              <Text style={styles.premiumTimeLabel}>סיום</Text>
+              <Text style={styles.premiumTimeLabel}>{t('tracking.endTime')}</Text>
               <TouchableOpacity
                 style={styles.premiumTimeDisplay}
                 onPress={() => { setShowSleepEndPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
@@ -1442,8 +1442,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       <Text style={[styles.subtitle, { textAlign: 'center' }]}>מה היה?</Text>
       <View style={styles.diaperOptions}>
         {[
-          { key: 'pee', label: 'רטוב', icon: Droplets, color: '#3B82F6' },
-          { key: 'poop', label: 'מלוכלך', icon: Sparkles, color: '#F59E0B' },
+          { key: 'pee', label: t('tracking.wet'), icon: Droplets, color: '#3B82F6' },
+          { key: 'poop', label: t('tracking.dirty'), icon: Sparkles, color: '#F59E0B' },
           { key: 'both', label: 'שניהם', icon: Layers, color: '#8B5CF6' },
         ].map(opt => {
           const IconComponent = opt.icon;
@@ -1531,7 +1531,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Text style={styles.timePickerDoneBtnText}>סיום</Text>
+                <Text style={styles.timePickerDoneBtnText}>{t('tracking.endTime')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -1657,7 +1657,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 onPress={handleSave}
                 disabled={saveSuccess || isSaving}
                 accessibilityRole="button"
-                accessibilityLabel={saveSuccess ? 'נשמר בהצלחה' : 'שמור תיעוד'}
+                accessibilityLabel={saveSuccess ? t('misc.savedSuccessfully') : 'שמור תיעוד'}
                 accessibilityState={{ disabled: saveSuccess }}
               >
                 <Check size={18} color="#fff" strokeWidth={2.5} />
@@ -1763,7 +1763,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                     {/* Months View */}
                     {calendarView === 'months' && (
                       <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', marginTop: 8 }}>
-                        {['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'].map((month, i) => {
+                        {[t('months.january'), t('months.february'), t('months.march'), t('months.april'), t('months.may'), t('months.june'), t('months.july'), t('months.august'), t('months.september'), t('months.october'), t('months.november'), t('months.december')].map((month, i) => {
                           const isCurrentMonth = selectedDate.getMonth() === i;
                           const today = new Date();
                           const isFutureMonth = selectedDate.getFullYear() > today.getFullYear() ||
@@ -1920,7 +1920,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.datePickerBtnText, { color: theme.primary }]}>היום</Text>
+              <Text style={[styles.datePickerBtnText, { color: theme.primary }]}>{t('common.today')}</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

@@ -58,7 +58,7 @@ export default function PhoneVerificationScreen({
     const sendSMS = async () => {
         const validation = validateIsraeliPhone(phoneNumber);
         if (!validation.valid) {
-            Alert.alert('שגיאה', validation.message);
+            Alert.alert(t('common.error'), validation.message);
             return;
         }
 
@@ -76,7 +76,7 @@ export default function PhoneVerificationScreen({
                 // Show detailed error message
                 const errorMsg = result.error || 'לא ניתן לשלוח SMS';
                 Alert.alert(
-                    'שגיאה',
+                    t('common.error'),
                     errorMsg + (errorMsg.includes('לא מופעל') ? '\n\nיש להפעיל Phone Authentication ב-Firebase Console' : ''),
                     [
                         { text: 'הבנתי', style: 'cancel' },
@@ -93,7 +93,7 @@ export default function PhoneVerificationScreen({
             logger.error('SMS send error:', error);
             const errorMsg = error?.message || 'לא ניתן לשלוח SMS. נסה שוב מאוחר יותר';
             Alert.alert(
-                'שגיאה',
+                t('common.error'),
                 errorMsg + '\n\nאם הבעיה נמשכת, וודא ש:\n1. Phone Authentication מופעל ב-Firebase Console\n2. יש כרטיס אשראי מקושר לחשבון'
             );
         } finally {
@@ -103,12 +103,12 @@ export default function PhoneVerificationScreen({
 
     const handleVerify = async () => {
         if (code.length !== 6) {
-            Alert.alert('שגיאה', 'יש להזין קוד בן 6 ספרות');
+            Alert.alert(t('common.error'), 'יש להזין קוד בן 6 ספרות');
             return;
         }
 
         if (!confirmation) {
-            Alert.alert('שגיאה', 'אין אישור פעיל. נסה לשלוח SMS מחדש');
+            Alert.alert(t('common.error'), 'אין אישור פעיל. נסה לשלוח SMS מחדש');
             return;
         }
 
@@ -124,12 +124,12 @@ export default function PhoneVerificationScreen({
                 if (Platform.OS !== 'web') {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 }
-                Alert.alert('שגיאה', result.error || 'קוד אימות שגוי');
+                Alert.alert(t('common.error'), result.error || 'קוד אימות שגוי');
                 setCode('');
             }
         } catch (error) {
             logger.error('Verification error:', error);
-            Alert.alert('שגיאה', 'אירעה שגיאה באימות. נסה שוב');
+            Alert.alert(t('common.error'), 'אירעה שגיאה באימות. נסה שוב');
         } finally {
             setLoading(false);
         }
@@ -165,13 +165,11 @@ export default function PhoneVerificationScreen({
                         <TouchableOpacity
                             onPress={onCancel}
                             style={styles.backBtn}
-                            accessibilityLabel="חזרה"
+                            accessibilityLabel={t('sitter.back')}
                         >
                             <ArrowLeft size={24} color={theme.textPrimary} />
                         </TouchableOpacity>
-                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                            אימות טלפון
-                        </Text>
+                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('auth.phoneVerification')}</Text>
                         <View style={{ width: 40 }} />
                     </View>
 
@@ -277,9 +275,7 @@ export default function PhoneVerificationScreen({
                                 {loading ? (
                                     <ActivityIndicator color={theme.card} />
                                 ) : (
-                                    <Text style={[styles.verifyBtnText, { color: theme.card }]}>
-                                        אמת
-                                    </Text>
+                                    <Text style={[styles.verifyBtnText, { color: theme.card }]}>{t('auth.verify')}</Text>
                                 )}
                             </LinearGradient>
                         </TouchableOpacity>

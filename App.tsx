@@ -488,6 +488,7 @@ export default function App() {
   const [childrenReady, setChildrenReady] = useState(false);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
+  const isAuthenticatingRef = useRef(false);
 
   // Clean up any stuck Live Activities from previous session on cold launch
   useEffect(() => {
@@ -743,7 +744,8 @@ export default function App() {
         appStateRef.current.match(/inactive|background/) &&
         nextState === 'active' &&
         biometricsEnabledRef.current &&
-        user
+        user &&
+        !isAuthenticatingRef.current
       ) {
         setIsLocked(true);
         setTimeout(() => authenticateUser(), 150);
@@ -788,6 +790,8 @@ export default function App() {
   };
 
   const authenticateUser = async () => {
+    if (isAuthenticatingRef.current) return;
+    isAuthenticatingRef.current = true;
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       if (!hasHardware) { setIsLocked(false); return; }
@@ -799,7 +803,11 @@ export default function App() {
       });
 
       if (result.success) setIsLocked(false);
-    } catch (e) { logger.log('Authentication error:', e); }
+    } catch (e) {
+      logger.log('Authentication error:', e);
+    } finally {
+      isAuthenticatingRef.current = false;
+    }
   };
 
   // Keep splash visible while loading - return null to not render anything

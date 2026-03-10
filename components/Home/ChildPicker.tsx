@@ -5,6 +5,7 @@ import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Unique avatar colors per child index
 const AVATAR_COLORS = [
@@ -26,6 +27,7 @@ interface ChildPickerProps {
 }
 
 const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, onJoinWithCode, compact = false }) => {
+    const { t } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const { allChildren, activeChild, setActiveChild } = useActiveChild();
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -127,9 +129,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                 >
                                     <X size={20} color={theme.textSecondary} />
                                 </TouchableOpacity>
-                                <Text style={[styles.dropdownTitle, { color: theme.textPrimary }]}>
-                                    החלפת ילד
-                                </Text>
+                                <Text style={[styles.dropdownTitle, { color: theme.textPrimary }]}>{t('child.switchChild')}</Text>
                                 <View style={styles.closeButton} />
                             </View>
 
@@ -188,7 +188,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                                 </Text>
                                                 {isGuest && (
                                                     <View style={styles.guestTag}>
-                                                        <Text style={styles.guestTagText}>אורח</Text>
+                                                        <Text style={styles.guestTagText}>{t('family.guest')}</Text>
                                                     </View>
                                                 )}
                                             </View>
@@ -210,7 +210,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                             {/* Add Child Options */}
                             {onAddChild && (
                                 <View style={styles.addOptionsSection}>
-                                    <Text style={[styles.addSectionTitle, { color: theme.textTertiary }]}>הוספת ילד</Text>
+                                    <Text style={[styles.addSectionTitle, { color: theme.textTertiary }]}>{t('child.addChild')}</Text>
 
                                     {/* Register new child */}
                                     <TouchableOpacity
@@ -310,7 +310,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
 
                             {isGuest && (
                                 <View style={styles.guestBadge}>
-                                    <Text style={styles.guestBadgeText}>אורח</Text>
+                                    <Text style={styles.guestBadgeText}>{t('family.guest')}</Text>
                                 </View>
                             )}
 
@@ -337,9 +337,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                         <View style={styles.addIconContainer}>
                             <Plus size={24} color="#9CA3AF" />
                         </View>
-                        <Text style={[styles.childName, { color: theme.textSecondary }]}>
-                            הוסף
-                        </Text>
+                        <Text style={[styles.childName, { color: theme.textSecondary }]}>{t('common.add')}</Text>
                     </TouchableOpacity>
                 )}
             </View>

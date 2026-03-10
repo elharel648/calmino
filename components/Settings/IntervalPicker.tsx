@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Unified accent color
 const ACCENT_COLOR = '#6366F1';
@@ -22,6 +23,7 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
     disabled = false,
 }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const scaleAnims = React.useRef(options.map(() => new Animated.Value(1))).current;
 
     const handlePress = (option: number, index: number) => {
@@ -50,7 +52,7 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>כל {unit}:</Text>
             <View style={styles.optionsContainer}>
                 {options.map((option, index) => {
@@ -67,7 +69,6 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
                                         backgroundColor: isSelected ? ACCENT_COLOR : theme.card,
                                         borderColor: isSelected ? ACCENT_COLOR : theme.divider,
                                     },
-                                    isSelected && styles.optionButtonSelected,
                                     disabled && styles.optionButtonDisabled,
                                 ]}
                                 onPress={() => handlePress(option, index)}
@@ -78,7 +79,6 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
                                     style={[
                                         styles.optionText,
                                         { color: isSelected ? '#fff' : theme.textPrimary },
-                                        disabled && styles.optionTextDisabled,
                                     ]}
                                 >
                                     {option}
@@ -94,49 +94,39 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 20,
-        paddingVertical: 14,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        gap: 10,
     },
     label: {
         fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 12,
+        fontWeight: '400',
         textAlign: 'right',
+        flexShrink: 0,
     },
     optionsContainer: {
+        flex: 1,
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
+        gap: 6,
         justifyContent: 'flex-end',
     },
     optionButton: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
-        borderWidth: 1.5,
+        width: 40,
+        height: 34,
+        borderRadius: 10,
+        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
-    },
-    optionButtonSelected: {
-        shadowColor: ACCENT_COLOR,
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 3,
     },
     optionButtonDisabled: {
         opacity: 0.4,
     },
     optionText: {
-        fontSize: 18,
-        fontWeight: '700',
-    },
-    optionTextDisabled: {
-        opacity: 0.6,
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
 

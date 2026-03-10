@@ -13,6 +13,7 @@ import {
 import { X, Check, Calendar, Camera, User } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface EditBasicInfoModalProps {
     visible: boolean;
@@ -26,11 +27,12 @@ interface EditBasicInfoModalProps {
     onClose: () => void;
 }
 
-const GENDER_OPTIONS = [
-    { value: 'boy', label: 'בן' },
-    { value: 'girl', label: 'בת' },
-    { value: 'other', label: 'אחר' },
-] as const;
+const GENDER_KEYS: Record<string, string> = {
+    boy: 'child.boy',
+    girl: 'child.girl',
+    other: 'child.other',
+};
+const GENDER_VALUES = ['boy', 'girl', 'other'] as const;
 
 export default function EditBasicInfoModal({
     visible,
@@ -38,6 +40,7 @@ export default function EditBasicInfoModal({
     onSave,
     onClose,
 }: EditBasicInfoModalProps) {
+    const { t } = useLanguage();
     const [name, setName] = useState(initialData.name);
     const [gender, setGender] = useState<'boy' | 'girl' | 'other'>(initialData.gender);
     const [photoUrl, setPhotoUrl] = useState<string | undefined>(initialData.photoUrl);
@@ -73,7 +76,7 @@ export default function EditBasicInfoModal({
 
     const handleSave = () => {
         if (!name.trim()) {
-            Alert.alert('שגיאה', 'יש להזין שם');
+            Alert.alert(t('common.error'), 'יש להזין שם');
             return;
         }
         onSave({ name: name.trim(), gender, birthDate, photoUrl });
@@ -83,7 +86,7 @@ export default function EditBasicInfoModal({
     const handlePickPhoto = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-            Alert.alert('שגיאה', 'נדרשת הרשאה לגלריה');
+            Alert.alert(t('common.error'), 'נדרשת הרשאה לגלריה');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -118,7 +121,7 @@ export default function EditBasicInfoModal({
                         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                             <X size={24} color="#6B7280" />
                         </TouchableOpacity>
-                        <Text style={styles.title}>עריכת פרטי ילד</Text>
+                        <Text style={styles.title}>{t('child.editDetails')}</Text>
                     </View>
 
                     {/* Content */}
@@ -137,12 +140,12 @@ export default function EditBasicInfoModal({
                                     <Camera size={14} color="#fff" />
                                 </View>
                             </TouchableOpacity>
-                            <Text style={styles.photoHint}>לחץ לשינוי תמונה</Text>
+                            <Text style={styles.photoHint}>{t('child.tapToChangePhoto')}</Text>
                         </View>
 
                         {/* Name */}
                         <View style={styles.field}>
-                            <Text style={styles.label}>שם הילד</Text>
+                            <Text style={styles.label}>{t('child.name')}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={name}
@@ -154,24 +157,24 @@ export default function EditBasicInfoModal({
 
                         {/* Gender */}
                         <View style={styles.field}>
-                            <Text style={styles.label}>מין</Text>
+                            <Text style={styles.label}>{t('child.gender')}</Text>
                             <View style={styles.genderRow}>
-                                {GENDER_OPTIONS.map((option) => (
+                                {GENDER_VALUES.map((value) => (
                                     <TouchableOpacity
-                                        key={option.value}
+                                        key={value}
                                         style={[
                                             styles.genderBtn,
-                                            gender === option.value && styles.genderBtnActive,
+                                            gender === value && styles.genderBtnActive,
                                         ]}
-                                        onPress={() => setGender(option.value)}
+                                        onPress={() => setGender(value)}
                                     >
                                         <Text
                                             style={[
                                                 styles.genderText,
-                                                gender === option.value && styles.genderTextActive,
+                                                gender === value && styles.genderTextActive,
                                             ]}
                                         >
-                                            {option.label}
+                                            {t(GENDER_KEYS[value])}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
@@ -180,7 +183,7 @@ export default function EditBasicInfoModal({
 
                         {/* Birth Date */}
                         <View style={styles.field}>
-                            <Text style={styles.label}>תאריך לידה</Text>
+                            <Text style={styles.label}>{t('child.birthDate')}</Text>
                             <TouchableOpacity
                                 style={styles.dateBtn}
                                 onPress={() => setShowDatePicker(true)}
@@ -206,7 +209,7 @@ export default function EditBasicInfoModal({
                     {/* Save Button */}
                     <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
                         <Check size={20} color="#fff" />
-                        <Text style={styles.saveBtnText}>שמור שינויים</Text>
+                        <Text style={styles.saveBtnText}>{t('child.saveChanges')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

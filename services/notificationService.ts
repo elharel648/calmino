@@ -133,7 +133,8 @@ export interface NotificationSettings {
     sleepReminder: boolean;
     sleepTime: string; // HH:MM format
     supplementReminder: boolean;
-    supplementTime: string; // HH:MM format
+    supplementTime: string; // HH:MM format (legacy, kept for compat)
+    supplementTimes: Record<string, string>; // supplementId -> HH:MM
     vaccineReminder: boolean;
     dailySummary: boolean;
     dailySummaryTime: string; // HH:MM format
@@ -148,6 +149,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     sleepTime: '20:00',
     supplementReminder: true,
     supplementTime: '09:00',
+    supplementTimes: { vitaminD: '09:00', iron: '09:00' },
     vaccineReminder: true,
     dailySummary: false,
     dailySummaryTime: '20:00',
@@ -348,6 +350,38 @@ class NotificationService {
         this.scheduledNotifications.set('supplement_reminder', id);
     }
 
+    // Schedule one notification per supplement with its own time
+    async schedulePerSupplementReminders(supplements: { id: string; name: string }[]): Promise<void> {
+        if (!this.settings.enabled || !this.settings.supplementReminder) return;
+
+        // Cancel existing per-supplement notifications
+        for (const key of Array.from(this.scheduledNotifications.keys())) {
+            if (key.startsWith('supp_')) {
+                await this.cancelNotification(key);
+            }
+        }
+
+        for (const supp of supplements) {
+            const time = this.settings.supplementTimes?.[supp.id] || '09:00';
+            const [hours, minutes] = time.split(':').map(Number);
+            const notifKey = `supp_${supp.id}`;
+
+            const id = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: '💊 תזכורת תוסף',
+                    body: `הגיע הזמן לקחת ${supp.name}`,
+                    data: { type: 'supplement_reminder', supplementId: supp.id },
+                },
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                    hour: hours,
+                    minute: minutes,
+                },
+            });
+
+            this.scheduledNotifications.set(notifKey, id);
+        }
+    }
 
     // Schedule sleep reminder (daily at bedtime)
     async scheduleSleepReminder(): Promise<void> {

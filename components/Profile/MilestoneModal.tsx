@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, Platform } 
 import { Calendar as CalendarIcon } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MilestoneModalProps {
     visible: boolean;
@@ -11,6 +12,7 @@ interface MilestoneModalProps {
 }
 
 const MilestoneModal = memo(({ visible, onAdd, onClose }: MilestoneModalProps) => {
+    const { t } = useLanguage();
     const [title, setTitle] = useState('');
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
@@ -71,7 +73,7 @@ const MilestoneModal = memo(({ visible, onAdd, onClose }: MilestoneModalProps) =
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                        <Text style={styles.cancelText}>ביטול</Text>
+                        <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

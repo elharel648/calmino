@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from './/LanguageContext';
 
 const THEME_CACHE_KEY = '@calmino_dark_mode';
 
@@ -113,6 +114,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+    const { t } = useLanguage();
     const [isDarkMode, setIsDarkMode] = useState(false);
 
     // Load theme preference — AsyncStorage first (instant), then Firestore (sync)

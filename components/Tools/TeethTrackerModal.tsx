@@ -14,6 +14,7 @@ import { saveEventToFirebase } from '../../services/firebaseService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate } from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -59,8 +60,10 @@ const getToothShapeStyle = (type: string) => {
     }
 };
 
-export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModalProps) {
+export default function TeethTrackerModal({
+    visible, onClose }: TeethTrackerModalProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const { activeChild } = useActiveChild();
     const [teethData, setTeethData] = useState<Record<string, Date | null>>({});
     const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
@@ -631,7 +634,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                             }}
                                             activeOpacity={0.7}
                                         >
-                                            <Text style={[styles.datePickerBtnText, { color: theme.textSecondary }]}>ביטול</Text>
+                                            <Text style={[styles.datePickerBtnText, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.datePickerConfirmBtn, { backgroundColor: theme.primary }]}
@@ -642,7 +645,7 @@ export default function TeethTrackerModal({ visible, onClose }: TeethTrackerModa
                                             }}
                                             activeOpacity={0.8}
                                         >
-                                            <Text style={[styles.datePickerBtnText, { color: theme.card }]}>אישור</Text>
+                                            <Text style={[styles.datePickerBtnText, { color: theme.card }]}>{t('common.confirm')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </Animated.View>

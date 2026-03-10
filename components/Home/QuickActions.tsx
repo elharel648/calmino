@@ -36,6 +36,8 @@ interface QuickActionsProps {
     onFoodTimerStop?: (seconds: number, timerType: string) => void;
     onSleepTimerStop?: (seconds: number) => void;
     meds?: MedicationsState;
+    supplementsTakenCount?: number;
+    supplementsTotalCount?: number;
     dynamicStyles: { text: string };
 }
 
@@ -60,6 +62,8 @@ const QuickActions = memo<QuickActionsProps>(({
     onFoodTimerStop,
     onSleepTimerStop,
     meds,
+    supplementsTakenCount,
+    supplementsTotalCount,
     dynamicStyles,
 }) => {
     const { theme } = useTheme();
@@ -172,11 +176,9 @@ const QuickActions = memo<QuickActionsProps>(({
         }
     }, [sleepIsRunning, sleepTimer, sleepElapsed, onSleepPress, onSleepTimerStop]);
 
-    const customTakenCount = Object.values(meds?.custom || {}).filter(Boolean).length;
-    const customTotalCount = Object.keys(meds?.custom || {}).length;
-    const takenCount = (meds?.vitaminD ? 1 : 0) + (meds?.iron ? 1 : 0) + customTakenCount;
-    const totalSupplements = 2 + customTotalCount;
-    const allTaken = takenCount === totalSupplements;
+    const takenCount = supplementsTakenCount ?? 0;
+    const totalSupplements = supplementsTotalCount ?? 0;
+    const allTaken = totalSupplements > 0 && takenCount === totalSupplements;
 
     const scrollViewRef = useRef<ScrollView>(null);
 

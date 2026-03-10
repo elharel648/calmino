@@ -68,7 +68,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     }
     if (!birthDate) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('שגיאה', 'יש לבחור תאריך לידה');
+      Alert.alert(t('common.error'), 'יש לבחור תאריך לידה');
       return;
     }
 
@@ -149,7 +149,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 <View style={styles.cardIconWrap}>
                   <User size={18} color="#6366F1" strokeWidth={1.5} />
                 </View>
-                <Text style={styles.cardLabel}>שם הילד</Text>
+                <Text style={styles.cardLabel}>{t('child.name')}</Text>
               </View>
 
               <TextInput
@@ -180,7 +180,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 <View style={styles.cardIconWrap}>
                   <Calendar size={18} color="#8B5CF6" strokeWidth={1.5} />
                 </View>
-                <Text style={styles.cardLabel}>תאריך לידה</Text>
+                <Text style={styles.cardLabel}>{t('child.birthDate')}</Text>
               </View>
 
               <TouchableOpacity
@@ -225,7 +225,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 <View style={[styles.genderIcon, { backgroundColor: gender === 'boy' ? '#3B82F6' : '#E5E7EB' }]}>
                   <User size={22} color="#fff" strokeWidth={2} />
                 </View>
-                <Text style={[styles.genderText, gender === 'boy' && styles.genderTextActive]}>בן</Text>
+                <Text style={[styles.genderText, gender === 'boy' && styles.genderTextActive]}>{t('child.boy')}</Text>
 
                 {gender === 'boy' && (
                   <View style={[styles.genderBadge, { backgroundColor: '#3B82F6' }]}>
@@ -246,7 +246,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 <View style={[styles.genderIcon, { backgroundColor: gender === 'girl' ? '#EC4899' : '#E5E7EB' }]}>
                   <User size={22} color="#fff" strokeWidth={2} />
                 </View>
-                <Text style={[styles.genderText, gender === 'girl' && styles.genderTextActive]}>בת</Text>
+                <Text style={[styles.genderText, gender === 'girl' && styles.genderTextActive]}>{t('child.girl')}</Text>
 
                 {gender === 'girl' && (
                   <View style={[styles.genderBadge, { backgroundColor: '#EC4899' }]}>

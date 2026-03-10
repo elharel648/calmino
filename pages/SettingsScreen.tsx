@@ -186,7 +186,7 @@ export default function SettingsScreen() {
       'הסרת חבר',
       `להסיר את ${memberName} מהמשפחה?`,
       [
-        { text: 'ביטול', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: 'הסר',
           style: 'destructive',
@@ -207,7 +207,7 @@ export default function SettingsScreen() {
       'עזיבת משפחה',
       'האם אתה בטוח שברצונך לעזוב את המשפחה? תאבד גישה לכל הנתונים המשותפים.',
       [
-        { text: 'ביטול', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: 'עזוב',
           style: 'destructive',
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
         'חובה לאשר הרשאות',
         'נדרשת הרשאת גלריה כדי לבחור תמונה',
         [
-          { text: 'ביטול', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           { text: 'פתח הגדרות', onPress: openSettings }
         ]
       );
@@ -275,9 +275,9 @@ export default function SettingsScreen() {
         'ערוך שם',
         'הזן שם חדש',
         [
-          { text: 'ביטול', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'שמור',
+            text: t('common.save'),
             onPress: async (newName) => {
               if (newName && newName.trim() && user) {
                 try {
@@ -287,7 +287,7 @@ export default function SettingsScreen() {
                   setUserName(newName.trim());
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 } catch (error) {
-                  Alert.alert('שגיאה', 'לא הצלחנו לשמור את השם');
+                  Alert.alert(t('common.error'), 'לא הצלחנו לשמור את השם');
                 }
               }
             },
@@ -445,10 +445,10 @@ export default function SettingsScreen() {
                 {members.map((member, index) => {
                   const isMe = member.id === auth.currentUser?.uid;
                   const roleConfig = {
-                    admin: { label: 'מנהל', color: isDarkMode ? '#fff' : '#000' },
+                    admin: { label: t('family.admin'), color: isDarkMode ? '#fff' : '#000' },
                     member: { label: 'חבר', color: isDarkMode ? '#fff' : '#000' },
                     viewer: { label: 'צופה', color: isDarkMode ? '#fff' : '#000' },
-                    guest: { label: 'אורח', color: isDarkMode ? '#fff' : '#000' },
+                    guest: { label: t('family.guest'), color: isDarkMode ? '#fff' : '#000' },
                   }[member.role] || { label: 'חבר', color: isDarkMode ? '#fff' : '#000' };
 
                   return (
@@ -588,7 +588,7 @@ export default function SettingsScreen() {
                     <LogOut size={20} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                   </View>
                   <View style={styles.listItemTextContainer}>
-                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>עזוב משפחה</Text>
+                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('family.leaveFamily')}</Text>
                     <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
                       יניתק אותך מהמשפחה המשותפת
                     </Text>

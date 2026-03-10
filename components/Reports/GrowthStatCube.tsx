@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { getMeasurementsForChart, getGrowthChange } from '../../services/growthService';
 import { Svg, Path, Defs, LinearGradient, Stop, Circle } from 'react-native-svg';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -64,6 +65,7 @@ Sparkline.displayName = 'Sparkline';
 
 const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [weightData, setWeightData] = useState<number[]>([]);
     const [change, setChange] = useState<{ weight?: number } | null>(null);
     const [latestWeight, setLatestWeight] = useState<number | null>(null);
@@ -124,7 +126,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                                 </View>
                             ) : (
                                 <Text style={[styles.statValue, { color: theme.textPrimary }]}>
-                                    {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>ק"ג</Text>
+                                    {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>{t('reports.units.kg')}</Text>
                                 </Text>
                             )}
 
@@ -158,7 +160,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                 </View>
 
                 {/* Label */}
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>גדילה</Text>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.metrics.growth')}</Text>
 
                 {/* Sub value - only shown when sparkline is visible (multiple measurements) */}
                 {hasData && latestWeight && weightData.length >= 2 && (

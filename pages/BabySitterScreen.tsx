@@ -523,10 +523,10 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Sort Pills
     const SORT_OPTIONS = [
-        { key: 'rating' as const, label: 'דירוג', icon: '⭐' },
-        { key: 'price' as const, label: 'מחיר', icon: '₪' },
-        { key: 'distance' as const, label: 'מרחק', icon: '📍' },
-        { key: 'favorites' as const, label: 'מועדפים', icon: '❤️' },
+        { key: 'rating' as const, label: t('sitter.rating'), icon: '⭐' },
+        { key: 'price' as const, label: t('sitter.price'), icon: '₪' },
+        { key: 'distance' as const, label: t('sitter.distance'), icon: '📍' },
+        { key: 'favorites' as const, label: t('sitter.favorites'), icon: '❤️' },
     ];
 
     const SortPills = () => (
@@ -569,7 +569,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
             >
                 <Text style={{ fontSize: 11 }}>🚫</Text>
-                <Text style={[styles.sortPillText, { color: theme.textSecondary, fontWeight: '500' }]}>חסומים</Text>
+                <Text style={[styles.sortPillText, { color: theme.textSecondary, fontWeight: '500' }]}>{t('sitter.blocked')}</Text>
             </TouchableOpacity>
 
         </ScrollView>
@@ -648,7 +648,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <ChevronLeft size={18} color={theme.textPrimary} strokeWidth={2.5} />
                     </TouchableOpacity>
 
-                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>מצא סיטר</Text>
+                    <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('sitter.findSitter')}</Text>
 
                     <View style={styles.headerRight}>
 
@@ -682,9 +682,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <Text style={[styles.modeBtnText, {
                             color: userMode === 'parent' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary,
                             fontWeight: userMode === 'parent' ? '700' : '500',
-                        }]}>
-                            מצב הורה
-                        </Text>
+                        }]}>{t('sitter.parentMode')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.modeBtn, userMode === 'sitter' && [styles.modeBtnActive, {
@@ -692,7 +690,9 @@ const BabySitterScreen = ({ navigation }: any) => {
                         }]]}
                         onPress={() => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setIsSitterRegistered(null);
                             setUserMode('sitter');
+                            checkSitterStatus();
                         }}
                         activeOpacity={0.8}
                     >
@@ -700,9 +700,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <Text style={[styles.modeBtnText, {
                             color: userMode === 'sitter' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary,
                             fontWeight: userMode === 'sitter' ? '700' : '500',
-                        }]}>
-                            מצב סיטר
-                        </Text>
+                        }]}>{t('sitter.sitterMode')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -741,7 +739,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                     if (autocompleteTimeoutRef.current) clearTimeout(autocompleteTimeoutRef.current);
                                     autocompleteTimeoutRef.current = setTimeout(() => setShowCitySuggestions(false), 200);
                                 }}
-                                placeholder={userCity && ISRAELI_CITIES.includes(userCity) ? `${userCity} (אוטומטי)` : 'חפש לפי עיר...'}
+                                placeholder={userCity && ISRAELI_CITIES.includes(userCity) ? `${userCity} (אוטומטי)` : t('sitter.searchByCity')}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
                             />
@@ -811,7 +809,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 backgroundColor: isDarkMode ? 'rgba(52,211,153,0.15)' : 'rgba(16,185,129,0.10)',
                             }]}>
                                 <MapPin size={10} color="#10B981" strokeWidth={2.5} />
-                                <Text style={styles.gpsActiveText}>מיון לפי קרבה</Text>
+                                <Text style={styles.gpsActiveText}>{t('sitter.sortByProximity')}</Text>
                             </View>
                         )}
                     </View>
@@ -825,9 +823,15 @@ const BabySitterScreen = ({ navigation }: any) => {
                         <View style={styles.emptyState}>
                             {sortBy === 'favorites' ? (
                                 <>
-                                    <Heart size={52} color={theme.border} strokeWidth={1} />
-                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין מועדפות עדיין</Text>
-                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>לחצי על ❤️ על כרטיס של בייביסיטר כדי להוסיף למועדפות</Text>
+                                    <View style={styles.emptyIconOuter}>
+                                        <View style={styles.emptyIconInner}>
+                                            <Heart size={32} color="#EF4444" strokeWidth={2} fill="#EF4444" />
+                                        </View>
+                                    </View>
+                                    <View style={styles.emptyTextGroup}>
+                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין מועדפים עדיין</Text>
+                                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>לחצי על לב בכרטיס בייביסיטר להוספה</Text>
+                                    </View>
                                 </>
                             ) : activeCity ? (
                                 <>
@@ -837,8 +841,15 @@ const BabySitterScreen = ({ navigation }: any) => {
                                 </>
                             ) : (
                                 <>
-                                    <User size={90} color={theme.border} strokeWidth={0.8} />
-                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary, fontSize: 22 }]}>אין בייביסיטרים כרגע</Text>
+                                    <View style={styles.emptyIconOuter}>
+                                        <View style={styles.emptyIconInner}>
+                                            <User size={38} color={theme.textSecondary} strokeWidth={1.2} />
+                                        </View>
+                                    </View>
+                                    <View style={styles.emptyTextGroup}>
+                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין בייביסיטרים כרגע</Text>
+                                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>נסי שוב מאוחר יותר או בחרי עיר אחרת</Text>
+                                    </View>
                                 </>
                             )}
                         </View>
@@ -1081,12 +1092,41 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
+        gap: 24,
+        paddingBottom: 60,
+    },
+    emptyIconOuter: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: 'rgba(0,0,0,0.04)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyIconInner: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: 'rgba(0,0,0,0.06)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyTextGroup: {
+        alignItems: 'center',
+        gap: 8,
     },
     emptyTitle: {
-        fontSize: 17,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: '700',
         textAlign: 'center',
+        letterSpacing: -0.4,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        fontWeight: '400',
+        textAlign: 'center',
+        opacity: 0.6,
+        lineHeight: 20,
     },
     emptyText: {
         fontSize: 14,

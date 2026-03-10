@@ -1,18 +1,60 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Animated, Platform, LayoutAnimation, UIManager } from 'react-native';
-import { Bell, Utensils, Pill, FileText, ChevronDown, ChevronUp, Play, Sparkles } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform, LayoutAnimation, UIManager, Modal } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Bell, Utensils, Pill, ChevronDown, ChevronUp, Play, Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { IntervalPicker } from './IntervalPicker';
-import { TimePicker } from './TimePicker';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
+
+const ACCENT_COLOR = '#6366F1';
+
+// Compact time chip used inside supplement rows
+function CompactTimePicker({ value, onChange, disabled }: { value: string; onChange: (t: string) => void; disabled?: boolean }) {
+    const { theme, isDarkMode } = useTheme();
+    const [show, setShow] = useState(false);
+    const getDate = (s: string) => { const [h, m] = s.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
+    const fmt = (d: Date) => `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    const chipBg = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const chipColor = isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+    return (
+        <>
+            <TouchableOpacity
+                style={[styles.timeChip, { backgroundColor: chipBg, opacity: disabled ? 0.4 : 1 }]}
+                onPress={() => { if (!disabled) { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShow(true); }}}
+                activeOpacity={0.7}
+                disabled={disabled}
+            >
+                <Clock size={11} color={chipColor} strokeWidth={2} />
+                <Text style={[styles.timeChipText, { color: chipColor }]}>{value}</Text>
+            </TouchableOpacity>
+            {Platform.OS === 'android' && show && (
+                <DateTimePicker value={getDate(value)} mode="time" is24Hour onChange={(e, d) => { setShow(false); if (d && e.type !== 'dismissed') onChange(fmt(d)); }} />
+            )}
+            {Platform.OS === 'ios' && (
+                <Modal visible={show} transparent animationType="fade" onRequestClose={() => setShow(false)}>
+                    <View style={styles.timeModalOverlay}>
+                        <View style={[styles.timeModalContent, { backgroundColor: theme.card }]}>
+                            <View style={[styles.timeModalHeader, { borderBottomColor: theme.divider }]}>
+                                <TouchableOpacity onPress={() => setShow(false)}><Text style={{ color: theme.textSecondary, fontSize: 16 }}>ביטול</Text></TouchableOpacity>
+                                <Text style={[styles.timeModalTitle, { color: theme.textPrimary }]}>בחר שעה</Text>
+                                <TouchableOpacity onPress={() => setShow(false)}><Text style={{ color: ACCENT_COLOR, fontSize: 16, fontWeight: '600' }}>אישור</Text></TouchableOpacity>
+                            </View>
+                            <DateTimePicker value={getDate(value)} mode="time" is24Hour display="spinner" locale="he-IL" textColor={theme.textPrimary} style={{ height: 200 }}
+                                onChange={(e, d) => { if (d && e.type !== 'dismissed') onChange(fmt(d)); }} />
+                        </View>
+                    </View>
+                </Modal>
+            )}
+        </>
+    );
+}
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-const ACCENT_COLOR = '#6366F1';
 
 interface NotificationCardConfig {
   icon: React.ElementType;
@@ -133,9 +175,14 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
   );
 };
 
-export default function PremiumNotificationSettings() {
+interface PremiumNotificationSettingsProps {
+  supplements?: { id: string; name: string }[];
+}
+
+export default function PremiumNotificationSettings({ supplements = [] }: PremiumNotificationSettingsProps) {
+    const { t } = useLanguage();
   const { theme, isDarkMode } = useTheme();
-  const { settings, updateSettings, sendTestNotification } = useNotifications();
+  const { settings, updateSettings, sendTestNotification, schedulePerSupplementReminders } = useNotifications();
 
   const handleTestNotification = async (type: 'feeding' | 'supplement' | 'summary') => {
     if (Platform.OS !== 'web') {
@@ -149,7 +196,7 @@ export default function PremiumNotificationSettings() {
       icon: Utensils,
       iconColor: isDarkMode ? '#FF9F1C' : '#E68A00',
       iconBg: isDarkMode ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255, 159, 28, 0.1)',
-      title: 'תזכורת אוכל',
+      title: t('settings.feedingReminder'),
       getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
       enabled: settings.feedingReminder,
       onToggle: (val) => updateSettings({ feedingReminder: val }),
@@ -160,17 +207,19 @@ export default function PremiumNotificationSettings() {
           <IntervalPicker
             value={settings.feedingIntervalHours}
             options={[1, 2, 3, 4]}
-            unit="שעות"
+            unit={t('tracking.hours')}
             onChange={(val) => updateSettings({ feedingIntervalHours: val as 1 | 2 | 3 | 4 })}
             disabled={!settings.enabled}
           />
-          <View style={styles.spacer} />
-          <TimePicker
-            value={settings.feedingStartTime || "08:00"}
-            label="שעת התחלה"
-            onChange={(time) => updateSettings({ feedingStartTime: time })}
-            disabled={!settings.enabled}
-          />
+          <View style={[styles.suppDivider, { backgroundColor: theme.divider }]} />
+          <View style={styles.suppRow}>
+            <Text style={[styles.suppName, { color: theme.textPrimary }]}>שעת התחלה</Text>
+            <CompactTimePicker
+              value={settings.feedingStartTime || "08:00"}
+              disabled={!settings.enabled}
+              onChange={(time) => updateSettings({ feedingStartTime: time })}
+            />
+          </View>
         </View>
       ),
     },
@@ -178,41 +227,42 @@ export default function PremiumNotificationSettings() {
       icon: Pill,
       iconColor: isDarkMode ? '#34D399' : '#059669',
       iconBg: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
-      title: 'תזכורת תוספים',
-      getSubtitle: () => `כל יום בשעה ${settings.supplementTime}`,
+      title: t('settings.supplementsReminder'),
+      getSubtitle: () => supplements.length > 0
+        ? `${supplements.length} תוספים מוגדרים`
+        : 'כל יום בשעה שתבחרי',
       enabled: settings.supplementReminder,
       onToggle: (val) => updateSettings({ supplementReminder: val }),
       disabled: !settings.enabled,
       onTest: () => handleTestNotification('supplement'),
       children: (
         <View style={styles.cardChildContent}>
-          <TimePicker
-            value={settings.supplementTime}
-            label="שעת נטילה"
-            onChange={(time) => updateSettings({ supplementTime: time })}
-            disabled={!settings.enabled}
-          />
-        </View>
-      ),
-    },
-    {
-      icon: FileText,
-      iconColor: isDarkMode ? '#F472B6' : '#DB2777',
-      iconBg: isDarkMode ? 'rgba(236, 72, 153, 0.15)' : 'rgba(236, 72, 153, 0.1)',
-      title: 'סיכום יומי',
-      getSubtitle: () => `כל יום בשעה ${settings.dailySummaryTime}`,
-      enabled: settings.dailySummary,
-      onToggle: (val) => updateSettings({ dailySummary: val }),
-      disabled: !settings.enabled,
-      onTest: () => handleTestNotification('summary'),
-      children: (
-        <View style={styles.cardChildContent}>
-          <TimePicker
-            value={settings.dailySummaryTime}
-            label="שעת סיכום"
-            onChange={(time) => updateSettings({ dailySummaryTime: time })}
-            disabled={!settings.enabled}
-          />
+          {supplements.length === 0 ? (
+            <Text style={[styles.emptySupplements, { color: theme.textSecondary }]}>
+              אין תוספים מוגדרים — הוסיפי תוספים בדף הבית
+            </Text>
+          ) : (
+            supplements.map((supp, i) => {
+              const time = settings.supplementTimes?.[supp.id] || '09:00';
+              return (
+                <View key={supp.id}>
+                  {i > 0 && <View style={[styles.suppDivider, { backgroundColor: theme.divider }]} />}
+                  <View style={styles.suppRow}>
+                    <Text style={[styles.suppName, { color: theme.textPrimary }]}>{supp.name}</Text>
+                    <CompactTimePicker
+                      value={time}
+                      disabled={!settings.enabled}
+                      onChange={async (newTime) => {
+                        const newTimes = { ...(settings.supplementTimes || {}), [supp.id]: newTime };
+                        await updateSettings({ supplementTimes: newTimes });
+                        await schedulePerSupplementReminders(supplements);
+                      }}
+                    />
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
       ),
     },
@@ -228,11 +278,9 @@ export default function PremiumNotificationSettings() {
               <Bell size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
             </View>
             <View style={styles.masterTextContainer}>
-              <Text style={[styles.masterTitle, { color: theme.textPrimary }]}>
-                התראות ותזכורות
-              </Text>
+              <Text style={[styles.masterTitle, { color: theme.textPrimary }]}>{t('settings.notificationsAndReminders')}</Text>
               <Text style={[styles.masterSubtitle, { color: theme.textSecondary }]}>
-                {settings.enabled ? 'מופעל' : 'כבוי'}
+                {settings.enabled ? t('settings.enabled') : t('settings.disabled')}
               </Text>
             </View>
           </View>
@@ -390,9 +438,6 @@ const styles = StyleSheet.create({
   cardChildContent: {
     paddingTop: 4,
   },
-  spacer: {
-    height: 4,
-  },
   divider: {
     height: StyleSheet.hairlineWidth,
     marginHorizontal: 20,
@@ -411,5 +456,65 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -0.08,
     textAlign: 'right',
+  },
+  timeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  timeChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 0.1,
+  },
+  timeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  timeModalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 34,
+  },
+  timeModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  timeModalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  suppRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  suppName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '400',
+    textAlign: 'right',
+  },
+  suppDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 16,
+  },
+  emptySupplements: {
+    fontSize: 13,
+    textAlign: 'right',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    opacity: 0.7,
   },
 });

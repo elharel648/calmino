@@ -20,6 +20,7 @@ import { BlurView } from 'expo-blur';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
 import { initRemoteConfig, getPaywallConfig } from '../../services/remoteConfigService';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface PremiumPaywallProps {
     visible: boolean;
@@ -38,6 +39,7 @@ const FEATURE_ICONS = [
 
 const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigger }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const { offerings, purchase, restore, isLoading } = usePremium();
     const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
     const [purchasing, setPurchasing] = useState(false);
@@ -53,7 +55,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
     const handlePurchase = async () => {
         const pkg = selectedPlan === 'annual' ? annualPackage : monthlyPackage;
         if (!pkg) {
-            Alert.alert('שגיאה', 'המוצר לא זמין כרגע');
+            Alert.alert(t('common.error'), 'המוצר לא זמין כרגע');
             return;
         }
 
@@ -69,7 +71,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
                 ]);
             }
         } catch (error) {
-            Alert.alert('שגיאה', 'לא הצלחנו להשלים את הרכישה');
+            Alert.alert(t('common.error'), 'לא הצלחנו להשלים את הרכישה');
         } finally {
             setPurchasing(false);
         }
@@ -89,7 +91,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
                 Alert.alert('לא נמצאו רכישות', 'לא מצאנו מנוי קיים לשחזר');
             }
         } catch (error) {
-            Alert.alert('שגיאה', 'לא הצלחנו לשחזר את הרכישות');
+            Alert.alert(t('common.error'), 'לא הצלחנו לשחזר את הרכישות');
         } finally {
             setPurchasing(false);
         }
@@ -167,7 +169,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
                             }}
                             activeOpacity={0.8}
                         >
-                            <Text style={[styles.planDuration, { color: theme.textPrimary }]}>חודשי</Text>
+                            <Text style={[styles.planDuration, { color: theme.textPrimary }]}>{t('premium.monthly')}</Text>
                             <Text style={[styles.planPrice, { color: theme.primary }]}>{monthlyPrice}</Text>
                             <Text style={[styles.planPer, { color: theme.textSecondary }]}>לחודש</Text>
                         </TouchableOpacity>
@@ -192,7 +194,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
                             <View style={styles.planBadge}>
                                 <Text style={styles.planBadgeText}>חסכון {monthlySavings}%</Text>
                             </View>
-                            <Text style={[styles.planDuration, { color: theme.textPrimary }]}>שנתי</Text>
+                            <Text style={[styles.planDuration, { color: theme.textPrimary }]}>{t('premium.yearly')}</Text>
                             <Text style={[styles.planPrice, { color: theme.primary }]}>{annualPrice}</Text>
                             <Text style={[styles.planPer, { color: theme.textSecondary }]}>לשנה (₪{(annualPriceNumber / 12).toFixed(2)}/חודש)</Text>
                         </TouchableOpacity>

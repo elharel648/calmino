@@ -344,7 +344,7 @@ export default function ReportsScreen() {
         nightWakeups: 0,
         longestSleep: Math.round(maxSleepDuration / 3600 * 10) / 10,
         biggestFeeding: maxFeedingAmount,
-        bestSleepDay: bestDay || 'לא ידוע',
+        bestSleepDay: bestDay || t('reports.empty.unknown'),
       });
 
       setDailyStats(stats);
@@ -511,7 +511,7 @@ export default function ReportsScreen() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דוח התפתחות מקיף - ${activeChild?.childName || 'התינוק'}</title>
+    <title>דוח התפתחות מקיף - ${activeChild?.childName || t('reports.misc.baby')}</title>
     <style>
         body {
             font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
@@ -786,57 +786,57 @@ export default function ReportsScreen() {
     <div class="report-header">
         ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" class="report-header-logo" />` : ''}
         <div class="report-header-text">
-            <h1>דוח מעקב - ${activeChild?.childName || 'התינוק'}</h1>
+            <h1>דוח מעקב - ${activeChild?.childName || t('reports.misc.baby')}</h1>
             <p>${dateText} | ${periodText}</p>
         </div>
     </div>
 
     <!-- Goals & Consistency -->
-    <div class="section-title">עקביות ומטרות</div>
+    <div class="section-title">{t('reports.sections.consistencyGoals')}</div>
     <div class="goals-container">
         <div class="goal-item">
             <div class="goal-circle">${weeklyGoals.streak}</div>
-            <h3 style="margin-bottom: 4px;">רצף מעקב</h3>
-            <span style="color:#64748B; font-size:14px;">ימים רצופים של תיעוד</span>
+            <h3 style="margin-bottom: 4px;">{t('reports.sections.trackingStreak')}</h3>
+            <span style="color:#64748B; font-size:14px;">{t('reports.sections.consecutiveDays')}</span>
         </div>
         <div class="goal-item">
             <div class="goal-circle" style="background:#F0FDF4; color:#16A34A; border-color:#DCFCE7;">
                 ${weeklyGoals.sleepDaysMet}/${weeklyGoals.sleepDaysGoal}
             </div>
-            <h3 style="margin-bottom: 4px;">יעדי שינה</h3>
+            <h3 style="margin-bottom: 4px;">{t('reports.goals.sleepGoals')}</h3>
             <span style="color:#64748B; font-size:14px;">ימים עם 8+ שעות שינה</span>
         </div>
         <div class="goal-item">
             <div class="goal-circle" style="background:#FFF7ED; color:#EA580C; border-color:#FFEDD5;">
                 ${weeklyGoals.docDaysMet}/${weeklyGoals.docDaysGoal}
             </div>
-            <h3 style="margin-bottom: 4px;">יעדי תיעוד</h3>
-            <span style="color:#64748B; font-size:14px;">ימים של תיעוד יומן</span>
+            <h3 style="margin-bottom: 4px;">{t('reports.goals.trackingGoals')}</h3>
+            <span style="color:#64748B; font-size:14px;">{t('reports.goals.dailyJournalDays')}</span>
         </div>
     </div>
 
-    <div class="section-title section-title-summary">סיכום כולל</div>
+    <div class="section-title section-title-summary">{t('reports.sections.overallSummary')}</div>
     <div class="grid">
         <!-- Feeding Card -->
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-food"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
-                <h3>תזונה והאכלה</h3>
+                <h3>{t('reports.sections.nutritionFeeding')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">ארוחות בסך הכל</span></div>
+            <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">{t('reports.sections.totalMeals')}</span></div>
             <div class="stat-sub">כמות כוללת: ${dailyStats.food} מ"ל</div>
             
             <div class="details-list">
                 <div class="detail-item">
-                    <span>בקבוק תמ"ל/שאוב</span>
+                    <span>{t('reports.feeding.formulaPumped')}</span>
                     <span class="detail-value">${dailyStats.feedingTypes.bottle} ארוחות</span>
                 </div>
                 <div class="detail-item">
-                    <span>הנקה ישירה</span>
+                    <span>{t('reports.feeding.directBreastfeeding')}</span>
                     <span class="detail-value">${dailyStats.feedingTypes.breast} ארוחות</span>
                 </div>
                 <div class="detail-item">
-                    <span>מוצקים</span>
+                    <span>{t('reports.feeding.solids')}</span>
                     <span class="detail-value">${dailyStats.feedingTypes.solids} ארוחות</span>
                 </div>
             </div>
@@ -846,22 +846,22 @@ export default function ReportsScreen() {
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-sleep"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
-                <h3>שינה ומנוחה</h3>
+                <h3>{t('reports.sections.sleepRest')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">שעות שינה מצטברות</span></div>
+            <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">{t('reports.sections.cumulativeSleepHours')}</span></div>
             <div class="stat-sub">ממוצע לתנומה: ${avgSleep} שעות</div>
             
             <div class="details-list">
                 <div class="detail-item">
-                    <span>תנומה ארוכה ביותר</span>
+                    <span>{t('reports.sleep.longestNap')}</span>
                     <span class="detail-value">${timeInsights?.longestSleep || 0} שעות</span>
                 </div>
                 <div class="detail-item">
-                    <span>יום שינה אידיאלי</span>
+                    <span>{t('reports.sleep.idealDay')}</span>
                     <span class="detail-value">${timeInsights?.bestSleepDay || '-'}</span>
                 </div>
                 <div class="detail-item">
-                    <span>שעת השכבה ממוצעת</span>
+                    <span>{t('reports.sleep.avgBedtime')}</span>
                     <span class="detail-value">${timeInsights?.avgSleepTime || '-'}</span>
                 </div>
             </div>
@@ -871,51 +871,51 @@ export default function ReportsScreen() {
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-diaper"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-                <h3>החתלה והיגיינה</h3>
+                <h3>{t('reports.sections.diaperingHygiene')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">החלפות חיתול</span></div>
-            <div class="stat-sub">מעקב תקין של יציאות והרטבות</div>
+            <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">{t('reports.sections.diaperChanges')}</span></div>
+            <div class="stat-sub">{t('reports.sections.normalTracking')}</div>
         </div>
 
         <!-- Supplements Card -->
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-supplements"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
-                <h3>תוספים ותרופות</h3>
+                <h3>{t('reports.sections.supplementsMeds')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">מנות שניתנו</span></div>
-            <div class="stat-sub">לפי תיעוד הורים או היסטוריה רפואית</div>
+            <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">{t('reports.sections.dosesGiven')}</span></div>
+            <div class="stat-sub">{t('reports.sections.perParentTracking')}</div>
         </div>
     </div>
 
     <!-- Analytics & Comparisons -->
     ${comparison && (comparison.sleepChange !== 0 || comparison.feedingChange !== 0 || comparison.diaperChange !== 0) ? `
     <div class="section-block">
-    <div class="section-title section-title-trends">מגמות ותובנות שבועיות</div>
+    <div class="section-title section-title-trends">{t('reports.sections.weeklyTrends')}</div>
     <div class="card">
         <div class="card-header">
             <div class="icon icon-trends"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-            <h3>השוואה לתקופה מקבילה קודמת</h3>
+            <h3>{t('reports.comparison.previousPeriod')}</h3>
         </div>
-        <p style="color:#64748B; margin-top:0; font-size:16px;">זיהוי דפוסים אל מול הנתונים מהתקופה שעברה.</p>
+        <p style="color:#64748B; margin-top:0; font-size:16px;">{t('reports.comparison.patternDetection')}</p>
         
         <div class="trends-grid">
             <div class="trend-card" style="border-top: 4px solid ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#CBD5E1'};">
-                <span class="trend-label">שינה ומנוחה</span>
+                <span class="trend-label">{t('reports.sections.sleepRest')}</span>
                 <span class="trend-value" style="color: ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#1E293B'}">
                     ${comparison.sleepChange > 0 ? '+' : ''}${comparison.sleepChange}%
                 </span>
             </div>
             
             <div class="trend-card" style="border-top: 4px solid ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#CBD5E1'};">
-                <span class="trend-label">כמויות האכלה</span>
+                <span class="trend-label">{t('reports.sections.feedingAmounts')}</span>
                 <span class="trend-value" style="color: ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#1E293B'}">
                     ${comparison.feedingChange > 0 ? '+' : ''}${comparison.feedingChange}%
                 </span>
             </div>
             
             <div class="trend-card" style="border-top: 4px solid ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#CBD5E1'};">
-                <span class="trend-label">החלפות חיתול</span>
+                <span class="trend-label">{t('reports.sections.diaperChanges')}</span>
                 <span class="trend-value" style="color: ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#1E293B'}">
                     ${comparison.diaperChange > 0 ? '+' : ''}${comparison.diaperChange}%
                 </span>
@@ -928,15 +928,15 @@ export default function ReportsScreen() {
     <!-- Daily Breakdown Table -->
     ${dailyRows ? `
     <div class="section-block">
-    <div class="section-title section-title-daily">פירוט נתונים יומי</div>
+    <div class="section-title section-title-daily">{t('reports.sections.dailyBreakdown')}</div>
     <table class="data-table">
         <thead>
             <tr>
-                <th>תאריך</th>
-                <th>האכלה (כמות / ארוחות)</th>
-                <th>שעות שינה</th>
-                <th>חיתולים</th>
-                <th>תוספים</th>
+                <th>{t('reports.dates.date')}</th>
+                <th>{t('reports.charts.feedingAmountMeals')}</th>
+                <th>{t('reports.charts.sleepHours')}</th>
+                <th>{t('reports.metrics.diapers')}</th>
+                <th>{t('reports.metrics.supplements')}</th>
             </tr>
         </thead>
         <tbody>
@@ -949,7 +949,7 @@ export default function ReportsScreen() {
     <div class="footer">
         הופק באמצעות מערכת <span class="brand">Calmino</span>
         <br>
-        <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">כל זכויות הנתונים שמורות להורים בלבד.</span>
+        <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">{t('reports.share.dataDisclaimer')}</span>
     </div>
 
 </body>
@@ -967,17 +967,17 @@ export default function ReportsScreen() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
-          dialogTitle: `דוח מערכת - ${activeChild?.childName || 'התינוק'}`,
+          dialogTitle: `דוח מערכת - ${activeChild?.childName || t('reports.misc.baby')}`,
           UTI: 'com.adobe.pdf'
         });
       } else {
-        Alert.alert('שגיאה', 'שיתוף קבצים אינו נתמך במכשיר זה');
+        Alert.alert(t('common.error'), t('reports.share.notSupported'));
       }
     } catch (error) {
       logger.error('Failed to generate/share PDF report:', error);
       // Use toast instead of Alert
       if (typeof window !== 'undefined' && (window as any).showToast) {
-        (window as any).showToast({ message: 'לא ניתן לשתף', type: 'error' });
+        (window as any).showToast({ message: t('reports.share.cannotShare'), type: 'error' });
       }
     }
   };
@@ -1098,7 +1098,7 @@ export default function ReportsScreen() {
           }}
         >
           <Text style={[styles.tabText, { color: activeTab === tab ? theme.textPrimary : theme.textSecondary }]}>
-            {tab === 'summary' ? 'סיכום' : tab === 'insights' ? 'תובנות' : 'גרפים'}
+            {tab === 'summary' ? t('reports.tabs.summary') : tab === 'insights' ? t('reports.insights.title') : t('reports.tabs.charts')}
           </Text>
         </TouchableOpacity>
       ))}
@@ -1130,7 +1130,7 @@ export default function ReportsScreen() {
             <TouchableOpacity onPress={() => { setShowRangeModal(false); setActivePickerField(null); }}>
               <X size={22} color={theme.textSecondary} />
             </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>בחר תאריכים</Text>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('reports.dates.selectDates')}</Text>
             <TouchableOpacity onPress={() => {
               // Commit temp dates to actual state
               if (isSingleDayMode) {
@@ -1158,7 +1158,7 @@ export default function ReportsScreen() {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.modeToggleText, { color: theme.textSecondary }, isSingleDayMode && { color: theme.card }]}>יום בודד</Text>
+              <Text style={[styles.modeToggleText, { color: theme.textSecondary }, isSingleDayMode && { color: theme.card }]}>{t('reports.dates.singleDay')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modeToggleBtn, { backgroundColor: theme.inputBackground }, !isSingleDayMode && { backgroundColor: theme.primary }]}
@@ -1168,7 +1168,7 @@ export default function ReportsScreen() {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.modeToggleText, { color: theme.textSecondary }, !isSingleDayMode && { color: theme.card }]}>טווח תאריכים</Text>
+              <Text style={[styles.modeToggleText, { color: theme.textSecondary }, !isSingleDayMode && { color: theme.card }]}>{t('reports.dates.dateRange')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -1188,7 +1188,7 @@ export default function ReportsScreen() {
           ) : (
             <View style={styles.datePickerRow}>
               <View style={styles.datePickerItem}>
-                <Text style={[styles.datePickerLabel, { color: theme.textSecondary }]}>מתאריך</Text>
+                <Text style={[styles.datePickerLabel, { color: theme.textSecondary }]}>{t('reports.dates.from')}</Text>
                 <TouchableOpacity
                   style={[styles.datePickerBtn, { backgroundColor: activePickerField === 'start' ? (isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF') : theme.cardSecondary }]}
                   onPress={() => setActivePickerField('start')}
@@ -1199,7 +1199,7 @@ export default function ReportsScreen() {
                 </TouchableOpacity>
               </View>
               <View style={styles.datePickerItem}>
-                <Text style={[styles.datePickerLabel, { color: theme.textSecondary }]}>עד תאריך</Text>
+                <Text style={[styles.datePickerLabel, { color: theme.textSecondary }]}>{t('reports.dates.to')}</Text>
                 <TouchableOpacity
                   style={[styles.datePickerBtn, { backgroundColor: activePickerField === 'end' ? (isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF') : theme.cardSecondary }]}
                   onPress={() => setActivePickerField('end')}
@@ -1261,13 +1261,13 @@ export default function ReportsScreen() {
 
     return (
       <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
-        <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>התפלגות האכלה</Text>
+        <Text style={[styles.chartTitle, { color: theme.textPrimary }]}>{t('reports.feeding.distribution')}</Text>
 
         <View style={styles.donutContainer}>
           {/* Simple circular indicator */}
           <View style={[styles.donutRing, { borderColor: theme.cardSecondary }]}>
             <Text style={[styles.donutTotal, { color: theme.textPrimary }]}>{total}</Text>
-            <Text style={[styles.donutLabel, { color: theme.textSecondary }]}>סה״כ</Text>
+            <Text style={[styles.donutLabel, { color: theme.textSecondary }]}>{t('reports.misc.total')}</Text>
           </View>
 
           {/* Legend with progress bars */}
@@ -1352,7 +1352,7 @@ export default function ReportsScreen() {
               <StatCard
                 icon={Utensils}
                 value={dailyStats.foodCount}
-                label="האכלה"
+                label={t('reports.metrics.feeding')}
                 subValue={dailyStats.food > 0 ? `${dailyStats.food} מ"ל` : undefined}
                 change={comparison?.feedingChange}
                 accentColor="#F59E0B"
@@ -1368,7 +1368,7 @@ export default function ReportsScreen() {
               <StatCard
                 icon={Moon}
                 value={dailyStats.sleep > 0 ? dailyStats.sleep.toFixed(1) : (dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount}` : '—')}
-                label={dailyStats.sleep > 0 ? 'שעות שינה' : (dailyStats.sleepCount > 0 ? 'תנומות' : 'שעות שינה')}
+                label={dailyStats.sleep > 0 ? t('reports.charts.sleepHours') : (dailyStats.sleepCount > 0 ? t('reports.charts.naps') : t('reports.charts.sleepHours'))}
                 subValue={dailyStats.sleep > 0 && dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount} תנומות` : undefined}
                 change={comparison?.sleepChange}
                 accentColor="#6366F1"
@@ -1384,7 +1384,7 @@ export default function ReportsScreen() {
               <StatCard
                 icon={Droplets}
                 value={dailyStats.diapers}
-                label="חיתולים"
+                label={t('reports.metrics.diapers')}
                 change={comparison?.diaperChange}
                 accentColor="#0EA5E9"
                 iconColor="#0EA5E9"
@@ -1400,7 +1400,7 @@ export default function ReportsScreen() {
               <StatCard
                 icon={Pill}
                 value={dailyStats.supplements}
-                label="תוספים"
+                label={t('reports.metrics.supplements')}
                 accentColor="#EC4899"
                 iconColor="#EC4899"
                 iconBg={isDarkMode ? 'rgba(236, 72, 153, 0.15)' : 'rgba(236, 72, 153, 0.1)'}
@@ -1435,11 +1435,11 @@ export default function ReportsScreen() {
               </View>
 
               <View style={styles.statValueRow}>
-                <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>יומן</Text>
+                <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>{t('reports.history.journal')}</Text>
               </View>
 
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>היסטוריה</Text>
-              <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>ציר זמן מלא</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.history.title')}</Text>
+              <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>{t('reports.history.fullTimeline')}</Text>
 
               <ChevronRight size={16} color={theme.textTertiary} style={styles.cardChevron} />
             </TouchableOpacity>,
@@ -1468,7 +1468,7 @@ export default function ReportsScreen() {
               <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
                 <Moon size={16} color="#6366F1" strokeWidth={2} />
               </View>
-              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>שינה</Text>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.sleep')}</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.sleepChange !== undefined && comparison.sleepChange !== 0
                   ? (comparison.sleepChange > 0 ? '#10B981' : '#EF4444')
@@ -1490,7 +1490,7 @@ export default function ReportsScreen() {
               <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
                 <Utensils size={16} color="#F59E0B" strokeWidth={2} />
               </View>
-              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>האכלה</Text>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.feeding')}</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
                   ? (comparison.feedingChange > 0 ? '#F59E0B' : '#EF4444')
@@ -1512,7 +1512,7 @@ export default function ReportsScreen() {
               <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)' }]}>
                 <Droplets size={16} color="#0EA5E9" strokeWidth={2} />
               </View>
-              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>חיתולים</Text>
+              <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.diapers')}</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
                   ? '#10B981'
@@ -1546,7 +1546,7 @@ export default function ReportsScreen() {
           {/* Sleep Goal - Blue */}
           <View style={styles.goalItem}>
             <View style={styles.goalItemHeader}>
-              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>שינה של 8+ שעות</Text>
+              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.goals.sleepOver8')}</Text>
               <Text style={[styles.goalItemProgress, { color: '#3B82F6' }]}>
                 {weeklyGoals.sleepDaysMet}/{weeklyGoals.sleepDaysGoal}
               </Text>
@@ -1567,7 +1567,7 @@ export default function ReportsScreen() {
           {/* Documentation Goal - Green */}
           <View style={styles.goalItem}>
             <View style={styles.goalItemHeader}>
-              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>ימים עם תיעוד</Text>
+              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.goals.daysWithTracking')}</Text>
               <Text style={[styles.goalItemProgress, { color: '#10B981' }]}>
                 {weeklyGoals.docDaysMet}/{weeklyGoals.docDaysGoal}
               </Text>
@@ -1597,11 +1597,11 @@ export default function ReportsScreen() {
                 {/* Right side: flame icon + label (flex:1 to fill available space) */}
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, flex: 1 }}>
                   <Flame size={15} color="#F97316" strokeWidth={2.5} />
-                  <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>רצף תיעוד</Text>
+                  <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.misc.trackingStreak')}</Text>
                 </View>
                 {/* Left side: count */}
                 <Text style={[styles.goalItemProgress, { color: '#F97316', fontWeight: '600' }]}>
-                  {weeklyGoals.streak} {weeklyGoals.streak === 1 ? 'יום' : 'ימים'}
+                  {weeklyGoals.streak} {weeklyGoals.streak === 1 ? t('reports.units.day') : t('reports.units.days')}
                 </Text>
               </View>
             </View>
@@ -1620,8 +1620,8 @@ export default function ReportsScreen() {
       weeklyData,
       prevWeekStats,
       childName: activeChild?.childName,
-    });
-  }, [dailyStats, timeInsights, weeklyData, prevWeekStats, activeChild?.childName]);
+    }, t);
+  }, [dailyStats, timeInsights, weeklyData, prevWeekStats, activeChild?.childName, t]);
 
   // Premium Insights Tab
   const renderLockedSection = (children: React.ReactNode, compact: boolean = false) => {
@@ -1664,7 +1664,7 @@ export default function ReportsScreen() {
               adjustsFontSizeToFit
               minimumFontScale={0.8}
             >
-              {compact ? 'תובנות מתקדמות' : 'פתיחת תובנות מתקדמות'}
+              {compact ? t('reports.insights.advanced') : t('reports.insights.unlockAdvanced')}
             </Text>
           </View>
         </BlurView>
@@ -1677,7 +1677,7 @@ export default function ReportsScreen() {
       {/* Insights Section */}
       <View style={styles.sectionTitleRow}>
         <Trophy size={16} color="#6366F1" strokeWidth={1.5} />
-        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>תובנות</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.insights.title')}</Text>
       </View>
       {aiInsights.tips.slice(0, 2).map((tipData, index) => (
         <AITipCard
@@ -1691,27 +1691,27 @@ export default function ReportsScreen() {
       {/* Achievements Section */}
       <View style={[styles.sectionTitleRow, { marginTop: 20 }]}>
         <Award size={16} color="#6366F1" strokeWidth={1.5} />
-        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>הישגים</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.sections.achievements')}</Text>
       </View>
       {renderLockedSection(
         <View style={styles.insightsList}>
           <PremiumInsightCard
             icon={Moon}
-            title="שינה ארוכה ביותר"
+            title={t('reports.sleep.longestSleep')}
             value={`${timeInsights?.longestSleep || 0} שעות`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={0}
           />
           <PremiumInsightCard
             icon={Utensils}
-            title="האכלה גדולה ביותר"
+            title={t('reports.feeding.biggestFeeding')}
             value={`${timeInsights?.biggestFeeding || 0} מ"ל`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={50}
           />
           <PremiumInsightCard
             icon={Clock}
-            title="זמן ממוצע בין האכלה"
+            title={t('reports.feeding.avgTimeBetween')}
             value={`${timeInsights?.avgFeedingInterval || 0} שעות`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={100}
@@ -1724,7 +1724,7 @@ export default function ReportsScreen() {
         <>
           <View style={[styles.sectionTitleRow, { marginTop: 20 }]}>
             <Activity size={16} color="#6366F1" strokeWidth={1.5} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>דפוסים</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.sections.patterns')}</Text>
           </View>
           {renderLockedSection(
             <View style={styles.insightsList}>
@@ -1770,16 +1770,16 @@ export default function ReportsScreen() {
             <View style={styles.insightsList}>
               <PremiumInsightCard
                 icon={Moon}
-                title="שינה"
+                title={t('reports.metrics.sleep')}
                 value={`${comparison.sleepChange >= 0 ? '+' : ''}${comparison.sleepChange}%`}
-                subtitle={comparison.sleepChange >= 0 ? 'יותר שינה' : 'פחות שינה'}
+                subtitle={comparison.sleepChange >= 0 ? t('reports.comparison.moreSleep') : t('reports.comparison.lessSleep')}
                 trend={comparison.sleepChange >= 0 ? 'up' : 'down'}
                 color="#8B5CF6"
                 delay={0}
               />
               <PremiumInsightCard
                 icon={Utensils}
-                title="האכלה"
+                title={t('reports.metrics.feeding')}
                 value={`${comparison.feedingChange >= 0 ? '+' : ''}${comparison.feedingChange}%`}
                 trend={comparison.feedingChange >= 0 ? 'up' : 'down'}
                 color="#F59E0B"
@@ -1805,7 +1805,7 @@ export default function ReportsScreen() {
         <GlassBarChartPerfect
           data={weeklyData.sleep}
           labels={weeklyData.labels}
-          title="שינה (שעות)"
+          title={t('reports.charts.sleepInHours')}
           unit="ש'"
           gradientColors={['#8B5CF6', '#8B5CF620']}
           height={260}
@@ -1828,7 +1828,7 @@ export default function ReportsScreen() {
         <GlassBarChartPerfect
           data={weeklyData.diapers}
           labels={weeklyData.labels}
-          title="חיתולים"
+          title={t('reports.metrics.diapers')}
           gradientColors={['#10B981', '#10B98120']}
           height={220}
           yAxisSteps={[0, 3, 6, 9, 12]}
@@ -1930,7 +1930,7 @@ export default function ReportsScreen() {
               }}
             >
               <Text style={[styles.filterPillText, { color: timeRange === range ? theme.card : theme.textSecondary }]}>
-                {range === 'day' ? 'יומי' : range === 'week' ? 'שבועי' : 'חודשי'}
+                {range === 'day' ? t('reports.tabs.daily') : range === 'week' ? t('reports.tabs.weekly') : t('reports.tabs.monthly')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -1939,9 +1939,7 @@ export default function ReportsScreen() {
             onPress={() => setShowRangeModal(true)}
           >
             <Calendar size={14} color={timeRange === 'custom' ? theme.card : theme.textSecondary} />
-            <Text style={[styles.filterPillText, { color: timeRange === 'custom' ? theme.card : theme.textSecondary }]}>
-              מותאם
-            </Text>
+            <Text style={[styles.filterPillText, { color: timeRange === 'custom' ? theme.card : theme.textSecondary }]}>{t('settings.custom')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -2017,7 +2015,7 @@ export default function ReportsScreen() {
             <TouchableOpacity onPress={() => setShowHistoryModal(false)} style={[styles.closeButton, { backgroundColor: theme.cardSecondary }]}>
               <X size={24} color={theme.textPrimary} />
             </TouchableOpacity>
-            <Text style={[styles.historyModalTitle, { color: theme.textPrimary }]}>היסטוריה מלאה</Text>
+            <Text style={[styles.historyModalTitle, { color: theme.textPrimary }]}>{t('reports.history.fullHistory')}</Text>
             <View style={{ width: 40 }} />
           </View>
           <ScrollView

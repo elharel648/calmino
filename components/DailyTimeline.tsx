@@ -94,7 +94,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     teeth: {
       icon: TeethIcon,
       color: theme.actionColors.teeth.accentColor,
-      label: 'שיניים',
+      label: t('profile.teeth'),
     },
   };
 
@@ -194,9 +194,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
       let label: string;
       if (date.toDateString() === today.toDateString()) {
-        label = 'היום';
+        label = t('common.today');
       } else if (date.toDateString() === yesterday.toDateString()) {
-        label = 'אתמול';
+        label = t('common.yesterday');
       } else {
         label = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
       }
@@ -580,7 +580,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   const subtitle = subtext
                     ? `${config.label} · ${subtext}`
                     : detailsIsJustLabel
-                      ? config.label   // title already IS "שינה"/"חיתול" etc. — still show label for clarity
+                      ? config.label   // title already IS t('tracking.sleep')/t('tracking.diaper') etc. — still show label for clarity
                       : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
                   return (
@@ -710,12 +710,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         {isFirst && (
                           <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, backgroundColor: config.color, borderTopRightRadius: 18, borderBottomRightRadius: 18, opacity: 0.75 }} />
                         )}
-                        {/* "עכשיו" / "אחרון" badge for latest event */}
+                        {/* t('timeline.now') / "אחרון" badge for latest event */}
                         {isFirst && (
                           <View style={{ position: 'absolute', top: 8, left: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                             <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: isRecent ? '#34D399' : config.color }} />
                             <Text style={{ fontSize: 10, fontWeight: '700', color: isRecent ? '#34D399' : config.color, letterSpacing: 0.3 }}>
-                              {isRecent ? 'עכשיו' : 'אחרון'}
+                              {isRecent ? t('timeline.now') : 'אחרון'}
                             </Text>
                           </View>
                         )}

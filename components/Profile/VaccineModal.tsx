@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface VaccineModalProps {
     visible: boolean;
@@ -9,6 +10,7 @@ interface VaccineModalProps {
 }
 
 const VaccineModal = memo(({ visible, onAdd, onClose }: VaccineModalProps) => {
+    const { t } = useLanguage();
     const [name, setName] = useState('');
 
     useEffect(() => {
@@ -43,11 +45,11 @@ const VaccineModal = memo(({ visible, onAdd, onClose }: VaccineModalProps) => {
                     />
 
                     <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
-                        <Text style={styles.addBtnText}>הוסף</Text>
+                        <Text style={styles.addBtnText}>{t('common.add')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                        <Text style={styles.cancelText}>ביטול</Text>
+                        <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

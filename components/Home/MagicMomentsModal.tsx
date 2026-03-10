@@ -37,6 +37,7 @@ import Animated, {
     withSequence,
 } from 'react-native-reanimated';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -49,8 +50,10 @@ interface MagicMomentsModalProps {
     onClose: () => void;
 }
 
-export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModalProps) {
+export default function MagicMomentsModal({
+    visible, onClose }: MagicMomentsModalProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const { activeChild } = useActiveChild();
     const { baby, updatePhoto, updateAlbumNote, updateAlbumDate, refresh } = useBabyProfile(activeChild?.childId);
 
@@ -192,7 +195,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                 }, 1000);
             } catch (error) {
                 logger.error('Error adding photo:', error);
-                Alert.alert('שגיאה', 'לא הצלחנו להוסיף תמונה');
+                Alert.alert(t('common.error'), 'לא הצלחנו להוסיף תמונה');
             }
         }
     };
@@ -547,7 +550,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                             activeOpacity={0.7}
                                         >
                                             <Plus size={20} color={ACCENT} strokeWidth={2} />
-                                            <Text style={[styles.addMonthText, { color: ACCENT }]}>הוסף</Text>
+                                            <Text style={[styles.addMonthText, { color: ACCENT }]}>{t('common.add')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -731,7 +734,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                     }
                                 }}
                             >
-                                <Text style={[styles.saveButton, { color: ACCENT }]}>שמור</Text>
+                                <Text style={[styles.saveButton, { color: ACCENT }]}>{t('common.save')}</Text>
                             </TouchableOpacity>
                         </View>
                         <TextInput
@@ -797,11 +800,9 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                         setEditingDateMonth(null);
                                     }}
                                 >
-                                    <Text style={[styles.cancelButton, { color: theme.textSecondary }]}>ביטול</Text>
+                                    <Text style={[styles.cancelButton, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
                                 </TouchableOpacity>
-                                <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
-                                    בחר תאריך
-                                </Text>
+                                <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('sitter.selectDate')}</Text>
                                 <TouchableOpacity
                                     onPress={() => {
                                         if (editingDateMonth) {
@@ -812,7 +813,7 @@ export default function MagicMomentsModal({ visible, onClose }: MagicMomentsModa
                                         }
                                     }}
                                 >
-                                    <Text style={[styles.saveButton, { color: ACCENT }]}>שמור</Text>
+                                    <Text style={[styles.saveButton, { color: ACCENT }]}>{t('common.save')}</Text>
                                 </TouchableOpacity>
                             </View>
                             <DateTimePicker

@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { WeatherData } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface WeatherCardProps {
     weather: WeatherData;
@@ -11,6 +12,7 @@ interface WeatherCardProps {
  * Weather card with skeleton loading state
  */
 const WeatherCard = memo<WeatherCardProps>(({ weather }) => {
+    const { t } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     
     if (weather.loading) {

@@ -18,6 +18,7 @@ import { logger } from '../../utils/logger';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { Sparkles } from 'lucide-react-native';
 import { useDynamicPromo } from '../../hooks/useDynamicPromo';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ interface DynamicPromoModalProps {
 }
 
 const DynamicPromoModal: React.FC<DynamicPromoModalProps> = ({ currentScreenName, onNavigateToPaywall }) => {
+    const { t } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const { showPromo, promoData, dismissPromo, isReady } = useDynamicPromo(currentScreenName);
 

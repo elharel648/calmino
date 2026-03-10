@@ -3,6 +3,7 @@ import { TouchableOpacity, Text, StyleSheet, Platform, Linking, View } from 'rea
 import { Share2, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ShareStatusButtonProps {
     onShare: () => Promise<void>;
@@ -11,6 +12,7 @@ interface ShareStatusButtonProps {
 
 const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handlePress = useCallback(async () => {
@@ -54,7 +56,7 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
                 <Share2 size={15} color={iconColor} strokeWidth={1.8} />
             )}
             <Text style={[styles.text, { color: textColor }]}>
-                {showSuccess ? 'נשלח!' : 'שתף סיכום יומי'}
+                {showSuccess ? 'נשלח!' : t('export.shareDailySummary')}
             </Text>
         </TouchableOpacity>
     );

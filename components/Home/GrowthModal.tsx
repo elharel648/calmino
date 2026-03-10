@@ -38,6 +38,7 @@ import { addGrowthMeasurement, updateGrowthMeasurement, deleteGrowthMeasurement,
 import { logger } from '../../utils/logger';
 import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { Timestamp } from 'firebase/firestore';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -52,8 +53,10 @@ interface GrowthModalProps {
     editMeasurement?: GrowthMeasurement;
 }
 
-export default function GrowthModal({ visible, onClose, childId, editMeasurement }: GrowthModalProps) {
+export default function GrowthModal({
+    visible, onClose, childId, editMeasurement }: GrowthModalProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const { baby, updateAllStats } = useBabyProfile(childId);
 
     const [weight, setWeight] = useState('');
@@ -357,7 +360,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                         </Animated.View>
 
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
-                            {isEditMode ? 'עריכת מדידה' : 'מעקב גדילה'}
+                            {isEditMode ? 'עריכת מדידה' : t('growth.tracking')}
                         </Text>
                         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                             {isEditMode ? 'עדכנו את המדידה' : 'תעדו את ההתפתחות של התינוק'}
@@ -384,7 +387,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                 >
                                     <Calendar size={18} color={theme.textPrimary} strokeWidth={2} />
                                     <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
-                                        {isToday ? 'היום' : format(measurementDate, 'd בMMMM yyyy', { locale: he })}
+                                        {isToday ? t('common.today') : format(measurementDate, 'd בMMMM yyyy', { locale: he })}
                                     </Text>
                                     {showDatePicker ? (
                                         <ChevronUp size={16} color={theme.textSecondary} strokeWidth={2} />
@@ -407,7 +410,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                                 style={[styles.dateConfirmBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}
                                                 onPress={() => setShowDatePicker(false)}
                                             >
-                                                <Text style={{ color: '#007AFF', fontWeight: '600', fontSize: 15 }}>אישור</Text>
+                                                <Text style={{ color: '#007AFF', fontWeight: '600', fontSize: 15 }}>{t('common.confirm')}</Text>
                                             </TouchableOpacity>
                                         )}
                                     </View>
@@ -424,7 +427,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                             borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
                                         }
                                     ]}>
-                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>משקל</Text>
+                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('growth.weight')}</Text>
                                         <View style={styles.inputValueRow}>
                                             <TextInput
                                                 style={[styles.input, { color: theme.textPrimary }]}
@@ -448,7 +451,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                             borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
                                         }
                                     ]}>
-                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>גובה</Text>
+                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('growth.height')}</Text>
                                         <View style={styles.inputValueRow}>
                                             <TextInput
                                                 style={[styles.input, { color: theme.textPrimary }]}
@@ -472,7 +475,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                             borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
                                         }
                                     ]}>
-                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>היקף ראש</Text>
+                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('growth.headCircumference')}</Text>
                                         <View style={styles.inputValueRow}>
                                             <TextInput
                                                 style={[styles.input, { color: theme.textPrimary }]}
@@ -513,7 +516,7 @@ export default function GrowthModal({ visible, onClose, childId, editMeasurement
                                     )}
                                     <FileText size={16} color={theme.textSecondary} strokeWidth={1.5} />
                                     <Text style={[styles.notesToggleText, { color: theme.textSecondary }]}>
-                                        {showNotes ? 'הסתר הערות' : 'הוסף הערה'}
+                                        {showNotes ? 'הסתר הערות' : t('tracking.addNote')}
                                     </Text>
                                 </TouchableOpacity>
 

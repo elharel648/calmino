@@ -6,14 +6,17 @@ import { useTheme } from '../context/ThemeContext';
 import { useClockTimer } from '../hooks/useClockTimer';
 import { useAppleWatch } from '../hooks/useAppleWatch';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ClockWidgetProps {
     initialDuration?: number; // Countdown duration in seconds (0 = stopwatch)
     onComplete?: () => void;
 }
 
-export default function ClockWidget({ initialDuration = 0, onComplete }: ClockWidgetProps) {
+export default function ClockWidget({
+    initialDuration = 0, onComplete }: ClockWidgetProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const { sendTimer, stop: stopWatch } = useAppleWatch();
     const { isRunning, remainingSeconds, elapsedSeconds, start, pause, reset, formatTime } = useClockTimer({
         duration: initialDuration > 0 ? initialDuration : undefined,

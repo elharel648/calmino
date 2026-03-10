@@ -16,7 +16,24 @@
     "undo": "Undo",
     "undone": "Undone",
     "or": "or",
-    "done": "Done"
+    "done": "Done",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "saving": "Saving",
+    "add": "Add",
+    "select": "Select",
+    "search": "Search",
+    "share": "Share",
+    "send": "Send",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "week": "Week",
+    "month": "Month",
+    "unknown": "Unknown"
   },
   "errors": {
     "somethingWentWrong": "Oops! Something went wrong",
@@ -108,7 +125,36 @@
     "deleteAccountConfirmMessage": "After deletion, the account and data cannot be recovered. Continue?",
     "deleteAccountButton": "Delete Permanently",
     "deleteAccountYes": "Yes, Delete All",
-    "hours": "hours"
+    "hours": "hours",
+    "notificationsAndReminders": "Notifications & Reminders",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "feedingReminder": "Feeding Reminder",
+    "displayAndBehavior": "Display & Behavior",
+    "darkMode": "Dark Mode",
+    "biometricLock": "Biometric Lock",
+    "about": "About",
+    "version": "Version",
+    "termsOfUse": "Terms of Use",
+    "deleteAccount": "Delete Account",
+    "feedback": "Feedback",
+    "rateUs": "Rate Us",
+    "updateDetails": "Update Details",
+    "fullName": "Full Name",
+    "emailAddress": "Email Address",
+    "account": "Account",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "phoneNumber": "Phone Number",
+    "profile": "Profile",
+    "privacyAndSecurity": "Privacy & Security",
+    "helpAndSupport": "Help & Support",
+    "contactUs": "Contact Us",
+    "faq": "FAQ",
+    "every3Hours": "Every 3 Hours",
+    "dailyAt": "Daily at",
+    "custom": "Custom"
   },
   "navigation": {
     "home": "Home",
@@ -122,7 +168,11 @@
     "firstFeed": "First Feeding",
     "notYetToday": "Not recorded today yet",
     "vitaminD": "Vitamin D",
-    "iron": "Iron"
+    "iron": "Iron",
+    "title": "Notifications",
+    "noNew": "No new notifications",
+    "markAllRead": "Mark all as read",
+    "deleteAll": "Delete All"
   },
   "timeline": {
     "title": "Daily Timeline",
@@ -140,7 +190,16 @@
     "sleep": "Sleep",
     "supplement": "Supplement",
     "iron": "Iron",
-    "probiotic": "Probiotic"
+    "probiotic": "Probiotic",
+    "dailyTimeline": "Daily Timeline",
+    "noEvents": "No Events",
+    "noEventsRecorded": "No events recorded",
+    "ago": "ago",
+    "now": "Now",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Delete this?",
+    "eventDeleted": "Event deleted"
   },
   "time": {
     "now": "Now",
@@ -225,7 +284,11 @@
   },
   "empty": {
     "noChild": "Select a child to view statistics",
-    "noEvents": "No events to display"
+    "noEvents": "No events to display",
+    "noChildren": "No children registered",
+    "addChildToStart": "Add a child to get started",
+    "noActivityToday": "No activity today",
+    "startRecordingDay": "Start recording your day"
   },
   "baby": {
     "welcome": "How Fun! 🎉",
@@ -301,7 +364,30 @@
     "pressToStart": "Press to start",
     "enterAmount": "Enter amount",
     "example": "For example",
-    "forExample": "For example"
+    "forExample": "For example",
+    "endTime": "End",
+    "feeding": "Feeding",
+    "diapers": "Diapers",
+    "supplements": "Supplements",
+    "breastfeeding": "Breastfeeding",
+    "breastRight": "Right Breast",
+    "breastLeft": "Left Breast",
+    "soup": "Soup",
+    "amount": "Amount",
+    "notes": "Notes",
+    "addNote": "Add Note",
+    "stop": "Stop",
+    "finish": "Finish",
+    "active": "Active",
+    "nap": "Nap",
+    "naps": "Naps",
+    "wet": "Wet",
+    "dirty": "Dirty",
+    "mixed": "Mixed",
+    "dry": "Dry",
+    "times": "Times",
+    "meals": "Meals",
+    "startTime": "Start"
   },
   "weekday": {
     "sun": "S",
@@ -323,7 +409,13 @@
     "subscribeYearly": "Subscribe to Yearly Premium",
     "subscribeMonthly": "Subscribe to Monthly Premium",
     "members": "members",
-    "familyOf": "Family of"
+    "familyOf": "Family of",
+    "premium": "Premium",
+    "upgrade": "Upgrade to Premium",
+    "tryFree": "Try Free",
+    "restorePurchase": "Restore Purchase",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
   },
   "units": {
     "km": "km"
@@ -357,7 +449,51 @@
       "cityRequired": "Required Field",
       "selectCity": "Please select a city",
       "saveError": "Could not save, please try again"
-    }
+    },
+    "back": "Back",
+    "year": "year",
+    "hourUnit": "hour",
+    "findSitter": "Find Sitter",
+    "parentMode": "Parent Mode",
+    "sitterMode": "Sitter Mode",
+    "searchByCity": "Search by city...",
+    "distance": "Distance",
+    "price": "Price",
+    "rating": "Rating",
+    "favorites": "Favorites",
+    "blocked": "Blocked",
+    "availableSitters": "Available Sitters",
+    "sortByProximity": "Sort by Proximity",
+    "experience": "Experience",
+    "availability": "Availability",
+    "aboutMe": "About Me",
+    "skills": "Skills",
+    "reviews": "Reviews",
+    "bookSitter": "Book Sitter",
+    "bookings": "Bookings",
+    "newBooking": "New Booking",
+    "selectDate": "Select Date",
+    "selectHours": "Select Hours",
+    "confirmBooking": "Confirm Booking",
+    "cancelBooking": "Cancel Booking",
+    "bookingConfirmed": "Booking Confirmed",
+    "bookingCancelled": "Booking Cancelled",
+    "pendingApproval": "Pending Approval",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "completed": "Completed",
+    "becomeSitter": "Become a Sitter",
+    "sitterRegistration": "Sitter Registration",
+    "perHour": "/hr",
+    "km": "km",
+    "block": "Block",
+    "unblock": "Unblock",
+    "report": "Report",
+    "sendMessage": "Send Message",
+    "contact": "Contact",
+    "activeJobs": "Active Jobs",
+    "dashboard": "Dashboard",
+    "years": "years"
   },
   "guestInvite": {
     "cancelInvite": "Cancel Invite",
@@ -625,5 +761,372 @@
     "rating": "Rating",
     "price": "Price",
     "distanceFilter": "Distance Radius"
+  },
+  "reports": {
+    "empty": {
+      "noData": "No data to display",
+      "notEnoughData": "Not enough data to display",
+      "notEntered": "Not entered",
+      "notEnough": "Not enough data",
+      "unknown": "Unknown"
+    },
+    "growth": {
+      "title": "Growth Tracking",
+      "childAge": "Child Age",
+      "currentMeasurements": "Current Measurements",
+      "trend": "Growth Trend"
+    },
+    "metrics": {
+      "weight": "Weight",
+      "height": "Height",
+      "headCircumference": "Head Circumference",
+      "growth": "Growth",
+      "feeding": "Feeding",
+      "sleep": "Sleep",
+      "diapers": "Diapers",
+      "supplements": "Supplements"
+    },
+    "units": {
+      "kg": "kg",
+      "cm": "cm",
+      "hours": "hours",
+      "times": "times",
+      "doses": "doses",
+      "months": "months",
+      "day": "day",
+      "days": "days"
+    },
+    "tabs": {
+      "orderTabs": "Reorder Cards",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "custom": "Custom",
+      "summary": "Summary",
+      "charts": "Charts"
+    },
+    "tips": {
+      "sleep": "Sleep Tip",
+      "feeding": "Feeding Tip",
+      "general": "General Tip",
+      "shortNaps": "Very short naps. Try creating a quieter, darker environment.",
+      "keepTracking": "Keep tracking - the more data, the more accurate insights!"
+    },
+    "share": {
+      "dailySummary": "Daily Summary",
+      "summary": "Share Summary",
+      "error": "Could not share the report",
+      "dataDisclaimer": "All data rights reserved to parents only.",
+      "notSupported": "File sharing is not supported on this device",
+      "cannotShare": "Cannot share"
+    },
+    "sleep": {
+      "bestSleepDay": "Best sleep day",
+      "longestNap": "Longest nap",
+      "idealDay": "Ideal sleep day",
+      "avgBedtime": "Average bedtime",
+      "longestSleep": "Longest sleep"
+    },
+    "insights": {
+      "mostActiveDay": "Most active day",
+      "avgSleepDuration": "Average sleep duration",
+      "avgSleepTime": "Average sleep time",
+      "bestNight": "Best night",
+      "weekChange": "Change from last week",
+      "avgDailyFeeding": "Average daily feeding",
+      "biggestFeeding": "Biggest feeding",
+      "avgInterval": "Average interval between feedings",
+      "dailyAverage": "Daily average",
+      "busiestDay": "Busiest day",
+      "consistency": "Consistency",
+      "commonTime": "Common time",
+      "title": "Insights",
+      "advanced": "Advanced Insights",
+      "unlockAdvanced": "Unlock Advanced Insights"
+    },
+    "feeding": {
+      "mixed": "Mixed",
+      "bottle": "Bottle",
+      "breastfeeding": "Breastfeeding",
+      "pumping": "Pumping",
+      "solids": "Solids",
+      "preferredType": "Preferred Feeding Type",
+      "breastRight": "Right breast",
+      "breastLeft": "Left breast",
+      "formulaPumped": "Formula/Pumped bottle",
+      "directBreastfeeding": "Direct breastfeeding",
+      "distribution": "Feeding Distribution",
+      "biggestFeeding": "Biggest feeding",
+      "avgTimeBetween": "Average time between feedings"
+    },
+    "goals": {
+      "goodSleepWeek": "Good Sleep Week",
+      "daysOver10Hours": "Days with 10+ hours",
+      "feedingConsistency": "Feeding Consistency",
+      "daysWithTracking": "Days with tracking",
+      "daysOver8Hours": "Days with 8+ hours",
+      "regularSleep": "Regular Sleep",
+      "daysWithRoutine": "Days with routine",
+      "adequateNutrition": "Adequate Nutrition",
+      "regularTracking": "Regular Tracking",
+      "daysWith4Changes": "Days with 4+ changes",
+      "supplementConsistency": "Supplement Consistency",
+      "daysWithSupplement": "Days with supplement",
+      "title": "Goals",
+      "sleepGoals": "Sleep Goals",
+      "trackingGoals": "Tracking Goals",
+      "dailyJournalDays": "Days of journal tracking",
+      "sleepOver8": "Sleep 8+ hours"
+    },
+    "sections": {
+      "changes": "Changes",
+      "consistencyGoals": "Consistency & Goals",
+      "trackingStreak": "Tracking Streak",
+      "consecutiveDays": "Consecutive tracking days",
+      "overallSummary": "Overall Summary",
+      "nutritionFeeding": "Nutrition & Feeding",
+      "totalMeals": "Total Meals",
+      "sleepRest": "Sleep & Rest",
+      "cumulativeSleepHours": "Cumulative Sleep Hours",
+      "diaperingHygiene": "Diapering & Hygiene",
+      "diaperChanges": "Diaper Changes",
+      "normalTracking": "Normal output and wetness tracking",
+      "supplementsMeds": "Supplements & Medications",
+      "dosesGiven": "Doses Given",
+      "perParentTracking": "Per parent tracking or medical history",
+      "weeklyTrends": "Weekly Trends & Insights",
+      "feedingAmounts": "Feeding Amounts",
+      "dailyBreakdown": "Daily Breakdown",
+      "achievements": "Achievements",
+      "patterns": "Patterns"
+    },
+    "time": {
+      "morning": "Morning"
+    },
+    "comparison": {
+      "previousPeriod": "Comparison to previous period",
+      "more": "more",
+      "less": "less",
+      "patternDetection": "Pattern detection compared to previous period data.",
+      "moreSleep": "More sleep",
+      "lessSleep": "Less sleep"
+    },
+    "misc": {
+      "baby": "Baby",
+      "total": "Total",
+      "trackingStreak": "Tracking Streak"
+    },
+    "dates": {
+      "date": "Date",
+      "selectDates": "Select Dates",
+      "singleDay": "Single Day",
+      "dateRange": "Date Range",
+      "from": "From",
+      "to": "To"
+    },
+    "charts": {
+      "feedingAmountMeals": "Feeding (amount / meals)",
+      "sleepHours": "Sleep Hours",
+      "naps": "Naps",
+      "sleepInHours": "Sleep (hours)"
+    },
+    "history": {
+      "journal": "Journal",
+      "title": "History",
+      "fullTimeline": "Full Timeline",
+      "fullHistory": "Full History"
+    }
+  },
+  "calmMode": {
+    "nightMode": "Night Mode",
+    "title": "Calm Mode"
+  },
+  "child": {
+    "name": "Child Name",
+    "birthDate": "Date of Birth",
+    "gender": "Gender",
+    "boy": "Boy",
+    "girl": "Girl",
+    "other": "Other",
+    "editDetails": "Edit Child Details",
+    "addChild": "Add Child",
+    "switchChild": "Switch Child",
+    "saveChanges": "Save Changes",
+    "tapToChangePhoto": "Tap to change photo",
+    "age": "Age",
+    "childDetails": "Child Details",
+    "addBaby": "Add Baby",
+    "addNewBaby": "Add New Baby",
+    "deleteChild": "Delete Child",
+    "babyName": "Baby Name"
+  },
+  "onboarding": {
+    "start": "Get Started",
+    "welcome": "Welcome",
+    "skip": "Skip"
+  },
+  "family": {
+    "family": "Family",
+    "members": "Family Members",
+    "invite": "Invite to Family",
+    "join": "Join Family",
+    "inviteCode": "Invite Code",
+    "copyCode": "Copy Code",
+    "codeCopied": "Code Copied",
+    "sendInvite": "Send Invite",
+    "joinBtn": "Join",
+    "guest": "Guest",
+    "owner": "Owner",
+    "admin": "Admin",
+    "scanQR": "Scan QR",
+    "guestInvite": "Guest Invite",
+    "removeFromFamily": "Remove from Family",
+    "leaveFamily": "Leave Family"
+  },
+  "growth": {
+    "growth": "Growth",
+    "tracking": "Growth Tracking",
+    "weight": "Weight",
+    "height": "Height",
+    "headCircumference": "Head Circumference",
+    "addMeasurement": "Add Measurement",
+    "newMeasurement": "New Measurement",
+    "growthChart": "Growth Chart",
+    "percentile": "Percentile"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password",
+    "loginBtn": "Login",
+    "registerBtn": "Register",
+    "loginWithGoogle": "Continue with Google",
+    "loginWithApple": "Continue with Apple",
+    "guestLogin": "Continue as Guest",
+    "phoneVerification": "Phone Verification",
+    "verificationCode": "Verification Code",
+    "sendCode": "Send Code",
+    "verify": "Verify"
+  },
+  "tools": {
+    "sleepCalculator": "Sleep Calculator",
+    "teethTracker": "Teeth Tracker",
+    "vaccineTracker": "Vaccine Tracker",
+    "whiteNoise": "White Noise",
+    "resetting": "Resetting...",
+    "babysitterCalculator": "Babysitter Calculator"
+  },
+  "profile": {
+    "milestones": "Milestones",
+    "vaccines": "Vaccines",
+    "album": "Album",
+    "teeth": "Teeth",
+    "medications": "Medications",
+    "measurements": "Measurements"
+  },
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  },
+  "days": {
+    "sunday": "Sun",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat",
+    "sundayFull": "Sunday",
+    "mondayFull": "Monday",
+    "tuesdayFull": "Tuesday",
+    "wednesdayFull": "Wednesday",
+    "thursdayFull": "Thursday",
+    "fridayFull": "Friday"
+  },
+  "weather": {
+    "title": "Weather",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "airQuality": "Air Quality"
+  },
+  "health": {
+    "title": "Health",
+    "bloodPressure": "Blood Pressure",
+    "fever": "Fever",
+    "medicine": "Medicine"
+  },
+  "misc": {
+    "uploadPhoto": "Upload Photo",
+    "takePhoto": "Take Photo",
+    "chooseFromGallery": "Choose from Gallery",
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied",
+    "savedSuccessfully": "Saved Successfully",
+    "deletedSuccessfully": "Deleted Successfully",
+    "areYouSure": "Are you sure?",
+    "confirmDelete": "Confirm Delete",
+    "noResults": "No Results",
+    "noData": "No Data",
+    "noDataToShow": "No data to show",
+    "loading": "Loading",
+    "moment": "Just a moment...",
+    "loadingError": "Loading Error",
+    "saveError": "Save Error",
+    "actionCancelled": "Action Cancelled",
+    "done": "Done"
+  },
+  "export": {
+    "pdf": "Export PDF",
+    "export": "Export",
+    "shareDailySummary": "Share Daily Summary"
+  },
+  "blocked": {
+    "title": "Blocked Users",
+    "noBlocked": "No blocked users"
+  },
+  "legal": {
+    "terms": "Terms & Conditions",
+    "serviceAgreement": "Service Agreement"
+  },
+  "rating": {
+    "rateExperience": "Rate your experience",
+    "writeReview": "Write a Review",
+    "myReviews": "My Reviews",
+    "submitReview": "Submit Review"
+  },
+  "subscription": {
+    "subscription": "Subscription",
+    "plan": "Plan",
+    "free": "Free"
+  },
+  "network": {
+    "noConnection": "No Internet Connection",
+    "checking": "Checking connection..."
+  },
+  "bookings": {
+    "myBookings": "My Bookings",
+    "upcoming": "Upcoming Bookings",
+    "past": "Past Bookings",
+    "requests": "Requests",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "error": {
+    "loadingData": "Error loading data",
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try again"
   }
 }

@@ -1,4 +1,4 @@
-// pages/MyReviewsScreen.tsx - Dedicated Reviews Screen for Sitters
+// pages/MyReviewsScreen.tsx - Minimalist Reviews Screen for Sitters
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -9,27 +9,29 @@ import {
     ActivityIndicator,
     Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Star, ChevronRight, TrendingUp, Award, ThumbsUp } from 'lucide-react-native';
+import { Star, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { auth } from '../services/firebaseConfig';
 import { getBabysitterReviews, getReviewStats } from '../services/babysitterService';
 import * as Haptics from 'expo-haptics';
 import { logger } from '../utils/logger';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Review {
     id: string;
     parentName: string;
     parentPhoto: string | null;
     rating: number;
-    comment?: string; // Optional - may not exist
-    createdAt: Date;
+    comment?: string;
+    text?: string;
+    createdAt: any;
     isVerified: boolean;
 }
 
 export default function MyReviewsScreen({ navigation }: any) {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const [reviews, setReviews] = useState<Review[]>([]);
     const [stats, setStats] = useState<any>(null);
@@ -58,219 +60,145 @@ export default function MyReviewsScreen({ navigation }: any) {
         }
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.textPrimary} />
-            </View>
-        );
-    }
+    const formatDate = (createdAt: any): string => {
+        try {
+            const date = createdAt?.toDate ? createdAt.toDate() : new Date(createdAt);
+            return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+        } catch {
+            return '';
+        }
+    };
 
-    const Header = () => (
-        <View style={[styles.header, {
-            paddingTop: insets.top + 8,
-            backgroundColor: isDarkMode ? 'rgba(28,28,30,0.95)' : 'rgba(255,255,255,0.95)',
-            borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-        }]}>
-            <TouchableOpacity
-                style={[styles.backBtn, {
-                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                }]}
-                onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    navigation.goBack();
-                }}
-                activeOpacity={0.7}
-            >
-                <ChevronRight size={22} color={theme.textPrimary} strokeWidth={2.5} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>הביקורות שלי</Text>
-            <View style={{ width: 36 }} />
+    const renderStars = (rating: number, size = 13) => (
+        <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                    key={i}
+                    size={size}
+                    color="#FBBF24"
+                    fill={i <= rating ? '#FBBF24' : 'transparent'}
+                    strokeWidth={1.5}
+                />
+            ))}
         </View>
     );
 
-    // Empty State
-    if (reviews.length === 0) {
+    if (loading) {
         return (
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                {/* Premium Gradient Background */}
-                <LinearGradient
-                    colors={isDarkMode
-                        ? [theme.background, '#1a1a2e', theme.background]
-                        : ['#FFFFFF', '#FFFFFF', '#FFFFFF']
-                    }
-                    style={StyleSheet.absoluteFill}
-                />
-
-                <Header />
-                <ScrollView contentContainerStyle={styles.emptyContainer}>
-                    {/* Premium Empty State - New Black Aesthetic */}
-                    <View style={[styles.emptyCard, {
-                        backgroundColor: isDarkMode ? 'rgba(28, 28, 30, 0.6)' : 'rgba(255, 255, 255, 0.9)',
-                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                        borderWidth: 1,
-                    }]}>
-                        {/* Glass Gradient Overlay */}
-                        <LinearGradient
-                            colors={isDarkMode
-                                ? ['rgba(255, 255, 255, 0.03)', 'rgba(255, 255, 255, 0.01)']
-                                : ['rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0.4)']
-                            }
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={StyleSheet.absoluteFill}
-                        />
-
-                        <View style={[styles.emptyIconContainer, {
-                            backgroundColor: isDarkMode ? '#FFF' : '#000',
-                            shadowColor: isDarkMode ? '#FFF' : '#000',
-                            shadowOpacity: 0.15,
-                            shadowRadius: 20,
-                            elevation: 10,
-                        }]}>
-                            <Star size={44} color={isDarkMode ? '#000' : '#FFF'} fill={isDarkMode ? '#000' : '#FFF'} strokeWidth={0} />
-                        </View>
-
-                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
-                            עדיין אין ביקורות
-                        </Text>
-
-                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                            התחל לאסוף המלצות מהורים מרוצים וצפה בדירוג שלך עולה!
-                        </Text>
-
-                        {/* Tips Cards - Monochromatic */}
-                        <View style={styles.tipsContainer}>
-                            <View style={[styles.tipCardGlass, {
-                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                                borderWidth: 1,
-                            }]}>
-                                <Award size={18} color={theme.textPrimary} strokeWidth={1.5} />
-                                <Text style={[styles.tipText, { color: theme.textPrimary }]}>
-                                    השלם הזמנות בהצלחה
-                                </Text>
-                            </View>
-                            <View style={[styles.tipCardGlass, {
-                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                                borderWidth: 1,
-                            }]}>
-                                <ThumbsUp size={18} color={theme.textPrimary} strokeWidth={1.5} />
-                                <Text style={[styles.tipText, { color: theme.textPrimary }]}>
-                                    תן שירות מעולה
-                                </Text>
-                            </View>
-                            <View style={[styles.tipCardGlass, {
-                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                                borderWidth: 1,
-                            }]}>
-                                <TrendingUp size={18} color={theme.textPrimary} strokeWidth={1.5} />
-                                <Text style={[styles.tipText, { color: theme.textPrimary }]}>
-                                    בקש המלצה
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </ScrollView>
+            <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.textSecondary} />
             </View>
         );
     }
 
-    // Has Reviews
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Header />
-            <ScrollView>
-                {/* Stats Header */}
-                <LinearGradient
-                    colors={['#FBBF24', '#F59E0B']}
-                    style={styles.statsHeader}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+            {/* Header */}
+            <View style={[styles.header, {
+                paddingTop: insets.top + 8,
+                backgroundColor: theme.card,
+                borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+            }]}>
+                <TouchableOpacity
+                    style={[styles.backBtn, {
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                    }]}
+                    onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        navigation.goBack();
+                    }}
+                    activeOpacity={0.7}
                 >
-                    <View style={styles.statsRow}>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{stats?.average?.toFixed(1) || '0.0'}</Text>
-                            <Text style={styles.statLabel}>דירוג ממוצע</Text>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{stats?.total || 0}</Text>
-                            <Text style={styles.statLabel}>סה"כ ביקורות</Text>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{stats?.verifiedCount || 0}</Text>
-                            <Text style={styles.statLabel}>מאומתות</Text>
-                        </View>
-                    </View>
+                    <ChevronRight size={20} color={theme.textPrimary} strokeWidth={2.5} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('rating.myReviews')}</Text>
+                <View style={{ width: 36 }} />
+            </View>
 
-                    {/* Stars Display */}
-                    <View style={styles.starsContainer}>
-                        {[...Array(5)].map((_, i) => (
-                            <Star
-                                key={i}
-                                size={20}
-                                color="#FFF"
-                                fill={i < Math.round(stats?.average || 0) ? "#FFF" : "none"}
-                                strokeWidth={2}
-                            />
-                        ))}
+            {reviews.length === 0 ? (
+                /* Empty State */
+                <View style={styles.centered}>
+                    <View style={[styles.emptyIconWrap, {
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+                    }]}>
+                        <Star size={32} color={theme.textSecondary} strokeWidth={1.5} />
                     </View>
-                </LinearGradient>
+                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>עדיין אין ביקורות</Text>
+                    <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                        השלם הזמנות ותקבל ביקורות מהורים
+                    </Text>
+                </View>
+            ) : (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    {/* Stats Row */}
+                    {stats && (
+                        <View style={[styles.statsCard, {
+                            backgroundColor: theme.card,
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+                        }]}>
+                            <View style={styles.statsItem}>
+                                <Text style={[styles.statsValue, { color: theme.textPrimary }]}>
+                                    {stats.average?.toFixed(1) || '0.0'}
+                                </Text>
+                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>דירוג ממוצע</Text>
+                            </View>
+                            <View style={[styles.statsDivider, { backgroundColor: theme.divider }]} />
+                            <View style={styles.statsItem}>
+                                {renderStars(Math.round(stats.average || 0), 16)}
+                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>{stats.total} ביקורות</Text>
+                            </View>
+                            <View style={[styles.statsDivider, { backgroundColor: theme.divider }]} />
+                            <View style={styles.statsItem}>
+                                <Text style={[styles.statsValue, { color: theme.textPrimary }]}>
+                                    {stats.verifiedCount || 0}
+                                </Text>
+                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>מאומתות</Text>
+                            </View>
+                        </View>
+                    )}
 
-                {/* Reviews List */}
-                <View style={styles.reviewsList}>
-                    {reviews.map((review) => (
-                        <TouchableOpacity
-                            key={review.id}
-                            style={[styles.reviewCard, { backgroundColor: theme.card }]}
-                            onPress={() => {
-                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            }}
-                        >
-                            <View style={styles.reviewHeader}>
-                                <View>
-                                    <Text style={[styles.reviewName, { color: theme.textPrimary }]}>
-                                        {review.parentName}
-                                    </Text>
-                                    <View style={styles.reviewStars}>
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                size={14}
-                                                color="#FBBF24"
-                                                fill={i < review.rating ? "#FBBF24" : "none"}
-                                                strokeWidth={1.5}
-                                            />
-                                        ))}
+                    {/* Reviews */}
+                    {reviews.map((review, index) => {
+                        const comment = review.comment || review.text;
+                        return (
+                            <View
+                                key={review.id}
+                                style={[styles.reviewCard, {
+                                    backgroundColor: theme.card,
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+                                    marginTop: index === 0 ? 0 : 10,
+                                }]}
+                            >
+                                <View style={styles.reviewTop}>
+                                    <View style={styles.reviewMeta}>
+                                        {renderStars(review.rating)}
+                                        <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>
+                                            {formatDate(review.createdAt)}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.reviewNameRow}>
+                                        <Text style={[styles.reviewName, { color: theme.textPrimary }]}>
+                                            {review.parentName || 'הורה'}
+                                        </Text>
+                                        {review.isVerified && (
+                                            <View style={[styles.verifiedDot, { backgroundColor: '#10B981' }]} />
+                                        )}
                                     </View>
                                 </View>
-                                {review.isVerified && (
-                                    <View style={styles.verifiedBadge}>
-                                        <Text style={styles.verifiedText}>✓ מאומת</Text>
-                                    </View>
-                                )}
-                            </View>
 
-                            {/* Text comment - Only show if: verified, 5 stars, and text exists */}
-                            {review.comment &&
-                                review.isVerified &&
-                                review.rating === 5 && (
-                                    <Text style={[styles.reviewComment, { color: theme.textSecondary }]} numberOfLines={3}>
-                                        {review.comment}
+                                {!!comment && (
+                                    <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>
+                                        {comment}
                                     </Text>
                                 )}
-
-                            <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>
-                                {new Date(review.createdAt).toLocaleDateString('he-IL')}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </ScrollView>
+                            </View>
+                        );
+                    })}
+                </ScrollView>
+            )}
         </View>
     );
 }
@@ -279,6 +207,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 12,
+        padding: 24,
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -286,7 +221,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        zIndex: 10,
     },
     backBtn: {
         width: 36,
@@ -297,146 +231,106 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 17,
-        fontWeight: '700',
+        fontWeight: '600',
         letterSpacing: -0.3,
     },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    emptyCard: {
-        width: '100%',
-        maxWidth: 400,
-        padding: 32,
-        borderRadius: 24,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-        elevation: 8,
-    },
-    emptyIconContainer: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
+    // Empty
+    emptyIconWrap: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 24,
+        marginBottom: 4,
     },
     emptyTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        marginBottom: 12,
+        fontSize: 18,
+        fontWeight: '600',
+        letterSpacing: -0.3,
         textAlign: 'center',
     },
     emptySubtitle: {
-        fontSize: 15,
-        textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: 32,
-    },
-    tipsContainer: {
-        width: '100%',
-        gap: 12,
-    },
-    tipCardGlass: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 16,
-        gap: 12,
-        marginBottom: 8,
-    },
-    tipText: {
         fontSize: 14,
-        fontWeight: '600',
+        textAlign: 'center',
+        lineHeight: 20,
     },
-    statsHeader: {
-        padding: 24,
-        paddingTop: 60,
+    // Scroll
+    scrollContent: {
+        padding: 16,
+        paddingBottom: 32,
+        gap: 10,
     },
-    statsRow: {
+    // Stats
+    statsCard: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginBottom: 20,
-    },
-    statItem: {
         alignItems: 'center',
-    },
-    statValue: {
-        fontSize: 32,
-        fontWeight: '700',
-        color: '#FFF',
-    },
-    statLabel: {
-        fontSize: 12,
-        color: '#FFF',
-        opacity: 0.9,
-        marginTop: 4,
-    },
-    statDivider: {
-        width: 1,
-        backgroundColor: '#FFF',
-        opacity: 0.3,
-    },
-    starsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 4,
-    },
-    reviewsList: {
-        padding: 16,
-        gap: 12,
-    },
-    reviewCard: {
-        padding: 16,
         borderRadius: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        marginBottom: 10,
     },
-    reviewHeader: {
-        flexDirection: 'row-reverse',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
+    statsItem: {
+        flex: 1,
+        alignItems: 'center',
+        gap: 6,
     },
-    reviewName: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 6,
-        textAlign: 'right',
-        writingDirection: 'rtl',
+    statsValue: {
+        fontSize: 24,
+        fontWeight: '700',
+        letterSpacing: -0.5,
     },
-    reviewStars: {
+    statsLabel: {
+        fontSize: 12,
+        fontWeight: '400',
+    },
+    statsDivider: {
+        width: StyleSheet.hairlineWidth,
+        height: 36,
+    },
+    starsRow: {
         flexDirection: 'row',
         gap: 2,
     },
-    verifiedBadge: {
-        backgroundColor: '#10B981',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
+    // Review cards
+    reviewCard: {
+        borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        padding: 14,
     },
-    verifiedText: {
-        color: '#FFF',
-        fontSize: 11,
-        fontWeight: '600',
+    reviewTop: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    reviewNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    reviewName: {
+        fontSize: 15,
+        fontWeight: '500',
+        textAlign: 'right',
+    },
+    verifiedDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+    },
+    reviewMeta: {
+        alignItems: 'flex-end',
+        gap: 4,
+    },
+    reviewDate: {
+        fontSize: 12,
+        fontWeight: '400',
     },
     reviewComment: {
         fontSize: 14,
         lineHeight: 20,
-        marginTop: 8,
-        marginBottom: 8,
+        marginTop: 10,
         textAlign: 'right',
         writingDirection: 'rtl',
-    },
-    reviewDate: {
-        fontSize: 12,
     },
 });

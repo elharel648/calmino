@@ -498,6 +498,8 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                         });
                                     }}
                                     meds={meds}
+                                    supplementsTakenCount={takenCount}
+                                    supplementsTotalCount={totalCount}
                                     dynamicStyles={dynamicStyles}
                                 />
                             </View>
@@ -609,7 +611,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                 Alert.alert('נוסף!', `"${action.name}" נשמר בהצלחה`);
                             } catch (error) {
                                 logger.error('Failed to save custom action:', error);
-                                Alert.alert('שגיאה בשמירה');
+                                Alert.alert(t('misc.saveError'));
                             }
                         }
                     }}

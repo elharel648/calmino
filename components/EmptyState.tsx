@@ -54,7 +54,7 @@ export default function EmptyState({
         >
           <Plus size={18} color="#fff" strokeWidth={2.5} />
           <Text style={styles.actionButtonText}>
-            {actionLabel || t('common.add') || 'הוסף'}
+            {actionLabel || t('common.add') || t('common.add')}
           </Text>
         </TouchableOpacity>
       )}

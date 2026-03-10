@@ -77,12 +77,12 @@ const BecomeBabysitterScreen = () => {
     // Submit handler
     const handleSubmit = async () => {
         if (selectedAges.length === 0) {
-            Alert.alert('שגיאה', 'יש לבחור לפחות טווח גילאים אחד');
+            Alert.alert(t('common.error'), 'יש לבחור לפחות טווח גילאים אחד');
             return;
         }
 
         if (!hourlyRate || parseInt(hourlyRate) < 30) {
-            Alert.alert('שגיאה', 'יש להזין מחיר לשעה (מינימום ₪30)');
+            Alert.alert(t('common.error'), 'יש להזין מחיר לשעה (מינימום ₪30)');
             return;
         }
 
@@ -181,7 +181,7 @@ const BecomeBabysitterScreen = () => {
             );
         } catch (error) {
             logger.error('Error becoming babysitter:', error);
-            Alert.alert('שגיאה', 'אירעה שגיאה בשמירת הפרופיל. נסי שוב.');
+            Alert.alert(t('common.error'), 'אירעה שגיאה בשמירת הפרופיל. נסי שוב.');
         } finally {
             setLoading(false);
         }
@@ -271,9 +271,7 @@ const BecomeBabysitterScreen = () => {
                                 placeholder="65"
                                 placeholderTextColor={theme.textSecondary}
                             />
-                            <Text style={[styles.inputSuffix, { color: theme.textSecondary }]}>
-                                לשעה
-                            </Text>
+                            <Text style={[styles.inputSuffix, { color: theme.textSecondary }]}>{t('sitter.perHour')}</Text>
                         </View>
                     </View>
 

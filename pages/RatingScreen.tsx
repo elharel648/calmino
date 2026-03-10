@@ -23,6 +23,7 @@ import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { ReviewTag, REVIEW_TAG_LABELS, REVIEW_TAG_LABELS_MALE } from '../types/babysitter';
 import { logger } from '../utils/logger';
+import { useLanguage } from '../context/LanguageContext';
 
 type RootStackParamList = {
     RatingScreen: { bookingId?: string; babysitterId: string; sitterName?: string };
@@ -42,10 +43,12 @@ const AVAILABLE_TAGS: ReviewTag[] = [
 
 const RATING_LABELS = ['', 'לא טוב', 'סביר', 'טוב', 'מצוין', 'מושלם! ⭐'];
 
-export default function RatingScreen({ route, navigation }: Props) {
+export default function RatingScreen({
+    route, navigation }: Props) {
     const insets = useSafeAreaInsets();
     const { bookingId, babysitterId, sitterName } = route.params;
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
 
     const [rating, setRating] = useState<number>(0);
     const [selectedTags, setSelectedTags] = useState<ReviewTag[]>([]);
@@ -109,13 +112,13 @@ export default function RatingScreen({ route, navigation }: Props) {
 
     const handleSubmit = async () => {
         if (rating === 0) {
-            Alert.alert('שגיאה', 'אנא בחר/י דירוג של 1 עד 5 כוכבים.');
+            Alert.alert(t('common.error'), 'אנא בחר/י דירוג של 1 עד 5 כוכבים.');
             return;
         }
 
         const parentId = auth.currentUser?.uid;
         if (!parentId) {
-            Alert.alert('שגיאה', 'עליך להיות מחובר כדי לדרג.');
+            Alert.alert(t('common.error'), 'עליך להיות מחובר כדי לדרג.');
             return;
         }
 
@@ -135,11 +138,11 @@ export default function RatingScreen({ route, navigation }: Props) {
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('תודה רבה! 🎉', 'הדירוג שלך עוזר להורים אחרים למצוא את הבייביסיטר הטוב ביותר.', [
-                { text: 'סגור', onPress: () => navigation.goBack() }
+                { text: t('common.close'), onPress: () => navigation.goBack() }
             ]);
         } catch (error) {
             logger.error('Submit review error:', error);
-            Alert.alert('שגיאה', 'אירעה שגיאה בחיבור לשרת. נסה/י שוב.');
+            Alert.alert(t('common.error'), 'אירעה שגיאה בחיבור לשרת. נסה/י שוב.');
         } finally {
             setIsSubmitting(false);
         }

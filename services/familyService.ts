@@ -523,7 +523,7 @@ export const joinAsGuest = async (
         await updateDoc(doc(db, 'families', familyId), {
             [`members.${userId}`]: {
                 role: 'guest',
-                name: user.displayName || 'אורח',
+                name: user.displayName || 'Guest',
                 email: user.email || '',
                 joinedAt: serverTimestamp(),
                 accessLevel: 'actions_only',

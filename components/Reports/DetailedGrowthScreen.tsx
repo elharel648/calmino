@@ -34,6 +34,7 @@ import { useBabyProfile } from '../../hooks/useBabyProfile';
 import { Svg, Path, Defs, LinearGradient, Stop, Circle, Line } from 'react-native-svg';
 import GrowthModal from '../Home/GrowthModal';
 import Animated, { FadeInUp, FadeOutDown, Layout } from 'react-native-reanimated';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -288,6 +289,7 @@ export default function DetailedGrowthScreen({
     gender,
 }: DetailedGrowthScreenProps) {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const { baby, refresh } = useBabyProfile(childId);
     const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
     const [change, setChange] = useState<{ weight?: number; height?: number; headCircumference?: number } | null>(null);
@@ -346,7 +348,7 @@ export default function DetailedGrowthScreen({
     const handleExport = useCallback(async () => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        const babyName = baby?.name || 'התינוק';
+        const babyName = baby?.name || t('reports.misc.baby');
         let reportText = `📊 דוח מעקב גדילה - ${babyName}\n`;
         reportText += `גיל: ${ageInMonths} חודשים\n`;
         reportText += `תאריך: ${format(new Date(), 'd בMMMM yyyy', { locale: he })}\n\n`;
@@ -376,7 +378,7 @@ export default function DetailedGrowthScreen({
                 title: `דוח גדילה - ${babyName}`,
             });
         } catch (error) {
-            Alert.alert('שגיאה', 'לא הצלחנו לשתף את הדוח');
+            Alert.alert(t('common.error'), t('reports.share.error'));
         }
     }, [baby, measurements, ageInMonths]);
 
@@ -428,7 +430,7 @@ export default function DetailedGrowthScreen({
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
                     <TrendingUp size={20} color="#10B981" strokeWidth={2} />
-                    <Text style={[styles.headerText, { color: theme.textPrimary }]}>מעקב גדילה</Text>
+                    <Text style={[styles.headerText, { color: theme.textPrimary }]}>{t('reports.growth.title')}</Text>
                 </View>
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerBtn} onPress={handleExport}>
@@ -448,10 +450,10 @@ export default function DetailedGrowthScreen({
             >
                 {/* Summary */}
                 <View style={[styles.summaryCard, { backgroundColor: '#ECFDF5' }]}>
-                    <Text style={[styles.summaryLabel, { color: '#047857' }]}>גיל הילד</Text>
+                    <Text style={[styles.summaryLabel, { color: '#047857' }]}>{t('reports.growth.childAge')}</Text>
                     <View style={styles.summaryValue}>
                         <Text style={[styles.summaryNumber, { color: '#10B981' }]}>{ageInMonths}</Text>
-                        <Text style={[styles.summaryUnit, { color: '#10B981' }]}>חודשים</Text>
+                        <Text style={[styles.summaryUnit, { color: '#10B981' }]}>{t('reports.units.months')}</Text>
                     </View>
                     {lastMeasurementDate && (
                         <Text style={[styles.lastUpdate, { color: '#047857' }]}>מדידה אחרונה: {lastMeasurementDate}</Text>
@@ -466,21 +468,21 @@ export default function DetailedGrowthScreen({
                     <>
                         {/* Percentile Cards */}
                         <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>מדידות נוכחיות</Text>
-                            <PercentileCard icon={Scale} label="משקל" value={currentValues.weight} unit="ק״ג"
+                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.currentMeasurements')}</Text>
+                            <PercentileCard icon={Scale} label={t('reports.metrics.weight')} value={currentValues.weight} unit={t('reports.units.kg')}
                                 percentile={currentValues.weightPercentile} change={change?.weight} color="#3B82F6" bgColor="#EFF6FF" />
-                            <PercentileCard icon={Ruler} label="גובה" value={currentValues.height} unit="ס״מ"
+                            <PercentileCard icon={Ruler} label={t('reports.metrics.height')} value={currentValues.height} unit={t('reports.units.cm')}
                                 percentile={currentValues.heightPercentile} change={change?.height} color="#10B981" bgColor="#ECFDF5" />
-                            <PercentileCard icon={Activity} label="היקף ראש" value={currentValues.head} unit="ס״מ"
+                            <PercentileCard icon={Activity} label={t('reports.metrics.headCircumference')} value={currentValues.head} unit={t('reports.units.cm')}
                                 percentile={currentValues.headPercentile} change={change?.headCircumference} color="#8B5CF6" bgColor="#F5F3FF" />
                         </View>
 
                         {/* Charts */}
                         <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>מגמת גדילה</Text>
-                            <GrowthChart data={chartData.weightData} color="#3B82F6" title="משקל" unit="ק״ג" />
-                            <GrowthChart data={chartData.heightData} color="#10B981" title="גובה" unit="ס״מ" />
-                            <GrowthChart data={chartData.headData} color="#8B5CF6" title="היקף ראש" unit="ס״מ" />
+                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.trend')}</Text>
+                            <GrowthChart data={chartData.weightData} color="#3B82F6" title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
+                            <GrowthChart data={chartData.heightData} color="#10B981" title={t('reports.metrics.height')} unit={t('reports.units.cm')} />
+                            <GrowthChart data={chartData.headData} color="#8B5CF6" title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
                         </View>
 
                         {/* History */}

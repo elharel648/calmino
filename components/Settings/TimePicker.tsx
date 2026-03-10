@@ -4,6 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Unified accent color
 const ACCENT_COLOR = '#6366F1';
@@ -22,6 +23,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     disabled = false,
 }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [showPicker, setShowPicker] = useState(false);
 
     // Convert HH:MM string to Date object
@@ -128,11 +130,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                             {/* Header */}
                             <View style={[styles.modalHeader, { borderBottomColor: theme.divider }]}>
                                 <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-                                    <Text style={[styles.cancelText, { color: theme.textSecondary }]}>ביטול</Text>
+                                    <Text style={[styles.cancelText, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
                                 </TouchableOpacity>
                                 <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{label}</Text>
                                 <TouchableOpacity onPress={handleConfirm} style={styles.headerButton}>
-                                    <Text style={styles.confirmText}>אישור</Text>
+                                    <Text style={styles.confirmText}>{t('common.confirm')}</Text>
                                 </TouchableOpacity>
                             </View>
 

@@ -4,6 +4,7 @@ import { Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Milestone } from '../../types/profile';
 import { SwipeableRow } from '../Common/SwipeableRow';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -27,6 +28,7 @@ interface MilestoneRowProps {
 }
 
 const MilestoneRow = memo(({ title, date, ageAtEvent, onDelete }: MilestoneRowProps) => {
+    const { t } = useLanguage();
     return (
         <SwipeableRow onDelete={onDelete}>
             <View style={styles.row}>

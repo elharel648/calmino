@@ -1,6 +1,7 @@
 import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface StatusBadgeProps {
     babyName: string;
@@ -12,6 +13,7 @@ interface StatusBadgeProps {
  * Status badge with haptic feedback on toggle
  */
 const StatusBadge = memo<StatusBadgeProps>(({ babyName, status, onToggle }) => {
+    const { t } = useLanguage();
     const handlePress = useCallback(() => {
         // Haptic feedback for premium feel
         if (Platform.OS !== 'web') {

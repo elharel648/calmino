@@ -90,16 +90,16 @@ const BookingsScreen = ({ navigation }: any) => {
                     const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
                     const message = `היי ${booking.sitterName}, לגבי ההזמנה שלנו ב-${booking.date.toDate().toLocaleDateString('he-IL')}...`;
                     const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-                    Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
+                    Linking.openURL(url).catch(() => Alert.alert(t('common.error'), 'לא ניתן לפתוח וואצאפ'));
                 } else {
                     Alert.alert('שים לב', 'לספק זה לא מוגדר מספר טלפון.');
                 }
             } else {
-                Alert.alert('שגיאה', 'לא נמצאו פרטי ספק.');
+                Alert.alert(t('common.error'), 'לא נמצאו פרטי ספק.');
             }
         } catch (error) {
             logger.error('WhatsApp fetch error:', error);
-            Alert.alert('שגיאה', 'אירעה שגיאה בחיבור לוואטסאפ. נסה שוב.');
+            Alert.alert(t('common.error'), 'אירעה שגיאה בחיבור לוואטסאפ. נסה שוב.');
         }
     };
 
@@ -143,12 +143,12 @@ const BookingsScreen = ({ navigation }: any) => {
 
     const getStatusText = (status: string) => {
         const statusMap: Record<string, string> = {
-            pending: 'ממתין לאישור',
-            confirmed: 'אושר',
-            active: 'פעיל',
-            completed: 'הושלם',
+            pending: t('sitter.pendingApproval'),
+            confirmed: t('sitter.approved'),
+            active: t('tracking.active'),
+            completed: t('sitter.completed'),
             cancelled: 'בוטל',
-            declined: 'נדחה',
+            declined: t('sitter.rejected'),
         };
         return statusMap[status] || status;
     };
@@ -180,7 +180,7 @@ const BookingsScreen = ({ navigation }: any) => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         }}
                         accessibilityRole="button"
-                        accessibilityLabel="הזמנות עתידיות"
+                        accessibilityLabel={t('bookings.upcoming')}
                     >
                         <Text style={[styles.tabText, activeTab === 'upcoming' && styles.activeTabText]}>
                             עתידיות
@@ -210,9 +210,7 @@ const BookingsScreen = ({ navigation }: any) => {
                         accessibilityRole="button"
                         accessibilityLabel="כל ההזמנות"
                     >
-                        <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
-                            הכל
-                        </Text>
+                        <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>{t('common.all')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

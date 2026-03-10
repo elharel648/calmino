@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface DayHoursEditorProps {
     dayKey: string;
@@ -33,6 +34,7 @@ const formatTimeInput = (text: string): string => {
 
 export default function DayHoursEditor({ dayKey, dayLabel, hours, onHoursChange }: DayHoursEditorProps) {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [startError, setStartError] = useState(false);
     const [endError, setEndError] = useState(false);
 

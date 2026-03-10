@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { TrendingUp, TrendingDown, LucideIcon } from 'lucide-react-native';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ interface AIInsightProps {
 }
 
 export const AIInsightHeader: React.FC<AIInsightProps> = ({ childName, insight, metric }) => {
+    const { t } = useLanguage();
     const glowOpacity = useSharedValue(0.3);
 
     useEffect(() => {
@@ -186,6 +188,7 @@ export const SkiaBezierChart: React.FC<SkiaChartProps> = ({
     height = 180,
     title,
 }) => {
+    const { t } = useLanguage();
     const chartWidth = SCREEN_WIDTH - 64;
     const chartHeight = height - 40;
     const padding = { top: 20, bottom: 30, left: 10, right: 10 };
@@ -237,7 +240,7 @@ export const SkiaBezierChart: React.FC<SkiaChartProps> = ({
                 <View style={styles.chartOverlay} />
                 <Text style={styles.chartTitle}>{title}</Text>
                 <View style={styles.chartEmpty}>
-                    <Text style={styles.chartEmptyText}>אין מספיק נתונים</Text>
+                    <Text style={styles.chartEmptyText}>{t('reports.empty.notEnough')}</Text>
                 </View>
             </View>
         );

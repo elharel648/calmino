@@ -77,7 +77,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         if (!permission?.granted) {
             const { status } = await requestPermission();
             if (status !== 'granted') {
-                Alert.alert('שגיאה', 'יש לאשר גישה למצלמה כדי לסרוק QR');
+                Alert.alert(t('common.error'), 'יש לאשר גישה למצלמה כדי לסרוק QR');
                 return;
             }
         }
@@ -107,7 +107,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                     'שים לב',
                     `אתה כבר חלק ממשפחת "${result.currentFamilyName}".\nאם תמשיך, תאבד את הגישה לנתוניה.\n\nלהמשיך ולהצטרף?`,
                     [
-                        { text: 'ביטול', style: 'cancel' },
+                        { text: t('common.cancel'), style: 'cancel' },
                         {
                             text: 'כן, הצטרף',
                             style: 'destructive',
@@ -240,7 +240,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                         if (!permission?.granted) {
                                             const { status } = await requestPermission();
                                             if (status !== 'granted') {
-                                                Alert.alert('שגיאה', 'יש לאשר גישה למצלמה כדי לסרוק QR');
+                                                Alert.alert(t('common.error'), 'יש לאשר גישה למצלמה כדי לסרוק QR');
                                                 return;
                                             }
                                         }
@@ -255,7 +255,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                             {/* Divider + QR scan */}
                             <View style={styles.orRow}>
                                 <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
-                                <Text style={[styles.orText, { color: theme.textSecondary }]}>או</Text>
+                                <Text style={[styles.orText, { color: theme.textSecondary }]}>{t('common.or')}</Text>
                                 <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
                             </View>
                             <TouchableOpacity style={styles.scanBtn} onPress={handleOpenScanner} activeOpacity={0.6}>

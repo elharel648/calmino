@@ -215,7 +215,7 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
 
                     {/* Save Button */}
                     <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary }]} onPress={handleClose}>
-                        <Text style={styles.saveBtnText}>סיום</Text>
+                        <Text style={styles.saveBtnText}>{t('tracking.endTime')}</Text>
                     </TouchableOpacity>
                 </RNAnimated.View>
             </View>

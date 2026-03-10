@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { auth, db } from '../services/firebaseConfig';
 import { doc, onSnapshot, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { AccessLevel, FamilyRole } from '../services/familyService';
+import { useLanguage } from './/LanguageContext';
 
 // --- Types ---
 export interface ActiveChild {
@@ -42,6 +43,7 @@ interface ActiveChildProviderProps {
 }
 
 export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ children, onReady }) => {
+    const { t } = useLanguage();
     const [activeChild, setActiveChildState] = useState<ActiveChild | null>(null);
     const [allChildren, setAllChildren] = useState<ActiveChild[]>([]);
     const [isLoading, setIsLoading] = useState(true);

@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { calculatePercentile, getPercentileStatus } from '../../utils/whoGrowthStandards';
 import { getGrowthChange } from '../../services/growthService';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface GrowthStats {
     weight?: string;
@@ -40,6 +41,7 @@ interface MetricRowProps {
 
 const MetricRow = memo(({ icon: Icon, label, value, unit, percentile, change, color, iconBg }: MetricRowProps) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const status = getPercentileStatus(percentile);
     const hasValue = value && value !== '0' && value !== '-';
     const hasChange = change !== undefined && change !== 0;
@@ -108,7 +110,7 @@ const MetricRow = memo(({ icon: Icon, label, value, unit, percentile, change, co
                         </View>
                     </>
                 ) : (
-                    <Text style={[styles.noDataText, { color: theme.textTertiary }]}>לא הוזן</Text>
+                    <Text style={[styles.noDataText, { color: theme.textTertiary }]}>{t('reports.empty.notEntered')}</Text>
                 )}
             </View>
         </View>
@@ -119,6 +121,7 @@ MetricRow.displayName = 'MetricRow';
 
 const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit }: GrowthPercentileCardProps) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const genderKey = gender === 'girl' ? 'girl' : 'boy';
     const safeAge = isNaN(ageInMonths) || ageInMonths < 0 ? 0 : ageInMonths;
     const [changes, setChanges] = useState<GrowthChange | null>(null);
@@ -150,7 +153,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     <TrendingUp size={18} color="#10B981" strokeWidth={2.5} />
-                    <Text style={[styles.title, { color: theme.textPrimary }]}>מעקב גדילה</Text>
+                    <Text style={[styles.title, { color: theme.textPrimary }]}>{t('reports.growth.title')}</Text>
                 </View>
                 {onEdit && (
                     <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -162,9 +165,9 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
             <View style={styles.metricsContainer}>
                 <MetricRow
                     icon={Scale}
-                    label="משקל"
+                    label={t('reports.metrics.weight')}
                     value={stats?.weight || '-'}
-                    unit="ק״ג"
+                    unit={t('reports.units.kg')}
                     percentile={percentiles.weight}
                     change={changes?.weight}
                     color="#3B82F6"
@@ -175,9 +178,9 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
 
                 <MetricRow
                     icon={Ruler}
-                    label="גובה"
+                    label={t('reports.metrics.height')}
                     value={stats?.height || '-'}
-                    unit="ס״מ"
+                    unit={t('reports.units.cm')}
                     percentile={percentiles.height}
                     change={changes?.height}
                     color="#10B981"
@@ -188,9 +191,9 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
 
                 <MetricRow
                     icon={Activity}
-                    label="היקף ראש"
+                    label={t('reports.metrics.headCircumference')}
                     value={stats?.headCircumference || '-'}
-                    unit="ס״מ"
+                    unit={t('reports.units.cm')}
                     percentile={percentiles.head}
                     change={changes?.headCircumference}
                     color="#8B5CF6"

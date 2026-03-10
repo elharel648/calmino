@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { useFamily } from '../../hooks/useFamily';
 import { FamilyRole } from '../../services/familyService';
 import { auth } from '../../services/firebaseConfig';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface GuardianSelectorProps {
     currentGuardian?: string;

@@ -3,8 +3,10 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { ChevronRight, DollarSign, Zap } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native'; 
+import { useLanguage } from '../context/LanguageContext';
 
 export default function SubscriptionScreen() {
+    const { t } = useLanguage();
   const navigation = useNavigation();
   
   // 🔑 פונקציה לטיפול בלחיצה על כפתור השדרוג

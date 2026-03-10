@@ -31,6 +31,7 @@ import Animated, {
     Extrapolation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -60,6 +61,7 @@ const GlassBarChartPerfect: React.FC<GlassBarChartProps> = ({
     maxValue: propMaxValue,
     yAxisSteps,
 }) => {
+    const { t } = useLanguage();
     // ==================== LAYOUT MATH ====================
     const chartWidth = SCREEN_WIDTH - 64;
     const padding = { top: 20, bottom: 50, left: 50, right: 30 }; // Increased padding for labels
@@ -222,7 +224,7 @@ const GlassBarChartPerfect: React.FC<GlassBarChartProps> = ({
                 <View style={styles.border} />
                 <Text style={styles.title}>{title}</Text>
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>אין נתונים להצגה</Text>
+                    <Text style={styles.emptyText}>{t('reports.empty.noData')}</Text>
                 </View>
             </Animated.View>
         );

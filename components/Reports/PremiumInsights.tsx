@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 // =====================================================
 // TYPES
@@ -81,6 +82,7 @@ export const PremiumInsightCard: React.FC<PremiumInsightCardProps> = ({
     trend,
     delay = 0,
 }) => {
+    const { t } = useLanguage();
     return (
         <Animated.View
             entering={FadeInRight.duration(400).delay(delay)}
@@ -129,10 +131,11 @@ interface AITipCardProps {
 }
 
 export const AITipCard: React.FC<AITipCardProps> = ({ tip, category, delay = 0 }) => {
+    const { t } = useLanguage();
     const categoryConfig = {
-        sleep: { color: '#8B5CF6', icon: Moon, label: 'טיפ שינה' },
-        feeding: { color: '#F59E0B', icon: Utensils, label: 'טיפ האכלה' },
-        general: { color: '#6366F1', icon: Lightbulb, label: 'טיפ כללי' },
+        sleep: { color: '#8B5CF6', icon: Moon, label: t('reports.tips.sleep') },
+        feeding: { color: '#F59E0B', icon: Utensils, label: t('reports.tips.feeding') },
+        general: { color: '#6366F1', icon: Lightbulb, label: t('reports.tips.general') },
     };
 
     const config = categoryConfig[category];
@@ -243,6 +246,7 @@ interface ShareButtonProps {
 }
 
 export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, childName }) => {
+    const { t } = useLanguage();
     const handleShare = async () => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -260,7 +264,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
         try {
             await Share.share({
                 message,
-                title: 'סיכום יומי',
+                title: t('reports.share.dailySummary'),
             });
         } catch (error) {
             // Silent fail
@@ -272,7 +276,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
             <BlurView intensity={80} tint="systemUltraThinMaterialLight" style={StyleSheet.absoluteFill} />
             <View style={styles.shareButtonOverlay} />
             <Share2 size={18} color="#6366F1" strokeWidth={2} />
-            <Text style={styles.shareButtonText}>שתף סיכום</Text>
+            <Text style={styles.shareButtonText}>{t('reports.share.summary')}</Text>
         </TouchableOpacity>
     );
 };
@@ -281,7 +285,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
 // AI INSIGHTS GENERATOR
 // =====================================================
 
-export function generateAIInsights(data: InsightData): {
+export function generateAIInsights(data: InsightData, t: (key: string) => string): {
     tips: { tip: string; category: 'sleep' | 'feeding' | 'general' }[];
     patterns: { label: string; value: string; icon: LucideIcon; color: string }[];
     milestones: { title: string; current: number; target: number; unit: string }[];
@@ -299,7 +303,7 @@ export function generateAIInsights(data: InsightData): {
 
         if (avgSleep < 2) {
             tips.push({
-                tip: 'תנומות קצרות מאוד. נסו ליצור סביבה שקטה וחשוכה יותר.',
+                tip: t('reports.tips.shortNaps'),
                 category: 'sleep',
             });
         } else if (avgSleep > 3) {
@@ -352,7 +356,7 @@ export function generateAIInsights(data: InsightData): {
     // Default tip if none generated
     if (tips.length === 0) {
         tips.push({
-            tip: 'המשיכו לתעד - ככל שיש יותר נתונים, התובנות יהיו מדויקות יותר!',
+            tip: t('reports.tips.keepTracking'),
             category: 'general',
         });
     }
@@ -364,8 +368,8 @@ export function generateAIInsights(data: InsightData): {
         val > arr[maxIdx] ? idx : maxIdx, 0);
     if (weeklyData.sleep[maxSleepDay] > 0) {
         patterns.push({
-            label: 'יום השינה הטוב ביותר',
-            value: weeklyData.labels[maxSleepDay] || 'לא ידוע',
+            label: t('reports.sleep.bestSleepDay'),
+            value: weeklyData.labels[maxSleepDay] || t('reports.empty.unknown'),
             icon: Moon,
             color: '#8B5CF6',
         });
@@ -381,8 +385,8 @@ export function generateAIInsights(data: InsightData): {
         val > arr[maxIdx] ? idx : maxIdx, 0);
     if (totalPerDay[mostActiveDay] > 0) {
         patterns.push({
-            label: 'היום הכי פעיל',
-            value: weeklyData.labels[mostActiveDay] || 'לא ידוע',
+            label: t('reports.insights.mostActiveDay'),
+            value: weeklyData.labels[mostActiveDay] || t('reports.empty.unknown'),
             icon: Zap,
             color: '#F59E0B',
         });
@@ -392,25 +396,25 @@ export function generateAIInsights(data: InsightData): {
     const { bottle, breast, pumping, solids } = dailyStats.feedingTypes;
     const feedingTotal = bottle + breast + pumping + solids;
     if (feedingTotal > 0) {
-        let preferred = 'מעורב';
+        let preferred = t('reports.feeding.mixed');
         let percent = 0;
         if (bottle > breast && bottle > pumping && bottle > solids) {
-            preferred = 'בקבוק';
+            preferred = t('reports.feeding.bottle');
             percent = Math.round((bottle / feedingTotal) * 100);
         } else if (breast > bottle && breast > pumping && breast > solids) {
-            preferred = 'הנקה';
+            preferred = t('reports.feeding.breastfeeding');
             percent = Math.round((breast / feedingTotal) * 100);
         } else if (pumping > bottle && pumping > breast && pumping > solids) {
-            preferred = 'שאיבה';
+            preferred = t('reports.feeding.pumping');
             percent = Math.round((pumping / feedingTotal) * 100);
         } else if (solids > bottle && solids > breast && solids > pumping) {
-            preferred = 'מוצקים';
+            preferred = t('reports.feeding.solids');
             percent = Math.round((solids / feedingTotal) * 100);
         }
 
         if (percent > 50) {
             patterns.push({
-                label: 'סוג האכלה מועדף',
+                label: t('reports.feeding.preferredType'),
                 value: `${preferred} (${percent}%)`,
                 icon: Heart,
                 color: '#EC4899',
@@ -423,19 +427,19 @@ export function generateAIInsights(data: InsightData): {
     // Sleep milestone
     const totalSleepDays = weeklyData.sleep.filter(s => s >= 10).length;
     milestones.push({
-        title: 'שבוע של שינה טובה',
+        title: t('reports.goals.goodSleepWeek'),
         current: totalSleepDays,
         target: 5,
-        unit: 'ימים עם 10+ שעות',
+        unit: t('reports.goals.daysOver10Hours'),
     });
 
     // Consistent feeding
     const consistentFeedingDays = weeklyData.food.filter(f => f > 0).length;
     milestones.push({
-        title: 'עקביות בהאכלה',
+        title: t('reports.goals.feedingConsistency'),
         current: consistentFeedingDays,
         target: 7,
-        unit: 'ימים עם תיעוד',
+        unit: t('reports.goals.daysWithTracking'),
     });
 
     return { tips, patterns, milestones };

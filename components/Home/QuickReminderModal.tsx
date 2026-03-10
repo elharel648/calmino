@@ -204,7 +204,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                     // Within 2 minutes — bump to 10 seconds from now
                     date = new Date(now.getTime() + 10000);
                 } else if (reminderType === 'once') {
-                    Alert.alert('שגיאה', 'לא ניתן לקבוע תזכורת לעבר');
+                    Alert.alert(t('common.error'), 'לא ניתן לקבוע תזכורת לעבר');
                     setSaving(false);
                     return;
                 }
@@ -272,7 +272,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
             if (e?.message?.includes('disabled')) {
                 Alert.alert('התראות כבויות', 'יש לאפשר התראות בהגדרות כדי ליצור תזכורות');
             } else {
-                Alert.alert('שגיאה', 'לא ניתן לשמור את התזכורת. נסה שוב.');
+                Alert.alert(t('common.error'), 'לא ניתן לשמור את התזכורת. נסה שוב.');
             }
         } finally {
             setSaving(false);
@@ -280,10 +280,10 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
     };
 
     const handleDelete = async (id: string) => {
-        Alert.alert('מחיקה', 'למחוק תזכורת זו?', [
-            { text: 'ביטול', style: 'cancel' },
+        Alert.alert(t('common.delete'), 'למחוק תזכורת זו?', [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'מחק',
+                text: t('timeline.delete'),
                 style: 'destructive',
                 onPress: async () => {
                     await notificationService.cancelReminder(id);
@@ -485,9 +485,9 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                     snapToAlignment="end"
                                 >
                                     {[
-                                        { label: 'בקבוק', icon: Baby, color: '#60A5FA' },
-                                        { label: 'חיתולים', icon: ShoppingCart, color: '#34D399' },
-                                        { label: 'תרופה', icon: Pill, color: '#F472B6' },
+                                        { label: t('tracking.bottle'), icon: Baby, color: '#60A5FA' },
+                                        { label: t('tracking.diapers'), icon: ShoppingCart, color: '#34D399' },
+                                        { label: t('health.medicine'), icon: Pill, color: '#F472B6' },
                                         { label: 'רופא', icon: Phone, color: '#A78BFA' },
                                         { label: 'לישון', icon: Moon, color: '#818CF8' },
                                     ].map((p, i) => (
@@ -532,13 +532,13 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 {/* Custom Input - Integrated Design */}
                                 <View style={[styles.customInputWrapper, {
                                     backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-                                    borderColor: message && ![' בקבוק', 'חיתולים', 'תרופה', 'רופא', 'לישון'].includes(message)
+                                    borderColor: message && ![' בקבוק', t('tracking.diapers'), t('health.medicine'), 'רופא', 'לישון'].includes(message)
                                         ? theme.primary
                                         : (isDarkMode ? '#333' : '#E5E7EB')
                                 }]}>
                                     <Sparkles
                                         size={18}
-                                        color={message && ![' בקבוק', 'חיתולים', 'תרופה', 'רופא', 'לישון'].includes(message) ? theme.primary : theme.textTertiary}
+                                        color={message && ![' בקבוק', t('tracking.diapers'), t('health.medicine'), 'רופא', 'לישון'].includes(message) ? theme.primary : theme.textTertiary}
                                     />
                                     <TextInput
                                         style={[styles.customInput, { color: theme.textPrimary }]}
@@ -715,7 +715,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                     {saving ? (
                                         <Text style={styles.minimalSaveText}>שומר...</Text>
                                     ) : (
-                                        <Text style={styles.minimalSaveText}>שמור</Text>
+                                        <Text style={styles.minimalSaveText}>{t('common.save')}</Text>
                                     )}
                                 </TouchableOpacity>
 

@@ -31,7 +31,7 @@ export default function ErrorState({
       </View>
       
       <Text style={[styles.title, { color: theme.textPrimary }]}>
-        {t('errors.somethingWentWrong') || 'משהו השתבש'}
+        {t('errors.somethingWentWrong') || t('error.somethingWentWrong')}
       </Text>
       
       {message && (
@@ -48,7 +48,7 @@ export default function ErrorState({
         >
           <RefreshCw size={18} color="#fff" strokeWidth={2.5} />
           <Text style={styles.retryButtonText}>
-            {retryLabel || t('common.retry') || 'נסה שוב'}
+            {retryLabel || t('common.retry') || t('common.retry')}
           </Text>
         </TouchableOpacity>
       )}

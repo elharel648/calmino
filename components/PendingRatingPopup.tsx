@@ -17,8 +17,10 @@ import { db, auth } from '../services/firebaseConfig';
 import { BabysitterBooking } from '../types/babysitter';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PendingRatingPopup() {
+    const { t } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
 

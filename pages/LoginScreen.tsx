@@ -126,7 +126,8 @@ const getPasswordStrengthColor = (password: string): string => {
   return '#059669';
 };
 
-export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+export default function LoginScreen({
+  onLoginSuccess }: LoginScreenProps) {
   const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useLanguage();
   const { showSuccess } = useToast();
@@ -246,7 +247,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         .catch((error) => {
           logger.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Alert.alert('שגיאה', `לא הצלחנו להתחבר עם גוגל: ${error.code}`);
+          Alert.alert(t('common.error'), `לא הצלחנו להתחבר עם גוגל: ${error.code}`);
         })
         .finally(() => setLoading(false));
     } else if (response?.type === 'error') {
@@ -363,7 +364,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     await sendEmailVerification(user);
                     Alert.alert('נשלח בהצלחה', 'מייל אימות נשלח שוב לכתובת שלך.');
                   } catch (e) {
-                    Alert.alert('שגיאה', 'לא ניתן לשלוח מייל כרגע. נסה שוב מאוחר יותר.');
+                    Alert.alert(t('common.error'), 'לא ניתן לשלוח מייל כרגע. נסה שוב מאוחר יותר.');
                   }
                 }
               },
@@ -383,11 +384,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     }
                   } catch (error) {
                     setLoading(false);
-                    Alert.alert('שגיאה', 'אירעה שגיאה בבדיקת האימות.');
+                    Alert.alert(t('common.error'), 'אירעה שגיאה בבדיקת האימות.');
                   }
                 }
               },
-              { text: 'ביטול', style: 'cancel', onPress: () => auth.signOut() }
+              { text: t('common.cancel'), style: 'cancel', onPress: () => auth.signOut() }
             ]
           );
           return;
@@ -950,7 +951,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 ) : (
                   <>
                     <Text style={styles.mainButtonText}>
-                      {isLogin ? 'התחברות' : 'צור חשבון'}
+                      {isLogin ? t('auth.login') : 'צור חשבון'}
                     </Text>
                     {isFormValid && <Shield size={16} color="rgba(255,255,255,0.7)" strokeWidth={2} />}
                   </>
@@ -961,7 +962,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             {/* Divider */}
             <View style={styles.divider}>
               <View style={[styles.line, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' }]} />
-              <Text style={[styles.orText, { color: theme.textTertiary }]}>או</Text>
+              <Text style={[styles.orText, { color: theme.textTertiary }]}>{t('common.or')}</Text>
               <View style={[styles.line, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' }]} />
             </View>
 
@@ -1031,7 +1032,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
                       // Validate identity token exists before using it
                       if (!appleCredential.identityToken) {
-                        Alert.alert('שגיאה', 'לא התקבל טוקן מ-Apple. נסה שוב.');
+                        Alert.alert(t('common.error'), 'לא התקבל טוקן מ-Apple. נסה שוב.');
                         return;
                       }
 
@@ -1202,7 +1203,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                     if (!permission?.granted) {
                       const result = await requestPermission();
                       if (!result.granted) {
-                        Alert.alert('שגיאה', 'יש לאשר גישה למצלמה כדי לסרוק את הקוד');
+                        Alert.alert(t('common.error'), 'יש לאשר גישה למצלמה כדי לסרוק את הקוד');
                         return;
                       }
                     }

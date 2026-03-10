@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withRepeat, interpolate } from 'react-native-reanimated';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -15,7 +16,8 @@ interface NightLightModalProps {
     onClose: () => void;
 }
 
-export default function NightLightModal({ visible, onClose }: NightLightModalProps) {
+export default function NightLightModal({
+    visible, onClose }: NightLightModalProps) {
     const [colorTemp, setColorTemp] = useState<'warm' | 'white' | 'red'>('warm');
     const [brightness, setBrightness] = useState(0.3);
     const [controlsVisible, setControlsVisible] = useState(true);

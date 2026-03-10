@@ -6,14 +6,10 @@ import { Platform } from 'react-native';
 
 // Sound file imports
 const soundFiles = {
-    rain: require('../assets/sounds/rain.mp3'),
-    shh: require('../assets/sounds/shh.mp3'),
-    heartbeat: require('../assets/sounds/heartbeat.mp3'),
-    dryer: require('../assets/sounds/dryer.mp3'),
-    lullaby1: require('../assets/sounds/lullaby1.mp3'),
-    lullaby2: require('../assets/sounds/lullaby2.mp3'),
-    lullaby3: require('../assets/sounds/lullaby3.mp3'),
-    lullaby4: require('../assets/sounds/lullaby4.mp3'),
+    lullaby1: require('../assets/sounds/lullaby.mp3'),
+    lullaby2: require('../assets/sounds/gentle.mp3'),
+    lullaby3: require('../assets/sounds/birds.mp3'),
+    lullaby4: require('../assets/sounds/גשם.wav'),
 };
 
 export type SoundId = keyof typeof soundFiles;

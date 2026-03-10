@@ -22,6 +22,7 @@ import Animated, {
     Easing,
     interpolate,
 } from 'react-native-reanimated';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ const LiquidGlassLineChart: React.FC<LiquidGlassChartProps> = ({
     height = 200,
     showLabels = true,
 }) => {
+    const { t } = useLanguage();
     const chartWidth = SCREEN_WIDTH - 64;
     const chartHeight = height - 60;
     const padding = { top: 20, bottom: 10, left: 15, right: 15 };
@@ -140,7 +142,7 @@ const LiquidGlassLineChart: React.FC<LiquidGlassChartProps> = ({
                 <View style={styles.chartBorder} />
                 <Text style={styles.chartTitle}>{title}</Text>
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>אין מספיק נתונים להצגה</Text>
+                    <Text style={styles.emptyText}>{t('reports.empty.notEnoughData')}</Text>
                 </View>
             </Animated.View>
         );
@@ -293,6 +295,7 @@ const LiquidGlassBarChart: React.FC<LiquidGlassBarChartProps> = ({
     color = '#818CF8',
     height = 200,
 }) => {
+    const { t } = useLanguage();
     const chartWidth = SCREEN_WIDTH - 64;
     const chartHeight = height - 60;
     const padding = { top: 10, bottom: 10, left: 15, right: 15 };
@@ -336,7 +339,7 @@ const LiquidGlassBarChart: React.FC<LiquidGlassBarChartProps> = ({
                 <View style={styles.chartOverlay} />
                 <Text style={styles.chartTitle}>{title}</Text>
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>אין נתונים להצגה</Text>
+                    <Text style={styles.emptyText}>{t('reports.empty.noData')}</Text>
                 </View>
             </Animated.View>
         );

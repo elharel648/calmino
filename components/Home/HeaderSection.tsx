@@ -71,7 +71,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
     const { weather } = useWeather();
     const [unreadCount, setUnreadCount] = useState(0);
 
-    // Calculate age - Better format with "בן" or "בת"
+    // Calculate age - Better format with t('child.boy') or t('child.girl')
     const ageText = useMemo(() => {
         if (!profile.birthDate) return '';
         let birth: Date;
@@ -87,7 +87,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
         // Determine gender prefix
-        const genderPrefix = profile.gender === 'girl' ? 'בת' : profile.gender === 'boy' ? 'בן' : '';
+        const genderPrefix = profile.gender === 'girl' ? t('child.girl') : profile.gender === 'boy' ? t('child.boy') : '';
 
         // Special cases
         if (diffDays === 0) {
@@ -101,21 +101,21 @@ const HeaderSection = memo<HeaderSectionProps>(({
         }
         if (diffDays < 30) {
             const weeks = Math.floor(diffDays / 7);
-            const weekText = weeks === 1 ? 'שבוע' : `${weeks} שבועות`;
+            const weekText = weeks === 1 ? t('common.week') : `${weeks} שבועות`;
             return genderPrefix ? `${genderPrefix} ${weekText}` : weekText;
         }
         const months = Math.floor(diffDays / 30);
         if (months < 12) {
-            const monthText = months === 1 ? 'חודש' : `${months} חודשים`;
+            const monthText = months === 1 ? t('common.month') : `${months} חודשים`;
             return genderPrefix ? `${genderPrefix} ${monthText}` : monthText;
         }
         const years = Math.floor(months / 12);
         const remainingMonths = months % 12;
         if (remainingMonths > 0) {
-            const yearText = `${years} ${years === 1 ? 'שנה' : 'שנים'} ו-${remainingMonths} חודשים`;
+            const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')} ו-${remainingMonths} חודשים`;
             return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
         }
-        const yearText = `${years} ${years === 1 ? 'שנה' : 'שנים'}`;
+        const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')}`;
         return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
     }, [profile.birthDate, profile.gender]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -49,7 +49,6 @@ import {
   ChevronRight,
   Mail,
   Instagram,
-  Download,
 } from 'lucide-react-native';
 import { auth, db } from '../services/firebaseConfig';
 import LegalModal from '../components/Legal/LegalModal';
@@ -57,16 +56,15 @@ import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'fire
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useDataExport } from '../hooks/useDataExport';
 import { Language } from '../types';
 import { useNotifications } from '../hooks/useNotifications';
 import { useChildProfile } from '../hooks/useChildProfile';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { deleteChild } from '../services/babyService';
-import { useUserDataExport } from '../hooks/useUserDataExport';
 import { IntervalPicker } from '../components/Settings/IntervalPicker';
 import { TimePicker } from '../components/Settings/TimePicker';
 import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
+import { useMedications } from '../hooks/useMedications';
 import { logger } from '../utils/logger';
 
 const LANGUAGES = [
@@ -84,9 +82,9 @@ export default function SettingsScreen() {
   const { language, setLanguage, t } = useLanguage();
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
-  const { exportUserData, isExporting } = useUserDataExport();
+  const { meds, customSupplements, refresh: refreshMeds } = useMedications(activeChild?.childId);
+  useEffect(() => { refreshMeds(); }, [activeChild?.childId]);
   const { settings: notifSettings, updateSettings: updateNotifSettings } = useNotifications();
-  const { exportData, loading: exportLoading } = useDataExport(t);
 
   const [userData, setUserData] = useState({ name: '', email: '', photoURL: null });
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
@@ -270,8 +268,8 @@ export default function SettingsScreen() {
             html: `
               <div dir="rtl" style="font-family: sans-serif; max-width: 500px;">
                 <h2 style="color: #007AFF;">פנייה חדשה מהאפליקציה</h2>
-                <p><strong>שם:</strong> ${userData.name || 'לא ידוע'}</p>
-                <p><strong>מייל:</strong> ${user.email || 'לא ידוע'}</p>
+                <p><strong>שם:</strong> ${userData.name || t('common.unknown')}</p>
+                <p><strong>מייל:</strong> ${user.email || t('common.unknown')}</p>
                 <hr/>
                 <p><strong>הודעה:</strong></p>
                 <p style="background: #f5f5f5; padding: 12px; border-radius: 8px;">${contactMessage}</p>
@@ -617,7 +615,7 @@ export default function SettingsScreen() {
       {/* Minimal Header - Apple Style */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('settings.title', { defaultValue: 'הגדרות' })}</Text>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('settings.title', { defaultValue: t('settings.title') })}</Text>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -643,7 +641,11 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.notifications')}</Text>
           </View>
 
-          <PremiumNotificationSettings />
+          <PremiumNotificationSettings supplements={[
+            ...(!meds.hiddenDefaults?.includes('vitaminD') ? [{ id: 'vitaminD', name: 'ויטמין D' }] : []),
+            ...(!meds.hiddenDefaults?.includes('iron') ? [{ id: 'iron', name: 'ברזל' }] : []),
+            ...customSupplements.map(s => ({ id: s.id, name: s.name })),
+          ]} />
         </View>
 
         {/* תצוגה והתנהגות */}
@@ -686,7 +688,7 @@ export default function SettingsScreen() {
                   <Globe size={18} color="#10B981" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>שפה</Text>
+                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.language')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
                     {currentLang?.flag} {currentLang ? t(currentLang.labelKey) : ''}
                   </Text>
@@ -746,30 +748,6 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               style={styles.listItem}
-              onPress={exportUserData}
-              disabled={isExporting}
-              activeOpacity={0.6}
-            >
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }]}>
-                  {isExporting ? (
-                    <ActivityIndicator size="small" color="#3B82F6" />
-                  ) : (
-                    <Download size={18} color="#3B82F6" strokeWidth={2} />
-                  )}
-                </View>
-                <Text style={[styles.listItemText, { color: theme.textPrimary }]}>ייצוא הנתונים שלי</Text>
-              </View>
-              <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
-            </TouchableOpacity>
-
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-            <TouchableOpacity
-              style={styles.listItem}
               onPress={() => setTermsModalVisible(true)}
               activeOpacity={0.6}
             >
@@ -802,31 +780,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
 
-
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-            {/* Data Export Button - GDPR Right to Data Portability */}
-            <TouchableOpacity
-              style={styles.listItem}
-              onPress={exportData}
-              disabled={exportLoading}
-              activeOpacity={0.6}
-            >
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
-                  {exportLoading ? (
-                    <ActivityIndicator size="small" color="#10B981" />
-                  ) : (
-                    <Download size={18} color="#10B981" strokeWidth={2} />
-                  )}
-                </View>
-                <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.exportData')}</Text>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>{t('settings.exportDataSubtitle')}</Text>
-                </View>
-              </View>
-              <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
-            </TouchableOpacity>
 
             <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
 

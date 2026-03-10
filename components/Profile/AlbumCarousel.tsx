@@ -12,6 +12,7 @@ import Animated, {
     withDelay,
 } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -147,6 +148,7 @@ interface AlbumCarouselProps {
 }
 
 const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto, onNoteUpdate }: AlbumCarouselProps) => {
+    const { t } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const [editingMonth, setEditingMonth] = useState<number | null>(null);
     const [noteText, setNoteText] = useState('');
@@ -237,7 +239,7 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                         <View style={[styles.addCustomCircle, { borderColor: ACCENT }]}>
                             <Plus size={20} color={ACCENT} strokeWidth={1.5} />
                         </View>
-                        <Text style={[styles.addCustomLabel, { color: ACCENT }]}>הוסף</Text>
+                        <Text style={[styles.addCustomLabel, { color: ACCENT }]}>{t('common.add')}</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>

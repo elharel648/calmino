@@ -28,6 +28,7 @@ import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { addMilestone, removeMilestone } from '../../services/babyService';
 import { SwipeableRow } from '../Common/SwipeableRow';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -43,8 +44,10 @@ interface MilestonesModalProps {
     onClose: () => void;
 }
 
-export default function MilestonesModal({ visible, onClose }: MilestonesModalProps) {
+export default function MilestonesModal({
+    visible, onClose }: MilestonesModalProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const { baby, refresh } = useBabyProfile();
 
     const [activeTab, setActiveTab] = useState<'add' | 'history'>('add');
@@ -207,12 +210,12 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
 
     const handleSave = async () => {
         if (!title.trim()) {
-            Alert.alert('שגיאה', 'נא להזין כותרת');
+            Alert.alert(t('common.error'), 'נא להזין כותרת');
             return;
         }
 
         if (!baby?.id) {
-            Alert.alert('שגיאה', 'לא נמצא פרופיל תינוק');
+            Alert.alert(t('common.error'), 'לא נמצא פרופיל תינוק');
             return;
         }
 
@@ -231,7 +234,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
             setActiveTab('history');
         } catch (error) {
             logger.log('Error saving milestone:', error);
-            Alert.alert('שגיאה', 'לא הצלחנו לשמור את אבן הדרך');
+            Alert.alert(t('common.error'), 'לא הצלחנו לשמור את אבן הדרך');
         } finally {
             setLoading(false);
         }
@@ -263,8 +266,8 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
         const diffTime = now.getTime() - dateObj.getTime();
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 0) return 'היום';
-        if (diffDays === 1) return 'אתמול';
+        if (diffDays === 0) return t('common.today');
+        if (diffDays === 1) return t('common.yesterday');
         if (diffDays < 7) return `לפני ${diffDays} ימים`;
         if (diffDays < 30) return `לפני ${Math.floor(diffDays / 7)} שבועות`;
         return formatDate(d);
@@ -334,7 +337,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                     <Award size={28} color="#fff" strokeWidth={2} />
                                 </LinearGradient>
                             </Animated.View>
-                            <Text style={[styles.title, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>אבני דרך</Text>
+                            <Text style={[styles.title, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('profile.milestones')}</Text>
                             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>תעדו את הרגעים המיוחדים</Text>
                         </View>
                     </View>
@@ -469,7 +472,7 @@ export default function MilestonesModal({ visible, onClose }: MilestonesModalPro
                                                 numberOfLines={2}
                                             />
                                         </View>
-                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>הערות</Text>
+                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('tracking.notes')}</Text>
                                     </View>
 
                                     {/* Save Button - Minimalist Yellow Border */}

@@ -31,6 +31,7 @@ export interface MedicationsState {
     vitaminD: boolean;
     iron: boolean;
     custom?: Record<string, boolean>;
+    hiddenDefaults?: string[];
 }
 
 export interface HomeDataState {

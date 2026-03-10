@@ -10,6 +10,7 @@ interface UseNotificationsReturn {
     updateSettings: (settings: Partial<NotificationSettings>) => Promise<void>;
     scheduleFeedingReminder: (lastFeedingTime: Date) => Promise<void>;
     scheduleSupplementReminder: () => Promise<void>;
+    schedulePerSupplementReminders: (supplements: { id: string; name: string }[]) => Promise<void>;
     scheduleVaccineReminder: (date: Date, name: string) => Promise<void>;
     scheduleSmartReminders: (childId: string) => Promise<void>;
     sendTestNotification: () => Promise<void>;
@@ -109,6 +110,11 @@ export const useNotifications = (): UseNotificationsReturn => {
         await notificationService.scheduleSupplementReminder();
     }, []);
 
+    // Schedule per-supplement reminders
+    const schedulePerSupplementReminders = useCallback(async (supplements: { id: string; name: string }[]) => {
+        await notificationService.schedulePerSupplementReminders(supplements);
+    }, []);
+
     // Schedule vaccine reminder
     const scheduleVaccineReminder = useCallback(async (date: Date, name: string) => {
         await notificationService.scheduleVaccineReminder(date, name);
@@ -131,6 +137,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         updateSettings,
         scheduleFeedingReminder,
         scheduleSupplementReminder,
+        schedulePerSupplementReminders,
         scheduleVaccineReminder,
         scheduleSmartReminders,
         sendTestNotification,

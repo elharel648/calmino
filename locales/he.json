@@ -16,7 +16,24 @@
     "undo": "בטל",
     "undone": "בוטל",
     "or": "או",
-    "done": "אישור"
+    "done": "אישור",
+    "confirm": "אישור",
+    "continue": "המשך",
+    "saving": "שמירה",
+    "add": "הוספה",
+    "select": "בחר",
+    "search": "חיפוש",
+    "share": "שיתוף",
+    "send": "שלח",
+    "next": "הבא",
+    "previous": "הקודם",
+    "yes": "כן",
+    "no": "לא",
+    "today": "היום",
+    "yesterday": "אתמול",
+    "week": "שבוע",
+    "month": "חודש",
+    "unknown": "לא ידוע"
   },
   "errors": {
     "somethingWentWrong": "אופס! משהו השתבש",
@@ -108,7 +125,36 @@
     "deleteAccountConfirmMessage": "לאחר המחיקה לא ניתן יהיה לשחזר את החשבון והנתונים. להמשיך?",
     "deleteAccountButton": "מחק לצמיתות",
     "deleteAccountYes": "כן, מחק הכל",
-    "hours": "שעות"
+    "hours": "שעות",
+    "notificationsAndReminders": "התראות ותזכורות",
+    "enabled": "מופעל",
+    "disabled": "כבוי",
+    "feedingReminder": "תזכורת אוכל",
+    "displayAndBehavior": "תצוגה והתנהגות",
+    "darkMode": "מצב כהה",
+    "biometricLock": "נעילה ביומטרית",
+    "about": "אודות",
+    "version": "גירסה",
+    "termsOfUse": "תנאי שימוש",
+    "deleteAccount": "מחיקת חשבון",
+    "feedback": "משוב",
+    "rateUs": "דרג אותנו",
+    "updateDetails": "עדכון פרטים",
+    "fullName": "שם מלא",
+    "emailAddress": "כתובת אימייל",
+    "account": "חשבון",
+    "firstName": "שם פרטי",
+    "lastName": "שם משפחה",
+    "phone": "טלפון",
+    "phoneNumber": "מספר טלפון",
+    "profile": "פרופיל",
+    "privacyAndSecurity": "פרטיות ואבטחה",
+    "helpAndSupport": "עזרה ותמיכה",
+    "contactUs": "יצירת קשר",
+    "faq": "שאלות נפוצות",
+    "every3Hours": "כל 3 שעות",
+    "dailyAt": "כל יום בשעה",
+    "custom": "מותאם אישית"
   },
   "navigation": {
     "home": "בית",
@@ -122,7 +168,11 @@
     "firstFeed": "האכלה ראשונה",
     "notYetToday": "עדיין לא תועד היום",
     "vitaminD": "ויטמין D",
-    "iron": "ברזל"
+    "iron": "ברזל",
+    "title": "התראות",
+    "noNew": "אין התראות חדשות",
+    "markAllRead": "סמן הכל כנקרא",
+    "deleteAll": "מחק הכל"
   },
   "timeline": {
     "title": "סדר היום",
@@ -140,7 +190,16 @@
     "sleep": "שינה",
     "supplement": "תוסף",
     "iron": "ברזל",
-    "probiotic": "פרוביוטיקה"
+    "probiotic": "פרוביוטיקה",
+    "dailyTimeline": "ציר הזמן היומי",
+    "noEvents": "אין אירועים",
+    "noEventsRecorded": "אין אירועים מתועדים",
+    "ago": "לפני",
+    "now": "עכשיו",
+    "edit": "ערוך",
+    "delete": "מחק",
+    "confirmDelete": "האם למחוק?",
+    "eventDeleted": "האירוע נמחק"
   },
   "time": {
     "now": "עכשיו",
@@ -225,7 +284,11 @@
   },
   "empty": {
     "noChild": "בחר ילד לצפייה בסטטיסטיקות",
-    "noEvents": "אין אירועים להצגה"
+    "noEvents": "אין אירועים להצגה",
+    "noChildren": "אין ילדים רשומים",
+    "addChildToStart": "הוסף ילד כדי להתחיל",
+    "noActivityToday": "אין פעילות היום",
+    "startRecordingDay": "התחל לתעד את היום"
   },
   "baby": {
     "welcome": "איזה כיף! 🎉",
@@ -301,7 +364,30 @@
     "pressToStart": "לחץ להתחיל",
     "enterAmount": "הזן כמות",
     "example": "לדוגמה",
-    "forExample": "למשל"
+    "forExample": "למשל",
+    "endTime": "סיום",
+    "feeding": "האכלה",
+    "diapers": "חיתולים",
+    "supplements": "תוספים",
+    "breastfeeding": "הנקה",
+    "breastRight": "הנקה ימין",
+    "breastLeft": "הנקה שמאל",
+    "soup": "מרק",
+    "amount": "כמות",
+    "notes": "הערות",
+    "addNote": "הוסף הערה",
+    "stop": "עצור",
+    "finish": "סיים",
+    "active": "פעיל",
+    "nap": "תנומה",
+    "naps": "תנומות",
+    "wet": "רטוב",
+    "dirty": "מלוכלך",
+    "mixed": "מעורב",
+    "dry": "יבש",
+    "times": "פעמים",
+    "meals": "ארוחות",
+    "startTime": "התחלה"
   },
   "weekday": {
     "sun": "א",
@@ -323,7 +409,13 @@
     "subscribeYearly": "הירשם ל-Premium שנתי",
     "subscribeMonthly": "הירשם ל-Premium חודשי",
     "members": "חברים",
-    "familyOf": "משפחת"
+    "familyOf": "משפחת",
+    "premium": "פרימיום",
+    "upgrade": "שדרג לפרימיום",
+    "tryFree": "נסה בחינם",
+    "restorePurchase": "שחזר רכישה",
+    "monthly": "חודשי",
+    "yearly": "שנתי"
   },
   "units": {
     "km": "ק\"מ"
@@ -357,7 +449,51 @@
       "cityRequired": "שדה חובה",
       "selectCity": "יש לבחור עיר",
       "saveError": "לא ניתן לשמור, נסה שוב"
-    }
+    },
+    "back": "חזרה",
+    "year": "שנה",
+    "hourUnit": "שעה",
+    "findSitter": "מצא סיטר",
+    "parentMode": "מצב הורה",
+    "sitterMode": "מצב סיטר",
+    "searchByCity": "חפש לפי עיר...",
+    "distance": "מרחק",
+    "price": "מחיר",
+    "rating": "דירוג",
+    "favorites": "מועדפים",
+    "blocked": "חסומים",
+    "availableSitters": "סיטרים זמינים",
+    "sortByProximity": "מיון לפי קרבה",
+    "experience": "ניסיון",
+    "availability": "זמינות",
+    "aboutMe": "אודותיי",
+    "skills": "כישורים",
+    "reviews": "ביקורות",
+    "bookSitter": "הזמן סיטר",
+    "bookings": "הזמנות",
+    "newBooking": "הזמנה חדשה",
+    "selectDate": "בחר תאריך",
+    "selectHours": "בחר שעות",
+    "confirmBooking": "אישור הזמנה",
+    "cancelBooking": "ביטול הזמנה",
+    "bookingConfirmed": "הזמנה אושרה",
+    "bookingCancelled": "הזמנה בוטלה",
+    "pendingApproval": "ממתין לאישור",
+    "approved": "אושר",
+    "rejected": "נדחה",
+    "completed": "הושלם",
+    "becomeSitter": "הפוך לסיטר",
+    "sitterRegistration": "רישום סיטר",
+    "perHour": "לשעה",
+    "km": "ק\"מ",
+    "block": "חסום",
+    "unblock": "בטל חסימה",
+    "report": "דווח",
+    "sendMessage": "שלח הודעה",
+    "contact": "צור קשר",
+    "activeJobs": "משרות פעילות",
+    "dashboard": "לוח דשבורד",
+    "years": "שנים"
   },
   "guestInvite": {
     "cancelInvite": "ביטול הזמנה",
@@ -625,5 +761,372 @@
     "rating": "דירוג",
     "price": "מחיר",
     "distanceFilter": "טווח חיפוש"
+  },
+  "reports": {
+    "empty": {
+      "noData": "אין נתונים להצגה",
+      "notEnoughData": "אין מספיק נתונים להצגה",
+      "notEntered": "לא הוזן",
+      "notEnough": "אין מספיק נתונים",
+      "unknown": "לא ידוע"
+    },
+    "growth": {
+      "title": "מעקב גדילה",
+      "childAge": "גיל הילד",
+      "currentMeasurements": "מדידות נוכחיות",
+      "trend": "מגמת גדילה"
+    },
+    "metrics": {
+      "weight": "משקל",
+      "height": "גובה",
+      "headCircumference": "היקף ראש",
+      "growth": "גדילה",
+      "feeding": "האכלה",
+      "sleep": "שינה",
+      "diapers": "חיתולים",
+      "supplements": "תוספים"
+    },
+    "units": {
+      "kg": "ק״ג",
+      "cm": "ס״מ",
+      "hours": "שעות",
+      "times": "פעמים",
+      "doses": "מנות",
+      "months": "חודשים",
+      "day": "יום",
+      "days": "ימים"
+    },
+    "tabs": {
+      "orderTabs": "סדר כרטיסיות",
+      "daily": "יומי",
+      "weekly": "שבועי",
+      "monthly": "חודשי",
+      "custom": "מותאם",
+      "summary": "סיכום",
+      "charts": "גרפים"
+    },
+    "tips": {
+      "sleep": "טיפ שינה",
+      "feeding": "טיפ האכלה",
+      "general": "טיפ כללי",
+      "shortNaps": "תנומות קצרות מאוד. נסו ליצור סביבה שקטה וחשוכה יותר.",
+      "keepTracking": "המשיכו לתעד - ככל שיש יותר נתונים, התובנות יהיו מדויקות יותר!"
+    },
+    "share": {
+      "dailySummary": "סיכום יומי",
+      "summary": "שתף סיכום",
+      "error": "לא הצלחנו לשתף את הדוח",
+      "dataDisclaimer": "כל זכויות הנתונים שמורות להורים בלבד.",
+      "notSupported": "שיתוף קבצים אינו נתמך במכשיר זה",
+      "cannotShare": "לא ניתן לשתף"
+    },
+    "sleep": {
+      "bestSleepDay": "יום השינה הטוב ביותר",
+      "longestNap": "תנומה ארוכה ביותר",
+      "idealDay": "יום שינה אידיאלי",
+      "avgBedtime": "שעת השכבה ממוצעת",
+      "longestSleep": "שינה ארוכה ביותר"
+    },
+    "insights": {
+      "mostActiveDay": "היום הכי פעיל",
+      "avgSleepDuration": "ממוצע משך השינה",
+      "avgSleepTime": "שעת שינה ממוצעת",
+      "bestNight": "הלילה הטוב ביותר",
+      "weekChange": "שינוי מהשבוע הקודם",
+      "avgDailyFeeding": "ממוצע האכלה יומית",
+      "biggestFeeding": "האכלה הגדולה ביותר",
+      "avgInterval": "מרווח ממוצע בין האכלות",
+      "dailyAverage": "ממוצע יומי",
+      "busiestDay": "היום הפעיל ביותר",
+      "consistency": "עקביות",
+      "commonTime": "שעה נפוצה",
+      "title": "תובנות",
+      "advanced": "תובנות מתקדמות",
+      "unlockAdvanced": "פתיחת תובנות מתקדמות"
+    },
+    "feeding": {
+      "mixed": "מעורב",
+      "bottle": "בקבוק",
+      "breastfeeding": "הנקה",
+      "pumping": "שאיבה",
+      "solids": "מוצקים",
+      "preferredType": "סוג האכלה מועדף",
+      "breastRight": "הנקה ימין",
+      "breastLeft": "הנקה שמאל",
+      "formulaPumped": "בקבוק תמ\"ל/שאוב",
+      "directBreastfeeding": "הנקה ישירה",
+      "distribution": "התפלגות האכלה",
+      "biggestFeeding": "האכלה גדולה ביותר",
+      "avgTimeBetween": "זמן ממוצע בין האכלה"
+    },
+    "goals": {
+      "goodSleepWeek": "שבוע של שינה טובה",
+      "daysOver10Hours": "ימים עם 10+ שעות",
+      "feedingConsistency": "עקביות בהאכלה",
+      "daysWithTracking": "ימים עם תיעוד",
+      "daysOver8Hours": "ימים עם 8+ שעות",
+      "regularSleep": "שינה קבועה",
+      "daysWithRoutine": "ימים עם שגרה",
+      "adequateNutrition": "תזונה מספקת",
+      "regularTracking": "מעקב קבוע",
+      "daysWith4Changes": "ימים עם 4+ החלפות",
+      "supplementConsistency": "עקביות בתוספים",
+      "daysWithSupplement": "ימים עם מתן תוסף",
+      "title": "יעדים",
+      "sleepGoals": "יעדי שינה",
+      "trackingGoals": "יעדי תיעוד",
+      "dailyJournalDays": "ימים של תיעוד יומן",
+      "sleepOver8": "שינה של 8+ שעות"
+    },
+    "sections": {
+      "changes": "החלפות",
+      "consistencyGoals": "עקביות ומטרות",
+      "trackingStreak": "רצף מעקב",
+      "consecutiveDays": "ימים רצופים של תיעוד",
+      "overallSummary": "סיכום כולל",
+      "nutritionFeeding": "תזונה והאכלה",
+      "totalMeals": "ארוחות בסך הכל",
+      "sleepRest": "שינה ומנוחה",
+      "cumulativeSleepHours": "שעות שינה מצטברות",
+      "diaperingHygiene": "החתלה והיגיינה",
+      "diaperChanges": "החלפות חיתול",
+      "normalTracking": "מעקב תקין של יציאות והרטבות",
+      "supplementsMeds": "תוספים ותרופות",
+      "dosesGiven": "מנות שניתנו",
+      "perParentTracking": "לפי תיעוד הורים או היסטוריה רפואית",
+      "weeklyTrends": "מגמות ותובנות שבועיות",
+      "feedingAmounts": "כמויות האכלה",
+      "dailyBreakdown": "פירוט נתונים יומי",
+      "achievements": "הישגים",
+      "patterns": "דפוסים"
+    },
+    "time": {
+      "morning": "בוקר"
+    },
+    "comparison": {
+      "previousPeriod": "השוואה לתקופה קודמת",
+      "more": "יותר",
+      "less": "פחות",
+      "patternDetection": "זיהוי דפוסים אל מול הנתונים מהתקופה שעברה.",
+      "moreSleep": "יותר שינה",
+      "lessSleep": "פחות שינה"
+    },
+    "misc": {
+      "baby": "התינוק",
+      "total": "סה״כ",
+      "trackingStreak": "רצף תיעוד"
+    },
+    "dates": {
+      "date": "תאריך",
+      "selectDates": "בחר תאריכים",
+      "singleDay": "יום בודד",
+      "dateRange": "טווח תאריכים",
+      "from": "מתאריך",
+      "to": "עד תאריך"
+    },
+    "charts": {
+      "feedingAmountMeals": "האכלה (כמות / ארוחות)",
+      "sleepHours": "שעות שינה",
+      "naps": "תנומות",
+      "sleepInHours": "שינה (שעות)"
+    },
+    "history": {
+      "journal": "יומן",
+      "title": "היסטוריה",
+      "fullTimeline": "ציר זמן מלא",
+      "fullHistory": "היסטוריה מלאה"
+    }
+  },
+  "calmMode": {
+    "nightMode": "מצב לילה",
+    "title": "מצב רגוע"
+  },
+  "child": {
+    "name": "שם הילד",
+    "birthDate": "תאריך לידה",
+    "gender": "מין",
+    "boy": "בן",
+    "girl": "בת",
+    "other": "אחר",
+    "editDetails": "עריכת פרטי ילד",
+    "addChild": "הוספת ילד",
+    "switchChild": "החלפת ילד",
+    "saveChanges": "שמור שינויים",
+    "tapToChangePhoto": "לחץ לשינוי תמונה",
+    "age": "גיל",
+    "childDetails": "פרטי הילד",
+    "addBaby": "הוסף תינוק",
+    "addNewBaby": "הוסף תינוק חדש",
+    "deleteChild": "מחק ילד",
+    "babyName": "שם התינוק"
+  },
+  "onboarding": {
+    "start": "התחל",
+    "welcome": "ברוכים הבאים",
+    "skip": "דלג"
+  },
+  "family": {
+    "family": "משפחה",
+    "members": "חברי משפחה",
+    "invite": "הזמן למשפחה",
+    "join": "הצטרף למשפחה",
+    "inviteCode": "קוד הזמנה",
+    "copyCode": "העתק קוד",
+    "codeCopied": "הקוד הועתק",
+    "sendInvite": "שלח הזמנה",
+    "joinBtn": "הצטרף",
+    "guest": "אורח",
+    "owner": "בעל/ת",
+    "admin": "מנהל",
+    "scanQR": "סורק QR",
+    "guestInvite": "הזמנת אורח",
+    "removeFromFamily": "הסר מהמשפחה",
+    "leaveFamily": "עזוב משפחה"
+  },
+  "growth": {
+    "growth": "גדילה",
+    "tracking": "מעקב גדילה",
+    "weight": "משקל",
+    "height": "גובה",
+    "headCircumference": "היקף ראש",
+    "addMeasurement": "הוסף מדידה",
+    "newMeasurement": "מדידה חדשה",
+    "growthChart": "תרשים גדילה",
+    "percentile": "אחוזון"
+  },
+  "auth": {
+    "login": "התחברות",
+    "register": "הרשמה",
+    "email": "כתובת דוא\"ל",
+    "password": "סיסמה",
+    "forgotPassword": "שכחתי סיסמה",
+    "loginBtn": "התחבר",
+    "registerBtn": "הירשם",
+    "loginWithGoogle": "התחבר עם גוגל",
+    "loginWithApple": "התחבר עם אפל",
+    "guestLogin": "כניסה כאורח",
+    "phoneVerification": "אימות טלפון",
+    "verificationCode": "קוד אימות",
+    "sendCode": "שלח קוד",
+    "verify": "אמת"
+  },
+  "tools": {
+    "sleepCalculator": "מחשבון שינה",
+    "teethTracker": "מעקב שיניים",
+    "vaccineTracker": "מעקב חיסונים",
+    "whiteNoise": "רעש לבן",
+    "resetting": "מאפס...",
+    "babysitterCalculator": "מחשבון ביביסיטר"
+  },
+  "profile": {
+    "milestones": "אבני דרך",
+    "vaccines": "חיסונים",
+    "album": "אלבום",
+    "teeth": "שיניים",
+    "medications": "תרופות",
+    "measurements": "מדידות"
+  },
+  "months": {
+    "january": "ינואר",
+    "february": "פברואר",
+    "march": "מרץ",
+    "april": "אפריל",
+    "may": "מאי",
+    "june": "יוני",
+    "july": "יולי",
+    "august": "אוגוסט",
+    "september": "ספטמבר",
+    "october": "אוקטובר",
+    "november": "נובמבר",
+    "december": "דצמבר"
+  },
+  "days": {
+    "sunday": "יום א",
+    "monday": "יום ב",
+    "tuesday": "יום ג",
+    "wednesday": "יום ד",
+    "thursday": "יום ה",
+    "friday": "יום ו",
+    "saturday": "שבת",
+    "sundayFull": "ראשון",
+    "mondayFull": "שני",
+    "tuesdayFull": "שלישי",
+    "wednesdayFull": "רביעי",
+    "thursdayFull": "חמישי",
+    "fridayFull": "שישי"
+  },
+  "weather": {
+    "title": "מזג אוויר",
+    "temperature": "טמפרטורה",
+    "humidity": "לחות",
+    "airQuality": "איכות אוויר"
+  },
+  "health": {
+    "title": "בריאות",
+    "bloodPressure": "לחץ דם",
+    "fever": "חום",
+    "medicine": "תרופה"
+  },
+  "misc": {
+    "uploadPhoto": "העלה תמונה",
+    "takePhoto": "צלם תמונה",
+    "chooseFromGallery": "בחר מהגלריה",
+    "share": "שתף",
+    "copy": "העתק",
+    "copied": "הועתק",
+    "savedSuccessfully": "נשמר בהצלחה",
+    "deletedSuccessfully": "נמחק בהצלחה",
+    "areYouSure": "בטוח?",
+    "confirmDelete": "אישור מחיקה",
+    "noResults": "אין תוצאות",
+    "noData": "אין נתונים",
+    "noDataToShow": "אין נתונים להצגה",
+    "loading": "טוען",
+    "moment": "רגע...",
+    "loadingError": "שגיאה בטעינה",
+    "saveError": "שגיאה בשמירה",
+    "actionCancelled": "הפעולה בוטלה",
+    "done": "בוצע"
+  },
+  "export": {
+    "pdf": "ייצוא PDF",
+    "export": "ייצוא",
+    "shareDailySummary": "שתף סיכום יומי"
+  },
+  "blocked": {
+    "title": "משתמשים חסומים",
+    "noBlocked": "אין משתמשים חסומים"
+  },
+  "legal": {
+    "terms": "תנאים והגבלות",
+    "serviceAgreement": "הסכם שירות"
+  },
+  "rating": {
+    "rateExperience": "דרג את החוויה",
+    "writeReview": "כתוב ביקורת",
+    "myReviews": "הביקורות שלי",
+    "submitReview": "שלח ביקורת"
+  },
+  "subscription": {
+    "subscription": "מנוי",
+    "plan": "תוכנית",
+    "free": "חינם"
+  },
+  "network": {
+    "noConnection": "אין חיבור לאינטרנט",
+    "checking": "בודק חיבור..."
+  },
+  "bookings": {
+    "myBookings": "הזמנות שלי",
+    "upcoming": "הזמנות עתידיות",
+    "past": "הזמנות קודמות",
+    "requests": "בקשות",
+    "approve": "אשר",
+    "reject": "דחה"
+  },
+  "error": {
+    "loadingData": "שגיאה בטעינת הנתונים",
+    "somethingWentWrong": "משהו השתבש",
+    "tryAgain": "נסה שנית"
   }
 }

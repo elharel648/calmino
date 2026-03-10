@@ -6,6 +6,7 @@ import { useFamily } from '../../hooks/useFamily';
 import { subscribeToFamilyPresence, FamilyMemberPresence, setupPresenceListener } from '../../services/presenceService';
 import { auth } from '../../services/firebaseConfig';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface FamilyStatusIndicatorProps {
     onPress?: () => void;
@@ -13,6 +14,7 @@ interface FamilyStatusIndicatorProps {
 
 const FamilyStatusIndicator = memo(({ onPress }: FamilyStatusIndicatorProps) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const { family } = useFamily();
     const [members, setMembers] = useState<FamilyMemberPresence[]>([]);
 

@@ -15,6 +15,7 @@ import { useSleepTimer } from '../context/SleepTimerContext';
 import { useFoodTimer } from '../context/FoodTimerContext';
 import { useDynamicIsland } from '../context/DynamicIslandContext';
 import { useAppleWatch } from '../hooks/useAppleWatch';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COMPACT_WIDTH = 126; // Compact state width (Apple-like)
@@ -23,6 +24,7 @@ const COMPACT_HEIGHT = 37; // Apple's compact height
 const EXPANDED_HEIGHT = 88; // Slightly taller for better content display
 
 export default function DynamicIsland() {
+    const { t } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const { isRunning: sleepRunning, elapsedSeconds: sleepSeconds, formatTime: formatSleepTime, start: startSleep, stop: stopSleep } = useSleepTimer();
     const {
@@ -158,7 +160,7 @@ export default function DynamicIsland() {
             const sleepTime = formatSleepTime(sleepSeconds);
             // Sync timer to Apple Watch
             sendTimer({
-                title: 'שינה',
+                title: t('tracking.sleep'),
                 time: sleepTime,
                 isRunning: true,
                 color: '#8B5CF6',
@@ -166,7 +168,7 @@ export default function DynamicIsland() {
 
             return {
                 icon: Moon,
-                title: 'שינה',
+                title: t('tracking.sleep'),
                 subtitle: sleepTime,
                 color: '#8B5CF6',
             };
@@ -176,7 +178,7 @@ export default function DynamicIsland() {
             const pumpingTime = formatFoodTime(pumpingElapsedSeconds);
             // Sync timer to Apple Watch
             sendTimer({
-                title: 'שאיבה',
+                title: t('tracking.pumping'),
                 time: pumpingTime,
                 isRunning: true,
                 color: '#F59E0B',
@@ -184,7 +186,7 @@ export default function DynamicIsland() {
 
             return {
                 icon: Droplets,
-                title: 'שאיבה',
+                title: t('tracking.pumping'),
                 subtitle: pumpingTime,
                 color: '#F59E0B',
             };

@@ -117,7 +117,7 @@ const SupplementCard = memo(({
                 disabled={isEditMode}
             >
                 {/* Delete badge for custom supplements in edit mode */}
-                {isEditMode && !isDefault && (
+                {isEditMode && (
                     <TouchableOpacity
                         style={styles.deleteBadge}
                         onPress={() => onRemove(id)}
@@ -347,7 +347,8 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
 
     if (!visible) return null;
 
-    // Build supplement list: defaults + custom
+    // Build supplement list: defaults (unless hidden) + custom
+    const hiddenDefaults = meds.hiddenDefaults || [];
     const allSupplements = [
         { id: 'vitaminD', name: 'ויטמין D', icon: 'sun', taken: meds.vitaminD, isDefault: true },
         { id: 'iron', name: 'ברזל', icon: 'droplet', taken: meds.iron, isDefault: true },
@@ -358,7 +359,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
             taken: meds.custom?.[s.id] || false,
             isDefault: false,
         })),
-    ];
+    ].filter(s => !s.isDefault || !hiddenDefaults.includes(s.id));
 
     return (
         <Modal

@@ -15,6 +15,7 @@ import { Baby, BarChart2, Users, ArrowRight, ChevronLeft } from 'lucide-react-na
 import { useTheme } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -56,8 +57,10 @@ interface OnboardingScreenProps {
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export default function OnboardingScreen({
+    onComplete }: OnboardingScreenProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -240,9 +243,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                             onPress={handleSkip}
                             activeOpacity={0.7}
                         >
-                            <Text style={[styles.skipText, { color: theme.textSecondary }]}>
-                                דלג
-                            </Text>
+                            <Text style={[styles.skipText, { color: theme.textSecondary }]}>{t('onboarding.skip')}</Text>
                         </TouchableOpacity>
                     )}
 
@@ -258,7 +259,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                                 style={styles.nextButton}
                             >
                                 <Text style={styles.nextText}>
-                                    {currentIndex === slides.length - 1 ? 'בוא נתחיל!' : 'הבא'}
+                                    {currentIndex === slides.length - 1 ? 'בוא נתחיל!' : t('common.next')}
                                 </Text>
                                 <ChevronLeft size={20} color="#fff" strokeWidth={2.5} />
                             </LinearGradient>

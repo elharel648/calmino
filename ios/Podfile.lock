@@ -2074,34 +2074,8 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - SocketRocket
-  - react-native-netinfo (11.5.2):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
+  - react-native-netinfo (11.4.1):
     - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
   - react-native-safe-area-context (5.6.2):
     - boost
     - DoubleConversion
@@ -2219,7 +2193,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider (5.1.2):
+  - react-native-slider (5.0.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2237,7 +2211,7 @@ PODS:
     - React-graphics
     - React-ImageManager
     - React-jsi
-    - react-native-slider/common (= 5.1.2)
+    - react-native-slider/common (= 5.0.1)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -2248,7 +2222,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider/common (5.1.2):
+  - react-native-slider/common (5.0.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3332,7 +3306,7 @@ PODS:
     - ZXingObjC/Core
 
 DEPENDENCIES:
-  - ActivityKitModule (from `../node_modules/activity-kit-module/ios`)
+  - ActivityKitModule (from `../local-modules/activity-kit-module-v2/ios`)
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - EASClient (from `../node_modules/expo-eas-client/ios`)
@@ -3460,7 +3434,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
-  - SharedAttributes (from `../node_modules/shared-attributes`)
+  - SharedAttributes (from `../local-modules/shared-attributes`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -3498,7 +3472,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   ActivityKitModule:
-    :path: "../node_modules/activity-kit-module/ios"
+    :path: "../local-modules/activity-kit-module-v2/ios"
   boost:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
   DoubleConversion:
@@ -3753,7 +3727,7 @@ EXTERNAL SOURCES:
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
   SharedAttributes:
-    :path: "../node_modules/shared-attributes"
+    :path: "../local-modules/shared-attributes"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3862,10 +3836,10 @@ SPEC CHECKSUMS:
   React-logger: a913317214a26565cd4c045347edf1bcacb80a3f
   React-Mapbuffer: 017336879e2e0fb7537bbc08c24f34e2384c9260
   React-microtasksnativemodule: 63ee6730cec233feab9cdcc0c100dc28a12e4165
-  react-native-netinfo: 64f05e94821ee3f3adcd9b67b35c1480e5564915
+  react-native-netinfo: cec9c4e86083cb5b6aba0e0711f563e2fbbff187
   react-native-safe-area-context: 0a3b034bb63a5b684dd2f5fffd3c90ef6ed41ee8
   react-native-skia: 0a5a68da2c0f044df6fa819113eeddb35f7534d7
-  react-native-slider: b5f51c55cea4308ed0e4bce29bf8ae2f01dbf572
+  react-native-slider: 6201419b3e3f7c6b7cf2068e0c01274fa86a1da5
   React-NativeModulesApple: cbceb3c4cb726838c461b13802a76cefa6f3476f
   React-oscompat: eb0626e8ba1a2c61673c991bf9dc21834898475d
   React-perflogger: 509e1f9a3ee28df71b0a66de806ac515ce951246

@@ -6,6 +6,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { MedicationsState } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MedicationsTrackerProps {
     meds: MedicationsState;

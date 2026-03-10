@@ -5,14 +5,17 @@ import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, addMinutes } from 'date-fns';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SleepCalculatorModalProps {
     visible: boolean;
     onClose: () => void;
 }
 
-export default function SleepCalculatorModal({ visible, onClose }: SleepCalculatorModalProps) {
+export default function SleepCalculatorModal({
+    visible, onClose }: SleepCalculatorModalProps) {
     const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
     const { activeChild } = useActiveChild();
     const [wakeTime, setWakeTime] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
@@ -37,7 +40,7 @@ export default function SleepCalculatorModal({ visible, onClose }: SleepCalculat
                     <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                         <X size={24} color={theme.textPrimary} />
                     </TouchableOpacity>
-                    <Text style={[styles.title, { color: theme.textPrimary }]}>מחשבון שינה</Text>
+                    <Text style={[styles.title, { color: theme.textPrimary }]}>{t('tools.sleepCalculator')}</Text>
                     <View style={{ width: 40 }} />
                 </View>
 

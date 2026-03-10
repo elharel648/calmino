@@ -24,6 +24,7 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
@@ -39,6 +40,7 @@ const DAYS_HEB = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 const SitterRegistrationScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
+    const insets = useSafeAreaInsets();
     const progressAnim = useRef(new Animated.Value(0.33)).current;
 
     // Current step (2 steps: Personal Info, Photo)
@@ -138,7 +140,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 }
                 // Basic phone validation - just check it's not empty
                 if (phone.trim().length < 9) {
-                    Alert.alert('שגיאה', 'מספר טלפון חייב להיות לפחות 9 ספרות');
+                    Alert.alert(t('common.error'), 'מספר טלפון חייב להיות לפחות 9 ספרות');
                     return false;
                 }
                 return true;
@@ -646,14 +648,14 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             </KeyboardAvoidingView>
 
             {/* Footer */}
-            <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+            <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border, paddingBottom: insets.bottom + 70 }]}>
                 {currentStep > 1 && (
                     <TouchableOpacity
                         style={[styles.secondaryBtn, { borderColor: theme.border }]}
                         onPress={prevStep}
                     >
                         <ChevronRight size={18} color={theme.textSecondary} />
-                        <Text style={[styles.secondaryBtnText, { color: theme.textSecondary }]}>חזרה</Text>
+                        <Text style={[styles.secondaryBtnText, { color: theme.textSecondary }]}>{t('sitter.back')}</Text>
                     </TouchableOpacity>
                 )}
 
@@ -662,7 +664,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         style={[styles.primaryBtn, { backgroundColor: theme.textPrimary }]}
                         onPress={nextStep}
                     >
-                        <Text style={[styles.primaryBtnText, { color: theme.card }]}>המשך</Text>
+                        <Text style={[styles.primaryBtnText, { color: theme.card }]}>{t('common.continue')}</Text>
                         <ChevronLeft size={18} color={theme.card} />
                     </TouchableOpacity>
                 ) : (
@@ -946,8 +948,8 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         paddingHorizontal: 20,
-        paddingVertical: 16,
-        paddingBottom: Platform.OS === 'ios' ? 120 : 100,
+        paddingTop: 16,
+        paddingBottom: 16,
         gap: 12,
         borderTopWidth: 1,
     },

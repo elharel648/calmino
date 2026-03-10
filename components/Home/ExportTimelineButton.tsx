@@ -20,7 +20,7 @@ export default function ExportTimelineButton() {
 
     const handleExport = async () => {
         if (!activeChild?.childId || !activeChild?.childName) {
-            Alert.alert('שגיאה', 'לא נמצא ילד פעיל');
+            Alert.alert(t('common.error'), 'לא נמצא ילד פעיל');
             return;
         }
 
@@ -47,10 +47,10 @@ export default function ExportTimelineButton() {
             if (success) {
                 Alert.alert('הצלחה!', 'הדוח יוצא בהצלחה');
             } else {
-                Alert.alert('שגיאה', 'לא הצלחנו לייצא את הדוח');
+                Alert.alert(t('common.error'), 'לא הצלחנו לייצא את הדוח');
             }
         } catch (error) {
-            Alert.alert('שגיאה', 'משהו השתבש בייצוא');
+            Alert.alert(t('common.error'), 'משהו השתבש בייצוא');
         } finally {
             setExporting(false);
         }

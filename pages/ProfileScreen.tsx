@@ -30,8 +30,10 @@ import GradientBackground from '../components/GradientBackground';
 
 // Types
 import { EditMetricState, Milestone } from '../types/profile';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ProfileScreen() {
+    const { t } = useLanguage();
   const navigation = useNavigation();
   const { theme, isDarkMode } = useTheme();
 
@@ -126,7 +128,7 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
               <ChevronRight size={22} color={theme.textPrimary} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>פרופיל</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('settings.profile')}</Text>
             <View style={{ width: 38 }} />
           </View>
         </BlurView>
@@ -179,9 +181,9 @@ export default function ProfileScreen() {
             </View>
             <GrowthSection
               stats={baby?.stats}
-              onEditWeight={() => setEditMetric({ type: 'weight', title: 'משקל', unit: 'ק"ג', value: baby?.stats?.weight || '' })}
-              onEditHeight={() => setEditMetric({ type: 'height', title: 'גובה', unit: 'ס"מ', value: baby?.stats?.height || '' })}
-              onEditHead={() => setEditMetric({ type: 'head', title: 'היקף ראש', unit: 'ס"מ', value: baby?.stats?.headCircumference || '' })}
+              onEditWeight={() => setEditMetric({ type: 'weight', title: t('growth.weight'), unit: 'ק"ג', value: baby?.stats?.weight || '' })}
+              onEditHeight={() => setEditMetric({ type: 'height', title: t('growth.height'), unit: 'ס"מ', value: baby?.stats?.height || '' })}
+              onEditHead={() => setEditMetric({ type: 'head', title: t('growth.headCircumference'), unit: 'ס"מ', value: baby?.stats?.headCircumference || '' })}
             />
           </View>
 
@@ -189,7 +191,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Award size={18} color="#F59E0B" />
-              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>אבני דרך</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('profile.milestones')}</Text>
               <TouchableOpacity
                 style={styles.addTextBtn}
                 onPress={() => {

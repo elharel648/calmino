@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
 import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
+import { useLanguage } from '../context/LanguageContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -16,8 +17,10 @@ interface CalmModeModalProps {
   onClose: () => void;
 }
 
-export default function CalmModeModal({ visible, onClose }: CalmModeModalProps) {
+export default function CalmModeModal({
+  visible, onClose }: CalmModeModalProps) {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
 
   // Animations
   const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;

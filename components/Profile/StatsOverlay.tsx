@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface StatsOverlayProps {
     weight?: string;
@@ -7,16 +8,17 @@ interface StatsOverlayProps {
 }
 
 const StatsOverlay = memo(({ weight, height }: StatsOverlayProps) => {
+    const { t } = useLanguage();
     return (
         <View style={styles.container}>
             <View style={styles.statItem}>
                 <Text style={styles.statVal}>{weight || '-'} ק״ג</Text>
-                <Text style={styles.statLabel}>משקל</Text>
+                <Text style={styles.statLabel}>{t('growth.weight')}</Text>
             </View>
             <View style={styles.verticalLine} />
             <View style={styles.statItem}>
                 <Text style={styles.statVal}>{height || '-'} ס״מ</Text>
-                <Text style={styles.statLabel}>גובה</Text>
+                <Text style={styles.statLabel}>{t('growth.height')}</Text>
             </View>
         </View>
     );

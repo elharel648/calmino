@@ -9,8 +9,10 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { logger } from '../utils/logger';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function NotificationsScreen() {
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const { theme, isDarkMode } = useTheme();
     const [refreshing, setRefreshing] = useState(false);
@@ -109,9 +111,9 @@ export default function NotificationsScreen() {
             'נקה הכל',
             'האם למחוק את כל ההתראות?',
             [
-                { text: 'ביטול', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'מחק הכל',
+                    text: t('notifications.deleteAll'),
                     style: 'destructive',
                     onPress: async () => {
                         await notificationStorageService.clearAll();
@@ -135,7 +137,7 @@ export default function NotificationsScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <ChevronRight size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>התראות</Text>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('notifications.title')}</Text>
                 <View style={styles.headerActions}>
                     {unreadCount > 0 && (
                         <TouchableOpacity onPress={markAllAsRead} style={styles.markAllBtn}>

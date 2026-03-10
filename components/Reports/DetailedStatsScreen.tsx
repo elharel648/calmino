@@ -23,6 +23,7 @@ import { db } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import GlassBarChartPerfect from './GlassBarChart';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -41,101 +42,7 @@ interface DetailedStatsScreenProps {
     childId: string;
 }
 
-const METRIC_CONFIG = {
-    sleep: {
-        title: 'שינה',
-        icon: Moon,
-        color: '#8B5CF6',
-        lightBg: '#F5F3FF',
-        barColors: ['#8B5CF6', '#A78BFA', '#C4B5FD'],
-        unit: 'שעות',
-        avgLabel: 'ממוצע משך השינה',
-        insights: [
-            { icon: Clock, title: 'שעת שינה ממוצעת', key: 'avgSleepTime' },
-            { icon: Star, title: 'הלילה הטוב ביותר', key: 'bestNight' },
-            { icon: TrendingUp, title: 'שינוי מהשבוע הקודם', key: 'weekChange' },
-        ],
-    },
-    food: {
-        title: 'האכלות',
-        icon: Utensils,
-        color: '#F59E0B',
-        lightBg: '#FFFBEB',
-        barColors: ['#F59E0B', '#FBBF24', '#FCD34D'],
-        unit: 'מ"ל',
-        avgLabel: 'ממוצע האכלה יומית',
-        insights: [
-            { icon: Zap, title: 'האכלה הגדולה ביותר', key: 'biggestFeeding' },
-            { icon: Clock, title: 'מרווח ממוצע בין האכלות', key: 'avgInterval' },
-            { icon: Award, title: 'סה"כ כמות', key: 'totalAmount' },
-        ],
-    },
-    diapers: {
-        title: 'חיתולים',
-        icon: Droplets,
-        color: '#14B8A6',
-        lightBg: '#F0FDFA',
-        barColors: ['#14B8A6', '#2DD4BF', '#5EEAD4'],
-        unit: 'פעמים',
-        avgLabel: 'ממוצע יומי',
-        insights: [
-            { icon: TrendingUp, title: 'ממוצע יומי', key: 'dailyAvg' },
-            { icon: Star, title: 'היום הפעיל ביותר', key: 'busiestDay' },
-            { icon: Award, title: 'סה"כ החלפות', key: 'totalChanges' },
-        ],
-    },
-    supplements: {
-        title: 'תוספים',
-        icon: Pill,
-        color: '#EC4899',
-        lightBg: '#FDF2F8',
-        barColors: ['#EC4899', '#F472B6', '#F9A8D4'],
-        unit: 'פעמים',
-        avgLabel: 'ממוצע יומי',
-        insights: [
-            { icon: Award, title: 'עקביות', key: 'consistency' },
-            { icon: Clock, title: 'שעה נפוצה', key: 'commonTime' },
-            { icon: TrendingUp, title: 'סה"כ מנות', key: 'totalDoses' },
-        ],
-    },
-}
-
-const TIME_RANGE_LABELS: Record<TimeRange, string> = {
-    day: 'יומי',
-    week: 'שבועי',
-    month: 'חודשי',
-    custom: 'מותאם',
-};
-
-// Feeding subtypes
 type FeedingSubType = 'all' | 'bottle' | 'breast_right' | 'breast_left' | 'solids' | 'pumping';
-
-const FEEDING_SUBTYPES: { id: FeedingSubType; label: string; color: string }[] = [
-    { id: 'all', label: 'הכל', color: '#F59E0B' },
-    { id: 'breast_right', label: 'הנקה ימין', color: '#EC4899' },
-    { id: 'breast_left', label: 'הנקה שמאל', color: '#F472B6' },
-    { id: 'bottle', label: 'בקבוק', color: '#818CF8' },
-    { id: 'solids', label: 'מוצקים', color: '#34D399' },
-    { id: 'pumping', label: 'שאיבה', color: '#A78BFA' },
-];
-
-// Goals configuration per metric
-const METRIC_GOALS = {
-    sleep: [
-        { title: 'שבוע של שינה טובה', target: 7, threshold: 8, unit: 'שעות', description: 'ימים עם 8+ שעות' },
-        { title: 'שינה קבועה', target: 7, threshold: 6, unit: 'שעות', description: 'ימים עם שגרה' },
-    ],
-    food: [
-        { title: 'עקביות בהאכלות', target: 7, threshold: 4, unit: 'האכלות', description: 'ימים עם תיעוד' },
-        { title: 'תזונה מספקת', target: 7, threshold: 500, unit: 'מ"ל', description: 'ימים עם 500+ מ"ל' },
-    ],
-    diapers: [
-        { title: 'מעקב קבוע', target: 7, threshold: 4, unit: 'החלפות', description: 'ימים עם 4+ החלפות' },
-    ],
-    supplements: [
-        { title: 'עקביות בתוספים', target: 7, threshold: 1, unit: 'מנות', description: 'ימים עם מתן תוסף' },
-    ],
-};
 
 export default function DetailedStatsScreen({
     onClose,
@@ -143,6 +50,100 @@ export default function DetailedStatsScreen({
     childId,
 }: DetailedStatsScreenProps) {
     const { theme } = useTheme();
+    const { t } = useLanguage();
+
+    const METRIC_CONFIG = useMemo(() => ({
+        sleep: {
+            title: t('reports.metrics.sleep'),
+            icon: Moon,
+            color: '#8B5CF6',
+            lightBg: '#F5F3FF',
+            barColors: ['#8B5CF6', '#A78BFA', '#C4B5FD'],
+            unit: t('reports.units.hours'),
+            avgLabel: t('reports.insights.avgSleepDuration'),
+            insights: [
+                { icon: Clock, title: t('reports.insights.avgSleepTime'), key: 'avgSleepTime' },
+                { icon: Star, title: t('reports.insights.bestNight'), key: 'bestNight' },
+                { icon: TrendingUp, title: t('reports.insights.weekChange'), key: 'weekChange' },
+            ],
+        },
+        food: {
+            title: t('reports.metrics.feeding'),
+            icon: Utensils,
+            color: '#F59E0B',
+            lightBg: '#FFFBEB',
+            barColors: ['#F59E0B', '#FBBF24', '#FCD34D'],
+            unit: t('reports.units.hours'),
+            avgLabel: t('reports.insights.avgDailyFeeding'),
+            insights: [
+                { icon: Zap, title: t('reports.insights.biggestFeeding'), key: 'biggestFeeding' },
+                { icon: Clock, title: t('reports.insights.avgInterval'), key: 'avgInterval' },
+                { icon: Award, title: t('reports.misc.total'), key: 'totalAmount' },
+            ],
+        },
+        diapers: {
+            title: t('reports.metrics.diapers'),
+            icon: Droplets,
+            color: '#14B8A6',
+            lightBg: '#F0FDFA',
+            barColors: ['#14B8A6', '#2DD4BF', '#5EEAD4'],
+            unit: t('reports.units.times'),
+            avgLabel: t('reports.insights.dailyAverage'),
+            insights: [
+                { icon: TrendingUp, title: t('reports.insights.dailyAverage'), key: 'dailyAvg' },
+                { icon: Star, title: t('reports.insights.busiestDay'), key: 'busiestDay' },
+                { icon: Award, title: t('reports.sections.changes'), key: 'totalChanges' },
+            ],
+        },
+        supplements: {
+            title: t('reports.metrics.supplements'),
+            icon: Pill,
+            color: '#EC4899',
+            lightBg: '#FDF2F8',
+            barColors: ['#EC4899', '#F472B6', '#F9A8D4'],
+            unit: t('reports.units.times'),
+            avgLabel: t('reports.insights.dailyAverage'),
+            insights: [
+                { icon: Award, title: t('reports.insights.consistency'), key: 'consistency' },
+                { icon: Clock, title: t('reports.insights.commonTime'), key: 'commonTime' },
+                { icon: TrendingUp, title: t('reports.units.doses'), key: 'totalDoses' },
+            ],
+        },
+    }), [t]);
+
+    const TIME_RANGE_LABELS = useMemo<Record<TimeRange, string>>(() => ({
+        day: t('reports.tabs.daily'),
+        week: t('reports.tabs.weekly'),
+        month: t('reports.tabs.monthly'),
+        custom: t('reports.tabs.custom'),
+    }), [t]);
+
+    const FEEDING_SUBTYPES = useMemo<{ id: FeedingSubType; label: string; color: string }[]>(() => [
+        { id: 'all', label: t('common.all'), color: '#F59E0B' },
+        { id: 'breast_right', label: t('reports.feeding.breastRight'), color: '#EC4899' },
+        { id: 'breast_left', label: t('reports.feeding.breastLeft'), color: '#F472B6' },
+        { id: 'bottle', label: t('reports.feeding.bottle'), color: '#818CF8' },
+        { id: 'solids', label: t('reports.feeding.solids'), color: '#34D399' },
+        { id: 'pumping', label: t('reports.feeding.pumping'), color: '#A78BFA' },
+    ], [t]);
+
+    const METRIC_GOALS = useMemo(() => ({
+        sleep: [
+            { title: t('reports.goals.goodSleepWeek'), target: 7, threshold: 8, unit: t('reports.units.hours'), description: t('reports.goals.daysOver8Hours') },
+            { title: t('reports.goals.regularSleep'), target: 7, threshold: 6, unit: t('reports.units.hours'), description: t('reports.goals.daysWithRoutine') },
+        ],
+        food: [
+            { title: t('reports.goals.feedingConsistency'), target: 7, threshold: 4, unit: t('reports.metrics.feeding'), description: t('reports.goals.daysWithTracking') },
+            { title: t('reports.goals.adequateNutrition'), target: 7, threshold: 500, unit: t('reports.units.hours'), description: t('reports.goals.daysWithTracking') },
+        ],
+        diapers: [
+            { title: t('reports.goals.regularTracking'), target: 7, threshold: 4, unit: t('reports.sections.changes'), description: t('reports.goals.daysWith4Changes') },
+        ],
+        supplements: [
+            { title: t('reports.goals.supplementConsistency'), target: 7, threshold: 1, unit: t('reports.units.doses'), description: t('reports.goals.daysWithSupplement') },
+        ],
+    }), [t]);
+
     const [timeRange, setTimeRange] = useState<TimeRange>('week');
     const [data, setData] = useState<DayData[]>([]);
     const [prevWeekData, setPrevWeekData] = useState<DayData[]>([]);
@@ -422,7 +423,7 @@ export default function DetailedStatsScreen({
         } else {
             return {
                 consistency: stats.average > 0 ? 'טוב' : '--',
-                commonTime: 'בוקר',
+                commonTime: t('reports.time.morning'),
                 totalDoses: `${Math.round(stats.total)} מנות`,
             };
         }
@@ -610,7 +611,7 @@ export default function DetailedStatsScreen({
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <TrendingUp size={18} color={config.color} />
-                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>יעדים</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.goals.title')}</Text>
                     </View>
                     {goalsProgress.map((goal, index) => (
                         <View key={index} style={[styles.goalCard, { backgroundColor: theme.card }]}>
@@ -644,7 +645,7 @@ export default function DetailedStatsScreen({
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <TrendingUp size={18} color={theme.textSecondary} />
-                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>השוואה לתקופה קודמת</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.comparison.previousPeriod')}</Text>
                     </View>
                     <View style={[styles.comparisonCard, { backgroundColor: theme.card }]}>
                         <View style={[styles.comparisonIconWrap, { backgroundColor: config.lightBg }]}>
@@ -663,7 +664,7 @@ export default function DetailedStatsScreen({
                                 )}
                             </View>
                             <Text style={[styles.comparisonNote, { color: theme.textSecondary }]}>
-                                {comparison.isPositive ? 'יותר' : 'פחות'} {config.title.toLowerCase()}
+                                {comparison.isPositive ? t('reports.comparison.more') : t('reports.comparison.less')} {config.title.toLowerCase()}
                             </Text>
                         </View>
                     </View>
@@ -671,7 +672,7 @@ export default function DetailedStatsScreen({
 
                 {/* Insights Section */}
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>תובנות</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.insights.title')}</Text>
                     {config.insights.map((insight, index) => {
                         const InsightIcon = insight.icon;
                         const value = insightValues[insight.key as keyof typeof insightValues];
