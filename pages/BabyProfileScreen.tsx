@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Modal,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -36,11 +37,13 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [name, setName] = useState('');
-  const [birthDate, setBirthDate] = useState(new Date());
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [gender, setGender] = useState<'boy' | 'girl'>('boy');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [welcomeVisible, setWelcomeVisible] = useState(false);
+  const [savedName, setSavedName] = useState('');
 
   // Subtle pulse animation for button
   const buttonScale = useSharedValue(1);
@@ -63,6 +66,11 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
       Alert.alert(t('baby.nameRequired'), t('baby.nameRequiredMessage'));
       return;
     }
+    if (!birthDate) {
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('שגיאה', 'יש לבחור תאריך לידה');
+      return;
+    }
 
     setLoading(true);
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -70,9 +78,8 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     try {
       await saveBabyProfile(name, birthDate, gender);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(t('baby.welcome'), t('baby.welcomeMessage').replace('{name}', name), [
-        { text: t('baby.letsStart'), onPress: onProfileSaved }
-      ]);
+      setSavedName(name);
+      setWelcomeVisible(true);
     } catch (error) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(t('common.error'), t('errors.saveError'));
@@ -94,7 +101,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const isFormValid = name.trim().length > 0;
+  const isFormValid = name.trim().length > 0 && birthDate !== null;
 
   return (
     <View style={styles.container}>
@@ -182,12 +189,10 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 activeOpacity={0.7}
               >
                 <ChevronRight size={18} color="#6B7280" />
-                <Text style={styles.dateText}>
-                  {birthDate.toLocaleDateString('he-IL', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                <Text style={[styles.dateText, !birthDate && { color: '#9CA3AF', fontWeight: '400' }]}>
+                  {birthDate
+                    ? birthDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
+                    : 'בחר תאריך לידה...'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -195,7 +200,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
 
           {showDatePicker && (
             <DateTimePicker
-              value={birthDate}
+              value={birthDate ?? new Date()}
               mode="date"
               display="spinner"
               locale="he"
@@ -307,10 +312,40 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
         onSuccess={() => {
           setShowJoinModal(false);
           if (onProfileSaved) {
-            onProfileSaved(); // Triggers app refresh to show new guest tabs
+            onProfileSaved();
           }
         }}
       />
+
+      {/* Welcome Modal */}
+      <Modal visible={welcomeVisible} transparent animationType="fade">
+        <View style={styles.welcomeOverlay}>
+          <Animated.View entering={FadeInUp.springify()} style={styles.welcomeCard}>
+            {/* Icon */}
+            <View style={styles.welcomeIconWrap}>
+              <Sparkles size={28} color="#8B5CF6" strokeWidth={1.5} />
+            </View>
+
+            {/* Text — RTL aligned */}
+            <Text style={styles.welcomeTitle}>!איזה כיף</Text>
+            <Text style={styles.welcomeMessage}>
+              {`ברוכים הבאים ${savedName} למשפחת Calmino!`}
+            </Text>
+
+            {/* Button */}
+            <TouchableOpacity
+              style={styles.welcomeBtn}
+              onPress={() => {
+                setWelcomeVisible(false);
+                onProfileSaved();
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.welcomeBtnText}>!בואו נתחיל</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -597,5 +632,65 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9CA3AF',
     textDecorationLine: 'underline',
+  },
+
+  // Welcome Modal
+  welcomeOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  welcomeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 28,
+    alignItems: 'flex-end',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  welcomeIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#EDE9FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'right',
+    marginBottom: 8,
+    writingDirection: 'rtl',
+  },
+  welcomeMessage: {
+    fontSize: 15,
+    color: '#6B7280',
+    textAlign: 'right',
+    lineHeight: 22,
+    marginBottom: 28,
+    writingDirection: 'rtl',
+  },
+  welcomeBtn: {
+    backgroundColor: '#6366F1',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  welcomeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
