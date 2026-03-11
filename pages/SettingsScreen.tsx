@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Alert, Linking, Modal } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Alert, Linking, Modal, Animated as RNAnimated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -65,6 +65,18 @@ export default function SettingsScreen() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [photoError, setPhotoError] = useState(false);
+  const [guestInvitedNames, setGuestInvitedNames] = useState<string[] | null>(null);
+  const guestBannerOpacity = useRef(new RNAnimated.Value(0)).current;
+
+  const showGuestBanner = useCallback((names: string[]) => {
+    setGuestInvitedNames(names);
+    guestBannerOpacity.setValue(0);
+    RNAnimated.sequence([
+      RNAnimated.timing(guestBannerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      RNAnimated.delay(3500),
+      RNAnimated.timing(guestBannerOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start(() => setGuestInvitedNames(null));
+  }, [guestBannerOpacity]);
 
   // Read remote config switch globally
   const showPremiumUpgrade = getShowPremiumUpgrade();
@@ -637,11 +649,21 @@ export default function SettingsScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* Guest invited banner */}
+      {guestInvitedNames && (
+        <RNAnimated.View style={[styles.guestBanner, { opacity: guestBannerOpacity }]}>
+          <Text style={styles.guestBannerText}>
+            ✅ קוד אורח נוצר עבור {guestInvitedNames.join(', ')}
+          </Text>
+        </RNAnimated.View>
+      )}
+
       {/* Guest Invite Modal */}
       <GuestInviteModal
         visible={isGuestInviteOpen}
         onClose={() => setIsGuestInviteOpen(false)}
         familyId={family?.id}
+        onSuccess={showGuestBanner}
       />
 
       {/* Family Invite Modal */}
@@ -870,6 +892,28 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  guestBanner: {
+    position: 'absolute',
+    bottom: 100,
+    left: 16,
+    right: 16,
+    backgroundColor: '#10B981',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  guestBannerText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 12 : 20,

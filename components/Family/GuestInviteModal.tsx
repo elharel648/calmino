@@ -30,6 +30,7 @@ interface Props {
     visible: boolean;
     onClose: () => void;
     familyId?: string;
+    onSuccess?: (childNames: string[]) => void;
 }
 
 type Step = 'select' | 'code';
@@ -41,7 +42,7 @@ interface InviteResult {
     expiresAt: Date;
 }
 
-const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
+const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSuccess }) => {
     const { theme, isDarkMode } = useTheme();
     const { allChildren } = useActiveChild();
     const { t } = useLanguage();
@@ -239,6 +240,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId }) => {
                 setStep('code');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 loadActiveInvites();
+                onSuccess?.(results.map(r => r.childName));
                 setTimeout(playSuccessAnimation, 100);
             } else {
                 Alert.alert(t('common.error'), t('guestInvite.inviteCreateFailed'));
