@@ -14,6 +14,7 @@ import {
 import { X, Copy, Share2, RefreshCw, Users, Check, Info, MessageCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import QRCode from 'react-native-qrcode-svg';
 import { useFamily } from '../../hooks/useFamily';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -151,7 +152,17 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                             }]}>
                                 <Text style={[styles.codeLabel, { color: theme.textSecondary }]}>{t('familyInvite.codeLabel')}</Text>
                                 {inviteCode ? (
-                                    <Text style={styles.code}>{inviteCode}</Text>
+                                    <>
+                                        <View style={styles.qrWrapper}>
+                                            <QRCode
+                                                value={inviteCode}
+                                                size={140}
+                                                color={isDarkMode ? '#fff' : '#1F2937'}
+                                                backgroundColor="transparent"
+                                            />
+                                        </View>
+                                        <Text style={styles.code}>{inviteCode}</Text>
+                                    </>
                                 ) : (
                                     <View style={styles.noCodeContainer}>
                                         <Text style={[styles.noCodeText, { color: theme.textSecondary }]}>{t('familyInvite.noCode')}</Text>
@@ -269,7 +280,13 @@ const styles = StyleSheet.create({
     },
     codeLabel: {
         fontSize: 12,
-        marginBottom: 8,
+        marginBottom: 12,
+    },
+    qrWrapper: {
+        padding: 12,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        marginBottom: 16,
     },
     code: {
         fontSize: 36,

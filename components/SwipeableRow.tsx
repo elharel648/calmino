@@ -1,14 +1,13 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
-import { Trash2, Share2 } from 'lucide-react-native';
+import { Trash2 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 
 interface SwipeableRowProps {
     children: React.ReactNode;
     onDelete?: () => void;
-    onShare?: () => void;
     rightActions?: Array<{
         label: string;
         icon: React.ElementType;
@@ -20,7 +19,6 @@ interface SwipeableRowProps {
 export default function SwipeableRow({
     children,
     onDelete,
-    onShare,
     rightActions,
 }: SwipeableRowProps) {
     const { theme, isDarkMode } = useTheme();
@@ -30,21 +28,6 @@ export default function SwipeableRow({
         const actions = rightActions || [];
 
         if (!rightActions) {
-            // Ultra-minimalist premium actions - only icons, no labels
-            if (onShare) {
-                actions.push({
-                    label: '',
-                    icon: Share2,
-                    color: isDarkMode ? 'rgba(59, 130, 246, 0.95)' : 'rgba(37, 99, 235, 0.95)',
-                    onPress: () => {
-                        if (Platform.OS !== 'web') {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }
-                        swipeableRef.current?.close();
-                        setTimeout(() => onShare(), 200);
-                    },
-                });
-            }
             if (onDelete) {
                 actions.push({
                     label: '',

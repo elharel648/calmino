@@ -10,7 +10,7 @@ const soundFiles = {
     lullaby1: require('../assets/sounds/lullaby.mp3'),
     lullaby2: require('../assets/sounds/gentle.mp3'),
     lullaby3: require('../assets/sounds/birds.mp3'),
-    lullaby4: require('../assets/sounds/גשם.wav'),
+    lullaby4: require('../assets/sounds/rain.wav'),
 };
 
 // Mapping from AudioContext soundId → Live Activity soundId + Hebrew name

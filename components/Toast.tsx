@@ -186,32 +186,6 @@ const Toast: React.FC<ToastProps> = ({
                         {message}
                     </Text>
 
-                    {/* Action or Close */}
-                    {action ? (
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={async () => {
-                                // Cancel auto-hide timer so toast stays while undo runs
-                                if (timeoutRef.current) {
-                                    clearTimeout(timeoutRef.current);
-                                }
-                                await action.onPress();
-                                hide();
-                            }}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.actionText}>{action.label}</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={hide}
-                            activeOpacity={0.6}
-                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                        >
-                            <X size={18} color="#fff" strokeWidth={2.5} />
-                        </TouchableOpacity>
-                    )}
                 </View>
             </View>
         </Animated.View>

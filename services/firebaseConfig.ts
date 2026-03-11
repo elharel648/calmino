@@ -6,7 +6,7 @@ import { initializeAuth, getAuth } from 'firebase/auth';
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { initializeAppCheck, CustomProvider } from 'firebase/app-check'; // JS SDK
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import rnFunctions from '@react-native-firebase/functions';
 import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
 import rnAppCheck from '@react-native-firebase/app-check'; // Native SDK
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -91,14 +91,7 @@ try {
 export const db = firestoreDb;
 
 // Firebase Functions
-const functions = getFunctions(app, 'us-central1');
-
-/**
- * Call a Firebase Cloud Function by name with data payload.
- * Throws on error (caller is responsible for catch).
- */
 export const callFirebaseFunction = async (name: string, data?: object): Promise<unknown> => {
-    const fn = httpsCallable(functions, name);
-    const result = await fn(data);
+    const result = await rnFunctions().httpsCallable(name)(data);
     return result.data;
 };

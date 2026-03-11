@@ -84,6 +84,10 @@
     <string>Allow $(PRODUCT_NAME) to access your reminders</string>
     <key>NSSupportsLiveActivities</key>
     <true/>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>

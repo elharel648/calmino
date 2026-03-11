@@ -133,7 +133,12 @@ export default function RatingScreen({
                     isVerified = contacted.includes(babysitterId);
                 } catch { /* silent */ }
             }
-            const allTags = [...selectedTags, ...customTags] as ReviewTag[];
+            // Auto-save any unsaved custom tag text
+            const pendingTag = customTagInput.trim();
+            const finalCustomTags = pendingTag && !customTags.includes(pendingTag)
+                ? [...customTags, pendingTag]
+                : customTags;
+            const allTags = [...selectedTags, ...finalCustomTags] as ReviewTag[];
             await submitReview(bookingId, babysitterId, parentId, rating, allTags, text, isVerified);
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -171,7 +176,7 @@ export default function RatingScreen({
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1 }}
             >
-                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 110 }]} showsVerticalScrollIndicator={false}>
 
                     {/* Stars Card */}
                     <View style={[styles.card, {
@@ -351,8 +356,6 @@ export default function RatingScreen({
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    {/* Bottom safe spacing */}
-                    <View style={{ height: insets.bottom + 20 }} />
 
                 </ScrollView>
             </KeyboardAvoidingView>

@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Share, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
 import { Utensils, Moon, Droplets, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { getRecentHistory, deleteEvent } from '../services/firebaseService';
@@ -229,14 +229,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     }
   };
 
-  const handleShare = async (event: TimelineEvent) => {
-    const eventText = `${getEventDetails(event)}\n${getTimeAgo(event.timestamp)}`;
-    try {
-      await Share.share({ message: eventText });
-    } catch (error) {
-      showError(t('errors.shareError'));
-    }
-  };
 
   const getTimeAgo = (date: Date) => {
     const now = new Date();
@@ -590,7 +582,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     >
                       <SwipeableRow
                         onDelete={() => handleDelete(event.id)}
-                        onShare={() => handleShare(event)}
                       >
                         {/* Simple 3-part RTL row: [time] [content] [icon] */}
                         <View style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]} collapsable={false}>
@@ -674,7 +665,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
               >
                 <SwipeableRow
                   onDelete={() => handleDelete(event.id)}
-                  onShare={() => handleShare(event)}
                 >
                   <View style={styles.eventRow} collapsable={false}>
                     {/* Left side: Time + Dot */}

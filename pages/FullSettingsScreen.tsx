@@ -23,7 +23,6 @@ import { MotiView } from 'moti';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
-import * as LocalAuthentication from 'expo-local-authentication';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,7 +31,6 @@ import {
   Trash2,
   Bell,
   Moon,
-  Lock,
   Globe,
   Shield,
   FileText,
@@ -87,7 +85,6 @@ export default function SettingsScreen() {
   const { settings: notifSettings, updateSettings: updateNotifSettings } = useNotifications();
 
   const [userData, setUserData] = useState({ name: '', email: '', photoURL: null });
-  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(language);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -123,8 +120,7 @@ export default function SettingsScreen() {
         });
 
         if (data.settings) {
-          if (data.settings.biometricsEnabled !== undefined) setBiometricsEnabled(data.settings.biometricsEnabled);
-          if (data.settings.language !== undefined) {
+if (data.settings.language !== undefined) {
             const lang = data.settings.language;
             setSelectedLanguage(lang);
             setLanguage(lang);
@@ -157,43 +153,6 @@ export default function SettingsScreen() {
       }
     } catch (error) {
       logger.log('Failed to save setting:', key);
-    }
-  };
-
-  const handleBiometricsToggle = async (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    if (!value) {
-      setBiometricsEnabled(false);
-      saveSettingToDB('biometricsEnabled', false);
-      return;
-    }
-
-    try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      if (!hasHardware || !isEnrolled) {
-        Alert.alert(t('alerts.notAvailable'), t('alerts.biometricNotSupported'));
-        return;
-      }
-
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: t('biometric.authenticate'),
-        fallbackLabel: t('biometric.usePassword')
-      });
-
-      if (result.success) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setBiometricsEnabled(true);
-        saveSettingToDB('biometricsEnabled', true);
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        setBiometricsEnabled(false);
-      }
-    } catch (error) {
-      Alert.alert(t('common.error'), t('alerts.authError'));
-      setBiometricsEnabled(false);
     }
   };
 
@@ -697,26 +656,6 @@ export default function SettingsScreen() {
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
 
-            <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
-
-            <View style={[styles.listItem, styles.listItemLast]}>
-              <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
-                  <Lock size={18} color="#6366F1" strokeWidth={2} />
-                </View>
-                <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.biometric')}</Text>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>Face ID / Touch ID</Text>
-                </View>
-              </View>
-              <Switch
-                trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
-                thumbColor={isDarkMode ? (biometricsEnabled ? '#000' : '#999') : '#fff'}
-                ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
-                onValueChange={handleBiometricsToggle}
-                value={biometricsEnabled}
-              />
-            </View>
           </View>
         </View>
 

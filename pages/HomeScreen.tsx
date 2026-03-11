@@ -275,32 +275,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             const eventId = await saveEventToFirebase(user.uid, profile.id, data);
             logger.debug('✅', 'Saved successfully, eventId:', eventId);
 
-            // Store for undo
-            undoService.setLastAction({
-                eventId,
-                type: 'create',
-                data,
-                timestamp: new Date(),
-            });
-
-            // Show success toast with undo
-            showToast({
-                message: t('common.savedSuccess'),
-                type: 'success',
-                duration: 5000,
-                action: {
-                    label: t('common.undo'),
-                    onPress: async () => {
-                        const success = await undoService.undo();
-                        if (success) {
-                            showSuccess(t('common.undone'));
-                            refreshHomeData();
-                        } else {
-                            showError(t('errors.cannotUndo'));
-                        }
-                    },
-                },
-            });
+            showSuccess(t('common.savedSuccess'));
 
             // Schedule feeding reminder if this was a food event
             if (data.type === 'food') {

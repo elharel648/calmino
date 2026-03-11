@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, PanResponder, Animated as RNAnimated, Platform, TouchableWithoutFeedback, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
+import * as SystemBrightness from 'expo-brightness';
 import { Sun, Moon, Sparkles, Zap } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
@@ -21,6 +22,7 @@ export default function NightLightModal({
     const [colorTemp, setColorTemp] = useState<'warm' | 'white' | 'red'>('warm');
     const [brightness, setBrightness] = useState(0.3);
     const [controlsVisible, setControlsVisible] = useState(true);
+    const originalBrightnessRef = useRef<number | null>(null);
 
     const controlsOpacity = useSharedValue(1);
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
@@ -30,6 +32,24 @@ export default function NightLightModal({
     // Pulse animation for active color
     const pulseAnim = useSharedValue(0);
     const glowAnim = useSharedValue(0);
+
+    // Sync brightness with system
+    useEffect(() => {
+        if (!visible || Platform.OS !== 'ios') return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { status } = await SystemBrightness.requestPermissionsAsync();
+                if (status !== 'granted') return;
+                const current = await SystemBrightness.getBrightnessAsync();
+                if (!cancelled) {
+                    originalBrightnessRef.current = current;
+                    setBrightness(current);
+                }
+            } catch {}
+        })();
+        return () => { cancelled = true; };
+    }, [visible]);
 
     useEffect(() => {
         if (visible) {
@@ -194,10 +214,10 @@ export default function NightLightModal({
     };
 
     const handleBrightnessChange = (value: number) => {
-        if (Platform.OS !== 'web') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
         setBrightness(value);
+        if (Platform.OS === 'ios') {
+            SystemBrightness.setBrightnessAsync(value).catch(() => {});
+        }
     };
 
     // Animated styles for color buttons

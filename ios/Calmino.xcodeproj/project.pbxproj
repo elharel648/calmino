@@ -21,10 +21,13 @@
 		9A0305F9E5CF4190848C7DA6 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20C7B3117BCF482188F42C29 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		A372734753644EB19CB358B2 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D6437B8B454AAA955B3A56 /* FeedingLiveActivity.swift */; };
 		AA3F1BD1D49141D49EADA806 /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C089AB7DEAA4324B3700A55 /* GlassComponents.swift */; };
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* BreastfeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B6C7D8E9F0A1B2 /* BreastfeedingLiveActivity.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		C41F65FCB0D34D18AAFFF9FF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E25228E3FAB3433A969E2340 /* GoogleService-Info.plist */; };
 		CA5BDD2A798A4308BF47AE52 /* BabysitterShiftLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812AA6A53F9442ABA0994D7F /* BabysitterShiftLiveActivity.swift */; };
+		E1A2B3C4D5E6F7A8B9C0D1E2 /* WhiteNoiseLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* WhiteNoiseLiveActivity.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F2B3C4D5E6F7A8B9C0D1E2F3 /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E6F7A8B9C0D1E2F3 /* TimerIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -56,9 +59,11 @@
 		812AA6A53F9442ABA0994D7F /* BabysitterShiftLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = BabysitterShiftLiveActivity.swift; path = CalmParentLiveActivity/BabysitterShiftLiveActivity.swift; sourceTree = "<group>"; };
 		8AC7E423F07607A0BA89034A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Calmino/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9C089AB7DEAA4324B3700A55 /* GlassComponents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = GlassComponents.swift; path = CalmParentLiveActivity/GlassComponents.swift; sourceTree = "<group>"; };
+		A2B3C4D5E6F7A8B9C0D1E2F3 /* TimerIntents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = TimerIntents.swift; path = CalmParentLiveActivity/TimerIntents.swift; sourceTree = "<group>"; };
 		A46EA017B39140751AD13616 /* Pods_Calmino.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Calmino.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Calmino/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		C1D2E3F4A5B6C7D8E9F0A1B2 /* BreastfeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = BreastfeedingLiveActivity.swift; path = CalmParentLiveActivity/BreastfeedingLiveActivity.swift; sourceTree = "<group>"; };
 		C8D6437B8B454AAA955B3A56 /* FeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = FeedingLiveActivity.swift; path = CalmParentLiveActivity/FeedingLiveActivity.swift; sourceTree = "<group>"; };
 		CBAA3D6853A5461F94F6E4BA /* SleepLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = SleepLiveActivity.swift; path = CalmParentLiveActivity/SleepLiveActivity.swift; sourceTree = "<group>"; };
 		D670D307E71C42EA81CD5950 /* ActivityAttributes.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = ActivityAttributes.swift; path = CalmParentLiveActivity/ActivityAttributes.swift; sourceTree = "<group>"; };
@@ -66,6 +71,7 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Calmino/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Calmino-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Calmino-Bridging-Header.h"; path = "Calmino/Calmino-Bridging-Header.h"; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* WhiteNoiseLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = WhiteNoiseLiveActivity.swift; path = CalmParentLiveActivity/WhiteNoiseLiveActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,6 +161,9 @@
 				52A63318C6BC473197303AF6 /* CalmParentLiveActivityBundle.swift */,
 				D670D307E71C42EA81CD5950 /* ActivityAttributes.swift */,
 				9C089AB7DEAA4324B3700A55 /* GlassComponents.swift */,
+				C1D2E3F4A5B6C7D8E9F0A1B2 /* BreastfeedingLiveActivity.swift */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* WhiteNoiseLiveActivity.swift */,
+				A2B3C4D5E6F7A8B9C0D1E2F3 /* TimerIntents.swift */,
 				1DB5A59A9B6CC0A82ABAF7AB /* Pods */,
 				2CCA50C05F7D0130A7CDDEC9 /* ExpoModulesProviders */,
 			);
@@ -505,6 +514,9 @@
 				71A2AD62284C4C74AB3F57D1 /* CalmParentLiveActivityBundle.swift in Sources */,
 				1D8F374A5ECF4DE0A65FD84F /* ActivityAttributes.swift in Sources */,
 				AA3F1BD1D49141D49EADA806 /* GlassComponents.swift in Sources */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* BreastfeedingLiveActivity.swift in Sources */,
+				E1A2B3C4D5E6F7A8B9C0D1E2 /* WhiteNoiseLiveActivity.swift in Sources */,
+				F2B3C4D5E6F7A8B9C0D1E2F3 /* TimerIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

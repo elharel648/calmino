@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated as RNAnimated, PanResponder, Dimensions } from 'react-native';
 import { Phone, Siren, Shield, Skull, AlertTriangle } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence } from 'react-native-reanimated';
-import { useTheme } from '../context/ThemeContext';
 import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -19,7 +17,6 @@ interface CalmModeModalProps {
 
 export default function CalmModeModal({
   visible, onClose }: CalmModeModalProps) {
-  const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
 
   // Animations
@@ -174,32 +171,19 @@ export default function CalmModeModal({
             {
               transform: [{ translateY: slideAnim }],
               opacity: fadeAnim,
-              backgroundColor: theme.card,
+              backgroundColor: '#FFFFFF',
               zIndex: 1000,
             }
           ]}
         >
           {/* Drag Handle */}
           <View style={styles.dragHandle} {...panResponder.panHandlers}>
-            <View style={[
-              styles.dragHandleBar,
-              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }
-            ]} />
+            <View style={[styles.dragHandleBar, { backgroundColor: 'rgba(0,0,0,0.12)' }]} />
           </View>
 
-          {/* Premium Header - Centered Icon with Title Below */}
+          {/* Header - Centered Icon with Title Below */}
           <View style={styles.header} {...panResponder.panHandlers}>
-            {Platform.OS === 'ios' && (
-              <BlurView
-                intensity={30}
-                tint={isDarkMode ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
-              />
-            )}
-            <View style={[
-              styles.headerContent,
-              { backgroundColor: theme.card }
-            ]}>
+            <View style={styles.headerContent}>
               <Animated.View style={[styles.titleIcon, iconAnimatedStyle]}>
                 <LinearGradient
                   colors={['#EF4444', '#FCA5A5']}
@@ -210,7 +194,7 @@ export default function CalmModeModal({
                   <AlertTriangle size={32} color="#fff" strokeWidth={2.5} />
                 </LinearGradient>
               </Animated.View>
-              <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>מצב חירום</Text>
+              <Text style={[styles.mainTitle, { color: '#111827' }]}>מצב חירום</Text>
             </View>
           </View>
 
@@ -227,7 +211,7 @@ export default function CalmModeModal({
               scrollEventThrottle={16}
             >
               {/* Emergency - Premium Row */}
-              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
+              <Text style={[styles.sectionTitle, { color: '#6B7280' }]}>חירום מיידי</Text>
               <View style={styles.emergencyRow}>
                 {emergencyContacts.map((contact, index) => {
                   const { Icon } = contact;
@@ -237,18 +221,17 @@ export default function CalmModeModal({
                       style={[
                         styles.emergencyCard,
                         {
-                          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
-                          borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                          backgroundColor: '#F9FAFB',
+                          borderColor: 'rgba(0,0,0,0.06)',
                         }
                       ]}
                       onPress={() => makeCall(contact.number, contact.name)}
                       activeOpacity={0.7}
                     >
-                      {/* Icon with color */}
                       <View style={[styles.emergencyIcon, { backgroundColor: contact.bgColor }]}>
                         <Icon size={22} color={contact.color} strokeWidth={2} />
                       </View>
-                      <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
+                      <Text style={[styles.emergencyName, { color: '#111827' }]}>
                         {contact.name}
                       </Text>
                       <Text
@@ -265,14 +248,8 @@ export default function CalmModeModal({
               </View>
 
               {/* HMO - Clean List */}
-              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
-              <View style={[
-                styles.hmoContainer,
-                {
-                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF',
-                  borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                }
-              ]}>
+              <Text style={[styles.sectionTitle, { color: '#6B7280' }]}>קופות חולים</Text>
+              <View style={[styles.hmoContainer, { backgroundColor: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)' }]}>
                 {hmoContacts.map((hmo, index) => (
                   <TouchableOpacity
                     key={index}
@@ -280,24 +257,21 @@ export default function CalmModeModal({
                       styles.hmoRow,
                       index < hmoContacts.length - 1 && {
                         borderBottomWidth: 1,
-                        borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
+                        borderBottomColor: '#E5E7EB',
                       }
                     ]}
                     onPress={() => makeCall(hmo.number, hmo.name)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.hmoInfo}>
-                      <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
-                      <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
+                      <Text style={[styles.hmoName, { color: '#111827' }]}>{hmo.name}</Text>
+                      <Text style={[styles.hmoSubtitle, { color: '#6B7280' }]}>{hmo.subtitle}</Text>
                     </View>
                     <View style={styles.hmoCall}>
-                      <View style={[
-                        styles.phoneIcon,
-                        { backgroundColor: isDarkMode ? 'rgba(59,130,246,0.2)' : '#DBEAFE' }
-                      ]}>
+                      <View style={[styles.phoneIcon, { backgroundColor: '#DBEAFE' }]}>
                         <Phone size={14} color="#3B82F6" strokeWidth={2} />
                       </View>
-                      <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
+                      <Text style={[styles.hmoNumber, { color: '#6B7280' }]}>{hmo.number}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -358,6 +332,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     gap: 12,
+    backgroundColor: '#FFFFFF',
   },
   closeButton: {
     width: 36,

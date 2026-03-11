@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform, LayoutAnimation, UIManager, Modal } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Bell, Utensils, Pill, ChevronDown, ChevronUp, Play, Clock } from 'lucide-react-native';
+import { Bell, Utensils, Pill, ChevronDown, ChevronUp, Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { IntervalPicker } from './IntervalPicker';
@@ -65,7 +65,6 @@ interface NotificationCardConfig {
   enabled: boolean;
   onToggle: (value: boolean) => void;
   disabled?: boolean;
-  onTest?: () => void;
   children?: React.ReactNode;
 }
 
@@ -87,7 +86,6 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
     enabled,
     onToggle,
     disabled = false,
-    onTest,
     children,
   } = config;
 
@@ -143,16 +141,6 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
               )}
             </TouchableOpacity>
           )}
-          {onTest && enabled && (
-            <TouchableOpacity
-              style={[styles.testButton, { backgroundColor: `${iconColor}15` }]}
-              onPress={onTest}
-              activeOpacity={0.7}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            >
-              <Play size={11} color={iconColor} fill={iconColor} />
-            </TouchableOpacity>
-          )}
           <Switch
             trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
             thumbColor='#fff'
@@ -182,14 +170,7 @@ interface PremiumNotificationSettingsProps {
 export default function PremiumNotificationSettings({ supplements = [] }: PremiumNotificationSettingsProps) {
     const { t } = useLanguage();
   const { theme, isDarkMode } = useTheme();
-  const { settings, updateSettings, sendTestNotification, schedulePerSupplementReminders } = useNotifications();
-
-  const handleTestNotification = async (type: 'feeding' | 'supplement' | 'summary') => {
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    await sendTestNotification();
-  };
+  const { settings, updateSettings, schedulePerSupplementReminders } = useNotifications();
 
   const notificationCards: NotificationCardConfig[] = [
     {
@@ -201,7 +182,6 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
       enabled: settings.feedingReminder,
       onToggle: (val) => updateSettings({ feedingReminder: val }),
       disabled: !settings.enabled,
-      onTest: () => handleTestNotification('feeding'),
       children: (
         <View style={styles.cardChildContent}>
           <IntervalPicker
@@ -234,7 +214,6 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
       enabled: settings.supplementReminder,
       onToggle: (val) => updateSettings({ supplementReminder: val }),
       disabled: !settings.enabled,
-      onTest: () => handleTestNotification('supplement'),
       children: (
         <View style={styles.cardChildContent}>
           {supplements.length === 0 ? (
