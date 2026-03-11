@@ -1,13 +1,16 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse } from 'lucide-react-native';
+import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Slider from '@react-native-community/slider';
 import { BlurView } from 'expo-blur';
 import { auth, db } from '../../services/firebaseConfig';
+import { addMedication, getMedications, deleteMedication, logMedicationTaken } from '../../services/medicationService';
+import AddMedicationForm from './AddMedicationForm';
+import { Medication } from '../../types/home';
 import { saveEventToFirebase } from '../../services/firebaseService';
 import { doc, getDoc, updateDoc, arrayUnion, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { VACCINE_SCHEDULE, CustomVaccine } from '../../types/profile';
@@ -25,7 +28,7 @@ interface HealthCardProps {
     onClose?: () => void;
 }
 
-type HealthScreen = 'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'history';
+type HealthScreen = 'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history';
 
 interface HealthOption {
     key: HealthScreen;
@@ -114,7 +117,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [customIllness, setCustomIllness] = useState('');
     const [illnessNote, setIllnessNote] = useState('');
 
-    // Medication state
+    // Medication state (new form-based system)
+    const [savedMedications, setSavedMedications] = useState<Medication[]>([]);
+    const [loadingMeds, setLoadingMeds] = useState(false);
+    const [savingMed, setSavingMed] = useState(false);
+    const [medSaveSuccess, setMedSaveSuccess] = useState(false);
+
+    // Legacy state kept for backwards compat (used in resetForms)
     const [selectedMed, setSelectedMed] = useState<string | null>(null);
     const [customMed, setCustomMed] = useState('');
     const [medNote, setMedNote] = useState('');
@@ -897,56 +906,191 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         </ScrollView>
     );
 
-    // Medications
+    // Load medications when entering medications screen
+    useEffect(() => {
+        if (currentScreen === 'medications' && babyId) {
+            setLoadingMeds(true);
+            getMedications(babyId).then(meds => {
+                setSavedMedications(meds);
+                setLoadingMeds(false);
+            });
+        }
+    }, [currentScreen, babyId]);
+
+    // Handle saving a new medication
+    const handleSaveMedication = async (med: Omit<Medication, 'id' | 'createdAt'>) => {
+        if (!babyId) return;
+        setSavingMed(true);
+        const saved = await addMedication(babyId, med);
+        setSavingMed(false);
+        if (saved) {
+            setMedSaveSuccess(true);
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            // Refresh list and go back
+            setTimeout(async () => {
+                setMedSaveSuccess(false);
+                const refreshed = await getMedications(babyId);
+                setSavedMedications(refreshed);
+                setCurrentScreen('medications');
+            }, 800);
+        }
+    };
+
+    // Handle deleting a medication
+    const handleDeleteMedication = async (medId: string) => {
+        if (!babyId) return;
+        const success = await deleteMedication(babyId, medId);
+        if (success) {
+            setSavedMedications(prev => prev.filter(m => m.id !== medId));
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        }
+    };
+
+    // Handle marking medication as taken
+    const handleMedTaken = async (med: Medication) => {
+        if (!babyId) return;
+        await logMedicationTaken(babyId, med);
+        if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        Alert.alert('✅', `${med.name} סומנה כנלקחה`);
+    };
+
+    // Medications List View
     const renderMedications = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
-            <View style={styles.screenHeader}>
-                <View style={styles.screenHeaderIconMinimal}>
-                    <Pill size={24} color="#8B5CF6" strokeWidth={1.2} />
-                </View>
-            </View>
-
-            <Text style={styles.sectionTitle}>בחר סוג תרופה</Text>
-            <View style={styles.chipsContainerRTL}>
-                {COMMON_MEDICATIONS.map(med => (
-                    <TouchableOpacity key={med} style={[styles.chip, selectedMed === med && styles.chipActivePurple]} onPress={() => setSelectedMed(med)}>
-                        <Text style={[styles.chipText, selectedMed === med && styles.chipTextActive]}>{med}</Text>
-                    </TouchableOpacity>
-                ))}
-                {/* Plus button for custom medication */}
-                <TouchableOpacity
-                    style={[styles.chip, styles.chipPlus]}
-                    onPress={() => setSelectedMed('custom')}
-                >
-                    <Plus size={16} color="#9CA3AF" strokeWidth={1.5} />
-                </TouchableOpacity>
-            </View>
-
-            {/* Custom medication input */}
-            {selectedMed === 'custom' && (
-                <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>שם התרופה</Text>
-                    <TextInput
-                        style={styles.textInput}
-                        value={customMed}
-                        onChangeText={setCustomMed}
-                        placeholder="כתוב שם תרופה..."
-                        placeholderTextColor="#9CA3AF"
-                    />
-                </View>
-            )}
-
-            <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>הערות (מינון, תדירות)</Text>
-                <TextInput style={styles.textArea} value={medNote} onChangeText={setMedNote} placeholder="מינון: 5 מ״ל, פעמיים ביום..." placeholderTextColor="#9CA3AF" multiline />
-            </View>
-
-            <TouchableOpacity style={styles.saveButton} onPress={() => saveEntry('medication', { name: selectedMed === 'custom' ? customMed : selectedMed, note: medNote })} disabled={saveSuccess}>
-                <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>שמור</Text>}
-                </View>
+            {/* Add medication button */}
+            <TouchableOpacity
+                style={styles.addVaccineBtn}
+                onPress={() => setCurrentScreen('medications_add' as any)}
+            >
+                <Plus size={20} color="#8B5CF6" />
+                <Text style={[styles.addVaccineBtnText, { color: '#8B5CF6' }]}>הוסף תרופה חדשה</Text>
             </TouchableOpacity>
+
+            {loadingMeds ? (
+                <View style={{ alignItems: 'center', marginTop: 40 }}>
+                    <ActivityIndicator size="large" color="#8B5CF6" />
+                </View>
+            ) : savedMedications.length === 0 ? (
+                <View style={{ alignItems: 'center', marginTop: 40 }}>
+                    <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center' }}>
+                        <Pill size={36} color="#C4B5FD" />
+                    </View>
+                    <Text style={{ fontSize: 16, color: '#374151', fontWeight: '600', marginTop: 16 }}>אין תרופות עדיין</Text>
+                    <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>לחץ על "הוסף תרופה" כדי להתחיל</Text>
+                </View>
+            ) : (
+                savedMedications.map((med) => (
+                    <SwipeableRow key={med.id} onDelete={() => handleDeleteMedication(med.id)}>
+                        <View style={{
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginBottom: 12,
+                            borderWidth: 1,
+                            borderColor: '#E5E7EB',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.04,
+                            shadowRadius: 4,
+                            elevation: 1,
+                        }}>
+                            {/* Header row */}
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 10 }}>
+                                <View style={{
+                                    width: 40, height: 40, borderRadius: 12,
+                                    backgroundColor: '#F5F3FF',
+                                    alignItems: 'center', justifyContent: 'center',
+                                    marginLeft: 12,
+                                }}>
+                                    <Pill size={20} color="#8B5CF6" strokeWidth={1.5} />
+                                </View>
+                                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', textAlign: 'right' }}>
+                                        {med.name}
+                                    </Text>
+                                    <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2, textAlign: 'right' }}>
+                                        {med.dosage} · {med.frequency}x ביום
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* Times chips */}
+                            <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                                {med.times.map((time, idx) => (
+                                    <View key={idx} style={{
+                                        backgroundColor: '#F5F3FF',
+                                        paddingHorizontal: 10,
+                                        paddingVertical: 5,
+                                        borderRadius: 8,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                    }}>
+                                        <Clock size={12} color="#8B5CF6" />
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#7C3AED' }}>{time}</Text>
+                                    </View>
+                                ))}
+                                {med.remindersEnabled && (
+                                    <View style={{
+                                        backgroundColor: '#FEF3C7',
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 5,
+                                        borderRadius: 8,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                    }}>
+                                        <Bell size={12} color="#D97706" />
+                                        <Text style={{ fontSize: 11, color: '#D97706', fontWeight: '500' }}>תזכורת</Text>
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Notes */}
+                            {med.notes ? (
+                                <Text style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'right', marginBottom: 10 }}>
+                                    {med.notes}
+                                </Text>
+                            ) : null}
+
+                            {/* Taken button */}
+                            <TouchableOpacity
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    backgroundColor: '#F0FDF4',
+                                    borderRadius: 12,
+                                    paddingVertical: 10,
+                                    borderWidth: 1,
+                                    borderColor: '#BBF7D0',
+                                }}
+                                onPress={() => handleMedTaken(med)}
+                            >
+                                <Check size={16} color="#10B981" strokeWidth={2} />
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#10B981' }}>נלקחה ✓</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </SwipeableRow>
+                ))
+            )}
         </ScrollView>
+    );
+
+    // Add Medication Form
+    const renderMedicationsAdd = () => (
+        <AddMedicationForm
+            onSave={handleSaveMedication}
+            saving={savingMed}
+            saveSuccess={medSaveSuccess}
+        />
     );
 
     // History - beautiful tabbed view with premium cards
@@ -1042,79 +1186,79 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             const Icon = config.icon;
                             return (
                                 <SwipeableRow key={index} onDelete={() => deleteHistoryEntry(healthLog.indexOf(item))}>
-                                <View style={{
-                                    backgroundColor: theme.card,
-                                    borderRadius: 16,
-                                    padding: 16,
-                                    marginBottom: 12,
-                                    flexDirection: 'row-reverse',
-                                    alignItems: 'flex-start',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 1 },
-                                    shadowOpacity: 0.05,
-                                    shadowRadius: 4,
-                                    elevation: 2,
-                                }}>
-                                    {/* Icon Badge - circular like menu */}
                                     <View style={{
-                                        width: 48, height: 48, borderRadius: 24,
-                                        backgroundColor: config.bg,
-                                        alignItems: 'center', justifyContent: 'center',
-                                        marginLeft: 16,
+                                        backgroundColor: theme.card,
+                                        borderRadius: 16,
+                                        padding: 16,
+                                        marginBottom: 12,
+                                        flexDirection: 'row-reverse',
+                                        alignItems: 'flex-start',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: 0.05,
+                                        shadowRadius: 4,
+                                        elevation: 2,
                                     }}>
-                                        <Icon size={22} color={config.color} strokeWidth={1.2} />
-                                    </View>
+                                        {/* Icon Badge - circular like menu */}
+                                        <View style={{
+                                            width: 48, height: 48, borderRadius: 24,
+                                            backgroundColor: config.bg,
+                                            alignItems: 'center', justifyContent: 'center',
+                                            marginLeft: 16,
+                                        }}>
+                                            <Icon size={22} color={config.color} strokeWidth={1.2} />
+                                        </View>
 
-                                    {/* Content - on left in RTL */}
-                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                        <Text style={{ fontSize: 12, color: config.color, fontWeight: '500', marginBottom: 2 }}>
-                                            {config.label}
-                                        </Text>
+                                        {/* Content - on left in RTL */}
+                                        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                            <Text style={{ fontSize: 12, color: config.color, fontWeight: '500', marginBottom: 2 }}>
+                                                {config.label}
+                                            </Text>
 
-                                        {item.value && (
-                                            <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
-                                                {item.value}°
+                                            {item.value && (
+                                                <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
+                                                    {item.value}°
+                                                </Text>
+                                            )}
+                                            {item.name && (
+                                                <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
+                                                    {item.name}
+                                                </Text>
+                                            )}
+                                            {item.reason && (
+                                                <Text style={{ fontSize: 14, color: '#374151', marginTop: 2, textAlign: 'right' }}>{item.reason}</Text>
+                                            )}
+                                            {item.note && (
+                                                <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'right' }}>{item.note}</Text>
+                                            )}
+                                            {/* Show photo/document attachments */}
+                                            {(item.photoUri || item.documentName) && (
+                                                <View style={{ flexDirection: 'row-reverse', gap: 8, marginTop: 8 }}>
+                                                    {item.photoUri && (
+                                                        <TouchableOpacity
+                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.successLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
+                                                            onPress={() => {
+                                                                // Open photo in a lightbox or share
+                                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                            }}
+                                                        >
+                                                            <Camera size={14} color={theme.success} />
+                                                            <Text style={{ fontSize: 12, color: theme.success, fontWeight: '500' }}>תמונה</Text>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                    {item.documentName && (
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                                                            <FileText size={14} color={theme.primary} />
+                                                            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '500' }} numberOfLines={1}>{item.documentName}</Text>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            )}
+                                            <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
+                                                {formatDate(item.timestamp)}
                                             </Text>
-                                        )}
-                                        {item.name && (
-                                            <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
-                                                {item.name}
-                                            </Text>
-                                        )}
-                                        {item.reason && (
-                                            <Text style={{ fontSize: 14, color: '#374151', marginTop: 2, textAlign: 'right' }}>{item.reason}</Text>
-                                        )}
-                                        {item.note && (
-                                            <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'right' }}>{item.note}</Text>
-                                        )}
-                                        {/* Show photo/document attachments */}
-                                        {(item.photoUri || item.documentName) && (
-                                            <View style={{ flexDirection: 'row-reverse', gap: 8, marginTop: 8 }}>
-                                                {item.photoUri && (
-                                                    <TouchableOpacity
-                                                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.successLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
-                                                        onPress={() => {
-                                                            // Open photo in a lightbox or share
-                                                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                        }}
-                                                    >
-                                                        <Camera size={14} color={theme.success} />
-                                                        <Text style={{ fontSize: 12, color: theme.success, fontWeight: '500' }}>תמונה</Text>
-                                                    </TouchableOpacity>
-                                                )}
-                                                {item.documentName && (
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                                                        <FileText size={14} color={theme.primary} />
-                                                        <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '500' }} numberOfLines={1}>{item.documentName}</Text>
-                                                    </View>
-                                                )}
-                                            </View>
-                                        )}
-                                        <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
-                                            {formatDate(item.timestamp)}
-                                        </Text>
+                                        </View>
                                     </View>
-                                </View>
                                 </SwipeableRow>
                             );
                         })
@@ -1131,6 +1275,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             case 'illness': return 'מחלות';
             case 'temperature': return 'טמפרטורה';
             case 'medications': return 'תרופות';
+            case 'medications_add': return 'תרופה חדשה';
             case 'history': return 'היסטוריה';
             default: return 'בריאות';
         }
@@ -1143,6 +1288,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             case 'illness': return ['#EF4444', '#DC2626'];
             case 'temperature': return ['#F59E0B', '#D97706'];
             case 'medications': return ['#8B5CF6', '#7C3AED'];
+            case 'medications_add': return ['#8B5CF6', '#7C3AED'];
             case 'history': return ['#0EA5E9', '#0284C7'];
             default: return ['#10B981', '#059669'];
         }
@@ -1213,6 +1359,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         {currentScreen === 'illness' && renderIllness()}
                         {currentScreen === 'temperature' && renderTemperature()}
                         {currentScreen === 'medications' && renderMedications()}
+                        {currentScreen === ('medications_add' as any) && renderMedicationsAdd()}
                         {currentScreen === 'history' && renderHistory()}
                     </View>
                 </Animated.View>

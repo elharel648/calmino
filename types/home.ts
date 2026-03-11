@@ -34,6 +34,17 @@ export interface MedicationsState {
     hiddenDefaults?: string[];
 }
 
+export interface Medication {
+    id: string;
+    name: string;             // Free text: "אקמול"
+    dosage: string;           // Free text: "5 מ״ל", "כדור אחד"
+    frequency: number;        // Times per day (1-6)
+    times: string[];          // ["08:00", "14:00", "20:00"]
+    notes?: string;           // Optional notes
+    remindersEnabled: boolean;
+    createdAt: string;        // ISO timestamp
+}
+
 export interface HomeDataState {
     lastFeedTime: string;
     lastSleepTime: string;
