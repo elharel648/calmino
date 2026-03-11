@@ -347,6 +347,19 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
     }
 
+    // MARK: - Stop All (called on cold launch to clean up stale activities)
+    async stopAllLiveActivities(): Promise<void> {
+        if (!this.isSupported || !ActivityKitManager) return;
+        await Promise.allSettled([
+            ActivityKitManager.stopMeal?.(),
+            ActivityKitManager.stopSleep?.(),
+            ActivityKitManager.stopBreastfeeding?.(),
+            ActivityKitManager.stopBabysitterShift?.(),
+            ActivityKitManager.stopWhiteNoise?.(),
+        ]);
+        this.activityId = null;
+    }
+
     // MARK: - Utility
     async isLiveActivitySupported(): Promise<boolean> {
         return this.isSupported;
