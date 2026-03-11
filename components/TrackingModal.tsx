@@ -1249,6 +1249,39 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       {sleepMode === 'duration' && (
         <View style={styles.sleepDurationSection}>
           <View style={styles.sleepDurationRow}>
+            {/* Minutes — first in JSX = right side (row-reverse) */}
+            <View style={styles.sleepDurationItem}>
+              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.minutes')}</Text>
+              <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
+                <TouchableOpacity
+                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (sleepMinutes === 0) {
+                      if (sleepHours > 0) { setSleepMinutes(59); setSleepHours(sleepHours - 1); }
+                    } else { setSleepMinutes(sleepMinutes - 1); }
+                  }}
+                >
+                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>−</Text>
+                </TouchableOpacity>
+                <Text style={[styles.sleepSliderValue, { color: theme.textPrimary }]}>{String(sleepMinutes).padStart(2, '0')}</Text>
+                <TouchableOpacity
+                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (sleepMinutes === 59) {
+                      setSleepMinutes(0); setSleepHours(Math.min(12, sleepHours + 1));
+                    } else { setSleepMinutes(sleepMinutes + 1); }
+                  }}
+                >
+                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <Text style={[styles.sleepDurationSeparator, { color: isDarkMode ? 'rgba(255,255,255,0.2)' : '#C7C7CC' }]}>:</Text>
+
+            {/* Hours — second in JSX = left side (row-reverse) */}
             <View style={styles.sleepDurationItem}>
               <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.hours')}</Text>
               <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
@@ -1262,27 +1295,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 <TouchableOpacity
                   style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
                   onPress={() => { setSleepHours(Math.min(12, sleepHours + 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <Text style={[styles.sleepDurationSeparator, { color: isDarkMode ? 'rgba(255,255,255,0.2)' : '#C7C7CC' }]}>:</Text>
-
-            <View style={styles.sleepDurationItem}>
-              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.minutes')}</Text>
-              <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
-                <TouchableOpacity
-                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
-                  onPress={() => { setSleepMinutes(Math.max(0, sleepMinutes - 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>−</Text>
-                </TouchableOpacity>
-                <Text style={[styles.sleepSliderValue, { color: theme.textPrimary }]}>{String(sleepMinutes).padStart(2, '0')}</Text>
-                <TouchableOpacity
-                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
-                  onPress={() => { setSleepMinutes(Math.min(59, sleepMinutes + 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                 >
                   <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
                 </TouchableOpacity>
