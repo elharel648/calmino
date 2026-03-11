@@ -257,17 +257,6 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Divider + QR scan */}
-                            <View style={styles.orRow}>
-                                <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
-                                <Text style={[styles.orText, { color: theme.textSecondary }]}>{t('common.or')}</Text>
-                                <View style={[styles.orLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' }]} />
-                            </View>
-                            <TouchableOpacity style={styles.scanBtn} onPress={handleOpenScanner} activeOpacity={0.6}>
-                                <QrCode size={15} color="#10B981" strokeWidth={1.8} />
-                                <Text style={[styles.scanBtnText, { color: theme.textSecondary }]}>סרוק קוד QR</Text>
-                            </TouchableOpacity>
-
                             {/* Join Button */}
                             <TouchableOpacity
                                 style={[styles.joinBtn, code.length !== 6 && styles.joinBtnDisabled]}
