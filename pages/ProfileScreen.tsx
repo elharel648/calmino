@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Text, TouchableOpacity, Platform, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Text, TouchableOpacity, Platform, Image, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
   const { theme, isDarkMode } = useTheme();
 
   // Use activeChild instead of useBabyProfile
-  const { activeChild } = useActiveChild();
+  const { activeChild, refreshChildren } = useActiveChild();
 
   const {
     baby,
@@ -80,10 +80,15 @@ export default function ProfileScreen() {
   }, [baby?.id, removeMilestone, refresh]);
 
   const handleSaveBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date; photoUrl?: string }) => {
-    await updateBasicInfo(data);
-    setIsEditBasicInfoOpen(false);
-    refresh();
-  }, [updateBasicInfo, refresh]);
+    try {
+      await updateBasicInfo(data);
+      setIsEditBasicInfoOpen(false);
+      await refreshChildren();
+      refresh();
+    } catch (e) {
+      Alert.alert('שגיאה', 'שגיאה בשמירת הפרטים. נסה שוב.');
+    }
+  }, [updateBasicInfo, refresh, refreshChildren]);
 
   const handleEditPhoto = useCallback(() => {
     if (Platform.OS !== 'web') {

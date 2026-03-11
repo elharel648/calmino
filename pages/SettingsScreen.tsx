@@ -46,7 +46,7 @@ export default function SettingsScreen() {
   const { t } = useLanguage();
   const navigation = useNavigation<any>();
   const { activeChild, refreshChildren } = useActiveChild();
-  const { baby, updateBasicInfo, updatePhoto, refresh } = useBabyProfile(activeChild?.childId);
+  const { baby, updateBasicInfo, updatePhoto, refresh, birthDateObj, babyAgeMonths } = useBabyProfile(activeChild?.childId);
   const { family, members, rename: renameFamily, isAdmin, remove: removeMember, leave: leaveFamily } = useFamily();
   const { isPremium } = usePremium();
   const user = auth.currentUser;
@@ -75,10 +75,6 @@ export default function SettingsScreen() {
     }
     navigation.navigate('FullSettings');
   };
-
-  // Calculate baby age
-  const birthDateObj = baby?.birthDate ? new Date(baby.birthDate) : new Date();
-  const babyAgeMonths = Math.floor((new Date().getTime() - birthDateObj.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
 
   const getAgeDisplay = () => {
     if (babyAgeMonths < 1) {
@@ -139,11 +135,16 @@ export default function SettingsScreen() {
     await refreshChildren();
   }, [updatePhoto, refreshChildren]);
 
-  const handleSaveBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date }) => {
-    await updateBasicInfo(data);
-    setIsEditBasicInfoOpen(false);
-    refresh();
-  }, [updateBasicInfo, refresh]);
+  const handleSaveBasicInfo = useCallback(async (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date; photoUrl?: string }) => {
+    try {
+      await updateBasicInfo(data);
+      setIsEditBasicInfoOpen(false);
+      await refreshChildren();
+      refresh();
+    } catch (e) {
+      Alert.alert(t('common.error'), 'שגיאה בשמירת הפרטים. נסה שוב.');
+    }
+  }, [updateBasicInfo, refresh, refreshChildren, t]);
 
   const handleEditFamilyName = useCallback(() => {
     if (Platform.OS === 'ios') {
