@@ -1,17 +1,20 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import {
     View, Text, StyleSheet, Modal, TouchableOpacity,
-    Platform, Animated as RNAnimated, PanResponder, Dimensions, useWindowDimensions, StyleSheet as RNStyleSheet
+    Platform, Animated as RNAnimated, PanResponder, Dimensions, useWindowDimensions
 } from 'react-native';
-import { Volume2, Volume1, VolumeX, Clock, Music, Music2, Star, Sparkles, CloudRain } from 'lucide-react-native';
+import { Volume2, Volume1, VolumeX, Clock, Music, Music2, Star, Sparkles, CloudRain, X } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
 import Animated, {
-    useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, interpolate
+    useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withDelay, interpolate
 } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
 import { useAudio, SoundId } from '../context/AudioContext';
+
+let VolumeManager: any = null;
+try { VolumeManager = require('react-native-volume-manager').VolumeManager; } catch (e) {}
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -32,6 +35,14 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
     const { activeSound, volume, isLoading, toggleSound, setVolume, sleepTimer, timeRemaining, startTimer, stopTimer } = useAudio();
     const { width: screenW } = useWindowDimensions();
     const isSmall = screenW < 390;
+
+    // Suppress the native iOS volume HUD while modal is open
+    useEffect(() => {
+        if (Platform.OS === 'ios') {
+            VolumeManager.showNativeVolumeUI({ enabled: false });
+            return () => { VolumeManager.showNativeVolumeUI({ enabled: true }); };
+        }
+    }, []);
     // 2 columns always (4 sounds → 2×2 grid)
     const cardWidth = '47%';
     const gridPad  = isSmall ? 16 : 20;
@@ -59,7 +70,40 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
     const ws4 = waveStyle(w4, 4, 26);
     const ws5 = waveStyle(w5, 4, 18);
 
-    // Entry / exit slide
+    // Header icon animations
+    const musicPulse  = useSharedValue(0);
+    const musicPulse2 = useSharedValue(0);
+    const musicBounce = useSharedValue(0);
+    const musicNote1  = useSharedValue(0);
+    const musicNote2  = useSharedValue(0);
+
+    const musicPulseStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: 0.7 + musicPulse.value * 1.3 }],
+        opacity: 0.65 * (1 - musicPulse.value),
+    }));
+    const musicPulse2Style = useAnimatedStyle(() => ({
+        transform: [{ scale: 0.7 + musicPulse2.value * 1.3 }],
+        opacity: 0.45 * (1 - musicPulse2.value),
+    }));
+    const musicBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: musicBounce.value * 5 }],
+    }));
+    const musicNote1Style = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: -musicNote1.value * 22 },
+            { translateX: musicNote1.value * 14 },
+        ],
+        opacity: musicNote1.value < 0.6 ? musicNote1.value * 1.6 : (1 - musicNote1.value) * 2.5,
+    }));
+    const musicNote2Style = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: -musicNote2.value * 18 },
+            { translateX: -musicNote2.value * 12 },
+        ],
+        opacity: musicNote2.value < 0.6 ? musicNote2.value * 1.6 : (1 - musicNote2.value) * 2.5,
+    }));
+
+    // Entry / exit slide + icon animations
     useEffect(() => {
         if (visible) {
             slideAnim.setValue(SCREEN_HEIGHT);
@@ -68,6 +112,16 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                 RNAnimated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
                 RNAnimated.timing(backdropAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
             ]).start();
+
+            // Start icon animations
+            musicPulse.value  = withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 0 })), -1, false);
+            musicPulse2.value = withDelay(900, withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 0 })), -1, false));
+            musicBounce.value = withRepeat(withSequence(withTiming(-1, { duration: 1400 }), withTiming(1, { duration: 1400 })), -1, true);
+            musicNote1.value  = withRepeat(withSequence(withTiming(1, { duration: 1100 }), withTiming(0, { duration: 400 })), -1, false);
+            musicNote2.value  = withDelay(650, withRepeat(withSequence(withTiming(1, { duration: 950 }), withTiming(0, { duration: 350 })), -1, false));
+        } else {
+            musicPulse.value = 0; musicPulse2.value = 0;
+            musicBounce.value = 0; musicNote1.value = 0; musicNote2.value = 0;
         }
     }, [visible]);
 
@@ -119,6 +173,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
     const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
     const activeConfig = SOUNDS.find(s => s.id === activeSound);
+    const accentColor = activeConfig?.color ?? '#A78BFA';
 
     if (!visible) return null;
 
@@ -143,27 +198,47 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                     <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
                 </View>
 
-                {/* Header */}
-                <View style={styles.header} {...panResponder.panHandlers}>
-                    <Text style={[styles.title, { color: theme.textPrimary, fontSize: titleSize }]}>מוזיקה לשינה</Text>
-                    {/* Waveform + active sound name */}
-                    {activeSound ? (
-                        <View style={styles.waveformArea}>
-                            <Text style={[styles.nowPlaying, { color: activeConfig?.color ?? '#A78BFA' }]}>
-                                {activeConfig?.label}
-                            </Text>
-                            <View style={styles.waveform}>
-                                {([ws1, ws2, ws3, ws4, ws5] as any[]).map((ws, i) => (
-                                    <Animated.View
-                                        key={i}
-                                        style={[styles.waveBar, { backgroundColor: activeConfig?.color ?? '#A78BFA' }, ws]}
-                                    />
-                                ))}
+                {/* Animated header — matches TrackingModal style */}
+                <View style={styles.iconHeader} {...panResponder.panHandlers}>
+                    {/* Animated music icon */}
+                    <View style={styles.iconContainer}>
+                        {/* Pulse rings */}
+                        <Animated.View style={[styles.iconPulse, musicPulseStyle, { borderColor: accentColor }]} />
+                        <Animated.View style={[styles.iconPulse, musicPulse2Style, { borderColor: accentColor }]} />
+                        {/* Main icon with bounce */}
+                        <Animated.View style={[styles.iconCircle, { backgroundColor: accentColor + '22' }, musicBounceStyle]}>
+                            <Music size={30} color={accentColor} strokeWidth={1.75} />
+                        </Animated.View>
+                        {/* Floating music notes */}
+                        <Animated.View style={[styles.floatingNote, { top: 10, right: 4 }, musicNote1Style]}>
+                            <Music2 size={13} color={accentColor} strokeWidth={2} />
+                        </Animated.View>
+                        <Animated.View style={[styles.floatingNote, { top: 16, left: 6 }, musicNote2Style]}>
+                            <Music2 size={10} color={accentColor} strokeWidth={2} />
+                        </Animated.View>
+                    </View>
+
+                    {/* Title + subtitle / now playing */}
+                    <View style={styles.iconHeaderText}>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>רעש לבן</Text>
+                        {activeSound ? (
+                            <View style={styles.nowPlayingRow}>
+                                <View style={styles.waveform}>
+                                    {([ws1, ws2, ws3, ws4, ws5] as any[]).map((ws, i) => (
+                                        <Animated.View key={i} style={[styles.waveBar, { backgroundColor: accentColor }, ws]} />
+                                    ))}
+                                </View>
+                                <Text style={[styles.nowPlaying, { color: accentColor }]}>{activeConfig?.label}</Text>
                             </View>
-                        </View>
-                    ) : (
-                        <View style={styles.wavePlaceholder} />
-                    )}
+                        ) : (
+                            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>מוזיקה מרגיעה לשינה</Text>
+                        )}
+                    </View>
+
+                    {/* Close button */}
+                    <TouchableOpacity style={styles.closeIconBtn} onPress={handleClose} activeOpacity={0.7}>
+                        <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
+                    </TouchableOpacity>
                 </View>
 
                 {/* Sound grid */}
@@ -315,41 +390,82 @@ const styles = StyleSheet.create({
         height: 4,
         borderRadius: 2,
     },
-    header: {
+    // Animated icon header
+    iconHeader: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingTop: 14,
-        paddingBottom: 20,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 18,
+        gap: 14,
     },
-    title: {
-        fontSize: 28,
-        fontWeight: '800',
-        letterSpacing: -0.5,
+    iconContainer: {
+        width: 72,
+        height: 72,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
     },
-    waveformArea: {
+    iconPulse: {
+        position: 'absolute',
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        borderWidth: 1.5,
+    },
+    iconCircle: {
+        width: 56,
+        height: 56,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    floatingNote: {
+        position: 'absolute',
+    },
+    iconHeaderText: {
+        flex: 1,
         alignItems: 'flex-end',
         gap: 4,
     },
+    title: {
+        fontSize: 26,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+        textAlign: 'right',
+    },
+    headerSubtitle: {
+        fontSize: 13,
+        fontWeight: '500',
+        textAlign: 'right',
+    },
+    nowPlayingRow: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 8,
+    },
     nowPlaying: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '600',
         letterSpacing: 0.2,
     },
     waveform: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        height: 28,
+        gap: 3,
+        height: 20,
     },
     waveBar: {
-        width: 4,
+        width: 3,
         borderRadius: 2,
     },
-    wavePlaceholder: {
-        height: 38,
-        width: 44,
+    closeIconBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.04)',
     },
     grid: {
         flexDirection: 'row-reverse',

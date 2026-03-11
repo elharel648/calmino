@@ -40,6 +40,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [gender, setGender] = useState<'boy' | 'girl'>('boy');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [welcomeVisible, setWelcomeVisible] = useState(false);
@@ -89,11 +90,31 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setBirthDate(selectedDate);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (selectedDate) {
+        setBirthDate(selectedDate);
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } else {
+      // iOS: user is still scrolling — just track the pending value, don't commit yet
+      if (selectedDate) setPendingDate(selectedDate);
+    }
+  };
+
+  const handleDateConfirm = () => {
+    const chosen = pendingDate ?? birthDate;
+    if (chosen) {
+      setBirthDate(chosen);
       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    setShowDatePicker(false);
+    setPendingDate(null);
+  };
+
+  const handleDateCancel = () => {
+    setShowDatePicker(false);
+    setPendingDate(null);
   };
 
   const handleGenderSelect = (selected: 'boy' | 'girl') => {
@@ -198,7 +219,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             </View>
           </Animated.View>
 
-          {showDatePicker && (
+          {showDatePicker && Platform.OS === 'android' && (
             <DateTimePicker
               value={birthDate ?? new Date()}
               mode="date"
@@ -207,6 +228,29 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
               maximumDate={new Date()}
               onChange={onDateChange}
             />
+          )}
+
+          {showDatePicker && Platform.OS === 'ios' && (
+            <View style={styles.datePickerIosWrapper}>
+              {/* Cancel / Done bar */}
+              <View style={styles.datePickerHeader}>
+                <TouchableOpacity onPress={handleDateCancel} style={styles.datePickerHeaderBtn}>
+                  <Text style={[styles.datePickerCancel, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleDateConfirm} style={styles.datePickerHeaderBtn}>
+                  <Text style={styles.datePickerConfirm}>{t('common.confirm')}</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={pendingDate ?? birthDate ?? new Date()}
+                mode="date"
+                display="spinner"
+                locale="he"
+                maximumDate={new Date()}
+                onChange={onDateChange}
+                style={{ width: '100%' }}
+              />
+            </View>
           )}
 
           {/* Gender Selection */}
@@ -327,7 +371,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             </View>
 
             {/* Text — RTL aligned */}
-            <Text style={styles.welcomeTitle}>!איזה כיף</Text>
+            <Text style={styles.welcomeTitle}>איזה כיף!</Text>
             <Text style={styles.welcomeMessage}>
               {`ברוכים הבאים ${savedName} למשפחת Calmino!`}
             </Text>
@@ -489,6 +533,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
     fontWeight: '600',
+  },
+
+  // iOS date picker wrapper
+  datePickerIosWrapper: {
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.15)',
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  datePickerHeaderBtn: {
+    minWidth: 60,
+  },
+  datePickerCancel: {
+    fontSize: 16,
+    textAlign: 'right',
+  },
+  datePickerConfirm: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6366F1',
+    textAlign: 'left',
   },
 
   // Gender section
@@ -668,14 +745,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: '#111827',
-    textAlign: 'right',
+    textAlign: 'center',
     marginBottom: 8,
     writingDirection: 'rtl',
   },
   welcomeMessage: {
     fontSize: 15,
     color: '#6B7280',
-    textAlign: 'right',
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: 28,
     writingDirection: 'rtl',
