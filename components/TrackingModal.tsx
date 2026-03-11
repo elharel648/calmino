@@ -1198,6 +1198,21 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         })}
       </View>
 
+      {/* Date Picker Button — visible in duration and timerange modes */}
+      {sleepMode !== 'timer' && (
+        <TouchableOpacity
+          style={styles.datePickerBtn}
+          onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
+          <Text style={styles.datePickerBtnText}>
+            {selectedDate.toDateString() === new Date().toDateString()
+              ? t('tracking.today')
+              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {/* Timer Mode */}
       {sleepMode === 'timer' && (
         <View style={styles.sleepTimerSection}>
