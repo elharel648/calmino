@@ -51,6 +51,7 @@ export const MEDICATIONS_DB: MedicationInfo[] = [
     { name: 'פנדול', nameEn: 'Panadol', category: 'pain_fever', commonDosage: '10-15 מ"ג/ק"ג כל 4-6 שעות', form: 'סירופ / כדור', notes: 'פרצטמול' },
     { name: 'אופטלגין', nameEn: 'Optalgin', category: 'pain_fever', commonDosage: 'לפי הוראת רופא', form: 'טיפות / סירופ', notes: 'דיפירון (Dipyrone). מגיל 3 חודשים' },
     { name: 'מיניפן', nameEn: 'Minifen', category: 'pain_fever', commonDosage: '5-10 מ"ג/ק"ג כל 6-8 שעות', form: 'סירופ', notes: 'איבופרופן לילדים' },
+    { name: 'נובימול', nameEn: 'Novimol', category: 'pain_fever', commonDosage: '10-15 מ"ג/ק"ג כל 4-6 שעות', form: 'סירופ / כדור / פתילה', notes: 'פרצטמול (Paracetamol)' },
 
     // ── אנטיביוטיקה ────────────────────────────────────────────────────────────
     { name: 'אוגמנטין', nameEn: 'Augmentin', category: 'antibiotics', commonDosage: 'לפי הוראת רופא', form: 'סירופ / כדור', notes: 'אמוקסיצילין + חומצה קלבולנית' },
