@@ -203,11 +203,26 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
 
             setAllChildren(childrenList);
 
-            // Set active child to first one if not already set
-            // Using ref to avoid infinite loop (ref doesn't cause callback recreation)
-            if (childrenList.length > 0 && !activeChildRef.current) {
-                setActiveChildState(childrenList[0]);
-                activeChildRef.current = childrenList[0];
+            // Update activeChild using ref to avoid infinite loop (ref doesn't cause callback recreation)
+            const currentId = activeChildRef.current?.childId;
+            if (!currentId) {
+                // No active child yet — set to first available
+                if (childrenList.length > 0) {
+                    setActiveChildState(childrenList[0]);
+                    activeChildRef.current = childrenList[0];
+                }
+            } else {
+                const stillExists = childrenList.find(c => c.childId === currentId);
+                if (!stillExists) {
+                    // Active child was removed (e.g. left guest access) — switch to first available or null
+                    const next = childrenList.length > 0 ? childrenList[0] : null;
+                    setActiveChildState(next);
+                    activeChildRef.current = next;
+                } else {
+                    // Refresh with latest data (name/photo may have changed)
+                    setActiveChildState(stillExists);
+                    activeChildRef.current = stillExists;
+                }
             }
 
         } catch (error) {

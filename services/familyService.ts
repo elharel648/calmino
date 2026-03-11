@@ -13,6 +13,7 @@ import {
     onSnapshot,
     runTransaction,
     arrayRemove,
+    arrayUnion,
     Unsubscribe
 } from 'firebase/firestore';
 import { db, auth, callFirebaseFunction } from './firebaseConfig';
@@ -531,7 +532,7 @@ export const joinAsGuest = async (
             }
         });
 
-        // Update user's guestAccess and guestFamilyId (required by Firestore rules)
+        // Update user's guestAccess, guestFamilyId, and guestChildIds (required by Firestore rules)
         await setDoc(doc(db, 'users', userId), {
             guestFamilyId: familyId,
             guestAccess: {
@@ -540,8 +541,10 @@ export const joinAsGuest = async (
                     childId,
                     accessLevel: 'actions_only',
                     joinedAt: serverTimestamp(),
+                    expiresAt: inviteData.expiresAt, // needed for expiry check in ActiveChildContext
                 }
-            }
+            },
+            guestChildIds: arrayUnion(childId),
         }, { merge: true });
 
         // Mark invite as used
@@ -586,11 +589,17 @@ export const revokeGuestAccess = async (guestUserId: string, familyId: string): 
             [`members.${guestUserId}`]: deleteField()
         });
 
-        // Remove from user's guestAccess, clear guestFamilyId, and remove from guestChildIds
+        // Remove from user's guestAccess, guestChildIds; only clear guestFamilyId if no other guest accesses remain
         const childId = family.babyId;
+        const guestUserDoc = await getDoc(doc(db, 'users', guestUserId));
+        const guestUserData = guestUserDoc.data();
+        const remainingAccess = { ...guestUserData?.guestAccess };
+        delete remainingAccess[familyId];
+        const hasOtherGuestAccess = Object.keys(remainingAccess).length > 0;
+
         await updateDoc(doc(db, 'users', guestUserId), {
             [`guestAccess.${familyId}`]: deleteField(),
-            guestFamilyId: deleteField(),
+            ...(hasOtherGuestAccess ? {} : { guestFamilyId: deleteField() }),
             ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
         });
 
@@ -704,10 +713,13 @@ export const leaveGuestAccess = async (familyId: string): Promise<boolean> => {
         const userDoc = await getDoc(doc(db, 'users', userId));
         const userData = userDoc.data();
         const childId = userData?.guestAccess?.[familyId]?.childId;
+        const remainingAccess = { ...userData?.guestAccess };
+        delete remainingAccess[familyId];
+        const hasOtherGuestAccess = Object.keys(remainingAccess).length > 0;
 
         await updateDoc(doc(db, 'users', userId), {
             [`guestAccess.${familyId}`]: deleteField(),
-            guestFamilyId: deleteField(),
+            ...(hasOtherGuestAccess ? {} : { guestFamilyId: deleteField() }),
             ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
         });
 
