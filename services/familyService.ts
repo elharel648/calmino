@@ -691,6 +691,42 @@ export const cancelGuestInvite = async (inviteCode: string): Promise<boolean> =>
 };
 
 
+/**
+ * Leave a family the current user joined as a guest (self-initiated).
+ * Cleans up guestAccess, guestFamilyId, and guestChildIds from the user doc.
+ */
+export const leaveGuestAccess = async (familyId: string): Promise<boolean> => {
+    const userId = getCurrentUserId();
+    if (!userId) return false;
+
+    try {
+        // Get the childId from guestAccess before deleting
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        const userData = userDoc.data();
+        const childId = userData?.guestAccess?.[familyId]?.childId;
+
+        await updateDoc(doc(db, 'users', userId), {
+            [`guestAccess.${familyId}`]: deleteField(),
+            guestFamilyId: deleteField(),
+            ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
+        });
+
+        // Also remove from family members if present
+        try {
+            await updateDoc(doc(db, 'families', familyId), {
+                [`members.${userId}`]: deleteField(),
+            });
+        } catch {
+            // May not have write permission — that's fine, user doc cleanup is what matters
+        }
+
+        return true;
+    } catch (error) {
+        logger.log('Error leaving guest access:', error);
+        return false;
+    }
+};
+
 export default {
     createFamily,
     getMyFamily,

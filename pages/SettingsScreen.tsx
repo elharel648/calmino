@@ -20,6 +20,7 @@ import { useFamily } from '../hooks/useFamily';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useBabyProfile } from '../hooks/useBabyProfile';
 import { auth, db } from '../services/firebaseConfig';
+import { leaveGuestAccess } from '../services/familyService';
 import { logger } from '../utils/logger';
 import { usePremium } from '../context/PremiumContext';
 import { getShowPremiumUpgrade } from '../services/remoteConfigService';
@@ -213,6 +214,33 @@ export default function SettingsScreen() {
       ]
     );
   }, [removeMember]);
+
+  const handleLeaveGuestAccess = useCallback(() => {
+    const familyId = activeChild?.familyId;
+    if (!familyId) return;
+    const childName = activeChild?.childName || 'הילד';
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'עזיבת גישת אורח',
+      `האם לעזוב את גישת האורח ל-${childName}? תאבד גישה לנתוני הילד.`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: 'עזוב',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await leaveGuestAccess(familyId);
+            if (success) {
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              refreshChildren();
+            }
+          },
+        },
+      ]
+    );
+  }, [activeChild, refreshChildren, t]);
 
   const handleLeaveFamily = useCallback(() => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -604,6 +632,32 @@ export default function SettingsScreen() {
                     <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('family.leaveFamily')}</Text>
                     <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
                       יניתק אותך מהמשפחה המשותפת
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.chevronWrap}>
+                  <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Leave Guest Access - for guests who joined with invite code */}
+          {activeChild?.role === 'guest' && activeChild?.familyId && (
+            <Animated.View entering={ANIMATIONS.fadeInDown(750)} style={[styles.listContainer, { backgroundColor: theme.card, marginTop: 16 }]}>
+              <TouchableOpacity
+                style={[styles.listItem, styles.listItemFirst, styles.listItemLast]}
+                onPress={handleLeaveGuestAccess}
+                activeOpacity={0.6}
+              >
+                <View style={styles.listItemContent}>
+                  <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
+                    <LogOut size={20} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
+                  </View>
+                  <View style={styles.listItemTextContainer}>
+                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>עזוב גישת אורח</Text>
+                    <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
+                      יסיר את גישתך כאורח ל-{activeChild.childName}
                     </Text>
                   </View>
                 </View>
