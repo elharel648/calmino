@@ -12,10 +12,11 @@ import {
     LayoutAnimation,
     UIManager,
 } from 'react-native';
-import { Pill, Minus, Plus, Clock, Check, AlertCircle, Bell } from 'lucide-react-native';
+import { Pill, Minus, Plus, Clock, Check, AlertCircle, Bell, Search, Info } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Medication } from '../../types/home';
+import { searchMedications, MedicationInfo, CATEGORY_LABELS } from '../../data/medicationsDatabase';
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -41,6 +42,11 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
     const [notes, setNotes] = useState('');
     const [remindersEnabled, setRemindersEnabled] = useState(true);
     const [nameError, setNameError] = useState(false);
+
+    // Autocomplete state
+    const [suggestions, setSuggestions] = useState<MedicationInfo[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedMedInfo, setSelectedMedInfo] = useState<MedicationInfo | null>(null);
 
     // Time picker state
     const [showTimePicker, setShowTimePicker] = useState<number | null>(null);
@@ -144,17 +150,95 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                 </View>
             </View>
 
-            {/* Medication Name */}
+            {/* Medication Name with Autocomplete */}
             <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>שם התרופה</Text>
-                <TextInput
-                    style={[styles.textInput, nameError && styles.textInputError]}
-                    value={name}
-                    onChangeText={t => { setName(t); setNameError(false); }}
-                    placeholder="שם התרופה (למשל: אקמול)"
-                    placeholderTextColor="#9CA3AF"
-                    textAlign="right"
-                />
+                <View style={styles.searchInputWrapper}>
+                    <TextInput
+                        style={[styles.textInput, nameError && styles.textInputError, { paddingLeft: 40 }]}
+                        value={name}
+                        onChangeText={t => {
+                            setName(t);
+                            setNameError(false);
+                            setSelectedMedInfo(null);
+                            const results = searchMedications(t);
+                            setSuggestions(results);
+                            setShowSuggestions(results.length > 0 && t.length >= 1);
+                        }}
+                        onFocus={() => {
+                            if (suggestions.length > 0 && name.length >= 1) {
+                                setShowSuggestions(true);
+                            }
+                        }}
+                        placeholder="חפש תרופה (למשל: אקמול, נורופן...)"
+                        placeholderTextColor="#9CA3AF"
+                        textAlign="right"
+                    />
+                    <View style={styles.searchIcon}>
+                        <Search size={18} color="#9CA3AF" />
+                    </View>
+                </View>
+
+                {/* Autocomplete Dropdown */}
+                {showSuggestions && (
+                    <View style={styles.suggestionsContainer}>
+                        {suggestions.map((med, idx) => (
+                            <TouchableOpacity
+                                key={`${med.name}_${idx}`}
+                                style={[styles.suggestionRow, idx < suggestions.length - 1 && styles.suggestionBorder]}
+                                onPress={() => {
+                                    setName(med.name);
+                                    setSelectedMedInfo(med);
+                                    setSuggestions([]);
+                                    setShowSuggestions(false);
+                                    // Auto-fill dosage hint
+                                    if (med.form && !dosage) {
+                                        setDosage(med.form);
+                                    }
+                                    if (Platform.OS !== 'web') {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.suggestionContent}>
+                                    <Text style={styles.suggestionName}>{med.name}</Text>
+                                    {med.nameEn && (
+                                        <Text style={styles.suggestionNameEn}>{med.nameEn}</Text>
+                                    )}
+                                    {med.notes && (
+                                        <Text style={styles.suggestionNotes}>{med.notes}</Text>
+                                    )}
+                                </View>
+                                <View style={styles.suggestionCategoryBadge}>
+                                    <Text style={styles.suggestionCategoryText}>
+                                        {CATEGORY_LABELS[med.category]}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+
+                {/* Selected medication info card */}
+                {selectedMedInfo && (
+                    <View style={styles.medInfoCard}>
+                        <View style={styles.medInfoHeader}>
+                            <Info size={14} color="#8B5CF6" />
+                            <Text style={styles.medInfoTitle}>מידע על {selectedMedInfo.name}</Text>
+                        </View>
+                        {selectedMedInfo.commonDosage && (
+                            <Text style={styles.medInfoText}>💊 מינון נפוץ: {selectedMedInfo.commonDosage}</Text>
+                        )}
+                        {selectedMedInfo.form && (
+                            <Text style={styles.medInfoText}>📦 צורה: {selectedMedInfo.form}</Text>
+                        )}
+                        <Text style={styles.medInfoDisclaimer}>
+                            ⚠️ מידע כללי בלבד. יש להתייעץ עם רופא.
+                        </Text>
+                    </View>
+                )}
+
                 {nameError && (
                     <View style={styles.errorRow}>
                         <Text style={styles.errorText}>יש להזין שם תרופה</Text>
@@ -526,6 +610,103 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         color: '#FFFFFF',
+    },
+
+    // Autocomplete
+    searchInputWrapper: {
+        position: 'relative' as const,
+    },
+    searchIcon: {
+        position: 'absolute' as const,
+        left: 14,
+        top: 16,
+    },
+    suggestionsContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 14,
+        marginTop: 6,
+        borderWidth: 1.5,
+        borderColor: '#DDD6FE',
+        overflow: 'hidden' as const,
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    suggestionRow: {
+        flexDirection: 'row-reverse' as const,
+        alignItems: 'center' as const,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+    suggestionBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+    },
+    suggestionContent: {
+        flex: 1,
+        alignItems: 'flex-end' as const,
+    },
+    suggestionName: {
+        fontSize: 15,
+        fontWeight: '600' as const,
+        color: '#1F2937',
+    },
+    suggestionNameEn: {
+        fontSize: 12,
+        color: '#9CA3AF',
+        marginTop: 1,
+    },
+    suggestionNotes: {
+        fontSize: 11,
+        color: '#6B7280',
+        marginTop: 2,
+    },
+    suggestionCategoryBadge: {
+        backgroundColor: '#F5F3FF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        marginRight: 10,
+    },
+    suggestionCategoryText: {
+        fontSize: 10,
+        color: '#7C3AED',
+        fontWeight: '500' as const,
+    },
+    medInfoCard: {
+        backgroundColor: '#F5F3FF',
+        borderRadius: 12,
+        padding: 14,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: '#DDD6FE',
+    },
+    medInfoHeader: {
+        flexDirection: 'row-reverse' as const,
+        alignItems: 'center' as const,
+        gap: 6,
+        marginBottom: 8,
+    },
+    medInfoTitle: {
+        fontSize: 14,
+        fontWeight: '700' as const,
+        color: '#7C3AED',
+        textAlign: 'right' as const,
+    },
+    medInfoText: {
+        fontSize: 13,
+        color: '#4B5563',
+        textAlign: 'right' as const,
+        marginBottom: 4,
+    },
+    medInfoDisclaimer: {
+        fontSize: 11,
+        color: '#9CA3AF',
+        textAlign: 'right' as const,
+        marginTop: 6,
+        fontStyle: 'italic' as const,
     },
 });
 
