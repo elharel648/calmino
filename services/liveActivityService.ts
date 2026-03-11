@@ -36,6 +36,10 @@ interface LiveActivityService {
     updateBabysitterShift: (isPaused: boolean, totalPausedSeconds: number) => Promise<boolean>;
     stopBabysitterShift: () => Promise<boolean>;
 
+    // White Noise
+    startWhiteNoise: (soundId: string, soundName: string) => Promise<string>;
+    stopWhiteNoise: () => Promise<boolean>;
+
     isLiveActivitySupported: () => Promise<boolean>;
     updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string) => Promise<boolean>;
 }
@@ -313,6 +317,32 @@ class LiveActivityServiceClass implements LiveActivityService {
             return true;
         } catch (error: any) {
             logger.error('Failed to stop Babysitter Shift Live Activity:', error);
+            return false;
+        }
+    }
+
+    // MARK: - White Noise
+    async startWhiteNoise(soundId: string, soundName: string): Promise<string> {
+        await this.ensureInitialized();
+        if (!this.isSupported || !ActivityKitManager) return '';
+        try {
+            const id = await ActivityKitManager.startWhiteNoise(soundId, soundName);
+            logger.log('✅ WhiteNoise Live Activity started:', id);
+            return id;
+        } catch (error: any) {
+            logger.warn('Failed to start WhiteNoise Live Activity:', error);
+            return '';
+        }
+    }
+
+    async stopWhiteNoise(): Promise<boolean> {
+        if (!this.isSupported || !ActivityKitManager) return false;
+        try {
+            const result = await ActivityKitManager.stopWhiteNoise();
+            logger.log('✅ WhiteNoise Live Activity stopped');
+            return result;
+        } catch (error: any) {
+            logger.warn('Failed to stop WhiteNoise Live Activity:', error);
             return false;
         }
     }

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import { liveActivityService } from '../services/liveActivityService';
 
 // Sound file imports
 const soundFiles = {
@@ -10,6 +11,14 @@ const soundFiles = {
     lullaby2: require('../assets/sounds/gentle.mp3'),
     lullaby3: require('../assets/sounds/birds.mp3'),
     lullaby4: require('../assets/sounds/גשם.wav'),
+};
+
+// Mapping from AudioContext soundId → Live Activity soundId + Hebrew name
+const SOUND_LIVE_ACTIVITY: Record<string, { id: string; name: string }> = {
+    lullaby1: { id: 'lullaby', name: 'שיר ערש' },
+    lullaby2: { id: 'gentle', name: 'מוזיקה עדינה' },
+    lullaby3: { id: 'birds', name: 'ציפורים' },
+    lullaby4: { id: 'rain', name: 'גשם' },
 };
 
 export type SoundId = keyof typeof soundFiles;
@@ -96,6 +105,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 soundRef.current = null;
             }
             setActiveSound(null);
+            if (Platform.OS === 'ios') {
+                liveActivityService.stopWhiteNoise().catch(() => {});
+            }
         } catch (error) {
             logger.log('Error stopping sound:', error);
         }
@@ -132,6 +144,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             soundRef.current = sound;
             setActiveSound(id);
+
+            if (Platform.OS === 'ios') {
+                const laInfo = SOUND_LIVE_ACTIVITY[id];
+                if (laInfo) {
+                    liveActivityService.startWhiteNoise(laInfo.id, laInfo.name).catch(() => {});
+                }
+            }
 
         } catch (error) {
             logger.log('Error playing sound:', error);

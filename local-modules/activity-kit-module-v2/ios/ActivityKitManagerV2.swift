@@ -16,6 +16,7 @@ public class ActivityKitManager: Module {
     private var mealActivity: Any?
     private var sleepActivity: Any?
     private var breastfeedingActivity: Any?
+    private var whiteNoiseActivity: Any?
     
     public func definition() -> ModuleDefinition {
         Name("ActivityKitManager")
@@ -319,6 +320,43 @@ public class ActivityKitManager: Module {
             return false
         }
         
+        // MARK: - White Noise Methods
+
+        AsyncFunction("startWhiteNoise") { (soundId: String, soundName: String) -> String in
+            if #available(iOS 16.2, *) {
+                // End any existing white noise activity first
+                if let existing = self.whiteNoiseActivity as? Activity<WhiteNoiseActivityAttributes> {
+                    Task { await existing.end(dismissalPolicy: .immediate) }
+                }
+                self.whiteNoiseActivity = nil
+
+                let attributes = WhiteNoiseActivityAttributes(soundId: soundId, soundName: soundName)
+                let initialState = WhiteNoiseActivityAttributes.ContentState(startTime: Date())
+                do {
+                    let activity = try Activity<WhiteNoiseActivityAttributes>.request(
+                        attributes: attributes,
+                        content: .init(state: initialState, staleDate: nil),
+                        pushType: nil
+                    )
+                    self.whiteNoiseActivity = activity
+                    return activity.id
+                } catch {
+                    throw Exception(name: "ACTIVITY_ERROR", description: error.localizedDescription)
+                }
+            }
+            return ""
+        }
+
+        AsyncFunction("stopWhiteNoise") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.whiteNoiseActivity as? Activity<WhiteNoiseActivityAttributes> else { return false }
+                Task { await activity.end(dismissalPolicy: .immediate) }
+                self.whiteNoiseActivity = nil
+                return true
+            }
+            return false
+        }
+
         AsyncFunction("isLiveActivitySupported") { () -> Bool in
             if #available(iOS 16.2, *) {
                 return ActivityAuthorizationInfo().areActivitiesEnabled
