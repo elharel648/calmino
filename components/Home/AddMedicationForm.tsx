@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
         borderColor: '#E5E7EB',
     },
     dateTimePicker: {
-        height: 120,
+        height: 180,
     },
     timePickerDone: {
         alignItems: 'center',
