@@ -5,6 +5,12 @@ import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { liveActivityService } from '../services/liveActivityService';
 
+// Safe import — requires full native rebuild after first install
+let VolumeManager: any = null;
+try {
+    VolumeManager = require('react-native-volume-manager').VolumeManager;
+} catch (e) { /* native module not linked yet — rebuild needed */ }
+
 // Sound file imports
 const soundFiles = {
     lullaby1: require('../assets/sounds/lullaby.mp3'),
@@ -57,7 +63,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const soundRef = useRef<Audio.Sound | null>(null);
     const isMountedRef = useRef(true);
 
-    // Setup audio mode for background playback
+    // Setup audio mode for background playback + read initial device volume
     useEffect(() => {
         const setupAudio = async () => {
             try {
@@ -71,12 +77,38 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             } catch (error) {
                 logger.log('Error setting up audio mode:', error);
             }
+
+            // Read current device volume and use it as initial value
+            if (VolumeManager) {
+                try {
+                    const result = await VolumeManager.getVolume();
+                    const deviceVol = typeof result === 'number' ? result : (result as any).volume ?? 0.7;
+                    if (isMountedRef.current) setVolumeState(deviceVol);
+                } catch (e) {
+                    logger.log('Could not read device volume:', e);
+                }
+            }
         };
         setupAudio();
+
+        // Listen for hardware volume button changes
+        let sub: { remove: () => void } | null = null;
+        if (VolumeManager) {
+            sub = VolumeManager.addVolumeListener((result: any) => {
+                const v = typeof result === 'number' ? result : (result as any).volume ?? 0;
+                if (isMountedRef.current) {
+                    setVolumeState(v);
+                    if (soundRef.current) {
+                        soundRef.current.setVolumeAsync(v).catch(() => {});
+                    }
+                }
+            });
+        }
 
         // Cleanup on unmount
         return () => {
             isMountedRef.current = false;
+            sub?.remove();
             if (soundRef.current) {
                 soundRef.current.unloadAsync();
             }
@@ -174,6 +206,14 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const setVolume = async (newVolume: number) => {
         setVolumeState(newVolume);
+        // Set both the sound volume and device system volume
+        if (VolumeManager) {
+            try {
+                await VolumeManager.setVolume(newVolume);
+            } catch (e) {
+                logger.log('Could not set device volume:', e);
+            }
+        }
         if (soundRef.current) {
             try {
                 await soundRef.current.setVolumeAsync(newVolume);

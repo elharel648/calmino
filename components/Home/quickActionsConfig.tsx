@@ -1,7 +1,8 @@
 import React from 'react';
-import { Utensils, Moon, Droplets, Music, Heart, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell } from 'lucide-react-native';
+import { Utensils, Moon, Music, Heart, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
+import DiaperIcon from '../Common/DiaperIcon';
 
 export type QuickActionMeta = {
     icon: any;
@@ -21,7 +22,7 @@ export const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; colo
 export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> = {
     food: { icon: Utensils, labelKey: 'actions.food', activeLabelKey: 'actions.active.food' },
     sleep: { icon: Moon, labelKey: 'actions.sleep', activeLabelKey: 'actions.active.sleep' },
-    diaper: { icon: Droplets, labelKey: 'actions.diaper', activeLabelKey: 'actions.diaper' },
+    diaper: { icon: DiaperIcon, labelKey: 'actions.diaper', activeLabelKey: 'actions.diaper' },
     supplements: { icon: Pill, labelKey: 'actions.supplements', activeLabelKey: 'actions.supplements' },
     whiteNoise: { icon: Music, labelKey: 'actions.whiteNoise', activeLabelKey: 'actions.whiteNoise' },
     sos: { icon: Heart, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },

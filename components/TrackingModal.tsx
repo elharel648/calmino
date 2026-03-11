@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, startTransiti
 import { logger } from '../utils/logger';
 
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
-import { X, Check, Droplets, Play, Pause, Baby, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
+import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
+import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../context/SleepTimerContext';
@@ -12,10 +13,96 @@ import { useLanguage } from '../context/LanguageContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, withDelay, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
 import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// ─── Drum Swipe Picker ────────────────────────────────────────────────────────
+const DRUM_ITEM_H = 48;
+
+function DrumColumn({
+  value, min, max, wrap = false, onSteps, isDarkMode, accentColor, modalGesture,
+}: {
+  value: number; min: number; max: number; wrap?: boolean;
+  onSteps: (steps: number) => void; isDarkMode: boolean;
+  accentColor: string; modalGesture: any;
+}) {
+  const range = max - min + 1;
+  const dragY = useSharedValue(0);
+  const lastHapticStep = useSharedValue(0);
+
+  const triggerHaptic = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const gesture = Gesture.Pan()
+    .blocksExternalGesture(modalGesture)
+    .activeOffsetY([-8, 8])
+    .failOffsetX([-15, 15])
+    .onUpdate((e) => {
+      dragY.value = e.translationY;
+      const step = Math.abs(Math.floor(e.translationY / DRUM_ITEM_H));
+      if (step !== lastHapticStep.value) {
+        lastHapticStep.value = step;
+        runOnJS(triggerHaptic)();
+      }
+    })
+    .onEnd((e) => {
+      const totalSteps = -Math.round(e.translationY / DRUM_ITEM_H);
+      dragY.value = withSpring(0, { damping: 22, stiffness: 280 });
+      lastHapticStep.value = 0;
+      if (totalSteps !== 0) runOnJS(onSteps)(totalSteps);
+    });
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: dragY.value }],
+  }));
+
+  const items = [-2, -1, 0, 1, 2].map((offset) => {
+    const v = wrap
+      ? ((value - min + offset) % range + range) % range + min
+      : value + offset;
+    const inRange = v >= min && v <= max;
+    const abs = Math.abs(offset);
+    return {
+      offset,
+      label: inRange ? String(v).padStart(2, '0') : '',
+      isCenter: offset === 0,
+      opacity: offset === 0 ? 1 : abs === 1 ? 0.33 : 0.1,
+      fontSize: offset === 0 ? 38 : abs === 1 ? 21 : 15,
+    };
+  });
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View style={{ height: DRUM_ITEM_H * 3, width: 84, overflow: 'hidden', position: 'relative', borderRadius: 16 }}>
+        {/* Center selection highlight */}
+        <View style={{
+          position: 'absolute', top: DRUM_ITEM_H, left: 0, right: 0, height: DRUM_ITEM_H,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+          borderRadius: 12,
+        }} />
+        <Animated.View style={[{ marginTop: -DRUM_ITEM_H }, animStyle]}>
+          {items.map((item) => (
+            <View key={item.offset} style={{ height: DRUM_ITEM_H, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{
+                fontSize: item.fontSize,
+                fontWeight: item.isCenter ? '700' : '400',
+                color: item.isCenter ? accentColor : (isDarkMode ? '#ffffff' : '#1C1C1E'),
+                opacity: item.opacity,
+                letterSpacing: -1,
+              }}>
+                {item.label}
+              </Text>
+            </View>
+          ))}
+        </Animated.View>
+      </View>
+    </GestureDetector>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface TrackingModalProps {
   visible: boolean;
@@ -36,7 +123,11 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   // Diaper icon animations
   const diaperPulse = useSharedValue(0);
+  const diaperPulse2 = useSharedValue(0);
   const diaperWiggle = useSharedValue(0);
+  const diaperBounce = useSharedValue(0);
+  const diaperStar1 = useSharedValue(0);
+  const diaperStar2 = useSharedValue(0);
 
   // Sleep icon animations
   const sleepIconPulse = useSharedValue(0);
@@ -62,7 +153,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     },
     diaper: {
       title: t('tracking.diaper.title'),
-      icon: Baby,
+      icon: DiaperIcon,
       accent: '#10B981',
       gradient: ['#10B981', '#34D399', '#6EE7B7'],
     },
@@ -91,6 +182,10 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const [sleepMode, setSleepMode] = useState<'timer' | 'duration' | 'timerange'>('timer');
   const [sleepHours, setSleepHours] = useState(0);
   const [sleepMinutes, setSleepMinutes] = useState(30);
+  const sleepHoursRef = React.useRef(sleepHours);
+  const sleepMinutesRef = React.useRef(sleepMinutes);
+  React.useEffect(() => { sleepHoursRef.current = sleepHours; }, [sleepHours]);
+  React.useEffect(() => { sleepMinutesRef.current = sleepMinutes; }, [sleepMinutes]);
   const [sleepNote, setSleepNote] = useState('');
   const sleepContext = useSleepTimer();
 
@@ -144,6 +239,30 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const triggerMediumHaptic = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
+
+  // Drum swipe step handlers (use refs to always get latest values, even mid-gesture)
+  const handleHourSteps = React.useCallback((steps: number) => {
+    setSleepHours(Math.max(0, Math.min(12, sleepHoursRef.current + steps)));
+  }, []);
+
+  const handleMinuteSteps = React.useCallback((steps: number) => {
+    const cur = sleepMinutesRef.current;
+    const curH = sleepHoursRef.current;
+    const total = cur + steps;
+    if (total >= 60) {
+      const carry = Math.floor(total / 60);
+      setSleepHours(Math.min(12, curH + carry));
+      setSleepMinutes(total % 60);
+    } else if (total < 0) {
+      const borrow = Math.ceil(-total / 60);
+      if (curH >= borrow) {
+        setSleepHours(curH - borrow);
+        setSleepMinutes(((total % 60) + 60) % 60);
+      }
+    } else {
+      setSleepMinutes(total);
+    }
+  }, []);
 
   // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
   const panGesture = Gesture.Pan()
@@ -225,22 +344,59 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // Diaper icon animation
   useEffect(() => {
     if (visible && type === 'diaper') {
+      // Double pulse rings
       diaperPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      diaperPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+      // Cute wiggle
       diaperWiggle.value = withRepeat(
         withSequence(
-          withTiming(-14, { duration: 180 }),
-          withTiming(14, { duration: 360 }),
-          withTiming(-8, { duration: 280 }),
-          withTiming(8, { duration: 280 }),
+          withTiming(-10, { duration: 180 }),
+          withTiming(10, { duration: 320 }),
+          withTiming(-6, { duration: 250 }),
+          withTiming(6, { duration: 250 }),
           withTiming(0, { duration: 180 }),
-          withTiming(0, { duration: 1400 }),
+          withTiming(0, { duration: 1600 }),
         ),
         -1,
         false
       );
+      // Gentle bounce up/down
+      diaperBounce.value = withRepeat(
+        withSequence(
+          withTiming(-5, { duration: 450, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 450, easing: Easing.in(Easing.quad) }),
+          withTiming(0, { duration: 300 }),
+        ),
+        -1,
+        false
+      );
+      // Sparkle star 1 — appears top-left
+      diaperStar1.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0, { duration: 600 }),
+          withTiming(0, { duration: 700 }),
+        ),
+        -1,
+        false
+      );
+      // Sparkle star 2 — delayed, appears top-right
+      diaperStar2.value = withDelay(900, withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0, { duration: 600 }),
+          withTiming(0, { duration: 700 }),
+        ),
+        -1,
+        false
+      ));
     } else {
       diaperPulse.value = withTiming(0, { duration: 200 });
+      diaperPulse2.value = withTiming(0, { duration: 200 });
       diaperWiggle.value = withTiming(0, { duration: 200 });
+      diaperBounce.value = withTiming(0, { duration: 200 });
+      diaperStar1.value = withTiming(0, { duration: 200 });
+      diaperStar2.value = withTiming(0, { duration: 200 });
     }
   }, [visible, type]);
 
@@ -278,11 +434,36 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   const diaperPulseStyle = useAnimatedStyle(() => ({
     opacity: interpolate(diaperPulse.value, [0, 1], [0.45, 0]),
-    transform: [{ scale: interpolate(diaperPulse.value, [0, 1], [1, 1.7]) }],
+    transform: [{ scale: interpolate(diaperPulse.value, [0, 1], [1, 1.75]) }],
+  }));
+
+  const diaperPulse2Style = useAnimatedStyle(() => ({
+    opacity: interpolate(diaperPulse2.value, [0, 1], [0.3, 0]),
+    transform: [{ scale: interpolate(diaperPulse2.value, [0, 1], [1, 1.75]) }],
   }));
 
   const diaperWiggleStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${diaperWiggle.value}deg` }],
+  }));
+
+  const diaperBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: diaperBounce.value }],
+  }));
+
+  const diaperStar1Style = useAnimatedStyle(() => ({
+    opacity: diaperStar1.value,
+    transform: [
+      { translateY: interpolate(diaperStar1.value, [0, 1], [0, -14]) },
+      { scale: interpolate(diaperStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ],
+  }));
+
+  const diaperStar2Style = useAnimatedStyle(() => ({
+    opacity: diaperStar2.value,
+    transform: [
+      { translateY: interpolate(diaperStar2.value, [0, 1], [0, -14]) },
+      { scale: interpolate(diaperStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ],
   }));
 
   const foodIconPulseStyle = useAnimatedStyle(() => ({
@@ -689,7 +870,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             ) : (leftTimer > 0 || rightTimer > 0) ? (
               <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(leftTimer + rightTimer)}</Text>
             ) : (
-              <Baby size={20} color={foodType === 'breast' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+              <Milk size={20} color={foodType === 'breast' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
             )}
           </View>
           <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'breast' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.breast')}</Text>
@@ -747,18 +928,20 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </TouchableOpacity>
       </View>
 
-      {/* Date Picker Button - Minimal */}
-      <TouchableOpacity
-        style={styles.datePickerBtn}
-        onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-      >
-        <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
-        <Text style={styles.datePickerBtnText}>
-          {selectedDate.toDateString() === new Date().toDateString()
-            ? t('tracking.today')
-            : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
-        </Text>
-      </TouchableOpacity>
+      {/* Date Picker Button - only in timerange/solids mode */}
+      {(foodMode === 'timerange' || foodType === 'solids') && (
+        <TouchableOpacity
+          style={styles.datePickerBtn}
+          onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
+          <Text style={styles.datePickerBtnText}>
+            {selectedDate.toDateString() === new Date().toDateString()
+              ? t('tracking.today')
+              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Food Mode Toggle - Normal vs Timerange */}
       {/* Hide for solids - timer not relevant */}
@@ -766,7 +949,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         <View style={styles.modeToggleContainer}>
           <TouchableOpacity
             style={[styles.modeToggleBtn, foodMode === 'normal' && [styles.modeToggleBtnActive, { backgroundColor: theme.primary }]]}
-            onPress={() => { setFoodMode('normal'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            onPress={() => { setFoodMode('normal'); setSelectedDate(new Date()); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
           >
             <Text style={[styles.modeToggleText, foodMode === 'normal' && styles.modeToggleTextActive]}>
               {foodType === 'breast' ? t('tracking.timer') : foodType === 'pumping' ? t('tracking.timer') : foodType === 'bottle' ? t('tracking.now') : t('tracking.now')}
@@ -1198,6 +1381,21 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         })}
       </View>
 
+      {/* Date Picker Button — visible in duration and timerange modes */}
+      {sleepMode !== 'timer' && (
+        <TouchableOpacity
+          style={styles.datePickerBtn}
+          onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
+          <Text style={styles.datePickerBtnText}>
+            {selectedDate.toDateString() === new Date().toDateString()
+              ? t('tracking.today')
+              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {/* Timer Mode */}
       {sleepMode === 'timer' && (
         <View style={styles.sleepTimerSection}>
@@ -1245,49 +1443,40 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </View>
       )}
 
-      {/* Duration Mode */}
+      {/* Duration Mode — swipe drum picker */}
       {sleepMode === 'duration' && (
         <View style={styles.sleepDurationSection}>
-          <View style={styles.sleepDurationRow}>
-            <View style={styles.sleepDurationItem}>
-              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.hours')}</Text>
-              <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
-                <TouchableOpacity
-                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
-                  onPress={() => { setSleepHours(Math.max(0, sleepHours - 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>−</Text>
-                </TouchableOpacity>
-                <Text style={[styles.sleepSliderValue, { color: theme.textPrimary }]}>{sleepHours}</Text>
-                <TouchableOpacity
-                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
-                  onPress={() => { setSleepHours(Math.min(12, sleepHours + 1)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
+          {/* Column labels */}
+          <View style={[styles.sleepDurationRow, { marginBottom: 6 }]}>
+            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 84, textAlign: 'center' }]}>{t('tracking.minutes')}</Text>
+            <View style={{ width: 28 }} />
+            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 84, textAlign: 'center' }]}>{t('tracking.hours')}</Text>
+          </View>
+          {/* Drum columns + separator */}
+          <View style={[styles.sleepDurationRow, { alignItems: 'center' }]}>
+            {/* Minutes — right side (row-reverse) */}
+            <DrumColumn
+              value={sleepMinutes}
+              min={0}
+              max={59}
+              wrap={true}
+              onSteps={handleMinuteSteps}
+              isDarkMode={isDarkMode}
+              accentColor="#6366F1"
+              modalGesture={panGesture}
+            />
             <Text style={[styles.sleepDurationSeparator, { color: isDarkMode ? 'rgba(255,255,255,0.2)' : '#C7C7CC' }]}>:</Text>
-
-            <View style={styles.sleepDurationItem}>
-              <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary }]}>{t('tracking.minutes')}</Text>
-              <View style={[styles.sleepSlider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
-                <TouchableOpacity
-                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
-                  onPress={() => { setSleepMinutes(Math.max(0, sleepMinutes - 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>−</Text>
-                </TouchableOpacity>
-                <Text style={[styles.sleepSliderValue, { color: theme.textPrimary }]}>{String(sleepMinutes).padStart(2, '0')}</Text>
-                <TouchableOpacity
-                  style={[styles.sleepSliderBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#fff' }]}
-                  onPress={() => { setSleepMinutes(Math.min(59, sleepMinutes + 5)); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                >
-                  <Text style={[styles.sleepSliderBtnText, { color: isDarkMode ? '#fff' : '#1C1C1E' }]}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            {/* Hours — left side (row-reverse) */}
+            <DrumColumn
+              value={sleepHours}
+              min={0}
+              max={12}
+              wrap={false}
+              onSteps={handleHourSteps}
+              isDarkMode={isDarkMode}
+              accentColor="#6366F1"
+              modalGesture={panGesture}
+            />
           </View>
         </View>
       )}
@@ -1600,13 +1789,25 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               {type && (
                 <View style={styles.header}>
                   {type === 'diaper' ? (
-                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: config.accent }, diaperPulseStyle]} />
-                      <View style={[styles.emojiCircle, { backgroundColor: config.accent + '22' }]}>
-                        <Animated.View style={diaperWiggleStyle}>
-                          {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
-                        </Animated.View>
-                      </View>
+                    <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Double pulse rings */}
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: config.accent }, diaperPulseStyle]} />
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: config.accent }, diaperPulse2Style]} />
+                      {/* Floating sparkle stars */}
+                      <Animated.View style={[{ position: 'absolute', left: 6, top: 8 }, diaperStar1Style]}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: config.accent }} />
+                      </Animated.View>
+                      <Animated.View style={[{ position: 'absolute', right: 6, top: 8 }, diaperStar2Style]}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#34D399' }} />
+                      </Animated.View>
+                      {/* Icon with bounce + wiggle */}
+                      <Animated.View style={diaperBounceStyle}>
+                        <View style={[styles.emojiCircle, { backgroundColor: config.accent + '22', width: 56, height: 56, borderRadius: 28 }]}>
+                          <Animated.View style={diaperWiggleStyle}>
+                            {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.2 })}
+                          </Animated.View>
+                        </View>
+                      </Animated.View>
                     </View>
                   ) : type === 'food' ? (
                     <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
@@ -2222,10 +2423,10 @@ const styles = StyleSheet.create({
   sleepTimerPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.15)' },
 
   sleepDurationSection: { marginVertical: 16 },
-  sleepDurationRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 16 },
+  sleepDurationRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   sleepDurationItem: { alignItems: 'center' },
   sleepDurationLabel: { fontSize: 12, fontWeight: '600', color: '#8E8E93', marginBottom: 8, letterSpacing: 0.2 },
-  sleepDurationSeparator: { fontSize: 28, fontWeight: '300', color: '#C7C7CC', marginTop: 24 },
+  sleepDurationSeparator: { fontSize: 28, fontWeight: '300', color: '#C7C7CC' },
 
   sleepSlider: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 4 },
   sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },

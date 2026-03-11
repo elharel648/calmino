@@ -47,7 +47,7 @@ interface SupplementsModalProps {
     totalCount: number;
 }
 
-// Individual supplement card component
+// Individual supplement row component (list layout)
 const SupplementCard = memo(({
     id,
     name,
@@ -80,8 +80,7 @@ const SupplementCard = memo(({
         if (isEditMode) return;
 
         scale.value = withSequence(
-            withSpring(0.9, { damping: 5, stiffness: 400 }),
-            withSpring(1.1, { damping: 5, stiffness: 400 }),
+            withSpring(0.93, { damping: 5, stiffness: 400 }),
             withSpring(1, { damping: 10, stiffness: 300 })
         );
 
@@ -97,53 +96,65 @@ const SupplementCard = memo(({
     const IconComponent = ICON_MAP[icon] || Pill;
 
     return (
-        <Animated.View style={animStyle} entering={FadeIn.duration(300)}>
+        <Animated.View style={animStyle} entering={FadeIn.duration(250)}>
             <TouchableOpacity
                 style={[
-                    styles.medBtn,
+                    styles.rowItem,
                     {
                         backgroundColor: taken
-                            ? (isDarkMode ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.08)')
-                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB'),
+                            ? (isDarkMode ? 'rgba(52,199,89,0.12)' : 'rgba(52,199,89,0.07)')
+                            : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
                         borderColor: taken
-                            ? (isDarkMode ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.25)')
-                            : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
-                        opacity: isEditMode ? 0.7 : 1,
+                            ? (isDarkMode ? 'rgba(52,199,89,0.3)' : 'rgba(52,199,89,0.2)')
+                            : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
                     },
-                    taken && styles.medBtnDone
                 ]}
                 onPress={handlePress}
-                activeOpacity={0.8}
+                activeOpacity={0.75}
                 disabled={isEditMode}
             >
-                {/* Delete badge for custom supplements in edit mode */}
+                {/* Delete badge in edit mode */}
                 {isEditMode && (
                     <TouchableOpacity
                         style={styles.deleteBadge}
                         onPress={() => onRemove(id)}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                        <Trash2 size={14} color="#fff" strokeWidth={2.5} />
+                        <Trash2 size={13} color="#fff" strokeWidth={2.5} />
                     </TouchableOpacity>
                 )}
 
-                <View style={styles.medIconWrapper}>
-                    {taken ? (
-                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(52,199,89,0.35)' : '#34C759' }]}>
-                            <Check size={26} color="#fff" strokeWidth={2.5} />
-                        </View>
-                    ) : (
-                        <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                            <IconComponent size={24} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={1.5} />
-                        </View>
-                    )}
+                {/* Check/status indicator — left side (LTR left = RTL end) */}
+                <View style={[
+                    styles.checkCircle,
+                    taken && {
+                        backgroundColor: isDarkMode ? 'rgba(52,199,89,0.3)' : '#34C759',
+                        borderColor: 'transparent',
+                    },
+                    !taken && {
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+                        backgroundColor: 'transparent',
+                    },
+                ]}>
+                    {taken && <Check size={14} color="#fff" strokeWidth={3} />}
                 </View>
-                <Text style={[styles.medText, { color: theme.textPrimary }]}>
+
+                {/* Name — flex 1, right-aligned */}
+                <Text style={[styles.rowName, { color: theme.textPrimary }]} numberOfLines={1}>
                     {name}
                 </Text>
-                <Text style={[styles.medStatus, { color: taken ? theme.textSecondary : theme.textTertiary }]}>
-                    {taken ? 'ניתן' : 'לא ניתן'}
-                </Text>
+
+                {/* Icon circle — right side (RTL start) */}
+                <View style={[
+                    styles.rowIconCircle,
+                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
+                ]}>
+                    <IconComponent
+                        size={18}
+                        color={taken ? '#34C759' : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
+                        strokeWidth={1.75}
+                    />
+                </View>
             </TouchableOpacity>
         </Animated.View>
     );
@@ -422,13 +433,13 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                         </TouchableOpacity>
                     </View>
 
-                    {/* Supplements grid */}
+                    {/* Supplements list */}
                     <ScrollView
                         style={styles.scrollArea}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        <View style={styles.buttonsGrid}>
+                        <View style={styles.supplementsList}>
                             {allSupplements.map((supp) => (
                                 <SupplementCard
                                     key={supp.id}
@@ -445,28 +456,24 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                 />
                             ))}
 
-                            {/* Add button — always shown in edit mode */}
+                            {/* Add button — full-width row in edit mode */}
                             {isEditMode && !showAddForm && (
                                 <Animated.View entering={FadeIn.duration(300)}>
                                     <TouchableOpacity
                                         style={[
-                                            styles.medBtn,
-                                            styles.addBtn,
+                                            styles.rowItem,
+                                            styles.addRowBtn,
                                             {
-                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                                                backgroundColor: isDarkMode ? 'rgba(0,122,255,0.06)' : 'rgba(0,122,255,0.04)',
+                                                borderColor: isDarkMode ? 'rgba(0,122,255,0.25)' : 'rgba(0,122,255,0.18)',
                                                 borderStyle: 'dashed',
                                             },
                                         ]}
                                         onPress={() => setShowAddForm(true)}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={styles.medIconWrapper}>
-                                            <View style={[styles.medIcon, { backgroundColor: isDarkMode ? 'rgba(0,122,255,0.15)' : 'rgba(0,122,255,0.08)' }]}>
-                                                <Plus size={26} color="#007AFF" strokeWidth={2} />
-                                            </View>
-                                        </View>
-                                        <Text style={[styles.medText, { color: '#007AFF' }]}>
+                                        <Plus size={18} color="#007AFF" strokeWidth={2.5} />
+                                        <Text style={[styles.addRowText, { color: '#007AFF' }]}>
                                             הוסף תוסף
                                         </Text>
                                     </TouchableOpacity>
@@ -594,62 +601,58 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 4,
     },
-    buttonsGrid: {
+    supplementsList: {
+        flexDirection: 'column',
+        gap: 8,
+    },
+    rowItem: {
         flexDirection: 'row-reverse',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    medBtn: {
-        width: 140,
-        paddingVertical: 24,
-        paddingHorizontal: 16,
-        borderRadius: 22,
         alignItems: 'center',
-        borderWidth: 1.5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        elevation: 2,
-    },
-    addBtn: {
-        justifyContent: 'center',
-    },
-    medBtnDone: {
-        shadowOpacity: 0.10,
-        shadowRadius: 14,
-        elevation: 4,
-    },
-    medIconWrapper: {
-        marginBottom: 10,
-    },
-    medIcon: {
-        width: 60,
+        paddingHorizontal: 14,
         height: 60,
-        borderRadius: 20,
+        borderRadius: 16,
+        borderWidth: 1.5,
+    },
+    rowIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
+        marginLeft: 12,
     },
-    medText: {
+    rowName: {
+        flex: 1,
         fontSize: 16,
-        fontWeight: '700',
-        letterSpacing: -0.3,
-        textAlign: 'center',
-        marginTop: 6,
-    },
-    medStatus: {
-        fontSize: 13,
         fontWeight: '600',
-        marginTop: 3,
+        textAlign: 'right',
+        letterSpacing: -0.3,
+    },
+    checkCircle: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        borderWidth: 1.5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 4,
+    },
+    addRowBtn: {
+        justifyContent: 'center',
+        gap: 8,
+    },
+    addRowText: {
+        fontSize: 15,
+        fontWeight: '600',
+        textAlign: 'right',
     },
     deleteBadge: {
         position: 'absolute',
         top: -6,
-        left: -6,
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        right: -6,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
         backgroundColor: '#EF4444',
         alignItems: 'center',
         justifyContent: 'center',
