@@ -1040,14 +1040,19 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <TextInput style={styles.textArea} value={illnessNote} onChangeText={setIllnessNote} placeholder="תסמינים, טיפול..." placeholderTextColor="#9CA3AF" multiline />
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={() => saveEntry('illness', {
-                name: selectedIllness === 'custom' ? customIllness : selectedIllness,
-                note: illnessNote,
-                startDate: illnessStartDate.toISOString(),
-                endDate: illnessOngoing ? null : illnessEndDate?.toISOString() || null,
-                ongoing: illnessOngoing,
-                durationDays: illnessOngoing ? null : (illnessEndDate ? Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24))) : null),
-            })} disabled={saveSuccess}>
+            <TouchableOpacity style={styles.saveButton} onPress={() => {
+                const saveData: any = {
+                    name: selectedIllness === 'custom' ? customIllness : selectedIllness,
+                    note: illnessNote,
+                    startDate: illnessStartDate.toISOString(),
+                    ongoing: illnessOngoing,
+                };
+                if (!illnessOngoing && illnessEndDate) {
+                    saveData.endDate = illnessEndDate.toISOString();
+                    saveData.durationDays = Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+                }
+                saveEntry('illness', saveData);
+            }} disabled={saveSuccess}>
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
                     {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>שמור</Text>}
                 </View>
