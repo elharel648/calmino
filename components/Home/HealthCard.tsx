@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Slider from '@react-native-community/slider';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { auth, db } from '../../services/firebaseConfig';
 import { addMedication, getMedications, deleteMedication, logMedicationTaken } from '../../services/medicationService';
@@ -116,6 +117,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [selectedIllness, setSelectedIllness] = useState<string | null>(null);
     const [customIllness, setCustomIllness] = useState('');
     const [illnessNote, setIllnessNote] = useState('');
+    const [illnessStartDate, setIllnessStartDate] = useState<Date>(new Date());
+    const [illnessEndDate, setIllnessEndDate] = useState<Date | null>(null);
+    const [showIllnessStartPicker, setShowIllnessStartPicker] = useState(false);
+    const [showIllnessEndPicker, setShowIllnessEndPicker] = useState(false);
+    const [illnessOngoing, setIllnessOngoing] = useState(true);
 
     // Medication state (new form-based system)
     const [savedMedications, setSavedMedications] = useState<Medication[]>([]);
@@ -893,12 +899,155 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 </View>
             )}
 
+            {/* Date Range */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>תאריכים</Text>
+
+                {/* Start Date */}
+                <TouchableOpacity
+                    style={{
+                        flexDirection: 'row-reverse',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: '#F9FAFB',
+                        borderRadius: 14,
+                        padding: 14,
+                        borderWidth: 1.5,
+                        borderColor: '#E5E7EB',
+                        marginBottom: 10,
+                    }}
+                    onPress={() => setShowIllnessStartPicker(!showIllnessStartPicker)}
+                >
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', textAlign: 'right' }}>תחילת מחלה</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Clock size={14} color="#EF4444" />
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>
+                            {illnessStartDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                {showIllnessStartPicker && (
+                    <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' }}>
+                        <DateTimePicker
+                            value={illnessStartDate}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={(e: any, d?: Date) => {
+                                if (Platform.OS === 'android') setShowIllnessStartPicker(false);
+                                if (d) setIllnessStartDate(d);
+                            }}
+                            maximumDate={new Date()}
+                            locale="he-IL"
+                            style={{ height: 160 }}
+                        />
+                        {Platform.OS === 'ios' && (
+                            <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessStartPicker(false)}>
+                                <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>אישור</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+
+                {/* Ongoing toggle */}
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#6B7280' }}>המחלה עדיין פעילה</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <TouchableOpacity
+                            onPress={() => { setIllnessOngoing(true); setIllnessEndDate(null); }}
+                            style={{
+                                paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10,
+                                backgroundColor: illnessOngoing ? '#FEE2E2' : '#F3F4F6',
+                            }}
+                        >
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: illnessOngoing ? '#EF4444' : '#9CA3AF' }}>כן</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => { setIllnessOngoing(false); setIllnessEndDate(new Date()); }}
+                            style={{
+                                paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10,
+                                backgroundColor: !illnessOngoing ? '#DCFCE7' : '#F3F4F6',
+                            }}
+                        >
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: !illnessOngoing ? '#10B981' : '#9CA3AF' }}>החלימה</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* End Date (only if not ongoing) */}
+                {!illnessOngoing && (
+                    <>
+                        <TouchableOpacity
+                            style={{
+                                flexDirection: 'row-reverse',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: '#F0FDF4',
+                                borderRadius: 14,
+                                padding: 14,
+                                borderWidth: 1.5,
+                                borderColor: '#BBF7D0',
+                                marginBottom: 10,
+                            }}
+                            onPress={() => setShowIllnessEndPicker(!showIllnessEndPicker)}
+                        >
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', textAlign: 'right' }}>סיום / החלמה</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Clock size={14} color="#10B981" />
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: '#10B981' }}>
+                                    {illnessEndDate?.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }) || '-'}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        {showIllnessEndPicker && illnessEndDate && (
+                            <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' }}>
+                                <DateTimePicker
+                                    value={illnessEndDate}
+                                    mode="date"
+                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    onChange={(e: any, d?: Date) => {
+                                        if (Platform.OS === 'android') setShowIllnessEndPicker(false);
+                                        if (d) setIllnessEndDate(d);
+                                    }}
+                                    minimumDate={illnessStartDate}
+                                    maximumDate={new Date()}
+                                    locale="he-IL"
+                                    style={{ height: 160 }}
+                                />
+                                {Platform.OS === 'ios' && (
+                                    <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessEndPicker(false)}>
+                                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#10B981' }}>אישור</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+                    </>
+                )}
+
+                {/* Duration summary */}
+                {!illnessOngoing && illnessEndDate && (
+                    <View style={{ backgroundColor: '#F9FAFB', borderRadius: 10, padding: 10, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: '#6B7280' }}>
+                            משך: {Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24)))} ימים
+                        </Text>
+                    </View>
+                )}
+            </View>
+
             <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>הערות</Text>
                 <TextInput style={styles.textArea} value={illnessNote} onChangeText={setIllnessNote} placeholder="תסמינים, טיפול..." placeholderTextColor="#9CA3AF" multiline />
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={() => saveEntry('illness', { name: selectedIllness === 'custom' ? customIllness : selectedIllness, note: illnessNote })} disabled={saveSuccess}>
+            <TouchableOpacity style={styles.saveButton} onPress={() => saveEntry('illness', {
+                name: selectedIllness === 'custom' ? customIllness : selectedIllness,
+                note: illnessNote,
+                startDate: illnessStartDate.toISOString(),
+                endDate: illnessOngoing ? null : illnessEndDate?.toISOString() || null,
+                ongoing: illnessOngoing,
+                durationDays: illnessOngoing ? null : (illnessEndDate ? Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24))) : null),
+            })} disabled={saveSuccess}>
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
                     {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>שמור</Text>}
                 </View>
