@@ -93,9 +93,6 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     };
 
     const toggleActionVisibility = (key: QuickActionKey) => {
-        // Cannot hide protected actions
-        if (PROTECTED_ACTIONS.includes(key)) return;
-
         const newHidden = hiddenActions.includes(key)
             ? hiddenActions.filter(k => k !== key)
             : [...hiddenActions, key];

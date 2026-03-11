@@ -265,11 +265,13 @@ export const saveAlbumImage = async (babyId: string, month: number, imageUrl: st
   });
 };
 
-export const addMilestone = async (babyId: string, title: string, date: Date) => {
+export const addMilestone = async (babyId: string, title: string, date: Date, notes?: string) => {
   if (!babyId) return;
   const babyRef = doc(db, 'babies', babyId);
+  const milestone: Record<string, any> = { title, date: Timestamp.fromDate(date) };
+  if (notes?.trim()) milestone.notes = notes.trim();
   await updateDoc(babyRef, {
-    milestones: arrayUnion({ title, date: Timestamp.fromDate(date) })
+    milestones: arrayUnion(milestone)
   });
 };
 

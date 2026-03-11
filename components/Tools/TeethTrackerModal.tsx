@@ -2,13 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions, PanResponder } from 'react-native';
 import { Check, Sparkles, X, Calendar, TrendingUp, Award, Clock } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { TeethIcon } from '../Home/quickActionsConfig';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { db, auth } from '../../services/firebaseConfig';
 import { logger } from '../../utils/logger';
-import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { doc, getDoc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
 import { saveEventToFirebase } from '../../services/firebaseService';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -390,7 +389,7 @@ export default function TeethTrackerModal({
                                 <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#8B5CF6' }, teethIconPulseStyle]} />
                                 <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
                                     <Animated.View style={teethIconBounceStyle}>
-                                        <MaterialCommunityIcons name="tooth" size={28} color="#8B5CF6" />
+                                        <TeethIcon size={28} color="#8B5CF6" strokeWidth={2} />
                                     </Animated.View>
                                 </View>
                             </View>
@@ -399,12 +398,11 @@ export default function TeethTrackerModal({
                     </View>
 
                     {/* Scrollable Content */}
-                    <ScrollFadeWrapper fadeHeight={80}>
-                        <ScrollView
-                            style={styles.scrollView}
-                            contentContainerStyle={styles.scrollContent}
-                            showsVerticalScrollIndicator={false}
-                        >
+                    <ScrollView
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
                             {/* Main Chart */}
                             <Animated.View
                                 entering={ANIMATIONS.fadeInDown(100)}
@@ -556,7 +554,6 @@ export default function TeethTrackerModal({
                                 );
                             })()}
                         </ScrollView>
-                    </ScrollFadeWrapper>
 
                     {/* Date Picker Modal */}
                     {showDatePicker && (

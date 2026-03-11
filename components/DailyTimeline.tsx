@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
 import { Utensils, Moon, Droplets, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
+import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
 import Svg, { Path } from 'react-native-svg';
 import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
@@ -391,7 +392,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     } else if (event.type === 'diaper') {
       return event.note || '';
     } else if (event.type === 'custom') {
-      return event.subType || '';
+      return '';
     } else if (event.type === 'teeth') {
       return event.note || '';
     }
@@ -528,7 +529,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                 {/* Events for this date — limited to EVENTS_PER_DAY unless expanded */}
                 {visibleDayEvents.map((event, index) => {
                   const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
-                  const Icon = config.icon;
+                  const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
                   const details = getEventDetails(event);
                   let subtext = getEventSubtext(event);
 
@@ -651,7 +652,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           /* Regular Flat Rendering (Fallback or Today View) */
           visibleEvents.map((event, index) => {
             const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
-            const Icon = config.icon;
+            const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
             const isLast = index === visibleEvents.length - 1;
             const details = getEventDetails(event);
             const subtext = getEventSubtext(event);

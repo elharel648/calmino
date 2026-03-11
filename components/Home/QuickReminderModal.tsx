@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import {
     X, Bell, Clock, Calendar, Check, Trash2, List, Plus,
-    ShoppingCart, Baby, Pill, Phone, Sparkles, Zap, Moon, Sun
+    Pill, Stethoscope, Sparkles, Zap, Moon, Sun
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
@@ -29,6 +29,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { notificationService } from '../../services/notificationService';
 import { logger } from '../../utils/logger';
 import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
+import DiaperIcon from '../Common/DiaperIcon';
+import BottleIcon from '../Common/BottleIcon';
 import Reanimated, {
     FadeInDown,
     FadeInUp,
@@ -485,10 +487,10 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                     snapToAlignment="end"
                                 >
                                     {[
-                                        { label: t('tracking.bottle'), icon: Baby, color: '#60A5FA' },
-                                        { label: t('tracking.diapers'), icon: ShoppingCart, color: '#34D399' },
+                                        { label: t('tracking.bottle'), icon: BottleIcon, color: '#60A5FA' },
+                                        { label: t('tracking.diapers'), icon: DiaperIcon, color: '#34D399' },
                                         { label: t('health.medicine'), icon: Pill, color: '#F472B6' },
-                                        { label: 'רופא', icon: Phone, color: '#A78BFA' },
+                                        { label: 'רופא', icon: Stethoscope, color: '#A78BFA' },
                                         { label: 'לישון', icon: Moon, color: '#818CF8' },
                                     ].map((p, i) => (
                                         <TouchableOpacity
@@ -913,7 +915,7 @@ const styles = StyleSheet.create({
     presetsContainer: {
         paddingHorizontal: 20,
         gap: 12,
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
     },
     premiumSlider: {
         width: 110,

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Utensils, Moon, Music, Heart, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell } from 'lucide-react-native';
+import { Utensils, Moon, Music, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
 import DiaperIcon from '../Common/DiaperIcon';
+import SOSIcon from '../Common/SOSIcon';
 
 export type QuickActionMeta = {
     icon: any;
@@ -25,7 +26,7 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     diaper: { icon: DiaperIcon, labelKey: 'actions.diaper', activeLabelKey: 'actions.diaper' },
     supplements: { icon: Pill, labelKey: 'actions.supplements', activeLabelKey: 'actions.supplements' },
     whiteNoise: { icon: Music, labelKey: 'actions.whiteNoise', activeLabelKey: 'actions.whiteNoise' },
-    sos: { icon: Heart, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },
+    sos: { icon: SOSIcon, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },
     health: { icon: HeartPulse, labelKey: 'actions.health', activeLabelKey: 'actions.health' },
     growth: { icon: TrendingUp, labelKey: 'actions.growth', activeLabelKey: 'actions.growth' },
     milestones: { icon: Award, labelKey: 'actions.milestones', activeLabelKey: 'actions.milestones' },

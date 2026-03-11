@@ -15,7 +15,7 @@ import {
     PanResponder,
     ActivityIndicator,
 } from 'react-native';
-import { TrendingUp, FileText, ChevronDown, ChevronUp, Calendar, Trash2 } from 'lucide-react-native';
+import { TrendingUp, FileText, ChevronDown, ChevronUp, Calendar, Trash2, Info } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -65,9 +65,11 @@ export default function GrowthModal({
     const [notes, setNotes] = useState('');
     const [showNotes, setShowNotes] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [showInfoTip, setShowInfoTip] = useState(false);
 
     const [measurementDate, setMeasurementDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [pendingDate, setPendingDate] = useState<Date | null>(null);
 
     const isEditMode = !!editMeasurement;
 
@@ -302,9 +304,12 @@ export default function GrowthModal({
     };
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios');
-        if (selectedDate) {
-            setMeasurementDate(selectedDate);
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false);
+            if (selectedDate) setMeasurementDate(selectedDate);
+        } else {
+            // iOS: buffer in pendingDate, confirm on Done
+            if (selectedDate) setPendingDate(selectedDate);
         }
     };
 
@@ -348,6 +353,27 @@ export default function GrowthModal({
 
                     {/* Clean Header with Animated Icon */}
                     <Animated.View style={[styles.header, headerStyle]} {...panResponder.panHandlers}>
+                        {/* Info button — top left (RTL = visual right) */}
+                        <TouchableOpacity
+                            style={styles.infoBtn}
+                            onPress={() => {
+                                setShowInfoTip(v => !v);
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Info size={18} color={ACCENT} strokeWidth={2} />
+                        </TouchableOpacity>
+
+                        {/* Tooltip bubble */}
+                        {showInfoTip && (
+                            <View style={[styles.tooltip, { backgroundColor: isDarkMode ? '#1C2E26' : '#ECFDF5', borderColor: isDarkMode ? '#2D4A3A' : '#A7F3D0' }]}>
+                                <Text style={[styles.tooltipText, { color: isDarkMode ? '#6EE7B7' : '#065F46' }]}>
+                                    מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק
+                                </Text>
+                            </View>
+                        )}
+
                         <Animated.View style={[styles.iconContainer, iconStyle]}>
                             <LinearGradient
                                 colors={[ACCENT, '#34D399']}
@@ -397,22 +423,40 @@ export default function GrowthModal({
                                 </TouchableOpacity>
 
                                 {showDatePicker && (
-                                    <View>
+                                    <View style={[styles.datePickerWrapper, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E5EA' }]}>
+                                        {Platform.OS === 'ios' && (
+                                            <View style={styles.datePickerHeader}>
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        setPendingDate(null);
+                                                        setShowDatePicker(false);
+                                                    }}
+                                                    style={styles.datePickerBtn}
+                                                >
+                                                    <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 15 }}>{t('common.cancel')}</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        if (pendingDate) setMeasurementDate(pendingDate);
+                                                        setPendingDate(null);
+                                                        setShowDatePicker(false);
+                                                    }}
+                                                    style={styles.datePickerBtn}
+                                                >
+                                                    <Text style={{ color: '#007AFF', fontWeight: '700', fontSize: 15 }}>{t('common.done')}</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
                                         <DateTimePicker
-                                            value={measurementDate}
+                                            value={pendingDate ?? measurementDate}
                                             mode="date"
-                                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                            display={Platform.OS === 'ios' ? 'inline' : 'default'}
                                             onChange={handleDateChange}
                                             maximumDate={new Date()}
+                                            locale="he-IL"
+                                            accentColor={ACCENT}
+                                            themeVariant={isDarkMode ? 'dark' : 'light'}
                                         />
-                                        {Platform.OS === 'ios' && (
-                                            <TouchableOpacity
-                                                style={[styles.dateConfirmBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}
-                                                onPress={() => setShowDatePicker(false)}
-                                            >
-                                                <Text style={{ color: '#007AFF', fontWeight: '600', fontSize: 15 }}>{t('common.confirm')}</Text>
-                                            </TouchableOpacity>
-                                        )}
                                     </View>
                                 )}
 
@@ -624,6 +668,34 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
         paddingHorizontal: 24,
         gap: 10,
+        position: 'relative',
+    },
+    infoBtn: {
+        position: 'absolute',
+        top: 16,
+        right: 24,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tooltip: {
+        position: 'absolute',
+        top: 52,
+        left: 16,
+        right: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        zIndex: 10,
+    },
+    tooltipText: {
+        fontSize: 13,
+        fontWeight: '500',
+        textAlign: 'right',
+        lineHeight: 20,
     },
     iconContainer: {
         marginBottom: 4,
@@ -672,11 +744,23 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         marginBottom: 20,
     },
-    dateConfirmBtn: {
-        alignItems: 'center' as const,
-        paddingVertical: 10,
-        marginBottom: 12,
-        borderRadius: 10,
+    datePickerWrapper: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 20,
+        borderWidth: 1,
+    },
+    datePickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+    },
+    datePickerBtn: {
+        paddingHorizontal: 4,
+        paddingVertical: 2,
     },
     dateText: {
         fontSize: 16,

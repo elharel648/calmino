@@ -1,7 +1,9 @@
 import React, { memo, useCallback, useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions, ScrollView, Animated as RNAnimated, TouchableWithoutFeedback } from 'react-native';
-import { X, Eye, EyeOff, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions, Animated as RNAnimated, TouchableWithoutFeedback, PanResponder } from 'react-native';
+import { Eye, EyeOff, RotateCcw, GripVertical } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -15,7 +17,7 @@ interface QuickActionsEditModalProps {
 }
 
 const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visible, onClose }) => {
-    const { actionOrder, hiddenActions, toggleActionVisibility, resetToDefault, isProtected, setActionOrder } = useQuickActions();
+    const { actionOrder, hiddenActions, toggleActionVisibility, resetToDefault, setActionOrder } = useQuickActions();
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const [localOrder, setLocalOrder] = useState<QuickActionKey[]>([]);
@@ -35,39 +37,55 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
         }
     }, [visible, actionOrder]);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         RNAnimated.timing(slideAnim, {
             toValue: SCREEN_HEIGHT,
             duration: 250,
             useNativeDriver: true,
         }).start(onClose);
-    };
+    }, [slideAnim, onClose]);
 
-    const moveItem = useCallback((key: QuickActionKey, direction: 'up' | 'down') => {
-        setLocalOrder(prev => {
-            const idx = prev.indexOf(key);
-            if (idx === -1) return prev;
-            if (direction === 'up' && idx === 0) return prev;
-            if (direction === 'down' && idx === prev.length - 1) return prev;
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => false,
+            onMoveShouldSetPanResponder: (_, gs) =>
+                gs.dy > 8 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+            onPanResponderMove: (_, gs) => {
+                if (gs.dy > 0) slideAnim.setValue(gs.dy);
+            },
+            onPanResponderRelease: (_, gs) => {
+                if (gs.dy > 100 || gs.vy > 0.5) {
+                    RNAnimated.timing(slideAnim, {
+                        toValue: SCREEN_HEIGHT,
+                        duration: 220,
+                        useNativeDriver: true,
+                    }).start(onClose);
+                } else {
+                    RNAnimated.spring(slideAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }).start();
+                }
+            },
+        })
+    ).current;
 
-            const newOrder = [...prev];
-            const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-            [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
-            setActionOrder(newOrder);
-            return newOrder;
-        });
+    const handleDragEnd = useCallback(({ data }: { data: QuickActionKey[] }) => {
+        setLocalOrder(data);
+        setActionOrder(data);
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
     }, [setActionOrder]);
 
     const handleToggleVisibility = useCallback((key: QuickActionKey) => {
-        if (isProtected(key)) return;
         toggleActionVisibility(key);
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-    }, [toggleActionVisibility, isProtected]);
+    }, [toggleActionVisibility]);
 
     const handleReset = useCallback(() => {
         resetToDefault();
@@ -76,6 +94,87 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
         }
     }, [resetToDefault]);
 
+    const renderItem = useCallback(({ item: key, drag, isActive }: RenderItemParams<QuickActionKey>) => {
+        const Icon = QUICK_ACTION_BASE_CONFIG[key].icon;
+        const labelKey = QUICK_ACTION_BASE_CONFIG[key].labelKey;
+        const colors = theme.actionColors[key as keyof typeof theme.actionColors];
+        const isHidden = hiddenActions.includes(key);
+        const iconBg = colors?.lightColor || (isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF');
+        const iconColor = colors?.color || theme.textPrimary;
+
+        return (
+            <ScaleDecorator>
+                <TouchableOpacity
+                    activeOpacity={0.85}
+                    onLongPress={drag}
+                    delayLongPress={200}
+                    disabled={isActive}
+                    style={[
+                        styles.itemContainer,
+                        {
+                            backgroundColor: isActive
+                                ? (isDarkMode ? '#2A2A2A' : '#F0F4FF')
+                                : (isDarkMode ? '#1E1E1E' : '#F9FAFB'),
+                            borderColor: isActive
+                                ? theme.primary
+                                : (isDarkMode ? '#333' : '#E5E7EB'),
+                        },
+                        isHidden && {
+                            opacity: 0.5,
+                            backgroundColor: isDarkMode ? '#2A1515' : '#FEE2E2',
+                            borderColor: isDarkMode ? '#4A2020' : '#FECACA',
+                        },
+                    ]}
+                >
+                    {/* Visibility Toggle (right side, RTL) */}
+                    <TouchableOpacity
+                        style={[
+                            styles.visibilityBtn,
+                            {
+                                backgroundColor: isHidden
+                                    ? (isDarkMode ? '#3A1515' : '#FEE2E2')
+                                    : (isDarkMode ? '#0A2A1A' : '#D1FAE5'),
+                            }
+                        ]}
+                        onPress={() => handleToggleVisibility(key)}
+                        onLongPress={() => {}}
+                    >
+                        {isHidden ? (
+                            <EyeOff size={18} color="#EF4444" />
+                        ) : (
+                            <Eye size={18} color="#10B981" />
+                        )}
+                    </TouchableOpacity>
+
+                    {/* Icon */}
+                    <View style={[
+                        styles.iconContainer,
+                        {
+                            backgroundColor: iconBg,
+                            shadowColor: isDarkMode ? 'transparent' : '#000',
+                        }
+                    ]}>
+                        <Icon size={19} color={iconColor} strokeWidth={1.5} />
+                    </View>
+
+                    {/* Label */}
+                    <Text style={[
+                        styles.itemLabel,
+                        { color: theme.textPrimary },
+                        isHidden && { color: theme.textTertiary, textDecorationLine: 'line-through' },
+                    ]}>
+                        {t(labelKey)}
+                    </Text>
+
+                    {/* Drag Handle indicator (left side, RTL) */}
+                    <View style={styles.dragHandle}>
+                        <GripVertical size={20} color={isDarkMode ? '#666' : '#C7C7CC'} strokeWidth={1.5} />
+                    </View>
+                </TouchableOpacity>
+            </ScaleDecorator>
+        );
+    }, [theme, isDarkMode, hiddenActions, handleToggleVisibility, t]);
+
     return (
         <Modal
             visible={visible}
@@ -83,6 +182,7 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
             transparent={true}
             onRequestClose={handleClose}
         >
+            <GestureHandlerRootView style={{ flex: 1 }}>
             <View style={styles.overlay}>
                 <TouchableWithoutFeedback onPress={handleClose}>
                     <View style={styles.backdrop} />
@@ -95,123 +195,35 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                         transform: [{ translateY: slideAnim }],
                     }
                 ]}>
-                    {/* Drag Handle */}
-                    <View style={styles.handleContainer}>
+                    {/* Drag Handle — swipe down zone */}
+                    <View style={styles.handleContainer} {...panResponder.panHandlers}>
                         <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
                     </View>
 
                     {/* Header */}
                     <View style={[styles.header, { borderBottomColor: theme.border, flexDirection: 'row-reverse' }]}>
-                        <TouchableOpacity style={[styles.closeBtn, { backgroundColor: isDarkMode ? '#222' : '#F3F4F6' }]} onPress={handleClose}>
-                            <X size={22} color={theme.textPrimary} />
-                        </TouchableOpacity>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>עריכת פעולות מהירות</Text>
                         <TouchableOpacity style={[styles.resetBtn, { backgroundColor: isDarkMode ? '#1E1040' : '#EEF2FF' }]} onPress={handleReset}>
                             <RotateCcw size={18} color={theme.primary} />
                         </TouchableOpacity>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>עריכת פעולות מהירות</Text>
+                        <View style={styles.resetBtn} />
                     </View>
 
                     {/* Instructions */}
                     <View style={styles.instructionsRow}>
-                        <Text style={[styles.instructionsText, { color: theme.textTertiary }]}>השתמש בחצים כדי לשנות סדר</Text>
+                        <Text style={[styles.instructionsText, { color: theme.textTertiary }]}>לחיצה ארוכה על שורה כדי לגרור ולשנות סדר • לחץ על העין להסתיר</Text>
                     </View>
 
-                    {/* List */}
-                    <ScrollView
-                        style={styles.listContainer}
+                    {/* Draggable List */}
+                    <DraggableFlatList
+                        data={localOrder}
+                        onDragEnd={handleDragEnd}
+                        keyExtractor={(item) => item}
+                        renderItem={renderItem}
                         contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {localOrder.map((key, index) => {
-                            const Icon = QUICK_ACTION_BASE_CONFIG[key].icon;
-                            const labelKey = QUICK_ACTION_BASE_CONFIG[key].labelKey;
-                            const colors = theme.actionColors[key as keyof typeof theme.actionColors];
-                            const isHidden = hiddenActions.includes(key);
-                            const isItemProtected = isProtected(key);
-
-                            // Fallback color if not found in theme
-                            const iconColor = colors?.accentColor || theme.primary;
-
-                            return (
-                                <View
-                                    key={key}
-                                    style={[
-                                        styles.itemContainer,
-                                        {
-                                            backgroundColor: isDarkMode ? '#1E1E1E' : '#F9FAFB',
-                                            borderColor: isDarkMode ? '#333' : '#E5E7EB',
-                                        },
-                                        isHidden && {
-                                            opacity: 0.5,
-                                            backgroundColor: isDarkMode ? '#2A1515' : '#FEE2E2',
-                                            borderColor: isDarkMode ? '#4A2020' : '#FECACA',
-                                        },
-                                    ]}
-                                >
-                                    {/* Move Arrows */}
-                                    <View style={styles.arrowsColumn}>
-                                        <TouchableOpacity
-                                            onPress={() => moveItem(key, 'up')}
-                                            disabled={index === 0}
-                                            style={styles.arrowBtn}
-                                            hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
-                                        >
-                                            <ChevronUp size={18} color={index === 0 ? (isDarkMode ? '#444' : '#D1D5DB') : theme.primary} strokeWidth={2.5} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => moveItem(key, 'down')}
-                                            disabled={index === localOrder.length - 1}
-                                            style={styles.arrowBtn}
-                                            hitSlop={{ top: 4, bottom: 8, left: 8, right: 8 }}
-                                        >
-                                            <ChevronDown size={18} color={index === localOrder.length - 1 ? (isDarkMode ? '#444' : '#D1D5DB') : theme.primary} strokeWidth={2.5} />
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    {/* Icon */}
-                                    <View style={[styles.iconCircle, { backgroundColor: iconColor + '15' }]}>
-                                        <Icon size={19} color={iconColor} strokeWidth={1.5} />
-                                    </View>
-
-                                    {/* Label */}
-                                    <Text style={[
-                                        styles.itemLabel,
-                                        { color: theme.textPrimary },
-                                        isHidden && { color: theme.textTertiary, textDecorationLine: 'line-through' },
-                                    ]}>
-                                        {t(labelKey)}
-                                    </Text>
-
-                                    {/* Visibility Toggle */}
-                                    {!isItemProtected && (
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.visibilityBtn,
-                                                {
-                                                    backgroundColor: isHidden
-                                                        ? (isDarkMode ? '#3A1515' : '#FEE2E2')
-                                                        : (isDarkMode ? '#0A2A1A' : '#D1FAE5'),
-                                                }
-                                            ]}
-                                            onPress={() => handleToggleVisibility(key)}
-                                        >
-                                            {isHidden ? (
-                                                <EyeOff size={18} color="#EF4444" />
-                                            ) : (
-                                                <Eye size={18} color="#10B981" />
-                                            )}
-                                        </TouchableOpacity>
-                                    )}
-
-                                    {isItemProtected && (
-                                        <View style={[styles.protectedBadge, { backgroundColor: isDarkMode ? '#1E1040' : '#E0E7FF' }]}>
-                                            <Text style={[styles.protectedText, { color: theme.primary }]}>חובה</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            );
-                        })}
-                    </ScrollView>
+                        containerStyle={styles.listContainer}
+                        activationDistance={8}
+                    />
 
                     {/* Save Button */}
                     <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary }]} onPress={handleClose}>
@@ -219,6 +231,7 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                     </TouchableOpacity>
                 </RNAnimated.View>
             </View>
+            </GestureHandlerRootView>
         </Modal>
     );
 });
@@ -237,8 +250,7 @@ const styles = StyleSheet.create({
     modalContainer: {
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        minHeight: SCREEN_HEIGHT * 0.65,
-        maxHeight: SCREEN_HEIGHT * 0.85,
+        height: SCREEN_HEIGHT * 0.75,
         paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     },
     handleContainer: {
@@ -263,13 +275,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
     },
-    closeBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
     resetBtn: {
         width: 36,
         height: 36,
@@ -278,7 +283,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     instructionsRow: {
-        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
@@ -303,21 +307,17 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
     },
-    arrowsColumn: {
-        alignItems: 'center',
-        marginLeft: 8,
-        gap: 2,
-    },
-    arrowBtn: {
-        padding: 2,
-    },
-    iconCircle: {
+    iconContainer: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 12,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 3,
+        elevation: 1,
     },
     itemLabel: {
         flex: 1,
@@ -337,11 +337,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
-        marginLeft: 8,
+        marginRight: 8,
     },
     protectedText: {
         fontSize: 11,
         fontWeight: '600',
+    },
+    dragHandle: {
+        paddingHorizontal: 6,
+        paddingVertical: 8,
+        marginLeft: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     saveBtn: {
         marginHorizontal: 20,

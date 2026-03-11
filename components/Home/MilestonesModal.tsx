@@ -221,7 +221,7 @@ export default function MilestonesModal({
 
         setLoading(true);
         try {
-            await addMilestone(baby.id, title.trim(), date);
+            await addMilestone(baby.id, title.trim(), date, notes);
             await refresh();
 
             if (Platform.OS !== 'web') {
@@ -297,7 +297,7 @@ export default function MilestonesModal({
 
     return (
         <Modal visible={visible} transparent animationType="none">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20} style={styles.overlay}>
                 <TouchableWithoutFeedback onPress={handleClose}>
                     <RNAnimatedView style={[styles.backdrop, { opacity: backdropAnim, backgroundColor: theme.modalOverlay }]}>
                         {Platform.OS === 'ios' && (
@@ -470,6 +470,11 @@ export default function MilestonesModal({
                                                 textAlign="right"
                                                 multiline
                                                 numberOfLines={2}
+                                                onFocus={() => {
+                                                    setTimeout(() => {
+                                                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                                                    }, 300);
+                                                }}
                                             />
                                         </View>
                                         <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('tracking.notes')}</Text>

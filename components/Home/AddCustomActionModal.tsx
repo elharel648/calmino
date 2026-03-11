@@ -3,6 +3,28 @@ import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence,
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug } from 'lucide-react-native';
 
+// Exported icon map for use in DailyTimeline and other components
+export const CUSTOM_ICON_MAP: Record<string, React.ComponentType<any>> = {
+    sparkles: Sparkles,
+    baby: Baby,
+    bath: Bath,
+    stethoscope: Stethoscope,
+    pill: Pill,
+    thermometer: Thermometer,
+    camera: Camera,
+    book: Book,
+    music: Music,
+    star: Star,
+    heart: Heart,
+    smile: Smile,
+    gamepad: Gamepad2,
+    sun: Sun,
+    droplets: Droplets,
+    footprints: Footprints,
+    gift: Gift,
+    zap: Zap,
+};
+
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/ThemeContext';

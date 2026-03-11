@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated as RNAnimated, PanResponder, Dimensions } from 'react-native';
-import { Phone, Siren, Shield, Skull, AlertTriangle } from 'lucide-react-native';
+import { Phone, Siren, Shield, Skull } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withDelay, withSpring } from 'react-native-reanimated';
 import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 import { useLanguage } from '../context/LanguageContext';
+import SOSIcon from './Common/SOSIcon';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -24,8 +25,12 @@ export default function CalmModeModal({
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
   const backdropAnim = useRef(new RNAnimated.Value(0)).current;
 
-  // Premium animation
-  const iconScaleAnim = useSharedValue(1);
+  // Animated header values
+  const iconBounce = useSharedValue(0.7);
+  const ring1Scale = useSharedValue(1);
+  const ring1Opacity = useSharedValue(0);
+  const ring2Scale = useSharedValue(1);
+  const ring2Opacity = useSharedValue(0);
 
   // Track if we're dragging and scroll position
   const isDragging = useRef(false);
@@ -57,20 +62,36 @@ export default function CalmModeModal({
         }),
       ]).start();
 
-      // Start premium breathing animation for icon
-      iconScaleAnim.value = withRepeat(
-        withSequence(
-          withTiming(1.08, { duration: 1500 }),
-          withTiming(1, { duration: 1500 })
-        ),
-        -1,
-        true
+      // Icon bounce in
+      iconBounce.value = withSpring(1, { damping: 10, stiffness: 180 });
+
+      // Pulse ring 1 — heartbeat rhythm
+      ring1Scale.value = withRepeat(
+        withSequence(withTiming(1, { duration: 0 }), withTiming(1.9, { duration: 700 })),
+        -1, false
       );
+      ring1Opacity.value = withRepeat(
+        withSequence(withTiming(0.55, { duration: 0 }), withTiming(0, { duration: 700 })),
+        -1, false
+      );
+      // Pulse ring 2 — delayed for offset effect
+      ring2Scale.value = withDelay(350, withRepeat(
+        withSequence(withTiming(1, { duration: 0 }), withTiming(1.9, { duration: 700 })),
+        -1, false
+      ));
+      ring2Opacity.value = withDelay(350, withRepeat(
+        withSequence(withTiming(0.35, { duration: 0 }), withTiming(0, { duration: 700 })),
+        -1, false
+      ));
     } else {
       slideAnim.setValue(SCREEN_HEIGHT);
       fadeAnim.setValue(0);
       backdropAnim.setValue(0);
-      iconScaleAnim.value = 1;
+      iconBounce.value = 0.7;
+      ring1Scale.value = 1;
+      ring1Opacity.value = 0;
+      ring2Scale.value = 1;
+      ring2Opacity.value = 0;
     }
   }, [visible]);
 
@@ -123,8 +144,16 @@ export default function CalmModeModal({
     },
   }), [slideAnim, backdropAnim, onClose]);
 
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: iconScaleAnim.value }]
+  const iconBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconBounce.value }],
+  }));
+  const ring1Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring1Scale.value }],
+    opacity: ring1Opacity.value,
+  }));
+  const ring2Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring2Scale.value }],
+    opacity: ring2Opacity.value,
   }));
 
   const makeCall = async (phoneNumber: string, name: string) => {
@@ -181,20 +210,28 @@ export default function CalmModeModal({
             <View style={[styles.dragHandleBar, { backgroundColor: 'rgba(0,0,0,0.12)' }]} />
           </View>
 
-          {/* Header - Centered Icon with Title Below */}
+          {/* Header */}
           <View style={styles.header} {...panResponder.panHandlers}>
             <View style={styles.headerContent}>
-              <Animated.View style={[styles.titleIcon, iconAnimatedStyle]}>
-                <LinearGradient
-                  colors={['#EF4444', '#FCA5A5']}
-                  style={styles.iconGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <AlertTriangle size={32} color="#fff" strokeWidth={2.5} />
-                </LinearGradient>
-              </Animated.View>
-              <Text style={[styles.mainTitle, { color: '#111827' }]}>מצב חירום</Text>
+              {/* Animated icon with pulse rings */}
+              <View style={styles.iconWrapper}>
+                {/* Pulse ring 2 (outer) */}
+                <Animated.View style={[styles.pulseRing, ring2Style, { backgroundColor: '#EF4444' }]} />
+                {/* Pulse ring 1 (inner) */}
+                <Animated.View style={[styles.pulseRing, ring1Style, { backgroundColor: '#EF4444' }]} />
+                {/* Icon circle */}
+                <Animated.View style={iconBounceStyle}>
+                  <LinearGradient
+                    colors={['#EF4444', '#FCA5A5']}
+                    style={styles.iconGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <SOSIcon size={32} color="#fff" strokeWidth={2.2} />
+                  </LinearGradient>
+                </Animated.View>
+              </View>
+              <Text style={[styles.mainTitle, { color: '#111827' }]}>SOS</Text>
             </View>
           </View>
 
@@ -346,20 +383,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  titleIcon: {
+  iconWrapper: {
+    width: 72,
+    height: 72,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  iconGradient: {
+  pulseRing: {
+    position: 'absolute',
     width: 64,
     height: 64,
     borderRadius: 32,
+  },
+  iconGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },

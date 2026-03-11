@@ -15,6 +15,7 @@ import { useActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 import { logger } from '../../utils/logger';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as ReAnimated } from 'react-native-reanimated';
+import SwipeableRow from '../SwipeableRow';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -609,12 +610,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <Text style={styles.ageBadgeTextMinimal}>חיסונים מותאמים</Text>
                     </View>
                     {customVaccines.map(vaccine => (
-                        <View key={vaccine.id} style={styles.vaccineRowDone}>
-                            <Text style={[styles.vaccineNameDone, { textAlign: 'right', writingDirection: 'rtl' }]}>{vaccine.name}</Text>
-                            <TouchableOpacity onPress={() => deleteCustomVaccine(vaccine.id)}>
-                                <Trash2 size={18} color="#EF4444" />
-                            </TouchableOpacity>
-                        </View>
+                        <SwipeableRow key={vaccine.id} onDelete={() => deleteCustomVaccine(vaccine.id)}>
+                            <View style={styles.vaccineRowDone}>
+                                <View style={[styles.checkbox, styles.checkboxChecked]}>
+                                    <Check size={14} color="#fff" />
+                                </View>
+                                <Text style={[styles.vaccineNameDone, { textAlign: 'right', writingDirection: 'rtl', flex: 1 }]}>{vaccine.name}</Text>
+                            </View>
+                        </SwipeableRow>
                     ))}
                 </View>
             )}
@@ -627,9 +630,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
                     {group.vaccines.map((vaccine, vIdx) => {
                         const isChecked = vaccines[vaccine.key] || false;
-                        return (
+                        const row = (
                             <TouchableOpacity
-                                key={vIdx}
                                 style={[styles.vaccineRow, isChecked && styles.vaccineRowDone]}
                                 onPress={() => toggleVaccine(vaccine.key)}
                                 activeOpacity={0.7}
@@ -641,6 +643,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                     {vaccine.name}
                                 </Text>
                             </TouchableOpacity>
+                        );
+                        return isChecked ? (
+                            <SwipeableRow key={vIdx} onDelete={() => toggleVaccine(vaccine.key)}>
+                                {row}
+                            </SwipeableRow>
+                        ) : (
+                            <React.Fragment key={vIdx}>{row}</React.Fragment>
                         );
                     })}
                 </View>
@@ -1032,7 +1041,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             const config = getTypeConfig(item.type);
                             const Icon = config.icon;
                             return (
-                                <View key={index} style={{
+                                <SwipeableRow key={index} onDelete={() => deleteHistoryEntry(healthLog.indexOf(item))}>
+                                <View style={{
                                     backgroundColor: theme.card,
                                     borderRadius: 16,
                                     padding: 16,
@@ -1057,17 +1067,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
                                     {/* Content - on left in RTL */}
                                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                        <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                            <Text style={{ fontSize: 12, color: config.color, fontWeight: '500' }}>
-                                                {config.label}
-                                            </Text>
-                                            <TouchableOpacity
-                                                onPress={() => deleteHistoryEntry(index)}
-                                                style={{ padding: 4 }}
-                                            >
-                                                <X size={16} color="#9CA3AF" />
-                                            </TouchableOpacity>
-                                        </View>
+                                        <Text style={{ fontSize: 12, color: config.color, fontWeight: '500', marginBottom: 2 }}>
+                                            {config.label}
+                                        </Text>
 
                                         {item.value && (
                                             <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
@@ -1113,6 +1115,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                         </Text>
                                     </View>
                                 </View>
+                                </SwipeableRow>
                             );
                         })
                     )}
@@ -1312,8 +1315,8 @@ const styles = StyleSheet.create({
     ageBadgeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
     ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
     ageBadgeTextMinimal: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
-    vaccineRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
-    vaccineRowDone: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#10B981' },
+    vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+    vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#10B981' },
     vaccineName: { fontSize: 15, color: '#1F2937', fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
     vaccineNameDone: { fontSize: 15, color: '#10B981', fontWeight: '600', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
     checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
