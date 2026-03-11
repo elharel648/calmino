@@ -6,7 +6,7 @@ import { initializeAuth, getAuth } from 'firebase/auth';
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { initializeAppCheck, CustomProvider } from 'firebase/app-check'; // JS SDK
-import rnFunctions from '@react-native-firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
 import rnAppCheck from '@react-native-firebase/app-check'; // Native SDK
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -90,8 +90,10 @@ try {
 
 export const db = firestoreDb;
 
-// Firebase Functions
+// Firebase Functions (JS Web SDK — automatically attaches auth tokens from the JS auth instance)
+const functions = getFunctions(app);
 export const callFirebaseFunction = async (name: string, data?: object): Promise<unknown> => {
-    const result = await rnFunctions().httpsCallable(name)(data);
-    return result.data;
+  const fn = httpsCallable(functions, name);
+  const result = await fn(data);
+  return result.data;
 };
