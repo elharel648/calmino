@@ -21,7 +21,7 @@ import {
     arrayRemove,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
-import { BabysitterBooking, Review, ActiveShift, Chat, ChatMessage, SitterBadge, ReviewTag } from '../types/babysitter';
+import { BabysitterBooking, Review, ActiveShift, SitterBadge, ReviewTag } from '../types/babysitter';
 import { logger } from '../utils/logger';
 import { getUserPushToken, sendPushNotification } from './pushNotificationService';
 
@@ -689,117 +689,6 @@ export async function calculateSitterBadges(
 // ===================
 // CHAT
 // ===================
-
-/**
- * Get or create chat between parent and babysitter
- */
-export async function getOrCreateChat(parentId: string, babysitterId: string): Promise<Chat> {
-    // Check if chat exists
-    const q = query(
-        collection(db, 'chats'),
-        where('parentId', '==', parentId),
-        where('babysitterId', '==', babysitterId)
-    );
-
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-        const doc = snapshot.docs[0];
-        return { id: doc.id, ...doc.data() } as Chat;
-    }
-
-    // Create new chat
-    const chatRef = await addDoc(collection(db, 'chats'), {
-        parentId,
-        babysitterId,
-        unreadByParent: 0,
-        unreadByBabysitter: 0,
-        createdAt: serverTimestamp(),
-    });
-
-    return {
-        id: chatRef.id,
-        parentId,
-        babysitterId,
-        unreadByParent: 0,
-        unreadByBabysitter: 0,
-        createdAt: Timestamp.now(),
-    };
-}
-
-/**
- * Send message in chat
- */
-export async function sendMessage(chatId: string, senderId: string, text: string): Promise<void> {
-    // Add message
-    await addDoc(collection(db, 'chats', chatId, 'messages'), {
-        chatId,
-        senderId,
-        text,
-        createdAt: serverTimestamp(),
-    });
-
-    // Update chat with last message
-    const chatDoc = await getDoc(doc(db, 'chats', chatId));
-    const chatData = chatDoc.data();
-
-    const isParent = senderId === chatData?.parentId;
-
-    await updateDoc(doc(db, 'chats', chatId), {
-        lastMessage: text,
-        lastMessageAt: serverTimestamp(),
-        // Increment unread for the other party
-        ...(isParent
-            ? { unreadByBabysitter: (chatData?.unreadByBabysitter || 0) + 1 }
-            : { unreadByParent: (chatData?.unreadByParent || 0) + 1 }
-        ),
-    });
-}
-
-/**
- * Get chat messages
- */
-export async function getChatMessages(chatId: string): Promise<ChatMessage[]> {
-    const q = query(
-        collection(db, 'chats', chatId, 'messages'),
-        orderBy('createdAt', 'asc')
-    );
-
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage));
-}
-
-/**
- * Subscribe to chat messages
- */
-export function subscribeToChatMessages(
-    chatId: string,
-    callback: (messages: ChatMessage[]) => void
-): () => void {
-    const q = query(
-        collection(db, 'chats', chatId, 'messages'),
-        orderBy('createdAt', 'asc')
-    );
-
-    return onSnapshot(q, (snapshot) => {
-        const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage));
-        callback(messages);
-    });
-}
-
-/**
- * Mark chat as read
- */
-export async function markChatAsRead(chatId: string, userId: string): Promise<void> {
-    const chatDoc = await getDoc(doc(db, 'chats', chatId));
-    const chatData = chatDoc.data();
-
-    const isParent = userId === chatData?.parentId;
-
-    await updateDoc(doc(db, 'chats', chatId), {
-        ...(isParent ? { unreadByParent: 0 } : { unreadByBabysitter: 0 }),
-    });
-}
 
 // ===================
 // BABYSITTER PROFILE

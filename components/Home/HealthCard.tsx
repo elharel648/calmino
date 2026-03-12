@@ -1,7 +1,8 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell } from 'lucide-react-native';
+import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell, CalendarPlus } from 'lucide-react-native';
+import * as ExpoCalendar from 'expo-calendar';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -108,6 +109,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [babyId, setBabyId] = useState<string | null>(null);
     const [newVaccineName, setNewVaccineName] = useState('');
     const [showAddVaccine, setShowAddVaccine] = useState(false);
+    // Date picker for marking vaccine done
+    const [pendingVaccineKey, setPendingVaccineKey] = useState<string | null>(null);
+    const [vaccineMarkDate, setVaccineMarkDate] = useState(new Date());
+    // Calendar appointment picker
+    const [calendarVaccineKey, setCalendarVaccineKey] = useState<string | null>(null);
+    const [calendarAppointmentDate, setCalendarAppointmentDate] = useState(new Date());
 
     // Temperature state with slider
     const [temperature, setTemperature] = useState(37.0);
@@ -205,7 +212,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     };
 
     const toggleVaccine = async (key: string, date?: Date) => {
-        if (!babyId) return;
+        const childId = babyId || activeChild?.childId;
+        if (!childId) return;
         const user = auth.currentUser;
         if (!user) return;
 
@@ -227,7 +235,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         setVaccines(updated);
 
         try {
-            await updateDoc(doc(db, 'babies', babyId), { [`vaccines.${key}`]: valueToSave });
+            await updateDoc(doc(db, 'babies', childId), { [`vaccines.${key}`]: valueToSave });
 
             // If marked as done, add to History and Timeline
             if (newVal) {
@@ -237,14 +245,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     type: 'vaccine',
                     name: vaccineName,
                     note: 'בוצע',
-                    timestamp: timestamp.toDate().toISOString() // Store as ISO string for consistency with other logs
+                    timestamp: timestamp.toDate().toISOString()
                 };
-                await updateDoc(doc(db, 'babies', babyId), { healthLog: arrayUnion(historyEntry) });
-                // Refresh local history log if visible
+                await updateDoc(doc(db, 'babies', childId), { healthLog: arrayUnion(historyEntry) });
                 if (currentScreen === 'history') loadHealthLog();
 
                 // 2. Add to Daily Timeline (events collection)
-                await saveEventToFirebase(user.uid, babyId, {
+                await saveEventToFirebase(user.uid, childId, {
                     type: 'custom',
                     subType: 'vaccine',
                     note: `חיסון: ${vaccineName}`,
@@ -253,13 +260,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             }
         } catch (error) {
             logger.log('Error updating vaccine:', error);
-            // Rollback optimistic update on failure
             setVaccines(prev => ({ ...prev, [key]: currentStatus }));
         }
     };
 
     const addCustomVaccine = async () => {
-        if (!babyId || !newVaccineName.trim()) return;
+        const childId = babyId || activeChild?.childId;
+        if (!childId || !newVaccineName.trim()) return;
 
         if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -277,14 +284,15 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         setShowAddVaccine(false);
 
         try {
-            await updateDoc(doc(db, 'babies', babyId), { customVaccines: updated });
+            await updateDoc(doc(db, 'babies', childId), { customVaccines: updated });
         } catch (error) {
             logger.log('Error adding custom vaccine:', error);
         }
     };
 
     const deleteCustomVaccine = async (id: string) => {
-        if (!babyId) return;
+        const childId = babyId || activeChild?.childId;
+        if (!childId) return;
 
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -294,10 +302,67 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         setCustomVaccines(updated);
 
         try {
-            await updateDoc(doc(db, 'babies', babyId), { customVaccines: updated });
+            await updateDoc(doc(db, 'babies', childId), { customVaccines: updated });
         } catch (error) {
             logger.log('Error deleting custom vaccine:', error);
         }
+    };
+
+    // Opens date picker before marking vaccine done
+    const handleVaccinePress = (key: string) => {
+        const currentStatus = vaccines[key];
+        const isDone = currentStatus && typeof currentStatus === 'object' ? (currentStatus as any).isDone : !!currentStatus;
+        if (isDone) {
+            // Already done — just toggle off directly (no date needed)
+            toggleVaccine(key);
+        } else {
+            setPendingVaccineKey(key);
+            setVaccineMarkDate(new Date());
+        }
+    };
+
+    const confirmVaccineMark = () => {
+        if (pendingVaccineKey) {
+            toggleVaccine(pendingVaccineKey, vaccineMarkDate);
+        }
+        setPendingVaccineKey(null);
+    };
+
+    // Add vaccine appointment to device calendar
+    const addVaccineToCalendar = async (vaccineName: string) => {
+        try {
+            const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('הרשאה נדרשת', 'נדרשת גישה ליומן כדי להוסיף תורים.');
+                return;
+            }
+
+            const calendars = await ExpoCalendar.getCalendarsAsync(ExpoCalendar.EntityTypes.EVENT);
+            const defaultCal = calendars.find(c => c.allowsModifications && c.source?.isLocalAccount) || calendars.find(c => c.allowsModifications);
+            if (!defaultCal) {
+                Alert.alert('שגיאה', 'לא נמצא יומן זמין.');
+                return;
+            }
+
+            const startDate = new Date(calendarAppointmentDate);
+            startDate.setHours(9, 0, 0, 0);
+            const endDate = new Date(startDate);
+            endDate.setMinutes(endDate.getMinutes() + 30);
+
+            await ExpoCalendar.createEventAsync(defaultCal.id, {
+                title: `חיסון: ${vaccineName}`,
+                startDate,
+                endDate,
+                notes: `תזכורת חיסון לתינוק - ${vaccineName}`,
+                alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }], // 1hr and 1day before
+            });
+
+            Alert.alert('נוסף ביומן ✓', `תור לחיסון "${vaccineName}" נוסף ליומן שלך.`);
+        } catch (error) {
+            logger.log('Error adding to calendar:', error);
+            Alert.alert('שגיאה', 'לא הצלחנו להוסיף ליומן.');
+        }
+        setCalendarVaccineKey(null);
     };
 
     // Photo picker for doctor visit
@@ -592,6 +657,66 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <Text style={styles.screenSubtitle}>לפי המלצות משרד הבריאות</Text>
             </View>
 
+            {/* Date picker — mark vaccine done */}
+            {pendingVaccineKey && (
+                <Modal transparent animationType="fade" visible={!!pendingVaccineKey}>
+                    <View style={styles.modalOverlayCenter}>
+                        <View style={styles.datePickerCard}>
+                            <Text style={styles.datePickerTitle}>מתי בוצע החיסון?</Text>
+                            <DateTimePicker
+                                value={vaccineMarkDate}
+                                mode="date"
+                                display="spinner"
+                                onChange={(_, d) => d && setVaccineMarkDate(d)}
+                                maximumDate={new Date()}
+                                locale="he-IL"
+                            />
+                            <View style={styles.datePickerButtons}>
+                                <TouchableOpacity style={styles.datePickerCancel} onPress={() => setPendingVaccineKey(null)}>
+                                    <Text style={styles.datePickerCancelText}>ביטול</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.datePickerConfirm} onPress={confirmVaccineMark}>
+                                    <Text style={styles.datePickerConfirmText}>אישור</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            )}
+
+            {/* Calendar appointment picker */}
+            {calendarVaccineKey && (
+                <Modal transparent animationType="fade" visible={!!calendarVaccineKey}>
+                    <View style={styles.modalOverlayCenter}>
+                        <View style={styles.datePickerCard}>
+                            <Text style={styles.datePickerTitle}>מתי התור?</Text>
+                            <Text style={styles.datePickerSubtitle}>
+                                {VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name}
+                            </Text>
+                            <DateTimePicker
+                                value={calendarAppointmentDate}
+                                mode="date"
+                                display="spinner"
+                                onChange={(_, d) => d && setCalendarAppointmentDate(d)}
+                                minimumDate={new Date()}
+                                locale="he-IL"
+                            />
+                            <View style={styles.datePickerButtons}>
+                                <TouchableOpacity style={styles.datePickerCancel} onPress={() => setCalendarVaccineKey(null)}>
+                                    <Text style={styles.datePickerCancelText}>ביטול</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.datePickerConfirm} onPress={() => {
+                                    const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
+                                    addVaccineToCalendar(name);
+                                }}>
+                                    <Text style={styles.datePickerConfirmText}>הוסף ליומן</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            )}
+
             {/* Add Custom Vaccine Button */}
             <TouchableOpacity
                 style={styles.addVaccineBtn}
@@ -625,14 +750,18 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <Text style={styles.ageBadgeTextMinimal}>חיסונים מותאמים</Text>
                     </View>
                     {customVaccines.map(vaccine => (
-                        <SwipeableRow key={vaccine.id} onDelete={() => deleteCustomVaccine(vaccine.id)}>
-                            <View style={styles.vaccineRowDone}>
-                                <View style={[styles.checkbox, styles.checkboxChecked]}>
-                                    <Check size={14} color="#fff" />
-                                </View>
-                                <Text style={[styles.vaccineNameDone, { textAlign: 'right', writingDirection: 'rtl', flex: 1 }]}>{vaccine.name}</Text>
+                        <View key={vaccine.id} style={styles.vaccineRow}>
+                            <TouchableOpacity
+                                onPress={() => deleteCustomVaccine(vaccine.id)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                                <Trash2 size={16} color="#EF4444" />
+                            </TouchableOpacity>
+                            <View style={[styles.checkbox, styles.checkboxChecked]}>
+                                <Check size={14} color="#fff" />
                             </View>
-                        </SwipeableRow>
+                            <Text style={[styles.vaccineName, { flex: 1, textAlign: 'right' }]}>{vaccine.name}</Text>
+                        </View>
                     ))}
                 </View>
             )}
@@ -645,26 +774,40 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
                     {group.vaccines.map((vaccine, vIdx) => {
                         const isChecked = vaccines[vaccine.key] || false;
-                        const row = (
-                            <TouchableOpacity
-                                style={[styles.vaccineRow, isChecked && styles.vaccineRowDone]}
-                                onPress={() => toggleVaccine(vaccine.key)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-                                    {isChecked && <Check size={14} color="#fff" />}
-                                </View>
-                                <Text style={[styles.vaccineName, isChecked && styles.vaccineNameDone]}>
-                                    {vaccine.name}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                        return isChecked ? (
-                            <SwipeableRow key={vIdx} onDelete={() => toggleVaccine(vaccine.key)}>
-                                {row}
-                            </SwipeableRow>
-                        ) : (
-                            <React.Fragment key={vIdx}>{row}</React.Fragment>
+                        const isDone = isChecked && typeof isChecked === 'object' ? (isChecked as any).isDone : !!isChecked;
+                        return (
+                            <View key={vIdx} style={[styles.vaccineRow, isDone && styles.vaccineRowDone]}>
+                                {isDone ? (
+                                    <TouchableOpacity
+                                        onPress={() => toggleVaccine(vaccine.key)}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Trash2 size={16} color="#EF4444" />
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setCalendarAppointmentDate(new Date());
+                                            setCalendarVaccineKey(vaccine.key);
+                                        }}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <CalendarPlus size={16} color="#6366F1" />
+                                    </TouchableOpacity>
+                                )}
+                                <TouchableOpacity
+                                    style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1, gap: 10 }}
+                                    onPress={() => handleVaccinePress(vaccine.key)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[styles.checkbox, isDone && styles.checkboxChecked]}>
+                                        {isDone && <Check size={14} color="#fff" />}
+                                    </View>
+                                    <Text style={[styles.vaccineName, isDone && styles.vaccineNameDone]}>
+                                        {vaccine.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         );
                     })}
                 </View>
@@ -1622,6 +1765,15 @@ const styles = StyleSheet.create({
     vaccineNameDone: { fontSize: 15, color: '#10B981', fontWeight: '600', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
     checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
     checkboxChecked: { backgroundColor: '#10B981', borderColor: '#10B981' },
+    modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+    datePickerCard: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', alignItems: 'center' },
+    datePickerTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 4 },
+    datePickerSubtitle: { fontSize: 13, color: '#6366F1', marginBottom: 8 },
+    datePickerButtons: { flexDirection: 'row', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' },
+    datePickerConfirm: { backgroundColor: '#6366F1', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+    datePickerConfirmText: { color: '#fff', fontWeight: '700' },
+    datePickerCancel: { backgroundColor: '#F1F5F9', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+    datePickerCancelText: { color: '#64748b', fontWeight: '600' },
 
     // Temperature slider
     temperatureDisplay: { backgroundColor: '#fff', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 3, marginBottom: 20 },

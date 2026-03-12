@@ -194,32 +194,6 @@ export interface Review {
 }
 
 // ===================
-// CHAT
-// ===================
-
-export interface Chat {
-    id: string;
-    parentId: string;
-    babysitterId: string;
-
-    lastMessage?: string;
-    lastMessageAt?: Timestamp;
-    unreadByParent: number;
-    unreadByBabysitter: number;
-
-    createdAt: Timestamp;
-}
-
-export interface ChatMessage {
-    id: string;
-    chatId: string;
-    senderId: string;
-    text: string;
-    createdAt: Timestamp;
-    readAt?: Timestamp;
-}
-
-// ===================
 // DISPLAY HELPERS
 // ===================
 

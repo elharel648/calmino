@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
@@ -304,9 +304,10 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       backdropOpacity.value = withTiming(1, { duration: 300 });
       translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
 
-      // Defer all state resets as low-priority so the animation frame renders first.
-      // This eliminates the 5-second JS-thread freeze on modal open.
-      startTransition(() => {
+      // Defer all state resets until after the animation frame.
+      // setTimeout with React 18 auto-batching = all 25 setStates become 1 re-render,
+      // and it runs after the current frame so the animation starts immediately.
+      const resetTimer = setTimeout(() => {
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         setSaveSuccess(false);
@@ -334,7 +335,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         setFoodEndTime(new Date(now));
         setShowFoodStartTimePicker(false);
         setShowFoodEndTimePicker(false);
-      });
+      }, 0);
+      return () => clearTimeout(resetTimer);
     } else {
       glowAnim.value = 0;
       sparkleAnim.value = 0;
