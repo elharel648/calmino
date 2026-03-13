@@ -20,7 +20,7 @@ import { Award, Calendar, FileText, Plus, Trash2, Clock, Sparkles } from 'lucide
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, interpolate } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withDelay, interpolate } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -68,10 +68,40 @@ export default function MilestonesModal({
     const scrollOffsetY = useRef(0);
     const dragStartY = useRef(0);
 
-    // Premium animations
-    const glowAnim = useSharedValue(0);
-    const sparkleAnim = useSharedValue(0);
-    const awardAnim = useSharedValue(0);
+    // Premium header animations (WhiteNoise-style)
+    const pulse1 = useSharedValue(0);
+    const pulse2 = useSharedValue(0);
+    const iconBounce = useSharedValue(0);
+    const sparkle1 = useSharedValue(0);
+    const sparkle2 = useSharedValue(0);
+
+    const ACCENT = '#F59E0B'; // Yellow accent
+
+    const pulse1Style = useAnimatedStyle(() => ({
+        transform: [{ scale: 0.7 + pulse1.value * 1.3 }],
+        opacity: 0.6 * (1 - pulse1.value),
+    }));
+    const pulse2Style = useAnimatedStyle(() => ({
+        transform: [{ scale: 0.7 + pulse2.value * 1.3 }],
+        opacity: 0.4 * (1 - pulse2.value),
+    }));
+    const iconBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: iconBounce.value * 4 }],
+    }));
+    const sparkle1Style = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: -sparkle1.value * 20 },
+            { translateX: sparkle1.value * 12 },
+        ] as any,
+        opacity: sparkle1.value < 0.6 ? sparkle1.value * 1.6 : (1 - sparkle1.value) * 2.5,
+    }));
+    const sparkle2Style = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: -sparkle2.value * 16 },
+            { translateX: -sparkle2.value * 10 },
+        ] as any,
+        opacity: sparkle2.value < 0.6 ? sparkle2.value * 1.6 : (1 - sparkle2.value) * 2.5,
+    }));
 
     useEffect(() => {
         if (visible) {
@@ -91,31 +121,17 @@ export default function MilestonesModal({
                 }),
             ]).start();
 
-            // Start premium animations
-            glowAnim.value = withRepeat(
-                withTiming(1, { duration: 2000 }),
-                -1,
-                true
-            );
-            sparkleAnim.value = withRepeat(
-                withTiming(1, { duration: 3000 }),
-                -1,
-                true
-            );
-            awardAnim.value = withRepeat(
-                withSequence(
-                    withTiming(1.08, { duration: 1500 }),
-                    withTiming(1, { duration: 1500 })
-                ),
-                -1,
-                true
-            );
+            // Start header icon animations
+            pulse1.value = withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 0 })), -1, false);
+            pulse2.value = withDelay(900, withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 0 })), -1, false));
+            iconBounce.value = withRepeat(withSequence(withTiming(-1, { duration: 1400 }), withTiming(1, { duration: 1400 })), -1, true);
+            sparkle1.value = withRepeat(withSequence(withTiming(1, { duration: 1100 }), withTiming(0, { duration: 400 })), -1, false);
+            sparkle2.value = withDelay(650, withRepeat(withSequence(withTiming(1, { duration: 950 }), withTiming(0, { duration: 350 })), -1, false));
         } else {
             slideAnim.setValue(SCREEN_HEIGHT);
             backdropAnim.setValue(0);
-            glowAnim.value = 0;
-            sparkleAnim.value = 0;
-            awardAnim.value = 1;
+            pulse1.value = 0; pulse2.value = 0;
+            iconBounce.value = 0; sparkle1.value = 0; sparkle2.value = 0;
         }
     }, [visible]);
 
@@ -187,26 +203,7 @@ export default function MilestonesModal({
         setActiveTab(tab);
     };
 
-    // Animated styles for premium effects
-    const glowStyle = useAnimatedStyle(() => {
-        const opacity = interpolate(glowAnim.value, [0, 1], [0.3, 0.6]);
-        return {
-            opacity,
-        };
-    });
 
-    const sparkleStyle = useAnimatedStyle(() => {
-        const rotate = interpolate(sparkleAnim.value, [0, 1], [0, 360]);
-        return {
-            transform: [{ rotate: `${rotate}deg` }],
-        };
-    });
-
-    const awardStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: awardAnim.value }],
-        };
-    });
 
     const handleSave = async () => {
         if (!title.trim()) {
@@ -320,26 +317,28 @@ export default function MilestonesModal({
                         <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
                     </View>
 
-                    {/* Premium Header with Gradient */}
-                    <View style={[styles.header, { backgroundColor: theme.card }]} {...panResponder.panHandlers}>
-                        {Platform.OS === 'ios' && (
-                            <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                        )}
-
-                        <View style={styles.headerContent}>
-                            <Animated.View style={[styles.iconContainer, awardStyle]}>
-                                <LinearGradient
-                                    colors={['#F59E0B', '#FBBF24']}
-                                    style={styles.iconGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    <Award size={28} color="#fff" strokeWidth={2} />
-                                </LinearGradient>
+                    {/* Animated Header — matches TrackingModal style */}
+                    <View style={styles.header} {...panResponder.panHandlers}>
+                        {/* Animated milestone icon */}
+                        <View style={styles.animIconContainer}>
+                            {/* Pulse rings */}
+                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            {/* Floating sparkle dots */}
+                            <Animated.View style={[styles.floatingNote, { left: 6, top: 8 }, sparkle1Style]}>
+                                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: ACCENT }} />
                             </Animated.View>
-                            <Text style={[styles.title, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('profile.milestones')}</Text>
-                            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>תעדו את הרגעים המיוחדים</Text>
+                            <Animated.View style={[styles.floatingNote, { right: 6, top: 8 }, sparkle2Style]}>
+                                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FBBF24' }} />
+                            </Animated.View>
+                            {/* Main icon with bounce */}
+                            <Animated.View style={iconBounceStyle}>
+                                <View style={[styles.animIconCircle, { backgroundColor: ACCENT + '22' }]}>
+                                    <Award size={28} color={ACCENT} strokeWidth={2.2} />
+                                </View>
+                            </Animated.View>
                         </View>
+                        <Text style={[styles.title, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('profile.milestones')}</Text>
                     </View>
 
                     {/* Premium Tabs with Gradient */}
@@ -480,12 +479,12 @@ export default function MilestonesModal({
                                         <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('tracking.notes')}</Text>
                                     </View>
 
-                                    {/* Save Button - Minimalist Yellow Border */}
+                                    {/* Save Button */}
                                     <TouchableOpacity
                                         style={[
                                             styles.saveBtnMinimal,
                                             {
-                                                borderColor: '#F59E0B',
+                                                borderColor: ACCENT,
                                                 backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.05)',
                                                 opacity: !title.trim() || loading ? 0.5 : 1
                                             }
@@ -495,10 +494,10 @@ export default function MilestonesModal({
                                         activeOpacity={0.7}
                                     >
                                         {loading ? (
-                                            <ActivityIndicator color="#F59E0B" />
+                                            <ActivityIndicator color={ACCENT} />
                                         ) : (
                                             <>
-                                                <Award size={20} color="#F59E0B" strokeWidth={2.5} />
+                                                <Award size={20} color={ACCENT} strokeWidth={2.5} />
                                                 <Text style={styles.saveBtnTextMinimal}>שמור אבן דרך</Text>
                                             </>
                                         )}
@@ -519,10 +518,10 @@ export default function MilestonesModal({
                                                 }
                                                 style={styles.emptyIconGradient}
                                             >
-                                                <Animated.View style={sparkleStyle}>
-                                                    <Sparkles size={24} color="#F59E0B" strokeWidth={2} style={{ position: 'absolute', top: -8, right: -8 }} />
+                                                <Animated.View style={sparkle1Style}>
+                                                    <Sparkles size={24} color={ACCENT} strokeWidth={2} style={{ position: 'absolute', top: -8, right: -8 }} />
                                                 </Animated.View>
-                                                <Award size={40} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
+                                                <Award size={40} color={ACCENT} strokeWidth={2.5} fill={ACCENT} />
                                             </LinearGradient>
                                             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
                                                 אין אבני דרך עדיין
@@ -540,6 +539,7 @@ export default function MilestonesModal({
                                                 {group.items.map((milestone, index) => (
                                                     <SwipeableRow key={index} onDelete={() => handleDelete(milestone)}>
                                                         <View style={styles.milestoneCardWrapper}>
+                                                          <View style={styles.milestoneCardInner}>
                                                             {Platform.OS === 'ios' && (
                                                                 <BlurView intensity={30} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                                                             )}
@@ -583,6 +583,7 @@ export default function MilestonesModal({
                                                                     </View>
                                                                 ) : null}
                                                             </View>
+                                                          </View>
                                                         </View>
                                                     </SwipeableRow>
                                                 ))}
@@ -648,47 +649,43 @@ const styles = StyleSheet.create({
         height: 5,
         borderRadius: 3,
     },
+    // Header — centered, matches TrackingModal
     header: {
         alignItems: 'center',
-        paddingTop: 12,
+        paddingTop: 8,
         paddingBottom: 24,
-        paddingHorizontal: 24,
-        borderRadius: 0,
-        overflow: 'hidden',
+    },
+    animIconContainer: {
+        width: 72,
+        height: 72,
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
     },
-    headerContent: {
-        alignItems: 'center',
-        gap: 12,
-        zIndex: 1,
+    iconPulse: {
+        position: 'absolute',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
     },
-    iconContainer: {
+    animIconCircle: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.03)',
     },
-    iconGradient: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#F59E0B',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 8,
+    floatingNote: {
+        position: 'absolute',
     },
     title: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '800',
         letterSpacing: -0.5,
-    },
-    subtitle: {
-        fontSize: 14,
-        fontWeight: '500',
-        opacity: 0.7,
-        marginTop: -4,
+        textAlign: 'center',
+        marginTop: 10,
     },
     tabContainerWrapper: {
         marginHorizontal: 24,
@@ -872,13 +869,18 @@ const styles = StyleSheet.create({
     milestoneCardWrapper: {
         borderRadius: 20,
         marginBottom: 16,
-        overflow: 'hidden',
+        overflow: 'visible',
         position: 'relative',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
         elevation: 6,
+    },
+    milestoneCardInner: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        position: 'relative',
     },
     milestoneCard: {
         borderRadius: 20,

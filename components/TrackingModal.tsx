@@ -132,11 +132,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   // Sleep icon animations
   const sleepIconPulse = useSharedValue(0);
-  const sleepIconFloat = useSharedValue(0);
+  const sleepIconPulse2 = useSharedValue(0);
+  const sleepIconBounce = useSharedValue(0);
+  const sleepIconStar1 = useSharedValue(0);
+  const sleepIconStar2 = useSharedValue(0);
 
   // Food icon animations
   const foodIconPulse = useSharedValue(0);
-  const foodIconBounce = useSharedValue(1);
+  const foodIconPulse2 = useSharedValue(0);
+  const foodIconBounce = useSharedValue(0);
+  const foodIconStar1 = useSharedValue(0);
+  const foodIconStar2 = useSharedValue(0);
 
   // Get translated TYPE_CONFIG
   const TYPE_CONFIG = {
@@ -403,25 +409,37 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     }
   }, [visible, type]);
 
-  // Food icon animation
+  // Food icon animation — same style as diaper
   useEffect(() => {
     if (visible && type === 'food') {
-      foodIconPulse.value = withTiming(0, { duration: 200 });
-      foodIconBounce.value = withTiming(1, { duration: 200 });
+      foodIconPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      foodIconPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+      foodIconBounce.value = withRepeat(withSequence(withTiming(-3, { duration: 800 }), withTiming(0, { duration: 800 })), -1, true);
+      foodIconStar1.value = withRepeat(withSequence(withTiming(1, { duration: 1200 }), withTiming(0, { duration: 600 }), withTiming(0, { duration: 700 })), -1, false);
+      foodIconStar2.value = withDelay(600, withRepeat(withSequence(withTiming(1, { duration: 1000 }), withTiming(0, { duration: 500 }), withTiming(0, { duration: 700 })), -1, false));
     } else {
       foodIconPulse.value = withTiming(0, { duration: 200 });
-      foodIconBounce.value = withTiming(1, { duration: 200 });
+      foodIconPulse2.value = withTiming(0, { duration: 200 });
+      foodIconBounce.value = withTiming(0, { duration: 200 });
+      foodIconStar1.value = withTiming(0, { duration: 200 });
+      foodIconStar2.value = withTiming(0, { duration: 200 });
     }
   }, [visible, type]);
 
-  // Sleep icon animation
+  // Sleep icon animation — same style as diaper
   useEffect(() => {
     if (visible && type === 'sleep') {
-      sleepIconPulse.value = withTiming(0, { duration: 200 });
-      sleepIconFloat.value = withTiming(0, { duration: 200 });
+      sleepIconPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      sleepIconPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+      sleepIconBounce.value = withRepeat(withSequence(withTiming(-3, { duration: 800 }), withTiming(0, { duration: 800 })), -1, true);
+      sleepIconStar1.value = withRepeat(withSequence(withTiming(1, { duration: 1200 }), withTiming(0, { duration: 600 }), withTiming(0, { duration: 700 })), -1, false);
+      sleepIconStar2.value = withDelay(600, withRepeat(withSequence(withTiming(1, { duration: 1000 }), withTiming(0, { duration: 500 }), withTiming(0, { duration: 700 })), -1, false));
     } else {
       sleepIconPulse.value = withTiming(0, { duration: 200 });
-      sleepIconFloat.value = withTiming(0, { duration: 200 });
+      sleepIconPulse2.value = withTiming(0, { duration: 200 });
+      sleepIconBounce.value = withTiming(0, { duration: 200 });
+      sleepIconStar1.value = withTiming(0, { duration: 200 });
+      sleepIconStar2.value = withTiming(0, { duration: 200 });
     }
   }, [visible, type]);
 
@@ -458,7 +476,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     transform: [
       { translateY: interpolate(diaperStar1.value, [0, 1], [0, -14]) },
       { scale: interpolate(diaperStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
-    ],
+    ] as any,
   }));
 
   const diaperStar2Style = useAnimatedStyle(() => ({
@@ -466,25 +484,59 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     transform: [
       { translateY: interpolate(diaperStar2.value, [0, 1], [0, -14]) },
       { scale: interpolate(diaperStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
-    ],
+    ] as any,
   }));
 
   const foodIconPulseStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(foodIconPulse.value, [0, 1], [0.4, 0]),
-    transform: [{ scale: interpolate(foodIconPulse.value, [0, 1], [1, 1.7]) }],
+    opacity: interpolate(foodIconPulse.value, [0, 1], [0.45, 0]),
+    transform: [{ scale: interpolate(foodIconPulse.value, [0, 1], [1, 1.75]) }],
   }));
-
+  const foodIconPulse2Style = useAnimatedStyle(() => ({
+    opacity: interpolate(foodIconPulse2.value, [0, 1], [0.3, 0]),
+    transform: [{ scale: interpolate(foodIconPulse2.value, [0, 1], [1, 1.75]) }],
+  }));
   const foodIconBounceStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: foodIconBounce.value }],
+    transform: [{ translateY: foodIconBounce.value }],
+  }));
+  const foodIconStar1Style = useAnimatedStyle(() => ({
+    opacity: foodIconStar1.value,
+    transform: [
+      { translateY: interpolate(foodIconStar1.value, [0, 1], [0, -14]) },
+      { scale: interpolate(foodIconStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+  const foodIconStar2Style = useAnimatedStyle(() => ({
+    opacity: foodIconStar2.value,
+    transform: [
+      { translateY: interpolate(foodIconStar2.value, [0, 1], [0, -14]) },
+      { scale: interpolate(foodIconStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
   }));
 
   const sleepIconPulseStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(sleepIconPulse.value, [0, 1], [0.35, 0]),
-    transform: [{ scale: interpolate(sleepIconPulse.value, [0, 1], [1, 1.65]) }],
+    opacity: interpolate(sleepIconPulse.value, [0, 1], [0.45, 0]),
+    transform: [{ scale: interpolate(sleepIconPulse.value, [0, 1], [1, 1.75]) }],
   }));
-
-  const sleepIconFloatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: sleepIconFloat.value }],
+  const sleepIconPulse2Style = useAnimatedStyle(() => ({
+    opacity: interpolate(sleepIconPulse2.value, [0, 1], [0.3, 0]),
+    transform: [{ scale: interpolate(sleepIconPulse2.value, [0, 1], [1, 1.75]) }],
+  }));
+  const sleepIconBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sleepIconBounce.value }],
+  }));
+  const sleepIconStar1Style = useAnimatedStyle(() => ({
+    opacity: sleepIconStar1.value,
+    transform: [
+      { translateY: interpolate(sleepIconStar1.value, [0, 1], [0, -14]) },
+      { scale: interpolate(sleepIconStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+  const sleepIconStar2Style = useAnimatedStyle(() => ({
+    opacity: sleepIconStar2.value,
+    transform: [
+      { translateY: interpolate(sleepIconStar2.value, [0, 1], [0, -14]) },
+      { scale: interpolate(sleepIconStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
   }));
 
   // Calculate duration for Time Range mode (Sleep)
@@ -1815,22 +1867,42 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                       </Animated.View>
                     </View>
                   ) : type === 'food' ? (
-                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulseStyle]} />
-                      <View style={[styles.emojiCircle, { backgroundColor: 'rgba(245,158,11,0.14)' }]}>
-                        <Animated.View style={foodIconBounceStyle}>
-                          {React.createElement(config.icon, { size: 26, color: '#F59E0B', strokeWidth: 2 })}
-                        </Animated.View>
-                      </View>
+                    <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Double pulse rings */}
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulseStyle]} />
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulse2Style]} />
+                      {/* Floating sparkle stars */}
+                      <Animated.View style={[{ position: 'absolute', left: 6, top: 8 }, foodIconStar1Style]}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#F59E0B' }} />
+                      </Animated.View>
+                      <Animated.View style={[{ position: 'absolute', right: 6, top: 8 }, foodIconStar2Style]}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FBBF24' }} />
+                      </Animated.View>
+                      {/* Icon with bounce */}
+                      <Animated.View style={foodIconBounceStyle}>
+                        <View style={[styles.emojiCircle, { backgroundColor: 'rgba(245,158,11,0.14)', width: 56, height: 56, borderRadius: 28 }]}>
+                          {React.createElement(config.icon, { size: 28, color: '#F59E0B', strokeWidth: 2.2 })}
+                        </View>
+                      </Animated.View>
                     </View>
                   ) : type === 'sleep' ? (
-                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulseStyle]} />
-                      <View style={[styles.emojiCircle, { backgroundColor: 'rgba(129,140,248,0.14)' }]}>
-                        <Animated.View style={sleepIconFloatStyle}>
-                          {React.createElement(config.icon, { size: 26, color: '#6366F1', strokeWidth: 2 })}
-                        </Animated.View>
-                      </View>
+                    <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Double pulse rings */}
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulseStyle]} />
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulse2Style]} />
+                      {/* Floating sparkle stars */}
+                      <Animated.View style={[{ position: 'absolute', left: 6, top: 8 }, sleepIconStar1Style]}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#818CF8' }} />
+                      </Animated.View>
+                      <Animated.View style={[{ position: 'absolute', right: 6, top: 8 }, sleepIconStar2Style]}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#A78BFA' }} />
+                      </Animated.View>
+                      {/* Icon with bounce */}
+                      <Animated.View style={sleepIconBounceStyle}>
+                        <View style={[styles.emojiCircle, { backgroundColor: 'rgba(129,140,248,0.14)', width: 56, height: 56, borderRadius: 28 }]}>
+                          {React.createElement(config.icon, { size: 28, color: '#6366F1', strokeWidth: 2.2 })}
+                        </View>
+                      </Animated.View>
                     </View>
                   ) : (
                     <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>

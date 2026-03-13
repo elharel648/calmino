@@ -6,7 +6,7 @@ import { initializeAuth, getAuth } from 'firebase/auth';
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { initializeAppCheck, CustomProvider } from 'firebase/app-check'; // JS SDK
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import rnFunctions from '@react-native-firebase/functions';
 import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
 import rnAppCheck from '@react-native-firebase/app-check'; // Native SDK
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -90,17 +90,10 @@ try {
 
 export const db = firestoreDb;
 
-// Firebase Functions (JS Web SDK — automatically attaches auth tokens from the JS auth instance)
-// Lazy-init: getFunctions crashes if called at module-load time before the service is registered
-let _functions: ReturnType<typeof getFunctions> | null = null;
-function getFirebaseFunctions() {
-  if (!_functions) {
-    _functions = getFunctions(app);
-  }
-  return _functions;
-}
+// Firebase Functions — use native React Native Firebase SDK
+// (JS SDK's getFunctions crashes in Metro with 'Service functions is not available')
 export const callFirebaseFunction = async (name: string, data?: object): Promise<unknown> => {
-  const fn = httpsCallable(getFirebaseFunctions(), name);
+  const fn = rnFunctions().httpsCallable(name);
   const result = await fn(data);
   return result.data;
 };
