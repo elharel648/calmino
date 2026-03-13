@@ -63,22 +63,24 @@ service cloud.firestore {
     // FAMILIES COLLECTION
     // ===================
     match /families/{familyId} {
-      // Read: members only. Joining is handled by the joinFamilyByCode Cloud Function
-      // (admin SDK — bypasses these rules), so we can safely lock down client reads.
-      allow read: if isAuthenticated() && resource.data.members[request.auth.uid] != null;
+      // Read: members can read full doc.
+      // Any authenticated user can also read (needed for join-by-invite-code query).
+      allow read: if isAuthenticated();
       
       // Create: any authenticated
       allow create: if isAuthenticated();
       
-      // Update: ONLY admins of the family
+      // Update: admins of the family, OR
+      // a user leaving (removing only their own key), OR
+      // a user joining (adding only their own key to members)
       allow update: if isAuthenticated() && (
         resource.data.members[request.auth.uid].role == 'admin' ||
-        // Allow updating members list (e.g. self-leave) if strict rules applied? 
-        // For now, restricting to ADMIN prevents unauthorized modifications.
-        // Exception: A user leaving a family removes THEMSELVES. 
-        // We should allow a user to remove their OWN key from members.
+        // Allow self-leave: user removes ONLY themselves from members
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-         request.resource.data.members.diff(resource.data.members).removedKeys().hasOnly([request.auth.uid]))
+         request.resource.data.members.diff(resource.data.members).removedKeys().hasOnly([request.auth.uid])) ||
+        // Allow self-join: user adds ONLY themselves to members
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+         request.resource.data.members.diff(resource.data.members).addedKeys().hasOnly([request.auth.uid]))
       );
       
       // Delete: only creator (who should be an admin)
@@ -142,11 +144,10 @@ service cloud.firestore {
     // INVITES COLLECTION
     // ===================
     match /invites/{inviteCode} {
-      // Read: only the creator (to display/share their own invite).
-      // Joining by code is handled server-side via the joinFamilyByCode Cloud Function.
-      allow read: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      // Read: any authenticated user (needed for client-side join by invite code)
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      // Allow creator to update, OR allow anyone to mark as used (system action)
+      // Allow creator to update, OR allow any authenticated user to mark as used
       allow update: if isAuthenticated() && (
         resource.data.createdBy == request.auth.uid ||
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedBy', 'usedAt'])
