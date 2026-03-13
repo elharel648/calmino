@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
-// services/imageUploadService.ts - Firebase Storage Image Upload (Native SDK)
+// services/imageUploadService.ts - Firebase Storage Image Upload (JS SDK)
 
-import storage from '@react-native-firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -32,7 +32,15 @@ async function compressImage(uri: string): Promise<string> {
 }
 
 /**
- * Upload image to Firebase Storage using Native SDK
+ * Convert local file URI to Blob for JS SDK upload
+ */
+async function uriToBlob(uri: string): Promise<Blob> {
+    const response = await fetch(uri);
+    return await response.blob();
+}
+
+/**
+ * Upload image to Firebase Storage using JS SDK
  * @param uri - Local image URI
  * @param path - Storage path (e.g., "sitterPhotos/userId/photo.jpg")
  * @returns Download URL
@@ -44,13 +52,17 @@ export async function uploadImage(uri: string, path: string): Promise<string> {
         // Compress first
         const compressedUri = await compressImage(uri);
 
-        // Upload using native SDK (no blob conversion needed)
-        const ref = storage().ref(path);
+        // Convert to blob for JS SDK upload
+        const blob = await uriToBlob(compressedUri);
+
+        // Upload using JS SDK
+        const storageInstance = getStorage();
+        const storageRef = ref(storageInstance, path);
         logger.debug('📸', 'Uploading to:', path);
-        await ref.putFile(compressedUri, { contentType: 'image/jpeg' });
+        await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
 
         // Get download URL
-        const downloadURL = await ref.getDownloadURL();
+        const downloadURL = await getDownloadURL(storageRef);
         logger.debug('✅', 'Upload complete:', downloadURL.substring(0, 60));
 
         return downloadURL;

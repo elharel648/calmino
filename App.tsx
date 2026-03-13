@@ -18,14 +18,10 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
   I18nManager.allowRTL(false);
   I18nManager.forceRTL(false);
   I18nManager.swapLeftAndRightInRTL(false);
-
-  if (__DEV__) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { DevSettings } = require('react-native');
-    try { DevSettings.reload(); } catch (e) { }
-  } else {
-    Updates.reloadAsync().catch(() => { });
-  }
+  // NOTE: Do NOT call Updates.reloadAsync() here — it causes infinite reload loop
+  // because I18nManager changes require a restart to take effect, but on restart
+  // isRTL may still be true causing another reload. The settings take effect
+  // on the NEXT cold start naturally.
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -756,6 +752,13 @@ export default function App() {
   }, [user]);
 
   const checkBiometricSettingsAndProfile = async (uid: string) => {
+    // Safety timeout — if Firestore hangs (App Check, network), force past splash after 10s
+    const safetyTimer = setTimeout(() => {
+      logger.warn('⚠️ Startup safety timeout triggered — forcing past splash screen');
+      setHasBabyProfile(true); // Assume profile exists to show main app
+      setIsAppLoading(false);
+    }, 10000);
+
     try {
       const userRef = doc(db, 'users', uid);
       const userSnap = await getDoc(userRef);
@@ -781,10 +784,12 @@ export default function App() {
       const babyExists = await checkIfBabyExists();
       setHasBabyProfile(babyExists);
       setIsAppLoading(false);
+      clearTimeout(safetyTimer);
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);
 
     } catch (error) {
       logger.log('Error during startup checks:', error);
+      clearTimeout(safetyTimer);
       setIsAppLoading(false);
     }
   };

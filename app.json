@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/app-check",
@@ -32,8 +32,7 @@
         {
           "ios": {
             "useFrameworks": "static",
-            "deploymentTarget": "16.1",
-            "buildReactNativeFromSource": true
+            "deploymentTarget": "16.1"
           }
         }
       ],
@@ -59,7 +58,9 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
-        "UIBackgroundModes": ["audio"],
+        "UIBackgroundModes": [
+          "audio"
+        ],
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [

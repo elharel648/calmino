@@ -91,9 +91,16 @@ try {
 export const db = firestoreDb;
 
 // Firebase Functions (JS Web SDK — automatically attaches auth tokens from the JS auth instance)
-const functions = getFunctions(app);
+// Lazy-init: getFunctions crashes if called at module-load time before the service is registered
+let _functions: ReturnType<typeof getFunctions> | null = null;
+function getFirebaseFunctions() {
+  if (!_functions) {
+    _functions = getFunctions(app);
+  }
+  return _functions;
+}
 export const callFirebaseFunction = async (name: string, data?: object): Promise<unknown> => {
-  const fn = httpsCallable(functions, name);
+  const fn = httpsCallable(getFirebaseFunctions(), name);
   const result = await fn(data);
   return result.data;
 };

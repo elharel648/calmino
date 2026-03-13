@@ -20,6 +20,10 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
 
+# Required for Firebase Storage v12+ (Swift-only) to generate the
+# FirebaseStorage-Swift.h bridging header when using static frameworks
+$RNFirebaseAsStaticFramework = true
+
 target 'Calmino' do
   use_expo_modules!
 
@@ -53,11 +57,218 @@ target 'Calmino' do
   )
 
   post_install do |installer|
+    # Fix 1 — Add Firebase header paths DIRECTLY to RNFB .xcconfig files.
+    # CRITICAL: build_settings[] on target objects do NOT reach the .xcconfig files
+    # that Xcode actually reads. Must modify the files on disk.
+    firebase_public_headers = [
+      '"${PODS_ROOT}/FirebaseCore/FirebaseCore/Sources/Public"',
+      '"${PODS_ROOT}/FirebaseMessaging/FirebaseMessaging/Sources/Public"',
+      '"${PODS_ROOT}/FirebaseStorage/FirebaseStorage/Sources/Public"',
+      '"${PODS_ROOT}/FirebaseCrashlytics/Crashlytics/Crashlytics/Public"',
+      '"${PODS_ROOT}/FirebaseAppCheck/FirebaseAppCheck/Sources/Public"',
+      '"${PODS_ROOT}/FirebaseFunctions/FirebaseFunctions/Sources/Public"',
+    ].join(' ')
+
+    react_native_path = File.join("${PODS_ROOT}", "..", config[:reactNativePath])
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        config.build_settings['REACT_NATIVE_PATH'] = react_native_path
+      end
+    end
+
+    # Patch xcconfig files on disk for all RNFB targets
+    rnfb_names = ['RNFBApp', 'RNFBAppCheck', 'RNFBCrashlytics', 'RNFBFunctions', 'RNFBMessaging', 'RNFBStorage']
+    rnfb_names.each do |pod_name|
+      ['debug', 'release'].each do |conf|
+        xcconfig_path = File.join(installer.sandbox.root, 'Target Support Files', pod_name, "#{pod_name}.#{conf}.xcconfig")
+        next unless File.exist?(xcconfig_path)
+        content = File.read(xcconfig_path)
+        unless content.include?('FirebaseMessaging/Sources/Public')
+          # Append Firebase header paths to HEADER_SEARCH_PATHS
+          content = content.gsub(
+            /^(HEADER_SEARCH_PATHS\s*=\s*.*)$/,
+            "\\1 #{firebase_public_headers}"
+          )
+          # RNFBStorage needs access to FirebaseStorage-Swift.h generated header
+          # Do NOT use -fmodules as it breaks RNFBApp module resolution for RCTBridgeModule
+          if pod_name == 'RNFBStorage'
+            content = content.gsub(
+              /^(HEADER_SEARCH_PATHS\s*=\s*.*)$/,
+              "\\1 ${PODS_CONFIGURATION_BUILD_DIR}/FirebaseStorage/FirebaseStorage.framework/Headers"
+            )
+          end
+          # Disable explicit modules in xcconfig too (not just pbxproj)
+          content += "\nSWIFT_ENABLE_EXPLICIT_MODULES = NO\n" unless content.include?('SWIFT_ENABLE_EXPLICIT_MODULES')
+          File.write(xcconfig_path, content)
+          Pod::UI.puts "[RNFB Fix] Patched #{pod_name}.#{conf}.xcconfig"
+        end
+      end
+    end
+
+
+    # Fix 2 — Build order: ensure each Firebase Swift target compiles BEFORE
+    # the RNFB ObjC target that depends on it. This guarantees the
+    # FirebaseXxx-Swift.h headers exist when the ObjC compiler needs them.
+    # Without this explicit dependency, Xcode may compile RNFB before Firebase,
+    # causing "Type specifier missing" / "Expected ')'" cascading errors.
+    targets = installer.pods_project.targets.each_with_object({}) { |t, h| h[t.name] = t }
+
+    firebase_rnfb_deps = {
+      'RNFBApp'              => ['FirebaseCore'],
+      'RNFBAppCheck'         => ['FirebaseCore', 'FirebaseAppCheck'],
+      'RNFBCrashlytics'      => ['FirebaseCore', 'FirebaseCrashlytics'],
+      'RNFBFunctions'        => ['FirebaseCore', 'FirebaseFunctions'],
+      'RNFBMessaging'        => ['FirebaseCore', 'FirebaseMessaging'],
+      'RNFBStorage'          => ['FirebaseCore', 'FirebaseStorage'],
+      'SDWebImageWebPCoder'  => ['SDWebImage'],
+    }
+
+    firebase_rnfb_deps.each do |rnfb_name, dep_names|
+      rnfb_target = targets[rnfb_name]
+      next unless rnfb_target
+      dep_names.each do |dep_name|
+        dep_target = targets[dep_name]
+        next unless dep_target
+        rnfb_target.add_dependency(dep_target)
+        Pod::UI.puts "[Build Order Fix] #{rnfb_name} → #{dep_name}"
+      end
+    end
+
+    # Fix 3 — Patch folly/lang/New.h: replace FOLLY_CREATE_QUAL_INVOKER with explicit
+    # struct overloads. The SFINAE forwarding types fail when ::operator delete(void*, size_t)
+    # isn't available without -fsized-deallocation.
+    folly_new_h_paths = Dir.glob(File.join(installer.sandbox.root, '**', 'folly', 'lang', 'New.h'))
+    folly_new_h_paths.each do |new_h_path|
+      content = File.read(new_h_path)
+      if content.include?('FOLLY_CREATE_QUAL_INVOKER') || content.include?('op_del_builtin_fn_')
+        next if content.include?('NUCLEAR_PATCHED')
+        patched_content = <<~'NEWH'
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// NUCLEAR_PATCHED: Explicit overloads to avoid SFINAE failures with operator new/delete
+
+#pragma once
+
+#include <new>
+
+#include <folly/CppAttributes.h>
+#include <folly/Portability.h>
+
+namespace folly {
+
+namespace detail {
+
+#if defined(__cpp_aligned_new)
+constexpr auto cpp_aligned_new_ = __cpp_aligned_new >= 201606;
+#else
+constexpr auto cpp_aligned_new_ = false;
+#endif
+
+#if defined(__cpp_sized_deallocation)
+constexpr auto cpp_sized_deallocation_ = __cpp_sized_deallocation >= 201309L;
+#else
+constexpr auto cpp_sized_deallocation_ = false;
+#endif
+
+struct op_new_fn_ {
+  FOLLY_ERASE void* operator()(std::size_t s) const { return ::operator new(s); }
+  FOLLY_ERASE void* operator()(std::size_t s, std::nothrow_t const& nt) const noexcept { return ::operator new(s, nt); }
+  FOLLY_ERASE void* operator()(std::size_t s, std::align_val_t a) const { return ::operator new(s, a); }
+  FOLLY_ERASE void* operator()(std::size_t s, std::align_val_t a, std::nothrow_t const& nt) const noexcept { return ::operator new(s, a, nt); }
+};
+
+struct op_del_fn_ {
+  FOLLY_ERASE void operator()(void* p) const noexcept { ::operator delete(p); }
+  FOLLY_ERASE void operator()(void* p, std::align_val_t a) const noexcept { ::operator delete(p, a); }
+#if defined(__cpp_sized_deallocation) && __cpp_sized_deallocation >= 201309L
+  FOLLY_ERASE void operator()(void* p, std::size_t s) const noexcept { ::operator delete(p, s); }
+  FOLLY_ERASE void operator()(void* p, std::size_t s, std::align_val_t a) const noexcept { ::operator delete(p, s, a); }
+#endif
+};
+
+template <bool>
+constexpr op_new_fn_ op_new_;
+
+template <bool>
+constexpr op_del_fn_ op_del_;
+
+template <bool Usual, typename... A>
+FOLLY_ERASE void do_op_del_sized_(
+    void* const p, std::size_t const s, A const... a) {
+#if defined(__cpp_sized_deallocation) && __cpp_sized_deallocation >= 201309L
+  return op_del_<Usual>(p, s, a...);
+#else
+  return op_del_<Usual>(p, a...);
+#endif
+}
+
+} // namespace detail
+
+struct operator_new_fn {
+  FOLLY_NODISCARD FOLLY_ERASE void* operator()(std::size_t const s) const noexcept(noexcept(::operator new(0))) {
+    return detail::op_new_<true>(s);
+  }
+  FOLLY_NODISCARD FOLLY_ERASE void* operator()(std::size_t const s, std::nothrow_t const& nt) const noexcept {
+    return detail::op_new_<true>(s, nt);
+  }
+  FOLLY_NODISCARD FOLLY_ERASE void* operator()(std::size_t const s, std::align_val_t const a) const noexcept(noexcept(::operator new(0))) {
+    return detail::op_new_<detail::cpp_aligned_new_>(s, a);
+  }
+  FOLLY_NODISCARD FOLLY_ERASE void* operator()(std::size_t const s, std::align_val_t const a, std::nothrow_t const& nt) const noexcept {
+    return detail::op_new_<detail::cpp_aligned_new_>(s, a, nt);
+  }
+};
+inline constexpr operator_new_fn operator_new{};
+
+struct operator_delete_fn {
+  FOLLY_ERASE void operator()(void* const p) const noexcept { return detail::op_del_<true>(p); }
+  FOLLY_ERASE void operator()(void* const p, std::size_t const s) const noexcept { return detail::do_op_del_sized_<true>(p, s); }
+  FOLLY_ERASE void operator()(void* const p, std::align_val_t const a) const noexcept { return detail::op_del_<detail::cpp_aligned_new_>(p, a); }
+  FOLLY_ERASE void operator()(void* const p, std::size_t const s, std::align_val_t const a) const noexcept { return detail::do_op_del_sized_<detail::cpp_aligned_new_>(p, s, a); }
+};
+inline constexpr operator_delete_fn operator_delete{};
+
+} // namespace folly
+NEWH
+        File.write(new_h_path, patched_content)
+        Pod::UI.puts "[Folly New.h Patch] Replaced with explicit overloads in #{new_h_path}"
+      end
+    end
+
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # Fix 4 — Override module settings for RNFB ObjC targets.
+    # DEFINES_MODULE=NO prevents Clang from treating RNFB as modules, which causes
+    # "must be imported from module" errors for RCTPromiseRejectBlock etc.
+    installer.pods_project.targets.each do |target|
+      next unless target.name.start_with?('RNFB')
+      target.build_configurations.each do |config|
+        config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+        config.build_settings['DEFINES_MODULE'] = 'NO'
+      end
+    end
+    Pod::UI.puts '[RNFB Fix] SWIFT_ENABLE_EXPLICIT_MODULES=NO + DEFINES_MODULE=NO'
+
   end
 end
+

@@ -16,7 +16,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, withDelay, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
 import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+const TIME_PICKER_STYLE = { width: SCREEN_WIDTH * 0.8, height: 200 };
 
 // ─── Drum Swipe Picker ────────────────────────────────────────────────────────
 const DRUM_ITEM_H = 48;
@@ -1295,6 +1296,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
             <DateTimePicker
+              style={TIME_PICKER_STYLE}
               value={foodStartTime}
               mode="time"
               is24Hour={true}
@@ -1325,6 +1327,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
             <DateTimePicker
+              style={TIME_PICKER_STYLE}
               value={foodEndTime}
               mode="time"
               is24Hour={true}
@@ -2790,7 +2793,7 @@ const styles = StyleSheet.create({
 
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
-  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
+  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'stretch', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
   timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 48, paddingVertical: 14, backgroundColor: '#1C1C1E', borderRadius: 14, width: '100%', alignItems: 'center' },
   timePickerDoneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 
