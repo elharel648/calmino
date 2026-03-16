@@ -35,6 +35,8 @@ import Animated, {
     withDelay,
     withRepeat,
     withSequence,
+    interpolate,
+    Easing,
 } from 'react-native-reanimated';
 import { logger } from '../../utils/logger';
 import { useLanguage } from '../../context/LanguageContext';
@@ -42,8 +44,8 @@ import { useLanguage } from '../../context/LanguageContext';
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
-// Minimal accent
-const ACCENT = '#8B5CF6';
+// Warm rose accent — distinct from purple used elsewhere
+const ACCENT = '#E8567F';
 
 interface MagicMomentsModalProps {
     visible: boolean;
@@ -76,7 +78,13 @@ export default function MagicMomentsModal({
     // Simple animations
     const headerOpacity = useSharedValue(0);
     const contentOpacity = useSharedValue(0);
-    const iconScaleAnim = useSharedValue(1);
+
+    // Icon animations — matching TrackingModal pulse/bounce/sparkle pattern
+    const iconPulse1 = useSharedValue(0);
+    const iconPulse2 = useSharedValue(0);
+    const iconBounce = useSharedValue(0);
+    const iconStar1 = useSharedValue(0);
+    const iconStar2 = useSharedValue(0);
 
     useEffect(() => {
         if (visible) {
@@ -99,19 +107,47 @@ export default function MagicMomentsModal({
             headerOpacity.value = withTiming(1, { duration: 300 });
             contentOpacity.value = withDelay(150, withTiming(1, { duration: 300 }));
 
-            // Continuous breathing/hover effect for the icon
-            iconScaleAnim.value = withRepeat(
+            // Pulse rings — expanding circles that fade out
+            iconPulse1.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+            iconPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+
+            // Gentle bounce
+            iconBounce.value = withRepeat(
                 withSequence(
-                    withTiming(1.08, { duration: 1500 }),
-                    withTiming(1, { duration: 1500 })
+                    withTiming(-3, { duration: 800 }),
+                    withTiming(0, { duration: 800 }),
                 ),
                 -1,
                 true
             );
+
+            // Sparkle stars floating up
+            iconStar1.value = withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 1200 }),
+                    withTiming(0, { duration: 600 }),
+                    withTiming(0, { duration: 700 }),
+                ),
+                -1,
+                false
+            );
+            iconStar2.value = withDelay(600, withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 1000 }),
+                    withTiming(0, { duration: 500 }),
+                    withTiming(0, { duration: 700 }),
+                ),
+                -1,
+                false
+            ));
         } else {
             headerOpacity.value = 0;
             contentOpacity.value = 0;
-            iconScaleAnim.value = 1;
+            iconPulse1.value = 0;
+            iconPulse2.value = 0;
+            iconBounce.value = 0;
+            iconStar1.value = 0;
+            iconStar2.value = 0;
             slideAnim.setValue(SCREEN_HEIGHT);
             backdropAnim.setValue(0);
         }
@@ -175,8 +211,31 @@ export default function MagicMomentsModal({
         opacity: contentOpacity.value,
     }));
 
-    const iconAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: iconScaleAnim.value }]
+    // Animated styles for icon
+    const pulse1Style = useAnimatedStyle(() => ({
+        opacity: interpolate(iconPulse1.value, [0, 1], [0.45, 0]),
+        transform: [{ scale: interpolate(iconPulse1.value, [0, 1], [1, 1.75]) }],
+    }));
+    const pulse2Style = useAnimatedStyle(() => ({
+        opacity: interpolate(iconPulse2.value, [0, 1], [0.3, 0]),
+        transform: [{ scale: interpolate(iconPulse2.value, [0, 1], [1, 1.75]) }],
+    }));
+    const bounceStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: iconBounce.value }],
+    }));
+    const star1Style = useAnimatedStyle(() => ({
+        opacity: iconStar1.value,
+        transform: [
+            { translateY: interpolate(iconStar1.value, [0, 1], [0, -14]) },
+            { scale: interpolate(iconStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+        ] as any,
+    }));
+    const star2Style = useAnimatedStyle(() => ({
+        opacity: iconStar2.value,
+        transform: [
+            { translateY: interpolate(iconStar2.value, [0, 1], [0, -14]) },
+            { scale: interpolate(iconStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+        ] as any,
     }));
 
     const handleMonthPress = async (month: number) => {
@@ -284,17 +343,32 @@ export default function MagicMomentsModal({
 
                     {/* Clean Header */}
                     <Animated.View style={[styles.header, headerStyle]} {...panResponder.panHandlers}>
-                        {/* Animated Simple icon */}
-                        <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
-                            <LinearGradient
-                                colors={[ACCENT, '#A78BFA']}
-                                style={styles.iconGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                <Sparkles size={28} color="#fff" strokeWidth={2} />
-                            </LinearGradient>
-                        </Animated.View>
+                        {/* Animated icon with pulse rings + sparkles */}
+                        <View style={styles.iconContainer}>
+                            {/* Pulse ring 1 */}
+                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
+                            {/* Pulse ring 2 */}
+                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            {/* Main icon with bounce */}
+                            <Animated.View style={bounceStyle}>
+                                <LinearGradient
+                                    colors={[ACCENT, '#F292A8']}
+                                    style={styles.iconGradient}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                >
+                                    <Sparkles size={28} color="#fff" strokeWidth={2} />
+                                </LinearGradient>
+                            </Animated.View>
+                            {/* Sparkle star 1 — top-left */}
+                            <Animated.View style={[styles.floatingStar, { top: 2, left: 4 }, star1Style]}>
+                                <Sparkles size={12} color={ACCENT} strokeWidth={2.5} />
+                            </Animated.View>
+                            {/* Sparkle star 2 — top-right */}
+                            <Animated.View style={[styles.floatingStar, { top: 6, right: 2 }, star2Style]}>
+                                <Sparkles size={10} color={ACCENT} strokeWidth={2.5} />
+                            </Animated.View>
+                        </View>
 
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
                             רגעים קסומים
@@ -875,9 +949,21 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     iconContainer: {
+        width: 80,
+        height: 80,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 4,
+        position: 'relative',
+    },
+    iconPulse: {
+        position: 'absolute',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+    },
+    floatingStar: {
+        position: 'absolute',
     },
     iconGradient: {
         width: 64,

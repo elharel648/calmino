@@ -12,11 +12,12 @@ import {
     LayoutAnimation,
     UIManager,
 } from 'react-native';
-import { Pill, Minus, Plus, Clock, Check, AlertCircle, Bell, Search, Info } from 'lucide-react-native';
+import { Pill, Minus, Plus, Clock, Check, AlertCircle, Bell, Search, Info, Package, AlertTriangle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Medication } from '../../types/home';
 import { searchMedications, MedicationInfo, CATEGORY_LABELS } from '../../data/medicationsDatabase';
+import { useTheme } from '../../context/ThemeContext';
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -35,6 +36,8 @@ const DEFAULT_TIMES = ['08:00', '12:00', '16:00', '20:00', '10:00', '22:00'];
  * Rendered INSIDE HealthCard's medication sub-screen (not a separate modal).
  */
 const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, saveSuccess }) => {
+    const { theme, isDarkMode } = useTheme();
+
     const [name, setName] = useState('');
     const [dosage, setDosage] = useState('');
     const [frequency, setFrequency] = useState(1);
@@ -47,6 +50,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
     const [suggestions, setSuggestions] = useState<MedicationInfo[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedMedInfo, setSelectedMedInfo] = useState<MedicationInfo | null>(null);
+    const [showCustomOption, setShowCustomOption] = useState(false);
 
     // Time picker state
     const [showTimePicker, setShowTimePicker] = useState<number | null>(null);
@@ -56,11 +60,17 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
         Array.from({ length: 6 }, () => new Animated.Value(0))
     ).current;
 
+    // Theme-derived colors
+    const accentColor = '#8B5CF6'; // Medication-specific purple accent
+    const accentLight = isDarkMode ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)';
+    const accentBorder = isDarkMode ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.2)';
+    const inputBg = isDarkMode ? theme.cardSecondary : theme.card;
+    const inputBorder = theme.border;
+
     const updateFrequency = useCallback((newFreq: number) => {
         const clamped = Math.max(1, Math.min(6, newFreq));
         const oldFreq = frequency;
 
-        // Animate layout change
         LayoutAnimation.configureNext(LayoutAnimation.create(
             250,
             LayoutAnimation.Types.easeInEaseOut,
@@ -69,7 +79,6 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
         setFrequency(clamped);
 
-        // Update times array
         setTimes(prev => {
             const newTimes = [...prev];
             while (newTimes.length < clamped) {
@@ -78,7 +87,6 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             return newTimes.slice(0, clamped);
         });
 
-        // Animate new fields in
         if (clamped > oldFreq) {
             for (let i = oldFreq; i < clamped; i++) {
                 fadeAnims[i].setValue(0);
@@ -132,66 +140,112 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             dosage: dosage.trim() || '-',
             frequency,
             times: times.slice(0, frequency),
-            notes: notes.trim() || undefined,
+            notes: notes.trim() || '',
             remindersEnabled,
         });
+    };
+
+    const handleNameChange = (text: string) => {
+        setName(text);
+        setNameError(false);
+        setSelectedMedInfo(null);
+        const results = searchMedications(text);
+        setSuggestions(results);
+        // Show custom option when typed text has 2+ chars and no exact match
+        const hasExactMatch = results.some(r => r.name === text.trim());
+        setShowCustomOption(text.trim().length >= 2 && !hasExactMatch);
+        setShowSuggestions(results.length > 0 && text.length >= 1);
+    };
+
+    const selectCustomName = () => {
+        setShowSuggestions(false);
+        setShowCustomOption(false);
+        setSuggestions([]);
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
     };
 
     return (
         <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.container}
+            contentContainerStyle={[styles.container, { backgroundColor: 'transparent' }]}
             keyboardShouldPersistTaps="handled"
         >
             {/* Header Icon */}
             <View style={styles.headerIcon}>
-                <View style={styles.headerIconCircle}>
-                    <Pill size={24} color="#8B5CF6" strokeWidth={1.5} />
+                <View style={[styles.headerIconCircle, {
+                    backgroundColor: accentLight,
+                    borderColor: accentBorder,
+                }]}>
+                    <Pill size={24} color={accentColor} strokeWidth={1.5} />
                 </View>
             </View>
 
             {/* Medication Name with Autocomplete */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>שם התרופה</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>שם התרופה</Text>
                 <View style={styles.searchInputWrapper}>
                     <TextInput
-                        style={[styles.textInput, nameError && styles.textInputError, { paddingLeft: 40 }]}
+                        style={[styles.textInput, {
+                            backgroundColor: inputBg,
+                            borderColor: nameError ? theme.danger : inputBorder,
+                            color: theme.textPrimary,
+                        }, nameError && { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }, { paddingLeft: 40 }]}
                         value={name}
-                        onChangeText={t => {
-                            setName(t);
-                            setNameError(false);
-                            setSelectedMedInfo(null);
-                            const results = searchMedications(t);
-                            setSuggestions(results);
-                            setShowSuggestions(results.length > 0 && t.length >= 1);
-                        }}
+                        onChangeText={handleNameChange}
                         onFocus={() => {
                             if (suggestions.length > 0 && name.length >= 1) {
                                 setShowSuggestions(true);
                             }
                         }}
                         placeholder="חפש תרופה (למשל: אקמול, נורופן...)"
-                        placeholderTextColor="#9CA3AF"
+                        placeholderTextColor={theme.textSecondary}
                         textAlign="right"
                     />
                     <View style={styles.searchIcon}>
-                        <Search size={18} color="#9CA3AF" />
+                        <Search size={18} color={theme.textSecondary} />
                     </View>
                 </View>
 
+                {/* Free-text custom option — shown when no exact match */}
+                {showCustomOption && name.trim().length >= 2 && (
+                    <TouchableOpacity
+                        style={[styles.customNameOption, {
+                            backgroundColor: accentLight,
+                            borderColor: accentBorder,
+                        }]}
+                        onPress={selectCustomName}
+                        activeOpacity={0.7}
+                    >
+                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+                            <Plus size={16} color={accentColor} />
+                            <Text style={[styles.customNameText, { color: accentColor }]}>
+                                {`השתמש ב: "${name.trim()}"`}
+                            </Text>
+                        </View>
+                        <Text style={{ fontSize: 11, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }}>
+                            תרופה לא נמצאה במילון — ניתן להקליד שם חופשי
+                        </Text>
+                    </TouchableOpacity>
+                )}
+
                 {/* Autocomplete Dropdown */}
                 {showSuggestions && (
-                    <View style={styles.suggestionsContainer}>
+                    <View style={[styles.suggestionsContainer, {
+                        backgroundColor: theme.card,
+                        borderColor: accentBorder,
+                    }]}>
                         {suggestions.map((med, idx) => (
                             <TouchableOpacity
                                 key={`${med.name}_${idx}`}
-                                style={[styles.suggestionRow, idx < suggestions.length - 1 && styles.suggestionBorder]}
+                                style={[styles.suggestionRow, idx < suggestions.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }]}
                                 onPress={() => {
                                     setName(med.name);
                                     setSelectedMedInfo(med);
                                     setSuggestions([]);
                                     setShowSuggestions(false);
-                                    // Auto-fill dosage hint
+                                    setShowCustomOption(false);
                                     if (med.form && !dosage) {
                                         setDosage(med.form);
                                     }
@@ -202,16 +256,16 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.suggestionContent}>
-                                    <Text style={styles.suggestionName}>{med.name}</Text>
+                                    <Text style={[styles.suggestionName, { color: theme.textPrimary }]}>{med.name}</Text>
                                     {med.nameEn && (
-                                        <Text style={styles.suggestionNameEn}>{med.nameEn}</Text>
+                                        <Text style={[styles.suggestionNameEn, { color: theme.textSecondary }]}>{med.nameEn}</Text>
                                     )}
                                     {med.notes && (
-                                        <Text style={styles.suggestionNotes}>{med.notes}</Text>
+                                        <Text style={[styles.suggestionNotes, { color: theme.textSecondary }]}>{med.notes}</Text>
                                     )}
                                 </View>
-                                <View style={styles.suggestionCategoryBadge}>
-                                    <Text style={styles.suggestionCategoryText}>
+                                <View style={[styles.suggestionCategoryBadge, { backgroundColor: accentLight }]}>
+                                    <Text style={[styles.suggestionCategoryText, { color: accentColor }]}>
                                         {CATEGORY_LABELS[med.category]}
                                     </Text>
                                 </View>
@@ -222,69 +276,100 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
                 {/* Selected medication info card */}
                 {selectedMedInfo && (
-                    <View style={styles.medInfoCard}>
+                    <View style={[styles.medInfoCard, {
+                        backgroundColor: accentLight,
+                        borderColor: accentBorder,
+                    }]}>
                         <View style={styles.medInfoHeader}>
-                            <Info size={14} color="#8B5CF6" />
-                            <Text style={styles.medInfoTitle}>מידע על {selectedMedInfo.name}</Text>
+                            <Info size={14} color={accentColor} />
+                            <Text style={[styles.medInfoTitle, { color: accentColor }]}>
+                                מידע על {selectedMedInfo.name}
+                            </Text>
                         </View>
                         {selectedMedInfo.commonDosage && (
-                            <Text style={styles.medInfoText}>💊 מינון נפוץ: {selectedMedInfo.commonDosage}</Text>
+                            <View style={styles.medInfoRow}>
+                                <Pill size={13} color={theme.textSecondary} strokeWidth={1.5} />
+                                <Text style={[styles.medInfoText, { color: theme.textPrimary }]}>
+                                    מינון נפוץ: {selectedMedInfo.commonDosage}
+                                </Text>
+                            </View>
                         )}
                         {selectedMedInfo.form && (
-                            <Text style={styles.medInfoText}>📦 צורה: {selectedMedInfo.form}</Text>
+                            <View style={styles.medInfoRow}>
+                                <Package size={13} color={theme.textSecondary} strokeWidth={1.5} />
+                                <Text style={[styles.medInfoText, { color: theme.textPrimary }]}>
+                                    צורה: {selectedMedInfo.form}
+                                </Text>
+                            </View>
                         )}
-                        <Text style={styles.medInfoDisclaimer}>
-                            ⚠️ מידע כללי בלבד. יש להתייעץ עם רופא.
-                        </Text>
+                        <View style={[styles.disclaimerRow, { borderTopColor: theme.border }]}>
+                            <AlertTriangle size={12} color={theme.textSecondary} strokeWidth={1.5} />
+                            <Text style={[styles.medInfoDisclaimer, { color: theme.textSecondary }]}>
+                                מידע כללי בלבד. יש להתייעץ עם רופא.
+                            </Text>
+                        </View>
                     </View>
                 )}
 
                 {nameError && (
                     <View style={styles.errorRow}>
-                        <Text style={styles.errorText}>יש להזין שם תרופה</Text>
-                        <AlertCircle size={14} color="#EF4444" />
+                        <Text style={[styles.errorText, { color: theme.danger }]}>יש להזין שם תרופה</Text>
+                        <AlertCircle size={14} color={theme.danger} />
                     </View>
                 )}
             </View>
 
             {/* Dosage */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>מינון</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>מינון</Text>
                 <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, {
+                        backgroundColor: inputBg,
+                        borderColor: inputBorder,
+                        color: theme.textPrimary,
+                    }]}
                     value={dosage}
                     onChangeText={setDosage}
                     placeholder="כמות (למשל: 5 מ״ל, כדור אחד)"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={theme.textSecondary}
                     textAlign="right"
                 />
             </View>
 
             {/* Frequency Stepper */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>כמות פעמים ביום</Text>
-                <View style={styles.stepperContainer}>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>כמות פעמים ביום</Text>
+                <View style={[styles.stepperContainer, {
+                    backgroundColor: inputBg,
+                    borderColor: inputBorder,
+                }]}>
                     <TouchableOpacity
-                        style={[styles.stepperBtn, frequency <= 1 && styles.stepperBtnDisabled]}
+                        style={[styles.stepperBtn, {
+                            backgroundColor: theme.card,
+                            borderColor: inputBorder,
+                        }, frequency <= 1 && styles.stepperBtnDisabled]}
                         onPress={() => updateFrequency(frequency - 1)}
                         disabled={frequency <= 1}
                     >
-                        <Minus size={20} color={frequency <= 1 ? '#D1D5DB' : '#6B7280'} />
+                        <Minus size={20} color={frequency <= 1 ? theme.textSecondary : theme.textPrimary} />
                     </TouchableOpacity>
 
                     <View style={styles.stepperValueContainer}>
-                        <Text style={styles.stepperValue}>{frequency}</Text>
-                        <Text style={styles.stepperUnit}>
+                        <Text style={[styles.stepperValue, { color: accentColor }]}>{frequency}</Text>
+                        <Text style={[styles.stepperUnit, { color: theme.textSecondary }]}>
                             {frequency === 1 ? 'פעם' : 'פעמים'}
                         </Text>
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.stepperBtn, frequency >= 6 && styles.stepperBtnDisabled]}
+                        style={[styles.stepperBtn, {
+                            backgroundColor: theme.card,
+                            borderColor: inputBorder,
+                        }, frequency >= 6 && styles.stepperBtnDisabled]}
                         onPress={() => updateFrequency(frequency + 1)}
                         disabled={frequency >= 6}
                     >
-                        <Plus size={20} color={frequency >= 6 ? '#D1D5DB' : '#6B7280'} />
+                        <Plus size={20} color={frequency >= 6 ? theme.textSecondary : theme.textPrimary} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -292,8 +377,8 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             {/* Dynamic Time Pickers */}
             <View style={styles.inputGroup}>
                 <View style={styles.timesHeader}>
-                    <Clock size={16} color="#8B5CF6" />
-                    <Text style={styles.inputLabel}>שעות מתן</Text>
+                    <Clock size={16} color={accentColor} />
+                    <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>שעות מתן</Text>
                 </View>
 
                 {times.slice(0, frequency).map((time, index) => (
@@ -304,20 +389,26 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                             { opacity: index < 1 ? 1 : fadeAnims[index] },
                         ]}
                     >
-                        <Text style={styles.timeLabel}>
+                        <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>
                             {frequency === 1 ? 'שעה' : `שעה ${index + 1}`}
                         </Text>
 
                         <TouchableOpacity
-                            style={styles.timeButton}
+                            style={[styles.timeButton, {
+                                backgroundColor: accentLight,
+                                borderColor: accentBorder,
+                            }]}
                             onPress={() => setShowTimePicker(showTimePicker === index ? null : index)}
                         >
-                            <Clock size={16} color="#8B5CF6" strokeWidth={1.5} />
-                            <Text style={styles.timeButtonText}>{time}</Text>
+                            <Clock size={16} color={accentColor} strokeWidth={1.5} />
+                            <Text style={[styles.timeButtonText, { color: accentColor }]}>{time}</Text>
                         </TouchableOpacity>
 
                         {showTimePicker === index && (
-                            <View style={styles.dateTimePickerWrapper}>
+                            <View style={[styles.dateTimePickerWrapper, {
+                                backgroundColor: theme.card,
+                                borderColor: inputBorder,
+                            }]}>
                                 <DateTimePicker
                                     value={getTimeAsDate(time)}
                                     mode="time"
@@ -329,10 +420,10 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                                 />
                                 {Platform.OS === 'ios' && (
                                     <TouchableOpacity
-                                        style={styles.timePickerDone}
+                                        style={[styles.timePickerDone, { borderTopColor: theme.border }]}
                                         onPress={() => setShowTimePicker(null)}
                                     >
-                                        <Text style={styles.timePickerDoneText}>אישור</Text>
+                                        <Text style={[styles.timePickerDoneText, { color: accentColor }]}>אישור</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -345,33 +436,37 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             <View style={styles.inputGroup}>
                 <View style={styles.reminderRow}>
                     <View style={styles.reminderInfo}>
-                        <Bell size={16} color="#8B5CF6" />
-                        <Text style={styles.inputLabel}>התראות תזכורת</Text>
+                        <Bell size={16} color={accentColor} />
+                        <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>התראות תזכורת</Text>
                     </View>
                     <Switch
                         value={remindersEnabled}
                         onValueChange={setRemindersEnabled}
-                        trackColor={{ false: '#E5E7EB', true: '#C4B5FD' }}
-                        thumbColor={remindersEnabled ? '#8B5CF6' : '#f4f3f4'}
-                        ios_backgroundColor="#E5E7EB"
+                        trackColor={{ false: theme.border, true: isDarkMode ? 'rgba(139,92,246,0.4)' : '#C4B5FD' }}
+                        thumbColor={remindersEnabled ? accentColor : theme.card}
+                        ios_backgroundColor={theme.border}
                     />
                 </View>
                 {remindersEnabled && (
-                    <Text style={styles.reminderHint}>
-                        תקבל/י תזכורת יומית בכל שעת מתן שנבחרה
+                    <Text style={[styles.reminderHint, { color: theme.textSecondary }]}>
+                        תקבל/י התראות + אירוע ביומן בכל שעת מתן שנבחרה
                     </Text>
                 )}
             </View>
 
             {/* Notes */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>הערות</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>הערות</Text>
                 <TextInput
-                    style={styles.textArea}
+                    style={[styles.textArea, {
+                        backgroundColor: inputBg,
+                        borderColor: inputBorder,
+                        color: theme.textPrimary,
+                    }]}
                     value={notes}
                     onChangeText={setNotes}
                     placeholder="הערות (למשל: לפני האוכל)"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={theme.textSecondary}
                     textAlign="right"
                     multiline
                     numberOfLines={3}
@@ -385,11 +480,17 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                 disabled={saving || saveSuccess}
                 activeOpacity={0.8}
             >
-                <View style={[styles.saveButtonInner, saveSuccess && styles.saveButtonSuccess]}>
+                <View style={[styles.saveButtonInner, {
+                    backgroundColor: accentColor,
+                }, saveSuccess && {
+                    backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#F0FDF4',
+                }]}>
                     {saveSuccess ? (
                         <Check size={22} color="#10B981" strokeWidth={2.5} />
                     ) : (
-                        <Text style={styles.saveButtonText}>שמור תרופה</Text>
+                        <Text style={styles.saveButtonText}>
+                            {saving ? 'שומר...' : 'שמור תרופה'}
+                        </Text>
                     )}
                 </View>
             </TouchableOpacity>
@@ -410,9 +511,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#F9FAFB',
         borderWidth: 1,
-        borderColor: '#E5E7EB',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -422,33 +521,22 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
         textAlign: 'right',
         marginBottom: 8,
     },
     textInput: {
-        backgroundColor: '#F9FAFB',
         borderRadius: 14,
         padding: 16,
         fontSize: 15,
-        color: '#1F2937',
         borderWidth: 1.5,
-        borderColor: '#E5E7EB',
         textAlign: 'right',
         writingDirection: 'rtl',
     },
-    textInputError: {
-        borderColor: '#EF4444',
-        backgroundColor: '#FEF2F2',
-    },
     textArea: {
-        backgroundColor: '#F9FAFB',
         borderRadius: 14,
         padding: 16,
         fontSize: 15,
-        color: '#1F2937',
         borderWidth: 1.5,
-        borderColor: '#E5E7EB',
         textAlign: 'right',
         writingDirection: 'rtl',
         minHeight: 80,
@@ -463,7 +551,6 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 12,
-        color: '#EF4444',
     },
 
     // Stepper
@@ -472,21 +559,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 20,
-        backgroundColor: '#F9FAFB',
         borderRadius: 16,
         padding: 12,
         borderWidth: 1.5,
-        borderColor: '#E5E7EB',
     },
     stepperBtn: {
         width: 44,
         height: 44,
         borderRadius: 12,
-        backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#E5E7EB',
     },
     stepperBtnDisabled: {
         opacity: 0.4,
@@ -498,12 +581,10 @@ const styles = StyleSheet.create({
     stepperValue: {
         fontSize: 32,
         fontWeight: '800',
-        color: '#8B5CF6',
     },
     stepperUnit: {
         fontSize: 12,
         fontWeight: '500',
-        color: '#9CA3AF',
         marginTop: -2,
     },
 
@@ -520,7 +601,6 @@ const styles = StyleSheet.create({
     timeLabel: {
         fontSize: 13,
         fontWeight: '500',
-        color: '#6B7280',
         textAlign: 'right',
         marginBottom: 6,
     },
@@ -529,25 +609,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        backgroundColor: '#F5F3FF',
         borderRadius: 12,
         padding: 14,
         borderWidth: 1.5,
-        borderColor: '#DDD6FE',
     },
     timeButtonText: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#7C3AED',
         letterSpacing: 2,
     },
     dateTimePickerWrapper: {
-        backgroundColor: '#FAFAFE',
         borderRadius: 12,
         marginTop: 8,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#E5E7EB',
     },
     dateTimePicker: {
         height: 180,
@@ -556,12 +631,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
     },
     timePickerDoneText: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#8B5CF6',
     },
 
     // Reminders
@@ -577,7 +650,6 @@ const styles = StyleSheet.create({
     },
     reminderHint: {
         fontSize: 12,
-        color: '#9CA3AF',
         textAlign: 'right',
         marginTop: 6,
     },
@@ -590,7 +662,6 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     saveButtonInner: {
-        backgroundColor: '#8B5CF6',
         borderRadius: 16,
         paddingVertical: 18,
         alignItems: 'center',
@@ -600,11 +671,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 4,
-    },
-    saveButtonSuccess: {
-        backgroundColor: '#F0FDF4',
-        shadowOpacity: 0,
-        elevation: 0,
     },
     saveButtonText: {
         fontSize: 17,
@@ -622,15 +688,13 @@ const styles = StyleSheet.create({
         top: 16,
     },
     suggestionsContainer: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 14,
         marginTop: 6,
         borderWidth: 1.5,
-        borderColor: '#DDD6FE',
         overflow: 'hidden' as const,
-        shadowColor: '#8B5CF6',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.08,
         shadowRadius: 12,
         elevation: 4,
     },
@@ -640,10 +704,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 14,
     },
-    suggestionBorder: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
-    },
     suggestionContent: {
         flex: 1,
         alignItems: 'flex-end' as const,
@@ -651,20 +711,16 @@ const styles = StyleSheet.create({
     suggestionName: {
         fontSize: 15,
         fontWeight: '600' as const,
-        color: '#1F2937',
     },
     suggestionNameEn: {
         fontSize: 12,
-        color: '#9CA3AF',
         marginTop: 1,
     },
     suggestionNotes: {
         fontSize: 11,
-        color: '#6B7280',
         marginTop: 2,
     },
     suggestionCategoryBadge: {
-        backgroundColor: '#F5F3FF',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
@@ -672,41 +728,62 @@ const styles = StyleSheet.create({
     },
     suggestionCategoryText: {
         fontSize: 10,
-        color: '#7C3AED',
         fontWeight: '500' as const,
     },
-    medInfoCard: {
-        backgroundColor: '#F5F3FF',
+
+    // Custom name option
+    customNameOption: {
         borderRadius: 12,
+        padding: 12,
+        marginTop: 8,
+        borderWidth: 1,
+    },
+    customNameText: {
+        fontSize: 14,
+        fontWeight: '600' as const,
+    },
+
+    // Med info card
+    medInfoCard: {
+        borderRadius: 14,
         padding: 14,
         marginTop: 10,
         borderWidth: 1,
-        borderColor: '#DDD6FE',
     },
     medInfoHeader: {
         flexDirection: 'row-reverse' as const,
         alignItems: 'center' as const,
         gap: 6,
-        marginBottom: 8,
+        marginBottom: 10,
     },
     medInfoTitle: {
         fontSize: 14,
         fontWeight: '700' as const,
-        color: '#7C3AED',
         textAlign: 'right' as const,
+    },
+    medInfoRow: {
+        flexDirection: 'row-reverse' as const,
+        alignItems: 'center' as const,
+        gap: 6,
+        marginBottom: 6,
     },
     medInfoText: {
         fontSize: 13,
-        color: '#4B5563',
         textAlign: 'right' as const,
-        marginBottom: 4,
+    },
+    disclaimerRow: {
+        flexDirection: 'row-reverse' as const,
+        alignItems: 'center' as const,
+        gap: 5,
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
     },
     medInfoDisclaimer: {
         fontSize: 11,
-        color: '#9CA3AF',
         textAlign: 'right' as const,
-        marginTop: 6,
         fontStyle: 'italic' as const,
+        flex: 1,
     },
 });
 

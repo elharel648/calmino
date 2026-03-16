@@ -113,6 +113,19 @@ service cloud.firestore {
       
       // Delete: only parent
       allow delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+
+      // Medications subcollection
+      match /medications/{medId} {
+        // Read: parent OR family member OR guest with access
+        allow read: if isAuthenticated() && (
+          isParentOfBaby(babyId) ||
+          hasFamilyAccessToBaby(babyId) ||
+          hasGuestAccessToBaby(babyId)
+        );
+
+        // Create/Update/Delete: only parent of the baby
+        allow create, update, delete: if isAuthenticated() && isParentOfBaby(babyId);
+      }
     }
 
     // ===================

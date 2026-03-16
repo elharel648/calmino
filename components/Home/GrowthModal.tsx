@@ -28,6 +28,7 @@ import Animated, {
     withSpring,
     Easing,
     withDelay,
+    interpolate,
 } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
@@ -81,9 +82,12 @@ export default function GrowthModal({
     const scrollOffsetY = useRef(0);
     const dragStartY = useRef(0);
 
-    // Icon animation
-    const iconRotation = useSharedValue(0);
-    const iconScale = useSharedValue(1);
+    // Icon animations — matching TrackingModal pulse/bounce/sparkle pattern
+    const iconPulse1 = useSharedValue(0);
+    const iconPulse2 = useSharedValue(0);
+    const iconBounce = useSharedValue(0);
+    const iconStar1 = useSharedValue(0);
+    const iconStar2 = useSharedValue(0);
     const headerOpacity = useSharedValue(0);
     const contentOpacity = useSharedValue(1);
 
@@ -109,28 +113,47 @@ export default function GrowthModal({
             headerOpacity.value = withTiming(1, { duration: 300 });
             contentOpacity.value = 1;
 
-            // Icon animation - rotation and pulse
-            iconRotation.value = withRepeat(
+            // Pulse rings — expanding circles that fade out
+            iconPulse1.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+            iconPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+
+            // Gentle bounce
+            iconBounce.value = withRepeat(
                 withSequence(
-                    withTiming(10, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(-10, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+                    withTiming(-3, { duration: 800 }),
+                    withTiming(0, { duration: 800 }),
                 ),
                 -1,
                 true
             );
-            iconScale.value = withRepeat(
+
+            // Sparkle stars
+            iconStar1.value = withRepeat(
                 withSequence(
-                    withTiming(1.08, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+                    withTiming(1, { duration: 1200 }),
+                    withTiming(0, { duration: 600 }),
+                    withTiming(0, { duration: 700 }),
                 ),
                 -1,
-                true
+                false
             );
+            iconStar2.value = withDelay(600, withRepeat(
+                withSequence(
+                    withTiming(1, { duration: 1000 }),
+                    withTiming(0, { duration: 500 }),
+                    withTiming(0, { duration: 700 }),
+                ),
+                -1,
+                false
+            ));
         } else {
             headerOpacity.value = 0;
             contentOpacity.value = 1;
-            iconRotation.value = 0;
-            iconScale.value = 1;
+            iconPulse1.value = 0;
+            iconPulse2.value = 0;
+            iconBounce.value = 0;
+            iconStar1.value = 0;
+            iconStar2.value = 0;
             slideAnim.setValue(SCREEN_HEIGHT);
             backdropAnim.setValue(0);
         }
@@ -196,11 +219,30 @@ export default function GrowthModal({
     }), [slideAnim, backdropAnim, resetAndClose]);
 
     // Animated styles
-    const iconStyle = useAnimatedStyle(() => ({
+    const pulse1Style = useAnimatedStyle(() => ({
+        opacity: interpolate(iconPulse1.value, [0, 1], [0.45, 0]),
+        transform: [{ scale: interpolate(iconPulse1.value, [0, 1], [1, 1.75]) }],
+    }));
+    const pulse2Style = useAnimatedStyle(() => ({
+        opacity: interpolate(iconPulse2.value, [0, 1], [0.3, 0]),
+        transform: [{ scale: interpolate(iconPulse2.value, [0, 1], [1, 1.75]) }],
+    }));
+    const bounceStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: iconBounce.value }],
+    }));
+    const star1Style = useAnimatedStyle(() => ({
+        opacity: iconStar1.value,
         transform: [
-            { rotate: `${iconRotation.value}deg` } as any,
-            { scale: iconScale.value } as any,
-        ],
+            { translateY: interpolate(iconStar1.value, [0, 1], [0, -14]) },
+            { scale: interpolate(iconStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+        ] as any,
+    }));
+    const star2Style = useAnimatedStyle(() => ({
+        opacity: iconStar2.value,
+        transform: [
+            { translateY: interpolate(iconStar2.value, [0, 1], [0, -14]) },
+            { scale: interpolate(iconStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+        ] as any,
     }));
 
     const headerStyle = useAnimatedStyle(() => ({
@@ -374,16 +416,30 @@ export default function GrowthModal({
                             </View>
                         )}
 
-                        <Animated.View style={[styles.iconContainer, iconStyle]}>
-                            <LinearGradient
-                                colors={[ACCENT, '#34D399']}
-                                style={styles.iconGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                <TrendingUp size={28} color="#fff" strokeWidth={2} />
-                            </LinearGradient>
-                        </Animated.View>
+                        <View style={styles.iconContainer}>
+                            {/* Pulse rings */}
+                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            {/* Main icon with bounce */}
+                            <Animated.View style={bounceStyle}>
+                                <LinearGradient
+                                    colors={[ACCENT, '#34D399']}
+                                    style={styles.iconGradient}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                >
+                                    <TrendingUp size={28} color="#fff" strokeWidth={2} />
+                                </LinearGradient>
+                            </Animated.View>
+                            {/* Sparkle star 1 */}
+                            <Animated.View style={[styles.floatingStar, { top: 2, left: 4 }, star1Style]}>
+                                <TrendingUp size={12} color={ACCENT} strokeWidth={2.5} />
+                            </Animated.View>
+                            {/* Sparkle star 2 */}
+                            <Animated.View style={[styles.floatingStar, { top: 6, right: 2 }, star2Style]}>
+                                <TrendingUp size={10} color={ACCENT} strokeWidth={2.5} />
+                            </Animated.View>
+                        </View>
 
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
                             {isEditMode ? 'עריכת מדידה' : t('growth.tracking')}
@@ -698,7 +754,21 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     iconContainer: {
+        width: 80,
+        height: 80,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 4,
+        position: 'relative',
+    },
+    iconPulse: {
+        position: 'absolute',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+    },
+    floatingStar: {
+        position: 'absolute',
     },
     iconGradient: {
         width: 64,

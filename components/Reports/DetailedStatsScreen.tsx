@@ -17,7 +17,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { format, subWeeks, subMonths, startOfDay, endOfDay, eachDayOfInterval, differenceInHours } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
@@ -50,7 +50,12 @@ export default function DetailedStatsScreen({
     childId,
 }: DetailedStatsScreenProps) {
     const { theme } = useTheme();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+
+    const dateFnsLocale = useMemo(() => {
+        const locales: Record<string, any> = { he, en: enUS, es, ar, fr, de };
+        return locales[language] || he;
+    }, [language]);
 
     const METRIC_CONFIG = useMemo(() => ({
         sleep: {
@@ -343,7 +348,7 @@ export default function DetailedStatsScreen({
         const average = nonZeroValues.length > 0 ? total / nonZeroValues.length : 0;
         const max = Math.max(...values, 0);
         const maxIndex = values.indexOf(max);
-        const maxDay = data[maxIndex] ? format(data[maxIndex].date, 'EEEE', { locale: he }) : '';
+        const maxDay = data[maxIndex] ? format(data[maxIndex].date, 'EEEE', { locale: dateFnsLocale }) : '';
 
         return { total, average, max, maxDay };
     }, [data]);
@@ -392,11 +397,11 @@ export default function DetailedStatsScreen({
         const minutes = Math.round((avg - hours) * 60);
 
         if (hours === 0) {
-            return `${minutes} דק'`;
+            return `${minutes} ${t('detailedStats.minuteShort')}`;
         } else if (minutes === 0) {
-            return `${hours} שעות`;
+            return `${hours} ${t('detailedStats.hours')}`;
         } else {
-            return `${hours}.${Math.floor(minutes / 6)} שעות`; // Round to nearest 10 minutes
+            return `${hours}.${Math.floor(minutes / 6)} ${t('detailedStats.hours')}`; // Round to nearest 10 minutes
         }
     }, [allFoodEvents, metricType]);
 
@@ -404,37 +409,37 @@ export default function DetailedStatsScreen({
     const insightValues = useMemo(() => {
         if (metricType === 'sleep') {
             return {
-                avgSleepTime: stats.average > 0 ? `${stats.average.toFixed(1)} שעות` : '--',
-                bestNight: stats.maxDay ? `${stats.max.toFixed(1)} שעות (${stats.maxDay})` : '--',
+                avgSleepTime: stats.average > 0 ? `${stats.average.toFixed(1)} ${t('detailedStats.hours')}` : '--',
+                bestNight: stats.maxDay ? `${stats.max.toFixed(1)} ${t('detailedStats.hours')} (${stats.maxDay})` : '--',
                 weekChange: weekChange || '--',
             };
         } else if (metricType === 'food') {
             return {
-                biggestFeeding: `${stats.max} מ"ל`,
+                biggestFeeding: `${stats.max} ${t('detailedStats.ml')}`,
                 avgInterval: avgInterval || '--',
-                totalAmount: `${Math.round(stats.total)} מ"ל`,
+                totalAmount: `${Math.round(stats.total)} ${t('detailedStats.ml')}`,
             };
         } else if (metricType === 'diapers') {
             return {
-                dailyAvg: `${stats.average.toFixed(1)} פעמים`,
+                dailyAvg: `${stats.average.toFixed(1)} ${t('detailedStats.times')}`,
                 busiestDay: stats.maxDay || '--',
-                totalChanges: `${Math.round(stats.total)} החלפות`,
+                totalChanges: `${Math.round(stats.total)} ${t('detailedStats.changes')}`,
             };
         } else {
             return {
-                consistency: stats.average > 0 ? 'טוב' : '--',
+                consistency: stats.average > 0 ? t('detailedStats.good') : '--',
                 commonTime: t('reports.time.morning'),
-                totalDoses: `${Math.round(stats.total)} מנות`,
+                totalDoses: `${Math.round(stats.total)} ${t('detailedStats.doses')}`,
             };
         }
-    }, [stats, metricType, weekChange, avgInterval]);
+    }, [stats, metricType, weekChange, avgInterval, t]);
 
     // Format value for display
     const formatValue = (value: number) => {
         if (metricType === 'sleep') {
             const hours = Math.floor(value);
             const minutes = Math.round((value - hours) * 60);
-            return { main: hours.toString(), sub: `${minutes} דק'`, unit: 'שע\'' };
+            return { main: hours.toString(), sub: `${minutes} ${t('detailedStats.minuteShort')}`, unit: t('detailedStats.hourShort') };
         }
         return { main: Math.round(value).toString(), sub: '', unit: config.unit };
     };
@@ -444,8 +449,8 @@ export default function DetailedStatsScreen({
     // Prepare chart data
     const chartData = useMemo(() => data.map(d => d.value), [data]);
     const chartLabels = useMemo(() =>
-        data.map(d => format(d.date, timeRange === 'custom' ? 'd/M' : 'EEE', { locale: he })),
-        [data, timeRange]
+        data.map(d => format(d.date, timeRange === 'custom' ? 'd/M' : 'EEE', { locale: dateFnsLocale })),
+        [data, timeRange, dateFnsLocale]
     );
 
     // Calculate goals progress
@@ -579,7 +584,7 @@ export default function DetailedStatsScreen({
                         )}
                     </View>
                     <Text style={[styles.dateRange, { color: theme.textSecondary }]}>
-                        {format(dateRange.start, 'd', { locale: he })}-{format(dateRange.end, 'd בMMMM yyyy', { locale: he })}
+                        {format(dateRange.start, 'd', { locale: dateFnsLocale })}-{format(dateRange.end, 'd MMMM yyyy', { locale: dateFnsLocale })}
                     </Text>
                 </View>
 
@@ -601,7 +606,7 @@ export default function DetailedStatsScreen({
                     <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
                         <View style={styles.emptyChart}>
                             <Text style={[styles.emptyChartText, { color: theme.textSecondary }]}>
-                                אין נתונים להצגה
+                                {t('detailedStats.noDataToDisplay')}
                             </Text>
                         </View>
                     </View>

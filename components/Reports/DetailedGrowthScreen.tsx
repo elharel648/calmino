@@ -21,7 +21,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { logger } from '../../utils/logger';
 import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import {
     getMeasurementsForChart,
@@ -35,6 +35,8 @@ import { Svg, Path, Defs, LinearGradient, Stop, Circle, Line } from 'react-nativ
 import GrowthModal from '../Home/GrowthModal';
 import Animated, { FadeInUp, FadeOutDown, Layout } from 'react-native-reanimated';
 import { useLanguage } from '../../context/LanguageContext';
+
+const DATE_FNS_LOCALES: Record<string, any> = { he, en: enUS, es, ar, fr, de };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -58,6 +60,7 @@ const GrowthChart = ({
     unit: string;
 }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
 
     if (!data || data.length < 2) {
         return (
@@ -68,7 +71,7 @@ const GrowthChart = ({
                         <TrendingUp size={24} color={color} strokeWidth={1.5} />
                     </View>
                     <Text style={[chartStyles.emptyText, { color: theme.textTertiary }]}>
-                        נדרשות לפחות 2 מדידות
+                        {t('detailedGrowth.needMinMeasurements')}
                     </Text>
                 </View>
             </View>
@@ -225,6 +228,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
     onEdit: (m: GrowthMeasurement) => void;
 }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const date = measurement.date.toDate();
 
     return (
@@ -245,7 +249,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                         <View style={histStyles.valueItem}>
                             <Scale size={12} color="#3B82F6" />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
-                                {measurement.weight} ק"ג
+                                {measurement.weight} {t('reports.units.kg')}
                             </Text>
                         </View>
                     )}
@@ -253,7 +257,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                         <View style={histStyles.valueItem}>
                             <Ruler size={12} color="#10B981" />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
-                                {measurement.height} ס"מ
+                                {measurement.height} {t('reports.units.cm')}
                             </Text>
                         </View>
                     )}
@@ -261,7 +265,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                         <View style={histStyles.valueItem}>
                             <Activity size={12} color="#8B5CF6" />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
-                                {measurement.headCircumference} ס"מ
+                                {measurement.headCircumference} {t('reports.units.cm')}
                             </Text>
                         </View>
                     )}
@@ -289,7 +293,8 @@ export default function DetailedGrowthScreen({
     gender,
 }: DetailedGrowthScreenProps) {
     const { theme } = useTheme();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+    const dateFnsLocale = DATE_FNS_LOCALES[language] || he;
     const { baby, refresh } = useBabyProfile(childId);
     const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
     const [change, setChange] = useState<{ weight?: number; height?: number; headCircumference?: number } | null>(null);
@@ -349,38 +354,38 @@ export default function DetailedGrowthScreen({
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         const babyName = baby?.name || t('reports.misc.baby');
-        let reportText = `📊 דוח מעקב גדילה - ${babyName}\n`;
-        reportText += `גיל: ${ageInMonths} חודשים\n`;
-        reportText += `תאריך: ${format(new Date(), 'd בMMMM yyyy', { locale: he })}\n\n`;
+        let reportText = `📊 ${t('reports.growth.title')} - ${babyName}\n`;
+        reportText += `${t('reports.growth.childAge')}: ${ageInMonths} ${t('reports.units.months')}\n`;
+        reportText += `${format(new Date(), 'd MMMM yyyy', { locale: dateFnsLocale })}\n\n`;
 
-        reportText += `━━━ מדידות נוכחיות ━━━\n`;
-        if (baby?.stats?.weight) reportText += `• משקל: ${baby.stats.weight} ק"ג\n`;
-        if (baby?.stats?.height) reportText += `• גובה: ${baby.stats.height} ס"מ\n`;
-        if (baby?.stats?.headCircumference) reportText += `• היקף ראש: ${baby.stats.headCircumference} ס"מ\n`;
+        reportText += `━━━ ${t('detailedGrowth.currentMeasurements')} ━━━\n`;
+        if (baby?.stats?.weight) reportText += `• ${t('reports.metrics.weight')}: ${baby.stats.weight} ${t('reports.units.kg')}\n`;
+        if (baby?.stats?.height) reportText += `• ${t('reports.metrics.height')}: ${baby.stats.height} ${t('reports.units.cm')}\n`;
+        if (baby?.stats?.headCircumference) reportText += `• ${t('reports.metrics.headCircumference')}: ${baby.stats.headCircumference} ${t('reports.units.cm')}\n`;
 
         if (measurements.length > 0) {
-            reportText += `\n━━━ היסטוריית מדידות (${measurements.length}) ━━━\n`;
+            reportText += `\n━━━ ${t('detailedGrowth.measurementHistory')} (${measurements.length}) ━━━\n`;
             measurements.slice().reverse().slice(0, 10).forEach((m) => {
                 const date = format(m.date.toDate(), 'd/M/yy');
                 const parts: string[] = [];
-                if (m.weight) parts.push(`${m.weight} ק"ג`);
-                if (m.height) parts.push(`${m.height} ס"מ`);
-                if (m.headCircumference) parts.push(`ראש ${m.headCircumference}`);
+                if (m.weight) parts.push(`${m.weight} ${t('reports.units.kg')}`);
+                if (m.height) parts.push(`${m.height} ${t('reports.units.cm')}`);
+                if (m.headCircumference) parts.push(`${t('reports.metrics.headCircumference')} ${m.headCircumference}`);
                 reportText += `${date}: ${parts.join(' | ')}\n`;
             });
         }
 
-        reportText += `\n📱 נוצר באפליקציית Calmino`;
+        reportText += `\n📱 Calmino`;
 
         try {
             await Share.share({
                 message: reportText,
-                title: `דוח גדילה - ${babyName}`,
+                title: `${t('reports.growth.title')} - ${babyName}`,
             });
         } catch (error) {
             Alert.alert(t('common.error'), t('reports.share.error'));
         }
-    }, [baby, measurements, ageInMonths]);
+    }, [baby, measurements, ageInMonths, t, dateFnsLocale]);
 
     const chartData = useMemo(() => ({
         weightData: measurements.filter(m => m.weight !== undefined).map(m => ({ date: m.date.toDate(), value: m.weight! })),
@@ -415,7 +420,7 @@ export default function DetailedGrowthScreen({
 
     const lastMeasurementDate = useMemo(() => {
         if (measurements.length === 0) return null;
-        return format(measurements[measurements.length - 1].date.toDate(), 'd בMMMM yyyy', { locale: he });
+        return format(measurements[measurements.length - 1].date.toDate(), 'd MMMM yyyy', { locale: dateFnsLocale });
     }, [measurements]);
 
     return (
@@ -456,7 +461,7 @@ export default function DetailedGrowthScreen({
                         <Text style={[styles.summaryUnit, { color: '#10B981' }]}>{t('reports.units.months')}</Text>
                     </View>
                     {lastMeasurementDate && (
-                        <Text style={[styles.lastUpdate, { color: '#047857' }]}>מדידה אחרונה: {lastMeasurementDate}</Text>
+                        <Text style={[styles.lastUpdate, { color: '#047857' }]}>{lastMeasurementDate}</Text>
                     )}
                 </View>
 
@@ -489,7 +494,7 @@ export default function DetailedGrowthScreen({
                         {measurements.length > 0 && (
                             <View style={styles.section}>
                                 <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                    היסטוריית מדידות ({measurements.length})
+                                    {t('detailedGrowth.measurementHistory')} ({measurements.length})
                                 </Text>
                                 {measurements.slice().reverse().map((m) => (
                                     <MeasurementRow key={m.id} measurement={m} onEdit={handleEdit} />
@@ -504,7 +509,7 @@ export default function DetailedGrowthScreen({
                         >
                             <Share2 size={18} color="#10B981" />
                             <Text style={[styles.exportBtnText, { color: theme.textPrimary }]}>
-                                שתף דוח לרופא
+                                {t('detailedGrowth.shareReportToDoctor')}
                             </Text>
                         </TouchableOpacity>
 
@@ -512,7 +517,7 @@ export default function DetailedGrowthScreen({
                         <View style={[styles.disclaimer, { backgroundColor: theme.cardSecondary }]}>
                             <Info size={14} color={theme.textTertiary} />
                             <Text style={[styles.disclaimerText, { color: theme.textTertiary }]}>
-                                הנתונים מחושבים לפי תקן WHO. לייעוץ רפואי יש לפנות לרופא.
+                                {t('detailedGrowth.whoDisclaimer')}
                             </Text>
                         </View>
                     </>

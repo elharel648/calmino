@@ -34,6 +34,8 @@ import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
 import PremiumPaywall from '../components/Premium/PremiumPaywall';
 import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
 
+const NEARBY_RADIUS_KM = 30; // Show sitters within 30km by default
+
 const BabySitterScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
@@ -161,9 +163,33 @@ const BabySitterScreen = ({ navigation }: any) => {
                     return;
                 }
 
-                const location = await Location.getCurrentPositionAsync({
-                    accuracy: Location.Accuracy.High,
+                // Phase 1: Try last-known position for instant results
+                let location: Location.LocationObject | null = null;
+                try {
+                    const lastKnown = await Location.getLastKnownPositionAsync();
+                    if (lastKnown?.coords &&
+                        !isNaN(lastKnown.coords.latitude) &&
+                        !isNaN(lastKnown.coords.longitude)) {
+                        // Use last-known immediately so sitters show up fast
+                        if (isMounted) {
+                            setUserLocation({
+                                latitude: lastKnown.coords.latitude,
+                                longitude: lastKnown.coords.longitude,
+                            });
+                            setSortBy(prev => prev === 'rating' ? 'distance' : prev);
+                        }
+                        location = lastKnown;
+                    }
+                } catch {
+                    // Silent - will fall through to getCurrentPosition
+                }
+
+                // Phase 2: Get fresh position with Balanced accuracy (~100m, 1-2s)
+                // Balanced is plenty accurate for a 30km search radius
+                const freshLocation = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
                 });
+                location = freshLocation;
 
                 // Validate coordinates
                 if (!location?.coords ||
@@ -378,16 +404,19 @@ const BabySitterScreen = ({ navigation }: any) => {
         return filterCity.trim();
     }, [filterCity]);
 
-    // Filter: Show all sitters by default, or filter by manually selected city (memoized)
-    const sittersToShow = useMemo(() => {
+    // Smart filtering: radius-based when GPS available, with fallback to all
+    const { sittersToShow, showingAllFallback } = useMemo(() => {
         let filtered = processedSitters;
 
-        // Apply Favorites Filter
+        // Apply Favorites Filter (bypass radius)
         if (sortBy === 'favorites') {
-            filtered = filtered.filter(s => s.id && favorites.includes(s.id));
+            return {
+                sittersToShow: filtered.filter(s => s.id && favorites.includes(s.id)),
+                showingAllFallback: false,
+            };
         }
 
-        // 1. Filter by manual city selection
+        // 1. Filter by manual city selection (bypass radius)
         if (activeCity && activeCity.length > 0) {
             const searchCity = activeCity.toLowerCase().trim();
             if (searchCity.length > 0) {
@@ -398,9 +427,26 @@ const BabySitterScreen = ({ navigation }: any) => {
                     return sitterCity === searchCity || sitterCity.startsWith(searchCity) || sitterCity.includes(searchCity);
                 });
             }
+            return { sittersToShow: filtered, showingAllFallback: false };
         }
 
-        return filtered;
+        // 2. Radius filter when GPS is available (no manual city)
+        if (userLocation) {
+            const nearby = filtered.filter(s => {
+                const dist = typeof s.distance === 'number' && !isNaN(s.distance) ? s.distance : 999;
+                return dist <= NEARBY_RADIUS_KM;
+            });
+
+            if (nearby.length > 0) {
+                return { sittersToShow: nearby, showingAllFallback: false };
+            }
+
+            // No nearby sitters — fall back to showing all
+            return { sittersToShow: filtered, showingAllFallback: true };
+        }
+
+        // No GPS — show all
+        return { sittersToShow: filtered, showingAllFallback: false };
     }, [processedSitters, activeCity, userLocation, sortBy, favorites]);
 
     // Sort sitters intelligently: prioritize nearby sitters, then by selected sort (memoized)
@@ -483,7 +529,7 @@ const BabySitterScreen = ({ navigation }: any) => {
         // Map Sitter type to SitterData format expected by SitterProfileScreen
         const sitterData = {
             id: sitter.id,
-            name: (sitter.name && typeof sitter.name === 'string') ? sitter.name : 'סיטר',
+            name: (sitter.name && typeof sitter.name === 'string') ? sitter.name : t('babysitter.sitter'),
             age: typeof sitter.age === 'number' && !isNaN(sitter.age) && sitter.age > 0 ? sitter.age : 0,
             image: (sitter.photoUrl && typeof sitter.photoUrl === 'string') ? sitter.photoUrl : 'https://i.pravatar.cc/200',
             rating,
@@ -739,7 +785,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                                     if (autocompleteTimeoutRef.current) clearTimeout(autocompleteTimeoutRef.current);
                                     autocompleteTimeoutRef.current = setTimeout(() => setShowCitySuggestions(false), 200);
                                 }}
-                                placeholder={userCity && ISRAELI_CITIES.includes(userCity) ? `${userCity} (אוטומטי)` : t('sitter.searchByCity')}
+                                placeholder={userCity && ISRAELI_CITIES.includes(userCity) ? `${userCity} ${t('babysitter.automatic')}` : t('sitter.searchByCity')}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
                             />
@@ -801,7 +847,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
                         {!isLoading && sortedSitters.length > 0 && (
                             <Text style={[styles.sittersHeaderTitle, { color: theme.textSecondary }]}>
-                                {sortedSitters.length} סיטרים{activeCity ? ` ב${activeCity}` : ' זמינים'}
+                                {t('babysitter.sittersCount', { count: sortedSitters.length.toString() })}{activeCity ? ` ${t('babysitter.inCity', { city: activeCity })}` : showingAllFallback ? ` ${t('babysitter.nationwide')}` : userLocation ? ` ${t('babysitter.inYourArea')}` : ` ${t('babysitter.available')}`}
                             </Text>
                         )}
                         {userLocation && !activeCity && (
@@ -829,26 +875,30 @@ const BabySitterScreen = ({ navigation }: any) => {
                                         </View>
                                     </View>
                                     <View style={styles.emptyTextGroup}>
-                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין מועדפים עדיין</Text>
-                                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>לחצי על לב בכרטיס בייביסיטר להוספה</Text>
+                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('babysitter.noFavoritesYet')}</Text>
+                                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>{t('babysitter.tapHeartToAdd')}</Text>
                                     </View>
                                 </>
                             ) : activeCity ? (
                                 <>
                                     <MapPin size={52} color={theme.border} strokeWidth={1} />
-                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>לא נמצאו בייביסיטרים ב{activeCity}</Text>
-                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>נסי לחפש עיר אחרת או להרחיב את החיפוש</Text>
+                                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('babysitter.noSittersInCity', { city: activeCity })}</Text>
+                                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('babysitter.tryAnotherCity')}</Text>
                                 </>
                             ) : (
                                 <>
                                     <View style={styles.emptyIconOuter}>
                                         <View style={styles.emptyIconInner}>
-                                            <User size={38} color={theme.textSecondary} strokeWidth={1.2} />
+                                            <MapPin size={38} color={theme.textSecondary} strokeWidth={1.2} />
                                         </View>
                                     </View>
                                     <View style={styles.emptyTextGroup}>
-                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין בייביסיטרים כרגע</Text>
-                                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>נסי שוב מאוחר יותר או בחרי עיר אחרת</Text>
+                                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                                            {t('babysitter.noSittersInArea')}
+                                        </Text>
+                                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                                            {t('babysitter.newSittersJoining')}
+                                        </Text>
                                     </View>
                                 </>
                             )}

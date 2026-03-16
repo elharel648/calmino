@@ -43,7 +43,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
@@ -89,19 +89,19 @@ interface Stats {
     pendingBookings: number;
 }
 
-// Helper function to format relative time in Hebrew
-const formatRelativeTime = (date: Date): string => {
+// Helper function to format relative time
+const formatRelativeTime = (date: Date, t: (key: string, params?: any) => string): string => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMins < 1) return 'עכשיו';
-    if (diffMins < 60) return `לפני ${diffMins} דקות`;
-    if (diffHours < 24) return `לפני ${diffHours} שעות`;
-    if (diffDays === 1) return 'אתמול';
-    return `לפני ${diffDays} ימים`;
+    if (diffMins < 1) return t('time.now');
+    if (diffMins < 60) return t('time.minutesAgo', { count: diffMins.toString() });
+    if (diffHours < 24) return t('time.hoursAgo', { count: diffHours.toString() });
+    if (diffDays === 1) return t('time.yesterday');
+    return t('time.daysAgo', { count: diffDays.toString() });
 };
 
 const SitterDashboardScreen = ({ navigation }: any) => {
@@ -183,7 +183,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [bio, setBio] = useState('');
     const [age, setAge] = useState('');
     const [experience, setExperience] = useState('');
-    const [languages, setLanguages] = useState<string[]>(['עברית']);
+    const [languages, setLanguages] = useState<string[]>([t('sitterDash.langHebrew')]);
     const [certifications, setCertifications] = useState<string[]>([]);
     const [videoUri, setVideoUri] = useState<string | null>(null);
     const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -329,7 +329,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                 return {
                     id: userId,
-                    name: data.displayName || auth.currentUser?.displayName || 'סיטר',
+                    name: data.displayName || auth.currentUser?.displayName || t('babysitter.sitter'),
                     photoUrl: data.photoUrl || auth.currentUser?.photoURL || null,
                     rating: data.sitterRating || 0,
                     reviewCount: data.sitterReviewCount || 0,
@@ -344,7 +344,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
         // Fallback to auth user
         return {
             id: userId,
-            name: auth.currentUser?.displayName || 'סיטר',
+            name: auth.currentUser?.displayName || t('babysitter.sitter'),
             photoUrl: auth.currentUser?.photoURL || null,
             rating: 0,
             reviewCount: 0,
@@ -363,7 +363,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             const q = query(
                 collection(db, 'bookings'),
                 where('babysitterId', '==', userId),
-                orderBy('date', 'desc')
+                orderBy('date', 'desc'),
+                limit(50)
             );
 
             const snapshot = await getDocs(q);
@@ -375,13 +376,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 logger.debug('📋', 'Booking data:', docSnap.id);
 
                 // Get parent info
-                let parentName = 'הורה';
+                let parentName = t('babysitter.parent');
                 let parentPhoto = null;
                 if (data.parentId) {
                     try {
                         const parentDoc = await getDoc(doc(db, 'users', data.parentId));
                         if (parentDoc.exists()) {
-                            parentName = parentDoc.data().displayName || 'הורה';
+                            parentName = parentDoc.data().displayName || t('babysitter.parent');
                             parentPhoto = parentDoc.data().photoUrl || null;
                         }
                     } catch (error) {
@@ -443,10 +444,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     setSitterProfile(prev => prev ? { ...prev, photoUrl: downloadUrl } : prev);
 
                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('✅', 'התמונה עודכנה בהצלחה!');
+                    Alert.alert('✅', t('sitterDash.photoUpdated'));
                 } catch (uploadError) {
                     logger.error('Failed to upload photo:', uploadError);
-                    Alert.alert('שגיאה', 'לא ניתן להעלות תמונה, נסה שוב');
+                    Alert.alert(t('common.error'), t('sitterDash.photoError'));
                 }
             }
         } catch (error) {
@@ -534,7 +535,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             loadData();
         } catch (error) {
             logger.error('Failed to accept booking:', error);
-            Alert.alert('שגיאה', 'לא ניתן לאשר את ההזמנה. נסה שוב.');
+            Alert.alert(t('common.error'), t('sitterDash.bookingApproveError'));
         }
     };
 
@@ -548,7 +549,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             loadData();
         } catch (error) {
             logger.error('Failed to decline booking:', error);
-            Alert.alert('שגיאה', 'לא ניתן לבטל את ההזמנה. נסה שוב.');
+            Alert.alert(t('common.error'), t('sitterDash.bookingCancelError'));
         }
     };
 
@@ -569,13 +570,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     createdAt: FirestoreTimestamp.now(),
                     updatedAt: FirestoreTimestamp.now(),
                 },
-                sitterProfile?.name || 'סיטר'
+                sitterProfile?.name || t('babysitter.sitter')
             );
-            Alert.alert('✅ משמרת התחילה!', 'הטיימר רץ כעת. ההורה יכול לראות את הזמן.');
+            Alert.alert('✅', t('sitterDash.shiftStarted'));
             loadData();
         } catch (error) {
             logger.error('Start shift error:', error);
-            Alert.alert('שגיאה', 'לא הצלחנו להתחיל את המשמרת');
+            Alert.alert(t('common.error'), t('sitterDash.shiftStartError'));
         }
     };
 
@@ -611,7 +612,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         color: textColor,
                         bgColor,
                         borderColor,
-                        text: 'ממתין לאישור',
+                        text: t('sitter.pendingApproval'),
                         icon: <Clock size={13} color={iconColor} strokeWidth={2.5} />
                     };
                 case 'accepted':
@@ -619,7 +620,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         color: textColor,
                         bgColor,
                         borderColor,
-                        text: 'מאושר',
+                        text: t('sitter.approved'),
                         icon: <CheckCircle size={13} color={iconColor} strokeWidth={2.5} />
                     };
                 case 'completed':
@@ -627,7 +628,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         color: textColor,
                         bgColor,
                         borderColor,
-                        text: 'הושלם',
+                        text: t('sitter.completed'),
                         icon: <CheckCircle size={13} color={iconColor} strokeWidth={2.5} />
                     };
                 case 'cancelled':
@@ -635,7 +636,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         color: textColor,
                         bgColor,
                         borderColor,
-                        text: 'בוטל',
+                        text: t('sitter.bookingCancelled'),
                         icon: <XCircle size={13} color={iconColor} strokeWidth={2.5} />
                     };
                 default:
@@ -667,7 +668,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             }
 
             if (!phone) {
-                Alert.alert('שגיאה', 'מספר טלפון לא זמין עבור הורה זה');
+                Alert.alert(t('common.error'), t('sitterDash.phoneNotAvailable'));
                 return;
             }
 
@@ -677,13 +678,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 formattedPhone = '972' + formattedPhone.substring(1);
             }
 
-            const message = `היי ${booking.parentName}! תודה רבה שבחרת בי לבייביסיטר. אשמח מאוד אם תוכל/י להקדיש דקה לדרג אותי באפליקציה, זה ממש עוזר לי! ⭐️`;
+            const message = `Hi ${booking.parentName}! Thank you for choosing me. I would really appreciate it if you could take a moment to rate me in the app ⭐️`;
             const url = `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
 
             Linking.canOpenURL(url)
                 .then((supported) => {
                     if (!supported) {
-                        Alert.alert('שגיאה', 'וואטסאפ לא מותקן על המכשיר');
+                        Alert.alert(t('common.error'), t('sitterDash.whatsappNotInstalled'));
                     } else {
                         return Linking.openURL(url);
                     }
@@ -764,7 +765,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         }]}>
                             <Baby size={15} color={theme.textSecondary} strokeWidth={2} />
                             <Text style={[styles.detailTextGlass, { color: theme.textPrimary }]}>
-                                {booking.childrenCount} ילדים
+                                {booking.childrenCount} children
                             </Text>
                         </View>
 
@@ -795,7 +796,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 activeOpacity={0.7}
                             >
                                 <XCircle size={16} color={theme.textSecondary} strokeWidth={2.5} />
-                                <Text style={[styles.declineBtnTextGlass, { color: theme.textSecondary }]}>דחה</Text>
+                                <Text style={[styles.declineBtnTextGlass, { color: theme.textSecondary }]}>{t('sitter.rejected')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.acceptBtnGlass, {
@@ -809,7 +810,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 activeOpacity={0.8}
                             >
                                 <CheckCircle size={16} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                                <Text style={[styles.acceptBtnTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>אשר</Text>
+                                <Text style={[styles.acceptBtnTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>{t('sitter.approved')}</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -827,7 +828,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             activeOpacity={0.8}
                         >
                             <Play size={18} color={isDarkMode ? '#000' : '#fff'} fill={isDarkMode ? '#000' : '#fff'} strokeWidth={2} />
-                            <Text style={[styles.startShiftTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>התחל משמרת</Text>
+                            <Text style={[styles.startShiftTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>{t('sitter.startShift')}</Text>
                         </TouchableOpacity>
                     )}
 
@@ -843,7 +844,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             activeOpacity={0.8}
                         >
                             <MessageSquare size={18} color="#25D366" strokeWidth={2.5} />
-                            <Text style={[styles.startShiftTextGlass, { color: '#25D366' }]}>בקש דירוג בוואטסאפ</Text>
+                            <Text style={[styles.startShiftTextGlass, { color: '#25D366' }]}>{t('sitterDash.requestWhatsappRating')}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -901,7 +902,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             <ChevronRight size={22} color={theme.textPrimary} strokeWidth={2.5} />
                         </TouchableOpacity>
                         <Text style={[styles.headerTitleGlass, { color: theme.textPrimary }]}>
-                            מצב סיטר
+                            {t('sitterDash.sitterStatus')}
                         </Text>
                         <TouchableOpacity
                             style={styles.headerButton}
@@ -946,7 +947,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                         <View style={styles.profileInfoGlass}>
                             <Text style={[styles.profileNameGlass, { color: theme.textPrimary }]}>
-                                {sitterProfile?.name || 'סיטר'}
+                                {sitterProfile?.name || t('babysitter.sitter')}
                             </Text>
                             {sitterProfile?.rating ? (
                                 <View style={styles.ratingRowGlass}>
@@ -954,7 +955,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Text style={[styles.ratingTextGlass, { color: theme.textPrimary }]}>
                                         <Text style={{ fontWeight: '800' }}>{sitterProfile.rating.toFixed(1)}</Text>
                                         <Text style={[{ color: theme.textSecondary, fontWeight: '600' }]}>
-                                            {' '}({sitterProfile.reviewCount} ביקורות)
+                                            {' '}({sitterProfile.reviewCount} {t('sitterDash.reviews')})
                                         </Text>
                                     </Text>
                                 </View>
@@ -970,7 +971,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             ₪{hourlyRate}
                         </Text>
                         <Text style={[styles.hourlyRateLabel, { color: theme.textSecondary }]}>
-                            /שעה
+                            {t('sitter.perHour')}
                         </Text>
                     </View>
                 </View>
@@ -987,7 +988,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             navigation.navigate('SitterProfile', {
                                 sitterData: {
                                     id: sitterProfile?.id || '',
-                                    name: sitterProfile?.name || 'סיטר',
+                                    name: sitterProfile?.name || t('babysitter.sitter'),
                                     age: parseInt(age) || 0,
                                     image: sitterProfile?.photoUrl || '',
                                     rating: sitterProfile?.rating || 0,
@@ -1016,7 +1017,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     >
                         <ExternalLink size={16} color={theme.textPrimary} strokeWidth={2} />
                         <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
-                            ראה פרופיל כהורה
+                            {t('sitterDash.viewProfileAsParent')}
                         </Text>
                     </TouchableOpacity>
 
@@ -1028,15 +1029,15 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         onPress={async () => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             try {
-                                const name = sitterProfile?.name || 'סיטר';
+                                const name = sitterProfile?.name || t('babysitter.sitter');
                                 const ratingLine = sitterProfile?.rating
-                                    ? `${sitterProfile.rating.toFixed(1)} ⭐ | ${sitterProfile.reviewCount} ביקורות\n`
+                                    ? `${sitterProfile.rating.toFixed(1)} ⭐ | ${sitterProfile.reviewCount} reviews\n`
                                     : '';
                                 const cityLine = sitterCity ? `📍 ${sitterCity}\n` : '';
                                 // TODO: Replace with actual App Store / Play Store link
                                 const appLink = 'https://apps.apple.com/app/calmino';
                                 await Share.share({
-                                    message: `היי 👋\nאני ${name}, בייביסיטר באפליקציית Calmino.\n\n${ratingLine}${cityLine}\nרוצה לראות את הפרופיל שלי? הורידו את Calmino:\n${appLink}`,
+                                    message: `Hi 👋\nI'm ${name}, a babysitter on Calmino.\n\n${ratingLine}${cityLine}\nWant to see my profile? Download Calmino:\n${appLink}`,
                                 });
                             } catch (error) {
                                 logger.error('Share error:', error);
@@ -1046,7 +1047,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     >
                         <Share2 size={16} color={theme.textPrimary} strokeWidth={2} />
                         <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
-                            שתף פרופיל
+                            {t('sitterDash.shareProfile')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -1065,9 +1066,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         try {
                             const sitterId = auth.currentUser?.uid;
-                            const msg = `היי! אשמח ממש אם תוכלי להקדיש דקה לדרג אותי באפליקציית Calmino, זה עוזר לי מאוד 😊\n\nלחצי כאן:\ncalmparentapp://babysitter/${sitterId}`;
+                            const msg = `Hi! I would really appreciate if you could rate me on Calmino 😊\n\nTap here:\ncalmparentapp://babysitter/${sitterId}`;
                             Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
-                                Alert.alert('שגיאה', 'וואטסאפ לא מותקן על המכשיר.');
+                                Alert.alert(t('common.error'), t('sitterDash.whatsappNotInstalled'));
                             });
                         } catch (error) {
                             logger.error('WhatsApp rating error:', error);
@@ -1077,7 +1078,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 >
                     <MessageSquare size={16} color={theme.textPrimary} strokeWidth={2} />
                     <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
-                        בקש דירוג בוואטסאפ
+                        {t('sitterDash.requestWhatsappRating')}
                     </Text>
                 </TouchableOpacity>
 
@@ -1110,7 +1111,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             {sitterProfile?.reviewCount > 0 ? (
                                 <>
                                     <Text style={[styles.reviewsLabelGlass, { color: theme.textSecondary }]}>
-                                        הביקורות שלי
+                                        {t('sitterDash.myReviews')}
                                     </Text>
                                     <Text style={[styles.reviewsValueGlass, { color: theme.textPrimary }]}>
                                         {sitterProfile.rating.toFixed(1)} ★ ({sitterProfile.reviewCount})
@@ -1118,7 +1119,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </>
                             ) : (
                                 <Text style={[styles.reviewsValueGlass, { color: theme.textSecondary }]}>
-                                    אין ביקורות עדיין
+                                    {t('sitterDash.noReviewsYet')}
                                 </Text>
                             )}
                         </View>
@@ -1143,8 +1144,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 <Zap size={20} color="#10B981" strokeWidth={2} />
                             </View>
                             <View>
-                                <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary, textAlign: 'right' }]}>פנוי/ה להערב</Text>
-                                <Text style={[styles.quickActionDesc, { color: theme.textSecondary, textAlign: 'right' }]}>הורים יראו שאת/ה זמין/ה עכשיו</Text>
+                                <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary, textAlign: 'right' }]}>{t('sitterDash.availableTonight')}</Text>
+                                <Text style={[styles.quickActionDesc, { color: theme.textSecondary, textAlign: 'right' }]}>{t('sitterDash.parentsWillSee')}</Text>
                             </View>
                         </View>
                         <Switch
@@ -1189,10 +1190,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         </View>
                         <View style={styles.quickActionContent}>
                             <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary }]}>
-                                זמינות
+                                {t('sitterDash.availability')}
                             </Text>
                             <Text style={[styles.quickActionSubtextGlass, { color: theme.textSecondary }]}>
-                                {availableDays.length} ימים • {availableHours[availableDays[0]]?.start || '09:00'}-{availableHours[availableDays[0]]?.end || '18:00'}
+                                {availableDays.length} {t('sitterDash.days')} • {availableHours[availableDays[0]]?.start || '09:00'}-{availableHours[availableDays[0]]?.end || '18:00'}
                             </Text>
                         </View>
                         <ChevronLeft size={18} color={theme.textSecondary} strokeWidth={2} />
@@ -1201,7 +1202,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                 {/* Analytics Section */}
                 <View style={styles.bookingsSection}>
-                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>סטטיסטיקות</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('sitterDash.statistics')}</Text>
 
                     {/* Profile Views Chart */}
                     <View style={[styles.analyticsCard, {
@@ -1218,7 +1219,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Eye size={18} color={theme.textSecondary} strokeWidth={2} />
                                 </View>
                                 <Text style={[styles.analyticsCardTitle, { color: theme.textPrimary }]}>
-                                    צפיות בפרופיל
+                                    {t('sitterDash.profileViews')}
                                 </Text>
                             </View>
                             <View style={styles.analyticsCardStats}>
@@ -1226,7 +1227,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {profileViewStats?.totalWeek ?? 0}
                                 </Text>
                                 <Text style={[styles.analyticsSubStat, { color: theme.textSecondary }]}>
-                                    ב-7 ימים אחרונים
+                                    {t('reports.units.days')}
                                 </Text>
                             </View>
                         </View>
@@ -1234,10 +1235,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         {/* Mini Bar Chart */}
                         <View style={styles.chartContainer}>
                             {(profileViewStats?.dailyViews || [
-                                { date: 'א׳', count: 0 }, { date: 'ב׳', count: 0 },
-                                { date: 'ג׳', count: 0 }, { date: 'ד׳', count: 0 },
-                                { date: 'ה׳', count: 0 }, { date: 'ו׳', count: 0 },
-                                { date: 'ש׳', count: 0 },
+                                { date: t('sitterDash.sunday').charAt(0), count: 0 }, { date: t('sitterDash.monday').charAt(0), count: 0 },
+                                { date: t('sitterDash.tuesday').charAt(0), count: 0 }, { date: t('sitterDash.wednesday').charAt(0), count: 0 },
+                                { date: t('sitterDash.thursday').charAt(0), count: 0 }, { date: t('sitterDash.friday').charAt(0), count: 0 },
+                                { date: t('sitterDash.saturday').charAt(0), count: 0 },
                             ]).map((day, index) => {
                                 const maxCount = Math.max(1, ...(profileViewStats?.dailyViews || []).map(d => d.count));
                                 const barHeight = day.count > 0 ? Math.max(8, (day.count / maxCount) * 60) : 4;
@@ -1263,7 +1264,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                         {profileViewStats && profileViewStats.totalAllTime > 0 && (
                             <Text style={[styles.analyticsFooter, { color: theme.textSecondary }]}>
-                                סה״כ {profileViewStats.totalAllTime} צפיות
+                                {t('sitterDash.totalViews', { count: profileViewStats.totalAllTime.toString() })}
                             </Text>
                         )}
                     </View>
@@ -1294,7 +1295,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 <X size={22} color={theme.textSecondary} strokeWidth={2} />
                             </TouchableOpacity>
                             <Text style={[styles.settingsTitleGlass, { color: theme.textPrimary }]}>
-                                הגדרות סיטר
+                                {t('sitterDash.settings')}
                             </Text>
                         </View>
 
@@ -1343,12 +1344,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 <Text style={[styles.changePhotoText, {
                                     color: uploadingPhoto ? theme.textSecondary : theme.textPrimary,
                                 }]}>
-                                    {uploadingPhoto ? 'מעלה תמונה...' : 'שנה תמונה'}
+                                    {uploadingPhoto ? t('sitter.uploading') : t('sitter.changePhoto')}
                                 </Text>
                             </TouchableOpacity>
 
                             {/* ─── Contact ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>פרטי קשר</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitter.contactPhone')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
@@ -1365,13 +1366,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             setIsLoadingLocation(true);
                                             try {
                                                 const { status } = await Location.requestForegroundPermissionsAsync();
-                                                if (status !== 'granted') { Alert.alert('הרשאות נדרשות', 'אנא אפשר גישה למיקום בהגדרות הטלפון'); setIsLoadingLocation(false); return; }
+                                                if (status !== 'granted') { Alert.alert(t('sitterDash.locationPermRequired'), t('sitterDash.locationPermMessage')); setIsLoadingLocation(false); return; }
                                                 const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                                                 setGpsLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
                                                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                             } catch (error) {
                                                 logger.error('Location error:', error);
-                                                Alert.alert('שגיאה', 'לא ניתן לקבל מיקום. אנא נסה שוב.');
+                                                Alert.alert(t('common.error'), t('sitterDash.locationError'));
                                             } finally { setIsLoadingLocation(false); }
                                         }}
                                         disabled={isLoadingLocation}
@@ -1390,11 +1391,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         style={[styles.settingsCardInput, { color: theme.textPrimary }]}
                                         value={sitterCity}
                                         onChangeText={setSitterCity}
-                                        placeholder="תל אביב"
+                                        placeholder={t('sitterReg.city')}
                                         placeholderTextColor={theme.textSecondary}
                                         textAlign="right"
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>עיר</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterReg.city')}</Text>
                                 </View>
                                 <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
                                 <View style={styles.settingsCardRow}>
@@ -1407,7 +1408,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         keyboardType="phone-pad"
                                         textAlign="right"
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>טלפון</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterReg.phone')}</Text>
                                 </View>
                                 <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
                                 <View style={styles.settingsCardRow}>
@@ -1417,12 +1418,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         trackColor={{ false: isDarkMode ? '#3A3A3C' : '#E5E5EA', true: theme.primary }}
                                         thumbColor="#fff"
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>הצג מספר טלפון למשפחות</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.showPhoneToFamilies')}</Text>
                                 </View>
                             </View>
 
                             {/* ─── Price ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>תמחור</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitterDash.pricing')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
@@ -1445,12 +1446,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             <Plus size={14} color={theme.textPrimary} strokeWidth={2.5} />
                                         </TouchableOpacity>
                                     </View>
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>מחיר לשעה</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterReg.pricePerHour')}</Text>
                                 </View>
                             </View>
 
                             {/* ─── Availability ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>זמינות</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitterDash.availability')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
@@ -1463,7 +1464,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         thumbColor={isDarkMode ? (notificationsEnabled ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>התראות</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.notifications')}</Text>
                                 </View>
                                 <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
                                 <View style={styles.settingsToggleRow}>
@@ -1474,12 +1475,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         thumbColor={isDarkMode ? (availableForBookings ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>זמין להזמנות</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.availableForBookings')}</Text>
                                 </View>
                             </View>
 
                             {/* ─── Social ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>רשתות חברתיות</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitterDash.socialMedia')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
@@ -1558,14 +1559,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </View>
 
                             {/* ─── About ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>אודותיי</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitterDash.aboutMe')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
                             }]}>
                                 {/* Bio */}
                                 <View style={[styles.settingsCardRow, { flexDirection: 'column', alignItems: 'flex-end', gap: 6 }]}>
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary, textAlign: 'right', width: '100%' }]}>תיאור עצמי</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary, textAlign: 'right', width: '100%' }]}>{t('sitterDash.aboutMe')}</Text>
                                     <TextInput
                                         style={[styles.bioInput, {
                                             backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
@@ -1580,7 +1581,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         }]}
                                         value={bio}
                                         onChangeText={setBio}
-                                        placeholder="היי! אני אוהב/ת ילדים, יש לי ניסיון של..."
+                                        placeholder={t('sitterDash.bioPlaceholder')}
                                         placeholderTextColor={theme.textSecondary}
                                         textAlign="right"
                                         multiline
@@ -1599,7 +1600,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         keyboardType="numeric"
                                         textAlign="left"
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>גיל</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.ageLabel')}</Text>
                                 </View>
                                 <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
                                 {/* Experience */}
@@ -1608,23 +1609,23 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         style={[styles.settingsCardInput, { color: theme.textSecondary, flex: 1, textAlign: 'left' }]}
                                         value={experience}
                                         onChangeText={setExperience}
-                                        placeholder="5 שנים ניסיון..."
+                                        placeholder={t('sitterDash.experiencePlaceholder')}
                                         placeholderTextColor={theme.textSecondary}
                                         textAlign="left"
                                     />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>ניסיון</Text>
+                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.experienceLabel')}</Text>
                                 </View>
                             </View>{/* end settingsCard About */}
 
                             {/* ─── Languages ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>שפות</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitterDash.languages')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
                                 padding: 14,
                             }]}>
                                 <View style={styles.tagsContainer}>
-                                    {['עברית', 'אנגלית', 'ערבית', 'רוסית', 'צרפתית', 'ספרדית'].map((lang) => (
+                                    {[t('sitterDash.langHebrew'), t('sitterDash.langEnglish'), t('sitterDash.langArabic'), t('sitterDash.langRussian'), t('sitterDash.langFrench'), t('sitterDash.langSpanish')].map((lang) => (
                                         <TouchableOpacity
                                             key={lang}
                                             style={[styles.tag, {
@@ -1655,7 +1656,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         </TouchableOpacity>
                                     ))}
                                     {/* Custom languages tags */}
-                                    {languages.filter(l => !['עברית', 'אנגלית', 'ערבית', 'רוסית', 'צרפתית', 'ספרדית'].includes(l)).map((lang) => (
+                                    {languages.filter(l => ![t('sitterDash.langHebrew'), t('sitterDash.langEnglish'), t('sitterDash.langArabic'), t('sitterDash.langRussian'), t('sitterDash.langFrench'), t('sitterDash.langSpanish')].includes(l)).map((lang) => (
                                         <TouchableOpacity
                                             key={lang}
                                             style={[styles.tag, {
@@ -1701,7 +1702,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         }]}
                                         value={newLanguage}
                                         onChangeText={setNewLanguage}
-                                        placeholder="הוסף שפה חדשה..."
+                                        placeholder={t('sitterDash.addLanguage')}
                                         placeholderTextColor={theme.textSecondary}
                                         textAlign="right"
                                         onSubmitEditing={() => {
@@ -1715,14 +1716,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </View>
 
                             {/* ─── Certifications ─── */}
-                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>תעודות</Text>
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitterDash.certificates')}</Text>
                             <View style={[styles.settingsCard, {
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
                                 padding: 14,
                             }]}>
                                 <View style={styles.tagsContainer}>
-                                    {['עזרה ראשונה', 'החייאה (CPR)', 'קורס בייביסיטר', 'גננת מוסמכת', 'סייעת מוסמכת'].map((cert) => (
+                                    {[t('sitterDash.certFirstAid'), t('sitterDash.certCPR'), t('sitterDash.certBabysitter'), t('sitterDash.certKindergarten'), t('sitterDash.certAssistant')].map((cert) => (
                                         <TouchableOpacity
                                             key={cert}
                                             style={[styles.tag, {
@@ -1753,7 +1754,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         </TouchableOpacity>
                                     ))}
                                     {/* Custom certifications tags */}
-                                    {certifications.filter(c => !['עזרה ראשונה', 'החייאה (CPR)', 'קורס בייביסיטר', 'גננת מוסמכת', 'סייעת מוסמכת'].includes(c)).map((cert) => (
+                                    {certifications.filter(c => ![t('sitterDash.certFirstAid'), t('sitterDash.certCPR'), t('sitterDash.certBabysitter'), t('sitterDash.certKindergarten'), t('sitterDash.certAssistant')].includes(c)).map((cert) => (
                                         <TouchableOpacity
                                             key={cert}
                                             style={[styles.tag, {
@@ -1799,7 +1800,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         }]}
                                         value={newCertification}
                                         onChangeText={setNewCertification}
-                                        placeholder="הוסף תעודה חדשה..."
+                                        placeholder={t('sitterDash.addCertificate')}
                                         placeholderTextColor={theme.textSecondary}
                                         textAlign="right"
                                         onSubmitEditing={() => {
@@ -1823,7 +1824,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                                     const userId = auth.currentUser?.uid;
                                     if (!userId) {
-                                        Alert.alert('שגיאה', 'יש להתחבר קודם');
+                                        Alert.alert(t('common.error'), t('sitterDash.loginRequired'));
                                         return;
                                     }
 
@@ -1863,10 +1864,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                         setSettingsVisible(false);
-                                        Alert.alert('נשמר!', 'ההגדרות נשמרו בהצלחה');
+                                        Alert.alert(t('sitterDash.saved'), t('sitterDash.settingsSaved'));
                                     } catch (error) {
                                         logger.error('Failed to save settings:', error);
-                                        Alert.alert('שגיאה', 'לא ניתן לשמור, נסה שוב');
+                                        Alert.alert(t('common.error'), t('sitterDash.settingsSaveError'));
                                     } finally {
                                         setSavingSettings(false);
                                     }
@@ -1879,7 +1880,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 ) : (
                                     <>
                                         <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                                        <Text style={[styles.saveSettingsBtnTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>שמור הגדרות</Text>
+                                        <Text style={[styles.saveSettingsBtnTextGlass, { color: isDarkMode ? '#000' : '#fff' }]}>{t('sitterDash.saveSettings')}</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -1902,12 +1903,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 style={styles.deleteAccountBtn}
                                 onPress={() => {
                                     Alert.alert(
-                                        'מחיקת חשבון סיטר',
-                                        'האם אתה בטוח שברצונך למחוק את חשבון הסיטר שלך? לא ניתן לשחזר פעולה זו.',
+                                        t('sitterDash.deleteSitterAccount'),
+                                        t('sitterDash.deleteSitterConfirm'),
                                         [
-                                            { text: 'ביטול', style: 'cancel' },
+                                            { text: t('sitterDash.cancelBtn'), style: 'cancel' },
                                             {
-                                                text: 'מחק',
+                                                text: t('sitterDash.deleteBtn'),
                                                 style: 'destructive',
                                                 onPress: async () => {
                                                     const userId = auth.currentUser?.uid;
@@ -1920,11 +1921,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                             });
                                                             setSettingsVisible(false);
                                                             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                                                            Alert.alert('נמחק', 'חשבון הסיטר נמחק. תוכל להירשם מחדש בכל עת.');
+                                                            Alert.alert(t('sitterDash.saved'), t('sitterDash.accountDeleted'));
                                                             navigation.replace('SitterList');
                                                         } catch (error) {
                                                             logger.error('Failed to delete sitter account:', error);
-                                                            Alert.alert('שגיאה', 'לא ניתן למחוק, נסה שוב');
+                                                            Alert.alert(t('common.error'), t('sitterDash.deleteError'));
                                                         }
                                                     }
                                                 }
@@ -1989,13 +1990,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             {activeSocialPlatform.name}
                                         </Text>
                                         <Text style={{ color: theme.textSecondary, marginTop: 4, textAlign: 'center' }}>
-                                            {activeSocialPlatform.value ? 'ערוך קישור לפרופיל' : 'חבר חשבון חדש'}
+                                            {activeSocialPlatform.value ? t('sitterDash.editLink') : t('sitterDash.connectNew')}
                                         </Text>
                                     </View>
 
                                     <View style={{ gap: 16 }}>
                                         <View>
-                                            <Text style={[styles.fieldLabel, { color: theme.textPrimary, marginBottom: 8 }]}>קישור או שם משתמש</Text>
+                                            <Text style={[styles.fieldLabel, { color: theme.textPrimary, marginBottom: 8 }]}>{t('sitterDash.linkOrUsername')}</Text>
                                             <TextInput
                                                 style={[styles.settingsInputGlass, {
                                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F5F5F7',
@@ -2026,7 +2027,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 )}
                                                 {activeSocialPlatform.value && !validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) && (
                                                     <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
-                                                        {activeSocialPlatform.id === 'whatsapp' ? 'הזן מספר טלפון תקין' : 'שם משתמש לא תקין'}
+                                                        {activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput')}
                                                     </Text>
                                                 )}
                                             </View>
@@ -2053,7 +2054,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             >
                                                 <ExternalLink size={16} color={activeSocialPlatform.color} strokeWidth={2} />
                                                 <Text style={{ fontSize: 14, fontWeight: '600', color: activeSocialPlatform.color }}>
-                                                    בדוק קישור
+                                                    {t('sitterDash.checkLink')}
                                                 </Text>
                                             </TouchableOpacity>
                                         )}
@@ -2067,7 +2068,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 }}
                                                 onPress={() => setSocialModalVisible(false)}
                                             >
-                                                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>ביטול</Text>
+                                                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>{t('sitterDash.cancelBtn')}</Text>
                                             </TouchableOpacity>
 
                                             <TouchableOpacity
@@ -2092,14 +2093,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     }
                                                     if (!validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value)) {
                                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                                                        Alert.alert('שגיאה', activeSocialPlatform.id === 'whatsapp' ? 'הזן מספר טלפון תקין (כולל קידומת מדינה)' : 'שם המשתמש לא תקין. בדוק ונסה שוב.');
+                                                        Alert.alert(t('common.error'), activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput'));
                                                         return;
                                                     }
                                                     setSocialModalVisible(false);
                                                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                                 }}
                                             >
-                                                <Text style={{ fontSize: 16, fontWeight: '700', color: activeSocialPlatform.value && validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) ? '#FFFFFF' : theme.textSecondary }}>שמור</Text>
+                                                <Text style={{ fontSize: 16, fontWeight: '700', color: activeSocialPlatform.value && validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) ? '#FFFFFF' : theme.textSecondary }}>{t('sitterDash.saveSettings')}</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -2135,10 +2136,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Calendar size={24} color={theme.textSecondary} strokeWidth={2.5} />
                                 </View>
                                 <Text style={[styles.availabilityTitle, { color: theme.textPrimary }]}>
-                                    זמינות שבועית
+                                    {t('sitterDash.weeklyAvailability')}
                                 </Text>
                                 <Text style={[styles.availabilitySubtitle, { color: theme.textSecondary }]}>
-                                    בחר את הימים והשעות שבהם אתה זמין
+                                    {t('sitterDash.chooseAvailDays')}
                                 </Text>
                             </View>
                         </View>
@@ -2173,7 +2174,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         : theme.textSecondary,
                                     fontWeight: availabilityTab === 'weekly' ? '700' : '600',
                                 }]}>
-                                    זמינות שבועית
+                                    {t('sitterDash.weeklyAvailability')}
                                 </Text>
                             </TouchableOpacity>
 
@@ -2202,7 +2203,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         : theme.textSecondary,
                                     fontWeight: availabilityTab === 'exceptions' ? '700' : '600',
                                 }]}>
-                                    חריגות ותאריכים
+                                    {t('sitterDash.exceptionsAndDates')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -2214,13 +2215,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {/* Compact List - All Days */}
                                     <View style={styles.compactDaysList}>
                                         {[
-                                            { key: '0', label: 'ראשון' },
-                                            { key: '1', label: 'שני' },
-                                            { key: '2', label: 'שלישי' },
-                                            { key: '3', label: 'רביעי' },
-                                            { key: '4', label: 'חמישי' },
-                                            { key: '5', label: 'שישי' },
-                                            { key: '6', label: 'שבת' },
+                                            { key: '0', label: t('sitterDash.sunday') },
+                                            { key: '1', label: t('sitterDash.monday') },
+                                            { key: '2', label: t('sitterDash.tuesday') },
+                                            { key: '3', label: t('sitterDash.wednesday') },
+                                            { key: '4', label: t('sitterDash.thursday') },
+                                            { key: '5', label: t('sitterDash.friday') },
+                                            { key: '6', label: t('sitterDash.saturday') },
                                         ].map((day, index) => {
                                             const isSelected = availableDays.includes(day.key);
                                             const hours = availableHours[day.key] || { start: '09:00', end: '18:00' };
@@ -2272,7 +2273,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                                 </Text>
                                                             ) : (
                                                                 <Text style={[styles.compactUnavailableText, { color: theme.textSecondary }]}>
-                                                                    לא זמין
+                                                                    {t('sitterDash.notAvailableDay')}
                                                                 </Text>
                                                             )}
                                                         </View>
@@ -2399,14 +2400,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     newHours[key] = hours;
                                                 });
                                                 setAvailableHours(newHours);
-                                                Alert.alert('✅ הועתק!', 'השעות הועתקו לכל הימים');
+                                                Alert.alert('✅', t('sitterDash.hoursCopied'));
                                             }
                                         }}
                                         activeOpacity={0.7}
                                         disabled={availableDays.length === 0}
                                     >
                                         <Text style={[styles.copyToAllText, { color: theme.textSecondary }]}>
-                                            העתק שעות לכל הימים
+                                            {t('sitterDash.copyHoursToAll')}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
@@ -2422,7 +2423,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     }]}>
                                         <Clock size={18} color={theme.textSecondary} strokeWidth={2} />
                                         <Text style={[styles.exceptionsInfoText, { color: theme.textSecondary }]}>
-                                            הוסף חריגות מהתבנית השבועית - תאריכים ספציפיים שבהם אתה לא זמין או זמין בשעות שונות
+                                            {t('sitterDash.exceptionsHint')}
                                         </Text>
                                     </View>
 
@@ -2440,7 +2441,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     >
                                         <Plus size={18} color={theme.textPrimary} strokeWidth={2} />
                                         <Text style={[styles.addExceptionText, { color: theme.textPrimary }]}>
-                                            הוסף חריגה
+                                            {t('sitterDash.addException')}
                                         </Text>
                                     </TouchableOpacity>
 
@@ -2448,12 +2449,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {exceptions.length > 0 && (
                                         <View style={styles.exceptionsList}>
                                             <Text style={[styles.exceptionsListTitle, { color: theme.textSecondary }]}>
-                                                חריגות ({exceptions.length})
+                                                {t('sitterDash.exceptions')} ({exceptions.length})
                                             </Text>
                                             {exceptions.map((exception) => {
                                                 const date = new Date(exception.date);
                                                 const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-                                                const dayName = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][date.getDay()];
+                                                const dayName = [t('sitterDash.sunday'), t('sitterDash.monday'), t('sitterDash.tuesday'), t('sitterDash.wednesday'), t('sitterDash.thursday'), t('sitterDash.friday'), t('sitterDash.saturday')][date.getDay()];
 
                                                 return (
                                                     <View
@@ -2485,7 +2486,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                         <View style={styles.exceptionCardBody}>
                                                             {exception.type === 'unavailable' ? (
                                                                 <Text style={[styles.exceptionStatus, { color: '#EF4444' }]}>
-                                                                    ❌ לא זמין
+                                                                    {t('sitterDash.unavailable')}
                                                                 </Text>
                                                             ) : (
                                                                 <Text style={[styles.exceptionStatus, { color: theme.textPrimary }]}>
@@ -2518,7 +2519,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     >
                                         <Calendar size={18} color={theme.textPrimary} strokeWidth={2} />
                                         <Text style={[styles.addVacationText, { color: theme.textPrimary }]}>
-                                            הוסף חופשה (טווח תאריכים)
+                                            {t('sitterDash.addVacationRange')}
                                         </Text>
                                     </TouchableOpacity>
 
@@ -2526,7 +2527,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {vacations.length > 0 && (
                                         <View style={styles.vacationsList}>
                                             <Text style={[styles.vacationsListTitle, { color: theme.textSecondary }]}>
-                                                חופשות ({vacations.length})
+                                                {t('sitterDash.vacations')} ({vacations.length})
                                             </Text>
                                             {vacations.map((vacation) => {
                                                 const startDate = new Date(vacation.startDate);
@@ -2576,7 +2577,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         <View style={styles.exceptionsEmptyState}>
                                             <Calendar size={48} color={theme.textSecondary} strokeWidth={1.5} opacity={0.3} />
                                             <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
-                                                עדיין לא הוספת חריגות או חופשות
+                                                {t('sitterDash.noExceptionsYet')}
                                             </Text>
                                         </View>
                                     )}
@@ -2592,7 +2593,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 }]}
                                 onPress={async () => {
                                     if (availableDays.length === 0) {
-                                        Alert.alert('שים לב', 'יש לבחור לפחות יום אחד');
+                                        Alert.alert(t('common.error'), t('sitterDash.selectAtLeastOneDay'));
                                         return;
                                     }
 
@@ -2615,14 +2616,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                             // Update local profile state
                                             setAvailabilityModalVisible(false);
-                                            Alert.alert('✅ נשמר!', `הזמינות עודכנה ל-${availableDays.length} ימים בשבוע`);
+                                            Alert.alert(t('sitterDash.saved'), t('sitterDash.availabilityUpdated', { count: availableDays.length.toString() }));
 
                                             // Refresh data to reflect changes
                                             loadData();
                                         }
                                     } catch (error) {
                                         logger.error('Failed to save availability:', error);
-                                        Alert.alert('שגיאה', 'לא ניתן לשמור את הזמינות. נסה שוב.');
+                                        Alert.alert(t('common.error'), t('sitterDash.saveError'));
                                     } finally {
                                         setSavingSettings(false);
                                     }
@@ -2635,7 +2636,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 ) : (
                                     <>
                                         <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                                        <Text style={[styles.saveAvailabilityBtnText, { color: isDarkMode ? '#000' : '#fff' }]}>שמור זמינות</Text>
+                                        <Text style={[styles.saveAvailabilityBtnText, { color: isDarkMode ? '#000' : '#fff' }]}>{t('sitterDash.saveAvailability')}</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -2654,7 +2655,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         <View style={[styles.exceptionModal, { backgroundColor: theme.card }]}>
                             <View style={styles.exceptionModalHeader}>
                                 <Text style={[styles.exceptionModalTitle, { color: theme.textPrimary }]}>
-                                    הוסף חריגה
+                                    {t('sitterDash.addException')}
                                 </Text>
                                 <TouchableOpacity
                                     onPress={() => setAddExceptionModalVisible(false)}
@@ -2666,7 +2667,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                             <ScrollView showsVerticalScrollIndicator={false}>
                                 {/* Date Picker */}
-                                <Text style={[styles.exceptionLabel, { color: theme.textSecondary }]}>תאריך</Text>
+                                <Text style={[styles.exceptionLabel, { color: theme.textSecondary }]}>{t('sitterDash.dateLabel')}</Text>
                                 <TouchableOpacity
                                     style={[styles.exceptionDateBtn, {
                                         backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2699,12 +2700,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         style={[styles.datePickerDoneBtn, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}
                                         onPress={() => setShowExceptionDatePicker(false)}
                                     >
-                                        <Text style={{ color: isDarkMode ? '#000' : '#fff', fontWeight: '700', fontSize: 14 }}>אישור</Text>
+                                        <Text style={{ color: isDarkMode ? '#000' : '#fff', fontWeight: '700', fontSize: 14 }}>{t('sitterDash.confirm')}</Text>
                                     </TouchableOpacity>
                                 )}
 
                                 {/* Exception Type */}
-                                <Text style={[styles.exceptionLabel, { color: theme.textSecondary, marginTop: 16 }]}>סוג</Text>
+                                <Text style={[styles.exceptionLabel, { color: theme.textSecondary, marginTop: 16 }]}>{t('sitterDash.typeLabel')}</Text>
                                 <View style={styles.exceptionTypeRow}>
                                     <TouchableOpacity
                                         style={[styles.exceptionTypeBtn, {
@@ -2721,7 +2722,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 ? (isDarkMode ? '#000' : '#fff')
                                                 : theme.textPrimary,
                                         }]}>
-                                            לא זמין
+                                            {t('sitterDash.notAvailableDay')}
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
@@ -2739,7 +2740,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 ? (isDarkMode ? '#000' : '#fff')
                                                 : theme.textPrimary,
                                         }]}>
-                                            שעות מותאמות
+                                            {t('sitterDash.customHours')}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
@@ -2748,7 +2749,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 {exceptionType === 'custom' && (
                                     <View style={styles.customHoursRow}>
                                         <View style={styles.customHoursCol}>
-                                            <Text style={[styles.exceptionLabel, { color: theme.textSecondary }]}>מ-</Text>
+                                            <Text style={[styles.exceptionLabel, { color: theme.textSecondary }]}>{t('sitterDash.from')}</Text>
                                             <TextInput
                                                 style={[styles.customHoursInput, {
                                                     backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2763,7 +2764,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             />
                                         </View>
                                         <View style={styles.customHoursCol}>
-                                            <Text style={[styles.exceptionLabel, { color: theme.textSecondary }]}>עד-</Text>
+                                            <Text style={[styles.exceptionLabel, { color: theme.textSecondary }]}>{t('sitterDash.to')}</Text>
                                             <TextInput
                                                 style={[styles.customHoursInput, {
                                                     backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2781,7 +2782,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 )}
 
                                 {/* Reason (Optional) */}
-                                <Text style={[styles.exceptionLabel, { color: theme.textSecondary, marginTop: 16 }]}>סיבה (אופציונלי)</Text>
+                                <Text style={[styles.exceptionLabel, { color: theme.textSecondary, marginTop: 16 }]}>{t('sitterDash.reasonOptional')})</Text>
                                 <TextInput
                                     style={[styles.exceptionReasonInput, {
                                         backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2790,7 +2791,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     }]}
                                     value={exceptionReason}
                                     onChangeText={setExceptionReason}
-                                    placeholder='למשל: "רופא", "אירוע משפחתי"'
+                                    placeholder={t('sitterDash.reasonPlaceholder')}
                                     placeholderTextColor={theme.textSecondary}
                                     multiline
                                 />
@@ -2835,7 +2836,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 >
                                     <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                                     <Text style={[styles.saveExceptionBtnText, { color: isDarkMode ? '#000' : '#fff' }]}>
-                                        הוסף חריגה
+                                        {t('sitterDash.addException')}
                                     </Text>
                                 </TouchableOpacity>
                             </ScrollView>
@@ -2854,7 +2855,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                         <View style={[styles.vacationModal, { backgroundColor: theme.card }]}>
                             <View style={styles.vacationModalHeader}>
                                 <Text style={[styles.vacationModalTitle, { color: theme.textPrimary }]}>
-                                    הוסף חופשה
+                                    {t('sitterDash.addVacation')}
                                 </Text>
                                 <TouchableOpacity
                                     onPress={() => setAddVacationModalVisible(false)}
@@ -2866,7 +2867,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                             <ScrollView showsVerticalScrollIndicator={false}>
                                 {/* Start Date */}
-                                <Text style={[styles.vacationLabel, { color: theme.textSecondary }]}>תאריך התחלה</Text>
+                                <Text style={[styles.vacationLabel, { color: theme.textSecondary }]}>{t('sitterDash.startDate')}</Text>
                                 <TouchableOpacity
                                     style={[styles.vacationDateBtn, {
                                         backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2899,12 +2900,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         style={[styles.datePickerDoneBtn, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}
                                         onPress={() => setShowVacationStartPicker(false)}
                                     >
-                                        <Text style={{ color: isDarkMode ? '#000' : '#fff', fontWeight: '700', fontSize: 14 }}>אישור</Text>
+                                        <Text style={{ color: isDarkMode ? '#000' : '#fff', fontWeight: '700', fontSize: 14 }}>{t('sitterDash.confirm')}</Text>
                                     </TouchableOpacity>
                                 )}
 
                                 {/* End Date */}
-                                <Text style={[styles.vacationLabel, { color: theme.textSecondary, marginTop: 16 }]}>תאריך סיום</Text>
+                                <Text style={[styles.vacationLabel, { color: theme.textSecondary, marginTop: 16 }]}>{t('sitterDash.endDate')}</Text>
                                 <TouchableOpacity
                                     style={[styles.vacationDateBtn, {
                                         backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2937,12 +2938,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         style={[styles.datePickerDoneBtn, { backgroundColor: isDarkMode ? '#fff' : '#000' }]}
                                         onPress={() => setShowVacationEndPicker(false)}
                                     >
-                                        <Text style={{ color: isDarkMode ? '#000' : '#fff', fontWeight: '700', fontSize: 14 }}>אישור</Text>
+                                        <Text style={{ color: isDarkMode ? '#000' : '#fff', fontWeight: '700', fontSize: 14 }}>{t('sitterDash.confirm')}</Text>
                                     </TouchableOpacity>
                                 )}
 
                                 {/* Reason (Optional) */}
-                                <Text style={[styles.vacationLabel, { color: theme.textSecondary, marginTop: 16 }]}>סיבה (אופציונלי)</Text>
+                                <Text style={[styles.vacationLabel, { color: theme.textSecondary, marginTop: 16 }]}>{t('sitterDash.reasonOptional')})</Text>
                                 <TextInput
                                     style={[styles.vacationReasonInput, {
                                         backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
@@ -2951,7 +2952,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     }]}
                                     value={vacationReason}
                                     onChangeText={setVacationReason}
-                                    placeholder='למשל: "חופשה בחו״ל", "אירוע משפחתי"'
+                                    placeholder={t('sitterDash.vacationPlaceholder')}
                                     placeholderTextColor={theme.textSecondary}
                                     multiline
                                 />
@@ -2963,7 +2964,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     }]}
                                     onPress={async () => {
                                         if (vacationStartDate > vacationEndDate) {
-                                            Alert.alert('שגיאה', 'תאריך התחלה חייב להיות לפני תאריך הסיום');
+                                            Alert.alert(t('common.error'), t('sitterDash.startBeforeEnd'));
                                             return;
                                         }
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -2994,7 +2995,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 >
                                     <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                                     <Text style={[styles.saveVacationBtnText, { color: isDarkMode ? '#000' : '#fff' }]}>
-                                        הוסף חופשה
+                                        {t('sitterDash.addVacation')}
                                     </Text>
                                 </TouchableOpacity>
                             </ScrollView>

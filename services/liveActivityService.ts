@@ -41,7 +41,7 @@ interface LiveActivityService {
     stopWhiteNoise: () => Promise<boolean>;
 
     isLiveActivitySupported: () => Promise<boolean>;
-    updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string) => Promise<boolean>;
+    updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string, lastDiaperAgo: string, lastDiaperType: string, lastFeedType: string, feedCount: number, sleepMinutes: number, diaperCount: number, lastFeedTimestamp: number, lastSleepTimestamp: number, lastDiaperTimestamp: number, lastHealthTimestamp: number, healthCount: number, lastMedicationTimestamp: number, medicationCount: number) => Promise<boolean>;
 }
 
 class LiveActivityServiceClass implements LiveActivityService {
@@ -370,10 +370,10 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     // MARK: - Widget Data
-    async updateWidgetData(babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string): Promise<boolean> {
+    async updateWidgetData(babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string, lastDiaperAgo: string = '', lastDiaperType: string = '', lastFeedType: string = '', feedCount: number = 0, sleepMinutes: number = 0, diaperCount: number = 0, lastFeedTimestamp: number = 0, lastSleepTimestamp: number = 0, lastDiaperTimestamp: number = 0, lastHealthTimestamp: number = 0, healthCount: number = 0, lastMedicationTimestamp: number = 0, medicationCount: number = 0): Promise<boolean> {
         if (!ActivityKitManager || Platform.OS !== 'ios') return false;
         try {
-            return await ActivityKitManager.updateWidgetData(babyName, lastFeedTime, lastFeedAgo, lastSleepTime, lastSleepAgo, babyStatus);
+            return await ActivityKitManager.updateWidgetData(babyName, lastFeedTime, lastFeedAgo, lastSleepTime, lastSleepAgo, babyStatus, lastDiaperAgo, lastDiaperType, lastFeedType, feedCount, sleepMinutes, diaperCount, lastFeedTimestamp, lastSleepTimestamp, lastDiaperTimestamp, lastHealthTimestamp, healthCount, lastMedicationTimestamp, medicationCount);
         } catch {
             return false;
         }

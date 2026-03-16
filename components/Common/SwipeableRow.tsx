@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Trash2 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
@@ -95,20 +95,18 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({ children, onDelete }
     };
 
     return (
-        <GestureHandlerRootView>
-            <Swipeable
-                ref={swipeableRef}
-                renderLeftActions={renderLeftActions}
-                friction={2.8}
-                leftThreshold={50}
-                overshootLeft={false}
-                overshootRight={false}
-                containerStyle={styles.swipeableContainer}
-                enableTrackpadTwoFingerGesture={Platform.OS === 'ios'}
-            >
-                {children}
-            </Swipeable>
-        </GestureHandlerRootView>
+        <Swipeable
+            ref={swipeableRef}
+            renderLeftActions={renderLeftActions}
+            friction={2}
+            leftThreshold={40}
+            overshootLeft={false}
+            overshootRight={false}
+            containerStyle={styles.swipeableContainer}
+            enableTrackpadTwoFingerGesture={Platform.OS === 'ios'}
+        >
+            {children}
+        </Swipeable>
     );
 };
 

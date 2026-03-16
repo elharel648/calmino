@@ -198,7 +198,12 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                     <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
                 </View>
 
-                {/* Animated header — matches TrackingModal style */}
+                {/* Close button */}
+                <TouchableOpacity style={styles.closeIconBtn} onPress={handleClose} activeOpacity={0.7}>
+                    <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
+                </TouchableOpacity>
+
+                {/* Animated header — centered icon on top, text below */}
                 <View style={styles.iconHeader} {...panResponder.panHandlers}>
                     {/* Animated music icon */}
                     <View style={styles.iconContainer}>
@@ -234,11 +239,6 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                             <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>מוזיקה מרגיעה לשינה</Text>
                         )}
                     </View>
-
-                    {/* Close button */}
-                    <TouchableOpacity style={styles.closeIconBtn} onPress={handleClose} activeOpacity={0.7}>
-                        <X size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                    </TouchableOpacity>
                 </View>
 
                 {/* Sound grid */}
@@ -390,14 +390,14 @@ const styles = StyleSheet.create({
         height: 4,
         borderRadius: 2,
     },
-    // Animated icon header
+    // Animated icon header — centered column
     iconHeader: {
-        flexDirection: 'row-reverse',
+        flexDirection: 'column',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 10,
         paddingBottom: 18,
-        gap: 14,
+        gap: 8,
     },
     iconContainer: {
         width: 72,
@@ -424,20 +424,19 @@ const styles = StyleSheet.create({
         position: 'absolute',
     },
     iconHeaderText: {
-        flex: 1,
-        alignItems: 'flex-end',
+        alignItems: 'center',
         gap: 4,
     },
     title: {
         fontSize: 26,
         fontWeight: '800',
         letterSpacing: -0.5,
-        textAlign: 'right',
+        textAlign: 'center',
     },
     headerSubtitle: {
         fontSize: 13,
         fontWeight: '500',
-        textAlign: 'right',
+        textAlign: 'center',
     },
     nowPlayingRow: {
         flexDirection: 'row-reverse',
@@ -460,12 +459,16 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     closeIconBtn: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
         width: 32,
         height: 32,
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.04)',
+        zIndex: 10,
     },
     grid: {
         flexDirection: 'row-reverse',

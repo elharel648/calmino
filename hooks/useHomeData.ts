@@ -251,13 +251,54 @@ export const useHomeData = (
             // Push latest data to iOS homescreen widget
             if (Platform.OS === 'ios') {
                 const currentStatus = snap.exists() ? (snap.data().status || 'awake') : 'awake';
+                const lastDiaper = await getLastEvent(childId, 'diaper', creatorId);
+                const lastHealth = await getLastEvent(childId, 'supplement' as any, creatorId).catch(() => null);
+                const lastMed = await getLastEvent(childId, 'medication' as any, creatorId).catch(() => null);
+                const getTimestamp = (event: any): number => {
+                    if (!event?.timestamp) return 0;
+                    if (event.timestamp.seconds) return event.timestamp.seconds;
+                    return Math.floor(new Date(event.timestamp).getTime() / 1000);
+                };
+
+                // Count health & medication events in last 24h
+                let healthCount = 0;
+                let medCount = 0;
+                (history as any[]).forEach((event: any) => {
+                    let eventDate: Date;
+                    if (event.timestamp?.seconds) {
+                        eventDate = new Date(event.timestamp.seconds * 1000);
+                    } else if (event.timestamp) {
+                        eventDate = new Date(event.timestamp);
+                    } else {
+                        return;
+                    }
+                    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                    if (eventDate >= last24h) {
+                        if (event.type === 'supplement') healthCount++;
+                        if (event.type === 'medication') medCount++;
+                    }
+                });
+
                 liveActivityService.updateWidgetData(
                     childName,
                     feedTimeStr,
                     formatAgo(lastFeed?.timestamp),
                     sleepTimeStr,
                     formatAgo(lastSleep?.timestamp),
-                    currentStatus
+                    currentStatus,
+                    formatAgo(lastDiaper?.timestamp),
+                    lastDiaper?.subType || lastDiaper?.note || '',
+                    lastFeed?.subType || lastFeed?.note || '',
+                    stats.feedCount,
+                    stats.sleepMinutes,
+                    stats.diaperCount,
+                    getTimestamp(lastFeed),
+                    getTimestamp(lastSleep),
+                    getTimestamp(lastDiaper),
+                    getTimestamp(lastHealth),
+                    healthCount,
+                    getTimestamp(lastMed),
+                    medCount
                 ).catch((e) => logger.warn('Widget update failed:', e));
             }
 

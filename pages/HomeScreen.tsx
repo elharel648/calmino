@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
 import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -125,7 +125,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     // Derive profile from active child
     const profile = useMemo(() => {
         if (!activeChild) {
-            return { id: '', name: 'הבייבי שלי', birthDate: new Date(), ageMonths: 0, photoUrl: undefined, parentId: '' };
+            return { id: '', name: t('home.defaultBabyName'), birthDate: new Date(), ageMonths: 0, photoUrl: undefined, parentId: '' };
         }
 
         // Calculate age in months if we have birth date
@@ -256,7 +256,8 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     // --- Handlers ---
     const { showToast, showSuccess, showError } = useToast();
     const handleSaveTracking = useCallback(async (data: any) => {
-        logger.debug('📥', 'handleSaveTracking called with:', JSON.stringify(data, null, 2));
+        const t0 = Date.now();
+        logger.log('⏱️ [PERF] handleSaveTracking START', { type: data.type });
 
         if (!user) {
             logger.error('❌ No user found');
@@ -273,20 +274,25 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         try {
             logger.debug('💾', 'Saving to Firebase:', { userId: user.uid, childId: profile.id, dataType: data.type });
             const eventId = await saveEventToFirebase(user.uid, profile.id, data);
-            logger.debug('✅', 'Saved successfully, eventId:', eventId);
+            logger.log(`⏱️ [PERF] saveEventToFirebase done in ${Date.now() - t0}ms`);
 
             showSuccess(t('common.savedSuccess'));
 
             // Schedule feeding reminder if this was a food event
             if (data.type === 'food') {
                 scheduleFeedingReminder(new Date());
+                logger.log(`⏱️ [PERF] scheduleFeedingReminder done in ${Date.now() - t0}ms`);
             }
         } catch (error) {
             showError(t('errors.saveError'));
         }
 
-        refreshHomeData();
-        setTimelineRefresh(prev => prev + 1);
+        logger.log(`⏱️ [PERF] handleSaveTracking DONE in ${Date.now() - t0}ms, deferring refresh`);
+        // Defer refresh so it doesn't block the dismiss animation
+        InteractionManager.runAfterInteractions(() => {
+            refreshHomeData();
+            setTimelineRefresh(prev => prev + 1);
+        });
     }, [user, profile.id, refreshHomeData, scheduleFeedingReminder]);
 
     const shareMessage = useMemo(() => {
@@ -303,7 +309,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         const sleepM = dailyStats.sleepMinutes % 60;
         const sleepStr = sleepH > 0
             ? `${sleepH} שעות${sleepM > 0 ? ` ו-${sleepM} דקות` : ''}`
-            : sleepM > 0 ? `${sleepM} דקות` : 'לא תועד';
+            : sleepM > 0 ? t('home.minutesDuration', { count: sleepM }) : t('home.notRecorded');
 
         let msg = `🌟 *סיכום יומי — ${profile.name}*\n`;
         msg += `📅 ${dateStr}`;
@@ -311,9 +317,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         msg += `\n\n`;
 
         msg += `📊 *סטטיסטיקות היום:*\n`;
-        msg += `🍼 האכלה: ${dailyStats.feedCount > 0 ? `${dailyStats.feedCount} פעם` : 'לא תועדה'}\n`;
+        msg += `🍼 האכלה: ${dailyStats.feedCount > 0 ? t('home.feedCountTimes', { count: dailyStats.feedCount }) : t('home.feedNotRecorded')}\n`;
         msg += `💤 שינה כוללת: ${sleepStr}\n`;
-        msg += `🫧 החלפות חיתול: ${dailyStats.diaperCount > 0 ? `${dailyStats.diaperCount} פעמים` : 'לא תועד'}\n`;
+        msg += `🫧 החלפות חיתול: ${dailyStats.diaperCount > 0 ? t('home.diaperCountTimes', { count: dailyStats.diaperCount }) : t('home.notRecorded')}\n`;
 
         msg += `\n⏱️ *פעילות אחרונה:*\n`;
         msg += `🍼 האכלה אחרונה: ${lastFeedTime}\n`;
@@ -352,9 +358,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         if (diffMs <= 0) return null;
         const hours = Math.floor(diffMs / (1000 * 60 * 60));
         const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        if (hours > 0) return `נותרו ${hours} שעות לגישתך כאורח`;
-        return `נותרו ${minutes} דקות לגישתך כאורח`;
-    }, [guestExpiresAt]);
+        if (hours > 0) return t('home.guestHoursRemaining', { count: hours });
+        return t('home.guestMinutesRemaining', { count: minutes });
+    }, [guestExpiresAt, t]);
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -410,7 +416,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             {homeDataError && (
                                 <View style={styles.errorBanner}>
                                     <WifiOff size={14} color="#fff" strokeWidth={2} />
-                                    <Text style={styles.errorBannerText}>בעיית חיבור — משוך למטה לרענון</Text>
+                                    <Text style={styles.errorBannerText}>{t('home.connectionError')}</Text>
                                 </View>
                             )}
 
@@ -453,7 +459,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                             'pumping': 'pumping'
                                         };
                                         const subType = subTypeMap[timerType] || 'breast';
-                                        const side = timerType === 'breast_left' ? 'שמאל' : timerType === 'breast_right' ? 'ימין' : '';
+                                        const side = timerType === 'breast_left' ? t('tracking.left') : timerType === 'breast_right' ? t('tracking.right') : '';
                                         await handleSaveTracking({
                                             type: 'food',
                                             subType,
@@ -523,7 +529,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 />
                 <TrackingModal
                     visible={!!trackingModalType}
-                    type={trackingModalType}
+                    type={trackingModalType || 'food'}
                     onClose={() => setTrackingModalType(null)}
                     onSave={handleSaveTracking}
                 />
@@ -583,7 +589,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     subType: action.icon,
                                 });
                                 setTimelineRefresh(prev => prev + 1);
-                                Alert.alert('נוסף!', `"${action.name}" נשמר בהצלחה`);
+                                Alert.alert(t('home.customActionAdded'), t('home.customActionSaved', { name: action.name }));
                             } catch (error) {
                                 logger.error('Failed to save custom action:', error);
                                 Alert.alert(t('misc.saveError'));

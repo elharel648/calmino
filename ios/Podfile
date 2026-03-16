@@ -62,7 +62,6 @@ target 'Calmino' do
     # that Xcode actually reads. Must modify the files on disk.
     firebase_public_headers = [
       '"${PODS_ROOT}/FirebaseCore/FirebaseCore/Sources/Public"',
-      '"${PODS_ROOT}/FirebaseMessaging/FirebaseMessaging/Sources/Public"',
       '"${PODS_ROOT}/FirebaseStorage/FirebaseStorage/Sources/Public"',
       '"${PODS_ROOT}/FirebaseCrashlytics/Crashlytics/Crashlytics/Public"',
       '"${PODS_ROOT}/FirebaseAppCheck/FirebaseAppCheck/Sources/Public"',
@@ -78,7 +77,7 @@ target 'Calmino' do
     end
 
     # Patch xcconfig files on disk for all RNFB targets
-    rnfb_names = ['RNFBApp', 'RNFBAppCheck', 'RNFBCrashlytics', 'RNFBFunctions', 'RNFBMessaging', 'RNFBStorage']
+    rnfb_names = ['RNFBApp', 'RNFBAppCheck', 'RNFBCrashlytics', 'RNFBFunctions', 'RNFBStorage']
     rnfb_names.each do |pod_name|
       ['debug', 'release'].each do |conf|
         xcconfig_path = File.join(installer.sandbox.root, 'Target Support Files', pod_name, "#{pod_name}.#{conf}.xcconfig")
@@ -119,7 +118,6 @@ target 'Calmino' do
       'RNFBAppCheck'         => ['FirebaseCore', 'FirebaseAppCheck'],
       'RNFBCrashlytics'      => ['FirebaseCore', 'FirebaseCrashlytics'],
       'RNFBFunctions'        => ['FirebaseCore', 'FirebaseFunctions'],
-      'RNFBMessaging'        => ['FirebaseCore', 'FirebaseMessaging'],
       'RNFBStorage'          => ['FirebaseCore', 'FirebaseStorage'],
       'SDWebImageWebPCoder'  => ['SDWebImage'],
     }

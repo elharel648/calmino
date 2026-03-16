@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import messaging from '@react-native-firebase/messaging';
 import * as Device from 'expo-device';
 import * as Calendar from 'expo-calendar';
 import { Platform, Alert, Linking } from 'react-native';
@@ -7,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, auth } from './firebaseConfig';
 import { collection, query, where, getDocs, orderBy, Timestamp, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { logger } from '../utils/logger';
+import Constants from 'expo-constants';
 
 // --- Pattern Analysis Types ---
 export interface PatternData {
@@ -889,9 +889,9 @@ class NotificationService {
         }
     }
 
-    // --- Firebase Cloud Messaging (Push Notifications) ---
+    // --- Expo Push Notifications ---
 
-    // Get the Native FCM Token for remote notifications via Firebase Console
+    // Get the Expo Push Token for remote notifications
     async getExpoPushToken(): Promise<string | null> {
         if (!Device.isDevice) {
             logger.warn('Push Notifications are not supported in Simulator.');
@@ -902,18 +902,17 @@ class NotificationService {
             const hasPermission = await this.requestPermissions();
             if (!hasPermission) return null;
 
-            // Register APNs if on iOS for true FCM support
-            if (Platform.OS === 'ios') {
-                await messaging().registerDeviceForRemoteMessages();
-            }
+            const projectId = Constants.expoConfig?.extra?.eas?.projectId
+                ?? Constants.easConfig?.projectId;
 
-            // Fetch the native FCM token
-            const token = await messaging().getToken();
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+                projectId: projectId,
+            });
 
-            logger.info('📱 FCM Push Token retrieved:', token);
-            return token;
+            logger.info('📱 Expo Push Token retrieved:', tokenData.data);
+            return tokenData.data;
         } catch (error) {
-            logger.error('Error getting FCM push token:', error);
+            logger.error('Error getting Expo push token:', error);
             return null;
         }
     }

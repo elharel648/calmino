@@ -366,7 +366,7 @@ public class ActivityKitManager: Module {
 
         // MARK: - Widget Data
 
-        AsyncFunction("updateWidgetData") { (babyName: String, lastFeedTime: String, lastFeedAgo: String, lastSleepTime: String, lastSleepAgo: String, babyStatus: String) -> Bool in
+        AsyncFunction("updateWidgetData") { (babyName: String, lastFeedTime: String, lastFeedAgo: String, lastSleepTime: String, lastSleepAgo: String, babyStatus: String, lastDiaperAgo: String, lastDiaperType: String, lastFeedType: String, feedCount: Int, sleepMinutes: Int, diaperCount: Int, lastFeedTimestamp: Double, lastSleepTimestamp: Double, lastDiaperTimestamp: Double, lastHealthTimestamp: Double, healthCount: Int, lastMedicationTimestamp: Double, medicationCount: Int) -> Bool in
             let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
             defaults?.set(babyName, forKey: "widget_babyName")
             defaults?.set(lastFeedTime, forKey: "widget_lastFeedTime")
@@ -374,6 +374,21 @@ public class ActivityKitManager: Module {
             defaults?.set(lastSleepTime, forKey: "widget_lastSleepTime")
             defaults?.set(lastSleepAgo, forKey: "widget_lastSleepAgo")
             defaults?.set(babyStatus, forKey: "widget_babyStatus")
+            defaults?.set(lastDiaperAgo, forKey: "widget_lastDiaperAgo")
+            defaults?.set(lastDiaperType, forKey: "widget_lastDiaperType")
+            defaults?.set(lastFeedType, forKey: "widget_lastFeedType")
+            defaults?.set(feedCount, forKey: "widget_feedCount")
+            defaults?.set(sleepMinutes, forKey: "widget_sleepMinutes")
+            defaults?.set(diaperCount, forKey: "widget_diaperCount")
+            defaults?.set(lastFeedTimestamp, forKey: "widget_lastFeedTimestamp")
+            defaults?.set(lastSleepTimestamp, forKey: "widget_lastSleepTimestamp")
+            defaults?.set(lastDiaperTimestamp, forKey: "widget_lastDiaperTimestamp")
+            // Health & Medication
+            defaults?.set(lastHealthTimestamp, forKey: "widget_lastHealthTimestamp")
+            defaults?.set(healthCount, forKey: "widget_healthCount")
+            defaults?.set(lastMedicationTimestamp, forKey: "widget_lastMedicationTimestamp")
+            defaults?.set(medicationCount, forKey: "widget_medicationCount")
+            defaults?.set(Date().timeIntervalSince1970, forKey: "widget_lastUpdate")
             if #available(iOS 14.0, *) {
                 WidgetCenter.shared.reloadAllTimelines()
             }

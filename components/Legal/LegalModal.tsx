@@ -24,8 +24,8 @@ interface LegalModalProps {
   onClose: () => void;
 }
 
-const LAST_UPDATED_HE = '20 בינואר 2026';
-const LAST_UPDATED_EN = 'January 20, 2026';
+const LAST_UPDATED_HE = '15 במרץ 2026';
+const LAST_UPDATED_EN = 'March 15, 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 // ─────────────────────────────────────────────
@@ -51,6 +51,7 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • פרטי חשבון: שם מלא, כתובת אימייל, סיסמה מוצפנת{'\n'}
     • פרופיל ילד: שם, תאריך לידה, מגדר, תמונת פרופיל{'\n'}
     • נתוני מעקב: האכלה (שעה, כמות, סוג), שינה (שעות כניסה ויציאה), החלפת חיתול, תוספי תזונה, חיסונים, מדדי גדילה (משקל, גובה, היקף ראש){'\n'}
+    • נתוני מיקום (GPS) — לצורך שירותי איתור בייביסיטרים בסביבתך בלבד, באישורך המפורש{'\n'}
     • הערות ותיעוד שתזין ידנית{'\n'}
     • תמונות ורגעים קסומים שתבחר לשמור{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>ב. מידע הנאסף אוטומטית:{'\n'}</Text>
@@ -150,6 +151,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Account details: full name, email address, encrypted password{'\n'}
     • Child profile: name, date of birth, gender, profile photo{'\n'}
     • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, growth measurements (weight, height, head circumference){'\n'}
+    • Location data (GPS) — solely for babysitter discovery services in your area, with your explicit permission{'\n'}
     • Notes and records you enter manually{'\n'}
     • Photos and magic moments you choose to save{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Information collected automatically:{'\n'}</Text>
@@ -286,11 +288,12 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
     • <Text style={styles.bold}>Expo</Text> — פלטפורמת פיתוח ועדכונים{'\n\n'}
     שימושך בשירותים אלה כפוף גם למדיניות ותנאי השימוש שלהם. Calmino אינה אחראית לזמינות, ביצועים, או שינויים בשירותי צד שלישי.{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>8. הגבלת אחריות ואחריות רפואית{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>8. הגבלת אחריות, אחריות רפואית ושירותי בייביסיטר{'\n'}</Text>
     8.1 השירות מסופק <Text style={styles.bold}>"כפי שהוא" (AS IS)</Text> ו-"כפי שהוא זמין" (AS AVAILABLE) ללא אחריות מכל סוג.{'\n'}
     8.2 <Text style={styles.bold}>האפליקציה אינה מחליפה ייעוץ רפואי מקצועי.</Text> המידע המוצג הוא לצרכי תיעוד ומעקב בלבד. תמיד התייעץ עם רופא ילדים מוסמך בכל שאלה רפואית.{'\n'}
-    8.3 Calmino אינה נושאת באחריות לנזקים ישירים, עקיפים, נסיבתיים, מיוחדים, עונשיים, או תוצאתיים הנובעים מ: שימוש או אי-יכולת לשתמש בשירות; אובדן נתונים; הסתמכות על מידע מהאפליקציה; או כשל טכני.{'\n'}
-    8.4 אחריותנו הכוללת לא תעלה על הסכום שאתה שילמת בשנת הרישום האחרונה, או 200 ₪ — הנמוך מביניהם.{'\n\n'}
+    8.3 <Text style={styles.bold}>שירותי בייביסיטר — פלטפורמת חיבור בלבד:</Text> Calmino משמשת כפלטפורמת חיבור בלבד בין הורים לבייביסיטרים. Calmino <Text style={styles.bold}>אינה מעסיקה, ממליצה, מאשרת, מאמתת, אחראית על, או ערבה</Text> לאף בייביסיטר/ית המופיע/ה באפליקציה. פרופילי הבייביסיטרים מבוססים על מידע שהוזן על ידי הבייביסיטרים עצמם ולא אומת על ידי Calmino. <Text style={styles.bold}>האחריות הבלעדית</Text> על בדיקת התאמה, אימות זהות, בדיקת רקע, הערכת כישורים, וקבלת החלטה לגבי מפגש או העסקה — היא של ההורה בלבד. Calmino לא תישא באחריות כלשהי לכל נזק, אובדן, פגיעה, או תוצאה הנובעים ממפגש, העסקה, או כל אינטראקציה בין הורה לבייביסיטר שנוצרה באמצעות האפליקציה.{'\n'}
+    8.4 Calmino אינה נושאת באחריות לנזקים ישירים, עקיפים, נסיבתיים, מיוחדים, עונשיים, או תוצאתיים הנובעים מ: שימוש או אי-יכולת לשתמש בשירות; אובדן נתונים; הסתמכות על מידע מהאפליקציה; מפגש עם בייביסיטר; או כשל טכני.{'\n'}
+    8.5 אחריותנו הכוללת לא תעלה על הסכום שאתה שילמת בשנת הרישום האחרונה, או 200 ₪ — הנמוך מביניהם.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. קניין רוחני{'\n'}</Text>
     כל הזכויות באפליקציה — לרבות קוד מקור, עיצוב, ממשק משתמש, לוגו, שם "Calmino", וכל תוכן שיצרנו — הינן קניינה הבלעדי של Calmino ומוגנות בחוק זכויות יוצרים, סימני מסחר ופטנטים.{'\n'}
@@ -379,11 +382,12 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     • <Text style={styles.bold}>Expo</Text> — development platform and updates{'\n\n'}
     Your use of these services is also subject to their respective policies and terms of service. Calmino is not responsible for the availability, performance, or changes in third-party services.{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability and Medical Disclaimer{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability, Medical Disclaimer, and Babysitter Services{'\n'}</Text>
     8.1 The service is provided <Text style={styles.bold}>"AS IS"</Text> and "AS AVAILABLE" without warranty of any kind.{'\n'}
     8.2 <Text style={styles.bold}>The app does not replace professional medical advice.</Text> The information displayed is for documentation and tracking purposes only. Always consult a qualified pediatrician for any medical questions.{'\n'}
-    8.3 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; or technical failure.{'\n'}
-    8.4 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
+    8.3 <Text style={styles.bold}>Babysitter Services — Connection Platform Only:</Text> Calmino serves solely as a connection platform between parents and babysitters. Calmino <Text style={styles.bold}>does not employ, recommend, endorse, verify, vouch for, or assume responsibility</Text> for any babysitter listed on the application. Babysitter profiles are based on information provided by the babysitters themselves and have not been verified by Calmino. <Text style={styles.bold}>The sole responsibility</Text> for evaluating suitability, verifying identity, conducting background checks, assessing qualifications, and making decisions regarding meetings or employment — lies entirely with the parent. Calmino shall bear no liability whatsoever for any damage, loss, injury, or consequence arising from any meeting, employment, or interaction between a parent and a babysitter facilitated through the application.{'\n'}
+    8.4 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; meetings with babysitters; or technical failure.{'\n'}
+    8.5 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Intellectual Property{'\n'}</Text>
     All rights in the app — including source code, design, user interface, logo, the name "Calmino", and all content we created — are the exclusive property of Calmino and are protected by copyright, trademark, and patent laws.{'\n'}

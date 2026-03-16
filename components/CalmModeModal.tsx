@@ -65,22 +65,22 @@ export default function CalmModeModal({
       // Icon bounce in
       iconBounce.value = withSpring(1, { damping: 10, stiffness: 180 });
 
-      // Pulse ring 1 — heartbeat rhythm
+      // Pulse ring 1 — slow, calm breathing rhythm
       ring1Scale.value = withRepeat(
-        withSequence(withTiming(1, { duration: 0 }), withTiming(1.9, { duration: 700 })),
+        withSequence(withTiming(1, { duration: 0 }), withTiming(1.6, { duration: 2000 })),
         -1, false
       );
       ring1Opacity.value = withRepeat(
-        withSequence(withTiming(0.55, { duration: 0 }), withTiming(0, { duration: 700 })),
+        withSequence(withTiming(0.4, { duration: 0 }), withTiming(0, { duration: 2000 })),
         -1, false
       );
-      // Pulse ring 2 — delayed for offset effect
-      ring2Scale.value = withDelay(350, withRepeat(
-        withSequence(withTiming(1, { duration: 0 }), withTiming(1.9, { duration: 700 })),
+      // Pulse ring 2 — delayed for gentle offset
+      ring2Scale.value = withDelay(1000, withRepeat(
+        withSequence(withTiming(1, { duration: 0 }), withTiming(1.6, { duration: 2000 })),
         -1, false
       ));
-      ring2Opacity.value = withDelay(350, withRepeat(
-        withSequence(withTiming(0.35, { duration: 0 }), withTiming(0, { duration: 700 })),
+      ring2Opacity.value = withDelay(1000, withRepeat(
+        withSequence(withTiming(0.3, { duration: 0 }), withTiming(0, { duration: 2000 })),
         -1, false
       ));
     } else {

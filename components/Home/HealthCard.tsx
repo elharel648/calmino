@@ -21,6 +21,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { logger } from '../../utils/logger';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as ReAnimated } from 'react-native-reanimated';
 import SwipeableRow from '../SwipeableRow';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -70,36 +71,74 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new Animated.Value(0)).current;
 
-    // Health icon animation
+    // Health icon animation — premium heartbeat
     const healthIconPulse = useSharedValue(0);
+    const healthIconPulse2 = useSharedValue(0);
     const healthIconBounce = useSharedValue(1);
+    const healthIconRotate = useSharedValue(0);
 
     const healthIconPulseStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(healthIconPulse.value, [0, 1], [0.4, 0]),
-        transform: [{ scale: interpolate(healthIconPulse.value, [0, 1], [1, 1.7]) }],
+        opacity: interpolate(healthIconPulse.value, [0, 0.5, 1], [0.5, 0.2, 0]),
+        transform: [{ scale: interpolate(healthIconPulse.value, [0, 1], [1, 2.0]) }],
+    }));
+
+    // Second pulse ring — staggered for depth
+    const healthIconPulse2Style = useAnimatedStyle(() => ({
+        opacity: interpolate(healthIconPulse2.value, [0, 0.5, 1], [0.35, 0.15, 0]),
+        transform: [{ scale: interpolate(healthIconPulse2.value, [0, 1], [1, 2.4]) }],
     }));
 
     const healthIconBounceStyle = useAnimatedStyle(() => ({
         transform: [{ scale: healthIconBounce.value }],
     }));
 
+    const healthIconRotateStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${interpolate(healthIconRotate.value, [0, 1], [0, 6])}deg` }],
+    }));
+
     useEffect(() => {
         if (isModalOpen) {
-            healthIconPulse.value = withRepeat(withTiming(1, { duration: 1600 }), -1, false);
+            // Primary pulse ring
+            healthIconPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+            // Secondary pulse ring — delayed by starting slower
+            healthIconPulse2.value = withRepeat(
+                withSequence(
+                    withTiming(0, { duration: 400 }),
+                    withTiming(1, { duration: 1600 }),
+                ),
+                -1,
+                false
+            );
+            // Realistic heartbeat: "lub-dub" + rest
             healthIconBounce.value = withRepeat(
                 withSequence(
-                    withTiming(1.12, { duration: 300 }),
-                    withTiming(0.94, { duration: 200 }),
-                    withTiming(1.05, { duration: 150 }),
+                    withTiming(1.22, { duration: 100 }),  // lub (sharp)
+                    withTiming(0.92, { duration: 80 }),   // recoil
+                    withTiming(1.15, { duration: 90 }),   // dub
+                    withTiming(0.96, { duration: 70 }),   // recoil
+                    withTiming(1.02, { duration: 100 }),  // settle
+                    withTiming(1, { duration: 120 }),     // rest start
+                    withTiming(1, { duration: 2000 }),    // rest
+                ),
+                -1,
+                false
+            );
+            // Subtle rotation wiggle
+            healthIconRotate.value = withRepeat(
+                withSequence(
                     withTiming(1, { duration: 150 }),
-                    withTiming(1, { duration: 2200 }),
+                    withTiming(-0.5, { duration: 120 }),
+                    withTiming(0, { duration: 200 }),
+                    withTiming(0, { duration: 2200 }),
                 ),
                 -1,
                 false
             );
         } else {
             healthIconPulse.value = 0;
+            healthIconPulse2.value = 0;
             healthIconBounce.value = 1;
+            healthIconRotate.value = 0;
         }
     }, [isModalOpen]);
 
@@ -1216,9 +1255,34 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     // Handle saving a new medication
     const handleSaveMedication = async (med: Omit<Medication, 'id' | 'createdAt'>) => {
-        if (!babyId) return;
+        let targetBabyId = babyId || activeChild?.childId;
+
+        // If still no babyId, try to discover it
+        if (!targetBabyId) {
+            const user = auth.currentUser;
+            if (!user) {
+                Alert.alert('שגיאה', 'יש להתחבר כדי לשמור תרופה');
+                return;
+            }
+            try {
+                const q = query(collection(db, 'babies'), where('parentId', '==', user.uid), limit(1));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    targetBabyId = querySnapshot.docs[0].id;
+                    setBabyId(targetBabyId);
+                }
+            } catch (error) {
+                logger.log('Error discovering babyId:', error);
+            }
+        }
+
+        if (!targetBabyId) {
+            Alert.alert('שגיאה', 'לא נמצא פרופיל תינוק. יש להוסיף תינוק קודם.');
+            return;
+        }
+
         setSavingMed(true);
-        const saved = await addMedication(babyId, med);
+        const saved = await addMedication(targetBabyId, med);
         setSavingMed(false);
         if (saved) {
             setMedSaveSuccess(true);
@@ -1228,10 +1292,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             // Refresh list and go back
             setTimeout(async () => {
                 setMedSaveSuccess(false);
-                const refreshed = await getMedications(babyId);
+                const refreshed = await getMedications(targetBabyId!);
                 setSavedMedications(refreshed);
                 setCurrentScreen('medications');
             }, 800);
+        } else {
+            Alert.alert('שגיאה', 'לא ניתן לשמור את התרופה. נסה שוב.');
         }
     };
 
@@ -1634,11 +1700,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <View style={styles.headerTitleContainer}>
                             {currentScreen === 'menu' && (
                                 <View style={styles.headerIconWrapper}>
-                                    <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 28, backgroundColor: '#14B8A6' }, healthIconPulseStyle]} />
-                                        <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB' }]}>
-                                            <ReAnimated.View style={healthIconBounceStyle}>
-                                                <HeartPulse size={20} color="#14B8A6" strokeWidth={2} />
+                                    <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
+                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#14B8A6' }, healthIconPulseStyle]} />
+                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#14B8A6' }, healthIconPulse2Style]} />
+                                        <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB', width: 48, height: 48, borderRadius: 24 }]}>
+                                            <ReAnimated.View style={healthIconRotateStyle}>
+                                                <ReAnimated.View style={healthIconBounceStyle}>
+                                                    <HeartPulse size={22} color="#14B8A6" strokeWidth={2} />
+                                                </ReAnimated.View>
                                             </ReAnimated.View>
                                         </View>
                                     </View>
@@ -1649,7 +1718,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <View style={{ width: 40 }} />
                     </View>
 
-                    <View style={[styles.modalBody, { backgroundColor: 'transparent' }]}>
+                    <GestureHandlerRootView style={[styles.modalBody, { backgroundColor: 'transparent' }]}>
                         {currentScreen === 'menu' && renderMenu()}
                         {currentScreen === 'vaccines' && renderVaccines()}
                         {currentScreen === 'doctor' && renderDoctor()}
@@ -1658,7 +1727,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         {currentScreen === 'medications' && renderMedications()}
                         {currentScreen === ('medications_add' as any) && renderMedicationsAdd()}
                         {currentScreen === 'history' && renderHistory()}
-                    </View>
+                    </GestureHandlerRootView>
                 </Animated.View>
             </KeyboardAvoidingView>
         </Modal>

@@ -109,6 +109,10 @@ const useSitters = () => {
     const fetchSitters = useCallback(async (forceRefresh = false) => {
         logger.log('🔧 useSitters: fetchSitters START', { forceRefresh });
 
+        // Each call gets a unique ID — only the latest call's results are used
+        const fetchId = Date.now();
+        lastFetchRef.current = fetchId;
+
         // Try to load from cache first (unless force refresh)
         if (!forceRefresh) {
             const cachedSitters = await loadFromCache();
@@ -123,7 +127,6 @@ const useSitters = () => {
 
         setIsLoading(true);
         setError(null);
-        lastFetchRef.current = Date.now();
 
         // 🔧 Always fetch real sitters from Firebase (even in DEV mode)
         // Mock data will be used as fallback only when no real sitters found
@@ -224,15 +227,22 @@ const useSitters = () => {
             // Save to cache
             await saveToCache(fetchedSitters);
 
-            // Only update state if this is the latest fetch
-            if (Date.now() - lastFetchRef.current < 1000) {
+            // Only update state if this is still the latest fetch (prevent stale overwrites)
+            if (lastFetchRef.current === fetchId) {
                 setSitters(fetchedSitters);
+            } else {
+                logger.log('⚠️ useSitters: Stale fetch discarded (newer fetch in progress)');
             }
 
         } catch (err) {
-            // Silent fail - just show empty state (user needs to update Firebase rules)
-            logger.warn('useSitters: Firebase permission issue');
-            setSitters([]);
+            logger.warn('useSitters: Firebase error, falling back to cache:', err);
+            // On error, try to use cached data instead of showing empty
+            const cachedSitters = await loadFromCache();
+            if (cachedSitters && cachedSitters.length > 0 && lastFetchRef.current === fetchId) {
+                setSitters(cachedSitters);
+            } else if (lastFetchRef.current === fetchId) {
+                setSitters([]);
+            }
             setError(null);
         } finally {
             setIsLoading(false);

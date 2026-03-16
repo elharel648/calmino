@@ -14,6 +14,9 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { MedicationsState, CustomSupplement } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { notificationStorageService } from '../../services/notificationStorageService';
+import { auth } from '../../services/firebaseConfig';
 
 // Icon map for custom supplements
 const ICON_MAP: Record<string, any> = {
@@ -80,8 +83,8 @@ const SupplementCard = memo(({
         if (isEditMode) return;
 
         scale.value = withSequence(
-            withSpring(0.93, { damping: 5, stiffness: 400 }),
-            withSpring(1, { damping: 10, stiffness: 300 })
+            withTiming(0.97, { duration: 80 }),
+            withTiming(1, { duration: 150 })
         );
 
         if (Platform.OS !== 'web') {
@@ -176,11 +179,12 @@ const AddSupplementForm = memo(({
 }) => {
     const [name, setName] = useState('');
     const [selectedIcon, setSelectedIcon] = useState('pill');
+    const { t } = useLanguage();
 
     const handleAdd = () => {
         const trimmed = name.trim();
         if (!trimmed) {
-            Alert.alert('שגיאה', 'נא להזין שם לתוסף');
+            Alert.alert(t('common.error'), t('supplements.enterName'));
             return;
         }
         onAdd(trimmed, selectedIcon);
@@ -209,7 +213,7 @@ const AddSupplementForm = memo(({
                         borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
                     }
                 ]}
-                placeholder="שם התוסף (לדוגמה: אומגה 3)"
+                placeholder={t('supplements.namePlaceholder')}
                 placeholderTextColor={theme.textTertiary}
                 value={name}
                 onChangeText={setName}
@@ -266,6 +270,7 @@ AddSupplementForm.displayName = 'AddSupplementForm';
 
 const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, customSupplements, onAddCustom, onRemoveCustom, takenCount, totalCount }: SupplementsModalProps) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
@@ -325,10 +330,26 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
         onToggle(id);
         // Check if it was previously not taken (meaning we're marking it as taken)
         const wasTaken = id === 'vitaminD' ? meds.vitaminD : id === 'iron' ? meds.iron : (meds.custom?.[id] || false);
-        if (!wasTaken && onRefresh) {
-            setTimeout(onRefresh, 300);
+        if (!wasTaken) {
+            // Save in-app notification for supplement taken
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                // Find the supplement name
+                const suppName = id === 'vitaminD' ? t('notifications.vitaminD') : id === 'iron' ? t('notifications.iron') : customSupplements.find(s => s.id === id)?.name || id;
+                notificationStorageService.saveNotification({
+                    userId,
+                    type: 'medication',
+                    title: '💊 תוסף ניתן',
+                    message: suppName,
+                    timestamp: new Date(),
+                    isRead: false,
+                }).catch(() => {});
+            }
+            if (onRefresh) {
+                setTimeout(onRefresh, 300);
+            }
         }
-    }, [onToggle, meds, onRefresh]);
+    }, [onToggle, meds, onRefresh, customSupplements]);
 
     const handleAddCustom = useCallback(async (name: string, icon: string) => {
         await onAddCustom(name, icon);
@@ -340,12 +361,12 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
 
     const handleRemoveCustom = useCallback((id: string) => {
         Alert.alert(
-            'הסרת תוסף',
-            'האם למחוק את התוסף הזה?',
+            t('supplements.removeTitle'),
+            t('supplements.removeConfirm'),
             [
-                { text: 'ביטול', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'מחק', style: 'destructive', onPress: async () => {
+                    text: t('common.delete'), style: 'destructive', onPress: async () => {
                         await onRemoveCustom(id);
                         if (Platform.OS !== 'web') {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -361,8 +382,8 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
     // Build supplement list: defaults (unless hidden) + custom
     const hiddenDefaults = meds.hiddenDefaults || [];
     const allSupplements = [
-        { id: 'vitaminD', name: 'ויטמין D', icon: 'sun', taken: meds.vitaminD, isDefault: true },
-        { id: 'iron', name: 'ברזל', icon: 'droplet', taken: meds.iron, isDefault: true },
+        { id: 'vitaminD', name: t('notifications.vitaminD'), icon: 'sun', taken: meds.vitaminD, isDefault: true },
+        { id: 'iron', name: t('notifications.iron'), icon: 'droplet', taken: meds.iron, isDefault: true },
         ...customSupplements.map(s => ({
             id: s.id,
             name: s.name,
@@ -422,7 +443,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                             <Pill size={20} color={isEditMode ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)')} strokeWidth={2} />
                         </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
-                            {isEditMode ? 'עריכת תוספים' : 'תוספים יומיים'}
+                            {isEditMode ? t('supplements.editTitle') : t('supplements.dailyTitle')}
                         </Text>
                         <TouchableOpacity
                             style={styles.closeBtn}

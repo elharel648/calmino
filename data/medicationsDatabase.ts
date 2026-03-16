@@ -26,15 +26,15 @@ export type MedCategory =
     | 'other';           // אחר
 
 export const CATEGORY_LABELS: Record<MedCategory, string> = {
-    pain_fever: '💊 כאב וחום',
-    antibiotics: '💉 אנטיביוטיקה',
-    allergy: '🤧 אלרגיה',
-    respiratory: '🫁 נשימה ושיעול',
-    digestive: '🍼 עיכול',
-    vitamins: '💛 ויטמינים ותוספים',
-    skin: '🧴 עור',
-    eye_ear: '👁️ עיניים ואוזניים',
-    other: '📦 אחר',
+    pain_fever: 'כאב וחום',
+    antibiotics: 'אנטיביוטיקה',
+    allergy: 'אלרגיה',
+    respiratory: 'נשימה ושיעול',
+    digestive: 'עיכול',
+    vitamins: 'ויטמינים ותוספים',
+    skin: 'עור',
+    eye_ear: 'עיניים ואוזניים',
+    other: 'אחר',
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

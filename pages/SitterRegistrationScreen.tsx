@@ -35,7 +35,7 @@ import { logger } from '../utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const DAYS_HEB = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+
 
 const SitterRegistrationScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -53,6 +53,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     const [phone, setPhone] = useState('');
     const [bio, setBio] = useState('');
     const [experienceYears, setExperienceYears] = useState(''); // Years of experience
+    const [pricePerHour, setPricePerHour] = useState(''); // Hourly rate in NIS
 
     // Location
     const [city, setCity] = useState('');
@@ -140,7 +141,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 }
                 // Basic phone validation - just check it's not empty
                 if (phone.trim().length < 9) {
-                    Alert.alert(t('common.error'), 'מספר טלפון חייב להיות לפחות 9 ספרות');
+                    Alert.alert(t('common.error'), t('sitterReg.phoneMinDigits'));
                     return false;
                 }
                 return true;
@@ -244,11 +245,12 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 sitterActive: true,
                 sitterAvailable: true, // Set available status for badge
                 sitterBio: bio,
-                sitterExperience: experienceYears ? `${experienceYears} שנות ניסיון` : null,
+                sitterExperience: experienceYears ? `${experienceYears} ${t('sitterReg.yearsOfExperience')}` : null,
+                sitterPrice: pricePerHour ? parseInt(pricePerHour) : 50, // Hourly rate
                 sitterAvailability: Object.entries(availability)
                     .filter(([_, v]) => v)
                     .map(([k]) => parseInt(k)),
-                sitterVerified: true, // Verified by app registration
+                sitterVerified: false, // Must be verified manually by admin
                 phone: phone,
                 age: parseInt(age),
                 displayName: name,
@@ -277,15 +279,15 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
                     <User size={28} color={theme.textSecondary} strokeWidth={1.5} />
                 </View>
-                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>פרטים אישיים</Text>
+                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>{t('sitterReg.personalDetails')}</Text>
                 <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                    ספר לנו קצת על עצמך
+                    {t('sitterReg.tellUsAboutYourself')}
                 </Text>
             </View>
 
             <View style={styles.inputsContainer}>
                 <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>שם מלא *</Text>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.fullName')} *</Text>
                     <View style={styles.inputWrapper}>
                         {Platform.OS === 'ios' && (
                             <BlurView
@@ -302,7 +304,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                             }]}
                             value={name}
                             onChangeText={setName}
-                            placeholder="השם שלך"
+                            placeholder={t('sitterReg.fullName')}
                             placeholderTextColor={theme.textSecondary}
                             textAlign="right"
                         />
@@ -311,7 +313,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
                 <View style={styles.inputRow}>
                     <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>גיל *</Text>
+                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.age')} *</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
                             value={age}
@@ -323,7 +325,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         />
                     </View>
                     <View style={[styles.inputGroup, { flex: 2 }]}>
-                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>טלפון *</Text>
+                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.phone')} *</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
                             value={phone}
@@ -336,23 +338,37 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {/* Experience */}
-                <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>שנות ניסיון</Text>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                        value={experienceYears}
-                        onChangeText={setExperienceYears}
-                        placeholder="כמה שנים של ניסיון עם ילדים?"
-                        placeholderTextColor={theme.textSecondary}
-                        keyboardType="numeric"
-                        textAlign="right"
-                    />
+                {/* Experience + Price Row */}
+                <View style={styles.inputRow}>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.yearsExperience')}</Text>
+                        <TextInput
+                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
+                            value={experienceYears}
+                            onChangeText={setExperienceYears}
+                            placeholder={t('sitterReg.years')}
+                            placeholderTextColor={theme.textSecondary}
+                            keyboardType="numeric"
+                            textAlign="right"
+                        />
+                    </View>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.pricePerHour')} *</Text>
+                        <TextInput
+                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
+                            value={pricePerHour}
+                            onChangeText={setPricePerHour}
+                            placeholder="50"
+                            placeholderTextColor={theme.textSecondary}
+                            keyboardType="numeric"
+                            textAlign="right"
+                        />
+                    </View>
                 </View>
 
                 {/* City Picker - Premium Autocomplete */}
                 <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>עיר *</Text>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.city')} *</Text>
 
                     <View style={styles.cityInputContainer}>
                         <View style={[styles.cityInputWrapper, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -417,7 +433,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                     }
                                     setTimeout(() => setShowCitySuggestions(false), 200);
                                 }}
-                                placeholder="הקלד עיר או בחר מהרשימה"
+                                placeholder={t('sitterReg.typeOrSelect')}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
                             />
@@ -539,19 +555,19 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                 <MapPin size={16} color={gpsLocation ? theme.success : theme.primary} strokeWidth={2} />
                             </LinearGradient>
                             <Text style={[styles.locationBtnText, { color: gpsLocation ? theme.success : theme.textPrimary }]}>
-                                {gpsLocation ? 'מיקום נשמר ✓' : 'שתף מיקום GPS (מומלץ)'}
+                                {gpsLocation ? t('sitterReg.locationSaved') : t('sitterReg.shareGps')}
                             </Text>
                         </>
                     )}
                 </TouchableOpacity>
 
                 <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>קצת עליך</Text>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.aboutYou')}</Text>
                     <TextInput
                         style={[styles.input, styles.textArea, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
                         value={bio}
                         onChangeText={setBio}
-                        placeholder="ספר על הניסיון שלך, מה אתה אוהב לעשות עם ילדים..."
+                        placeholder={t('sitterReg.tellAboutExperience')}
                         placeholderTextColor={theme.textSecondary}
                         multiline
                         numberOfLines={4}
@@ -560,7 +576,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 </View>
             </View>
         </View>
-    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, experienceYears, theme]);
+    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, experienceYears, pricePerHour, theme]);
 
     // Step 2: Photo - memoized
     const PhotoStep = useMemo(() => (
@@ -569,7 +585,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
                     <Camera size={28} color={theme.textSecondary} strokeWidth={1.5} />
                 </View>
-                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>תמונת פרופיל</Text>
+                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>{t('sitter.registration.uploadPhotoHint')}</Text>
                 <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
                     {t('sitter.registration.uploadPhotoHint')}
                 </Text>
@@ -581,7 +597,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 ) : (
                     <View style={[styles.photoPlaceholder, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         <Camera size={40} color={theme.textSecondary} strokeWidth={1} />
-                        <Text style={[styles.photoPlaceholderText, { color: theme.textSecondary }]}>הקש להעלאת תמונה</Text>
+                        <Text style={[styles.photoPlaceholderText, { color: theme.textSecondary }]}>{t('sitter.registration.uploadPhoto')}</Text>
                     </View>
                 )}
                 {profilePhoto && (
@@ -635,7 +651,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     />
                 </View>
                 <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                    שלב {currentStep} מתוך 3
+                    {t('sitterReg.stepOf', { current: currentStep.toString(), total: '2' })}
                 </Text>
             </View>
 

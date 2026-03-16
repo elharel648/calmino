@@ -79,9 +79,9 @@ export default function NotificationsScreen() {
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
 
-        if (minutes < 60) return `לפני ${minutes} דקות`;
-        if (hours < 24) return `לפני ${hours} שעות`;
-        return `לפני ${days} ימים`;
+        if (minutes < 60) return t('notifications.minutesAgo', { count: minutes });
+        if (hours < 24) return t('notifications.hoursAgo', { count: hours });
+        return t('notifications.daysAgo', { count: days });
     };
 
     const markAsRead = async (id: string) => {
@@ -108,8 +108,8 @@ export default function NotificationsScreen() {
 
     const clearAllNotifications = async () => {
         Alert.alert(
-            'נקה הכל',
-            'האם למחוק את כל ההתראות?',
+            t('notifications.clearAllTitle'),
+            t('notifications.clearAllMessage'),
             [
                 { text: t('common.cancel'), style: 'cancel' },
                 {
@@ -141,7 +141,7 @@ export default function NotificationsScreen() {
                 <View style={styles.headerActions}>
                     {unreadCount > 0 && (
                         <TouchableOpacity onPress={markAllAsRead} style={styles.markAllBtn}>
-                            <Text style={[styles.markAllText, { color: theme.textPrimary }]}>סמן הכל</Text>
+                            <Text style={[styles.markAllText, { color: theme.textPrimary }]}>{t('notifications.markAll')}</Text>
                         </TouchableOpacity>
                     )}
                     {notifications.length > 0 && (
@@ -175,9 +175,9 @@ export default function NotificationsScreen() {
                         }}>
                             <Bell size={32} color={theme.textSecondary} strokeWidth={1.5} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>אין התראות מיוחדות</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('notifications.emptyTitle')}</Text>
                         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                            ההתראות שלך יופיעו כאן כשיגיעו
+                            {t('notifications.emptySubtitle')}
                         </Text>
                     </View>
                 }

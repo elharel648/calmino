@@ -48,7 +48,7 @@ import {
   Mail,
   Instagram,
 } from 'lucide-react-native';
-import { auth, db } from '../services/firebaseConfig';
+import { auth, db, callFirebaseFunction } from '../services/firebaseConfig';
 import LegalModal from '../components/Legal/LegalModal';
 import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
@@ -66,12 +66,12 @@ import { useMedications } from '../hooks/useMedications';
 import { logger } from '../utils/logger';
 
 const LANGUAGES = [
-  { key: 'he', labelKey: 'settings.hebrew', flag: '🇮🇱' },
-  { key: 'en', labelKey: 'settings.english', flag: '🇺🇸' },
-  { key: 'es', labelKey: 'settings.spanish', flag: '🇪🇸' },
-  { key: 'ar', labelKey: 'settings.arabic', flag: '🇸🇦' },
-  { key: 'fr', labelKey: 'settings.french', flag: '🇫🇷' },
-  { key: 'de', labelKey: 'settings.german', flag: '🇩🇪' },
+  { key: 'he', labelKey: 'settings.hebrew' },
+  { key: 'en', labelKey: 'settings.english' },
+  { key: 'es', labelKey: 'settings.spanish' },
+  { key: 'ar', labelKey: 'settings.arabic' },
+  { key: 'fr', labelKey: 'settings.french' },
+  { key: 'de', labelKey: 'settings.german' },
 ];
 
 
@@ -186,7 +186,7 @@ if (data.settings.language !== undefined) {
           text: t('alerts.sendEmail'), onPress: async () => {
             if (userData.email) {
               try {
-                await sendPasswordResetEmail(auth, userData.email);
+                await callFirebaseFunction('sendPasswordResetEmailBranded', { email: userData.email });
                 Alert.alert(t('alerts.sentSuccessfully'), t('alerts.checkEmail'));
               } catch (e) {
                 Alert.alert(t('common.error'), t('alerts.couldNotSendEmail'));
@@ -649,7 +649,7 @@ if (data.settings.language !== undefined) {
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.language')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                    {currentLang?.flag} {currentLang ? t(currentLang.labelKey) : ''}
+                    {currentLang ? t(currentLang.labelKey) : ''}
                   </Text>
                 </View>
               </View>
@@ -889,7 +889,6 @@ if (data.settings.language !== undefined) {
                   activeOpacity={0.6}
                 >
                   <View style={styles.languageContent}>
-                    <Text style={styles.languageFlag}>{lang.flag}</Text>
                     <Text style={[styles.languageLabel, { color: theme.textPrimary }]}>{t(lang.labelKey)}</Text>
                   </View>
                   {selectedLanguage === lang.key && (

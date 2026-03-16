@@ -29,6 +29,8 @@ import { addMilestone, removeMilestone } from '../../services/babyService';
 import { SwipeableRow } from '../Common/SwipeableRow';
 import { logger } from '../../utils/logger';
 import { useLanguage } from '../../context/LanguageContext';
+import { notificationStorageService } from '../../services/notificationStorageService';
+import { auth } from '../../services/firebaseConfig';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -207,12 +209,12 @@ export default function MilestonesModal({
 
     const handleSave = async () => {
         if (!title.trim()) {
-            Alert.alert(t('common.error'), 'נא להזין כותרת');
+            Alert.alert(t('common.error'), t('milestones.enterTitle'));
             return;
         }
 
         if (!baby?.id) {
-            Alert.alert(t('common.error'), 'לא נמצא פרופיל תינוק');
+            Alert.alert(t('common.error'), t('errors.noChildProfile'));
             return;
         }
 
@@ -225,13 +227,26 @@ export default function MilestonesModal({
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
 
+            // Save in-app notification
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                notificationStorageService.saveNotification({
+                    userId,
+                    type: 'achievement',
+                    title: `🌟 ${t('milestones.title')}`,
+                    message: title.trim(),
+                    timestamp: new Date(),
+                    isRead: false,
+                }).catch(() => {});
+            }
+
             setTitle('');
             setNotes('');
             setDate(new Date());
             setActiveTab('history');
         } catch (error) {
             logger.log('Error saving milestone:', error);
-            Alert.alert(t('common.error'), 'לא הצלחנו לשמור את אבן הדרך');
+            Alert.alert(t('common.error'), t('milestones.saveError'));
         } finally {
             setLoading(false);
         }
@@ -419,7 +434,7 @@ export default function MilestonesModal({
                                                 style={[styles.inputMinimal, { color: theme.textPrimary }]}
                                                 value={title}
                                                 onChangeText={setTitle}
-                                                placeholder="למשל: צעד ראשון"
+                                                placeholder={t('milestones.titlePlaceholder')}
                                                 placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'}
                                                 textAlign="center"
                                             />
@@ -464,7 +479,7 @@ export default function MilestonesModal({
                                                 style={[styles.notesInputMinimal, { color: theme.textPrimary }]}
                                                 value={notes}
                                                 onChangeText={setNotes}
-                                                placeholder="הערות..."
+                                                placeholder={t('milestones.notesPlaceholder')}
                                                 placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'}
                                                 textAlign="right"
                                                 multiline
@@ -527,7 +542,7 @@ export default function MilestonesModal({
                                                 אין אבני דרך עדיין
                                             </Text>
                                             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                                                לחץ על "הוסף חדש" כדי לתעד את הרגעים המיוחדים
+                                                {t('milestones.emptyHint')}
                                             </Text>
                                         </View>
                                     ) : (
@@ -632,8 +647,8 @@ const styles = StyleSheet.create({
     modalCard: {
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        paddingBottom: 44,
-        maxHeight: '95%',
+        paddingBottom: 20,
+        maxHeight: '90%',
         flex: 1,
     },
     dragHandle: {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, InteractionManager } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -70,29 +70,32 @@ function DrumColumn({
       offset,
       label: inRange ? String(v).padStart(2, '0') : '',
       isCenter: offset === 0,
-      opacity: offset === 0 ? 1 : abs === 1 ? 0.33 : 0.1,
-      fontSize: offset === 0 ? 38 : abs === 1 ? 21 : 15,
+      opacity: offset === 0 ? 1 : abs === 1 ? 0.35 : 0.12,
+      fontSize: offset === 0 ? 38 : abs === 1 ? 18 : 13,
     };
   });
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={{ height: DRUM_ITEM_H * 3, width: 84, overflow: 'hidden', position: 'relative', borderRadius: 16 }}>
+      <View style={{ height: DRUM_ITEM_H * 3, width: 96, overflow: 'hidden', position: 'relative', borderRadius: 20 }}>
         {/* Center selection highlight */}
         <View style={{
-          position: 'absolute', top: DRUM_ITEM_H, left: 0, right: 0, height: DRUM_ITEM_H,
-          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
-          borderRadius: 12,
+          position: 'absolute', top: DRUM_ITEM_H, left: 3, right: 3, height: DRUM_ITEM_H,
+          backgroundColor: isDarkMode ? `${accentColor}20` : `${accentColor}10`,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: isDarkMode ? `${accentColor}40` : `${accentColor}30`,
         }} />
         <Animated.View style={[{ marginTop: -DRUM_ITEM_H }, animStyle]}>
           {items.map((item) => (
             <View key={item.offset} style={{ height: DRUM_ITEM_H, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{
                 fontSize: item.fontSize,
-                fontWeight: item.isCenter ? '700' : '400',
-                color: item.isCenter ? accentColor : (isDarkMode ? '#ffffff' : '#1C1C1E'),
+                fontWeight: item.isCenter ? '800' : '500',
+                color: item.isCenter ? accentColor : (isDarkMode ? '#ffffff' : '#8E8E93'),
                 opacity: item.opacity,
-                letterSpacing: -1,
+                letterSpacing: item.isCenter ? -1 : -0.3,
+                fontVariant: ['tabular-nums'] as any,
               }}>
                 {item.label}
               </Text>
@@ -117,6 +120,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const { t } = useLanguage();
   const foodTimerContext = useFoodTimer();
   const { activeChild } = useActiveChild();
+
+  // Lazy content rendering — prevents iPhone CPU from freezing on mount
+  const [contentReady, setContentReady] = useState(false);
 
   // Premium animations
   const glowAnim = useSharedValue(0);
@@ -247,6 +253,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
+  // Animated dismiss — slides out then unmounts
+  const dismissModal = useCallback(() => {
+    logger.log('⏱️ [PERF] dismissModal START');
+    const t0 = Date.now();
+    backdropOpacity.value = withTiming(0, { duration: 200 });
+    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 280, easing: Easing.in(Easing.cubic) }, () => {
+      runOnJS(onClose)();
+    });
+    logger.log(`⏱️ [PERF] dismissModal animation queued in ${Date.now() - t0}ms`);
+  }, [onClose]);
+
   // Drum swipe step handlers (use refs to always get latest values, even mid-gesture)
   const handleHourSteps = React.useCallback((steps: number) => {
     setSleepHours(Math.max(0, Math.min(12, sleepHoursRef.current + steps)));
@@ -303,7 +320,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   useEffect(() => {
     if (visible) {
-      // Start animations immediately on the native thread — no JS re-render needed
+      // Phase 1: Start slide-in animation immediately (runs on native thread)
       translateY.value = SCREEN_HEIGHT;
       backdropOpacity.value = 0;
       glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
@@ -311,10 +328,10 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       backdropOpacity.value = withTiming(1, { duration: 300 });
       translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
 
-      // Defer all state resets until after the animation frame.
-      // setTimeout with React 18 auto-batching = all 25 setStates become 1 re-render,
-      // and it runs after the current frame so the animation starts immediately.
-      const resetTimer = setTimeout(() => {
+      // Phase 2: After animation settles, mount the heavy content + reset state
+      // This prevents the iPhone CPU from trying to mount 2000+ JSX elements
+      // in the same frame as the slide-in animation.
+      const handle = InteractionManager.runAfterInteractions(() => {
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         setSaveSuccess(false);
@@ -342,11 +359,14 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         setFoodEndTime(new Date(now));
         setShowFoodStartTimePicker(false);
         setShowFoodEndTimePicker(false);
-      }, 0);
-      return () => clearTimeout(resetTimer);
+        // Enable content rendering AFTER state is ready
+        setContentReady(true);
+      });
+      return () => handle.cancel();
     } else {
       glowAnim.value = 0;
       sparkleAnim.value = 0;
+      setContentReady(false);
     }
   }, [visible]);
 
@@ -633,7 +653,10 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   const handleSave = async () => {
     if (!type || isSaving) return;
+    const t0 = Date.now();
+    logger.log('⏱️ [PERF] handleSave START', { type });
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    logger.log(`⏱️ [PERF] haptics done in ${Date.now() - t0}ms`);
 
     let data: any = { type };
 
@@ -869,8 +892,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       } else {
         logger.log('🟢 Calling onSave with data:', { type: data.type, ...data });
       }
+      logger.log(`⏱️ [PERF] onSave data prep + save took ${Date.now() - t0}ms`);
       await onSave(data);
-      logger.log('✅ onSave completed successfully');
+      logger.log(`⏱️ [PERF] onSave completed in ${Date.now() - t0}ms`);
 
       // Start Live Activity for food
       if (type === 'food' && activeChild) {
@@ -896,9 +920,11 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       }
 
       setSaveSuccess(true);
+      logger.log(`⏱️ [PERF] post-save cleanup done in ${Date.now() - t0}ms`);
       setTimeout(() => {
         setSaveSuccess(false);
-        onClose();
+        logger.log(`⏱️ [PERF] dismissing modal after success animation, total ${Date.now() - t0}ms`);
+        dismissModal();
       }, 1500);
     } catch (error) {
       logger.error('Save failed', error);
@@ -1505,9 +1531,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         <View style={styles.sleepDurationSection}>
           {/* Column labels */}
           <View style={[styles.sleepDurationRow, { marginBottom: 6 }]}>
-            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 84, textAlign: 'center' }]}>{t('tracking.minutes')}</Text>
-            <View style={{ width: 28 }} />
-            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 84, textAlign: 'center' }]}>{t('tracking.hours')}</Text>
+            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 96, textAlign: 'center' }]}>{t('tracking.minutes')}</Text>
+            <View style={{ width: 24 }} />
+            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 96, textAlign: 'center' }]}>{t('tracking.hours')}</Text>
           </View>
           {/* Drum columns + separator */}
           <View style={[styles.sleepDurationRow, { alignItems: 'center' }]}>
@@ -1522,7 +1548,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               accentColor="#6366F1"
               modalGesture={panGesture}
             />
-            <Text style={[styles.sleepDurationSeparator, { color: isDarkMode ? 'rgba(255,255,255,0.2)' : '#C7C7CC' }]}>:</Text>
+            <Text style={[styles.sleepDurationSeparator, { color: '#6366F1', fontSize: 32, fontWeight: '700', opacity: 0.5 }]}>:</Text>
             {/* Hours — left side (row-reverse) */}
             <DrumColumn
               value={sleepHours}
@@ -1825,7 +1851,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             <TouchableOpacity
               style={StyleSheet.absoluteFill}
               activeOpacity={1}
-              onPress={onClose}
+              onPress={dismissModal}
             />
           </Animated.View>
 
@@ -1925,15 +1951,19 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   scrollEventThrottle={16}
                   onScroll={scrollHandler}
                 >
-                  {renderContent()}
+                  {contentReady ? renderContent() : (
+                    <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                      <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2.5, borderColor: config.accent, borderTopColor: 'transparent', transform: [{ rotate: '45deg' }] }} />
+                    </View>
+                  )}
                 </Animated.ScrollView>
               </NativeViewGestureHandler>
 
               {/* Save Button - Premium Full Width */}
               <TouchableOpacity
-                style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess]}
+                style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess, !contentReady && { opacity: 0.4 }]}
                 onPress={handleSave}
-                disabled={saveSuccess || isSaving}
+                disabled={saveSuccess || isSaving || !contentReady}
                 accessibilityRole="button"
                 accessibilityLabel={saveSuccess ? t('misc.savedSuccessfully') : 'שמור תיעוד'}
                 accessibilityState={{ disabled: saveSuccess }}

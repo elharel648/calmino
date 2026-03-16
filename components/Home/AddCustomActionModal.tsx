@@ -1,6 +1,6 @@
-import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
+import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as Reanimated } from 'react-native-reanimated';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView, PanResponder, Dimensions } from 'react-native';
 import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug } from 'lucide-react-native';
 
 // Exported icon map for use in DailyTimeline and other components
@@ -93,6 +93,40 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
     // Apple-style Animations
     const slideAnim = useRef(new RNAnimated.Value(400)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+    // Swipe down to dismiss
+    const panResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            return gestureState.dy > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        },
+        onPanResponderMove: (_, gestureState) => {
+            if (gestureState.dy > 0) {
+                slideAnim.setValue(gestureState.dy);
+                const opacity = Math.max(0, 1 - gestureState.dy / 400);
+                backdropAnim.setValue(opacity);
+            }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+            if (gestureState.dy > 120 || gestureState.vy > 0.5) {
+                handleClose();
+            } else {
+                RNAnimated.parallel([
+                    RNAnimated.spring(slideAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }),
+                    RNAnimated.timing(backdropAnim, {
+                        toValue: 1,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+            }
+        },
+    }), [slideAnim, backdropAnim]);
 
     const customIconPulse = useSharedValue(0);
     const customIconBounce = useSharedValue(1);
@@ -251,22 +285,17 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     ]}
                 >
                     {/* Drag Handle - iOS Sheet Style */}
-                    <View style={styles.dragHandle}>
+                    <View style={styles.dragHandle} {...panResponder.panHandlers}>
                         <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }]} />
                     </View>
-
-                    {/* Close Button */}
-                    <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
-                        <X size={24} color={theme.textSecondary} />
-                    </TouchableOpacity>
 
                     {/* Header */}
                     <View style={styles.header}>
                         <View style={{ width: 60, height: 60, alignItems: 'center', justifyContent: 'center' }}>
-                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 30, backgroundColor: '#10B981' }, customIconPulseStyle]} />
-                            <View style={[styles.emojiCircle, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#10B98115' }]}>
+                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 30, backgroundColor: '#F97316' }, customIconPulseStyle]} />
+                            <View style={[styles.emojiCircle, { backgroundColor: isDarkMode ? 'rgba(249,115,22,0.2)' : '#F9731615' }]}>
                                 <Reanimated.View style={customIconBounceStyle}>
-                                    <Sparkles size={28} color="#10B981" strokeWidth={2.5} />
+                                    <Zap size={28} color="#F97316" strokeWidth={2.5} />
                                 </Reanimated.View>
                             </View>
                         </View>
@@ -522,8 +551,10 @@ const styles = StyleSheet.create({
     // Drag Handle
     dragHandle: {
         alignItems: 'center',
-        paddingTop: 12,
-        paddingBottom: 8,
+        paddingTop: 14,
+        paddingBottom: 14,
+        paddingHorizontal: 50,
+        minHeight: 44,
     },
     dragHandleBar: {
         width: 36,
@@ -652,14 +683,14 @@ const styles = StyleSheet.create({
     // Save Button
     saveBtn: {
         flexDirection: 'row',
-        backgroundColor: '#10B981',
+        backgroundColor: '#F97316',
         borderRadius: 16,
         paddingVertical: 18,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
         marginTop: 8,
-        shadowColor: '#10B981',
+        shadowColor: '#F97316',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
