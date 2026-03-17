@@ -18,7 +18,7 @@ import {
     Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Sparkles, Camera, X, RefreshCw, Plus, Calendar } from 'lucide-react-native';
+import { Sparkles, Camera, X, RefreshCw, Plus, Calendar, Baby, Moon, Heart, Smile, Hand, Shapes, Utensils, Flower2, Eye, Bug, ArrowUp, Music, Footprints } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -40,12 +40,31 @@ import Animated, {
 } from 'react-native-reanimated';
 import { logger } from '../../utils/logger';
 import { useLanguage } from '../../context/LanguageContext';
+import BrandedShareModal from './BrandedShareModal';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
 // Warm rose accent — distinct from purple used elsewhere
 const ACCENT = '#E8567F';
+
+// Developmental milestone icons for each month's empty state
+// Each icon represents a real developmental milestone for that age
+const MONTH_ICONS: Record<number, { icon: any; label: string }> = {
+    0:  { icon: Baby,       label: 'יום הלידה' },       // Birth day
+    1:  { icon: Moon,       label: 'שנה ראשונה' },      // Sleepy newborn era
+    2:  { icon: Heart,      label: 'כישור רגשי' },      // Emotional bonding
+    3:  { icon: Smile,      label: 'חיוך ראשון' },      // First social smile
+    4:  { icon: Hand,       label: 'אחיזה ראשונה' },    // Grasping objects
+    5:  { icon: Shapes,     label: 'גילוי חפצים' },     // Exploring shapes/toys
+    6:  { icon: Utensils,   label: 'טעימות ראשונות' },  // Starting solids
+    7:  { icon: Flower2,    label: 'שניים צומחות' },    // Teeth sprouting
+    8:  { icon: Eye,        label: 'מודעות וצפייה' },    // Visual awareness
+    9:  { icon: Bug,        label: 'זחילה ראשונה' },    // Crawling!
+    10: { icon: ArrowUp,    label: 'עמידה ראשונה' },    // Pulling to stand
+    11: { icon: Music,      label: 'צלילים ראשונים' },  // First sounds/babbling
+    12: { icon: Footprints, label: 'צעדים ראשונים' },  // First steps!
+};
 
 interface MagicMomentsModalProps {
     visible: boolean;
@@ -68,6 +87,7 @@ export default function MagicMomentsModal({
 
     // Image Viewer State
     const [viewingImage, setViewingImage] = useState<{ url: string; month: number } | null>(null);
+    const [shareImage, setShareImage] = useState<{ url: string; month: number } | null>(null);
     const [monthPickerOpen, setMonthPickerOpen] = useState(false);
     const [editingMonth, setEditingMonth] = useState<number | null>(null);
     const [noteText, setNoteText] = useState('');
@@ -243,7 +263,7 @@ export default function MagicMomentsModal({
 
         if (existingPhoto) {
             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setViewingImage({ url: existingPhoto, month });
+            setShareImage({ url: existingPhoto, month });
         } else {
             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             try {
@@ -404,10 +424,10 @@ export default function MagicMomentsModal({
                                     </View>
                                     <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
                                         <Text style={[styles.statNumber, { color: ACCENT }]}>
-                                            {Object.keys(baby.album).filter(m => parseInt(m) <= 12).length}/12
+                                            {Object.keys(baby.album).filter(m => parseInt(m) <= 12).length}/13
                                         </Text>
                                         <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                                            חודשים ראשונים
+                                            רגעים ראשונים
                                         </Text>
                                     </View>
                                 </View>
@@ -415,14 +435,21 @@ export default function MagicMomentsModal({
 
                             {/* Grid Layout for Months */}
                             <View style={styles.gridSection}>
-                                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                    חודשי השנה הראשונה
-                                </Text>
+                                <View style={styles.sectionTitleRow}>
+                                    <Sparkles size={16} color={ACCENT} strokeWidth={2} />
+                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                                        {baby?.name ? `הרגעים של ${baby.name}` : 'השנה הראשונה'}
+                                    </Text>
+                                </View>
                                 <View style={styles.monthsGrid}>
-                                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                                    {/* Month 0 = Hello World birth tile + months 1-12 */}
+                                    {Array.from({ length: 13 }, (_, i) => i).map((month) => {
                                         const photoUrl = baby?.album?.[month];
                                         const note = baby?.albumNotes?.[month];
                                         const date = baby?.albumDates?.[month];
+                                        const milestoneInfo = MONTH_ICONS[month] || { icon: Camera, label: `חודש ${month}` };
+                                        const MilestoneIcon = milestoneInfo.icon;
+                                        const isBirthTile = month === 0;
                                         return (
                                             <TouchableOpacity
                                                 key={month}
@@ -431,14 +458,18 @@ export default function MagicMomentsModal({
                                                     {
                                                         backgroundColor: photoUrl
                                                             ? 'transparent'
-                                                            : isDarkMode
-                                                                ? 'rgba(255,255,255,0.03)'
-                                                                : 'rgba(0,0,0,0.02)',
+                                                            : isBirthTile
+                                                                ? isDarkMode ? 'rgba(232, 86, 127, 0.08)' : 'rgba(232, 86, 127, 0.05)'
+                                                                : isDarkMode
+                                                                    ? 'rgba(255,255,255,0.03)'
+                                                                    : 'rgba(0,0,0,0.02)',
                                                         borderColor: photoUrl
                                                             ? ACCENT + '40'
-                                                            : isDarkMode
-                                                                ? 'rgba(255,255,255,0.08)'
-                                                                : 'rgba(0,0,0,0.08)',
+                                                            : isBirthTile
+                                                                ? ACCENT + '30'
+                                                                : isDarkMode
+                                                                    ? 'rgba(255,255,255,0.08)'
+                                                                    : 'rgba(0,0,0,0.08)',
                                                     },
                                                 ]}
                                                 onPress={() => handleMonthPress(month)}
@@ -452,7 +483,9 @@ export default function MagicMomentsModal({
                                                             resizeMode="cover"
                                                         />
                                                         <View style={styles.monthBadge}>
-                                                            <Text style={styles.monthBadgeText}>{month}</Text>
+                                                            <Text style={styles.monthBadgeText}>
+                                                                {isBirthTile ? '🌍' : month}
+                                                            </Text>
                                                         </View>
                                                         {note && (
                                                             <TouchableOpacity
@@ -487,8 +520,13 @@ export default function MagicMomentsModal({
                                                     </>
                                                 ) : (
                                                     <View style={styles.emptyGridContent}>
-                                                        <Text style={[styles.emptyMonthText, { color: theme.textTertiary }]}>
-                                                            {month}
+                                                        {/* Milestone icon watermark */}
+                                                        <View style={styles.emptyIconWrap}>
+                                                            <MilestoneIcon size={26} color={ACCENT} strokeWidth={1.5} />
+                                                        </View>
+                                                        {/* Month label */}
+                                                        <Text style={[styles.emptyMonthLabel, { color: theme.textTertiary }]}>
+                                                            {isBirthTile ? 'Hello World' : `חודש ${month}`}
                                                         </Text>
                                                         <View style={[styles.plusIcon, { backgroundColor: ACCENT + '15' }]}>
                                                             <Plus size={14} color={ACCENT} strokeWidth={2} />
@@ -504,9 +542,12 @@ export default function MagicMomentsModal({
                             {/* Additional Months Section */}
                             {baby?.album && Object.keys(baby.album).some(m => parseInt(m) > 12) && (
                                 <View style={styles.gridSection}>
-                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                        חודשים נוספים
-                                    </Text>
+                                    <View style={styles.sectionTitleRow}>
+                                        <Sparkles size={16} color={ACCENT} strokeWidth={2} />
+                                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                                            חודשים נוספים
+                                        </Text>
+                                    </View>
                                     <View style={styles.monthsGrid}>
                                         {Object.keys(baby.album)
                                             .map(Number)
@@ -677,6 +718,15 @@ export default function MagicMomentsModal({
                     </ScrollView>
                 </RNAnimatedView>
             </KeyboardAvoidingView>
+
+            {/* BRANDED SHARE MODAL */}
+            <BrandedShareModal
+                visible={!!shareImage}
+                onClose={() => setShareImage(null)}
+                imageUrl={shareImage?.url || ''}
+                month={shareImage?.month || 0}
+                babyName={baby?.name || ''}
+            />
 
             {/* FULL SCREEN IMAGE VIEWER MODAL */}
             <Modal
@@ -1032,11 +1082,19 @@ const styles = StyleSheet.create({
     gridSection: {
         marginBottom: 32,
     },
+    sectionTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 16,
+        paddingHorizontal: 4,
+    },
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 16,
         paddingHorizontal: 4,
+        textAlign: 'left',
     },
     monthsGrid: {
         flexDirection: 'row',
@@ -1092,7 +1150,16 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 4,
+    },
+    emptyIconWrap: {
+        opacity: 0.3,
+        marginBottom: 2,
+    },
+    emptyMonthLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        marginTop: 2,
     },
     emptyMonthText: {
         fontSize: 18,
@@ -1104,6 +1171,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 2,
     },
     addMonthButton: {
         alignItems: 'center',

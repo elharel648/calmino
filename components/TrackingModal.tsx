@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, InteractionManager } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -221,6 +221,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   const [diaperNote, setDiaperNote] = useState('');
   const [diaperTime, setDiaperTime] = useState(() => new Date());
   const [showDiaperTimePicker, setShowDiaperTimePicker] = useState(false);
+  const [showDiaperDatePicker, setShowDiaperDatePicker] = useState(false);
 
   // Save success state for checkmark animation
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -307,7 +308,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       if (shouldDismiss) {
         runOnJS(triggerMediumHaptic)();
         backdropOpacity.value = withTiming(0, { duration: 200 });
-        translateY.value = withSpring(SCREEN_HEIGHT, { stiffness: 120, damping: 20 }, () => {
+        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250, easing: Easing.in(Easing.cubic) }, () => {
           runOnJS(onClose)();
           translateY.value = SCREEN_HEIGHT;
           backdropOpacity.value = 0;
@@ -328,10 +329,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       backdropOpacity.value = withTiming(1, { duration: 300 });
       translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
 
-      // Phase 2: After animation settles, mount the heavy content + reset state
-      // This prevents the iPhone CPU from trying to mount 2000+ JSX elements
-      // in the same frame as the slide-in animation.
-      const handle = InteractionManager.runAfterInteractions(() => {
+      // Phase 2: Reset state after a minimal delay (NOT waiting for all animations)
+      // Using setTimeout instead of InteractionManager to avoid being blocked by spring/glow animations
+      const timer = setTimeout(() => {
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         setSaveSuccess(false);
@@ -346,6 +346,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         setDiaperNote('');
         setDiaperTime(new Date(now));
         setShowDiaperTimePicker(false);
+        setShowDiaperDatePicker(false);
         setSleepMode('timer');
         setSleepStartTime(timeStr);
         setSleepEndTime(timeStr);
@@ -361,8 +362,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         setShowFoodEndTimePicker(false);
         // Enable content rendering AFTER state is ready
         setContentReady(true);
-      });
-      return () => handle.cancel();
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
       glowAnim.value = 0;
       sparkleAnim.value = 0;
@@ -1526,41 +1527,29 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </View>
       )}
 
-      {/* Duration Mode — swipe drum picker */}
+      {/* Duration Mode — native iOS-style spinner */}
       {sleepMode === 'duration' && (
         <View style={styles.sleepDurationSection}>
-          {/* Column labels */}
-          <View style={[styles.sleepDurationRow, { marginBottom: 6 }]}>
-            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 96, textAlign: 'center' }]}>{t('tracking.minutes')}</Text>
-            <View style={{ width: 24 }} />
-            <Text style={[styles.sleepDurationLabel, { color: theme.textTertiary, width: 96, textAlign: 'center' }]}>{t('tracking.hours')}</Text>
-          </View>
-          {/* Drum columns + separator */}
-          <View style={[styles.sleepDurationRow, { alignItems: 'center' }]}>
-            {/* Minutes — right side (row-reverse) */}
-            <DrumColumn
-              value={sleepMinutes}
-              min={0}
-              max={59}
-              wrap={true}
-              onSteps={handleMinuteSteps}
-              isDarkMode={isDarkMode}
-              accentColor="#6366F1"
-              modalGesture={panGesture}
-            />
-            <Text style={[styles.sleepDurationSeparator, { color: '#6366F1', fontSize: 32, fontWeight: '700', opacity: 0.5 }]}>:</Text>
-            {/* Hours — left side (row-reverse) */}
-            <DrumColumn
-              value={sleepHours}
-              min={0}
-              max={12}
-              wrap={false}
-              onSteps={handleHourSteps}
-              isDarkMode={isDarkMode}
-              accentColor="#6366F1"
-              modalGesture={panGesture}
-            />
-          </View>
+          <DateTimePicker
+            value={(() => {
+              const d = new Date(0);
+              d.setHours(sleepHours, sleepMinutes, 0, 0);
+              return d;
+            })()}
+            mode="countdown"
+            minuteInterval={1}
+            display="spinner"
+            onChange={(event, date) => {
+              if (date) {
+                const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
+                const h = Math.floor(totalSecs / 3600);
+                const m = Math.floor((totalSecs % 3600) / 60);
+                setSleepHours(h);
+                setSleepMinutes(m);
+              }
+            }}
+            locale="he-IL"
+          />
         </View>
       )}
 
@@ -1757,25 +1746,89 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         })}
       </View>
 
-      {/* Premium Time Picker */}
+      {/* Premium Date & Time Picker */}
       <View style={{ marginTop: 24 }}>
-        <TouchableOpacity
-          style={[styles.premiumTimeCard, { backgroundColor: theme.card }]}
-          onPress={() => {
-            setShowDiaperTimePicker(true);
-            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary }]}>מתי זה קרה?</Text>
-          <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
-            <Clock size={20} color={theme.primary} strokeWidth={2} />
-            <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary }]}>
-              {diaperTime.getHours().toString().padStart(2, '0')}:{diaperTime.getMinutes().toString().padStart(2, '0')}
-            </Text>
-          </View>
-        </TouchableOpacity>
+        <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary, marginBottom: 10, textAlign: 'right' }]}>מתי זה קרה?</Text>
+        <View style={{ flexDirection: 'row-reverse', gap: 10 }}>
+          {/* Date Card */}
+          <TouchableOpacity
+            style={[styles.premiumTimeCard, { backgroundColor: theme.card, flex: 1, marginTop: 0 }]}
+            onPress={() => {
+              setShowDiaperDatePicker(true);
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
+              <Calendar size={18} color={theme.primary} strokeWidth={2} />
+              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 15 }]}>
+                {(() => {
+                  const today = new Date();
+                  const isToday = diaperTime.getDate() === today.getDate() && diaperTime.getMonth() === today.getMonth() && diaperTime.getFullYear() === today.getFullYear();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(today.getDate() - 1);
+                  const isYesterday = diaperTime.getDate() === yesterday.getDate() && diaperTime.getMonth() === yesterday.getMonth() && diaperTime.getFullYear() === yesterday.getFullYear();
+                  if (isToday) return 'היום';
+                  if (isYesterday) return 'אתמול';
+                  return `${diaperTime.getDate().toString().padStart(2, '0')}/${(diaperTime.getMonth() + 1).toString().padStart(2, '0')}`;
+                })()}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Time Card */}
+          <TouchableOpacity
+            style={[styles.premiumTimeCard, { backgroundColor: theme.card, flex: 1, marginTop: 0 }]}
+            onPress={() => {
+              setShowDiaperTimePicker(true);
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
+              <Clock size={18} color={theme.primary} strokeWidth={2} />
+              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 15 }]}>
+                {diaperTime.getHours().toString().padStart(2, '0')}:{diaperTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Diaper Date Picker Modal */}
+      {showDiaperDatePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={diaperTime}
+              mode="date"
+              maximumDate={new Date()}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedDate) => {
+                if (Platform.OS === 'android') {
+                  setShowDiaperDatePicker(false);
+                }
+                if (selectedDate) {
+                  const updated = new Date(diaperTime);
+                  updated.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+                  setDiaperTime(updated);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setShowDiaperDatePicker(false);
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              >
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Diaper Time Picker Modal */}
       {showDiaperTimePicker && (
@@ -1791,7 +1844,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   setShowDiaperTimePicker(false);
                 }
                 if (selectedTime) {
-                  setDiaperTime(selectedTime);
+                  const updated = new Date(diaperTime);
+                  updated.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+                  setDiaperTime(updated);
                 }
               }}
             />
@@ -1803,7 +1858,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Text style={styles.timePickerDoneBtnText}>{t('tracking.endTime')}</Text>
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
               </TouchableOpacity>
             )}
           </View>
