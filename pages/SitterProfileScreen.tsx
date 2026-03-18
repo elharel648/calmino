@@ -9,7 +9,7 @@ import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/bab
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
 import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2, CalendarDays, AlertTriangle, Palmtree, Clock } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2, CalendarDays, Clock } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -122,8 +122,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [showOptionsSheet, setShowOptionsSheet] = useState(false);
     const [availabilityDays, setAvailabilityDays] = useState<string[]>(sitterData.sitterAvailableDays || []);
     const [availabilityHours, setAvailabilityHours] = useState<Record<string, { start: string; end: string }>>(sitterData.sitterAvailableHours || {});
-    const [sitterExceptions, setSitterExceptions] = useState<any[]>([]);
-    const [sitterVacations, setSitterVacations] = useState<any[]>([]);
+
 
     // Report / Block state
     const [showOptionsMenu, setShowOptionsMenu] = useState(false);
@@ -197,14 +196,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         logger.log('📅 No sitterAvailableHours found in Firestore');
                     }
 
-                    // Load exceptions & vacations (filter to future only)
-                    const today = new Date().toISOString().split('T')[0];
-                    if (Array.isArray(data.sitterAvailabilityExceptions)) {
-                        setSitterExceptions(data.sitterAvailabilityExceptions.filter((e: any) => e.date >= today));
-                    }
-                    if (Array.isArray(data.sitterAvailabilityVacations)) {
-                        setSitterVacations(data.sitterAvailabilityVacations.filter((v: any) => v.endDate >= today));
-                    }
+
 
                     // Get videoUri from Firebase if not already in sitterData
                     if (!videoUri) {
@@ -835,102 +827,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     );
                 })()}
 
-                {/* Exceptions & Vacations */}
-                {(sitterExceptions.length > 0 || sitterVacations.length > 0) && (
-                    <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, direction: 'rtl' }}>
-                            <AlertTriangle size={16} color="#F59E0B" strokeWidth={2} />
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginBottom: 0 }]}>חריגות וחופשות</Text>
-                        </View>
 
-                        {/* Exceptions */}
-                        {sitterExceptions.map((exc: any, idx: number) => {
-                            const dateStr = exc.date;
-                            const dateObj = new Date(dateStr + 'T00:00:00');
-                            const dayName = dateObj.toLocaleDateString('he-IL', { weekday: 'short' });
-                            const formatted = dateObj.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
-                            const isUnavailable = exc.type === 'unavailable';
-                            return (
-                                <View key={exc.id || idx} style={{
-                                    flexDirection: 'row-reverse',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    backgroundColor: isDarkMode
-                                        ? (isUnavailable ? 'rgba(239,68,68,0.08)' : 'rgba(59,130,246,0.08)')
-                                        : (isUnavailable ? 'rgba(239,68,68,0.05)' : 'rgba(59,130,246,0.05)'),
-                                    borderRadius: 12,
-                                    padding: 12,
-                                    marginBottom: 8,
-                                    borderWidth: 1,
-                                    borderColor: isDarkMode
-                                        ? (isUnavailable ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)')
-                                        : (isUnavailable ? 'rgba(239,68,68,0.1)' : 'rgba(59,130,246,0.1)'),
-                                }}>
-                                    <View style={{
-                                        width: 36, height: 36, borderRadius: 10,
-                                        backgroundColor: isUnavailable ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)',
-                                        alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        {isUnavailable
-                                            ? <AlertTriangle size={16} color="#EF4444" strokeWidth={2} />
-                                            : <Clock size={16} color="#3B82F6" strokeWidth={2} />
-                                        }
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
-                                            {dayName} {formatted}
-                                        </Text>
-                                        <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }}>
-                                            {isUnavailable
-                                                ? 'לא זמין/ה'
-                                                : `${exc.start || '?'} - ${exc.end || '?'}`
-                                            }
-                                            {exc.reason ? ` · ${exc.reason}` : ''}
-                                        </Text>
-                                    </View>
-                                </View>
-                            );
-                        })}
-
-                        {/* Vacations */}
-                        {sitterVacations.map((vac: any, idx: number) => {
-                            const startObj = new Date(vac.startDate + 'T00:00:00');
-                            const endObj = new Date(vac.endDate + 'T00:00:00');
-                            const startFormatted = startObj.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
-                            const endFormatted = endObj.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
-                            return (
-                                <View key={vac.id || idx} style={{
-                                    flexDirection: 'row-reverse',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    backgroundColor: isDarkMode ? 'rgba(249,115,22,0.08)' : 'rgba(249,115,22,0.05)',
-                                    borderRadius: 12,
-                                    padding: 12,
-                                    marginBottom: 8,
-                                    borderWidth: 1,
-                                    borderColor: isDarkMode ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.1)',
-                                }}>
-                                    <View style={{
-                                        width: 36, height: 36, borderRadius: 10,
-                                        backgroundColor: 'rgba(249,115,22,0.12)',
-                                        alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        <Palmtree size={16} color="#F97316" strokeWidth={2} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
-                                            חופשה
-                                        </Text>
-                                        <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }}>
-                                            {startFormatted} - {endFormatted}
-                                            {vac.reason ? ` · ${vac.reason}` : ''}
-                                        </Text>
-                                    </View>
-                                </View>
-                            );
-                        })}
-                    </View>
-                )}
 
                 {/* Social Media Links */}
                 {sitterData.socialLinks && Object.values(sitterData.socialLinks).some(v => v) && (

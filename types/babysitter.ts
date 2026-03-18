@@ -36,25 +36,7 @@ export interface DayAvailability {
     end: string;   // "18:00"
 }
 
-export type ExceptionType = 'unavailable' | 'custom';
 
-export interface AvailabilityException {
-    id: string; // unique ID for this exception
-    date: string; // "2026-02-15" (YYYY-MM-DD format)
-    type: ExceptionType;
-    start?: string; // for 'custom' type: "10:00"
-    end?: string;   // for 'custom' type: "16:00"
-    reason?: string; // "רופא", "אירוע משפחתי"
-    createdAt: Timestamp;
-}
-
-export interface Vacation {
-    id: string; // unique ID for this vacation
-    startDate: string; // "2026-02-22" (YYYY-MM-DD)
-    endDate: string;   // "2026-02-28" (YYYY-MM-DD)
-    reason?: string; // "חופשה בחו\"ל", "אירוע משפחתי"
-    createdAt: Timestamp;
-}
 
 export interface SitterAvailability {
     // Weekly default pattern
@@ -68,11 +50,7 @@ export interface SitterAvailability {
         saturday: DayAvailability | null;
     };
 
-    // Date-specific exceptions
-    exceptions: AvailabilityException[];
 
-    // Long vacations
-    vacations: Vacation[];
 
     updatedAt: Timestamp;
 }
