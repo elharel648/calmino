@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		016B447161EF4EBA8848E488 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983DE75783754C27A26D911B /* FeedingLiveActivity.swift */; }; };
+		016B447161EF4EBA8848E488 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983DE75783754C27A26D911B /* FeedingLiveActivity.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		187D930A42ECFDA26C51BDE1 /* Pods_Calmino.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B8DBA9457BFB2D773007860 /* Pods_Calmino.framework */; };
 		3C03358A726F458582B0B3ED /* BabysitterShiftLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D67706C9B034E30BB14CD1E /* BabysitterShiftLiveActivity.swift */; };
@@ -62,16 +62,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5DC35AB87CBC43A78874A2CC /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				4C162BA4A0AE4BEC9EF7BD95 /* ActivityKit.framework in Frameworks */,
-				068EA8AD0E194C23A7343EE8 /* WidgetKit.framework in Frameworks */,
-				89D3FC37165E429192BA1EA9 /* SwiftUI.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -245,13 +236,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		77ECAB2C4EF446FCAE6A655C /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -453,19 +438,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		88C9AF5E801446EB996A3381 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				3C03358A726F458582B0B3ED /* BabysitterShiftLiveActivity.swift in Sources */,
-				895747AAA693410282DE9032 /* SleepLiveActivity.swift in Sources */,
-				016B447161EF4EBA8848E488 /* FeedingLiveActivity.swift in Sources */,
-				E61E94672B064B7FA5A6FC50 /* CalmParentLiveActivityBundle.swift in Sources */,
-				7312174927F34F4580A9F363 /* ActivityAttributes.swift in Sources */,
-				58018117EFEB4B8B938853B9 /* GlassComponents.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
