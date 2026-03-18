@@ -50,20 +50,21 @@ const ACCENT = '#E8567F';
 
 // Developmental milestone icons for each month's empty state
 // Each icon represents a real developmental milestone for that age
-const MONTH_ICONS: Record<number, { icon: any; label: string }> = {
-    0:  { icon: Baby,       label: 'יום הלידה' },       // Birth day
-    1:  { icon: Moon,       label: 'שנה ראשונה' },      // Sleepy newborn era
-    2:  { icon: Heart,      label: 'כישור רגשי' },      // Emotional bonding
-    3:  { icon: Smile,      label: 'חיוך ראשון' },      // First social smile
-    4:  { icon: Hand,       label: 'אחיזה ראשונה' },    // Grasping objects
-    5:  { icon: Shapes,     label: 'גילוי חפצים' },     // Exploring shapes/toys
-    6:  { icon: Utensils,   label: 'טעימות ראשונות' },  // Starting solids
-    7:  { icon: Flower2,    label: 'שניים צומחות' },    // Teeth sprouting
-    8:  { icon: Eye,        label: 'מודעות וצפייה' },    // Visual awareness
-    9:  { icon: Bug,        label: 'זחילה ראשונה' },    // Crawling!
-    10: { icon: ArrowUp,    label: 'עמידה ראשונה' },    // Pulling to stand
-    11: { icon: Music,      label: 'צלילים ראשונים' },  // First sounds/babbling
-    12: { icon: Footprints, label: 'צעדים ראשונים' },  // First steps!
+// Labels are moved inside the component to access t()
+const MONTH_ICONS_BASE: Record<number, { icon: any; labelKey: string }> = {
+    0:  { icon: Baby,       labelKey: 'magicMoments.birthDay' },
+    1:  { icon: Moon,       labelKey: 'magicMoments.firstYearLabel' },
+    2:  { icon: Heart,      labelKey: 'magicMoments.emotionalBond' },
+    3:  { icon: Smile,      labelKey: 'magicMoments.firstSmile' },
+    4:  { icon: Hand,       labelKey: 'magicMoments.firstGrab' },
+    5:  { icon: Shapes,     labelKey: 'magicMoments.exploringObjects' },
+    6:  { icon: Utensils,   labelKey: 'magicMoments.firstTastes' },
+    7:  { icon: Flower2,    labelKey: 'magicMoments.teethGrowing' },
+    8:  { icon: Eye,        labelKey: 'magicMoments.visualAwareness' },
+    9:  { icon: Bug,        labelKey: 'magicMoments.firstCrawl' },
+    10: { icon: ArrowUp,    labelKey: 'magicMoments.firstStand' },
+    11: { icon: Music,      labelKey: 'magicMoments.firstSounds' },
+    12: { icon: Footprints, labelKey: 'magicMoments.firstSteps' },
 };
 
 interface MagicMomentsModalProps {
@@ -274,7 +275,7 @@ export default function MagicMomentsModal({
                 }, 1000);
             } catch (error) {
                 logger.error('Error adding photo:', error);
-                Alert.alert(t('common.error'), 'לא הצלחנו להוסיף תמונה');
+                Alert.alert(t('common.error'), t('magicMoments.imageAddError'));
             }
         }
     };
@@ -391,10 +392,10 @@ export default function MagicMomentsModal({
                         </View>
 
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
-                            רגעים קסומים
+                            {t('magicMoments.title')}
                         </Text>
                         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                            תעדו את הרגעים המיוחדים
+                            {t('magicMoments.subtitle')}
                         </Text>
                     </Animated.View>
 
@@ -419,7 +420,7 @@ export default function MagicMomentsModal({
                                             {Object.keys(baby.album).length}
                                         </Text>
                                         <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                                            תמונות
+                                            {t('magicMoments.photos')}
                                         </Text>
                                     </View>
                                     <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
@@ -427,7 +428,7 @@ export default function MagicMomentsModal({
                                             {Object.keys(baby.album).filter(m => parseInt(m) <= 12).length}/13
                                         </Text>
                                         <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                                            רגעים ראשונים
+                                            {t('magicMoments.firstMoments')}
                                         </Text>
                                     </View>
                                 </View>
@@ -438,7 +439,7 @@ export default function MagicMomentsModal({
                                 <View style={styles.sectionTitleRow}>
                                     <Sparkles size={16} color={ACCENT} strokeWidth={2} />
                                     <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                        {baby?.name ? `הרגעים של ${baby.name}` : 'השנה הראשונה'}
+                                        {baby?.name ? t('magicMoments.momentsOf', { name: baby.name }) : t('magicMoments.firstYear')}
                                     </Text>
                                 </View>
                                 <View style={styles.monthsGrid}>
@@ -447,7 +448,8 @@ export default function MagicMomentsModal({
                                         const photoUrl = baby?.album?.[month];
                                         const note = baby?.albumNotes?.[month];
                                         const date = baby?.albumDates?.[month];
-                                        const milestoneInfo = MONTH_ICONS[month] || { icon: Camera, label: `חודש ${month}` };
+                                        const milestoneBase = MONTH_ICONS_BASE[month] || { icon: Camera, labelKey: '' };
+                                        const milestoneInfo = { icon: milestoneBase.icon, label: milestoneBase.labelKey ? t(milestoneBase.labelKey) : t('magicMoments.month', { num: month.toString() }) };
                                         const MilestoneIcon = milestoneInfo.icon;
                                         const isBirthTile = month === 0;
                                         return (
@@ -514,7 +516,7 @@ export default function MagicMomentsModal({
                                                                 }}
                                                                 activeOpacity={0.8}
                                                             >
-                                                                <Text style={styles.addNoteText}>+ הערה</Text>
+                                                                <Text style={styles.addNoteText}>{t('magicMoments.addNote')}</Text>
                                                             </TouchableOpacity>
                                                         )}
                                                     </>
@@ -526,7 +528,7 @@ export default function MagicMomentsModal({
                                                         </View>
                                                         {/* Month label */}
                                                         <Text style={[styles.emptyMonthLabel, { color: theme.textTertiary }]}>
-                                                            {isBirthTile ? 'Hello World' : `חודש ${month}`}
+                                                            {isBirthTile ? 'Hello World' : t('magicMoments.month', { num: month.toString() })}
                                                         </Text>
                                                         <View style={[styles.plusIcon, { backgroundColor: ACCENT + '15' }]}>
                                                             <Plus size={14} color={ACCENT} strokeWidth={2} />
@@ -545,7 +547,7 @@ export default function MagicMomentsModal({
                                     <View style={styles.sectionTitleRow}>
                                         <Sparkles size={16} color={ACCENT} strokeWidth={2} />
                                         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                                            חודשים נוספים
+                                            {t('magicMoments.moreMonths')}
                                         </Text>
                                     </View>
                                     <View style={styles.monthsGrid}>
@@ -610,7 +612,7 @@ export default function MagicMomentsModal({
                                                                 activeOpacity={0.8}
                                                             >
                                                                 <Calendar size={10} color={ACCENT} strokeWidth={2} />
-                                                                <Text style={styles.addDateText}>תאריך</Text>
+                                                                <Text style={styles.addDateText}>{t('magicMoments.dateLabel')}</Text>
                                                             </TouchableOpacity>
                                                         )}
                                                         {note && (
@@ -640,7 +642,7 @@ export default function MagicMomentsModal({
                                                                 }}
                                                                 activeOpacity={0.8}
                                                             >
-                                                                <Text style={styles.addNoteText}>+ הערה</Text>
+                                                                <Text style={styles.addNoteText}>{t('magicMoments.addNote')}</Text>
                                                             </TouchableOpacity>
                                                         )}
                                                     </TouchableOpacity>
@@ -694,10 +696,10 @@ export default function MagicMomentsModal({
                                     </View>
                                     <View style={styles.addCustomTextContainer}>
                                         <Text style={[styles.addCustomTitle, { color: theme.textPrimary }]}>
-                                            הוסף חודש נוסף
+                                            {t('magicMoments.addMoreMonth')}
                                         </Text>
                                         <Text style={[styles.addCustomSubtitle, { color: theme.textSecondary }]}>
-                                            תיעוד חודשים 13-36
+                                            {t('magicMoments.monthsRange')}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>
@@ -710,7 +712,7 @@ export default function MagicMomentsModal({
                                         <Camera size={14} color={ACCENT} strokeWidth={1.5} />
                                     </View>
                                     <Text style={[styles.babyName, { color: theme.textPrimary }]}>
-                                        האלבום של {baby.name}
+                                        {t('magicMoments.albumOf', { name: baby.name })}
                                     </Text>
                                 </View>
                             )}
@@ -768,10 +770,10 @@ export default function MagicMomentsModal({
                                 onPress={handleReplacePhoto}
                             >
                                 <RefreshCw color="#FFF" size={20} />
-                                <Text style={styles.replaceButtonText}>החלף תמונה</Text>
+                                <Text style={styles.replaceButtonText}>{t('magicMoments.replacePhoto')}</Text>
                             </TouchableOpacity>
                             {viewingImage && (
-                                <Text style={styles.viewerMonthText}>חודש {viewingImage.month}</Text>
+                                <Text style={styles.viewerMonthText}>{t('magicMoments.monthNum', { num: viewingImage.month.toString() })}</Text>
                             )}
                         </View>
                     </SafeAreaView>
@@ -794,11 +796,11 @@ export default function MagicMomentsModal({
                             <TouchableOpacity onPress={() => setMonthPickerOpen(false)}>
                                 <X size={20} color={theme.textSecondary} strokeWidth={1.5} />
                             </TouchableOpacity>
-                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>בחר חודש</Text>
+                            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('magicMoments.selectMonth')}</Text>
                             <View style={{ width: 20 }} />
                         </View>
                         <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-                            הוסיפו תמונה לחודש 13-36
+                            {t('magicMoments.addPhotoRange')}
                         </Text>
                         <ScrollView
                             horizontal
@@ -846,7 +848,7 @@ export default function MagicMomentsModal({
                                 <X size={20} color={theme.textSecondary} strokeWidth={1.5} />
                             </TouchableOpacity>
                             <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
-                                הערה לחודש {editingMonth}
+                                {t('magicMoments.noteForMonth', { num: editingMonth?.toString() || '' })}
                             </Text>
                             <TouchableOpacity
                                 onPress={() => {
@@ -869,7 +871,7 @@ export default function MagicMomentsModal({
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                                 }
                             ]}
-                            placeholder="הוסף הערה או תיאור לתמונה..."
+                            placeholder={t('magicMoments.addNoteOrDesc')}
                             placeholderTextColor={theme.textTertiary}
                             value={noteText}
                             onChangeText={setNoteText}

@@ -2030,12 +2030,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 onPress={handleSave}
                 disabled={saveSuccess || isSaving || !contentReady}
                 accessibilityRole="button"
-                accessibilityLabel={saveSuccess ? t('misc.savedSuccessfully') : 'שמור תיעוד'}
+                accessibilityLabel={saveSuccess ? t('misc.savedSuccessfully') : t('tracking.saveRecord')}
                 accessibilityState={{ disabled: saveSuccess }}
               >
                 <Check size={18} color="#fff" strokeWidth={2.5} />
                 <Text style={[styles.saveBtnText, saveSuccess && styles.saveBtnTextSuccess]}>
-                  {saveSuccess ? 'נשמר!' : 'שמור תיעוד'}
+                  {saveSuccess ? t('tracking.saved') : t('tracking.saveRecord')}
                 </Text>
               </TouchableOpacity>
 

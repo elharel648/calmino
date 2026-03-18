@@ -488,7 +488,9 @@
     "dry": "Sèche",
     "times": "Fois",
     "meals": "Repas",
-    "startTime": "Début"
+    "startTime": "Début",
+    "saveRecord": "Enregistrer",
+    "saved": "Enregistré !"
   },
   "weekday": {
     "sun": "D",
@@ -1052,7 +1054,15 @@
     "saveError": "Échec de la sauvegarde de l'étape",
     "titlePlaceholder": "ex : Premiers pas",
     "notesPlaceholder": "Notes...",
-    "emptyHint": "Appuyez sur \"Ajouter\" pour enregistrer des moments spéciaux"
+    "emptyHint": "Appuyez sur \"Ajouter\" pour enregistrer des moments spéciaux",
+    "addNew": "Ajouter",
+    "history": "Historique ({count})",
+    "titleLabel": "Titre",
+    "dateLabel": "Date",
+    "saveMilestone": "Enregistrer l'étape",
+    "noMilestonesYet": "Aucune étape enregistrée",
+    "daysAgo": "Il y a {count} jours",
+    "weeksAgo": "Il y a {count} semaines"
   },
   "supplements": {
     "enterName": "Veuillez entrer un nom de supplément",
@@ -1060,7 +1070,14 @@
     "removeTitle": "Retirer le Supplément",
     "removeConfirm": "Supprimer ce supplément ?",
     "editTitle": "Modifier les Suppléments",
-    "dailyTitle": "Suppléments Quotidiens"
+    "dailyTitle": "Suppléments Quotidiens",
+    "addNewSupplement": "Ajouter un supplément",
+    "selectIcon": "Choisir une icône :",
+    "add": "Ajouter",
+    "supplementGiven": "💊 Supplément donné",
+    "addSupplement": "Ajouter un supplément",
+    "givenToday": "{taken}/{total} donnés aujourd'hui",
+    "editSupplements": "Modifier les suppléments"
   },
   "reports": {
     "empty": {
@@ -1498,5 +1515,53 @@
     "loadingData": "Erreur de chargement des données",
     "somethingWentWrong": "Quelque chose a mal tourné",
     "tryAgain": "Réessayer"
+  },
+  "whiteNoise": {
+    "title": "Bruit blanc",
+    "subtitle": "Musique apaisante pour dormir",
+    "lullaby": "Berceuse",
+    "softMusic": "Musique douce",
+    "birds": "Oiseaux",
+    "rain": "Pluie",
+    "volume": "Volume : {percent}%",
+    "sleepTimer": "Minuterie de sommeil",
+    "minutes": "{mins} min",
+    "cancelTimer": "Annuler",
+    "backgroundNote": "Le son continuera en arrière-plan"
+  },
+  "magicMoments": {
+    "title": "Moments Magiques",
+    "subtitle": "Documentez les moments spéciaux",
+    "photos": "Photos",
+    "firstMoments": "Premiers Moments",
+    "momentsOf": "Les moments de {name}",
+    "firstYear": "Première année",
+    "month": "Mois {num}",
+    "addNote": "+ Note",
+    "moreMonths": "Plus de mois",
+    "addMoreMonth": "Ajouter un mois",
+    "monthsRange": "Documenter les mois 13-36",
+    "albumOf": "L'album de {name}",
+    "replacePhoto": "Remplacer la photo",
+    "monthNum": "Mois {num}",
+    "selectMonth": "Choisir le mois",
+    "addPhotoRange": "Ajouter une photo pour les mois 13-36",
+    "noteForMonth": "Note pour le mois {num}",
+    "addNoteOrDesc": "Ajouter une note ou description...",
+    "imageAddError": "Impossible d'ajouter la photo",
+    "birthDay": "Jour de naissance",
+    "firstYearLabel": "Première année",
+    "emotionalBond": "Lien émotionnel",
+    "firstSmile": "Premier sourire",
+    "firstGrab": "Première prise",
+    "exploringObjects": "Découverte d'objets",
+    "firstTastes": "Premières bouchées",
+    "teethGrowing": "Poussée dentaire",
+    "visualAwareness": "Éveil visuel",
+    "firstCrawl": "Premier pas à quatre pattes",
+    "firstStand": "Premier debout",
+    "firstSounds": "Premiers sons",
+    "firstSteps": "Premiers pas",
+    "dateLabel": "Date"
   }
 }

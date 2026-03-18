@@ -488,7 +488,9 @@
     "dry": "Seco",
     "times": "Veces",
     "meals": "Comidas",
-    "startTime": "Inicio"
+    "startTime": "Inicio",
+    "saveRecord": "Guardar registro",
+    "saved": "¡Guardado!"
   },
   "weekday": {
     "sun": "D",
@@ -1052,7 +1054,15 @@
     "saveError": "No se pudo guardar el hito",
     "titlePlaceholder": "ej: Primeros pasos",
     "notesPlaceholder": "Notas...",
-    "emptyHint": "Toca \"Agregar\" para registrar momentos especiales"
+    "emptyHint": "Toca \"Agregar\" para registrar momentos especiales",
+    "addNew": "Agregar nuevo",
+    "history": "Historial ({count})",
+    "titleLabel": "Título",
+    "dateLabel": "Fecha",
+    "saveMilestone": "Guardar hito",
+    "noMilestonesYet": "Aún no hay hitos",
+    "daysAgo": "Hace {count} días",
+    "weeksAgo": "Hace {count} semanas"
   },
   "supplements": {
     "enterName": "Ingresa un nombre de suplemento",
@@ -1060,7 +1070,14 @@
     "removeTitle": "Eliminar Suplemento",
     "removeConfirm": "¿Eliminar este suplemento?",
     "editTitle": "Editar Suplementos",
-    "dailyTitle": "Suplementos Diarios"
+    "dailyTitle": "Suplementos Diarios",
+    "addNewSupplement": "Agregar nuevo suplemento",
+    "selectIcon": "Seleccionar icono:",
+    "add": "Agregar",
+    "supplementGiven": "💊 Suplemento dado",
+    "addSupplement": "Agregar suplemento",
+    "givenToday": "{taken}/{total} dados hoy",
+    "editSupplements": "Editar suplementos"
   },
   "reports": {
     "empty": {
@@ -1498,5 +1515,53 @@
     "loadingData": "Error al cargar datos",
     "somethingWentWrong": "Algo salió mal",
     "tryAgain": "Intentar de nuevo"
+  },
+  "whiteNoise": {
+    "title": "Ruido blanco",
+    "subtitle": "Música relajante para dormir",
+    "lullaby": "Canción de cuna",
+    "softMusic": "Música suave",
+    "birds": "Pájaros",
+    "rain": "Lluvia",
+    "volume": "Volumen: {percent}%",
+    "sleepTimer": "Temporizador de sueño",
+    "minutes": "{mins} min",
+    "cancelTimer": "Cancelar",
+    "backgroundNote": "El sonido seguirá reproduciéndose con la pantalla apagada"
+  },
+  "magicMoments": {
+    "title": "Momentos Mágicos",
+    "subtitle": "Documenten los momentos especiales",
+    "photos": "Fotos",
+    "firstMoments": "Primeros Momentos",
+    "momentsOf": "Los momentos de {name}",
+    "firstYear": "Primer año",
+    "month": "Mes {num}",
+    "addNote": "+ Nota",
+    "moreMonths": "Más meses",
+    "addMoreMonth": "Agregar otro mes",
+    "monthsRange": "Documentar meses 13-36",
+    "albumOf": "El álbum de {name}",
+    "replacePhoto": "Reemplazar foto",
+    "monthNum": "Mes {num}",
+    "selectMonth": "Seleccionar mes",
+    "addPhotoRange": "Agregar foto para meses 13-36",
+    "noteForMonth": "Nota para el mes {num}",
+    "addNoteOrDesc": "Agregar una nota o descripción...",
+    "imageAddError": "No se pudo agregar la foto",
+    "birthDay": "Día de nacimiento",
+    "firstYearLabel": "Primer año",
+    "emotionalBond": "Vínculo emocional",
+    "firstSmile": "Primera sonrisa",
+    "firstGrab": "Primer agarre",
+    "exploringObjects": "Descubriendo objetos",
+    "firstTastes": "Primeras probadas",
+    "teethGrowing": "Dientes creciendo",
+    "visualAwareness": "Conciencia visual",
+    "firstCrawl": "Primer gateo",
+    "firstStand": "Ponerse de pie",
+    "firstSounds": "Primeros sonidos",
+    "firstSteps": "Primeros pasos",
+    "dateLabel": "Fecha"
   }
 }

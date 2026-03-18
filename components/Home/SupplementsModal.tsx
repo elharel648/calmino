@@ -201,7 +201,7 @@ const AddSupplementForm = memo(({
             }
         ]}>
             <Text style={[styles.addFormTitle, { color: theme.textPrimary }]}>
-                הוספת תוסף חדש
+                {t('supplements.addNewSupplement')}
             </Text>
 
             <TextInput
@@ -222,7 +222,7 @@ const AddSupplementForm = memo(({
             />
 
             <Text style={[styles.iconPickerLabel, { color: theme.textSecondary }]}>
-                בחר אייקון:
+                {t('supplements.selectIcon')}
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.iconPicker} contentContainerStyle={styles.iconPickerContent}>
                 {ICON_OPTIONS.map((iconKey) => {
@@ -252,14 +252,14 @@ const AddSupplementForm = memo(({
 
             <View style={styles.addFormButtons}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-                    <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>ביטול</Text>
+                    <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.confirmBtn, { opacity: name.trim() ? 1 : 0.5 }]}
                     onPress={handleAdd}
                     disabled={!name.trim()}
                 >
-                    <Text style={styles.confirmBtnText}>הוסף</Text>
+                    <Text style={styles.confirmBtnText}>{t('supplements.add')}</Text>
                 </TouchableOpacity>
             </View>
         </Animated.View>
@@ -339,7 +339,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                 notificationStorageService.saveNotification({
                     userId,
                     type: 'medication',
-                    title: '💊 תוסף ניתן',
+                    title: t('supplements.supplementGiven'),
                     message: suppName,
                     timestamp: new Date(),
                     isRead: false,
@@ -495,7 +495,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                     >
                                         <Plus size={18} color="#007AFF" strokeWidth={2.5} />
                                         <Text style={[styles.addRowText, { color: '#007AFF' }]}>
-                                            הוסף תוסף
+                                            {t('supplements.addSupplement')}
                                         </Text>
                                     </TouchableOpacity>
                                 </Animated.View>
@@ -517,7 +517,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                     {!isEditMode && (
                         <View style={styles.progressContainer}>
                             <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                                {takenCount}/{totalCount} ניתנו היום
+                                {t('supplements.givenToday', { taken: takenCount.toString(), total: totalCount.toString() })}
                             </Text>
                             <View style={[
                                 styles.progressTrack,
@@ -551,7 +551,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                             <View style={styles.editHintRow}>
                                 <Pencil size={14} color="#007AFF" strokeWidth={2} />
                                 <Text style={[styles.editHintText, { color: '#007AFF' }]}>
-                                    ערוך תוספים
+                                    {t('supplements.editSupplements')}
                                 </Text>
                             </View>
                         </TouchableOpacity>

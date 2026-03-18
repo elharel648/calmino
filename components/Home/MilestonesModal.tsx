@@ -280,8 +280,8 @@ export default function MilestonesModal({
 
         if (diffDays === 0) return t('common.today');
         if (diffDays === 1) return t('common.yesterday');
-        if (diffDays < 7) return `לפני ${diffDays} ימים`;
-        if (diffDays < 30) return `לפני ${Math.floor(diffDays / 7)} שבועות`;
+        if (diffDays < 7) return t('milestones.daysAgo', { count: diffDays.toString() });
+        if (diffDays < 30) return t('milestones.weeksAgo', { count: Math.floor(diffDays / 7).toString() });
         return formatDate(d);
     };
 
@@ -375,12 +375,12 @@ export default function MilestonesModal({
                                         end={{ x: 1, y: 0 }}
                                     >
                                         <Plus size={18} color="#fff" strokeWidth={2.5} />
-                                        <Text style={styles.tabTextActive}>הוסף חדש</Text>
+                                        <Text style={styles.tabTextActive}>{t('milestones.addNew')}</Text>
                                     </LinearGradient>
                                 ) : (
                                     <View style={styles.tabInactive}>
                                         <Plus size={18} color={theme.textSecondary} strokeWidth={2} />
-                                        <Text style={[styles.tabText, { color: theme.textSecondary }]}>הוסף חדש</Text>
+                                        <Text style={[styles.tabText, { color: theme.textSecondary }]}>{t('milestones.addNew')}</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -397,12 +397,12 @@ export default function MilestonesModal({
                                         end={{ x: 1, y: 0 }}
                                     >
                                         <Clock size={18} color="#fff" strokeWidth={2.5} />
-                                        <Text style={styles.tabTextActive}>היסטוריה ({milestones.length})</Text>
+                                        <Text style={styles.tabTextActive}>{t('milestones.history', { count: milestones.length.toString() })}</Text>
                                     </LinearGradient>
                                 ) : (
                                     <View style={styles.tabInactive}>
                                         <Clock size={18} color={theme.textSecondary} strokeWidth={2} />
-                                        <Text style={[styles.tabText, { color: theme.textSecondary }]}>היסטוריה ({milestones.length})</Text>
+                                        <Text style={[styles.tabText, { color: theme.textSecondary }]}>{t('milestones.history', { count: milestones.length.toString() })}</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -439,7 +439,7 @@ export default function MilestonesModal({
                                                 textAlign="center"
                                             />
                                         </View>
-                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>כותרת</Text>
+                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('milestones.titleLabel')}</Text>
                                     </View>
 
                                     {/* Date Row - Premium */}
@@ -464,7 +464,7 @@ export default function MilestonesModal({
                                                 </Text>
                                             </View>
                                         </TouchableOpacity>
-                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>תאריך</Text>
+                                        <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('milestones.dateLabel')}</Text>
                                     </View>
 
                                     {/* Notes Row - Premium */}
@@ -513,7 +513,7 @@ export default function MilestonesModal({
                                         ) : (
                                             <>
                                                 <Award size={20} color={ACCENT} strokeWidth={2.5} />
-                                                <Text style={styles.saveBtnTextMinimal}>שמור אבן דרך</Text>
+                                                <Text style={styles.saveBtnTextMinimal}>{t('milestones.saveMilestone')}</Text>
                                             </>
                                         )}
                                     </TouchableOpacity>
@@ -539,7 +539,7 @@ export default function MilestonesModal({
                                                 <Award size={40} color={ACCENT} strokeWidth={2.5} fill={ACCENT} />
                                             </LinearGradient>
                                             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
-                                                אין אבני דרך עדיין
+                                                {t('milestones.noMilestonesYet')}
                                             </Text>
                                             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                                                 {t('milestones.emptyHint')}

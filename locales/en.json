@@ -488,14 +488,24 @@
     "dry": "Dry",
     "times": "Times",
     "meals": "Meals",
-    "startTime": "Start"
+    "startTime": "Start",
+    "saveRecord": "Save Record",
+    "saved": "Saved!"
   },
   "milestones": {
     "enterTitle": "Please enter a title",
     "saveError": "Failed to save the milestone",
     "titlePlaceholder": "e.g.: First steps",
     "notesPlaceholder": "Notes...",
-    "emptyHint": "Tap \"Add New\" to record special moments"
+    "emptyHint": "Tap \"Add New\" to record special moments",
+    "addNew": "Add New",
+    "history": "History ({count})",
+    "titleLabel": "Title",
+    "dateLabel": "Date",
+    "saveMilestone": "Save Milestone",
+    "noMilestonesYet": "No milestones yet",
+    "daysAgo": "{count} days ago",
+    "weeksAgo": "{count} weeks ago"
   },
   "supplements": {
     "enterName": "Please enter a supplement name",
@@ -503,7 +513,14 @@
     "removeTitle": "Remove Supplement",
     "removeConfirm": "Delete this supplement?",
     "editTitle": "Edit Supplements",
-    "dailyTitle": "Daily Supplements"
+    "dailyTitle": "Daily Supplements",
+    "addNewSupplement": "Add New Supplement",
+    "selectIcon": "Select icon:",
+    "add": "Add",
+    "supplementGiven": "💊 Supplement given",
+    "addSupplement": "Add Supplement",
+    "givenToday": "{taken}/{total} given today",
+    "editSupplements": "Edit Supplements"
   },
   "weekday": {
     "sun": "S",
@@ -1498,5 +1515,53 @@
     "shiftStartError": "Could not start the shift",
     "phoneNotAvailable": "Phone number not available for this parent",
     "whatsappNotInstalled": "WhatsApp is not installed on this device"
+  },
+  "whiteNoise": {
+    "title": "White Noise",
+    "subtitle": "Soothing music for sleep",
+    "lullaby": "Lullaby",
+    "softMusic": "Soft Music",
+    "birds": "Birds",
+    "rain": "Rain",
+    "volume": "Volume: {percent}%",
+    "sleepTimer": "Sleep Timer",
+    "minutes": "{mins} min",
+    "cancelTimer": "Cancel",
+    "backgroundNote": "Sound will continue playing when screen is off"
+  },
+  "magicMoments": {
+    "title": "Magic Moments",
+    "subtitle": "Document the special moments",
+    "photos": "Photos",
+    "firstMoments": "First Moments",
+    "momentsOf": "{name}'s Moments",
+    "firstYear": "First Year",
+    "month": "Month {num}",
+    "addNote": "+ Note",
+    "moreMonths": "More Months",
+    "addMoreMonth": "Add Another Month",
+    "monthsRange": "Document months 13-36",
+    "albumOf": "{name}'s Album",
+    "replacePhoto": "Replace Photo",
+    "monthNum": "Month {num}",
+    "selectMonth": "Select Month",
+    "addPhotoRange": "Add a photo for months 13-36",
+    "noteForMonth": "Note for month {num}",
+    "addNoteOrDesc": "Add a note or description for the photo...",
+    "imageAddError": "Could not add photo",
+    "birthDay": "Birth Day",
+    "firstYearLabel": "First Year",
+    "emotionalBond": "Emotional Bond",
+    "firstSmile": "First Smile",
+    "firstGrab": "First Grab",
+    "exploringObjects": "Exploring Objects",
+    "firstTastes": "First Tastes",
+    "teethGrowing": "Teeth Growing",
+    "visualAwareness": "Visual Awareness",
+    "firstCrawl": "First Crawl",
+    "firstStand": "First Stand",
+    "firstSounds": "First Sounds",
+    "firstSteps": "First Steps",
+    "dateLabel": "Date"
   }
 }

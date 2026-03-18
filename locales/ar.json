@@ -488,7 +488,9 @@
     "dry": "جاف",
     "times": "مرات",
     "meals": "وجبات",
-    "startTime": "البدء"
+    "startTime": "البدء",
+    "saveRecord": "حفظ السجل",
+    "saved": "تم الحفظ!"
   },
   "weekday": {
     "sun": "أح",
@@ -1052,7 +1054,15 @@
     "saveError": "فشل حفظ المعلم",
     "titlePlaceholder": "مثال: أول خطوات",
     "notesPlaceholder": "ملاحظات...",
-    "emptyHint": "اضغط \"إضافة جديد\" لتسجيل لحظات مميزة"
+    "emptyHint": "اضغط \"إضافة جديد\" لتسجيل لحظات مميزة",
+    "addNew": "إضافة جديد",
+    "history": "السجل ({count})",
+    "titleLabel": "العنوان",
+    "dateLabel": "التاريخ",
+    "saveMilestone": "حفظ المعلم",
+    "noMilestonesYet": "لا توجد معالم بعد",
+    "daysAgo": "قبل {count} أيام",
+    "weeksAgo": "قبل {count} أسابيع"
   },
   "supplements": {
     "enterName": "يرجى إدخال اسم المكمل",
@@ -1060,7 +1070,14 @@
     "removeTitle": "إزالة المكمل",
     "removeConfirm": "حذف هذا المكمل؟",
     "editTitle": "تعديل المكملات",
-    "dailyTitle": "المكملات اليومية"
+    "dailyTitle": "المكملات اليومية",
+    "addNewSupplement": "إضافة مكمل جديد",
+    "selectIcon": "اختر أيقونة:",
+    "add": "إضافة",
+    "supplementGiven": "💊 تم إعطاء المكمل",
+    "addSupplement": "إضافة مكمل",
+    "givenToday": "{taken}/{total} تم إعطاؤه اليوم",
+    "editSupplements": "تعديل المكملات"
   },
   "reports": {
     "empty": {
@@ -1498,5 +1515,53 @@
     "loadingData": "خطأ في تحميل البيانات",
     "somethingWentWrong": "حدث خطأ ما",
     "tryAgain": "حاول مجدداً"
+  },
+  "whiteNoise": {
+    "title": "ضوضاء بيضاء",
+    "subtitle": "موسيقى مهدئة للنوم",
+    "lullaby": "تهويدة",
+    "softMusic": "موسيقى هادئة",
+    "birds": "طيور",
+    "rain": "مطر",
+    "volume": "مستوى الصوت: {percent}%",
+    "sleepTimer": "مؤقت النوم",
+    "minutes": "{mins} دقيقة",
+    "cancelTimer": "إلغاء",
+    "backgroundNote": "سيستمر الصوت في التشغيل عند إيقاف الشاشة"
+  },
+  "magicMoments": {
+    "title": "لحظات سحرية",
+    "subtitle": "وثّقوا اللحظات المميزة",
+    "photos": "صور",
+    "firstMoments": "اللحظات الأولى",
+    "momentsOf": "لحظات {name}",
+    "firstYear": "السنة الأولى",
+    "month": "الشهر {num}",
+    "addNote": "+ ملاحظة",
+    "moreMonths": "أشهر إضافية",
+    "addMoreMonth": "إضافة شهر آخر",
+    "monthsRange": "توثيق الأشهر 13-36",
+    "albumOf": "ألبوم {name}",
+    "replacePhoto": "استبدال الصورة",
+    "monthNum": "الشهر {num}",
+    "selectMonth": "اختر الشهر",
+    "addPhotoRange": "أضف صورة للأشهر 13-36",
+    "noteForMonth": "ملاحظة للشهر {num}",
+    "addNoteOrDesc": "أضف ملاحظة أو وصف للصورة...",
+    "imageAddError": "تعذر إضافة الصورة",
+    "birthDay": "يوم الميلاد",
+    "firstYearLabel": "السنة الأولى",
+    "emotionalBond": "الرابطة العاطفية",
+    "firstSmile": "الابتسامة الأولى",
+    "firstGrab": "الإمساك الأول",
+    "exploringObjects": "اكتشاف الأشياء",
+    "firstTastes": "التذوق الأول",
+    "teethGrowing": "نمو الأسنان",
+    "visualAwareness": "الوعي البصري",
+    "firstCrawl": "الزحف الأول",
+    "firstStand": "الوقوف الأول",
+    "firstSounds": "الأصوات الأولى",
+    "firstSteps": "الخطوات الأولى",
+    "dateLabel": "التاريخ"
   }
 }

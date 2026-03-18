@@ -488,14 +488,24 @@
     "dry": "יבש",
     "times": "פעמים",
     "meals": "ארוחות",
-    "startTime": "התחלה"
+    "startTime": "התחלה",
+    "saveRecord": "שמור תיעוד",
+    "saved": "נשמר!"
   },
   "milestones": {
     "enterTitle": "נא להזין כותרת",
     "saveError": "לא הצלחנו לשמור את אבן הדרך",
     "titlePlaceholder": "למשל: צעד ראשון",
     "notesPlaceholder": "הערות...",
-    "emptyHint": "לחץ על \"הוסף חדש\" כדי לתעד את הרגעים המיוחדים"
+    "emptyHint": "לחץ על \"הוסף חדש\" כדי לתעד את הרגעים המיוחדים",
+    "addNew": "הוסף חדש",
+    "history": "היסטוריה ({count})",
+    "titleLabel": "כותרת",
+    "dateLabel": "תאריך",
+    "saveMilestone": "שמור אבן דרך",
+    "noMilestonesYet": "אין אבני דרך עדיין",
+    "daysAgo": "לפני {count} ימים",
+    "weeksAgo": "לפני {count} שבועות"
   },
   "supplements": {
     "enterName": "נא להזין שם לתוסף",
@@ -503,7 +513,14 @@
     "removeTitle": "הסרת תוסף",
     "removeConfirm": "האם למחוק את התוסף הזה?",
     "editTitle": "עריכת תוספים",
-    "dailyTitle": "תוספים יומיים"
+    "dailyTitle": "תוספים יומיים",
+    "addNewSupplement": "הוספת תוסף חדש",
+    "selectIcon": "בחר אייקון:",
+    "add": "הוסף",
+    "supplementGiven": "💊 תוסף ניתן",
+    "addSupplement": "הוסף תוסף",
+    "givenToday": "{taken}/{total} ניתנו היום",
+    "editSupplements": "ערוך תוספים"
   },
   "weekday": {
     "sun": "א",
@@ -1511,5 +1528,53 @@
     "shiftStartError": "לא הצלחנו להתחיל את המשמרת",
     "phoneNotAvailable": "מספר טלפון לא זמין עבור הורה זה",
     "whatsappNotInstalled": "וואטסאפ לא מותקן על המכשיר"
+  },
+  "whiteNoise": {
+    "title": "רעש לבן",
+    "subtitle": "מוזיקה מרגיעה לשינה",
+    "lullaby": "שיר ערש",
+    "softMusic": "מוזיקה עדינה",
+    "birds": "ציפורים",
+    "rain": "גשם",
+    "volume": "עוצמה: {percent}%",
+    "sleepTimer": "טיימר שינה",
+    "minutes": "{mins} דק'",
+    "cancelTimer": "בטל",
+    "backgroundNote": "הסאונד ימשיך לנגן גם כשהמסך כבוי"
+  },
+  "magicMoments": {
+    "title": "רגעים קסומים",
+    "subtitle": "תעדו את הרגעים המיוחדים",
+    "photos": "תמונות",
+    "firstMoments": "רגעים ראשונים",
+    "momentsOf": "הרגעים של {name}",
+    "firstYear": "השנה הראשונה",
+    "month": "חודש {num}",
+    "addNote": "+ הערה",
+    "moreMonths": "חודשים נוספים",
+    "addMoreMonth": "הוסף חודש נוסף",
+    "monthsRange": "תיעוד חודשים 13-36",
+    "albumOf": "האלבום של {name}",
+    "replacePhoto": "החלף תמונה",
+    "monthNum": "חודש {num}",
+    "selectMonth": "בחר חודש",
+    "addPhotoRange": "הוסיפו תמונה לחודש 13-36",
+    "noteForMonth": "הערה לחודש {num}",
+    "addNoteOrDesc": "הוסף הערה או תיאור לתמונה...",
+    "imageAddError": "לא הצלחנו להוסיף תמונה",
+    "birthDay": "יום הלידה",
+    "firstYearLabel": "שנה ראשונה",
+    "emotionalBond": "כישור רגשי",
+    "firstSmile": "חיוך ראשון",
+    "firstGrab": "אחיזה ראשונה",
+    "exploringObjects": "גילוי חפצים",
+    "firstTastes": "טעימות ראשונות",
+    "teethGrowing": "שניים צומחות",
+    "visualAwareness": "מודעות וצפייה",
+    "firstCrawl": "זחילה ראשונה",
+    "firstStand": "עמידה ראשונה",
+    "firstSounds": "צלילים ראשונים",
+    "firstSteps": "צעדים ראשונים",
+    "dateLabel": "תאריך"
   }
 }

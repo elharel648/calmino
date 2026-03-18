@@ -11,6 +11,7 @@ import Animated, {
     useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withDelay, interpolate
 } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useAudio, SoundId } from '../context/AudioContext';
 
 let VolumeManager: any = null;
@@ -23,16 +24,19 @@ interface WhiteNoiseModalProps {
     onClose: () => void;
 }
 
-const SOUNDS = [
-    { id: 'lullaby1', label: 'שיר ערש',      Icon: Music2,    color: '#818CF8', bgLight: '#EEF2FF', bgDark: 'rgba(129,140,248,0.14)' },
-    { id: 'lullaby2', label: 'מוזיקה עדינה', Icon: Star,      color: '#F472B6', bgLight: '#FDF2F8', bgDark: 'rgba(244,114,182,0.14)' },
-    { id: 'lullaby3', label: 'ציפורים',      Icon: Sparkles,  color: '#FB923C', bgLight: '#FFF7ED', bgDark: 'rgba(251,146,60,0.14)'  },
-    { id: 'lullaby4', label: 'גשם',          Icon: CloudRain, color: '#38BDF8', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.14)'  },
-] as const;
+// Moved inside component to access t()
 
 export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalProps) {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const { activeSound, volume, isLoading, toggleSound, setVolume, sleepTimer, timeRemaining, startTimer, stopTimer } = useAudio();
+
+    const SOUNDS = useMemo(() => [
+        { id: 'lullaby1', label: t('whiteNoise.lullaby'),   Icon: Music2,    color: '#818CF8', bgLight: '#EEF2FF', bgDark: 'rgba(129,140,248,0.14)' },
+        { id: 'lullaby2', label: t('whiteNoise.softMusic'), Icon: Star,      color: '#F472B6', bgLight: '#FDF2F8', bgDark: 'rgba(244,114,182,0.14)' },
+        { id: 'lullaby3', label: t('whiteNoise.birds'),     Icon: Sparkles,  color: '#FB923C', bgLight: '#FFF7ED', bgDark: 'rgba(251,146,60,0.14)'  },
+        { id: 'lullaby4', label: t('whiteNoise.rain'),      Icon: CloudRain, color: '#38BDF8', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.14)'  },
+    ], [t]);
     const { width: screenW } = useWindowDimensions();
     const isSmall = screenW < 390;
 
@@ -225,7 +229,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
 
                     {/* Title + subtitle / now playing */}
                     <View style={styles.iconHeaderText}>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>רעש לבן</Text>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>{t('whiteNoise.title')}</Text>
                         {activeSound ? (
                             <View style={styles.nowPlayingRow}>
                                 <View style={styles.waveform}>
@@ -236,7 +240,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                 <Text style={[styles.nowPlaying, { color: accentColor }]}>{activeConfig?.label}</Text>
                             </View>
                         ) : (
-                            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>מוזיקה מרגיעה לשינה</Text>
+                            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>{t('whiteNoise.subtitle')}</Text>
                         )}
                     </View>
                 </View>
@@ -294,7 +298,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                              volume < 0.5 ? <Volume1 size={16} color={theme.textSecondary} /> :
                                             <Volume2 size={16} color={theme.textSecondary} />}
                             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-                                עוצמה: {Math.round(volume * 100)}%
+                                {t('whiteNoise.volume', { percent: Math.round(volume * 100).toString() })}
                             </Text>
                         </View>
                         <Slider
@@ -315,7 +319,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                     <View style={styles.timerSection}>
                         <View style={styles.row}>
                             <Clock size={16} color={theme.textSecondary} />
-                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>טיימר שינה</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('whiteNoise.sleepTimer')}</Text>
                             {timeRemaining !== null && (
                                 <View style={[styles.timerBadge, { backgroundColor: (activeConfig?.color ?? '#A78BFA') + '22' }]}>
                                     <Clock size={12} color={activeConfig?.color ?? '#A78BFA'} strokeWidth={2.5} />
@@ -340,13 +344,13 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                     onPress={() => startTimer(mins)}
                                 >
                                     <Text style={[styles.timerBtnText, { color: sleepTimer === mins ? '#fff' : theme.textPrimary }]}>
-                                        {mins} דק'
+                                        {t('whiteNoise.minutes', { mins: mins.toString() })}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
                             {sleepTimer && (
                                 <TouchableOpacity style={[styles.timerBtn, { backgroundColor: '#EF4444' }]} onPress={stopTimer}>
-                                    <Text style={[styles.timerBtnText, { color: '#fff' }]}>בטל</Text>
+                                    <Text style={[styles.timerBtnText, { color: '#fff' }]}>{t('whiteNoise.cancelTimer')}</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -357,7 +361,7 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                 <View style={styles.tipRow}>
                     <Music size={12} color={theme.textTertiary} strokeWidth={1.5} />
                     <Text style={[styles.tip, { color: theme.textTertiary }]}>
-                        הסאונד ימשיך לנגן גם כשהמסך כבוי
+                        {t('whiteNoise.backgroundNote')}
                     </Text>
                 </View>
             </RNAnimated.View>
