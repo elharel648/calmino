@@ -1316,7 +1316,9 @@
     "updateMeasurement": "Messung aktualisieren",
     "subtitle": "Verfolgen Sie das Wachstum Ihres Babys",
     "editSubtitle": "Aktualisieren Sie die Messung",
-    "hideNotes": "Notizen ausblenden"
+    "hideNotes": "Notizen ausblenden",
+    "kg": "kg",
+    "cm": "cm"
   },
   "auth": {
     "login": "Anmelden",
@@ -1470,7 +1472,23 @@
     "noBabyProfile": "Kein Babyprofil gefunden. Bitte zuerst ein Baby hinzufügen.",
     "cannotSaveMedication": "Medikament kann nicht gespeichert werden. Erneut versuchen.",
     "markedAsTaken": "{name} als eingenommen markiert",
-    "illnessHistory": "Krankheiten"
+    "illnessHistory": "Krankheiten",
+    "visitReason": "Besuchsgrund",
+    "visitReasonPlaceholder": "z.B. Routineuntersuchung, Fieber...",
+    "doctorSummary": "Zusammenfassung / Empfehlungen",
+    "doctorSummaryPlaceholder": "Empfehlungen, verschriebene Medikamente...",
+    "addPhoto": "Foto hinzufügen",
+    "addDocument": "Dokument hinzufügen",
+    "saveVisit": "Besuch speichern",
+    "selectIllness": "Krankheit auswählen",
+    "dates": "Daten",
+    "illnessStart": "Krankheitsbeginn",
+    "illnessStillActive": "Krankheit noch aktiv",
+    "recovered": "Genesen",
+    "notes": "Notizen",
+    "addNotes": "Notizen hinzufügen...",
+    "save": "Speichern",
+    "symptomPlaceholder": "Symptome, Behandlung..."
   },
   "misc": {
     "uploadPhoto": "Foto Hochladen",
@@ -1618,6 +1636,13 @@
     "firstMolar": "Erster Backenzahn",
     "totalTeeth": "Zähne durchgebrochen: {count} / 20",
     "chronologicalHistory": "Chronologischer Verlauf",
-    "thisMonth": "Diesen Monat"
+    "thisMonth": "Diesen Monat",
+    "totalTeethDisplay": "Zähne durchgebrochen: {total} / 20",
+    "firstTooth": "Erster",
+    "lastTooth": "Letzter",
+    "allTeethErupted": "Alle Zähne durchgebrochen! 🎉",
+    "editToothDate": "Zahndatum bearbeiten",
+    "whenDidToothErupt": "Wann ist der Zahn durchgebrochen?",
+    "removeTooth": "Zahn entfernen"
   }
 }

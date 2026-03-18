@@ -1316,7 +1316,9 @@
     "updateMeasurement": "Actualizar medición",
     "subtitle": "Registra el crecimiento de tu bebé",
     "editSubtitle": "Actualiza la medición",
-    "hideNotes": "Ocultar notas"
+    "hideNotes": "Ocultar notas",
+    "kg": "kg",
+    "cm": "cm"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -1470,7 +1472,23 @@
     "noBabyProfile": "No se encontró perfil de bebé. Agrega un bebé primero.",
     "cannotSaveMedication": "No se puede guardar el medicamento. Intenta de nuevo.",
     "markedAsTaken": "{name} marcado como tomado",
-    "illnessHistory": "Enfermedades"
+    "illnessHistory": "Enfermedades",
+    "visitReason": "Motivo de visita",
+    "visitReasonPlaceholder": "Ej: revisión rutinaria, fiebre...",
+    "doctorSummary": "Resumen / Recomendaciones",
+    "doctorSummaryPlaceholder": "Recomendaciones, medicamentos recetados...",
+    "addPhoto": "Agregar foto",
+    "addDocument": "Agregar documento",
+    "saveVisit": "Guardar visita",
+    "selectIllness": "Seleccionar enfermedad",
+    "dates": "Fechas",
+    "illnessStart": "Inicio de enfermedad",
+    "illnessStillActive": "Enfermedad aún activa",
+    "recovered": "Recuperado",
+    "notes": "Notas",
+    "addNotes": "Agregar notas...",
+    "save": "Guardar",
+    "symptomPlaceholder": "Síntomas, tratamiento..."
   },
   "misc": {
     "uploadPhoto": "Subir Foto",
@@ -1618,6 +1636,13 @@
     "firstMolar": "Primer molar",
     "totalTeeth": "Total dientes: {count} / 20",
     "chronologicalHistory": "Historial cronológico",
-    "thisMonth": "Este mes"
+    "thisMonth": "Este mes",
+    "totalTeethDisplay": "Total dientes: {total} / 20",
+    "firstTooth": "Primero",
+    "lastTooth": "Último",
+    "allTeethErupted": "¡Todos los dientes salieron! 🎉",
+    "editToothDate": "Editar fecha del diente",
+    "whenDidToothErupt": "¿Cuándo salió el diente?",
+    "removeTooth": "Eliminar diente"
   }
 }

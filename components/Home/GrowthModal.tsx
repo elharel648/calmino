@@ -546,7 +546,7 @@ export default function GrowthModal({
                                                 keyboardType="decimal-pad"
                                                 textAlign="left"
                                             />
-                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>ק"ג</Text>
+                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.kg')}</Text>
                                         </View>
                                     </View>
 
@@ -570,7 +570,7 @@ export default function GrowthModal({
                                                 keyboardType="decimal-pad"
                                                 textAlign="left"
                                             />
-                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>ס"מ</Text>
+                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
                                         </View>
                                     </View>
 
@@ -594,7 +594,7 @@ export default function GrowthModal({
                                                 keyboardType="decimal-pad"
                                                 textAlign="left"
                                             />
-                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>ס"מ</Text>
+                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
                                         </View>
                                     </View>
                                 </View>

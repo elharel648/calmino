@@ -1165,7 +1165,9 @@
     "updateMeasurement": "Update Measurement",
     "subtitle": "Track your baby's growth",
     "editSubtitle": "Update the measurement",
-    "hideNotes": "Hide Notes"
+    "hideNotes": "Hide Notes",
+    "kg": "kg",
+    "cm": "cm"
   },
   "auth": {
     "login": "Login",
@@ -1319,7 +1321,23 @@
     "noBabyProfile": "No baby profile found. Please add a baby first.",
     "cannotSaveMedication": "Cannot save medication. Please try again.",
     "markedAsTaken": "{name} marked as taken",
-    "illnessHistory": "Illness History"
+    "illnessHistory": "Illness History",
+    "visitReason": "Visit Reason",
+    "visitReasonPlaceholder": "e.g. routine checkup, fever...",
+    "doctorSummary": "Summary / Doctor Recommendations",
+    "doctorSummaryPlaceholder": "Recommendations, prescribed medications...",
+    "addPhoto": "Add Photo",
+    "addDocument": "Add Document",
+    "saveVisit": "Save Visit",
+    "selectIllness": "Select Illness",
+    "dates": "Dates",
+    "illnessStart": "Illness Start",
+    "illnessStillActive": "Illness still active",
+    "recovered": "Recovered",
+    "notes": "Notes",
+    "addNotes": "Add notes...",
+    "save": "Save",
+    "symptomPlaceholder": "Symptoms, treatment..."
   },
   "nightLight": {
     "title": "Night Light",
@@ -1340,7 +1358,14 @@
     "firstMolar": "First Molar",
     "totalTeeth": "Total teeth erupted: {count} / 20",
     "chronologicalHistory": "Chronological History",
-    "thisMonth": "This Month"
+    "thisMonth": "This Month",
+    "totalTeethDisplay": "Total teeth erupted: {total} / 20",
+    "firstTooth": "First",
+    "lastTooth": "Last",
+    "allTeethErupted": "All teeth erupted! 🎉",
+    "editToothDate": "Edit tooth eruption date",
+    "whenDidToothErupt": "When did the tooth erupt?",
+    "removeTooth": "Remove tooth"
   },
   "misc": {
     "uploadPhoto": "Upload Photo",

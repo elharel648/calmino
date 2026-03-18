@@ -926,12 +926,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             </View>
 
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>הערות</Text>
+                <Text style={styles.inputLabel}>{t('health.notes')}</Text>
                 <TextInput
                     style={styles.textArea}
                     value={tempNote}
                     onChangeText={setTempNote}
-                    placeholder="הוסף הערות..."
+                    placeholder={t('health.addNotes')}
                     placeholderTextColor="#9CA3AF"
                     multiline
                 />
@@ -939,7 +939,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
             <TouchableOpacity style={styles.saveButton} onPress={() => saveEntry('temperature', { value: temperature.toFixed(1), note: tempNote })} disabled={saveSuccess}>
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>שמור</Text>}
+                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>{t('health.save')}</Text>}
                 </View>
             </TouchableOpacity>
         </ScrollView>
@@ -955,23 +955,23 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             </View>
 
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>סיבת הביקור</Text>
+                <Text style={styles.inputLabel}>{t('health.visitReason')}</Text>
                 <TextInput
                     style={styles.textInput}
                     value={doctorReason}
                     onChangeText={setDoctorReason}
-                    placeholder="למשל: בדיקה שגרתית, חום..."
+                    placeholder={t('health.visitReasonPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                 />
             </View>
 
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>סיכום / המלצות הרופא</Text>
+                <Text style={styles.inputLabel}>{t('health.doctorSummary')}</Text>
                 <TextInput
                     style={styles.textArea}
                     value={doctorNote}
                     onChangeText={setDoctorNote}
-                    placeholder="המלצות, תרופות שנרשמו..."
+                    placeholder={t('health.doctorSummaryPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                     multiline
                 />
@@ -994,7 +994,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     ) : (
                         <>
                             <Camera size={24} color="#6B7280" />
-                            <Text style={styles.uploadButtonText}>הוסף תמונה</Text>
+                            <Text style={styles.uploadButtonText}>{t('health.addPhoto')}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -1017,7 +1017,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     ) : (
                         <>
                             <FileText size={24} color="#6B7280" />
-                            <Text style={styles.uploadButtonText}>הוסף מסמך</Text>
+                            <Text style={styles.uploadButtonText}>{t('health.addDocument')}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -1034,7 +1034,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 disabled={saveSuccess}
             >
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>שמור ביקור</Text>}
+                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>{t('health.saveVisit')}</Text>}
                 </View>
             </TouchableOpacity>
         </ScrollView>
@@ -1049,7 +1049,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 </View>
             </View>
 
-            <Text style={styles.sectionTitle}>בחר מחלה</Text>
+            <Text style={styles.sectionTitle}>{t('health.selectIllness')}</Text>
             <View style={styles.chipsContainerRTL}>
                 {COMMON_ILLNESSES.map(illness => (
                     <TouchableOpacity
@@ -1085,7 +1085,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
             {/* Date Range */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>תאריכים</Text>
+                <Text style={styles.inputLabel}>{t('health.dates')}</Text>
 
                 {/* Start Date */}
                 <TouchableOpacity
@@ -1102,7 +1102,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     }}
                     onPress={() => setShowIllnessStartPicker(!showIllnessStartPicker)}
                 >
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', textAlign: 'right' }}>תחילת מחלה</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', textAlign: 'right' }}>{t('health.illnessStart')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Clock size={14} color="#EF4444" />
                         <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>
@@ -1135,7 +1135,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
                 {/* Ongoing toggle */}
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#6B7280' }}>המחלה עדיין פעילה</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#6B7280' }}>{t('health.illnessStillActive')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <TouchableOpacity
                             onPress={() => { setIllnessOngoing(true); setIllnessEndDate(null); }}
@@ -1153,7 +1153,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 backgroundColor: !illnessOngoing ? '#DCFCE7' : '#F3F4F6',
                             }}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: !illnessOngoing ? '#10B981' : '#9CA3AF' }}>החלימה</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: !illnessOngoing ? '#10B981' : '#9CA3AF' }}>{t('health.recovered')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -1220,8 +1220,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             </View>
 
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>הערות</Text>
-                <TextInput style={styles.textArea} value={illnessNote} onChangeText={setIllnessNote} placeholder="תסמינים, טיפול..." placeholderTextColor="#9CA3AF" multiline />
+                <Text style={styles.inputLabel}>{t('health.notes')}</Text>
+                <TextInput style={styles.textArea} value={illnessNote} onChangeText={setIllnessNote} placeholder={t('health.symptomPlaceholder')} placeholderTextColor="#9CA3AF" multiline />
             </View>
 
             <TouchableOpacity style={styles.saveButton} onPress={() => {
@@ -1238,7 +1238,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 saveEntry('illness', saveData);
             }} disabled={saveSuccess}>
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>שמור</Text>}
+                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>{t('health.save')}</Text>}
                 </View>
             </TouchableOpacity>
         </ScrollView>

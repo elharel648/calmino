@@ -1316,7 +1316,9 @@
     "updateMeasurement": "تحديث القياس",
     "subtitle": "تتبع نمو طفلك",
     "editSubtitle": "حدّث القياس",
-    "hideNotes": "إخفاء الملاحظات"
+    "hideNotes": "إخفاء الملاحظات",
+    "kg": "كغ",
+    "cm": "سم"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -1470,7 +1472,23 @@
     "noBabyProfile": "لم يتم العثور على ملف طفل. أضف طفلاً أولاً.",
     "cannotSaveMedication": "لا يمكن حفظ الدواء. حاول مرة أخرى.",
     "markedAsTaken": "تم تناول {name}",
-    "illnessHistory": "أمراض"
+    "illnessHistory": "أمراض",
+    "visitReason": "سبب الزيارة",
+    "visitReasonPlaceholder": "مثال: فحص روتيني، حرارة...",
+    "doctorSummary": "ملخص / توصيات الطبيب",
+    "doctorSummaryPlaceholder": "توصيات، أدوية موصوفة...",
+    "addPhoto": "إضافة صورة",
+    "addDocument": "إضافة مستند",
+    "saveVisit": "حفظ الزيارة",
+    "selectIllness": "اختر مرض",
+    "dates": "تواريخ",
+    "illnessStart": "بداية المرض",
+    "illnessStillActive": "المرض لا يزال نشطاً",
+    "recovered": "تعافى",
+    "notes": "ملاحظات",
+    "addNotes": "إضافة ملاحظات...",
+    "save": "حفظ",
+    "symptomPlaceholder": "أعراض، علاج..."
   },
   "misc": {
     "uploadPhoto": "رفع صورة",
@@ -1618,6 +1636,13 @@
     "firstMolar": "ضرس أول",
     "totalTeeth": "مجموع الأسنان: {count} / 20",
     "chronologicalHistory": "سجل زمني",
-    "thisMonth": "هذا الشهر"
+    "thisMonth": "هذا الشهر",
+    "totalTeethDisplay": "مجموع الأسنان: {total} / 20",
+    "firstTooth": "الأولى",
+    "lastTooth": "الأخيرة",
+    "allTeethErupted": "ظهرت جميع الأسنان! 🎉",
+    "editToothDate": "تعديل تاريخ ظهور السن",
+    "whenDidToothErupt": "متى ظهرت السن؟",
+    "removeTooth": "إزالة سن"
   }
 }

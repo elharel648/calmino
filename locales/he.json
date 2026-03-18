@@ -1178,7 +1178,9 @@
     "updateMeasurement": "עדכן מדידה",
     "subtitle": "תעדו את ההתפתחות של התינוק",
     "editSubtitle": "עדכנו את המדידה",
-    "hideNotes": "הסתר הערות"
+    "hideNotes": "הסתר הערות",
+    "kg": "ק\"ג",
+    "cm": "ס\"מ"
   },
   "auth": {
     "login": "התחברות",
@@ -1332,7 +1334,23 @@
     "noBabyProfile": "לא נמצא פרופיל תינוק. יש להוסיף תינוק קודם.",
     "cannotSaveMedication": "לא ניתן לשמור את התרופה. נסה שוב.",
     "markedAsTaken": "{name} סומנה כנלקחה",
-    "illnessHistory": "מחלות"
+    "illnessHistory": "מחלות",
+    "visitReason": "סיבת הביקור",
+    "visitReasonPlaceholder": "למשל: בדיקה שגרתית, חום...",
+    "doctorSummary": "סיכום / המלצות הרופא",
+    "doctorSummaryPlaceholder": "המלצות, תרופות שנרשמו...",
+    "addPhoto": "הוסף תמונה",
+    "addDocument": "הוסף מסמך",
+    "saveVisit": "שמור ביקור",
+    "selectIllness": "בחר מחלה",
+    "dates": "תאריכים",
+    "illnessStart": "תחילת מחלה",
+    "illnessStillActive": "המחלה עדיין פעילה",
+    "recovered": "החלימה",
+    "notes": "הערות",
+    "addNotes": "הוסף הערות...",
+    "save": "שמור",
+    "symptomPlaceholder": "תסמינים, טיפול..."
   },
   "nightLight": {
     "title": "פנס לילה",
@@ -1353,7 +1371,14 @@
     "firstMolar": "טוחנת ראשונה",
     "totalTeeth": "סה\"כ שיניים שבקעו: {count} / 20",
     "chronologicalHistory": "היסטוריה כרונולוגית",
-    "thisMonth": "החודש"
+    "thisMonth": "החודש",
+    "totalTeethDisplay": "סה\"כ שיניים שבקעו: {total} / 20",
+    "firstTooth": "ראשונה",
+    "lastTooth": "אחרונה",
+    "allTeethErupted": "כל השיניים בקעו! 🎉",
+    "editToothDate": "ערוך תאריך בקעת השן",
+    "whenDidToothErupt": "מתי בקעה השן?",
+    "removeTooth": "הסר שן"
   },
   "misc": {
     "uploadPhoto": "העלה תמונה",

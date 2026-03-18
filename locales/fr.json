@@ -1316,7 +1316,9 @@
     "updateMeasurement": "Mettre à jour",
     "subtitle": "Suivez la croissance de votre bébé",
     "editSubtitle": "Mettez à jour la mesure",
-    "hideNotes": "Masquer les notes"
+    "hideNotes": "Masquer les notes",
+    "kg": "kg",
+    "cm": "cm"
   },
   "auth": {
     "login": "Connexion",
@@ -1470,7 +1472,23 @@
     "noBabyProfile": "Aucun profil bébé trouvé. Ajoutez un bébé d'abord.",
     "cannotSaveMedication": "Impossible de sauvegarder le médicament. Réessayez.",
     "markedAsTaken": "{name} marqué comme pris",
-    "illnessHistory": "Maladies"
+    "illnessHistory": "Maladies",
+    "visitReason": "Motif de visite",
+    "visitReasonPlaceholder": "Ex: examen de routine, fièvre...",
+    "doctorSummary": "Résumé / Recommandations",
+    "doctorSummaryPlaceholder": "Recommandations, médicaments prescrits...",
+    "addPhoto": "Ajouter photo",
+    "addDocument": "Ajouter document",
+    "saveVisit": "Enregistrer visite",
+    "selectIllness": "Sélectionner maladie",
+    "dates": "Dates",
+    "illnessStart": "Début de maladie",
+    "illnessStillActive": "Maladie toujours active",
+    "recovered": "Guéri",
+    "notes": "Notes",
+    "addNotes": "Ajouter des notes...",
+    "save": "Enregistrer",
+    "symptomPlaceholder": "Symptômes, traitement..."
   },
   "misc": {
     "uploadPhoto": "Télécharger une Photo",
@@ -1618,6 +1636,13 @@
     "firstMolar": "Première molaire",
     "totalTeeth": "Total dents sorties : {count} / 20",
     "chronologicalHistory": "Historique chronologique",
-    "thisMonth": "Ce mois"
+    "thisMonth": "Ce mois",
+    "totalTeethDisplay": "Total dents sorties : {total} / 20",
+    "firstTooth": "Première",
+    "lastTooth": "Dernière",
+    "allTeethErupted": "Toutes les dents ont poussé ! 🎉",
+    "editToothDate": "Modifier la date",
+    "whenDidToothErupt": "Quand la dent est-elle apparue ?",
+    "removeTooth": "Retirer la dent"
   }
 }

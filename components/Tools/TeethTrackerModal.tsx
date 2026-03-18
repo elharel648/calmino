@@ -466,7 +466,7 @@ export default function TeethTrackerModal({
                                     >
                                         <View style={[styles.statsCard, { backgroundColor: theme.cardSecondary }]}>
                                             <Text style={[styles.statsText, { color: theme.textPrimary, marginBottom: 16 }]}>
-                                                סה"כ שיניים שבקעו: {stats.total} / 20
+                                                {t('teethTracker.totalTeethDisplay', { total: stats.total })}
                                             </Text>
 
                                             {/* Advanced Statistics */}
@@ -483,7 +483,7 @@ export default function TeethTrackerModal({
                                                     <View style={[styles.statItem, { backgroundColor: theme.card }]}>
                                                         <Award size={18} color="#F87171" strokeWidth={2} />
                                                         <View style={styles.statItemContent}>
-                                                            <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>ראשונה</Text>
+                                                            <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>{t('teethTracker.firstTooth')}</Text>
                                                             <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.first.label}</Text>
                                                             <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
                                                                 {formatToothDate(stats.first.date)}
@@ -496,7 +496,7 @@ export default function TeethTrackerModal({
                                                     <View style={[styles.statItem, { backgroundColor: theme.card }]}>
                                                         <Clock size={18} color="#34D399" strokeWidth={2} />
                                                         <View style={styles.statItemContent}>
-                                                            <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>אחרונה</Text>
+                                                            <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>{t('teethTracker.lastTooth')}</Text>
                                                             <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.last.label}</Text>
                                                             <Text style={[styles.statItemDate, { color: theme.textTertiary }]}>
                                                                 {formatToothDate(stats.last.date)}
@@ -509,7 +509,7 @@ export default function TeethTrackerModal({
                                             {stats.total === 20 && (
                                                 <View style={styles.completeBadge}>
                                                     <Sparkles size={16} color={theme.primary} strokeWidth={2} />
-                                                    <Text style={[styles.completeText, { color: theme.primary }]}>כל השיניים בקעו! 🎉</Text>
+                                                    <Text style={[styles.completeText, { color: theme.primary }]}>{t('teethTracker.allTeethErupted')}</Text>
                                                 </View>
                                             )}
                                         </View>
@@ -590,8 +590,8 @@ export default function TeethTrackerModal({
                                     <View style={[styles.datePickerHeader, { borderBottomColor: theme.border }]}>
                                         <Text style={[styles.datePickerTitle, { color: theme.textPrimary }]}>
                                             {selectedTooth && teethData[selectedTooth]
-                                                ? 'ערוך תאריך בקעת השן'
-                                                : 'מתי בקעה השן?'}
+                                                ? t('teethTracker.editToothDate')
+                                                : t('teethTracker.whenDidToothErupt')}
                                         </Text>
                                         <TouchableOpacity
                                             onPress={() => {
@@ -632,7 +632,7 @@ export default function TeethTrackerModal({
                                                 }}
                                                 activeOpacity={0.7}
                                             >
-                                                <Text style={[styles.datePickerBtnText, { color: theme.danger }]}>הסר שן</Text>
+                                                <Text style={[styles.datePickerBtnText, { color: theme.danger }]}>{t('teethTracker.removeTooth')}</Text>
                                             </TouchableOpacity>
                                         )}
                                         <TouchableOpacity
