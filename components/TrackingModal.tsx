@@ -1725,12 +1725,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   // --- Diaper Content ---
   const renderDiaperContent = () => (
     <View style={{ width: '100%' }}>
-      <Text style={[styles.subtitle, { textAlign: 'center' }]}>מה היה?</Text>
+      <Text style={[styles.subtitle, { textAlign: 'center' }]}>{t('tracking.whatHappened')}</Text>
       <View style={styles.diaperOptions}>
         {[
           { key: 'pee', label: t('tracking.wet'), icon: Droplets, color: '#3B82F6' },
           { key: 'poop', label: t('tracking.dirty'), icon: Sparkles, color: '#F59E0B' },
-          { key: 'both', label: 'שניהם', icon: Layers, color: '#8B5CF6' },
+          { key: 'both', label: t('tracking.both'), icon: Layers, color: '#8B5CF6' },
         ].map(opt => {
           const IconComponent = opt.icon;
           const isSelected = subType === opt.key;
@@ -1773,7 +1773,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
       {/* Premium Date & Time Picker */}
       <View style={{ marginTop: 24 }}>
-        <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary, marginBottom: 10, textAlign: 'right' }]}>מתי זה קרה?</Text>
+        <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary, marginBottom: 10, textAlign: 'right' }]}>{t('tracking.whenHappened')}</Text>
         <View style={{ flexDirection: 'row-reverse', gap: 10 }}>
           {/* Date Card */}
           <TouchableOpacity
@@ -1793,8 +1793,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                   const yesterday = new Date(today);
                   yesterday.setDate(today.getDate() - 1);
                   const isYesterday = diaperTime.getDate() === yesterday.getDate() && diaperTime.getMonth() === yesterday.getMonth() && diaperTime.getFullYear() === yesterday.getFullYear();
-                  if (isToday) return 'היום';
-                  if (isYesterday) return 'אתמול';
+                  if (isToday) return t('common.today');
+                  if (isYesterday) return t('common.yesterday');
                   return `${diaperTime.getDate().toString().padStart(2, '0')}/${(diaperTime.getMonth() + 1).toString().padStart(2, '0')}`;
                 })()}
               </Text>
@@ -1905,7 +1905,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             color: theme.textPrimary,
           }
         ]}
-        placeholder="הערות (אופציונלי)..."
+        placeholder={t('tracking.note')}
         placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
         value={diaperNote}
         onChangeText={(text) => setDiaperNote(text)}

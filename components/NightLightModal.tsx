@@ -23,6 +23,7 @@ export default function NightLightModal({
     const [brightness, setBrightness] = useState(0.3);
     const [controlsVisible, setControlsVisible] = useState(true);
     const originalBrightnessRef = useRef<number | null>(null);
+    const { t } = useLanguage();
 
     const controlsOpacity = useSharedValue(1);
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
@@ -286,14 +287,14 @@ export default function NightLightModal({
                                         <View style={[styles.iconCircle, { backgroundColor: getTextColor() + '15' }]}>
                                             <Zap size={28} color={getTextColor()} strokeWidth={2} />
                                         </View>
-                                        <Text style={[styles.title, { color: getTextColor() }]}>פנס לילה</Text>
+                                        <Text style={[styles.title, { color: getTextColor() }]}>{t('nightLight.title')}</Text>
                                     </View>
 
-                                    <Text style={[styles.subtitle, { color: getTextColor() }]}>לחץ על המסך להסתרת הפקדים</Text>
+                                    <Text style={[styles.subtitle, { color: getTextColor() }]}>{t('nightLight.tapToHideControls')}</Text>
 
                                     {/* Premium Color Selection with Glow */}
                                     <View style={styles.colorSection}>
-                                        <Text style={[styles.sectionLabel, { color: getTextColor() }]}>צבע</Text>
+                                        <Text style={[styles.sectionLabel, { color: getTextColor() }]}>{t('nightLight.color')}</Text>
                                         <View style={styles.colorRow}>
                                             <TouchableOpacity
                                                 style={styles.colorBtnWrapper}
@@ -362,7 +363,7 @@ export default function NightLightModal({
 
                                     {/* Premium Brightness Slider */}
                                     <View style={styles.brightnessSection}>
-                                        <Text style={[styles.sectionLabel, { color: getTextColor() }]}>בהירות</Text>
+                                        <Text style={[styles.sectionLabel, { color: getTextColor() }]}>{t('nightLight.brightness')}</Text>
                                         <View style={styles.brightnessRow}>
                                             <TouchableOpacity
                                                 onPress={() => handleBrightnessChange(Math.max(0.1, brightness - 0.1))}

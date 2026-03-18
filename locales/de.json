@@ -490,7 +490,8 @@
     "meals": "Mahlzeiten",
     "startTime": "Start",
     "saveRecord": "Aufzeichnung speichern",
-    "saved": "Gespeichert!"
+    "saved": "Gespeichert!",
+    "whenHappened": "Wann ist es passiert?"
   },
   "weekday": {
     "sun": "S",
@@ -1309,7 +1310,13 @@
     "addMeasurement": "Messung Hinzufügen",
     "newMeasurement": "Neue Messung",
     "growthChart": "Wachstumskurve",
-    "percentile": "Perzentile"
+    "percentile": "Perzentile",
+    "editMeasurement": "Messung bearbeiten",
+    "saveMeasurement": "Messung speichern",
+    "updateMeasurement": "Messung aktualisieren",
+    "subtitle": "Verfolgen Sie das Wachstum Ihres Babys",
+    "editSubtitle": "Aktualisieren Sie die Messung",
+    "hideNotes": "Notizen ausblenden"
   },
   "auth": {
     "login": "Anmelden",
@@ -1435,7 +1442,35 @@
     "title": "Gesundheit",
     "bloodPressure": "Blutdruck",
     "fever": "Fieber",
-    "medicine": "Medizin"
+    "medicine": "Medizin",
+    "doctorVisit": "Arztbesuch",
+    "vaccines": "Impfungen",
+    "illnesses": "Krankheiten",
+    "temperature": "Temperatur",
+    "medications": "Medikamente",
+    "history": "Verlauf",
+    "perHealthMinistry": "Nach Empfehlungen des Gesundheitsministeriums",
+    "whenWasVaccine": "Wann wurde die Impfung durchgeführt?",
+    "whenIsAppointment": "Wann ist der Termin?",
+    "addToCalendar": "Zum Kalender hinzufügen",
+    "addVaccine": "Impfung hinzufügen",
+    "vaccineName": "Name der Impfung",
+    "customVaccines": "Benutzerdefinierte Impfungen",
+    "performed": "Durchgeführt",
+    "temperatureC": "Temperatur (°C)",
+    "permissionRequired": "Berechtigung erforderlich",
+    "calendarAccessNeeded": "Kalenderzugriff ist erforderlich.",
+    "noCalendarFound": "Kein Kalender gefunden.",
+    "addedToCalendar": "Zum Kalender hinzugefügt ✓",
+    "vaccineAddedToCalendar": "Impftermin \"{name}\" zum Kalender hinzugefügt.",
+    "galleryPermissionNeeded": "Galerie-Berechtigung erforderlich",
+    "cannotSave": "Kann nicht speichern",
+    "cannotDelete": "Kann nicht löschen",
+    "mustLoginToSave": "Zum Speichern anmelden",
+    "noBabyProfile": "Kein Babyprofil gefunden. Bitte zuerst ein Baby hinzufügen.",
+    "cannotSaveMedication": "Medikament kann nicht gespeichert werden. Erneut versuchen.",
+    "markedAsTaken": "{name} als eingenommen markiert",
+    "illnessHistory": "Krankheiten"
   },
   "misc": {
     "uploadPhoto": "Foto Hochladen",
@@ -1563,5 +1598,26 @@
     "firstSounds": "Erste Laute",
     "firstSteps": "Erste Schritte",
     "dateLabel": "Datum"
+  },
+  "nightLight": {
+    "title": "Nachtlicht",
+    "tapToHideControls": "Tippen um Bedienelemente auszublenden",
+    "color": "Farbe",
+    "brightness": "Helligkeit"
+  },
+  "teethTracker": {
+    "title": "Babyzahn-Diagramm",
+    "upperTeeth": "Obere Zähne",
+    "lowerTeeth": "Untere Zähne",
+    "left": "Links",
+    "right": "Rechts",
+    "canine": "Eckzahn",
+    "lateralIncisor": "Seitlicher Schneidezahn",
+    "centralIncisor": "Mittlerer Schneidezahn",
+    "secondMolar": "Zweiter Backenzahn",
+    "firstMolar": "Erster Backenzahn",
+    "totalTeeth": "Zähne durchgebrochen: {count} / 20",
+    "chronologicalHistory": "Chronologischer Verlauf",
+    "thisMonth": "Diesen Monat"
   }
 }

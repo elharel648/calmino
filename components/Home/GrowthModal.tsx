@@ -450,10 +450,10 @@ export default function GrowthModal({
                         </View>
 
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
-                            {isEditMode ? 'עריכת מדידה' : t('growth.tracking')}
+                            {isEditMode ? t('growth.editMeasurement') : t('growth.tracking')}
                         </Text>
                         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                            {isEditMode ? 'עדכנו את המדידה' : 'תעדו את ההתפתחות של התינוק'}
+                            {isEditMode ? t('growth.editSubtitle') : t('growth.subtitle')}
                         </Text>
                     </Animated.View>
 
@@ -624,7 +624,7 @@ export default function GrowthModal({
                                     )}
                                     <FileText size={16} color={theme.textSecondary} strokeWidth={1.5} />
                                     <Text style={[styles.notesToggleText, { color: theme.textSecondary }]}>
-                                        {showNotes ? 'הסתר הערות' : t('tracking.addNote')}
+                                        {showNotes ? t('growth.hideNotes') : t('tracking.addNote')}
                                     </Text>
                                 </TouchableOpacity>
 
@@ -667,7 +667,7 @@ export default function GrowthModal({
                                             <>
                                                 <TrendingUp size={18} color="#fff" strokeWidth={2} />
                                                 <Text style={styles.saveButtonText}>
-                                                    {isEditMode ? 'עדכן מדידה' : 'שמור מדידה'}
+                                                    {isEditMode ? t('growth.updateMeasurement') : t('growth.saveMeasurement')}
                                                 </Text>
                                             </>
                                         )}

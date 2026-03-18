@@ -64,6 +64,18 @@ export default function TeethTrackerModal({
     const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
     const { activeChild } = useActiveChild();
+
+    // Helper to get translated tooth label from type
+    const getToothLabel = (type: string): string => {
+        switch (type) {
+            case 'molar_2': return t('teethTracker.secondMolar');
+            case 'molar_1': return t('teethTracker.firstMolar');
+            case 'canine': return t('teethTracker.canine');
+            case 'incisor_lat': return t('teethTracker.lateralIncisor');
+            case 'incisor_cen': return t('teethTracker.centralIncisor');
+            default: return type;
+        }
+    };
     const [teethData, setTeethData] = useState<Record<string, Date | null>>({});
     const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -294,7 +306,7 @@ export default function TeethTrackerModal({
                 return {
                     id,
                     date: date!,
-                    label: toothConfig?.label || 'שן',
+                    label: getToothLabel(toothConfig?.type || ''),
                     type: toothConfig?.type || '',
                     color: toothConfig?.color || '#8B5CF6'
                 };
@@ -393,7 +405,7 @@ export default function TeethTrackerModal({
                                     </Animated.View>
                                 </View>
                             </View>
-                            <Text style={[styles.title, { color: theme.textPrimary }]}>תרשים שיני תינוק</Text>
+                            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('teethTracker.title')}</Text>
                         </View>
                     </View>
 
@@ -409,12 +421,12 @@ export default function TeethTrackerModal({
                                 style={[styles.chartContainer, { backgroundColor: theme.card, borderColor: theme.border }]}
                             >
                                 <View style={styles.centerLabels}>
-                                    <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>שיניים עליונות</Text>
-                                    <Text style={[styles.jawLabel, { color: theme.textSecondary }]}>שיניים תחתונות</Text>
+                                    <Text style={[styles.jawLabel, { color: theme.textSecondary, marginBottom: 40 }]}>{t('teethTracker.upperTeeth')}</Text>
+                                    <Text style={[styles.jawLabel, { color: theme.textSecondary }]}>{t('teethTracker.lowerTeeth')}</Text>
                                 </View>
                                 {TEETH_CONFIG.map(renderTooth)}
-                                <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>שמאל</Text>
-                                <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>ימין</Text>
+                                <Text style={[styles.sideLabel, { left: 10, top: '50%', color: theme.textTertiary }]}>{t('teethTracker.left')}</Text>
+                                <Text style={[styles.sideLabel, { right: 10, top: '50%', color: theme.textTertiary }]}>{t('teethTracker.right')}</Text>
                             </Animated.View>
 
                             {/* Legend */}
@@ -424,23 +436,23 @@ export default function TeethTrackerModal({
                             >
                                 <View style={styles.legendRow}>
                                     <View style={[styles.legendDot, { backgroundColor: '#F87171' }]} />
-                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת מרכזית</Text>
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>{t('teethTracker.centralIncisor')}</Text>
                                 </View>
                                 <View style={styles.legendRow}>
                                     <View style={[styles.legendDot, { backgroundColor: '#A3E635' }]} />
-                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>חותכת צידית</Text>
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>{t('teethTracker.lateralIncisor')}</Text>
                                 </View>
                                 <View style={styles.legendRow}>
                                     <View style={[styles.legendDot, { backgroundColor: '#34D399' }]} />
-                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>ניב</Text>
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>{t('teethTracker.canine')}</Text>
                                 </View>
                                 <View style={styles.legendRow}>
                                     <View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} />
-                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת ראשונה</Text>
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>{t('teethTracker.firstMolar')}</Text>
                                 </View>
                                 <View style={styles.legendRow}>
                                     <View style={[styles.legendDot, { backgroundColor: '#A78BFA' }]} />
-                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>טוחנת שנייה</Text>
+                                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>{t('teethTracker.secondMolar')}</Text>
                                 </View>
                             </Animated.View>
 
@@ -462,7 +474,7 @@ export default function TeethTrackerModal({
                                                 <View style={[styles.statItem, { backgroundColor: theme.card }]}>
                                                     <Calendar size={18} color={theme.primary} strokeWidth={2} />
                                                     <View style={styles.statItemContent}>
-                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>החודש</Text>
+                                                        <Text style={[styles.statItemLabel, { color: theme.textSecondary }]}>{t('teethTracker.thisMonth')}</Text>
                                                         <Text style={[styles.statItemValue, { color: theme.textPrimary }]}>{stats.thisMonth}</Text>
                                                     </View>
                                                 </View>
@@ -519,7 +531,7 @@ export default function TeethTrackerModal({
                                             <View style={[styles.historyHeader, { borderBottomColor: theme.border }]}>
                                                 <TrendingUp size={20} color={theme.primary} strokeWidth={2} />
                                                 <Text style={[styles.historyTitle, { color: theme.textPrimary }]}>
-                                                    היסטוריה כרונולוגית
+                                                    {t('teethTracker.chronologicalHistory')}
                                                 </Text>
                                             </View>
                                             <ScrollView
@@ -540,7 +552,7 @@ export default function TeethTrackerModal({
                                                         </View>
                                                         <View style={styles.historyItemContent}>
                                                             <Text style={[styles.historyItemLabel, { color: theme.textPrimary }]}>
-                                                                {tooth.label}
+                                                                {getToothLabel(tooth.type)}
                                                             </Text>
                                                             <Text style={[styles.historyItemDate, { color: theme.textSecondary }]}>
                                                                 {formatToothDate(tooth.date)}

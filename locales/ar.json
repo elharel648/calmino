@@ -490,7 +490,8 @@
     "meals": "وجبات",
     "startTime": "البدء",
     "saveRecord": "حفظ السجل",
-    "saved": "تم الحفظ!"
+    "saved": "تم الحفظ!",
+    "whenHappened": "متى حدث ذلك؟"
   },
   "weekday": {
     "sun": "أح",
@@ -1309,7 +1310,13 @@
     "addMeasurement": "إضافة قياس",
     "newMeasurement": "قياس جديد",
     "growthChart": "مخطط النمو",
-    "percentile": "الشريحة المئوية"
+    "percentile": "الشريحة المئوية",
+    "editMeasurement": "تعديل القياس",
+    "saveMeasurement": "حفظ القياس",
+    "updateMeasurement": "تحديث القياس",
+    "subtitle": "تتبع نمو طفلك",
+    "editSubtitle": "حدّث القياس",
+    "hideNotes": "إخفاء الملاحظات"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -1435,7 +1442,35 @@
     "title": "الصحة",
     "bloodPressure": "ضغط الدم",
     "fever": "الحمى",
-    "medicine": "الدواء"
+    "medicine": "الدواء",
+    "doctorVisit": "زيارة طبيب",
+    "vaccines": "تطعيمات",
+    "illnesses": "أمراض",
+    "temperature": "حرارة",
+    "medications": "أدوية",
+    "history": "سجل",
+    "perHealthMinistry": "حسب توصيات وزارة الصحة",
+    "whenWasVaccine": "متى تم التطعيم؟",
+    "whenIsAppointment": "متى الموعد؟",
+    "addToCalendar": "أضف للتقويم",
+    "addVaccine": "أضف تطعيم",
+    "vaccineName": "اسم التطعيم",
+    "customVaccines": "تطعيمات مخصصة",
+    "performed": "تم",
+    "temperatureC": "الحرارة (°C)",
+    "permissionRequired": "إذن مطلوب",
+    "calendarAccessNeeded": "مطلوب إذن الوصول للتقويم لإضافة مواعيد.",
+    "noCalendarFound": "لم يتم العثور على تقويم.",
+    "addedToCalendar": "تمت الإضافة للتقويم ✓",
+    "vaccineAddedToCalendar": "موعد تطعيم \"{name}\" أضيف للتقويم.",
+    "galleryPermissionNeeded": "مطلوب إذن المعرض",
+    "cannotSave": "لا يمكن الحفظ",
+    "cannotDelete": "لا يمكن الحذف",
+    "mustLoginToSave": "يجب تسجيل الدخول لحفظ الدواء",
+    "noBabyProfile": "لم يتم العثور على ملف طفل. أضف طفلاً أولاً.",
+    "cannotSaveMedication": "لا يمكن حفظ الدواء. حاول مرة أخرى.",
+    "markedAsTaken": "تم تناول {name}",
+    "illnessHistory": "أمراض"
   },
   "misc": {
     "uploadPhoto": "رفع صورة",
@@ -1563,5 +1598,26 @@
     "firstSounds": "الأصوات الأولى",
     "firstSteps": "الخطوات الأولى",
     "dateLabel": "التاريخ"
+  },
+  "nightLight": {
+    "title": "ضوء ليلي",
+    "tapToHideControls": "اضغط على الشاشة لإخفاء الأزرار",
+    "color": "لون",
+    "brightness": "سطوع"
+  },
+  "teethTracker": {
+    "title": "جدول أسنان الطفل",
+    "upperTeeth": "أسنان علوية",
+    "lowerTeeth": "أسنان سفلية",
+    "left": "يسار",
+    "right": "يمين",
+    "canine": "ناب",
+    "lateralIncisor": "قاطعة جانبية",
+    "centralIncisor": "قاطعة مركزية",
+    "secondMolar": "ضرس ثاني",
+    "firstMolar": "ضرس أول",
+    "totalTeeth": "مجموع الأسنان: {count} / 20",
+    "chronologicalHistory": "سجل زمني",
+    "thisMonth": "هذا الشهر"
   }
 }

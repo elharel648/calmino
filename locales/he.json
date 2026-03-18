@@ -490,7 +490,8 @@
     "meals": "ארוחות",
     "startTime": "התחלה",
     "saveRecord": "שמור תיעוד",
-    "saved": "נשמר!"
+    "saved": "נשמר!",
+    "whenHappened": "מתי זה קרה?"
   },
   "milestones": {
     "enterTitle": "נא להזין כותרת",
@@ -1171,7 +1172,13 @@
     "addMeasurement": "הוסף מדידה",
     "newMeasurement": "מדידה חדשה",
     "growthChart": "תרשים גדילה",
-    "percentile": "אחוזון"
+    "percentile": "אחוזון",
+    "editMeasurement": "עריכת מדידה",
+    "saveMeasurement": "שמור מדידה",
+    "updateMeasurement": "עדכן מדידה",
+    "subtitle": "תעדו את ההתפתחות של התינוק",
+    "editSubtitle": "עדכנו את המדידה",
+    "hideNotes": "הסתר הערות"
   },
   "auth": {
     "login": "התחברות",
@@ -1297,7 +1304,56 @@
     "title": "בריאות",
     "bloodPressure": "לחץ דם",
     "fever": "חום",
-    "medicine": "תרופה"
+    "medicine": "תרופה",
+    "doctorVisit": "ביקור רופא",
+    "vaccines": "חיסונים",
+    "illnesses": "מחלות",
+    "temperature": "טמפרטורה",
+    "medications": "תרופות",
+    "history": "היסטוריה",
+    "perHealthMinistry": "לפי המלצות משרד הבריאות",
+    "whenWasVaccine": "מתי בוצע החיסון?",
+    "whenIsAppointment": "מתי התור?",
+    "addToCalendar": "הוסף ליומן",
+    "addVaccine": "הוסף חיסון",
+    "vaccineName": "שם החיסון",
+    "customVaccines": "חיסונים מותאמים",
+    "performed": "בוצע",
+    "temperatureC": "טמפרטורה (°C)",
+    "permissionRequired": "הרשאה נדרשת",
+    "calendarAccessNeeded": "נדרשת גישה ליומן כדי להוסיף תורים.",
+    "noCalendarFound": "לא נמצא יומן זמין.",
+    "addedToCalendar": "נוסף ביומן ✓",
+    "vaccineAddedToCalendar": "תור לחיסון \"{name}\" נוסף ליומן שלך.",
+    "galleryPermissionNeeded": "נדרשת הרשאה לגלריה",
+    "cannotSave": "לא ניתן לשמור",
+    "cannotDelete": "לא ניתן למחוק",
+    "mustLoginToSave": "יש להתחבר כדי לשמור תרופה",
+    "noBabyProfile": "לא נמצא פרופיל תינוק. יש להוסיף תינוק קודם.",
+    "cannotSaveMedication": "לא ניתן לשמור את התרופה. נסה שוב.",
+    "markedAsTaken": "{name} סומנה כנלקחה",
+    "illnessHistory": "מחלות"
+  },
+  "nightLight": {
+    "title": "פנס לילה",
+    "tapToHideControls": "לחץ על המסך להסתרת הפקדים",
+    "color": "צבע",
+    "brightness": "בהירות"
+  },
+  "teethTracker": {
+    "title": "תרשים שיני תינוק",
+    "upperTeeth": "שיניים עליונות",
+    "lowerTeeth": "שיניים תחתונות",
+    "left": "שמאל",
+    "right": "ימין",
+    "canine": "ניב",
+    "lateralIncisor": "חותכת צדית",
+    "centralIncisor": "חותכת מרכזית",
+    "secondMolar": "טוחנת שנייה",
+    "firstMolar": "טוחנת ראשונה",
+    "totalTeeth": "סה\"כ שיניים שבקעו: {count} / 20",
+    "chronologicalHistory": "היסטוריה כרונולוגית",
+    "thisMonth": "החודש"
   },
   "misc": {
     "uploadPhoto": "העלה תמונה",

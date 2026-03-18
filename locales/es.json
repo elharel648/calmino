@@ -490,7 +490,8 @@
     "meals": "Comidas",
     "startTime": "Inicio",
     "saveRecord": "Guardar registro",
-    "saved": "¡Guardado!"
+    "saved": "¡Guardado!",
+    "whenHappened": "¿Cuándo pasó?"
   },
   "weekday": {
     "sun": "D",
@@ -1309,7 +1310,13 @@
     "addMeasurement": "Agregar Medida",
     "newMeasurement": "Nueva Medida",
     "growthChart": "Gráfico de Crecimiento",
-    "percentile": "Percentil"
+    "percentile": "Percentil",
+    "editMeasurement": "Editar medición",
+    "saveMeasurement": "Guardar medición",
+    "updateMeasurement": "Actualizar medición",
+    "subtitle": "Registra el crecimiento de tu bebé",
+    "editSubtitle": "Actualiza la medición",
+    "hideNotes": "Ocultar notas"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -1435,7 +1442,35 @@
     "title": "Salud",
     "bloodPressure": "Presión Arterial",
     "fever": "Fiebre",
-    "medicine": "Medicamento"
+    "medicine": "Medicamento",
+    "doctorVisit": "Visita médica",
+    "vaccines": "Vacunas",
+    "illnesses": "Enfermedades",
+    "temperature": "Temperatura",
+    "medications": "Medicamentos",
+    "history": "Historial",
+    "perHealthMinistry": "Según recomendaciones del ministerio de salud",
+    "whenWasVaccine": "¿Cuándo se administró la vacuna?",
+    "whenIsAppointment": "¿Cuándo es la cita?",
+    "addToCalendar": "Agregar al calendario",
+    "addVaccine": "Agregar vacuna",
+    "vaccineName": "Nombre de la vacuna",
+    "customVaccines": "Vacunas personalizadas",
+    "performed": "Realizado",
+    "temperatureC": "Temperatura (°C)",
+    "permissionRequired": "Permiso requerido",
+    "calendarAccessNeeded": "Se necesita acceso al calendario para agregar citas.",
+    "noCalendarFound": "No se encontró calendario.",
+    "addedToCalendar": "Agregado al calendario ✓",
+    "vaccineAddedToCalendar": "Cita de vacuna \"{name}\" agregada al calendario.",
+    "galleryPermissionNeeded": "Se requiere permiso de galería",
+    "cannotSave": "No se puede guardar",
+    "cannotDelete": "No se puede eliminar",
+    "mustLoginToSave": "Inicia sesión para guardar",
+    "noBabyProfile": "No se encontró perfil de bebé. Agrega un bebé primero.",
+    "cannotSaveMedication": "No se puede guardar el medicamento. Intenta de nuevo.",
+    "markedAsTaken": "{name} marcado como tomado",
+    "illnessHistory": "Enfermedades"
   },
   "misc": {
     "uploadPhoto": "Subir Foto",
@@ -1563,5 +1598,26 @@
     "firstSounds": "Primeros sonidos",
     "firstSteps": "Primeros pasos",
     "dateLabel": "Fecha"
+  },
+  "nightLight": {
+    "title": "Luz nocturna",
+    "tapToHideControls": "Toca para ocultar controles",
+    "color": "Color",
+    "brightness": "Brillo"
+  },
+  "teethTracker": {
+    "title": "Tabla dental del bebé",
+    "upperTeeth": "Dientes superiores",
+    "lowerTeeth": "Dientes inferiores",
+    "left": "Izquierda",
+    "right": "Derecha",
+    "canine": "Canino",
+    "lateralIncisor": "Incisivo lateral",
+    "centralIncisor": "Incisivo central",
+    "secondMolar": "Segundo molar",
+    "firstMolar": "Primer molar",
+    "totalTeeth": "Total dientes: {count} / 20",
+    "chronologicalHistory": "Historial cronológico",
+    "thisMonth": "Este mes"
   }
 }

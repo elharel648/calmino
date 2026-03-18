@@ -490,7 +490,8 @@
     "meals": "Repas",
     "startTime": "Début",
     "saveRecord": "Enregistrer",
-    "saved": "Enregistré !"
+    "saved": "Enregistré !",
+    "whenHappened": "Quand est-ce arrivé ?"
   },
   "weekday": {
     "sun": "D",
@@ -1309,7 +1310,13 @@
     "addMeasurement": "Ajouter une Mesure",
     "newMeasurement": "Nouvelle Mesure",
     "growthChart": "Courbe de Croissance",
-    "percentile": "Percentile"
+    "percentile": "Percentile",
+    "editMeasurement": "Modifier la mesure",
+    "saveMeasurement": "Enregistrer",
+    "updateMeasurement": "Mettre à jour",
+    "subtitle": "Suivez la croissance de votre bébé",
+    "editSubtitle": "Mettez à jour la mesure",
+    "hideNotes": "Masquer les notes"
   },
   "auth": {
     "login": "Connexion",
@@ -1435,7 +1442,35 @@
     "title": "Santé",
     "bloodPressure": "Tension Artérielle",
     "fever": "Fièvre",
-    "medicine": "Médicament"
+    "medicine": "Médicament",
+    "doctorVisit": "Visite médicale",
+    "vaccines": "Vaccins",
+    "illnesses": "Maladies",
+    "temperature": "Température",
+    "medications": "Médicaments",
+    "history": "Historique",
+    "perHealthMinistry": "Selon les recommandations du ministère de la santé",
+    "whenWasVaccine": "Quand le vaccin a-t-il été administré ?",
+    "whenIsAppointment": "Quand est le rendez-vous ?",
+    "addToCalendar": "Ajouter au calendrier",
+    "addVaccine": "Ajouter un vaccin",
+    "vaccineName": "Nom du vaccin",
+    "customVaccines": "Vaccins personnalisés",
+    "performed": "Effectué",
+    "temperatureC": "Température (°C)",
+    "permissionRequired": "Permission requise",
+    "calendarAccessNeeded": "L'accès au calendrier est nécessaire pour ajouter des rendez-vous.",
+    "noCalendarFound": "Aucun calendrier trouvé.",
+    "addedToCalendar": "Ajouté au calendrier ✓",
+    "vaccineAddedToCalendar": "Rendez-vous vaccin \"{name}\" ajouté au calendrier.",
+    "galleryPermissionNeeded": "Permission galerie requise",
+    "cannotSave": "Impossible de sauvegarder",
+    "cannotDelete": "Impossible de supprimer",
+    "mustLoginToSave": "Connectez-vous pour sauvegarder",
+    "noBabyProfile": "Aucun profil bébé trouvé. Ajoutez un bébé d'abord.",
+    "cannotSaveMedication": "Impossible de sauvegarder le médicament. Réessayez.",
+    "markedAsTaken": "{name} marqué comme pris",
+    "illnessHistory": "Maladies"
   },
   "misc": {
     "uploadPhoto": "Télécharger une Photo",
@@ -1563,5 +1598,26 @@
     "firstSounds": "Premiers sons",
     "firstSteps": "Premiers pas",
     "dateLabel": "Date"
+  },
+  "nightLight": {
+    "title": "Veilleuse",
+    "tapToHideControls": "Appuyez pour masquer les contrôles",
+    "color": "Couleur",
+    "brightness": "Luminosité"
+  },
+  "teethTracker": {
+    "title": "Tableau dentaire bébé",
+    "upperTeeth": "Dents supérieures",
+    "lowerTeeth": "Dents inférieures",
+    "left": "Gauche",
+    "right": "Droite",
+    "canine": "Canine",
+    "lateralIncisor": "Incisive latérale",
+    "centralIncisor": "Incisive centrale",
+    "secondMolar": "Deuxième molaire",
+    "firstMolar": "Première molaire",
+    "totalTeeth": "Total dents sorties : {count} / 20",
+    "chronologicalHistory": "Historique chronologique",
+    "thisMonth": "Ce mois"
   }
 }

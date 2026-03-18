@@ -22,6 +22,7 @@ import { logger } from '../../utils/logger';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as ReAnimated } from 'react-native-reanimated';
 import SwipeableRow from '../SwipeableRow';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -53,16 +54,17 @@ const COMMON_MEDICATIONS = [
 ];
 
 const HEALTH_OPTIONS: HealthOption[] = [
-    { key: 'doctor', label: 'ביקור רופא', icon: Stethoscope, iconColor: '#34D399' },
-    { key: 'vaccines', label: 'חיסונים', icon: Syringe, iconColor: '#9F7AEA' },
-    { key: 'illness', label: 'מחלות', icon: Heart, iconColor: '#F87171' },
-    { key: 'temperature', label: 'טמפרטורה', icon: Thermometer, iconColor: '#FF9F1C' },
-    { key: 'medications', label: 'תרופות', icon: Pill, iconColor: '#A78BFA' },
-    { key: 'history', label: 'היסטוריה', icon: ClipboardList, iconColor: '#3B82F6' },
+    { key: 'doctor', label: 'health.doctorVisit', icon: Stethoscope, iconColor: '#34D399' },
+    { key: 'vaccines', label: 'health.vaccines', icon: Syringe, iconColor: '#9F7AEA' },
+    { key: 'illness', label: 'health.illnesses', icon: Heart, iconColor: '#F87171' },
+    { key: 'temperature', label: 'health.temperature', icon: Thermometer, iconColor: '#FF9F1C' },
+    { key: 'medications', label: 'health.medications', icon: Pill, iconColor: '#A78BFA' },
+    { key: 'history', label: 'health.history', icon: ClipboardList, iconColor: '#3B82F6' },
 ];
 
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
@@ -372,14 +374,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         try {
             const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('הרשאה נדרשת', 'נדרשת גישה ליומן כדי להוסיף תורים.');
+                Alert.alert(t('health.permissionRequired'), t('health.calendarAccessNeeded'));
                 return;
             }
 
             const calendars = await ExpoCalendar.getCalendarsAsync(ExpoCalendar.EntityTypes.EVENT);
             const defaultCal = calendars.find(c => c.allowsModifications && c.source?.isLocalAccount) || calendars.find(c => c.allowsModifications);
             if (!defaultCal) {
-                Alert.alert('שגיאה', 'לא נמצא יומן זמין.');
+                Alert.alert(t('misc.saveError'), t('health.noCalendarFound'));
                 return;
             }
 
@@ -396,10 +398,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }], // 1hr and 1day before
             });
 
-            Alert.alert('נוסף ביומן ✓', `תור לחיסון "${vaccineName}" נוסף ליומן שלך.`);
+            Alert.alert(t('health.addedToCalendar'), t('health.vaccineAddedToCalendar', { name: vaccineName }));
         } catch (error) {
             logger.log('Error adding to calendar:', error);
-            Alert.alert('שגיאה', 'לא הצלחנו להוסיף ליומן.');
+            Alert.alert(t('misc.saveError'), t('health.cannotSave'));
         }
         setCalendarVaccineKey(null);
     };
@@ -409,7 +411,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         try {
             const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!permission.granted) {
-                Alert.alert('שגיאה', 'נדרשת הרשאה לגלריה');
+                Alert.alert(t('misc.saveError'), t('health.galleryPermissionNeeded'));
                 return;
             }
 
@@ -599,7 +601,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 }
             } catch (error) {
                 logger.log('Error saving entry:', error);
-                Alert.alert('שגיאה', 'לא ניתן לשמור');
+                Alert.alert(t('misc.saveError'), t('health.cannotSave'));
                 return;
             }
         } else {
@@ -608,7 +610,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 await updateDoc(doc(db, 'babies', babyId), { healthLog: arrayUnion(entry) });
             } catch (error) {
                 logger.log('Error saving entry:', error);
-                Alert.alert('שגיאה', 'לא ניתן לשמור');
+                Alert.alert(t('misc.saveError'), t('health.cannotSave'));
                 return;
             }
         }
@@ -639,7 +641,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             }
         } catch (error) {
             logger.log('Error deleting entry:', error);
-            Alert.alert('שגיאה', 'לא ניתן למחוק');
+            Alert.alert(t('misc.saveError'), t('health.cannotDelete'));
         }
     };
 
@@ -676,7 +678,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 <View style={styles.optionIconCircle}>
                                     <Icon size={22} color={option.iconColor} strokeWidth={1.2} />
                                 </View>
-                                <Text style={styles.optionLabel}>{option.label}</Text>
+                                <Text style={styles.optionLabel}>{t(option.label)}</Text>
                                 <ChevronLeft size={18} color="#9CA3AF" />
                             </TouchableOpacity>
                         </Animated.View>
@@ -693,7 +695,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <View style={styles.screenHeaderIconMinimal}>
                     <Syringe size={24} color="#6366F1" strokeWidth={1.2} />
                 </View>
-                <Text style={styles.screenSubtitle}>לפי המלצות משרד הבריאות</Text>
+                <Text style={styles.screenSubtitle}>{t('health.perHealthMinistry')}</Text>
             </View>
 
             {/* Date picker — mark vaccine done */}
@@ -701,7 +703,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <Modal transparent animationType="fade" visible={!!pendingVaccineKey}>
                     <View style={styles.modalOverlayCenter}>
                         <View style={styles.datePickerCard}>
-                            <Text style={styles.datePickerTitle}>מתי בוצע החיסון?</Text>
+                            <Text style={styles.datePickerTitle}>{t('health.whenWasVaccine')}</Text>
                             <DateTimePicker
                                 value={vaccineMarkDate}
                                 mode="date"
@@ -712,10 +714,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             />
                             <View style={styles.datePickerButtons}>
                                 <TouchableOpacity style={styles.datePickerCancel} onPress={() => setPendingVaccineKey(null)}>
-                                    <Text style={styles.datePickerCancelText}>ביטול</Text>
+                                    <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.datePickerConfirm} onPress={confirmVaccineMark}>
-                                    <Text style={styles.datePickerConfirmText}>אישור</Text>
+                                    <Text style={styles.datePickerConfirmText}>{t('common.confirm')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -728,7 +730,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <Modal transparent animationType="fade" visible={!!calendarVaccineKey}>
                     <View style={styles.modalOverlayCenter}>
                         <View style={styles.datePickerCard}>
-                            <Text style={styles.datePickerTitle}>מתי התור?</Text>
+                            <Text style={styles.datePickerTitle}>{t('health.whenIsAppointment')}</Text>
                             <Text style={styles.datePickerSubtitle}>
                                 {VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name}
                             </Text>
@@ -742,13 +744,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             />
                             <View style={styles.datePickerButtons}>
                                 <TouchableOpacity style={styles.datePickerCancel} onPress={() => setCalendarVaccineKey(null)}>
-                                    <Text style={styles.datePickerCancelText}>ביטול</Text>
+                                    <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.datePickerConfirm} onPress={() => {
                                     const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
                                     addVaccineToCalendar(name);
                                 }}>
-                                    <Text style={styles.datePickerConfirmText}>הוסף ליומן</Text>
+                                    <Text style={styles.datePickerConfirmText}>{t('health.addToCalendar')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -762,7 +764,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 onPress={() => setShowAddVaccine(!showAddVaccine)}
             >
                 <Plus size={20} color="#6366F1" />
-                <Text style={styles.addVaccineBtnText}>הוסף חיסון</Text>
+                <Text style={styles.addVaccineBtnText}>{t('health.addVaccine')}</Text>
             </TouchableOpacity>
 
             {showAddVaccine && (
@@ -771,7 +773,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         style={styles.addVaccineInput}
                         value={newVaccineName}
                         onChangeText={setNewVaccineName}
-                        placeholder="שם החיסון"
+                        placeholder={t('health.vaccineName')}
                         placeholderTextColor="#9CA3AF"
                         textAlign="right"
                         textAlignVertical="center"
@@ -786,7 +788,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             {customVaccines.length > 0 && (
                 <View style={styles.vaccineGroup}>
                     <View style={styles.ageBadgeMinimal}>
-                        <Text style={styles.ageBadgeTextMinimal}>חיסונים מותאמים</Text>
+                        <Text style={styles.ageBadgeTextMinimal}>{t('health.customVaccines')}</Text>
                     </View>
                     {customVaccines.map(vaccine => (
                         <View key={vaccine.id} style={styles.vaccineRow}>
@@ -864,7 +866,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             </View>
 
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>טמפרטורה (°C)</Text>
+                <Text style={styles.inputLabel}>{t('health.temperatureC')}</Text>
 
                 {/* Big temperature display - minimalist with thin color border */}
                 <View style={[styles.temperatureDisplayMinimal, { borderWidth: 1.5, borderColor: getTemperatureColor() }]}>
@@ -1261,7 +1263,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         if (!targetBabyId) {
             const user = auth.currentUser;
             if (!user) {
-                Alert.alert('שגיאה', 'יש להתחבר כדי לשמור תרופה');
+                Alert.alert(t('misc.saveError'), t('health.mustLoginToSave'));
                 return;
             }
             try {
@@ -1277,7 +1279,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         }
 
         if (!targetBabyId) {
-            Alert.alert('שגיאה', 'לא נמצא פרופיל תינוק. יש להוסיף תינוק קודם.');
+            Alert.alert(t('misc.saveError'), t('health.noBabyProfile'));
             return;
         }
 
@@ -1297,7 +1299,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 setCurrentScreen('medications');
             }, 800);
         } else {
-            Alert.alert('שגיאה', 'לא ניתן לשמור את התרופה. נסה שוב.');
+            Alert.alert(t('misc.saveError'), t('health.cannotSaveMedication'));
         }
     };
 
@@ -1320,7 +1322,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
-        Alert.alert('✅', `${med.name} סומנה כנלקחה`);
+        Alert.alert('✅', t('health.markedAsTaken', { name: med.name }));
     };
 
     // Medications List View
@@ -1479,11 +1481,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         };
 
         const filterTabs = [
-            { key: 'all', label: 'הכל' },
-            { key: 'temperature', label: 'חום' },
-            { key: 'doctor', label: 'רופא' },
-            { key: 'illness', label: 'מחלות' },
-            { key: 'medication', label: 'תרופות' },
+            { key: 'all', label: t('common.all') },
+            { key: 'temperature', label: t('health.fever') },
+            { key: 'doctor', label: t('health.doctorVisit') },
+            { key: 'illness', label: t('health.illnesses') },
+            { key: 'medication', label: t('health.medications') },
         ];
 
         const filteredLogs = historyFilter === 'all'
@@ -1633,14 +1635,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     const getScreenTitle = () => {
         switch (currentScreen) {
-            case 'vaccines': return 'פנקס חיסונים';
-            case 'doctor': return 'ביקור רופא';
-            case 'illness': return 'מחלות';
-            case 'temperature': return 'טמפרטורה';
-            case 'medications': return 'תרופות';
-            case 'medications_add': return 'תרופה חדשה';
-            case 'history': return 'היסטוריה';
-            default: return 'בריאות';
+            case 'vaccines': return t('health.vaccines');
+            case 'doctor': return t('health.doctorVisit');
+            case 'illness': return t('health.illnesses');
+            case 'temperature': return t('health.temperature');
+            case 'medications': return t('health.medications');
+            case 'medications_add': return t('health.medications');
+            case 'history': return t('health.history');
+            default: return t('health.title');
         }
     };
 

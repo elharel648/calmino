@@ -490,7 +490,8 @@
     "meals": "Meals",
     "startTime": "Start",
     "saveRecord": "Save Record",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "whenHappened": "When did it happen?"
   },
   "milestones": {
     "enterTitle": "Please enter a title",
@@ -1158,7 +1159,13 @@
     "addMeasurement": "Add Measurement",
     "newMeasurement": "New Measurement",
     "growthChart": "Growth Chart",
-    "percentile": "Percentile"
+    "percentile": "Percentile",
+    "editMeasurement": "Edit Measurement",
+    "saveMeasurement": "Save Measurement",
+    "updateMeasurement": "Update Measurement",
+    "subtitle": "Track your baby's growth",
+    "editSubtitle": "Update the measurement",
+    "hideNotes": "Hide Notes"
   },
   "auth": {
     "login": "Login",
@@ -1284,7 +1291,56 @@
     "title": "Health",
     "bloodPressure": "Blood Pressure",
     "fever": "Fever",
-    "medicine": "Medicine"
+    "medicine": "Medicine",
+    "doctorVisit": "Doctor Visit",
+    "vaccines": "Vaccines",
+    "illnesses": "Illnesses",
+    "temperature": "Temperature",
+    "medications": "Medications",
+    "history": "History",
+    "perHealthMinistry": "Per Health Ministry recommendations",
+    "whenWasVaccine": "When was the vaccine given?",
+    "whenIsAppointment": "When is the appointment?",
+    "addToCalendar": "Add to Calendar",
+    "addVaccine": "Add Vaccine",
+    "vaccineName": "Vaccine name",
+    "customVaccines": "Custom Vaccines",
+    "performed": "Done",
+    "temperatureC": "Temperature (°C)",
+    "permissionRequired": "Permission Required",
+    "calendarAccessNeeded": "Calendar access is needed to add appointments.",
+    "noCalendarFound": "No calendar found.",
+    "addedToCalendar": "Added to Calendar ✓",
+    "vaccineAddedToCalendar": "Appointment for vaccine \"{name}\" added to your calendar.",
+    "galleryPermissionNeeded": "Gallery permission is required",
+    "cannotSave": "Cannot save",
+    "cannotDelete": "Cannot delete",
+    "mustLoginToSave": "You must be logged in to save medication",
+    "noBabyProfile": "No baby profile found. Please add a baby first.",
+    "cannotSaveMedication": "Cannot save medication. Please try again.",
+    "markedAsTaken": "{name} marked as taken",
+    "illnessHistory": "Illness History"
+  },
+  "nightLight": {
+    "title": "Night Light",
+    "tapToHideControls": "Tap screen to hide controls",
+    "color": "Color",
+    "brightness": "Brightness"
+  },
+  "teethTracker": {
+    "title": "Baby Teeth Chart",
+    "upperTeeth": "Upper Teeth",
+    "lowerTeeth": "Lower Teeth",
+    "left": "Left",
+    "right": "Right",
+    "canine": "Canine",
+    "lateralIncisor": "Lateral Incisor",
+    "centralIncisor": "Central Incisor",
+    "secondMolar": "Second Molar",
+    "firstMolar": "First Molar",
+    "totalTeeth": "Total teeth erupted: {count} / 20",
+    "chronologicalHistory": "Chronological History",
+    "thisMonth": "This Month"
   },
   "misc": {
     "uploadPhoto": "Upload Photo",
