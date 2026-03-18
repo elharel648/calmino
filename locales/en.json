@@ -1550,6 +1550,7 @@
     "notAvailableToggle": "Not Available",
     "customHoursLabel": "Custom Hours",
     "resetToWeekly": "Reset to Weekly Pattern",
+    "alwaysAvailable": "Always Available",
     "overrideAdded": "Change saved for selected day",
     "overrideRemoved": "Day reset to weekly pattern",
     "startTime": "Start Time",

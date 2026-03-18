@@ -2336,6 +2336,56 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                 return (
                                     <View style={{ paddingHorizontal: 16 }}>
+                                        {/* Always Available Quick Action */}
+                                        <TouchableOpacity
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 8,
+                                                paddingVertical: 12,
+                                                paddingHorizontal: 20,
+                                                borderRadius: 14,
+                                                backgroundColor: availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
+                                                    ? (isDarkMode ? '#fff' : '#000')
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                                                borderWidth: 1,
+                                                borderColor: availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
+                                                    ? 'transparent'
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'),
+                                                marginBottom: 16,
+                                            }}
+                                            onPress={() => {
+                                                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                                setAvailableDays(['0', '1', '2', '3', '4', '5', '6']);
+                                                const fullHours: Record<string, { start: string; end: string }> = {};
+                                                ['0', '1', '2', '3', '4', '5', '6'].forEach(d => {
+                                                    fullHours[d] = { start: '07:00', end: '23:00' };
+                                                });
+                                                setAvailableHours(fullHours);
+                                                setMonthlyOverrides({});
+                                                setSelectedCalendarDate(null);
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <CheckCircle
+                                                size={16}
+                                                color={availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
+                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                    : theme.textSecondary}
+                                                strokeWidth={2.5}
+                                            />
+                                            <Text style={{
+                                                fontSize: 14,
+                                                fontWeight: '700',
+                                                color: availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
+                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                    : theme.textPrimary,
+                                            }}>
+                                                {t('sitterDash.alwaysAvailable')}
+                                            </Text>
+                                        </TouchableOpacity>
+
                                         {/* Month Navigation */}
                                         <View style={{
                                             flexDirection: 'row',
