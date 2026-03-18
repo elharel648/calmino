@@ -117,7 +117,19 @@
     },
     "extra": {
       "eas": {
-        "projectId": "0af00389-5a5c-48ad-aa91-1b083f8e494e"
+        "projectId": "0af00389-5a5c-48ad-aa91-1b083f8e494e",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "CalmParentLiveActivity",
+                  "bundleIdentifier": "com.harel.calmparentapp.LiveActivity"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "updates": {
