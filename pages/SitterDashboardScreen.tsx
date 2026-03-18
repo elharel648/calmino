@@ -2036,6 +2036,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                                 isSitter: false,
                                                                 sitterActive: false,
                                                                 sitterVerified: false,
+                                                                photoUrl: null,
+                                                                sitterPhoto: null,
                                                             });
                                                             setSettingsVisible(false);
                                                             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
