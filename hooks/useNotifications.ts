@@ -1,0 +1,147 @@
+import { logger } from '../utils/logger';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import * as Notifications from 'expo-notifications';
+import { notificationService, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/notificationService';
+
+interface UseNotificationsReturn {
+    settings: NotificationSettings;
+    isInitialized: boolean;
+    hasPermission: boolean;
+    updateSettings: (settings: Partial<NotificationSettings>) => Promise<void>;
+    scheduleFeedingReminder: (lastFeedingTime: Date) => Promise<void>;
+    scheduleSupplementReminder: () => Promise<void>;
+    schedulePerSupplementReminders: (supplements: { id: string; name: string }[]) => Promise<void>;
+    scheduleVaccineReminder: (date: Date, name: string) => Promise<void>;
+    scheduleSmartReminders: (childId: string) => Promise<void>;
+    sendTestNotification: () => Promise<void>;
+}
+
+export const useNotifications = (): UseNotificationsReturn => {
+    const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [hasPermission, setHasPermission] = useState(false);
+
+    const notificationListener = useRef<Notifications.Subscription | null>(null);
+    const responseListener = useRef<Notifications.Subscription | null>(null);
+
+    // Initialize on mount — load settings and permission state only
+    // Recurring notification scheduling is done once in App.tsx on login
+    useEffect(() => {
+        const init = async () => {
+            const success = await notificationService.initialize();
+            setHasPermission(success);
+            setSettings(notificationService.getSettings());
+            setIsInitialized(true);
+        };
+
+        init();
+
+        // Listeners for when app is open (for logging/debugging)
+        // Note: The main handler is in App.tsx to ensure it works globally
+        notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+            logger.log('🔔 Notification received:', notification);
+            // Note: Saving to Firebase is handled in setNotificationHandler in App.tsx
+            // This listener is just for logging/debugging
+        });
+
+        // Note: Notification tap handler is in App.tsx to ensure global navigation
+        // We don't need a duplicate listener here
+
+        return () => {
+            if (notificationListener.current) {
+                notificationListener.current.remove();
+            }
+            if (responseListener.current) {
+                responseListener.current.remove();
+            }
+        };
+    }, []);
+
+    // Update settings
+    const updateSettings = useCallback(async (newSettings: Partial<NotificationSettings>) => {
+        await notificationService.saveSettings(newSettings);
+        setSettings(prev => ({ ...prev, ...newSettings }));
+
+        // Reschedule notifications based on new settings
+        if (newSettings.feedingReminder !== undefined || newSettings.feedingIntervalHours !== undefined) {
+            if (newSettings.feedingReminder === false) {
+                await notificationService.cancelNotification('feeding_reminder');
+            }
+            // Feeding reminder is scheduled per-event, not here
+        }
+
+        if (newSettings.sleepReminder !== undefined || newSettings.sleepTime !== undefined) {
+            if (newSettings.sleepReminder === false) {
+                await notificationService.cancelNotification('sleep_reminder');
+            } else {
+                await notificationService.scheduleSleepReminder();
+            }
+        }
+
+        if (newSettings.supplementReminder !== undefined || newSettings.supplementTime !== undefined) {
+            if (newSettings.supplementReminder === false) {
+                await notificationService.cancelNotification('supplement_reminder');
+            } else {
+                await notificationService.scheduleSupplementReminder();
+            }
+        }
+
+        if (newSettings.dailySummary !== undefined || newSettings.dailySummaryTime !== undefined) {
+            if (newSettings.dailySummary === false) {
+                await notificationService.cancelNotification('daily_summary');
+            } else {
+                await notificationService.scheduleDailySummary();
+            }
+        }
+
+        // If all notifications disabled, cancel all
+        if (newSettings.enabled === false) {
+            await notificationService.cancelAll();
+        }
+    }, []);
+
+    // Schedule feeding reminder
+    const scheduleFeedingReminder = useCallback(async (lastFeedingTime: Date) => {
+        await notificationService.scheduleFeedingReminder(lastFeedingTime);
+    }, []);
+
+    // Schedule supplement reminder
+    const scheduleSupplementReminder = useCallback(async () => {
+        await notificationService.scheduleSupplementReminder();
+    }, []);
+
+    // Schedule per-supplement reminders
+    const schedulePerSupplementReminders = useCallback(async (supplements: { id: string; name: string }[]) => {
+        await notificationService.schedulePerSupplementReminders(supplements);
+    }, []);
+
+    // Schedule vaccine reminder
+    const scheduleVaccineReminder = useCallback(async (date: Date, name: string) => {
+        await notificationService.scheduleVaccineReminder(date, name);
+    }, []);
+
+    // Schedule smart pattern-based reminders
+    const scheduleSmartReminders = useCallback(async (childId: string) => {
+        await notificationService.scheduleSmartReminders(childId);
+    }, []);
+
+    // Send test notification
+    const sendTestNotification = useCallback(async () => {
+        await notificationService.sendImmediate('feeding_reminder', 'זו התראת בדיקה! 🎉');
+    }, []);
+
+    return {
+        settings,
+        isInitialized,
+        hasPermission,
+        updateSettings,
+        scheduleFeedingReminder,
+        scheduleSupplementReminder,
+        schedulePerSupplementReminders,
+        scheduleVaccineReminder,
+        scheduleSmartReminders,
+        sendTestNotification,
+    };
+};
+
+export default useNotifications;

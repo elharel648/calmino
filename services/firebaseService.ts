@@ -1,0 +1,333 @@
+import { logger } from '../utils/logger';
+// services/firebaseService.ts
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  Timestamp,
+  doc,
+  getDoc,
+  deleteDoc
+} from 'firebase/firestore';
+import { db, auth } from './firebaseConfig';
+
+// --- הגדרות קולקציה קבועות ---
+const EVENTS_COLLECTION = 'events';
+const PROFILES_COLLECTION = 'babies'; // Changed from 'child_profiles' to match babyService.ts
+const GARDEN_REPORTS_COLLECTION = 'garden_reports';
+
+// --- ממשקים (Types) ---
+interface ChildProfile {
+  name: string;
+  birthDate: Date;
+  parentId: string;
+  childId: string;
+  photoUrl?: string;
+}
+
+// ----------------------------------------------------
+// 1. ניהול פרופיל הילד (נדרש עבור HomeScreen ו-AI)
+// ----------------------------------------------------
+
+export const getChildProfile = async (userId: string): Promise<ChildProfile | null> => {
+  try {
+    // First try to find baby by user's UID
+    let q = query(collection(db, PROFILES_COLLECTION), where('parentId', '==', userId), limit(1));
+    let querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const docSnap = querySnapshot.docs[0];
+      const data = docSnap.data();
+
+      return {
+        name: data.name || 'תינוק',
+        birthDate: data.birthDate instanceof Timestamp ? data.birthDate.toDate() : new Date(data.birthDate),
+        parentId: userId,
+        childId: docSnap.id,
+        photoUrl: data.photoUrl || undefined,
+      };
+    }
+
+    // If not found, check if user belongs to a family
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const familyId = userDoc.data()?.familyId;
+
+    if (familyId) {
+      const familyDoc = await getDoc(doc(db, 'families', familyId));
+      if (familyDoc.exists()) {
+        const familyData = familyDoc.data();
+        const babyId = familyData?.babyId;
+        const creatorId = familyData?.createdBy;
+
+        // Try to get baby directly by ID
+        if (babyId) {
+          const babyDoc = await getDoc(doc(db, PROFILES_COLLECTION, babyId));
+          if (babyDoc.exists()) {
+            const data = babyDoc.data();
+            return {
+              name: data.name || 'תינוק',
+              birthDate: data.birthDate instanceof Timestamp ? data.birthDate.toDate() : new Date(data.birthDate),
+              parentId: creatorId,
+              childId: babyDoc.id,
+              photoUrl: data.photoUrl || undefined,
+            };
+          }
+        }
+
+        // Fallback: find baby by family creator
+        if (creatorId && creatorId !== userId) {
+          q = query(collection(db, PROFILES_COLLECTION), where('parentId', '==', creatorId), limit(1));
+          querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const docSnap = querySnapshot.docs[0];
+            const data = docSnap.data();
+            return {
+              name: data.name || 'תינוק',
+              birthDate: data.birthDate instanceof Timestamp ? data.birthDate.toDate() : new Date(data.birthDate),
+              parentId: creatorId,
+              childId: docSnap.id,
+              photoUrl: data.photoUrl || undefined,
+            };
+          }
+        }
+      }
+    }
+    return null;
+  } catch (e) {
+    logger.error('Error getting child profile:', e);
+    return null;
+  }
+};
+
+// ----------------------------------------------------
+// 2. שמירה ושליפת אירועים (Events)
+// ----------------------------------------------------
+
+// 💡 נוסף childId
+export const saveEventToFirebase = async (userId: string, childId: string, data: any) => {
+  try {
+    logger.log('🔥 saveEventToFirebase called:', { userId, childId, dataType: data.type });
+    const eventsRef = collection(db, EVENTS_COLLECTION);
+
+    // Handle timestamp conversion carefully
+    let timestamp: Timestamp;
+    if (data.timestamp instanceof Timestamp) {
+      timestamp = data.timestamp;
+    } else if (data.timestamp instanceof Date) {
+      timestamp = Timestamp.fromDate(data.timestamp);
+    } else if (data.timestamp) {
+      // Could be a number or string - try to convert
+      timestamp = Timestamp.fromDate(new Date(data.timestamp));
+    } else {
+      timestamp = Timestamp.now();
+    }
+
+    // Get current user info for reporter badge
+    const currentUser = auth.currentUser;
+    const reporterName = currentUser?.displayName || 'אנונימי';
+    const reporterPhotoUrl = currentUser?.photoURL || null;
+
+    // Remove undefined values from data to avoid Firestore errors
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined)
+    );
+
+    const eventData = {
+      userId,
+      childId, // 🔑 קריטי לשיתוף ולריבוי ילדים
+      creatorId: userId, // 🔑 נדרש עבור security rules
+      reporterName, // 👤 שם המדווח
+      reporterPhotoUrl, // 📸 תמונת המדווח
+      ...cleanData,
+      timestamp
+    };
+
+    const anyEventData = eventData as any;
+    logger.log('🔥 Saving eventData to Firestore:', JSON.stringify({
+      type: anyEventData.type,
+      duration: anyEventData.duration,
+      startTime: anyEventData.startTime,
+      endTime: anyEventData.endTime,
+      timestamp: timestamp.toDate().toISOString(),
+      note: anyEventData.note,
+      childId: anyEventData.childId
+    }, null, 2));
+
+    const docRef = await addDoc(eventsRef, eventData);
+    logger.log('✅ Event saved successfully with ID:', docRef.id);
+    return docRef.id; // Return event ID for undo functionality
+  } catch (error: any) {
+    logger.error('❌ saveEventToFirebase error:', error?.code, error?.message);
+    logger.error('❌ Full error:', error);
+    if (__DEV__) {
+      logger.log('saveEventToFirebase error:', error?.code);
+      logger.log('saveEventToFirebase error message:', error?.message);
+    }
+    throw error;
+  }
+};
+
+// 💡 שונה userId ל-childId + תמיכה ב-creatorId
+export const getLastEvent = async (childId: string, eventType: 'food' | 'sleep' | 'diaper', creatorId?: string) => {
+  try {
+    const eventsRef = collection(db, EVENTS_COLLECTION);
+
+    // 1. Query by childId
+    const q1 = query(
+      eventsRef,
+      where('childId', '==', childId), // חיפוש לפי הילד
+      where('type', '==', eventType),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
+    const snap1 = await getDocs(q1);
+    let doc1 = !snap1.empty ? snap1.docs[0] : null;
+
+    // 2. Query by creatorId (fallback for old data)
+    let doc2 = null;
+    if (creatorId) {
+      const q2 = query(
+        eventsRef,
+        where('userId', '==', creatorId),
+        where('type', '==', eventType),
+        orderBy('timestamp', 'desc'),
+        limit(1)
+      );
+      const snap2 = await getDocs(q2);
+      doc2 = !snap2.empty ? snap2.docs[0] : null;
+    }
+
+    // Compare and return the latest
+    if (doc1 && doc2) {
+      const t1 = doc1.data().timestamp instanceof Timestamp ? doc1.data().timestamp.toMillis() : new Date(doc1.data().timestamp).getTime();
+      const t2 = doc2.data().timestamp instanceof Timestamp ? doc2.data().timestamp.toMillis() : new Date(doc2.data().timestamp).getTime();
+      return t1 > t2 ? { id: doc1.id, ...doc1.data() } : { id: doc2.id, ...doc2.data() };
+    } else if (doc1) {
+      return { id: doc1.id, ...doc1.data() };
+    } else if (doc2) {
+      return { id: doc2.id, ...doc2.data() };
+    }
+
+    return null;
+  } catch (e) {
+    logger.error('Error getting last event:', e);
+    return null;
+  }
+};
+
+// 💡 Query ONLY by childId - shows events for daily timeline
+// ⚡ OPTIMIZED: Server-side ordering and date filter
+// 🎯 Guest Support: If historyAccessDays is provided, filter to last N days (e.g., 1 = 24 hours)
+// 🏠 Family Members: Show last 7 days by default
+export const getRecentHistory = async (childId: string, _creatorId?: string, historyAccessDays?: number) => {
+  if (!childId) {
+    return [];
+  }
+
+  try {
+    const eventsRef = collection(db, EVENTS_COLLECTION);
+
+    // Calculate start time based on access level
+    let startTime: Date;
+    const now = new Date();
+
+    if (historyAccessDays && historyAccessDays > 0) {
+      // Guest: Only last N days (e.g., 1 day = 24 hours)
+      startTime = new Date(now.getTime() - historyAccessDays * 24 * 60 * 60 * 1000);
+    } else {
+      // Family/Member: Show last 7 days by default
+      startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    const startTimestamp = Timestamp.fromDate(startTime);
+
+    // Query events from start time
+    const q = query(
+      eventsRef,
+      where('childId', '==', childId),
+      where('timestamp', '>=', startTimestamp),
+      orderBy('timestamp', 'desc'),
+      limit(100) // Increased limit for more history
+    );
+
+    const snapshot = await getDocs(q);
+    const events = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate() : new Date(data.timestamp)
+      };
+    });
+
+    // Already sorted by server, return directly
+    return events;
+  } catch (e) {
+    logger.error('Error getting recent history:', e);
+    return [];
+  }
+};
+
+// Delete event by ID
+export const deleteEvent = async (eventId: string) => {
+  try {
+    const eventRef = doc(db, EVENTS_COLLECTION, eventId);
+    await deleteDoc(eventRef);
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// ----------------------------------------------------
+// 3. פונקציית עזר לתצוגה
+// ----------------------------------------------------
+
+export const formatTimeFromTimestamp = (timestamp: any): string => {
+  if (!timestamp) return '--:--';
+
+  let date: Date;
+  if (timestamp instanceof Timestamp) {
+    date = timestamp.toDate();
+  } else if (timestamp.seconds) {
+    date = new Date(timestamp.seconds * 1000);
+  } else {
+    date = new Date(timestamp);
+  }
+
+  return date.toLocaleTimeString('he-IL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+};
+
+
+// ----------------------------------------------------
+// 4. ניהול B2B (דוחות גן)
+// ----------------------------------------------------
+
+export const saveGardenReport = async (reportData: {
+  childId: string;
+  gardenId: string;
+  caregiverId: string;
+  reportDate: Date;
+  content: string;
+  type: 'daily' | 'weekly';
+}) => {
+  try {
+    const reportsRef = collection(db, GARDEN_REPORTS_COLLECTION);
+    await addDoc(reportsRef, {
+      ...reportData,
+      reportDate: Timestamp.fromDate(reportData.reportDate),
+      createdAt: Timestamp.now(),
+    });
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}

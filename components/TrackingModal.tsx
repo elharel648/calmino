@@ -1,0 +1,3033 @@
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { logger } from '../utils/logger';
+
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
+import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
+import DiaperIcon from './Common/DiaperIcon';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Haptics from 'expo-haptics';
+import { useSleepTimer } from '../context/SleepTimerContext';
+import { useFoodTimer } from '../context/FoodTimerContext';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useActiveChild } from '../context/ActiveChildContext';
+import quickActionsService from '../services/quickActionsService';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, withDelay, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
+import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
+
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+const TIME_PICKER_STYLE = { width: SCREEN_WIDTH * 0.8, height: 200 };
+
+// ─── Drum Swipe Picker ────────────────────────────────────────────────────────
+const DRUM_ITEM_H = 48;
+
+function DrumColumn({
+  value, min, max, wrap = false, onSteps, isDarkMode, accentColor, modalGesture,
+}: {
+  value: number; min: number; max: number; wrap?: boolean;
+  onSteps: (steps: number) => void; isDarkMode: boolean;
+  accentColor: string; modalGesture: any;
+}) {
+  const range = max - min + 1;
+  const dragY = useSharedValue(0);
+  const lastHapticStep = useSharedValue(0);
+
+  const triggerHaptic = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const gesture = Gesture.Pan()
+    .blocksExternalGesture(modalGesture)
+    .activeOffsetY([-8, 8])
+    .failOffsetX([-15, 15])
+    .onUpdate((e) => {
+      dragY.value = e.translationY;
+      const step = Math.abs(Math.floor(e.translationY / DRUM_ITEM_H));
+      if (step !== lastHapticStep.value) {
+        lastHapticStep.value = step;
+        runOnJS(triggerHaptic)();
+      }
+    })
+    .onEnd((e) => {
+      const totalSteps = -Math.round(e.translationY / DRUM_ITEM_H);
+      dragY.value = withSpring(0, { damping: 22, stiffness: 280 });
+      lastHapticStep.value = 0;
+      if (totalSteps !== 0) runOnJS(onSteps)(totalSteps);
+    });
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: dragY.value }],
+  }));
+
+  const items = [-2, -1, 0, 1, 2].map((offset) => {
+    const v = wrap
+      ? ((value - min + offset) % range + range) % range + min
+      : value + offset;
+    const inRange = v >= min && v <= max;
+    const abs = Math.abs(offset);
+    return {
+      offset,
+      label: inRange ? String(v).padStart(2, '0') : '',
+      isCenter: offset === 0,
+      opacity: offset === 0 ? 1 : abs === 1 ? 0.35 : 0.12,
+      fontSize: offset === 0 ? 38 : abs === 1 ? 18 : 13,
+    };
+  });
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View style={{ height: DRUM_ITEM_H * 3, width: 96, overflow: 'hidden', position: 'relative', borderRadius: 20 }}>
+        {/* Center selection highlight */}
+        <View style={{
+          position: 'absolute', top: DRUM_ITEM_H, left: 3, right: 3, height: DRUM_ITEM_H,
+          backgroundColor: isDarkMode ? `${accentColor}20` : `${accentColor}10`,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: isDarkMode ? `${accentColor}40` : `${accentColor}30`,
+        }} />
+        <Animated.View style={[{ marginTop: -DRUM_ITEM_H }, animStyle]}>
+          {items.map((item) => (
+            <View key={item.offset} style={{ height: DRUM_ITEM_H, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{
+                fontSize: item.fontSize,
+                fontWeight: item.isCenter ? '800' : '500',
+                color: item.isCenter ? accentColor : (isDarkMode ? '#ffffff' : '#8E8E93'),
+                opacity: item.opacity,
+                letterSpacing: item.isCenter ? -1 : -0.3,
+                fontVariant: ['tabular-nums'] as any,
+              }}>
+                {item.label}
+              </Text>
+            </View>
+          ))}
+        </Animated.View>
+      </View>
+    </GestureDetector>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface TrackingModalProps {
+  visible: boolean;
+  type: 'food' | 'sleep' | 'diaper' | null;
+  onClose: () => void;
+  onSave: (data: any) => Promise<void> | void;
+}
+
+export default function TrackingModal({ visible, type, onClose, onSave }: TrackingModalProps) {
+  const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
+  const foodTimerContext = useFoodTimer();
+  const { activeChild } = useActiveChild();
+
+  // Lazy content rendering — prevents iPhone CPU from freezing on mount
+  const [contentReady, setContentReady] = useState(false);
+
+  // Premium animations
+  const glowAnim = useSharedValue(0);
+  const sparkleAnim = useSharedValue(0);
+
+  // Diaper icon animations
+  const diaperPulse = useSharedValue(0);
+  const diaperPulse2 = useSharedValue(0);
+  const diaperWiggle = useSharedValue(0);
+  const diaperBounce = useSharedValue(0);
+  const diaperStar1 = useSharedValue(0);
+  const diaperStar2 = useSharedValue(0);
+
+  // Sleep icon animations
+  const sleepIconPulse = useSharedValue(0);
+  const sleepIconPulse2 = useSharedValue(0);
+  const sleepIconBounce = useSharedValue(0);
+  const sleepIconStar1 = useSharedValue(0);
+  const sleepIconStar2 = useSharedValue(0);
+
+  // Food icon animations
+  const foodIconPulse = useSharedValue(0);
+  const foodIconPulse2 = useSharedValue(0);
+  const foodIconBounce = useSharedValue(0);
+  const foodIconStar1 = useSharedValue(0);
+  const foodIconStar2 = useSharedValue(0);
+
+  // Get translated TYPE_CONFIG
+  const TYPE_CONFIG = {
+    food: {
+      title: t('tracking.food.title'),
+      icon: Utensils,
+      accent: '#E5B85C',
+      gradient: ['#F59E0B', '#FBBF24', '#FCD34D'],
+    },
+    sleep: {
+      title: t('tracking.sleep.title'),
+      icon: Moon,
+      accent: '#6366F1',
+      gradient: ['#6366F1', '#818CF8', '#A5B4FC'],
+    },
+    diaper: {
+      title: t('tracking.diaper.title'),
+      icon: DiaperIcon,
+      accent: '#10B981',
+      gradient: ['#10B981', '#34D399', '#6EE7B7'],
+    },
+  };
+
+  // --- Food States ---
+  const [foodType, setFoodType] = useState<'bottle' | 'breast' | 'pumping' | 'solids'>('bottle');
+  const [foodMode, setFoodMode] = useState<'normal' | 'timerange'>('normal'); // normal = current behavior, timerange = start/end time
+  const [bottleAmount, setBottleAmount] = useState('');
+  const [pumpingAmount, setPumpingAmount] = useState('');
+  const [solidsFoodName, setSolidsFoodName] = useState('');
+  const [foodNote, setFoodNote] = useState('');
+
+  // Food Time States - using Date objects for picker (for timerange mode)
+  const [foodStartTime, setFoodStartTime] = useState(() => new Date());
+  const [foodEndTime, setFoodEndTime] = useState(() => new Date());
+  const [showFoodStartTimePicker, setShowFoodStartTimePicker] = useState(false);
+  const [showFoodEndTimePicker, setShowFoodEndTimePicker] = useState(false);
+
+  // Selected Date for logging past/future entries
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarView, setCalendarView] = useState<'days' | 'months'>('days');
+
+  // --- Sleep States (Manual entry) ---
+  const [sleepMode, setSleepMode] = useState<'timer' | 'duration' | 'timerange'>('timer');
+  const [sleepHours, setSleepHours] = useState(0);
+  const [sleepMinutes, setSleepMinutes] = useState(30);
+  const sleepHoursRef = React.useRef(sleepHours);
+  const sleepMinutesRef = React.useRef(sleepMinutes);
+  React.useEffect(() => { sleepHoursRef.current = sleepHours; }, [sleepHours]);
+  React.useEffect(() => { sleepMinutesRef.current = sleepMinutes; }, [sleepMinutes]);
+  const [sleepNote, setSleepNote] = useState('');
+  const sleepContext = useSleepTimer();
+
+  // Sleep Manual Time Range
+  const getInitialTime = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+  const [sleepStartTime, setSleepStartTime] = useState(getInitialTime());
+  const [sleepEndTime, setSleepEndTime] = useState(getInitialTime());
+  const [sleepStartTimeDate, setSleepStartTimeDate] = useState(new Date());
+  const [sleepEndTimeDate, setSleepEndTimeDate] = useState(new Date());
+  const [showSleepStartPicker, setShowSleepStartPicker] = useState(false);
+  const [showSleepEndPicker, setShowSleepEndPicker] = useState(false);
+
+  // --- Diaper States ---
+  const [subType, setSubType] = useState<string | null>(null);
+  const [diaperNote, setDiaperNote] = useState('');
+  const [diaperTime, setDiaperTime] = useState(() => new Date());
+  const [showDiaperTimePicker, setShowDiaperTimePicker] = useState(false);
+  const [showDiaperDatePicker, setShowDiaperDatePicker] = useState(false);
+
+  // Save success state for checkmark animation
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Reanimated shared values for modal slide + backdrop
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const scrollY = useSharedValue(0);
+
+  const scrollViewRef = useRef<Animated.ScrollView>(null);
+  const nativeScrollRef = useRef(null);
+
+  const modalAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropAnimStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  const scrollHandler = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+
+  const triggerHaptic = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+  const triggerMediumHaptic = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // Animated dismiss — slides out then unmounts
+  const dismissModal = useCallback(() => {
+    logger.log('⏱️ [PERF] dismissModal START');
+    const t0 = Date.now();
+    backdropOpacity.value = withTiming(0, { duration: 200 });
+    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 280, easing: Easing.in(Easing.cubic) }, () => {
+      runOnJS(onClose)();
+    });
+    logger.log(`⏱️ [PERF] dismissModal animation queued in ${Date.now() - t0}ms`);
+  }, [onClose]);
+
+  // Drum swipe step handlers (use refs to always get latest values, even mid-gesture)
+  const handleHourSteps = React.useCallback((steps: number) => {
+    setSleepHours(Math.max(0, Math.min(12, sleepHoursRef.current + steps)));
+  }, []);
+
+  const handleMinuteSteps = React.useCallback((steps: number) => {
+    const cur = sleepMinutesRef.current;
+    const curH = sleepHoursRef.current;
+    const total = cur + steps;
+    if (total >= 60) {
+      const carry = Math.floor(total / 60);
+      setSleepHours(Math.min(12, curH + carry));
+      setSleepMinutes(total % 60);
+    } else if (total < 0) {
+      const borrow = Math.ceil(-total / 60);
+      if (curH >= borrow) {
+        setSleepHours(curH - borrow);
+        setSleepMinutes(((total % 60) + 60) % 60);
+      }
+    } else {
+      setSleepMinutes(total);
+    }
+  }, []);
+
+  // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
+  const panGesture = Gesture.Pan()
+    .activeOffsetY([-2, 2])
+    .simultaneousWithExternalGesture(nativeScrollRef)
+    .onStart(() => {
+      runOnJS(triggerHaptic)();
+    })
+    .onUpdate((e) => {
+      // Only drag down when scroll is at top
+      if (e.translationY > 0 && scrollY.value <= 5) {
+        translateY.value = e.translationY;
+        backdropOpacity.value = 1 - Math.min(e.translationY / 300, 0.7);
+      }
+    })
+    .onEnd((e) => {
+      const shouldDismiss = e.translationY > 120 || e.velocityY > 500;
+      if (shouldDismiss) {
+        runOnJS(triggerMediumHaptic)();
+        backdropOpacity.value = withTiming(0, { duration: 200 });
+        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250, easing: Easing.in(Easing.cubic) }, () => {
+          runOnJS(onClose)();
+          translateY.value = SCREEN_HEIGHT;
+          backdropOpacity.value = 0;
+        });
+      } else {
+        translateY.value = withSpring(0, { stiffness: 300, damping: 30 });
+        backdropOpacity.value = withTiming(1, { duration: 200 });
+      }
+    });
+
+  useEffect(() => {
+    if (visible) {
+      // Phase 1: Start slide-in animation immediately (runs on native thread)
+      translateY.value = SCREEN_HEIGHT;
+      backdropOpacity.value = 0;
+      glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
+      sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
+      backdropOpacity.value = withTiming(1, { duration: 300 });
+      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
+
+      // Phase 2: Reset state after a minimal delay (NOT waiting for all animations)
+      // Using setTimeout instead of InteractionManager to avoid being blocked by spring/glow animations
+      const timer = setTimeout(() => {
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        setSaveSuccess(false);
+        setSubType(null);
+        setBottleAmount('');
+        setPumpingAmount('');
+        setSolidsFoodName('');
+        setFoodNote('');
+        setSleepHours(0);
+        setSleepMinutes(30);
+        setSleepNote('');
+        setDiaperNote('');
+        setDiaperTime(new Date(now));
+        setShowDiaperTimePicker(false);
+        setShowDiaperDatePicker(false);
+        setSleepMode('timer');
+        setSleepStartTime(timeStr);
+        setSleepEndTime(timeStr);
+        setSleepStartTimeDate(new Date(now));
+        setSleepEndTimeDate(new Date(now));
+        setShowSleepStartPicker(false);
+        setShowSleepEndPicker(false);
+        setSelectedDate(new Date(now));
+        setFoodMode('normal');
+        setFoodStartTime(new Date(now));
+        setFoodEndTime(new Date(now));
+        setShowFoodStartTimePicker(false);
+        setShowFoodEndTimePicker(false);
+        // Enable content rendering AFTER state is ready
+        setContentReady(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      glowAnim.value = 0;
+      sparkleAnim.value = 0;
+      setContentReady(false);
+    }
+  }, [visible]);
+
+  // Diaper icon animation
+  useEffect(() => {
+    if (visible && type === 'diaper') {
+      // Double pulse rings
+      diaperPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      diaperPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+      // Cute wiggle
+      diaperWiggle.value = withRepeat(
+        withSequence(
+          withTiming(-10, { duration: 180 }),
+          withTiming(10, { duration: 320 }),
+          withTiming(-6, { duration: 250 }),
+          withTiming(6, { duration: 250 }),
+          withTiming(0, { duration: 180 }),
+          withTiming(0, { duration: 1600 }),
+        ),
+        -1,
+        false
+      );
+      // Gentle bounce up/down
+      diaperBounce.value = withRepeat(
+        withSequence(
+          withTiming(-5, { duration: 450, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 450, easing: Easing.in(Easing.quad) }),
+          withTiming(0, { duration: 300 }),
+        ),
+        -1,
+        false
+      );
+      // Sparkle star 1 — appears top-left
+      diaperStar1.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0, { duration: 600 }),
+          withTiming(0, { duration: 700 }),
+        ),
+        -1,
+        false
+      );
+      // Sparkle star 2 — delayed, appears top-right
+      diaperStar2.value = withDelay(900, withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0, { duration: 600 }),
+          withTiming(0, { duration: 700 }),
+        ),
+        -1,
+        false
+      ));
+    } else {
+      diaperPulse.value = withTiming(0, { duration: 200 });
+      diaperPulse2.value = withTiming(0, { duration: 200 });
+      diaperWiggle.value = withTiming(0, { duration: 200 });
+      diaperBounce.value = withTiming(0, { duration: 200 });
+      diaperStar1.value = withTiming(0, { duration: 200 });
+      diaperStar2.value = withTiming(0, { duration: 200 });
+    }
+  }, [visible, type]);
+
+  // Food icon animation — same style as diaper
+  useEffect(() => {
+    if (visible && type === 'food') {
+      foodIconPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      foodIconPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+      foodIconBounce.value = withRepeat(withSequence(withTiming(-3, { duration: 800 }), withTiming(0, { duration: 800 })), -1, true);
+      foodIconStar1.value = withRepeat(withSequence(withTiming(1, { duration: 1200 }), withTiming(0, { duration: 600 }), withTiming(0, { duration: 700 })), -1, false);
+      foodIconStar2.value = withDelay(600, withRepeat(withSequence(withTiming(1, { duration: 1000 }), withTiming(0, { duration: 500 }), withTiming(0, { duration: 700 })), -1, false));
+    } else {
+      foodIconPulse.value = withTiming(0, { duration: 200 });
+      foodIconPulse2.value = withTiming(0, { duration: 200 });
+      foodIconBounce.value = withTiming(0, { duration: 200 });
+      foodIconStar1.value = withTiming(0, { duration: 200 });
+      foodIconStar2.value = withTiming(0, { duration: 200 });
+    }
+  }, [visible, type]);
+
+  // Sleep icon animation — same style as diaper
+  useEffect(() => {
+    if (visible && type === 'sleep') {
+      sleepIconPulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+      sleepIconPulse2.value = withDelay(700, withRepeat(withTiming(1, { duration: 1400 }), -1, false));
+      sleepIconBounce.value = withRepeat(withSequence(withTiming(-3, { duration: 800 }), withTiming(0, { duration: 800 })), -1, true);
+      sleepIconStar1.value = withRepeat(withSequence(withTiming(1, { duration: 1200 }), withTiming(0, { duration: 600 }), withTiming(0, { duration: 700 })), -1, false);
+      sleepIconStar2.value = withDelay(600, withRepeat(withSequence(withTiming(1, { duration: 1000 }), withTiming(0, { duration: 500 }), withTiming(0, { duration: 700 })), -1, false));
+    } else {
+      sleepIconPulse.value = withTiming(0, { duration: 200 });
+      sleepIconPulse2.value = withTiming(0, { duration: 200 });
+      sleepIconBounce.value = withTiming(0, { duration: 200 });
+      sleepIconStar1.value = withTiming(0, { duration: 200 });
+      sleepIconStar2.value = withTiming(0, { duration: 200 });
+    }
+  }, [visible, type]);
+
+  // Animated styles
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glowAnim.value, [0, 1], [0.3, 0.6]),
+    transform: [{ scale: interpolate(glowAnim.value, [0, 1], [0.95, 1.05]) }],
+  }));
+
+  const sparkleStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(sparkleAnim.value, [0, 1], [0, 360])}deg` }],
+  }));
+
+  const diaperPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(diaperPulse.value, [0, 1], [0.45, 0]),
+    transform: [{ scale: interpolate(diaperPulse.value, [0, 1], [1, 1.75]) }],
+  }));
+
+  const diaperPulse2Style = useAnimatedStyle(() => ({
+    opacity: interpolate(diaperPulse2.value, [0, 1], [0.3, 0]),
+    transform: [{ scale: interpolate(diaperPulse2.value, [0, 1], [1, 1.75]) }],
+  }));
+
+  const diaperWiggleStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${diaperWiggle.value}deg` }],
+  }));
+
+  const diaperBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: diaperBounce.value }],
+  }));
+
+  const diaperStar1Style = useAnimatedStyle(() => ({
+    opacity: diaperStar1.value,
+    transform: [
+      { translateY: interpolate(diaperStar1.value, [0, 1], [0, -14]) },
+      { scale: interpolate(diaperStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+
+  const diaperStar2Style = useAnimatedStyle(() => ({
+    opacity: diaperStar2.value,
+    transform: [
+      { translateY: interpolate(diaperStar2.value, [0, 1], [0, -14]) },
+      { scale: interpolate(diaperStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+
+  const foodIconPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(foodIconPulse.value, [0, 1], [0.45, 0]),
+    transform: [{ scale: interpolate(foodIconPulse.value, [0, 1], [1, 1.75]) }],
+  }));
+  const foodIconPulse2Style = useAnimatedStyle(() => ({
+    opacity: interpolate(foodIconPulse2.value, [0, 1], [0.3, 0]),
+    transform: [{ scale: interpolate(foodIconPulse2.value, [0, 1], [1, 1.75]) }],
+  }));
+  const foodIconBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: foodIconBounce.value }],
+  }));
+  const foodIconStar1Style = useAnimatedStyle(() => ({
+    opacity: foodIconStar1.value,
+    transform: [
+      { translateY: interpolate(foodIconStar1.value, [0, 1], [0, -14]) },
+      { scale: interpolate(foodIconStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+  const foodIconStar2Style = useAnimatedStyle(() => ({
+    opacity: foodIconStar2.value,
+    transform: [
+      { translateY: interpolate(foodIconStar2.value, [0, 1], [0, -14]) },
+      { scale: interpolate(foodIconStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+
+  const sleepIconPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(sleepIconPulse.value, [0, 1], [0.45, 0]),
+    transform: [{ scale: interpolate(sleepIconPulse.value, [0, 1], [1, 1.75]) }],
+  }));
+  const sleepIconPulse2Style = useAnimatedStyle(() => ({
+    opacity: interpolate(sleepIconPulse2.value, [0, 1], [0.3, 0]),
+    transform: [{ scale: interpolate(sleepIconPulse2.value, [0, 1], [1, 1.75]) }],
+  }));
+  const sleepIconBounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sleepIconBounce.value }],
+  }));
+  const sleepIconStar1Style = useAnimatedStyle(() => ({
+    opacity: sleepIconStar1.value,
+    transform: [
+      { translateY: interpolate(sleepIconStar1.value, [0, 1], [0, -14]) },
+      { scale: interpolate(sleepIconStar1.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+  const sleepIconStar2Style = useAnimatedStyle(() => ({
+    opacity: sleepIconStar2.value,
+    transform: [
+      { translateY: interpolate(sleepIconStar2.value, [0, 1], [0, -14]) },
+      { scale: interpolate(sleepIconStar2.value, [0, 0.5, 1], [0.4, 1.2, 0.6]) },
+    ] as any,
+  }));
+
+  // Calculate duration for Time Range mode (Sleep)
+  const calculatedDuration = useMemo(() => {
+    if (sleepMode !== 'timerange') return null;
+
+    const startH = sleepStartTimeDate.getHours();
+    const startM = sleepStartTimeDate.getMinutes();
+    const endH = sleepEndTimeDate.getHours();
+    const endM = sleepEndTimeDate.getMinutes();
+
+    let diffMins = (endH * 60 + endM) - (startH * 60 + startM);
+    if (diffMins < 0) diffMins += 24 * 60;
+
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+
+    return { hours, minutes };
+  }, [sleepStartTimeDate, sleepEndTimeDate, sleepMode]);
+
+  // Calculate duration for Food Time Range mode
+  const calculatedFoodDuration = useMemo(() => {
+    if (type !== 'food' || foodMode !== 'timerange') return null;
+
+    const startH = foodStartTime.getHours();
+    const startM = foodStartTime.getMinutes();
+    const endH = foodEndTime.getHours();
+    const endM = foodEndTime.getMinutes();
+
+    let diffMins = (endH * 60 + endM) - (startH * 60 + startM);
+    if (diffMins < 0) diffMins += 24 * 60;
+
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+
+    return { hours, minutes };
+  }, [foodStartTime, foodEndTime, foodMode, type]);
+
+  // Breastfeeding uses separate timer in FoodTimerContext
+  const leftTimer = foodTimerContext.leftBreastTime + (foodTimerContext.breastActiveSide === 'left' && foodTimerContext.breastIsRunning ? foodTimerContext.breastElapsedSeconds : 0);
+  const rightTimer = foodTimerContext.rightBreastTime + (foodTimerContext.breastActiveSide === 'right' && foodTimerContext.breastIsRunning ? foodTimerContext.breastElapsedSeconds : 0);
+  const activeSide = foodTimerContext.breastActiveSide;
+
+  const toggleBreastTimer = (side: 'left' | 'right') => {
+    // If clicking on the same side that's currently running - pause it
+    if (foodTimerContext.breastIsRunning && foodTimerContext.breastActiveSide === side && !foodTimerContext.breastIsPaused) {
+      foodTimerContext.pauseBreast();
+      // If clicking on a paused timer for the same side - resume it
+    } else if (foodTimerContext.breastIsRunning && foodTimerContext.breastActiveSide === side && foodTimerContext.breastIsPaused) {
+      foodTimerContext.resumeBreast();
+      // Otherwise start the timer for this side
+    } else {
+      foodTimerContext.startBreast(side);
+    }
+  };
+
+  const togglePumpingTimer = () => {
+    // If running and not paused - pause it
+    if (foodTimerContext.pumpingIsRunning && !foodTimerContext.pumpingIsPaused) {
+      foodTimerContext.pausePumping();
+      // If paused - resume it  
+    } else if (foodTimerContext.pumpingIsRunning && foodTimerContext.pumpingIsPaused) {
+      foodTimerContext.resumePumping();
+      // Not running - start fresh
+    } else {
+      foodTimerContext.startPumping();
+    }
+  };
+
+  const isPumpingActive = foodTimerContext.pumpingIsRunning;
+  const pumpingTimer = foodTimerContext.pumpingElapsedSeconds;
+
+  const isBottleActive = foodTimerContext.bottleIsRunning;
+  const bottleTimer = foodTimerContext.bottleElapsedSeconds;
+
+  const toggleBottleTimer = () => {
+    // If running and not paused - pause it
+    if (foodTimerContext.bottleIsRunning && !foodTimerContext.bottleIsPaused) {
+      foodTimerContext.pauseBottle();
+      // If paused - resume it
+    } else if (foodTimerContext.bottleIsRunning && foodTimerContext.bottleIsPaused) {
+      foodTimerContext.resumeBottle();
+      // Not running - start fresh
+    } else {
+      foodTimerContext.startBottle();
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  const handleSave = async () => {
+    if (!type || isSaving) return;
+    const t0 = Date.now();
+    logger.log('⏱️ [PERF] handleSave START', { type });
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    logger.log(`⏱️ [PERF] haptics done in ${Date.now() - t0}ms`);
+
+    let data: any = { type };
+
+    if (type === 'food') {
+      let durationText = '';
+
+      // Handle timerange mode for food
+      if (foodMode === 'timerange') {
+        const startHours = foodStartTime.getHours();
+        const startMinutes = foodStartTime.getMinutes();
+        const endHours = foodEndTime.getHours();
+        const endMinutes = foodEndTime.getMinutes();
+
+        const startTimeStr = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
+        const endTimeStr = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+        // Calculate duration in minutes
+        const startMins = startHours * 60 + startMinutes;
+        const endMins = endHours * 60 + endMinutes;
+        let durationMins = endMins - startMins;
+
+        // Handle overnight (end time is next day)
+        if (durationMins < 0) {
+          durationMins += 24 * 60;
+        }
+
+        // Save start and end times
+        data.startTime = startTimeStr;
+        data.endTime = endTimeStr;
+        data.duration = durationMins * 60; // Convert to seconds
+
+        // Set timestamp to start time
+        const startDate = new Date(selectedDate);
+        startDate.setHours(startHours, startMinutes, 0, 0);
+        data.timestamp = startDate;
+
+        const h = Math.floor(durationMins / 60);
+        const m = durationMins % 60;
+        durationText = `${h}:${String(m).padStart(2, '0')}`;
+      }
+
+      if (foodType === 'bottle') {
+        data.amount = bottleAmount ? `${bottleAmount} ${t('tracking.ml')}` : t('tracking.notSpecified');
+        data.subType = 'bottle';
+        if (foodMode === 'timerange' && durationText) {
+          data.note = foodNote ? `${durationText} | ${foodNote}` : durationText;
+        } else {
+          // Normal mode with timer or manual note
+          let noteParts = [];
+          if (bottleTimer > 0) noteParts.push(`${t('tracking.duration')}: ${formatTime(bottleTimer)}`);
+          if (foodNote) noteParts.push(foodNote);
+
+          if (noteParts.length > 0) data.note = noteParts.join(' | ');
+        }
+      } else if (foodType === 'breast') {
+        if (foodMode === 'timerange') {
+          // In timerange mode, use start/end times instead of timer
+          data.note = durationText ? (foodNote ? `${durationText} | ${foodNote}` : durationText) : foodNote;
+        } else {
+          // Normal mode - use timer
+          data.note = `${t('tracking.leftColon')}: ${formatTime(leftTimer)} | ${t('tracking.rightColon')}: ${formatTime(rightTimer)}`;
+          if (foodNote) data.note += ` | ${foodNote}`;
+          // Save structured breast side data for stats filtering
+          data.leftBreastDuration = leftTimer;
+          data.rightBreastDuration = rightTimer;
+          if (leftTimer > 0 || rightTimer > 0) {
+            data.breastSide = leftTimer >= rightTimer ? 'left' : 'right';
+          }
+        }
+        data.subType = 'breast';
+      } else if (foodType === 'pumping') {
+        data.amount = pumpingAmount ? `${pumpingAmount} ${t('tracking.ml')}` : t('tracking.notSpecified');
+        if (foodMode === 'timerange') {
+          // In timerange mode, use start/end times instead of timer
+          if (durationText) {
+            data.note = foodNote ? `${durationText} | ${foodNote}` : durationText;
+          } else if (foodNote) {
+            data.note = foodNote;
+          }
+        } else {
+          // Normal mode - use timer
+          data.note = pumpingTimer > 0 ? `${t('tracking.pumpingTime')}: ${formatTime(pumpingTimer)}` : undefined;
+          if (foodNote && data.note) data.note += ` | ${foodNote}`;
+          else if (foodNote) data.note = foodNote;
+        }
+        data.subType = 'pumping';
+      } else if (foodType === 'solids') {
+        data.note = solidsFoodName ? (foodNote ? `${solidsFoodName} | ${foodNote}` : solidsFoodName) : (foodNote || t('tracking.solidsFood'));
+        if (foodMode === 'timerange' && durationText) {
+          data.note = data.note ? `${durationText} | ${data.note}` : durationText;
+        }
+        data.subType = 'solids';
+      }
+
+      // Set timestamp if not already set (for normal mode)
+      if (!data.timestamp) {
+        data.timestamp = selectedDate;
+      }
+    } else if (type === 'sleep') {
+      let durationText = '';
+      if (sleepMode === 'timer' && sleepContext.elapsedSeconds > 0) {
+        durationText = `${t('tracking.sleepDuration')}: ${sleepContext.formatTime(sleepContext.elapsedSeconds)}`;
+        data.duration = sleepContext.elapsedSeconds;
+        if (sleepContext.isRunning) sleepContext.stop();
+      } else if (sleepMode === 'duration') {
+        const totalMinutes = (sleepHours * 60) + sleepMinutes;
+        if (totalMinutes > 0) {
+          const h = Math.floor(totalMinutes / 60);
+          const m = totalMinutes % 60;
+          durationText = `${t('tracking.sleepDuration')}: ${h}:${String(m).padStart(2, '0')}`;
+          data.duration = totalMinutes * 60;
+        }
+      } else if (sleepMode === 'timerange') {
+        // Always use the Date objects as they are the source of truth
+        const startHours = sleepStartTimeDate.getHours();
+        const startMinutes = sleepStartTimeDate.getMinutes();
+        const endHours = sleepEndTimeDate.getHours();
+        const endMinutes = sleepEndTimeDate.getMinutes();
+
+        const startTimeStr = `${startHours.toString().padStart(2, '0')}:${startMinutes.toString().padStart(2, '0')}`;
+        const endTimeStr = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+        // Calculate duration in minutes
+        const startMins = startHours * 60 + startMinutes;
+        const endMins = endHours * 60 + endMinutes;
+        let durationMins = endMins - startMins;
+
+        // Handle overnight sleep (end time is next day)
+        if (durationMins < 0) {
+          durationMins += 24 * 60;
+        }
+
+        // Always save, even if duration is 0 (user might have same start/end time)
+        data.duration = durationMins * 60; // Convert to seconds
+
+        // Save start and end times
+        data.startTime = startTimeStr;
+        data.endTime = endTimeStr;
+
+        // Set timestamp to start time (use selectedDate as base, then set the time)
+        const startDate = new Date(selectedDate);
+        startDate.setHours(startHours, startMinutes, 0, 0);
+        data.timestamp = startDate;
+
+        const h = Math.floor(durationMins / 60);
+        const m = durationMins % 60;
+        durationText = `${t('tracking.sleepDuration')}: ${h}:${String(m).padStart(2, '0')}`;
+      }
+
+      // Add duration to note if available
+      if (durationText && sleepNote) {
+        data.note = `${durationText} | ${sleepNote}`;
+      } else if (durationText) {
+        data.note = durationText;
+      } else {
+        data.note = sleepNote;
+      }
+
+      // Set timestamp if not already set (for timer and duration modes)
+      if (!data.timestamp) {
+        data.timestamp = selectedDate;
+      }
+    } else if (type === 'diaper') {
+      data.subType = subType;
+      data.note = diaperNote;
+      // Set the timestamp to the selected diaper time
+      data.timestamp = diaperTime;
+    }
+
+    // Debug: Log data before saving
+    if (type === 'sleep' && sleepMode === 'timerange') {
+      logger.log('🔵 Sleep timerange data to save:', JSON.stringify({
+        type: data.type,
+        duration: data.duration,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        timestamp: data.timestamp?.toISOString(),
+        note: data.note,
+        hasTimestamp: !!data.timestamp,
+        durationMins: data.duration ? Math.floor(data.duration / 60) : 0
+      }, null, 2));
+    }
+
+    // Validate sleep duration > 0
+    if (type === 'sleep') {
+      if (sleepMode === 'timer' && (!data.duration || data.duration === 0)) {
+        Alert.alert(t('common.error'), 'יש להפעיל את הטיימר לפני השמירה.');
+        return;
+      }
+      if (sleepMode === 'duration' && (!data.duration || data.duration === 0)) {
+        Alert.alert(t('common.error'), 'יש להזין משך שינה גדול מ-0.');
+        return;
+      }
+      if (sleepMode === 'timerange' && data.duration === 0) {
+        Alert.alert(t('common.error'), 'שעת הסיום חייבת להיות שונה משעת ההתחלה.');
+        return;
+      }
+    }
+
+    // Validate diaper type selected
+    if (type === 'diaper' && !subType) {
+      Alert.alert(t('common.error'), 'יש לבחור סוג חיתול לפני השמירה.');
+      return;
+    }
+
+    // Validate that we have required data for timerange mode
+    if (type === 'sleep' && sleepMode === 'timerange') {
+      if (!data.timestamp) {
+        logger.error('❌ Missing timestamp');
+        Alert.alert(t('common.error'), 'שגיאה: חסר timestamp. נא לנסות שוב.');
+        return;
+      }
+      if (data.duration === undefined || data.duration === null) {
+        logger.error('❌ Missing duration');
+        Alert.alert(t('common.error'), 'שגיאה: חסר duration. נא לנסות שוב.');
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      // Always log full data for sleep timerange
+      if (type === 'sleep' && sleepMode === 'timerange') {
+        logger.log('🟢 Calling onSave with FULL sleep timerange data:', {
+          type: data.type,
+          duration: data.duration,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          timestamp: data.timestamp?.toISOString(),
+          note: data.note,
+          allData: data
+        });
+      } else {
+        logger.log('🟢 Calling onSave with data:', { type: data.type, ...data });
+      }
+      logger.log(`⏱️ [PERF] onSave data prep + save took ${Date.now() - t0}ms`);
+      await onSave(data);
+      logger.log(`⏱️ [PERF] onSave completed in ${Date.now() - t0}ms`);
+
+      // Start Live Activity for food
+      if (type === 'food' && activeChild) {
+        quickActionsService.startMeal(
+          activeChild.childName,
+          '👶', // Default emoji since ActiveChild doesn't have emoji property
+          foodType,
+          solidsFoodName ? [solidsFoodName] : [],
+          0 // Initial progress
+        ).catch(err => logger.log('Meal activity error:', err));
+      }
+
+      // Reset all food timers after successful save (only here, not on pause!)
+      if (type === 'food') {
+        foodTimerContext.resetBottle();
+        foodTimerContext.resetPumping();
+        foodTimerContext.resetBreast();
+        // Reset notes
+        setFoodNote('');
+        setBottleAmount('');
+        setPumpingAmount('');
+        setSolidsFoodName('');
+      }
+
+      setSaveSuccess(true);
+      logger.log(`⏱️ [PERF] post-save cleanup done in ${Date.now() - t0}ms`);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        logger.log(`⏱️ [PERF] dismissing modal after success animation, total ${Date.now() - t0}ms`);
+        dismissModal();
+      }, 1500);
+    } catch (error) {
+      logger.error('Save failed', error);
+      Alert.alert(t('common.error'), t('common.saveFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const renderFoodContent = () => (
+    <View style={{ width: '100%' }}>
+      <View style={[styles.foodTabs, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+        <TouchableOpacity
+          style={[styles.foodTab, foodType === 'breast' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
+          onPress={() => {
+            setFoodType('breast');
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+        >
+          <View style={styles.foodTabIconContainer}>
+            {activeSide !== null ? (
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>{formatTime(activeSide === 'left' ? leftTimer : rightTimer)}</Text>
+            ) : (leftTimer > 0 || rightTimer > 0) ? (
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(leftTimer + rightTimer)}</Text>
+            ) : (
+              <Milk size={20} color={foodType === 'breast' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+            )}
+          </View>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'breast' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.breast')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.foodTab, foodType === 'bottle' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
+          onPress={() => {
+            setFoodType('bottle');
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+        >
+          <View style={styles.foodTabIconContainer}>
+            {isBottleActive ? (
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>{formatTime(bottleTimer)}</Text>
+            ) : bottleTimer > 0 ? (
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(bottleTimer)}</Text>
+            ) : (
+              <Milk size={20} color={foodType === 'bottle' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+            )}
+          </View>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'bottle' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.bottle')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.foodTab, foodType === 'solids' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
+          onPress={() => {
+            setFoodType('solids');
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+        >
+          <View style={styles.foodTabIconContainer}>
+            <Apple size={20} color={foodType === 'solids' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+          </View>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'solids' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.solids')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.foodTab, foodType === 'pumping' && [styles.activeFoodTab, { backgroundColor: theme.card }]]}
+          onPress={() => {
+            setFoodType('pumping');
+            setFoodMode('normal'); // Reset to normal when switching tabs
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+        >
+          <View style={styles.foodTabIconContainer}>
+            {isPumpingActive ? (
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>{formatTime(pumpingTimer)}</Text>
+            ) : pumpingTimer > 0 ? (
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(pumpingTimer)}</Text>
+            ) : (
+              <Droplets size={20} color={foodType === 'pumping' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+            )}
+          </View>
+          <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'pumping' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.pumping')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Date Picker Button - only in timerange/solids mode */}
+      {(foodMode === 'timerange' || foodType === 'solids') && (
+        <TouchableOpacity
+          style={styles.datePickerBtn}
+          onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
+          <Text style={styles.datePickerBtnText}>
+            {selectedDate.toDateString() === new Date().toDateString()
+              ? t('tracking.today')
+              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Food Mode Toggle - Normal vs Timerange */}
+      {/* Hide for solids - timer not relevant */}
+      {foodType !== 'solids' && (
+        <View style={styles.modeToggleContainer}>
+          <TouchableOpacity
+            style={[styles.modeToggleBtn, foodMode === 'normal' && [styles.modeToggleBtnActive, { backgroundColor: theme.primary }]]}
+            onPress={() => { setFoodMode('normal'); setSelectedDate(new Date()); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          >
+            <Text style={[styles.modeToggleText, foodMode === 'normal' && styles.modeToggleTextActive]}>
+              {foodType === 'breast' ? t('tracking.timer') : foodType === 'pumping' ? t('tracking.timer') : foodType === 'bottle' ? t('tracking.now') : t('tracking.now')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeToggleBtn, foodMode === 'timerange' && [styles.modeToggleBtnActive, { backgroundColor: theme.primary }]]}
+            onPress={() => { setFoodMode('timerange'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          >
+            <Clock size={16} color={foodMode === 'timerange' ? '#fff' : theme.textSecondary} strokeWidth={2} />
+            <Text style={[styles.modeToggleText, foodMode === 'timerange' && styles.modeToggleTextActive]}>
+              {t('tracking.hours')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Food Time Range Picker - Always show for solids, otherwise only when timerange mode */}
+      {(foodType === 'solids' || foodMode === 'timerange') && (
+        <View style={styles.premiumTimeRow}>
+          <View style={styles.premiumTimeCard}>
+            <Text style={styles.premiumTimeLabel}>{t('tracking.start')}</Text>
+            <TouchableOpacity
+              style={styles.premiumTimeDisplay}
+              onPress={() => { setShowFoodStartTimePicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Text style={styles.premiumTimeDigit}>
+                {foodStartTime.getHours().toString().padStart(2, '0')}:{foodStartTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.premiumTimeArrowContainer}>
+            <Text style={styles.premiumTimeArrow}>→</Text>
+          </View>
+
+          <View style={styles.premiumTimeCard}>
+            <Text style={styles.premiumTimeLabel}>{t('tracking.end')}</Text>
+            <TouchableOpacity
+              style={styles.premiumTimeDisplay}
+              onPress={() => { setShowFoodEndTimePicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Text style={styles.premiumTimeDigit}>
+                {foodEndTime.getHours().toString().padStart(2, '0')}:{foodEndTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Duration Display for Food Timerange */}
+      {calculatedFoodDuration && (
+        <View style={styles.durationContainer}>
+          <View style={[styles.durationPill, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: isDarkMode ? '#F59E0B' : '#FCD34D' }]}>
+            <Clock size={16} color={theme.primary} strokeWidth={2} />
+            <Text style={[styles.durationText, { color: theme.primary }]}>
+              {t('tracking.total')}: {calculatedFoodDuration.hours > 0 ? `${calculatedFoodDuration.hours} ${t('tracking.hours')}` : ''} {calculatedFoodDuration.minutes > 0 ? `${calculatedFoodDuration.minutes} ${t('tracking.minutes')}` : ''}
+              {calculatedFoodDuration.hours === 0 && calculatedFoodDuration.minutes === 0 ? `0 ${t('tracking.minutes')}` : ''}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Bottle Content */}
+      {
+        foodType === 'bottle' && foodMode === 'normal' && (
+          <View style={styles.bottleContainer}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, width: '100%', marginBottom: 12 }}>
+
+              {/* Amount Section - Right Side (First in Code for RTL) */}
+              <View style={{ alignItems: 'center' }}>
+                <Text style={[styles.label, { textAlign: 'center', marginBottom: 12 }]}>{t('tracking.howMuch')}</Text>
+                <View style={[styles.amountRow, { marginTop: 0, gap: 12 }]}>
+                  <TouchableOpacity
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    onPress={() => {
+                      const current = parseInt(bottleAmount) || 0;
+                      if (current >= 5) setBottleAmount((current - 5).toString());
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                  >
+                    <Minus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.amountDisplay}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      if (Platform.OS === 'ios') {
+                        const Alert = require('react-native').Alert;
+                        Alert.prompt(
+                          t('tracking.enterAmount'),
+                          t('tracking.howMuch'),
+                          [
+                            { text: t('common.cancel'), style: 'cancel' },
+                            {
+                              text: t('tracking.done'), onPress: (value: string) => {
+                                const num = parseInt(value);
+                                if (!isNaN(num) && num > 0) setBottleAmount(num.toString());
+                              }
+                            },
+                          ],
+                          'plain-text',
+                          bottleAmount || '0',
+                          'number-pad'
+                        );
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.amountValue, { fontSize: 32, color: theme.textPrimary }]}>{bottleAmount || '0'}</Text>
+                    <Text style={[styles.amountUnit, { fontSize: 13 }]}>{t('tracking.ml')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    onPress={() => {
+                      const current = parseInt(bottleAmount) || 0;
+                      setBottleAmount((current + 5).toString());
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                  >
+                    <Plus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Timer Section for Bottle - Square Card - Left Side */}
+              <View style={{ alignItems: 'center' }}>
+                <TouchableOpacity
+                  style={[
+                    styles.breastTimeCard,
+                    { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
+                    isBottleActive && !foodTimerContext.bottleIsPaused && styles.breastTimeCardActive,
+                    isBottleActive && foodTimerContext.bottleIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                  ]}
+                  onPress={() => { toggleBottleTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.breastTimeLabel, isBottleActive && { color: '#fff', opacity: 0.9 }]}>{t('tracking.timer')}</Text>
+                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isBottleActive && styles.breastTimeValueActive]}>
+                    {formatTime(bottleTimer)}
+                  </Text>
+                  <View style={[styles.breastPlayBtn, isBottleActive && styles.breastPlayBtnActive]}>
+                    {isBottleActive && !foodTimerContext.bottleIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isBottleActive ? '#fff' : theme.primary} style={{ marginLeft: 2 }} />}
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          </View>
+        )
+      }
+
+      {/* Breast Content - Minimalist Style like Sleep */}
+      {
+        foodType === 'breast' && foodMode === 'normal' && (
+          <View style={styles.breastContainer}>
+            {/* Two time cards side by side */}
+            <View style={styles.breastTimeRow}>
+              {/* Left Breast Card */}
+              <TouchableOpacity
+                style={[
+                  styles.breastTimeCard,
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
+                  activeSide === 'left' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
+                  activeSide === 'left' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                ]}
+                onPress={() => { toggleBreastTimer('left'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+              >
+                <Text style={[styles.breastTimeLabel, activeSide === 'left' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.left')}</Text>
+                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
+                {activeSide === 'left' && foodTimerContext.breastIsPaused && (
+                  <Text style={{ fontSize: 10, color: '#fff', opacity: 0.75, marginBottom: 2 }}>מושהה</Text>
+                )}
+                <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
+                  {activeSide === 'left' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'left' ? '#fff' : theme.primary} />}
+                </View>
+              </TouchableOpacity>
+
+              {/* Arrow indicator */}
+              <Text style={styles.breastArrow}>←</Text>
+
+              {/* Right Breast Card */}
+              <TouchableOpacity
+                style={[
+                  styles.breastTimeCard,
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
+                  activeSide === 'right' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
+                  activeSide === 'right' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                ]}
+                onPress={() => { toggleBreastTimer('right'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+              >
+                <Text style={[styles.breastTimeLabel, activeSide === 'right' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.right')}</Text>
+                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
+                {activeSide === 'right' && foodTimerContext.breastIsPaused && (
+                  <Text style={{ fontSize: 10, color: '#fff', opacity: 0.75, marginBottom: 2 }}>מושהה</Text>
+                )}
+                <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
+                  {activeSide === 'right' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'right' ? '#fff' : theme.primary} />}
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Total time display */}
+            <Text style={[styles.breastTotalLabel, { color: theme.textSecondary }]}>{t('tracking.total')}: {formatTime(leftTimer + rightTimer)}</Text>
+          </View>
+        )
+      }
+
+      {/* Pumping Content - Timer + Amount Side by Side */}
+      {
+        foodType === 'pumping' && foodMode === 'normal' && (
+          <View style={styles.bottleContainer}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, width: '100%', marginBottom: 12 }}>
+
+              {/* Amount Section - Right Side (First in Code for RTL) */}
+              <View style={{ alignItems: 'center' }}>
+                <Text style={[styles.label, { textAlign: 'center', marginBottom: 12 }]}>{t('tracking.pumpingAmount')}</Text>
+                <View style={[styles.amountRow, { marginTop: 0, gap: 12 }]}>
+                  <TouchableOpacity
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    onPress={() => {
+                      const current = parseInt(pumpingAmount) || 0;
+                      if (current >= 5) setPumpingAmount((current - 5).toString());
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                  >
+                    <Minus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.amountDisplay}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      if (Platform.OS === 'ios') {
+                        const Alert = require('react-native').Alert;
+                        Alert.prompt(
+                          t('tracking.enterAmount'),
+                          t('tracking.pumpingAmount'),
+                          [
+                            { text: t('common.cancel'), style: 'cancel' },
+                            {
+                              text: t('tracking.done'), onPress: (value: string) => {
+                                const num = parseInt(value);
+                                if (!isNaN(num) && num >= 0) setPumpingAmount(num.toString());
+                              }
+                            },
+                          ],
+                          'plain-text',
+                          pumpingAmount || '0',
+                          'number-pad'
+                        );
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.amountValue, { fontSize: 32, color: theme.textPrimary }]}>{pumpingAmount || '0'}</Text>
+                    <Text style={[styles.amountUnit, { fontSize: 13 }]}>{t('tracking.ml')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    onPress={() => {
+                      const current = parseInt(pumpingAmount) || 0;
+                      setPumpingAmount((current + 5).toString());
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                  >
+                    <Plus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Timer Section for Pumping - Square Card - Left Side */}
+              <View style={{ alignItems: 'center' }}>
+                <TouchableOpacity
+                  style={[
+                    styles.breastTimeCard,
+                    { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
+                    isPumpingActive && !foodTimerContext.pumpingIsPaused && styles.breastTimeCardActive,
+                    isPumpingActive && foodTimerContext.pumpingIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                  ]}
+                  onPress={() => { togglePumpingTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.breastTimeLabel, isPumpingActive && { color: '#fff', opacity: 0.9 }]}>{t('tracking.timer')}</Text>
+                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isPumpingActive && styles.breastTimeValueActive]}>
+                    {formatTime(pumpingTimer)}
+                  </Text>
+                  <View style={[styles.breastPlayBtn, isPumpingActive && styles.breastPlayBtnActive]}>
+                    {isPumpingActive && !foodTimerContext.pumpingIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isPumpingActive ? '#fff' : theme.primary} style={{ marginLeft: 2 }} />}
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          </View>
+        )
+
+      }
+
+      {/* Solids Content */}
+      {
+        foodType === 'solids' && foodMode === 'normal' && (
+          <View style={styles.solidsContainer}>
+            <Text style={styles.label}>{t('tracking.whatAte')}</Text>
+            <TextInput
+              style={[styles.solidsInput, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#E5E7EB', color: theme.textPrimary }]}
+              placeholder={`${t('tracking.forExample')}: ...`}
+              placeholderTextColor={theme.textTertiary}
+              value={solidsFoodName}
+              onChangeText={setSolidsFoodName}
+              textAlign="right"
+            />
+          </View>
+        )
+      }
+      {/* Free Text Note - Available for all food types */}
+      <View style={styles.sleepNoteContainer}>
+        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
+          <Text style={styles.sleepNoteLabel}>{t('tracking.note')}</Text>
+        </View>
+        <View pointerEvents="auto">
+          <TextInput
+            style={[styles.sleepNoteInput, { minHeight: 80, color: theme.textPrimary, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)' }]}
+            placeholder={`${t('tracking.example')}: ...`}
+            placeholderTextColor={theme.textTertiary}
+            value={foodNote}
+            onChangeText={setFoodNote}
+            textAlign="right"
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      </View>
+
+      {/* Food Start Time Picker Modal */}
+      {showFoodStartTimePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              style={TIME_PICKER_STYLE}
+              value={foodStartTime}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedTime) => {
+                if (Platform.OS === 'android') {
+                  setShowFoodStartTimePicker(false);
+                }
+                if (selectedTime) {
+                  setFoodStartTime(selectedTime);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => setShowFoodStartTimePicker(false)}
+              >
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Food End Time Picker Modal */}
+      {showFoodEndTimePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              style={TIME_PICKER_STYLE}
+              value={foodEndTime}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedTime) => {
+                if (Platform.OS === 'android') {
+                  setShowFoodEndTimePicker(false);
+                }
+                if (selectedTime) {
+                  setFoodEndTime(selectedTime);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => setShowFoodEndTimePicker(false)}
+              >
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+    </View >
+  );
+
+
+  const renderSleepContent = () => (
+    <View style={{ width: '100%' }}>
+      {/* Mode Selector */}
+      <View style={[styles.sleepModeRow, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+        {([
+          { mode: 'timerange', icon: Clock, label: t('tracking.hours') },
+          { mode: 'duration', icon: Hourglass, label: t('tracking.duration') },
+          { mode: 'timer', icon: Timer, label: t('tracking.timer') },
+        ] as const).map(({ mode, icon: Icon, label }) => {
+          const isActive = sleepMode === mode;
+          return (
+            <TouchableOpacity
+              key={mode}
+              style={[
+                styles.sleepModeBtn,
+                isActive && styles.sleepModeBtnActive,
+              ]}
+              onPress={() => { setSleepMode(mode); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Icon size={18} color={isActive ? '#1C1C1E' : theme.textTertiary} strokeWidth={2} />
+              <Text style={[
+                styles.sleepModeText,
+                isActive && styles.sleepModeTextActive,
+                !isActive && { color: theme.textTertiary },
+              ]}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Date Picker Button — visible in duration and timerange modes */}
+      {sleepMode !== 'timer' && (
+        <TouchableOpacity
+          style={styles.datePickerBtn}
+          onPress={() => { setShowCalendar(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        >
+          <Calendar size={16} color={theme.primary} strokeWidth={1.5} />
+          <Text style={styles.datePickerBtnText}>
+            {selectedDate.toDateString() === new Date().toDateString()
+              ? t('tracking.today')
+              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Timer Mode */}
+      {sleepMode === 'timer' && (
+        <View style={styles.sleepTimerSection}>
+          <TouchableOpacity
+            style={[
+              styles.sleepTimerCard,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' },
+              sleepContext.isRunning && styles.sleepTimerCardActive,
+            ]}
+            onPress={() => {
+              if (sleepContext.isRunning) {
+                sleepContext.stop();
+                const totalMins = Math.floor(sleepContext.elapsedSeconds / 60);
+                setSleepHours(Math.floor(totalMins / 60));
+                setSleepMinutes(totalMins % 60);
+                setSleepMode('duration');
+              } else {
+                sleepContext.start();
+              }
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[
+              styles.sleepTimerValue,
+              { color: isDarkMode ? theme.textPrimary : '#1C1C1E' },
+              sleepContext.isRunning && styles.sleepTimerValueActive,
+            ]}>
+              {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
+            </Text>
+            <View style={[
+              styles.sleepTimerPlayBtn,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' },
+              sleepContext.isRunning && styles.sleepTimerPlayBtnActive,
+            ]}>
+              {sleepContext.isRunning
+                ? <Pause size={16} color="#fff" strokeWidth={2} />
+                : <Play size={16} color={isDarkMode ? 'rgba(255,255,255,0.7)' : '#1C1C1E'} strokeWidth={2} />
+              }
+            </View>
+          </TouchableOpacity>
+          <Text style={[styles.sleepTimerHint, { color: theme.textTertiary }]}>
+            {sleepContext.isRunning ? t('tracking.pressToStop') : t('tracking.pressToStart')}
+          </Text>
+        </View>
+      )}
+
+      {/* Duration Mode — native iOS-style spinner */}
+      {sleepMode === 'duration' && (
+        <View style={styles.sleepDurationSection}>
+          <DateTimePicker
+            value={(() => {
+              const d = new Date(0);
+              d.setHours(sleepHours, sleepMinutes, 0, 0);
+              return d;
+            })()}
+            mode="countdown"
+            minuteInterval={1}
+            display="spinner"
+            onChange={(event, date) => {
+              if (date) {
+                const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
+                const h = Math.floor(totalSecs / 3600);
+                const m = Math.floor((totalSecs % 3600) / 60);
+                setSleepHours(h);
+                setSleepMinutes(m);
+              }
+            }}
+            locale="he-IL"
+          />
+        </View>
+      )}
+
+      {/* Time Range Mode - DateTimePicker spinner like Food section */}
+      {sleepMode === 'timerange' && (
+        <>
+          <View style={styles.premiumTimeRow}>
+            <View style={styles.premiumTimeCard}>
+              <Text style={styles.premiumTimeLabel}>{t('tracking.start')}</Text>
+              <TouchableOpacity
+                style={styles.premiumTimeDisplay}
+                onPress={() => { setShowSleepStartPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              >
+                <Text style={styles.premiumTimeDigit}>{sleepStartTime}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.premiumTimeArrowContainer}>
+              <Text style={styles.premiumTimeArrow}>→</Text>
+            </View>
+
+            <View style={styles.premiumTimeCard}>
+              <Text style={styles.premiumTimeLabel}>{t('tracking.endTime')}</Text>
+              <TouchableOpacity
+                style={styles.premiumTimeDisplay}
+                onPress={() => { setShowSleepEndPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              >
+                <Text style={styles.premiumTimeDigit}>{sleepEndTime}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Duration Display */}
+          {calculatedDuration && (
+            <View style={styles.durationContainer}>
+              <View style={[styles.durationPill, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }]}>
+                <Clock size={15} color={theme.textSecondary} strokeWidth={2} />
+                <Text style={[styles.durationText, { color: theme.textSecondary }]}>
+                  {t('tracking.total')}: {calculatedDuration.hours > 0 ? `${calculatedDuration.hours} ${t('tracking.hours')}` : ''} {calculatedDuration.minutes > 0 ? `${calculatedDuration.minutes} ${t('tracking.minutes')}` : ''}
+                  {calculatedDuration.hours === 0 && calculatedDuration.minutes === 0 ? `0 ${t('tracking.minutes')}` : ''}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Sleep Start Time Picker Modal */}
+          {showSleepStartPicker && (
+            <View style={styles.timePickerOverlay}>
+              <View style={styles.timePickerContainer}>
+                <DateTimePicker
+                  value={sleepStartTimeDate}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (Platform.OS === 'android') setShowSleepStartPicker(false);
+                    if (date) {
+                      setSleepStartTimeDate(date);
+                      const hours = date.getHours().toString().padStart(2, '0');
+                      const minutes = date.getMinutes().toString().padStart(2, '0');
+                      setSleepStartTime(`${hours}:${minutes}`);
+                    }
+                  }}
+                  locale="he-IL"
+                />
+                {Platform.OS === 'ios' && (
+                  <TouchableOpacity
+                    style={styles.timePickerDoneBtn}
+                    onPress={() => {
+                      const hours = sleepStartTimeDate.getHours().toString().padStart(2, '0');
+                      const minutes = sleepStartTimeDate.getMinutes().toString().padStart(2, '0');
+                      setSleepStartTime(`${hours}:${minutes}`);
+                      setShowSleepStartPicker(false);
+                    }}
+                  >
+                    <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Sleep End Time Picker Modal */}
+          {showSleepEndPicker && (
+            <View style={styles.timePickerOverlay}>
+              <View style={styles.timePickerContainer}>
+                <DateTimePicker
+                  value={sleepEndTimeDate}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (Platform.OS === 'android') setShowSleepEndPicker(false);
+                    if (date) {
+                      setSleepEndTimeDate(date);
+                      const hours = date.getHours().toString().padStart(2, '0');
+                      const minutes = date.getMinutes().toString().padStart(2, '0');
+                      setSleepEndTime(`${hours}:${minutes}`);
+                    }
+                  }}
+                  locale="he-IL"
+                />
+                {Platform.OS === 'ios' && (
+                  <TouchableOpacity
+                    style={styles.timePickerDoneBtn}
+                    onPress={() => {
+                      const hours = sleepEndTimeDate.getHours().toString().padStart(2, '0');
+                      const minutes = sleepEndTimeDate.getMinutes().toString().padStart(2, '0');
+                      setSleepEndTime(`${hours}:${minutes}`);
+                      setShowSleepEndPicker(false);
+                    }}
+                  >
+                    <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Free Text Note */}
+      <View style={styles.sleepNoteContainer}>
+        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
+          <Text style={[styles.sleepNoteLabel, { color: theme.textTertiary }]}>{t('tracking.note')}</Text>
+        </View>
+        <TextInput
+          style={[
+            styles.sleepNoteInput,
+            {
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+              color: theme.textPrimary,
+            }
+          ]}
+          placeholder="לדוגמה: ישן עמוק, התעורר פעם אחת..."
+          placeholderTextColor={theme.textTertiary}
+          value={sleepNote}
+          onChangeText={setSleepNote}
+          multiline
+          numberOfLines={3}
+        />
+      </View>
+    </View>
+  );
+
+  // --- Diaper Content ---
+  const renderDiaperContent = () => (
+    <View style={{ width: '100%' }}>
+      <Text style={[styles.subtitle, { textAlign: 'center' }]}>מה היה?</Text>
+      <View style={styles.diaperOptions}>
+        {[
+          { key: 'pee', label: t('tracking.wet'), icon: Droplets, color: '#3B82F6' },
+          { key: 'poop', label: t('tracking.dirty'), icon: Sparkles, color: '#F59E0B' },
+          { key: 'both', label: 'שניהם', icon: Layers, color: '#8B5CF6' },
+        ].map(opt => {
+          const IconComponent = opt.icon;
+          const isSelected = subType === opt.key;
+          return (
+            <TouchableOpacity
+              key={opt.key}
+              style={[
+                styles.diaperBtn,
+                {
+                  backgroundColor: isSelected
+                    ? opt.color
+                    : (isDarkMode ? 'rgba(255,255,255,0.07)' : '#FFFFFF'),
+                  borderColor: isSelected
+                    ? 'transparent'
+                    : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'),
+                }
+              ]}
+              onPress={() => {
+                setSubType(opt.key);
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+            >
+              <IconComponent
+                size={22}
+                color={isSelected ? '#FFFFFF' : (isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)')}
+                strokeWidth={2}
+              />
+              <Text style={[
+                styles.diaperBtnText,
+                {
+                  color: isSelected
+                    ? '#FFFFFF'
+                    : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.55)'),
+                }
+              ]}>{opt.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Premium Date & Time Picker */}
+      <View style={{ marginTop: 24 }}>
+        <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary, marginBottom: 10, textAlign: 'right' }]}>מתי זה קרה?</Text>
+        <View style={{ flexDirection: 'row-reverse', gap: 10 }}>
+          {/* Date Card */}
+          <TouchableOpacity
+            style={[styles.premiumTimeCard, { backgroundColor: theme.card, flex: 1, marginTop: 0 }]}
+            onPress={() => {
+              setShowDiaperDatePicker(true);
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
+              <Calendar size={18} color={theme.primary} strokeWidth={2} />
+              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 15 }]}>
+                {(() => {
+                  const today = new Date();
+                  const isToday = diaperTime.getDate() === today.getDate() && diaperTime.getMonth() === today.getMonth() && diaperTime.getFullYear() === today.getFullYear();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(today.getDate() - 1);
+                  const isYesterday = diaperTime.getDate() === yesterday.getDate() && diaperTime.getMonth() === yesterday.getMonth() && diaperTime.getFullYear() === yesterday.getFullYear();
+                  if (isToday) return 'היום';
+                  if (isYesterday) return 'אתמול';
+                  return `${diaperTime.getDate().toString().padStart(2, '0')}/${(diaperTime.getMonth() + 1).toString().padStart(2, '0')}`;
+                })()}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Time Card */}
+          <TouchableOpacity
+            style={[styles.premiumTimeCard, { backgroundColor: theme.card, flex: 1, marginTop: 0 }]}
+            onPress={() => {
+              setShowDiaperTimePicker(true);
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
+              <Clock size={18} color={theme.primary} strokeWidth={2} />
+              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 15 }]}>
+                {diaperTime.getHours().toString().padStart(2, '0')}:{diaperTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Diaper Date Picker Modal */}
+      {showDiaperDatePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={diaperTime}
+              mode="date"
+              maximumDate={new Date()}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedDate) => {
+                if (Platform.OS === 'android') {
+                  setShowDiaperDatePicker(false);
+                }
+                if (selectedDate) {
+                  const updated = new Date(diaperTime);
+                  updated.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+                  setDiaperTime(updated);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setShowDiaperDatePicker(false);
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              >
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Diaper Time Picker Modal */}
+      {showDiaperTimePicker && (
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={diaperTime}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selectedTime) => {
+                if (Platform.OS === 'android') {
+                  setShowDiaperTimePicker(false);
+                }
+                if (selectedTime) {
+                  const updated = new Date(diaperTime);
+                  updated.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+                  setDiaperTime(updated);
+                }
+              }}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setShowDiaperTimePicker(false);
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              >
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
+      <TextInput
+        style={[
+          styles.diaperNoteInput,
+          {
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
+            color: theme.textPrimary,
+          }
+        ]}
+        placeholder="הערות (אופציונלי)..."
+        placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
+        value={diaperNote}
+        onChangeText={(text) => setDiaperNote(text)}
+        textAlign="right"
+      />
+    </View>
+  );
+
+  const renderContent = () => {
+    if (type === 'food') return renderFoodContent();
+    if (type === 'sleep') return renderSleepContent();
+    if (type === 'diaper') return renderDiaperContent();
+    return null;
+  };
+
+  const config = type ? TYPE_CONFIG[type] : TYPE_CONFIG['food'];
+
+  return (
+    <>
+      <Modal visible={visible && !!type} transparent animationType="none">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'height' : 'height'} style={styles.overlay}>
+          <Animated.View style={[StyleSheet.absoluteFill, backdropAnimStyle]}>
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.45)' },
+              ]}
+            />
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={dismissModal}
+            />
+          </Animated.View>
+
+          <GestureDetector gesture={panGesture}>
+            <Animated.View
+              style={[
+                styles.modalCard,
+                { backgroundColor: theme.card },
+                modalAnimStyle,
+              ]}
+            >
+              {/* Drag Handle */}
+              <View style={styles.dragHandle}>
+                <View style={[styles.dragHandleBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }]} />
+              </View>
+
+              {/* Header */}
+              {type && (
+                <View style={styles.header}>
+                  {type === 'diaper' ? (
+                    <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Double pulse rings */}
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: config.accent }, diaperPulseStyle]} />
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: config.accent }, diaperPulse2Style]} />
+                      {/* Floating sparkle stars */}
+                      <Animated.View style={[{ position: 'absolute', left: 6, top: 8 }, diaperStar1Style]}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: config.accent }} />
+                      </Animated.View>
+                      <Animated.View style={[{ position: 'absolute', right: 6, top: 8 }, diaperStar2Style]}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#34D399' }} />
+                      </Animated.View>
+                      {/* Icon with bounce + wiggle */}
+                      <Animated.View style={diaperBounceStyle}>
+                        <View style={[styles.emojiCircle, { backgroundColor: config.accent + '22', width: 56, height: 56, borderRadius: 28 }]}>
+                          <Animated.View style={diaperWiggleStyle}>
+                            {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.2 })}
+                          </Animated.View>
+                        </View>
+                      </Animated.View>
+                    </View>
+                  ) : type === 'food' ? (
+                    <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Double pulse rings */}
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulseStyle]} />
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#F59E0B' }, foodIconPulse2Style]} />
+                      {/* Floating sparkle stars */}
+                      <Animated.View style={[{ position: 'absolute', left: 6, top: 8 }, foodIconStar1Style]}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#F59E0B' }} />
+                      </Animated.View>
+                      <Animated.View style={[{ position: 'absolute', right: 6, top: 8 }, foodIconStar2Style]}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FBBF24' }} />
+                      </Animated.View>
+                      {/* Icon with bounce */}
+                      <Animated.View style={foodIconBounceStyle}>
+                        <View style={[styles.emojiCircle, { backgroundColor: 'rgba(245,158,11,0.14)', width: 56, height: 56, borderRadius: 28 }]}>
+                          {React.createElement(config.icon, { size: 28, color: '#F59E0B', strokeWidth: 2.2 })}
+                        </View>
+                      </Animated.View>
+                    </View>
+                  ) : type === 'sleep' ? (
+                    <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Double pulse rings */}
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulseStyle]} />
+                      <Animated.View style={[{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: '#818CF8' }, sleepIconPulse2Style]} />
+                      {/* Floating sparkle stars */}
+                      <Animated.View style={[{ position: 'absolute', left: 6, top: 8 }, sleepIconStar1Style]}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#818CF8' }} />
+                      </Animated.View>
+                      <Animated.View style={[{ position: 'absolute', right: 6, top: 8 }, sleepIconStar2Style]}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#A78BFA' }} />
+                      </Animated.View>
+                      {/* Icon with bounce */}
+                      <Animated.View style={sleepIconBounceStyle}>
+                        <View style={[styles.emojiCircle, { backgroundColor: 'rgba(129,140,248,0.14)', width: 56, height: 56, borderRadius: 28 }]}>
+                          {React.createElement(config.icon, { size: 28, color: '#6366F1', strokeWidth: 2.2 })}
+                        </View>
+                      </Animated.View>
+                    </View>
+                  ) : (
+                    <View style={[styles.emojiCircle, { backgroundColor: config.accent + '15' }]}>
+                      {React.createElement(config.icon, { size: 28, color: config.accent, strokeWidth: 2.5 })}
+                    </View>
+                  )}
+                  <Text style={[styles.title, { color: theme.textPrimary }]}>{config.title}</Text>
+                </View>
+              )}
+
+              {/* Scrollable Content */}
+              <NativeViewGestureHandler ref={nativeScrollRef}>
+                <Animated.ScrollView
+                  ref={scrollViewRef}
+                  style={{ width: '100%' }}
+                  contentContainerStyle={styles.content}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  bounces={false}
+                  scrollEventThrottle={16}
+                  onScroll={scrollHandler}
+                >
+                  {contentReady ? renderContent() : (
+                    <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                      <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2.5, borderColor: config.accent, borderTopColor: 'transparent', transform: [{ rotate: '45deg' }] }} />
+                    </View>
+                  )}
+                </Animated.ScrollView>
+              </NativeViewGestureHandler>
+
+              {/* Save Button - Premium Full Width */}
+              <TouchableOpacity
+                style={[styles.saveBtn, saveSuccess && styles.saveBtnSuccess, !contentReady && { opacity: 0.4 }]}
+                onPress={handleSave}
+                disabled={saveSuccess || isSaving || !contentReady}
+                accessibilityRole="button"
+                accessibilityLabel={saveSuccess ? t('misc.savedSuccessfully') : 'שמור תיעוד'}
+                accessibilityState={{ disabled: saveSuccess }}
+              >
+                <Check size={18} color="#fff" strokeWidth={2.5} />
+                <Text style={[styles.saveBtnText, saveSuccess && styles.saveBtnTextSuccess]}>
+                  {saveSuccess ? 'נשמר!' : 'שמור תיעוד'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Calendar Overlay - Inline */}
+              {showCalendar && (
+                <View style={styles.calendarInlineOverlay}>
+                  <TouchableOpacity style={styles.calendarInlineBackdrop} activeOpacity={1} onPress={() => { setShowCalendar(false); setCalendarView('days'); }} />
+                  <View style={styles.calendarCard}>
+                    {/* Month Header - Clickable for drill-up */}
+                    <View style={styles.calendarHeader}>
+                      <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
+                        const newDate = new Date(selectedDate);
+                        if (calendarView === 'days') {
+                          newDate.setMonth(newDate.getMonth() + 1);
+                        } else {
+                          newDate.setFullYear(newDate.getFullYear() + 1);
+                        }
+                        setSelectedDate(newDate);
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}>
+                        <ChevronLeft size={18} color="#374151" strokeWidth={1.5} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => {
+                        setCalendarView(calendarView === 'days' ? 'months' : 'days');
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={styles.calendarMonthText}>
+                            {calendarView === 'days'
+                              ? selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+                              : selectedDate.getFullYear().toString()
+                            }
+                          </Text>
+                          <ChevronUp size={14} color="#374151" strokeWidth={1.5} style={{ transform: [{ rotate: calendarView === 'months' ? '180deg' : '0deg' }] }} />
+                        </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.calendarNavBtn} onPress={() => {
+                        const newDate = new Date(selectedDate);
+                        if (calendarView === 'days') {
+                          newDate.setMonth(newDate.getMonth() - 1);
+                        } else {
+                          newDate.setFullYear(newDate.getFullYear() - 1);
+                        }
+                        setSelectedDate(newDate);
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}>
+                        <ChevronRight size={18} color="#374151" strokeWidth={1.5} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Days View */}
+                    {calendarView === 'days' && (
+                      <>
+                        {/* Week Days */}
+                        <View style={styles.calendarWeekRow}>
+                          {[t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')].map((day, i) => (
+                            <Text key={i} style={styles.calendarWeekDay}>{day}</Text>
+                          ))}
+                        </View>
+
+                        {/* Days Grid */}
+                        <View style={styles.calendarDaysGrid}>
+                          {(() => {
+                            const year = selectedDate.getFullYear();
+                            const month = selectedDate.getMonth();
+                            const firstDay = new Date(year, month, 1).getDay();
+                            const daysInMonth = new Date(year, month + 1, 0).getDate();
+                            const today = new Date();
+                            const days = [];
+
+                            for (let i = 0; i < firstDay; i++) {
+                              days.push(<View key={`e-${i}`} style={styles.calendarDay} />);
+                            }
+
+                            for (let d = 1; d <= daysInMonth; d++) {
+                              const date = new Date(year, month, d);
+                              const isToday = date.toDateString() === today.toDateString();
+                              const isSelected = date.toDateString() === selectedDate.toDateString();
+                              const isFuture = date > today;
+
+                              days.push(
+                                <TouchableOpacity
+                                  key={d}
+                                  style={[styles.calendarDay, isToday && styles.calendarDayToday, isSelected && styles.calendarDaySelected, isFuture && styles.calendarDayDisabled]}
+                                  onPress={() => { if (!isFuture) { setSelectedDate(date); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } }}
+                                  disabled={isFuture}
+                                >
+                                  <Text style={[styles.calendarDayText, isSelected && styles.calendarDaySelectedText]}>{d}</Text>
+                                </TouchableOpacity>
+                              );
+                            }
+                            return days;
+                          })()}
+                        </View>
+                      </>
+                    )}
+
+                    {/* Months View */}
+                    {calendarView === 'months' && (
+                      <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', marginTop: 8 }}>
+                        {[t('months.january'), t('months.february'), t('months.march'), t('months.april'), t('months.may'), t('months.june'), t('months.july'), t('months.august'), t('months.september'), t('months.october'), t('months.november'), t('months.december')].map((month, i) => {
+                          const isCurrentMonth = selectedDate.getMonth() === i;
+                          const today = new Date();
+                          const isFutureMonth = selectedDate.getFullYear() > today.getFullYear() ||
+                            (selectedDate.getFullYear() === today.getFullYear() && i > today.getMonth());
+
+                          return (
+                            <TouchableOpacity
+                              key={i}
+                              style={{
+                                width: '33.33%',
+                                padding: 12,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isCurrentMonth ? '#7C3AED' : 'transparent',
+                                borderRadius: 12,
+                                opacity: isFutureMonth ? 0.4 : 1,
+                              }}
+                              onPress={() => {
+                                if (!isFutureMonth) {
+                                  const newDate = new Date(selectedDate);
+                                  newDate.setMonth(i);
+                                  // If selected day doesn't exist in new month, set to last day
+                                  const daysInNewMonth = new Date(newDate.getFullYear(), i + 1, 0).getDate();
+                                  if (newDate.getDate() > daysInNewMonth) {
+                                    newDate.setDate(daysInNewMonth);
+                                  }
+                                  setSelectedDate(newDate);
+                                  setCalendarView('days');
+                                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                }
+                              }}
+                              disabled={isFutureMonth}
+                            >
+                              <Text style={{
+                                fontSize: 14,
+                                fontWeight: '600',
+                                color: isCurrentMonth ? '#fff' : '#374151',
+                              }}>{month}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+
+                    {/* Today Button */}
+                    <TouchableOpacity style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0 }]} onPress={() => { setSelectedDate(new Date()); setShowCalendar(false); setCalendarView('days'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                      <Text style={styles.datePickerBtnText}>{t('tracking.today')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </Animated.View>
+          </GestureDetector>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCalendar(false)
+        }
+        statusBarTranslucent={true}
+      >
+        <TouchableOpacity style={[styles.calendarModal, { backgroundColor: theme.modalOverlay }]} activeOpacity={1} onPress={() => setShowCalendar(false)}>
+          <TouchableOpacity style={[styles.calendarCard, { backgroundColor: theme.card }]} activeOpacity={1} onPress={() => { }}>
+            {/* Month Header */}
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity style={[styles.calendarNavBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]} onPress={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(newDate.getMonth() + 1);
+                setSelectedDate(newDate);
+              }}>
+                <ChevronLeft size={18} color={theme.textPrimary} strokeWidth={1.5} />
+              </TouchableOpacity>
+              <Text style={[styles.calendarMonthText, { color: theme.textPrimary }]}>
+                {selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
+              </Text>
+              <TouchableOpacity style={[styles.calendarNavBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]} onPress={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(newDate.getMonth() - 1);
+                setSelectedDate(newDate);
+              }}>
+                <ChevronRight size={18} color={theme.textPrimary} strokeWidth={1.5} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Week Days Header */}
+            <View style={styles.calendarWeekRow}>
+              {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map((day, i) => (
+                <Text key={i} style={[styles.calendarWeekDay, { color: theme.textTertiary }]}>{day}</Text>
+              ))}
+            </View>
+
+            {/* Days Grid */}
+            <View style={styles.calendarDaysGrid}>
+              {(() => {
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth();
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const today = new Date();
+                const days = [];
+
+                // Empty slots for days before month starts
+                for (let i = 0; i < firstDay; i++) {
+                  days.push(<View key={`empty-${i}`} style={styles.calendarDay} />);
+                }
+
+                // Days of month
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const date = new Date(year, month, d);
+                  const isToday = date.toDateString() === today.toDateString();
+                  const isSelected = date.toDateString() === selectedDate.toDateString();
+                  const isFuture = date > today;
+
+                  days.push(
+                    <TouchableOpacity
+                      key={d}
+                      style={[
+                        styles.calendarDay,
+                        isToday && [styles.calendarDayToday, { backgroundColor: theme.cardSecondary }],
+                        isSelected && [styles.calendarDaySelected, { backgroundColor: theme.primary }],
+                        isFuture && styles.calendarDayDisabled
+                      ]}
+                      onPress={() => {
+                        if (!isFuture) {
+                          setSelectedDate(date);
+                          setShowCalendar(false);
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                      }}
+                      disabled={isFuture}
+                    >
+                      <Text style={[
+                        styles.calendarDayText,
+                        { color: theme.textPrimary },
+                        isSelected && [styles.calendarDaySelectedText, { color: theme.card }]
+                      ]}>{d}</Text>
+                    </TouchableOpacity>
+                  );
+                }
+                return days;
+              })()}
+            </View>
+
+            {/* Today Button */}
+            <TouchableOpacity
+              style={[styles.datePickerBtn, { marginTop: 16, marginBottom: 0, backgroundColor: theme.inputBackground, borderColor: theme.border }]}
+              onPress={() => {
+                setSelectedDate(new Date());
+                setShowCalendar(false);
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+            >
+              <Text style={[styles.datePickerBtnText, { color: theme.primary }]}>{t('common.today')}</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal >
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+
+
+  overlay: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  modalCard: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 44,
+    paddingHorizontal: 24,
+    maxHeight: '92%',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 12,
+  },
+  // Mid swipe zone - between header and scroll content
+  midSwipeZone: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    marginBottom: 4,
+    zIndex: 10,
+  },
+  midSwipeBar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+  },
+  // Drag Handle - iOS Sheet Style - larger hit area for swipe
+  dragHandle: {
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 4,
+    paddingHorizontal: 50,
+    zIndex: 10,
+    minHeight: 40, // Larger touch area for easier swiping
+  },
+  dragHandleBar: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  headerContent: {
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 16,
+  },
+  emojiCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Subtle inner shadow effect
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  emoji: { fontSize: 28 },
+  title: { fontSize: 22, fontWeight: '700', marginTop: 14, letterSpacing: -0.5 },
+  content: { paddingVertical: 28, alignItems: 'center' },
+  subtitle: { fontSize: 15, marginBottom: 20, textAlign: 'right', fontWeight: '500' },
+  label: { fontSize: 15, fontWeight: '600', textAlign: 'right', marginBottom: 16 },
+
+  // Date Picker Button - Minimal
+  foodTabsScroll: { marginBottom: 16 },
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginBottom: 12 },
+  datePickerBtnText: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
+
+  // Calendar Modal - Minimal
+  calendarModal: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  calendarOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  calendarInlineOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 10, zIndex: 1001 },
+  calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  calendarMonthText: { fontSize: 16, fontWeight: '600' },
+  calendarNavBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  calendarWeekRow: { flexDirection: 'row-reverse', marginBottom: 8 },
+  calendarWeekDay: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600' },
+  calendarDaysGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap' },
+  calendarDay: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
+  calendarDayText: { fontSize: 14, fontWeight: '500' },
+  calendarDayToday: { borderRadius: 20 },
+  calendarDaySelected: { borderRadius: 20 },
+  calendarDaySelectedText: {},
+  calendarDayDisabled: { opacity: 0.3 },
+
+  // Food Tabs - Segmented Control Style
+  foodTabs: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    paddingHorizontal: 0,
+    gap: 0,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 14,
+    padding: 4,
+  },
+  foodTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+  },
+  activeFoodTab: {
+    // backgroundColor will be set inline using theme.card
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  foodTabIconContainer: {
+    marginBottom: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 22,
+  },
+  foodTabText: {
+    fontSize: 11,
+    textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  activeFoodTabText: {
+    fontWeight: '700',
+  },
+  // Premium Food Tabs (kept for backward compatibility)
+  premiumFoodTabs: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+    paddingHorizontal: 4,
+  },
+  premiumFoodTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    marginHorizontal: 5,
+  },
+  premiumFoodTabActive: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#1C1C1E',
+    borderWidth: 1.5,
+  },
+  premiumFoodTabIconContainer: {
+    marginBottom: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 24,
+  },
+  premiumFoodTabText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  premiumFoodTabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  premiumFoodTabTimer: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F59E0B',
+  },
+  premiumFoodTabTimerActive: {
+    color: '#fff',
+  },
+
+  // Premium Date Picker
+  premiumDatePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    marginBottom: 20,
+  },
+  premiumDatePickerBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+
+  // Bottle/Pumping
+  bottleContainer: { width: '100%' },
+  inputWrapper: { flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'center', gap: 8 },
+  bigInput: { fontSize: 48, fontWeight: 'bold', color: '#1F2937', borderBottomWidth: 2, borderBottomColor: '#E5E7EB', width: 120, textAlign: 'center' },
+  unitText: { fontSize: 18, color: '#6B7280', marginBottom: 12 },
+
+  // Amount Row with +/- buttons
+  amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 12 },
+  amountBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  amountDisplay: { alignItems: 'center' },
+  amountValue: { fontSize: 36, fontWeight: '700', color: '#1F2937' },
+  amountUnit: { fontSize: 14, color: '#9CA3AF', marginTop: 2 },
+
+  presets: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  presetBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F3F4F6', borderRadius: 12 },
+  presetBtnActive: { backgroundColor: '#1C1C1E' },
+  presetText: { fontWeight: '600', color: '#4B5563' },
+  presetTextActive: { color: '#fff' },
+
+  // Breastfeeding - Minimalist Style like Sleep
+  breastContainer: { alignItems: 'center', paddingHorizontal: 16 },
+  breastTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  breastTimeCard: { flex: 1, alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  breastTimeCardActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
+  breastTimeLabel: { fontSize: 12, color: '#9CA3AF', fontWeight: '600', marginBottom: 8 },
+  breastTimeValue: { fontSize: 32, fontWeight: '300', color: '#1F2937', letterSpacing: -1 },
+  breastTimeValueActive: { color: '#fff' },
+  breastPlayBtn: { marginTop: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  breastPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  breastArrow: { fontSize: 20, color: '#9CA3AF', marginHorizontal: 4 },
+  breastTotalLabel: { marginTop: 12, fontSize: 13, color: '#6B7280', fontWeight: '500' },
+  sleepTimeInput: { fontSize: 32, fontWeight: '300', color: '#1F2937', letterSpacing: -1, minWidth: 80, paddingVertical: 4 },
+
+  // Pumping Timer - Premium Card
+  pumpingTimerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#F3F4F6', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, marginBottom: 24 },
+  pumpingTimerBtnActive: { backgroundColor: '#F59E0B' },
+  pumpingTimerText: { fontSize: 20, fontWeight: '700', color: '#1F2937' },
+  premiumPumpingCard: { alignItems: 'center', alignSelf: 'center', backgroundColor: '#F9FAFB', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  premiumPumpingCardActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
+  premiumPumpingLabel: { fontSize: 11, color: '#9CA3AF', marginBottom: 4, fontWeight: '600', letterSpacing: 0.3 },
+  premiumPumpingLabelActive: { color: 'rgba(255,255,255,0.8)' },
+  premiumPumpingTime: { fontSize: 26, fontWeight: '400', color: '#1F2937', letterSpacing: -0.5, marginBottom: 8 },
+  premiumPumpingTimeActive: { color: '#fff' },
+  premiumPumpingIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  premiumPumpingIconActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
+
+  // Solids
+  solidsContainer: { width: '100%' },
+  solidsInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, fontSize: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16 },
+  solidsSuggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
+
+  // Sleep (Manual Entry)
+  sleepTimerCompact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#F3F4F6', paddingVertical: 16, paddingHorizontal: 28, borderRadius: 20, marginBottom: 12, alignSelf: 'center' },
+  sleepTimerCompactActive: { backgroundColor: '#34C759' },
+  sleepTimerCompactText: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
+  sleepTimerPulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff', opacity: 0.8 },
+  sleepTimerHint: { fontSize: 12, color: '#34C759', textAlign: 'center', marginBottom: 8, fontWeight: '500' },
+  sleepDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, gap: 12 },
+  sleepDividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+  sleepDividerText: { fontSize: 12, color: '#9CA3AF', fontWeight: '500' },
+  sleepInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 },
+  sleepInputGroup: { alignItems: 'center', gap: 8 },
+  sleepBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  sleepBtnText: { fontSize: 22, fontWeight: '600', color: '#34C759' },
+  sleepValueBox: { alignItems: 'center', minWidth: 60 },
+  sleepValue: { fontSize: 36, fontWeight: '800', color: '#1F2937' },
+  sleepUnit: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
+  sleepSeparator: { fontSize: 32, fontWeight: '700', color: '#D1D5DB' },
+  sleepPresets: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
+  sleepNoteContainer: { marginTop: 16 },
+  sleepNoteLabel: { fontSize: 13, fontWeight: '500', textAlign: 'right' },
+  sleepNoteInput: { width: '100%', borderRadius: 14, padding: 14, fontSize: 14, textAlign: 'right', borderWidth: 1, minHeight: 60 },
+
+  // New Modern Sleep UI
+  sleepModeRow: { flexDirection: 'row-reverse', justifyContent: 'center', gap: 4, marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 14, padding: 4 },
+  sleepModeBtn: { flex: 1, flexDirection: 'column', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 10 },
+  sleepModeBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  sleepModeText: { fontSize: 13, fontWeight: '500', color: '#8E8E93' },
+  sleepModeTextActive: { color: '#1C1C1E' },
+
+  sleepTimerSection: { alignItems: 'center', marginVertical: 20 },
+  sleepTimerCard: { alignItems: 'center', backgroundColor: '#F9FAFB', paddingVertical: 24, paddingHorizontal: 52, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
+  sleepTimerCardActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  sleepTimerValue: { fontSize: 48, fontWeight: '200', color: '#1C1C1E', letterSpacing: -2 },
+  sleepTimerValueActive: { color: '#fff' },
+  sleepTimerPlayBtn: { marginTop: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
+  sleepTimerPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.15)' },
+
+  sleepDurationSection: { marginVertical: 16 },
+  sleepDurationRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  sleepDurationItem: { alignItems: 'center' },
+  sleepDurationLabel: { fontSize: 12, fontWeight: '600', color: '#8E8E93', marginBottom: 8, letterSpacing: 0.2 },
+  sleepDurationSeparator: { fontSize: 28, fontWeight: '300', color: '#C7C7CC' },
+
+  sleepSlider: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 4 },
+  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  sleepSliderBtnText: { fontSize: 20, fontWeight: '400', color: '#1C1C1E' },
+  sleepSliderValue: { fontSize: 34, fontWeight: '700', color: '#1C1C1E', minWidth: 54, textAlign: 'center', letterSpacing: -1 },
+
+  // Apple-style Time Picker
+  appleTimeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 24, marginVertical: 16 },
+  appleTimeItem: { alignItems: 'center' },
+  appleTimeLabel: { fontSize: 12, color: '#8E8E93', marginBottom: 6, fontWeight: '500' },
+  appleTimeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F2F7', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
+  appleTimeDigit: { fontSize: 22, fontWeight: '600', color: '#1C1C1E', minWidth: 28, textAlign: 'center' },
+  appleTimeColon: { fontSize: 22, fontWeight: '600', color: '#1C1C1E', marginHorizontal: 2 },
+  appleTimeArrow: { fontSize: 16, color: '#C7C7CC' },
+
+  // Premium Time Picker - Glass Cards
+  premiumTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  premiumTimeCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  premiumTimeLabel: {
+    fontSize: 11,
+    marginBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    opacity: 0.7,
+  },
+  premiumTimeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  premiumTimeDigit: {
+    fontSize: 28,
+    fontWeight: '300',
+    letterSpacing: -1,
+  },
+  premiumTimeArrowContainer: {
+    paddingHorizontal: 8
+  },
+  premiumTimeArrow: {
+    fontSize: 16,
+    fontWeight: '300'
+  },
+
+  // Premium Bottle
+  premiumBottleContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  premiumLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'right',
+    marginBottom: 16,
+    letterSpacing: -0.3,
+  },
+  premiumAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  premiumAmountBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  premiumAmountDisplay: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  premiumAmountValue: {
+    fontSize: 42,
+    fontWeight: '300',
+    letterSpacing: -1.5,
+  },
+  premiumAmountUnit: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
+    opacity: 0.7,
+  },
+
+  // Premium Breast
+  premiumBreastContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 24,
+  },
+  premiumBreastTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    width: '100%',
+  },
+  premiumBreastTimeCard: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  premiumBreastTimeLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 10,
+    letterSpacing: 0.3,
+    opacity: 0.7,
+  },
+  premiumBreastTimeValue: {
+    fontSize: 36,
+    fontWeight: '300',
+    letterSpacing: -1.5,
+    marginBottom: 12,
+  },
+  premiumBreastPlayBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumBreastArrow: {
+    fontSize: 18,
+    marginHorizontal: 4,
+  },
+  premiumBreastTotalLabel: {
+    marginTop: 16,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    opacity: 0.7,
+  },
+
+  // Premium Pumping
+  premiumPumpingRowContainer: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
+    paddingHorizontal: 4,
+    alignItems: 'stretch',
+  },
+  premiumPumpingTimerCard: {
+    flex: 0.4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  premiumPumpingTimerLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: 0.3,
+    opacity: 0.7,
+  },
+  premiumPumpingTimerValue: {
+    fontSize: 28,
+    fontWeight: '300',
+    letterSpacing: -1,
+    marginBottom: 10,
+  },
+  premiumPumpingTimerIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumPumpingAmountSection: {
+    flex: 0.6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumPumpingAmountLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 12,
+    letterSpacing: -0.2,
+    opacity: 0.7,
+  },
+  premiumPumpingAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  premiumPumpingAmountBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  premiumPumpingAmountDisplay: {
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  premiumPumpingAmountValue: {
+    fontSize: 42,
+    fontWeight: '300',
+    letterSpacing: -1.5,
+  },
+  premiumPumpingAmountUnit: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
+    opacity: 0.7,
+  },
+
+  // Premium Solids
+  premiumSolidsContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  premiumSolidsInputContainer: {
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  premiumSolidsInput: {
+    fontSize: 16,
+    fontWeight: '500',
+    minHeight: 24,
+  },
+
+  // Premium Notes
+  premiumNoteContainer: {
+    width: '100%',
+    marginTop: 8,
+  },
+  premiumNoteLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  premiumNoteInputContainer: {
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    minHeight: 80,
+    // Premium shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  premiumNoteInput: {
+    fontSize: 14,
+    fontWeight: '400',
+    minHeight: 48,
+    textAlignVertical: 'top',
+  },
+
+  sleepTimeRangeSection: { marginVertical: 16 },
+  timeRangeRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  timeRangeItem: { flex: 1, alignItems: 'center' },
+  timeRangeLabel: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 8 },
+  timeRangeInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, fontSize: 24, fontWeight: '700', borderWidth: 1, borderColor: '#E5E7EB', color: '#1F2937' },
+  timeRangeArrow: { fontSize: 24, color: '#9CA3AF', marginTop: 24 },
+  timeRangeHint: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 12 },
+
+  sleepTimerNote: { backgroundColor: 'rgba(52,199,89,0.08)', padding: 12, borderRadius: 12, marginTop: 20 },
+  sleepTimerNoteText: { fontSize: 14, color: '#34C759', fontWeight: '600', textAlign: 'center' },
+
+  // Legacy Sleep Timer (keep for compatibility)
+  timerCircle: { marginVertical: 20 },
+  timerCircleActive: {},
+  timerGradient: { width: 160, height: 160, borderRadius: 80, alignItems: 'center', justifyContent: 'center' },
+  timerBigText: { fontSize: 36, fontWeight: 'bold', color: '#1F2937' },
+  timerHint: { fontSize: 14, color: '#9CA3AF', textAlign: 'center' },
+  persistHint: { fontSize: 12, color: '#10B981', textAlign: 'center', marginTop: 12, fontWeight: '600' },
+
+  // Diaper
+  diaperOptions: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 16 },
+  diaperBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 20, borderRadius: 18, borderWidth: 1.5 },
+  diaperBtnText: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
+  diaperNoteInput: { width: '100%', borderRadius: 14, padding: 14, fontSize: 14, textAlign: 'right', marginTop: 20, borderWidth: 1 },
+
+  // Save - Premium Full Width
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 17,
+    paddingHorizontal: 32,
+    borderRadius: 18,
+    marginTop: 20,
+    backgroundColor: '#007AFF',
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
+  saveBtnSuccess: { backgroundColor: '#34C759', shadowColor: '#34C759' },
+  saveBtnTextSuccess: { color: '#fff' },
+
+  // Time Picker Overlay - Premium Design
+  timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'stretch', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
+  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 48, paddingVertical: 14, backgroundColor: '#1C1C1E', borderRadius: 14, width: '100%', alignItems: 'center' },
+  timePickerDoneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+
+  // Pumping Row Layout (Timer + Amount side by side)
+  pumpingRowContainer: { flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: 8, alignItems: 'stretch' },
+  pumpingTimerCard: { flex: 1, backgroundColor: '#F3F4F6', borderRadius: 16, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  pumpingTimerCardActive: { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' },
+  pumpingTimerLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginBottom: 4 },
+  pumpingTimerLabelActive: { color: '#F59E0B' },
+  pumpingTimerValue: { fontSize: 26, fontWeight: '700', color: '#1F2937', marginBottom: 6 },
+  pumpingTimerValueActive: { color: '#F59E0B' },
+  pumpingTimerIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  pumpingTimerIconActive: { backgroundColor: '#F59E0B' },
+  pumpingAmountSection: { flex: 1, alignItems: 'center' },
+  pumpingAmountLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginBottom: 8 },
+  pumpingAmountRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pumpingAmountBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  pumpingAmountDisplay: { alignItems: 'center' },
+  pumpingAmountValue: { fontSize: 28, fontWeight: '700', color: '#1F2937' },
+  pumpingAmountUnit: { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
+
+  // Pumping - Small Timer (left side)
+  pumpingTimerCardSmall: { flex: 0.35, backgroundColor: '#F3F4F6', borderRadius: 14, padding: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  pumpingTimerLabelSmall: { fontSize: 10, color: '#9CA3AF', fontWeight: '600', marginBottom: 2 },
+  pumpingTimerValueSmall: { fontSize: 20, fontWeight: '700', color: '#1F2937', marginBottom: 4 },
+  pumpingTimerIconSmall: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+
+  // Pumping - Large Amount (right side)
+  pumpingAmountSectionLarge: { flex: 0.65, alignItems: 'center', justifyContent: 'center' },
+  pumpingAmountLabelLarge: { fontSize: 12, color: '#9CA3AF', fontWeight: '600', marginBottom: 10 },
+  pumpingAmountRowLarge: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  pumpingAmountBtnLarge: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  pumpingAmountDisplayLarge: { alignItems: 'center', minWidth: 60 },
+  pumpingAmountValueLarge: { fontSize: 36, fontWeight: '700', color: '#1F2937' },
+  pumpingAmountUnitLarge: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
+
+  // Duration Display
+  durationContainer: { alignItems: 'center', marginBottom: 24, marginTop: -12 },
+  durationPill: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  durationText: { fontSize: 15, fontWeight: '600' },
+
+  // Mode Toggle (for food timerange)
+  modeToggleContainer: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  modeToggleBtn: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  modeToggleBtnActive: {
+    borderColor: 'transparent',
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  modeToggleTextActive: {
+    color: '#fff',
+  },
+});

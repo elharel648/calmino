@@ -1,0 +1,24 @@
+{
+    "name": "activity-kit-module",
+    "version": "1.0.0",
+    "main": "index.ts",
+    "description": "Local ActivityKit Module",
+    "author": "Harel",
+    "license": "MIT",
+    "homepage": "https://example.com",
+    "keywords": [
+        "react-native",
+        "expo",
+        "expo-module"
+    ],
+    "expo": {
+        "autolinking": {
+            "nativeModules": [
+                {
+                    "name": "ActivityKitManager",
+                    "moduleName": "ActivityKitManager"
+                }
+            ]
+        }
+    }
+}
