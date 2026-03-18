@@ -32,6 +32,22 @@ fi
 
 echo "✅ Build environment prepared successfully"
 
+# Fix LiveActivity extension code signing for EAS (manual signing)
+PBXPROJ_REAL="${EAS_BUILD_WORKINGDIR}/ios/Calmino.xcodeproj/project.pbxproj"
+if [ -f "$PBXPROJ_REAL" ]; then
+  echo "🔧 Fixing CalmParentLiveActivity code signing for EAS..."
+  
+  # Change Automatic → Manual for the LiveActivity target
+  # EAS uses manual signing, but the plugin sets Automatic
+  sed -i.bak 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$PBXPROJ_REAL"
+  
+  # Set the correct distribution identity for App Store builds
+  sed -i.bak 's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "iPhone Distribution";/g' "$PBXPROJ_REAL"
+  
+  rm -f "${PBXPROJ_REAL}.bak"
+  echo "   ✅ Fixed code signing to Manual for EAS builds"
+fi
+
 # Ensure CFBundleIconName is in Info.plist
 INFOPLIST_PATH="${EAS_BUILD_WORKINGDIR}/ios/CalmParentApp/Info.plist"
 
