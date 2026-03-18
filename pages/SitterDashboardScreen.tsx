@@ -2317,7 +2317,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 const daysInMonth = lastDay.getDate();
                                 const todayStr = new Date().toISOString().split('T')[0];
                                 const now = new Date();
-                                const maxMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1); // 1 month ahead
+                                const maxMonth = new Date(now.getFullYear(), now.getMonth() + 3, 1); // 3 months ahead
 
                                 const monthNames = [
                                     'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
@@ -2446,9 +2446,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                                     ? (isAvailable
                                                                         ? (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
                                                                         : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'))
-                                                                    : isAvailable
-                                                                        ? (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)')
-                                                                        : 'transparent',
+                                                                    : 'transparent',
                                                             borderWidth: isToday ? 2 : hasOverride ? 1.5 : 0,
                                                             borderColor: isSelected
                                                                 ? 'transparent'
