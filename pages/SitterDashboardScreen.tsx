@@ -2298,80 +2298,17 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Calendar size={24} color={theme.textSecondary} strokeWidth={2.5} />
                                 </View>
                                 <Text style={[styles.availabilityTitle, { color: theme.textPrimary }]}>
-                                    {availabilityTab === 'weekly' ? t('sitterDash.weeklyAvailability') : t('sitterDash.monthlyPlanning')}
+                                    {t('sitterDash.monthlyPlanning')}
                                 </Text>
                                 <Text style={[styles.availabilitySubtitle, { color: theme.textSecondary }]}>
-                                    {availabilityTab === 'weekly' ? t('sitterDash.chooseAvailDays') : t('sitterDash.monthlyPlanningSubtitle')}
+                                    {t('sitterDash.monthlyPlanningSubtitle')}
                                 </Text>
                             </View>
                         </View>
 
-                        {/* Tab Switcher */}
-                        <View style={{
-                            flexDirection: 'row',
-                            marginHorizontal: 20,
-                            marginBottom: 16,
-                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                            borderRadius: 12,
-                            padding: 3,
-                        }}>
-                            <TouchableOpacity
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 10,
-                                    borderRadius: 10,
-                                    alignItems: 'center',
-                                    backgroundColor: availabilityTab === 'weekly'
-                                        ? (isDarkMode ? '#fff' : '#000')
-                                        : 'transparent',
-                                }}
-                                onPress={() => {
-                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    setAvailabilityTab('weekly');
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={{
-                                    fontSize: 14,
-                                    fontWeight: availabilityTab === 'weekly' ? '700' : '600',
-                                    color: availabilityTab === 'weekly'
-                                        ? (isDarkMode ? '#000' : '#fff')
-                                        : theme.textSecondary,
-                                }}>
-                                    {t('sitterDash.weeklyTab')}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 10,
-                                    borderRadius: 10,
-                                    alignItems: 'center',
-                                    backgroundColor: availabilityTab === 'monthly'
-                                        ? (isDarkMode ? '#fff' : '#000')
-                                        : 'transparent',
-                                }}
-                                onPress={() => {
-                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    setAvailabilityTab('monthly');
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={{
-                                    fontSize: 14,
-                                    fontWeight: availabilityTab === 'monthly' ? '700' : '600',
-                                    color: availabilityTab === 'monthly'
-                                        ? (isDarkMode ? '#000' : '#fff')
-                                        : theme.textSecondary,
-                                }}>
-                                    {t('sitterDash.monthlyTab')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
                         <ScrollView showsVerticalScrollIndicator={false} style={styles.availabilityContent}>
-                            {/* Monthly Calendar Tab */}
-                            {availabilityTab === 'monthly' && (() => {
+                            {/* Monthly Calendar */}
+                            {(() => {
                                 const year = viewingMonth.getFullYear();
                                 const month = viewingMonth.getMonth();
                                 const firstDay = new Date(year, month, 1);
@@ -2827,8 +2764,56 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     </View>
                                 );
                             })()}
+                            {/* Collapsible Default Weekly Pattern */}
+                            <TouchableOpacity
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginHorizontal: 16,
+                                    marginTop: 20,
+                                    paddingVertical: 14,
+                                    paddingHorizontal: 16,
+                                    borderRadius: 14,
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                                    borderWidth: 1,
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                }}
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setAvailabilityTab(availabilityTab === 'weekly' ? 'monthly' : 'weekly');
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <ChevronRight
+                                    size={18}
+                                    color={theme.textSecondary}
+                                    strokeWidth={2}
+                                    style={{ transform: [{ rotate: availabilityTab === 'weekly' ? '90deg' : '0deg' }] }}
+                                />
+                                <View style={{ flex: 1, marginRight: 10 }}>
+                                    <Text style={{
+                                        fontSize: 14,
+                                        fontWeight: '700',
+                                        color: theme.textPrimary,
+                                        textAlign: 'right',
+                                    }}>
+                                        {t('sitterDash.weeklyAvailability')}
+                                    </Text>
+                                    <Text style={{
+                                        fontSize: 11,
+                                        fontWeight: '500',
+                                        color: theme.textSecondary,
+                                        textAlign: 'right',
+                                        marginTop: 2,
+                                    }}>
+                                        {t('sitterDash.chooseAvailDays')}
+                                    </Text>
+                                </View>
+                                <Clock size={18} color={theme.textSecondary} strokeWidth={2} />
+                            </TouchableOpacity>
 
-                            {/* Weekly Tab Content */}
+                            {/* Weekly Pattern Content (collapsible) */}
                             {availabilityTab === 'weekly' && (
                                 <View style={styles.compactDaysList}>
                                     {/* Compact List - All Days */}

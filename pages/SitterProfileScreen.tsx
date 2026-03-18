@@ -736,97 +736,125 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     </View>
                 )}
 
-                {/* Availability */}
+                {/* Upcoming 7 Days — Real Calendar Dates */}
                 {availabilityDays.length > 0 && (() => {
-                    const ALL_DAYS = [
-                        { key: '0', short: 'א׳', full: 'ראשון' },
-                        { key: '1', short: 'ב׳', full: 'שני' },
-                        { key: '2', short: 'ג׳', full: 'שלישי' },
-                        { key: '3', short: 'ד׳', full: 'רביעי' },
-                        { key: '4', short: 'ה׳', full: 'חמישי' },
-                        { key: '5', short: 'ו׳', full: 'שישי' },
-                        { key: '6', short: 'ש׳', full: 'שבת' },
-                    ];
-                    const activeDaysCount = availabilityDays.length;
+                    const today = new Date();
+                    const todayStr = today.toISOString().split('T')[0];
+                    const upcoming: { dateStr: string; date: Date; dayKey: string }[] = [];
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(today);
+                        d.setDate(d.getDate() + i);
+                        upcoming.push({
+                            dateStr: d.toISOString().split('T')[0],
+                            date: d,
+                            dayKey: d.getDay().toString(),
+                        });
+                    }
+                    const availCount = upcoming.filter(u => {
+                        const override = monthlyOverrides[u.dateStr];
+                        return override ? override.available : availabilityDays.includes(u.dayKey);
+                    }).length;
+
                     return (
                         <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
                             {/* Section Header */}
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, direction: 'rtl' }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <CalendarDays size={16} color="#10B981" strokeWidth={2} />
-                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginBottom: 0 }]}>זמינות שבועית</Text>
+                                    <CalendarDays size={16} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginBottom: 0 }]}>השבוע הקרוב</Text>
                                 </View>
                                 <View style={{
-                                    backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.08)',
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
                                     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
                                 }}>
-                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#10B981' }}>
-                                        {activeDaysCount}/7 ימים
+                                    <Text style={{ fontSize: 11, fontWeight: '700', color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)' }}>
+                                        {availCount}/7 ימים
                                     </Text>
                                 </View>
                             </View>
                             
                             {/* Days Grid */}
                             <View style={{ flexDirection: 'row', gap: 6, direction: 'rtl' }}>
-                                {ALL_DAYS.map((day) => {
-                                    const isAvailable = availabilityDays.includes(day.key);
-                                    const hours = availabilityHours[day.key];
+                                {upcoming.map((u) => {
+                                    const override = monthlyOverrides[u.dateStr];
+                                    const hasOverride = !!override;
+                                    const isAvailable = hasOverride ? override.available : availabilityDays.includes(u.dayKey);
+                                    const hours = hasOverride && override.available && override.start && override.end
+                                        ? { start: override.start, end: override.end }
+                                        : (availabilityDays.includes(u.dayKey) ? availabilityHours[u.dayKey] : null);
+                                    const isToday = u.dateStr === todayStr;
+                                    const dayLetter = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'][u.date.getDay()];
+
                                     return (
-                                        <View key={day.key} style={{
+                                        <View key={u.dateStr} style={{
                                             flex: 1,
                                             backgroundColor: isAvailable
-                                                ? (isDarkMode ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.06)')
-                                                : (isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+                                                ? (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)')
+                                                : (isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'),
                                             borderRadius: 14,
-                                            borderWidth: 1,
-                                            borderColor: isAvailable
-                                                ? (isDarkMode ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.2)')
-                                                : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                                            borderWidth: isToday ? 2 : 1,
+                                            borderColor: isToday
+                                                ? (isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)')
+                                                : isAvailable
+                                                    ? (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)')
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
                                             paddingVertical: 10,
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            minHeight: 72,
+                                            minHeight: 80,
                                         }}>
+                                            {/* Date Number */}
+                                            <Text style={{
+                                                fontSize: 18, fontWeight: '800',
+                                                color: isAvailable
+                                                    ? (isDarkMode ? '#fff' : '#000')
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'),
+                                            }}>
+                                                {u.date.getDate()}
+                                            </Text>
                                             {/* Day Letter */}
                                             <Text style={{
-                                                fontSize: 15, fontWeight: '800',
-                                                color: isAvailable ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'),
-                                                marginBottom: isAvailable ? 6 : 0,
+                                                fontSize: 11, fontWeight: '700',
+                                                color: isAvailable
+                                                    ? (isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)')
+                                                    : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
+                                                marginTop: 2,
                                             }}>
-                                                {day.short}
+                                                {dayLetter}
                                             </Text>
                                             {/* Hours */}
                                             {isAvailable && hours ? (
-                                                <View style={{ alignItems: 'center' }}>
+                                                <View style={{ alignItems: 'center', marginTop: 4 }}>
                                                     <Text style={{
-                                                        fontSize: 9.5, fontWeight: '700',
-                                                        color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                                                        fontSize: 8.5, fontWeight: '700',
+                                                        color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
                                                         letterSpacing: -0.3,
                                                     }}>
                                                         {hours.start}
                                                     </Text>
                                                     <View style={{
                                                         width: 8, height: 1,
-                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
-                                                        marginVertical: 2,
+                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                                                        marginVertical: 1.5,
                                                         borderRadius: 1,
                                                     }} />
                                                     <Text style={{
-                                                        fontSize: 9.5, fontWeight: '700',
-                                                        color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                                                        fontSize: 8.5, fontWeight: '700',
+                                                        color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
                                                         letterSpacing: -0.3,
                                                     }}>
                                                         {hours.end}
                                                     </Text>
                                                 </View>
-                                            ) : isAvailable ? (
-                                                <Text style={{
-                                                    fontSize: 9, fontWeight: '600',
-                                                    color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
-                                                }}>
-                                                    כל היום
-                                                </Text>
                                             ) : null}
+                                            {/* Override indicator */}
+                                            {hasOverride && (
+                                                <View style={{
+                                                    width: 4, height: 4, borderRadius: 2,
+                                                    backgroundColor: isDarkMode ? '#fff' : '#000',
+                                                    marginTop: 4,
+                                                }} />
+                                            )}
                                         </View>
                                     );
                                 })}
@@ -835,61 +863,6 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     );
                 })()}
 
-
-
-                {/* Monthly Overrides */}
-                {Object.keys(monthlyOverrides).length > 0 && (
-                    <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, direction: 'rtl' }}>
-                            <CalendarDays size={16} color={theme.textSecondary} strokeWidth={2} />
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginBottom: 0 }]}>
-                                תכנון חודשי
-                            </Text>
-                        </View>
-                        {Object.entries(monthlyOverrides)
-                            .sort(([a], [b]) => a.localeCompare(b))
-                            .slice(0, 10)
-                            .map(([dateKey, override]) => {
-                                const dateObj = new Date(dateKey + 'T00:00:00');
-                                const dayName = dateObj.toLocaleDateString('he-IL', { weekday: 'short' });
-                                const formatted = dateObj.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
-                                return (
-                                    <View key={dateKey} style={{
-                                        flexDirection: 'row-reverse',
-                                        alignItems: 'center',
-                                        gap: 10,
-                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-                                        borderRadius: 12,
-                                        padding: 12,
-                                        marginBottom: 6,
-                                        borderWidth: 1,
-                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                    }}>
-                                        <View style={{
-                                            width: 32, height: 32, borderRadius: 8,
-                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-                                            alignItems: 'center', justifyContent: 'center',
-                                        }}>
-                                            <Text style={{ fontSize: 12, fontWeight: '800', color: theme.textPrimary }}>
-                                                {dateObj.getDate()}
-                                            </Text>
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
-                                                {dayName} {formatted}
-                                            </Text>
-                                            <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }}>
-                                                {override.available
-                                                    ? (override.start && override.end ? `${override.start} - ${override.end}` : 'זמין/ה')
-                                                    : 'לא זמין/ה'
-                                                }
-                                            </Text>
-                                        </View>
-                                    </View>
-                                );
-                            })}
-                    </View>
-                )}
 
                 {/* Social Media Links */}
                 {sitterData.socialLinks && Object.values(sitterData.socialLinks).some(v => v) && (
