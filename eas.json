@@ -20,13 +20,7 @@
       },
       "ios": {
         "credentialsSource": "remote",
-        "prebuildCommand": "bash .eas/build/prebuild-icons.sh && bash .eas/build/prebuild.sh",
-        "appExtensions": [
-          {
-            "targetName": "CalmParentLiveActivity",
-            "bundleIdentifier": "com.harel.calmparentapp.LiveActivity"
-          }
-        ]
+        "prebuildCommand": "bash .eas/build/prebuild-icons.sh && bash .eas/build/prebuild.sh"
       },
       "channel": "production"
     }
