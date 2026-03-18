@@ -15,6 +15,7 @@ import {
     FlatList,
     ListRenderItem,
     ScrollView,
+    Modal,
 } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronLeft,
@@ -69,6 +70,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Get user photo from Auth or Firestore (prioritize sitter photo if user is a sitter)
     const [userPhoto, setUserPhoto] = useState<string | null>(auth.currentUser?.photoURL || null);
+    const [photoPreviewVisible, setPhotoPreviewVisible] = useState(false);
 
     // Load user photo from Firestore - prioritize sitter photo if user is a sitter
     const loadUserPhoto = useCallback(async () => {
@@ -706,15 +708,25 @@ const BabySitterScreen = ({ navigation }: any) => {
                             )}
                         </TouchableOpacity>
 
-                        {userPhoto ? (
-                            <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
-                        ) : (
-                            <View style={[styles.userPhotoPlaceholder, {
-                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                            }]}>
-                                <User size={15} color={theme.textSecondary} strokeWidth={1.5} />
-                            </View>
-                        )}
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (userPhoto) {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setPhotoPreviewVisible(true);
+                                }
+                            }}
+                            activeOpacity={userPhoto ? 0.7 : 1}
+                        >
+                            {userPhoto ? (
+                                <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
+                            ) : (
+                                <View style={[styles.userPhotoPlaceholder, {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                }]}>
+                                    <User size={15} color={theme.textSecondary} strokeWidth={1.5} />
+                                </View>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -888,6 +900,32 @@ const BabySitterScreen = ({ navigation }: any) => {
                         />
                     )}
                 </>
+            {/* Photo Preview Popup */}
+            <Modal
+                visible={photoPreviewVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setPhotoPreviewVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.photoPreviewOverlay}
+                    activeOpacity={1}
+                    onPress={() => setPhotoPreviewVisible(false)}
+                >
+                    <View style={[styles.photoPreviewCard, {
+                        backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                        shadowColor: '#000',
+                    }]}>
+                        {userPhoto && (
+                            <Image
+                                source={{ uri: userPhoto }}
+                                style={styles.photoPreviewImage}
+                                resizeMode="cover"
+                            />
+                        )}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
             <DynamicPromoModal
                 currentScreenName="BabySitter"
                 onNavigateToPaywall={() => setIsPaywallOpen(true)}
@@ -1315,6 +1353,27 @@ const styles = StyleSheet.create({
     // Radius Filter Styles
     filtersContainer: {
         paddingBottom: 10,
+    },
+
+    // Photo Preview Popup
+    photoPreviewOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    photoPreviewCard: {
+        borderRadius: 20,
+        padding: 6,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    photoPreviewImage: {
+        width: 200,
+        height: 200,
+        borderRadius: 16,
     },
 });
 
