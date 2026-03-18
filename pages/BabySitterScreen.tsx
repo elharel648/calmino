@@ -1363,7 +1363,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     photoPreviewCard: {
-        borderRadius: 20,
+        borderRadius: 130,
         padding: 6,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
@@ -1371,9 +1371,9 @@ const styles = StyleSheet.create({
         elevation: 12,
     },
     photoPreviewImage: {
-        width: 200,
-        height: 200,
-        borderRadius: 16,
+        width: 250,
+        height: 250,
+        borderRadius: 125,
     },
 });
 

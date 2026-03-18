@@ -1533,27 +1533,37 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
       {/* Duration Mode — native iOS-style spinner */}
       {sleepMode === 'duration' && (
-        <View style={styles.sleepDurationSection}>
-          <DateTimePicker
-            value={(() => {
-              const d = new Date(0);
-              d.setHours(sleepHours, sleepMinutes, 0, 0);
-              return d;
-            })()}
-            mode="countdown"
-            minuteInterval={1}
-            display="spinner"
-            onChange={(event, date) => {
-              if (date) {
-                const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
-                const h = Math.floor(totalSecs / 3600);
-                const m = Math.floor((totalSecs % 3600) / 60);
-                setSleepHours(h);
-                setSleepMinutes(m);
-              }
-            }}
-            locale="he-IL"
-          />
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={(() => {
+                const d = new Date(0);
+                d.setHours(sleepHours, sleepMinutes, 0, 0);
+                return d;
+              })()}
+              mode="countdown"
+              minuteInterval={1}
+              display="spinner"
+              onChange={(event, date) => {
+                if (date) {
+                  const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
+                  const h = Math.floor(totalSecs / 3600);
+                  const m = Math.floor((totalSecs % 3600) / 60);
+                  setSleepHours(h);
+                  setSleepMinutes(m);
+                }
+              }}
+              locale="he-IL"
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                onPress={() => setSleepMode('timer')}
+              >
+                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
 
