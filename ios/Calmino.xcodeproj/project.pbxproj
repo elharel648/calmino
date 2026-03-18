@@ -7,11 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		016B447161EF4EBA8848E488 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983DE75783754C27A26D911B /* FeedingLiveActivity.swift */; };
-		068EA8AD0E194C23A7343EE8 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB2C855E21944A6B8F6F9DE7 /* WidgetKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		016B447161EF4EBA8848E488 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983DE75783754C27A26D911B /* FeedingLiveActivity.swift */; }; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		187D930A42ECFDA26C51BDE1 /* Pods_Calmino.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B8DBA9457BFB2D773007860 /* Pods_Calmino.framework */; };
-		3B06522647B8403A9638F651 /* CalmParentLiveActivity.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = ACB4C9B73E36429BB8D838CF /* CalmParentLiveActivity.appex */; };
 		3C03358A726F458582B0B3ED /* BabysitterShiftLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D67706C9B034E30BB14CD1E /* BabysitterShiftLiveActivity.swift */; };
 		3E2845A2BA6853B3D0082536 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4D57C21E0FC20D78C1D7E0E8 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
@@ -28,17 +26,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		78EE5F5E70B848C59AEA27C7 /* Copy Files */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				3B06522647B8403A9638F651 /* CalmParentLiveActivity.appex in Copy Files */,
-			);
-			name = "Copy Files";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -55,7 +42,6 @@
 		A30F348A4CF2458E9D567919 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Calmino/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A5A8A146353D486B9CE4D871 /* ActivityAttributes.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = ActivityAttributes.swift; path = CalmParentLiveActivity/ActivityAttributes.swift; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Calmino/SplashScreen.storyboard; sourceTree = "<group>"; };
-		ACB4C9B73E36429BB8D838CF /* CalmParentLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = CalmParentLiveActivity.appex; path = CalmParentLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7A31BDEEC944EF0A0BC2D4F /* ActivityKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		C00F271F59274435922955CD /* SleepLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = SleepLiveActivity.swift; path = CalmParentLiveActivity/SleepLiveActivity.swift; sourceTree = "<group>"; };
@@ -65,7 +51,6 @@
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Calmino/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Calmino-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Calmino-Bridging-Header.h"; path = "Calmino/Calmino-Bridging-Header.h"; sourceTree = "<group>"; };
 		F1B8E693D0F64C90983483F5 /* CalmParentLiveActivityBundle.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = CalmParentLiveActivityBundle.swift; path = CalmParentLiveActivity/CalmParentLiveActivityBundle.swift; sourceTree = "<group>"; };
-		FB2C855E21944A6B8F6F9DE7 /* WidgetKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,7 +95,6 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				B7A31BDEEC944EF0A0BC2D4F /* ActivityKit.framework */,
-				FB2C855E21944A6B8F6F9DE7 /* WidgetKit.framework */,
 				EDE0AEA752C942AA99980428 /* SwiftUI.framework */,
 				5B8DBA9457BFB2D773007860 /* Pods_Calmino.framework */,
 			);
@@ -167,7 +151,6 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* Calmino.app */,
-				ACB4C9B73E36429BB8D838CF /* CalmParentLiveActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -202,7 +185,6 @@
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				78EE5F5E70B848C59AEA27C7 /* Copy Files */,
 				B4EBED46D3123567F5CE5ED7 /* [CP] Embed Pods Frameworks */,
 				3A0998224ED804C3645C005A /* [CP] Copy Pods Resources */,
 				EA3E8045FBBB182D75A3E1EC /* [CP-User] [RNFB] Core Configuration */,
@@ -217,23 +199,6 @@
 			productReference = 13B07F961A680F5B00A75B9A /* Calmino.app */;
 			productType = "com.apple.product-type.application";
 		};
-		F9E6C8BD58BD4A84B0C6D77D /* CalmParentLiveActivity */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5A760137A08A415DA31965B3 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */;
-			buildPhases = (
-				88C9AF5E801446EB996A3381 /* Sources */,
-				5DC35AB87CBC43A78874A2CC /* Frameworks */,
-				77ECAB2C4EF446FCAE6A655C /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = CalmParentLiveActivity;
-			productName = CalmParentLiveActivity;
-			productReference = ACB4C9B73E36429BB8D838CF /* CalmParentLiveActivity.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -245,10 +210,6 @@
 					13B07F861A680F5B00A75B9A = {
 						DevelopmentTeam = Q5555SW7GS;
 						LastSwiftMigration = 1250;
-						ProvisioningStyle = Automatic;
-					};
-					F9E6C8BD58BD4A84B0C6D77D = {
-						DevelopmentTeam = Q5555SW7GS;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -267,7 +228,6 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* Calmino */,
-				F9E6C8BD58BD4A84B0C6D77D /* CalmParentLiveActivity */,
 			);
 		};
 /* End PBXProject section */
@@ -725,54 +685,6 @@
 			};
 			name = Release;
 		};
-		AE679CF034D64A488D4D4D6D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = Q5555SW7GS;
-				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
-				PRODUCT_NAME = CalmParentLiveActivity;
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		D42DF66FF0A44DB0AC3F941A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = Q5555SW7GS;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
-				PRODUCT_NAME = CalmParentLiveActivity;
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -781,15 +693,6 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		5A760137A08A415DA31965B3 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D42DF66FF0A44DB0AC3F941A /* Debug */,
-				AE679CF034D64A488D4D4D6D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

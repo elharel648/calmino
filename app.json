@@ -35,8 +35,7 @@
             "deploymentTarget": "16.1"
           }
         }
-      ],
-      "./plugins/withLiveActivity"
+      ]
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
