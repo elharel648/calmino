@@ -1531,39 +1531,50 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </View>
       )}
 
-      {/* Duration Mode — native iOS-style spinner */}
+      {/* Duration Mode — native iOS-style spinner in card */}
       {sleepMode === 'duration' && (
-        <View style={styles.timePickerOverlay}>
-          <View style={styles.timePickerContainer}>
-            <DateTimePicker
-              value={(() => {
-                const d = new Date(0);
-                d.setHours(sleepHours, sleepMinutes, 0, 0);
-                return d;
-              })()}
-              mode="countdown"
-              minuteInterval={1}
-              display="spinner"
-              onChange={(event, date) => {
-                if (date) {
-                  const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
-                  const h = Math.floor(totalSecs / 3600);
-                  const m = Math.floor((totalSecs % 3600) / 60);
-                  setSleepHours(h);
-                  setSleepMinutes(m);
-                }
-              }}
-              locale="he-IL"
-            />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
-                onPress={() => setSleepMode('timer')}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={{
+          backgroundColor: isDarkMode ? '#2C2C2E' : '#FFFFFF',
+          borderRadius: 24,
+          paddingVertical: 16,
+          paddingHorizontal: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+          elevation: 8,
+          alignItems: 'center',
+        }}>
+          <DateTimePicker
+            value={(() => {
+              const d = new Date(0);
+              d.setHours(sleepHours, sleepMinutes, 0, 0);
+              return d;
+            })()}
+            mode="countdown"
+            minuteInterval={1}
+            display="spinner"
+            style={{ width: '100%', height: 180 }}
+            onChange={(event, date) => {
+              if (date) {
+                const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
+                const h = Math.floor(totalSecs / 3600);
+                const m = Math.floor((totalSecs % 3600) / 60);
+                setSleepHours(h);
+                setSleepMinutes(m);
+              }
+            }}
+            locale="he-IL"
+          />
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary, marginTop: 12 }]}
+              onPress={() => setSleepMode('timer')}
+            >
+              <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
