@@ -133,6 +133,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [tempStartTime, setTempStartTime] = useState('09:00');
     const [tempEndTime, setTempEndTime] = useState('18:00');
 
+    // Monthly Calendar state
+    const [availabilityTab, setAvailabilityTab] = useState<'weekly' | 'monthly'>('weekly');
+    const [monthlyOverrides, setMonthlyOverrides] = useState<Record<string, { available: boolean; start?: string; end?: string }>>({}); 
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
+    const [viewingMonth, setViewingMonth] = useState(new Date());
+
     const [savingSettings, setSavingSettings] = useState(false);
     const [sitterCity, setSitterCity] = useState(''); // City for location search
     const [gpsLocation, setGpsLocation] = useState<{ latitude: number; longitude: number } | null>(null); // GPS location
@@ -264,6 +270,15 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     setAvailableHours(prev => ({ ...prev, ...data.sitterAvailableHours }));
                 } else {
                     logger.log('📅 Dashboard: No sitterAvailableHours in Firestore data');
+                }
+                // Load monthly overrides (filter out past dates)
+                if (data.sitterMonthlyOverrides && typeof data.sitterMonthlyOverrides === 'object') {
+                    const today = new Date().toISOString().split('T')[0];
+                    const filtered: Record<string, { available: boolean; start?: string; end?: string }> = {};
+                    for (const [dateKey, val] of Object.entries(data.sitterMonthlyOverrides)) {
+                        if (dateKey >= today) filtered[dateKey] = val as any;
+                    }
+                    setMonthlyOverrides(filtered);
                 }
                 // Load GPS location if exists
                 if (data.sitterLocation &&
@@ -2283,18 +2298,538 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Calendar size={24} color={theme.textSecondary} strokeWidth={2.5} />
                                 </View>
                                 <Text style={[styles.availabilityTitle, { color: theme.textPrimary }]}>
-                                    {t('sitterDash.weeklyAvailability')}
+                                    {availabilityTab === 'weekly' ? t('sitterDash.weeklyAvailability') : t('sitterDash.monthlyPlanning')}
                                 </Text>
                                 <Text style={[styles.availabilitySubtitle, { color: theme.textSecondary }]}>
-                                    {t('sitterDash.chooseAvailDays')}
+                                    {availabilityTab === 'weekly' ? t('sitterDash.chooseAvailDays') : t('sitterDash.monthlyPlanningSubtitle')}
                                 </Text>
                             </View>
                         </View>
 
-
+                        {/* Tab Switcher */}
+                        <View style={{
+                            flexDirection: 'row',
+                            marginHorizontal: 20,
+                            marginBottom: 16,
+                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                            borderRadius: 12,
+                            padding: 3,
+                        }}>
+                            <TouchableOpacity
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 10,
+                                    borderRadius: 10,
+                                    alignItems: 'center',
+                                    backgroundColor: availabilityTab === 'weekly'
+                                        ? (isDarkMode ? '#fff' : '#000')
+                                        : 'transparent',
+                                }}
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setAvailabilityTab('weekly');
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={{
+                                    fontSize: 14,
+                                    fontWeight: availabilityTab === 'weekly' ? '700' : '600',
+                                    color: availabilityTab === 'weekly'
+                                        ? (isDarkMode ? '#000' : '#fff')
+                                        : theme.textSecondary,
+                                }}>
+                                    {t('sitterDash.weeklyTab')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 10,
+                                    borderRadius: 10,
+                                    alignItems: 'center',
+                                    backgroundColor: availabilityTab === 'monthly'
+                                        ? (isDarkMode ? '#fff' : '#000')
+                                        : 'transparent',
+                                }}
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setAvailabilityTab('monthly');
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={{
+                                    fontSize: 14,
+                                    fontWeight: availabilityTab === 'monthly' ? '700' : '600',
+                                    color: availabilityTab === 'monthly'
+                                        ? (isDarkMode ? '#000' : '#fff')
+                                        : theme.textSecondary,
+                                }}>
+                                    {t('sitterDash.monthlyTab')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <ScrollView showsVerticalScrollIndicator={false} style={styles.availabilityContent}>
-                            {/* Weekly Availability Content */}
+                            {/* Monthly Calendar Tab */}
+                            {availabilityTab === 'monthly' && (() => {
+                                const year = viewingMonth.getFullYear();
+                                const month = viewingMonth.getMonth();
+                                const firstDay = new Date(year, month, 1);
+                                const lastDay = new Date(year, month + 1, 0);
+                                const startDayOfWeek = firstDay.getDay(); // 0=Sun
+                                const daysInMonth = lastDay.getDate();
+                                const todayStr = new Date().toISOString().split('T')[0];
+                                const now = new Date();
+                                const maxMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1); // 1 month ahead
+
+                                const monthNames = [
+                                    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+                                    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+                                ];
+                                const dayLetters = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+
+                                const canGoBack = year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth());
+                                const canGoForward = viewingMonth < maxMonth;
+
+                                // Build calendar cells
+                                const cells: (number | null)[] = [];
+                                for (let i = 0; i < startDayOfWeek; i++) cells.push(null);
+                                for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+                                while (cells.length % 7 !== 0) cells.push(null);
+
+                                return (
+                                    <View style={{ paddingHorizontal: 16 }}>
+                                        {/* Month Navigation */}
+                                        <View style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            marginBottom: 16,
+                                            paddingHorizontal: 4,
+                                        }}>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    if (canGoForward) {
+                                                        setViewingMonth(new Date(year, month + 1, 1));
+                                                        setSelectedCalendarDate(null);
+                                                    }
+                                                }}
+                                                style={{ padding: 8, opacity: canGoForward ? 1 : 0.3 }}
+                                                disabled={!canGoForward}
+                                            >
+                                                <ChevronLeft size={22} color={theme.textPrimary} strokeWidth={2} />
+                                            </TouchableOpacity>
+                                            <Text style={{
+                                                fontSize: 18,
+                                                fontWeight: '700',
+                                                color: theme.textPrimary,
+                                            }}>
+                                                {monthNames[month]} {year}
+                                            </Text>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    if (canGoBack) {
+                                                        setViewingMonth(new Date(year, month - 1, 1));
+                                                        setSelectedCalendarDate(null);
+                                                    }
+                                                }}
+                                                style={{ padding: 8, opacity: canGoBack ? 1 : 0.3 }}
+                                                disabled={!canGoBack}
+                                            >
+                                                <ChevronRight size={22} color={theme.textPrimary} strokeWidth={2} />
+                                            </TouchableOpacity>
+                                        </View>
+
+                                        {/* Day Headers */}
+                                        <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                                            {dayLetters.map((letter, i) => (
+                                                <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                                                    <Text style={{
+                                                        fontSize: 12,
+                                                        fontWeight: '700',
+                                                        color: theme.textSecondary,
+                                                    }}>
+                                                        {letter}
+                                                    </Text>
+                                                </View>
+                                            ))}
+                                        </View>
+
+                                        {/* Calendar Grid */}
+                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                            {cells.map((day, idx) => {
+                                                if (day === null) {
+                                                    return <View key={`empty-${idx}`} style={{ width: '14.28%', aspectRatio: 1 }} />;
+                                                }
+
+                                                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                                const isPast = dateStr < todayStr;
+                                                const isToday = dateStr === todayStr;
+                                                const isSelected = dateStr === selectedCalendarDate;
+                                                const dayOfWeek = new Date(year, month, day).getDay().toString();
+                                                const isWeeklyAvailable = availableDays.includes(dayOfWeek);
+                                                const weeklyHours = availableHours[dayOfWeek];
+                                                const override = monthlyOverrides[dateStr];
+                                                const hasOverride = !!override;
+
+                                                // Determine final availability
+                                                const isAvailable = hasOverride ? override.available : isWeeklyAvailable;
+                                                const displayHours = hasOverride && override.available && override.start && override.end
+                                                    ? { start: override.start, end: override.end }
+                                                    : (isWeeklyAvailable && weeklyHours ? weeklyHours : null);
+
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={dateStr}
+                                                        style={{
+                                                            width: '14.28%',
+                                                            aspectRatio: 1,
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            opacity: isPast ? 0.3 : 1,
+                                                        }}
+                                                        onPress={() => {
+                                                            if (!isPast) {
+                                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                                setSelectedCalendarDate(dateStr === selectedCalendarDate ? null : dateStr);
+                                                            }
+                                                        }}
+                                                        disabled={isPast}
+                                                        activeOpacity={0.6}
+                                                    >
+                                                        <View style={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: 12,
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            backgroundColor: isSelected
+                                                                ? (isDarkMode ? '#fff' : '#000')
+                                                                : hasOverride
+                                                                    ? (isAvailable
+                                                                        ? (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
+                                                                        : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'))
+                                                                    : isAvailable
+                                                                        ? (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)')
+                                                                        : 'transparent',
+                                                            borderWidth: isToday ? 2 : hasOverride ? 1.5 : 0,
+                                                            borderColor: isSelected
+                                                                ? 'transparent'
+                                                                : isToday
+                                                                    ? (isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.25)')
+                                                                    : hasOverride
+                                                                        ? (isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)')
+                                                                        : 'transparent',
+                                                        }}>
+                                                            <Text style={{
+                                                                fontSize: 15,
+                                                                fontWeight: isToday || isSelected ? '800' : '600',
+                                                                color: isSelected
+                                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                                    : !isAvailable
+                                                                        ? (isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)')
+                                                                        : theme.textPrimary,
+                                                                textDecorationLine: !isAvailable && !isSelected ? 'line-through' : 'none',
+                                                            }}>
+                                                                {day}
+                                                            </Text>
+                                                        </View>
+                                                        {/* Time indicator */}
+                                                        {!isPast && isAvailable && displayHours && !isSelected && (
+                                                            <Text style={{
+                                                                fontSize: 7,
+                                                                fontWeight: '700',
+                                                                color: isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)',
+                                                                marginTop: -2,
+                                                            }}>
+                                                                {displayHours.start?.replace(':00', '')}-{displayHours.end?.replace(':00', '')}
+                                                            </Text>
+                                                        )}
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+
+                                        {/* Selected Day Detail Panel */}
+                                        {selectedCalendarDate && (() => {
+                                            const selDate = new Date(selectedCalendarDate + 'T00:00:00');
+                                            const dayOfWeek = selDate.getDay().toString();
+                                            const isWeeklyAvail = availableDays.includes(dayOfWeek);
+                                            const weeklyH = availableHours[dayOfWeek];
+                                            const override = monthlyOverrides[selectedCalendarDate];
+                                            const hasOverride = !!override;
+                                            const isAvail = hasOverride ? override.available : isWeeklyAvail;
+                                            const currentStart = hasOverride && override.start ? override.start : (weeklyH?.start || '09:00');
+                                            const currentEnd = hasOverride && override.end ? override.end : (weeklyH?.end || '18:00');
+
+                                            const dayNames = [
+                                                t('sitterDash.sunday'), t('sitterDash.monday'), t('sitterDash.tuesday'),
+                                                t('sitterDash.wednesday'), t('sitterDash.thursday'), t('sitterDash.friday'),
+                                                t('sitterDash.saturday')
+                                            ];
+
+                                            return (
+                                                <View style={{
+                                                    marginTop: 20,
+                                                    padding: 16,
+                                                    borderRadius: 16,
+                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
+                                                    borderWidth: 1,
+                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                                }}>
+                                                    {/* Day Header */}
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, direction: 'rtl' }}>
+                                                        <View>
+                                                            <Text style={{
+                                                                fontSize: 17,
+                                                                fontWeight: '700',
+                                                                color: theme.textPrimary,
+                                                                textAlign: 'right',
+                                                            }}>
+                                                                {dayNames[selDate.getDay()]}, {selDate.getDate()}/{selDate.getMonth() + 1}
+                                                            </Text>
+                                                            {hasOverride && (
+                                                                <Text style={{
+                                                                    fontSize: 11,
+                                                                    fontWeight: '600',
+                                                                    color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
+                                                                    marginTop: 2,
+                                                                    textAlign: 'right',
+                                                                }}>
+                                                                    שינוי מהתבנית השבועית
+                                                                </Text>
+                                                            )}
+                                                        </View>
+                                                        {hasOverride && (
+                                                            <View style={{
+                                                                width: 8,
+                                                                height: 8,
+                                                                borderRadius: 4,
+                                                                backgroundColor: isDarkMode ? '#fff' : '#000',
+                                                            }} />
+                                                        )}
+                                                    </View>
+
+                                                    {/* Available Toggle */}
+                                                    <View style={{
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        paddingVertical: 12,
+                                                        paddingHorizontal: 14,
+                                                        borderRadius: 12,
+                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                                                        borderWidth: 1,
+                                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                                        marginBottom: 12,
+                                                    }}>
+                                                        <Switch
+                                                            value={isAvail}
+                                                            onValueChange={(val) => {
+                                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                                const newOverrides = { ...monthlyOverrides };
+                                                                if (val === isWeeklyAvail && !override?.start) {
+                                                                    // Same as weekly pattern, remove override
+                                                                    delete newOverrides[selectedCalendarDate];
+                                                                } else {
+                                                                    newOverrides[selectedCalendarDate] = {
+                                                                        available: val,
+                                                                        ...(val ? { start: currentStart, end: currentEnd } : {}),
+                                                                    };
+                                                                }
+                                                                setMonthlyOverrides(newOverrides);
+                                                            }}
+                                                            trackColor={{
+                                                                false: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                                                true: isDarkMode ? '#fff' : '#000',
+                                                            }}
+                                                            thumbColor={isAvail ? (isDarkMode ? '#000' : '#fff') : (isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)')}
+                                                        />
+                                                        <Text style={{
+                                                            fontSize: 15,
+                                                            fontWeight: '600',
+                                                            color: theme.textPrimary,
+                                                        }}>
+                                                            {isAvail ? t('sitterDash.availableToggle') : t('sitterDash.notAvailableToggle')}
+                                                        </Text>
+                                                    </View>
+
+                                                    {/* Time Pickers (when available) */}
+                                                    {isAvail && (
+                                                        <View style={{
+                                                            flexDirection: 'row',
+                                                            gap: 10,
+                                                            marginBottom: 12,
+                                                        }}>
+                                                            <View style={{ flex: 1 }}>
+                                                                <Text style={{
+                                                                    fontSize: 11,
+                                                                    fontWeight: '700',
+                                                                    color: theme.textSecondary,
+                                                                    marginBottom: 6,
+                                                                    textAlign: 'right',
+                                                                    textTransform: 'uppercase',
+                                                                    letterSpacing: 0.5,
+                                                                }}>
+                                                                    {t('sitterDash.startTime')}
+                                                                </Text>
+                                                                <View style={{
+                                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                                                                    borderRadius: 10,
+                                                                    borderWidth: 1,
+                                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                                                                    overflow: 'hidden',
+                                                                    alignItems: 'center',
+                                                                    paddingVertical: 4,
+                                                                }}>
+                                                                    <DateTimePicker
+                                                                        value={(() => {
+                                                                            const [h = '9', m = '0'] = currentStart.split(':');
+                                                                            const d = new Date();
+                                                                            d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+                                                                            return d;
+                                                                        })()}
+                                                                        mode="time"
+                                                                        display="compact"
+                                                                        locale="en-GB"
+                                                                        minuteInterval={15}
+                                                                        onChange={(event, date) => {
+                                                                            if (date && event.type === 'set') {
+                                                                                const hh = String(date.getHours()).padStart(2, '0');
+                                                                                const mm = String(date.getMinutes()).padStart(2, '0');
+                                                                                const newStart = `${hh}:${mm}`;
+                                                                                setMonthlyOverrides(prev => ({
+                                                                                    ...prev,
+                                                                                    [selectedCalendarDate]: {
+                                                                                        available: true,
+                                                                                        start: newStart,
+                                                                                        end: currentEnd,
+                                                                                    },
+                                                                                }));
+                                                                            }
+                                                                        }}
+                                                                        style={{ height: 34 }}
+                                                                    />
+                                                                </View>
+                                                            </View>
+                                                            <View style={{ flex: 1 }}>
+                                                                <Text style={{
+                                                                    fontSize: 11,
+                                                                    fontWeight: '700',
+                                                                    color: theme.textSecondary,
+                                                                    marginBottom: 6,
+                                                                    textAlign: 'right',
+                                                                    textTransform: 'uppercase',
+                                                                    letterSpacing: 0.5,
+                                                                }}>
+                                                                    {t('sitterDash.endTime')}
+                                                                </Text>
+                                                                <View style={{
+                                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                                                                    borderRadius: 10,
+                                                                    borderWidth: 1,
+                                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                                                                    overflow: 'hidden',
+                                                                    alignItems: 'center',
+                                                                    paddingVertical: 4,
+                                                                }}>
+                                                                    <DateTimePicker
+                                                                        value={(() => {
+                                                                            const [h = '18', m = '0'] = currentEnd.split(':');
+                                                                            const d = new Date();
+                                                                            d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+                                                                            return d;
+                                                                        })()}
+                                                                        mode="time"
+                                                                        display="compact"
+                                                                        locale="en-GB"
+                                                                        minuteInterval={15}
+                                                                        onChange={(event, date) => {
+                                                                            if (date && event.type === 'set') {
+                                                                                const hh = String(date.getHours()).padStart(2, '0');
+                                                                                const mm = String(date.getMinutes()).padStart(2, '0');
+                                                                                const newEnd = `${hh}:${mm}`;
+                                                                                setMonthlyOverrides(prev => ({
+                                                                                    ...prev,
+                                                                                    [selectedCalendarDate]: {
+                                                                                        available: true,
+                                                                                        start: currentStart,
+                                                                                        end: newEnd,
+                                                                                    },
+                                                                                }));
+                                                                            }
+                                                                        }}
+                                                                        style={{ height: 34 }}
+                                                                    />
+                                                                </View>
+                                                            </View>
+                                                        </View>
+                                                    )}
+
+                                                    {/* Reset to Weekly Pattern */}
+                                                    {hasOverride && (
+                                                        <TouchableOpacity
+                                                            style={{
+                                                                flexDirection: 'row',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: 6,
+                                                                paddingVertical: 10,
+                                                                borderRadius: 10,
+                                                                borderWidth: 1,
+                                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                                            }}
+                                                            onPress={() => {
+                                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                                const newOverrides = { ...monthlyOverrides };
+                                                                delete newOverrides[selectedCalendarDate];
+                                                                setMonthlyOverrides(newOverrides);
+                                                            }}
+                                                            activeOpacity={0.7}
+                                                        >
+                                                            <XCircle size={14} color={theme.textSecondary} strokeWidth={2} />
+                                                            <Text style={{
+                                                                fontSize: 13,
+                                                                fontWeight: '600',
+                                                                color: theme.textSecondary,
+                                                            }}>
+                                                                {t('sitterDash.resetToWeekly')}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+                                            );
+                                        })()}
+
+                                        {/* Override Count */}
+                                        {Object.keys(monthlyOverrides).length > 0 && (
+                                            <View style={{
+                                                marginTop: 16,
+                                                paddingVertical: 10,
+                                                paddingHorizontal: 14,
+                                                borderRadius: 10,
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 6,
+                                            }}>
+                                                <Edit3 size={13} color={theme.textSecondary} strokeWidth={2} />
+                                                <Text style={{
+                                                    fontSize: 12,
+                                                    fontWeight: '600',
+                                                    color: theme.textSecondary,
+                                                }}>
+                                                    {Object.keys(monthlyOverrides).length} שינויים מהתבנית השבועית
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            })()}
+
+                            {/* Weekly Tab Content */}
+                            {availabilityTab === 'weekly' && (
                                 <View style={styles.compactDaysList}>
                                     {/* Compact List - All Days */}
                                     <View style={styles.compactDaysList}>
@@ -2538,6 +3073,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </View>
 
 
+                            )}
 
                             {/* MONOCHROMATIC Save Button */}
                             <TouchableOpacity
@@ -2558,12 +3094,18 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                         const userId = auth.currentUser?.uid;
                                         if (userId) {
+                                            // Clean past overrides before saving
+                                            const today = new Date().toISOString().split('T')[0];
+                                            const cleanedOverrides: Record<string, any> = {};
+                                            for (const [dateKey, val] of Object.entries(monthlyOverrides)) {
+                                                if (dateKey >= today) cleanedOverrides[dateKey] = val;
+                                            }
+
                                             await updateDoc(doc(db, 'users', userId), {
                                                 sitterAvailableDays: availableDays,
-                                                sitterAvailabilityLoading: false, // Ensure we don't block
+                                                sitterMonthlyOverrides: cleanedOverrides,
+                                                sitterAvailabilityLoading: false,
                                                 sitterAvailabilityDate: new Date().toISOString(),
-
-                                                // Ensure sitter is marked as active if they have availability
                                                 sitterActive: true
                                             });
 

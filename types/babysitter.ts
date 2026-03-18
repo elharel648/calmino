@@ -36,7 +36,11 @@ export interface DayAvailability {
     end: string;   // "18:00"
 }
 
-
+export interface MonthlyOverride {
+    available: boolean;
+    start?: string; // "10:00" - only when available: true with custom hours
+    end?: string;   // "14:00"
+}
 
 export interface SitterAvailability {
     // Weekly default pattern
@@ -50,7 +54,8 @@ export interface SitterAvailability {
         saturday: DayAvailability | null;
     };
 
-
+    // Monthly date-specific overrides (key = "YYYY-MM-DD")
+    monthlyOverrides: Record<string, MonthlyOverride>;
 
     updatedAt: Timestamp;
 }

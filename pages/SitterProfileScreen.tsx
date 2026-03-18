@@ -122,7 +122,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [showOptionsSheet, setShowOptionsSheet] = useState(false);
     const [availabilityDays, setAvailabilityDays] = useState<string[]>(sitterData.sitterAvailableDays || []);
     const [availabilityHours, setAvailabilityHours] = useState<Record<string, { start: string; end: string }>>(sitterData.sitterAvailableHours || {});
-
+    const [monthlyOverrides, setMonthlyOverrides] = useState<Record<string, { available: boolean; start?: string; end?: string }>>({}); 
 
     // Report / Block state
     const [showOptionsMenu, setShowOptionsMenu] = useState(false);
@@ -196,7 +196,15 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         logger.log('📅 No sitterAvailableHours found in Firestore');
                     }
 
-
+                    // Load monthly overrides (filter to future only)
+                    if (data.sitterMonthlyOverrides && typeof data.sitterMonthlyOverrides === 'object') {
+                        const today = new Date().toISOString().split('T')[0];
+                        const filtered: Record<string, { available: boolean; start?: string; end?: string }> = {};
+                        for (const [dateKey, val] of Object.entries(data.sitterMonthlyOverrides)) {
+                            if (dateKey >= today) filtered[dateKey] = val as any;
+                        }
+                        setMonthlyOverrides(filtered);
+                    }
 
                     // Get videoUri from Firebase if not already in sitterData
                     if (!videoUri) {
@@ -828,6 +836,60 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 })()}
 
 
+
+                {/* Monthly Overrides */}
+                {Object.keys(monthlyOverrides).length > 0 && (
+                    <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, direction: 'rtl' }}>
+                            <CalendarDays size={16} color={theme.textSecondary} strokeWidth={2} />
+                            <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginBottom: 0 }]}>
+                                תכנון חודשי
+                            </Text>
+                        </View>
+                        {Object.entries(monthlyOverrides)
+                            .sort(([a], [b]) => a.localeCompare(b))
+                            .slice(0, 10)
+                            .map(([dateKey, override]) => {
+                                const dateObj = new Date(dateKey + 'T00:00:00');
+                                const dayName = dateObj.toLocaleDateString('he-IL', { weekday: 'short' });
+                                const formatted = dateObj.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+                                return (
+                                    <View key={dateKey} style={{
+                                        flexDirection: 'row-reverse',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                                        borderRadius: 12,
+                                        padding: 12,
+                                        marginBottom: 6,
+                                        borderWidth: 1,
+                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                    }}>
+                                        <View style={{
+                                            width: 32, height: 32, borderRadius: 8,
+                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                                            alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <Text style={{ fontSize: 12, fontWeight: '800', color: theme.textPrimary }}>
+                                                {dateObj.getDate()}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ fontSize: 13, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
+                                                {dayName} {formatted}
+                                            </Text>
+                                            <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }}>
+                                                {override.available
+                                                    ? (override.start && override.end ? `${override.start} - ${override.end}` : 'זמין/ה')
+                                                    : 'לא זמין/ה'
+                                                }
+                                            </Text>
+                                        </View>
+                                    </View>
+                                );
+                            })}
+                    </View>
+                )}
 
                 {/* Social Media Links */}
                 {sitterData.socialLinks && Object.values(sitterData.socialLinks).some(v => v) && (
