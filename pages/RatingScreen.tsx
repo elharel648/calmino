@@ -41,7 +41,7 @@ const AVAILABLE_TAGS: ReviewTag[] = [
     'professional',
 ];
 
-const RATING_LABELS = ['', 'לא טוב', 'סביר', 'טוב', 'מצוין', 'מושלם! ⭐'];
+const RATING_LABELS_FALLBACK = ['', 'לא טוב', 'סביר', 'טוב', 'מצוין', 'מושלם! ⭐'];
 
 export default function RatingScreen({
     route, navigation }: Props) {
@@ -112,13 +112,13 @@ export default function RatingScreen({
 
     const handleSubmit = async () => {
         if (rating === 0) {
-            Alert.alert(t('common.error'), 'אנא בחר/י דירוג של 1 עד 5 כוכבים.');
+            Alert.alert(t('common.error'), t('rating.selectRatingError'));
             return;
         }
 
         const parentId = auth.currentUser?.uid;
         if (!parentId) {
-            Alert.alert(t('common.error'), 'עליך להיות מחובר כדי לדרג.');
+            Alert.alert(t('common.error'), t('rating.loginRequired'));
             return;
         }
 
@@ -142,12 +142,12 @@ export default function RatingScreen({
             await submitReview(bookingId, babysitterId, parentId, rating, allTags, text, isVerified);
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert('תודה רבה! 🎉', 'הדירוג שלך עוזר להורים אחרים למצוא את הבייביסיטר הטוב ביותר.', [
+            Alert.alert(t('rating.thankYou'), t('rating.thankYouMessage'), [
                 { text: t('common.close'), onPress: () => navigation.goBack() }
             ]);
         } catch (error) {
             logger.error('Submit review error:', error);
-            Alert.alert(t('common.error'), 'אירעה שגיאה בחיבור לשרת. נסה/י שוב.');
+            Alert.alert(t('common.error'), t('rating.serverError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -167,7 +167,7 @@ export default function RatingScreen({
                     </View>
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                    איך היה עם {sitterName || 'הבייביסיטר'}?
+                    {t('rating.howWasItWith', { name: sitterName || t('rating.sitterFallback') })}
                 </Text>
                 <View style={{ width: 40 }} />
             </View>
@@ -186,7 +186,7 @@ export default function RatingScreen({
                     }]}>
                         <View style={styles.starsIconRow}>
                             <Sparkles size={16} color="#FBBF24" strokeWidth={2} />
-                            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>דרג/י את החוויה הכללית</Text>
+                            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>{t('rating.rateOverall')}</Text>
                         </View>
                         <View style={styles.starsRow}>
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -209,7 +209,7 @@ export default function RatingScreen({
                         </View>
                         {rating > 0 && (
                             <Text style={[styles.ratingLabel, { color: theme.primary }]}>
-                                {RATING_LABELS[rating]}
+                                {RATING_LABELS_FALLBACK[rating]}
                             </Text>
                         )}
                     </View>
@@ -221,7 +221,7 @@ export default function RatingScreen({
                             borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                             shadowColor: isDarkMode ? 'transparent' : '#000',
                         }]}>
-                            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>מה אהבת במיוחד?</Text>
+                            <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>{t('rating.whatDidYouLike')}</Text>
                             <View style={styles.tagsContainer}>
                                 {AVAILABLE_TAGS.map((tag) => {
                                     const isSelected = selectedTags.includes(tag);
@@ -279,7 +279,7 @@ export default function RatingScreen({
                                             value={customTagInput}
                                             onChangeText={setCustomTagInput}
                                             onSubmitEditing={handleAddCustomTag}
-                                            placeholder="הקלד תג..."
+                                            placeholder={t('rating.enterTag')}
                                             placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
                                             style={{ color: theme.textPrimary, fontSize: 14, minWidth: 80, textAlign: 'right' }}
                                             returnKeyType="done"
@@ -309,7 +309,7 @@ export default function RatingScreen({
                         shadowColor: isDarkMode ? 'transparent' : '#000',
                     }]}>
                         <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>
-                            מילים חמות (אופציונלי)
+                            {t('rating.warmWords')}
                         </Text>
                         <TextInput
                             style={[styles.textInput, {
@@ -317,7 +317,7 @@ export default function RatingScreen({
                                 borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F0EDFF',
                                 color: theme.textPrimary,
                             }]}
-                            placeholder="איך הייתה החוויה שלך? ספרי להורים אחרים..."
+                            placeholder={t('rating.reviewPlaceholder')}
                             placeholderTextColor={theme.textTertiary}
                             multiline
                             textAlign="right"
@@ -348,7 +348,7 @@ export default function RatingScreen({
                             ) : (
                                 <>
                                     <Text style={[styles.submitBtnText, { color: rating > 0 ? '#fff' : theme.textTertiary }]}>
-                                        שמור דירוג
+                                        {t('rating.saveRating')}
                                     </Text>
                                     {rating > 0 && <Send size={18} color="#fff" strokeWidth={2.5} style={{ marginRight: 8 }} />}
                                 </>

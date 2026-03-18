@@ -250,6 +250,28 @@ PODS:
   - libwebp/sharpyuv (1.5.0)
   - libwebp/webp (1.5.0):
     - libwebp/sharpyuv
+  - LiquidGlass (0.7.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - lottie-ios (4.6.0)
   - lottie-react-native (7.3.6):
     - hermes-engine
@@ -2497,7 +2519,7 @@ PODS:
     - ZXingObjC/Core
 
 DEPENDENCIES:
-  - ActivityKitModule (from `../local-modules/activity-kit-module-v2/ios`)
+  - ActivityKitModule (from `../node_modules/activity-kit-module/ios`)
   - EASClient (from `../node_modules/expo-eas-client/ios`)
   - EXApplication (from `../node_modules/expo-application/ios`)
   - EXAV (from `../node_modules/expo-av/ios`)
@@ -2539,6 +2561,7 @@ DEPENDENCIES:
   - EXUpdatesInterface (from `../node_modules/expo-updates-interface/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
+  - "LiquidGlass (from `../node_modules/@callstack/liquid-glass`)"
   - lottie-react-native (from `../node_modules/lottie-react-native`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../node_modules/react-native/Libraries/Required`)
@@ -2623,7 +2646,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
-  - SharedAttributes (from `../local-modules/shared-attributes`)
+  - SharedAttributes (from `../node_modules/shared-attributes`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2661,7 +2684,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   ActivityKitModule:
-    :path: "../local-modules/activity-kit-module-v2/ios"
+    :path: "../node_modules/activity-kit-module/ios"
   EASClient:
     :path: "../node_modules/expo-eas-client/ios"
   EXApplication:
@@ -2745,6 +2768,8 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2025-07-07-RNv0.81.0-e0fc67142ec0763c6b6153ca2bf96df815539782
+  LiquidGlass:
+    :path: "../node_modules/@callstack/liquid-glass"
   lottie-react-native:
     :path: "../node_modules/lottie-react-native"
   RCTDeprecation:
@@ -2912,7 +2937,7 @@ EXTERNAL SOURCES:
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
   SharedAttributes:
-    :path: "../local-modules/shared-attributes"
+    :path: "../node_modules/shared-attributes"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -2978,6 +3003,7 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: b8ab00db932816e14b0a0664a08cb73dda6d164b
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
+  LiquidGlass: f4f3bc26923fb215efa7b972ced909b49fa6acd4
   lottie-ios: 8f959969761e9c45d70353667d00af0e5b9cadb3
   lottie-react-native: 04593e71e10b42fccb1ccacfbcf50c8ba4921c55
   Mute: 20135a96076f140cc82bfc8b810e2d6150d8ec7e
@@ -3059,10 +3085,10 @@ SPEC CHECKSUMS:
   RevenueCat: 1da8d1116fcc89f5084fe1caf91b11e5e61b0f96
   RNCAsyncStorage: c8407cc394627a3a4cf56b457d594bfa822b6ab8
   RNDateTimePicker: 3b90b0645499e9ae1a86298f23275a648283d415
-  RNFBApp: a21d643ba6f5c2f3d567f69cac84a7549d8830d2
-  RNFBAppCheck: 823dcd6309344f1de76320cdcc99aaa6e6641cff
-  RNFBCrashlytics: 21d238f7c12bb98fce8f17d70e4b160a12963015
-  RNFBFunctions: debe705eebd83b9701b5d6d01451c1bf975c5deb
+  RNFBApp: 94f303d904c7a1995b6a622686d1df07a3c09d34
+  RNFBAppCheck: 3cdcae116a6438d1b01bf5737f2c3530f1fe71e1
+  RNFBCrashlytics: da4e599dae1c6d8555125bbfddce2430fdc89e7a
+  RNFBFunctions: 36dd7c551a22360781db6e567d105636ace14245
   RNGestureHandler: c3831b3b1b5014c6afab7fff7e4171394a3419ab
   RNPurchases: 862e44a40fc03117245e465fe11dd9cfea030f45
   RNReanimated: 8315d083516a6690fcdb479b56fca8fabf65a73d
@@ -3075,6 +3101,6 @@ SPEC CHECKSUMS:
   Yoga: 65431d43277b661ebc7289c6c5d82f64ce42cfe0
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: a788d36552cdf351be68266a10b9d675d6ce9b92
+PODFILE CHECKSUM: 73c2d57f58313e4aa431d0dc6aa311e3e1d3e63d
 
 COCOAPODS: 1.16.2

@@ -337,6 +337,16 @@ service cloud.firestore {
     }
 
     // ===================
+    // SITTER REPORTS COLLECTION
+    // ===================
+    match /sitter_reports/{reportId} {
+      // Create: any authenticated user can report a sitter (must be their own ID)
+      allow create: if isAuthenticated() && request.resource.data.reporterId == request.auth.uid;
+      // Read/Update/Delete: admin only via console
+      allow read, update, delete: if false;
+    }
+
+    // ===================
     // MAIL COLLECTION (Firebase "Trigger Email" Extension)
     // ===================
     match /mail/{msgId} {

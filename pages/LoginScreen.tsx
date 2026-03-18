@@ -247,12 +247,12 @@ export default function LoginScreen({
         .catch((error) => {
           logger.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Alert.alert(t('common.error'), `לא הצלחנו להתחבר עם גוגל: ${error.code}`);
+          Alert.alert(t('common.error'), t('auth.googleLoginError', { code: error.code }));
         })
         .finally(() => setLoading(false));
     } else if (response?.type === 'error') {
       logger.error('❌ Google Auth Error:', response.error);
-      Alert.alert('שגיאת Google', response.error?.message || 'Unknown error');
+      Alert.alert(t('auth.googleError'), response.error?.message || t('auth.unknownError'));
     } else if (response?.type === 'dismiss') {
       logger.debug('🔐', 'Google Auth - User dismissed');
     }
@@ -354,22 +354,22 @@ export default function LoginScreen({
         if (!user.emailVerified) {
           setLoading(false);
           Alert.alert(
-            'אימות מייל נדרש',
-            'עדיין לא אימתת את המייל. יש לאמת את המייל כדי להיכנס לאפליקציה.',
+            t('auth.emailVerificationRequired'),
+            t('auth.emailVerificationMessage'),
             [
               {
-                text: 'שלח שוב',
+                text: t('auth.resendEmail'),
                 onPress: async () => {
                   try {
                     await sendEmailVerification(user);
-                    Alert.alert('נשלח בהצלחה', 'מייל אימות נשלח שוב לכתובת שלך.');
+                    Alert.alert(t('auth.emailSent'), t('auth.emailSentMessage'));
                   } catch (e) {
-                    Alert.alert(t('common.error'), 'לא ניתן לשלוח מייל כרגע. נסה שוב מאוחר יותר.');
+                    Alert.alert(t('common.error'), t('auth.cannotSendEmail'));
                   }
                 }
               },
               {
-                text: 'אימתתי, כנס',
+                text: t('auth.verifiedLogin'),
                 onPress: async () => {
                   setLoading(true);
                   try {
@@ -380,11 +380,11 @@ export default function LoginScreen({
                       onLoginSuccess();
                     } else {
                       setLoading(false);
-                      Alert.alert('עדיין לא מאומת', 'המערכת עדיין לא מזהה שהמייל אומת. נסה שוב בעוד כמה שניות.');
+                      Alert.alert(t('auth.notVerifiedYet'), t('auth.notVerifiedMessage'));
                     }
                   } catch (error) {
                     setLoading(false);
-                    Alert.alert(t('common.error'), 'אירעה שגיאה בבדיקת האימות.');
+                    Alert.alert(t('common.error'), t('auth.verificationError'));
                   }
                 }
               },
@@ -445,7 +445,7 @@ export default function LoginScreen({
           const result = await joinFamily(pendingInviteCode.trim());
           if (result.success) {
             logger.debug('✅', 'Joined family:', result.currentFamilyName);
-            showSuccess(`הצטרפת בהצלחה למשפחת ${result.currentFamilyName || 'החדשה'}!`, 3000);
+            showSuccess(t('auth.joinedFamily', { name: result.currentFamilyName || t('auth.newFamily') }), 3000);
           }
         }
 
@@ -456,10 +456,10 @@ export default function LoginScreen({
         await auth.signOut();
 
         Alert.alert(
-          'החשבון נוצר בהצלחה!',
-          'שלחנו לך מייל לאימות. יש לאשר את המייל ורק אז להתחבר.',
+          t('auth.accountCreated'),
+          t('auth.accountCreatedMessage'),
           [{
-            text: 'הבנתי, תעביר אותי להתחברות',
+            text: t('auth.understood'),
             onPress: () => {
               setIsLogin(true);
             }
@@ -936,7 +936,7 @@ export default function LoginScreen({
               onPress={handleAuth}
               disabled={loading || !isFormValid}
               activeOpacity={0.85}
-              accessibilityLabel={isLogin ? 'כפתור התחברות' : 'כפתור הרשמה'}
+              accessibilityLabel={isLogin ? t('auth.loginLabel') : t('auth.registerLabel')}
               accessibilityRole="button"
               accessibilityState={{ disabled: loading || !isFormValid }}
             >
@@ -951,7 +951,7 @@ export default function LoginScreen({
                 ) : (
                   <>
                     <Text style={styles.mainButtonText}>
-                      {isLogin ? t('auth.login') : 'צור חשבון'}
+                      {isLogin ? t('auth.login') : t('auth.createAccount')}
                     </Text>
                     {isFormValid && <Shield size={16} color="rgba(255,255,255,0.7)" strokeWidth={2} />}
                   </>
@@ -981,7 +981,7 @@ export default function LoginScreen({
                   }
                 }}
                 disabled={!request}
-                accessibilityLabel="התחברות עם Google"
+                accessibilityLabel={t('auth.googleLoginLabel')}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !request }}
               >
@@ -995,7 +995,7 @@ export default function LoginScreen({
                     styles.socialBtn,
                     { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0' },
                   ]}
-                  accessibilityLabel="התחברות עם Apple"
+                  accessibilityLabel={t('auth.appleLoginLabel')}
                   accessibilityRole="button"
                   onPress={async () => {
                     try {
@@ -1004,7 +1004,7 @@ export default function LoginScreen({
                       // Check if Apple Authentication is available (not available on simulator)
                       const isAvailable = await AppleAuthentication.isAvailableAsync();
                       if (!isAvailable) {
-                        Alert.alert('לא זמין', 'התחברות עם Apple לא זמינה במכשיר זה. נסה במכשיר אמיתי.');
+                        Alert.alert(t('auth.appleNotAvailable'), t('auth.appleNotAvailableMessage'));
                         return;
                       }
 
@@ -1032,7 +1032,7 @@ export default function LoginScreen({
 
                       // Validate identity token exists before using it
                       if (!appleCredential.identityToken) {
-                        Alert.alert(t('common.error'), 'לא התקבל טוקן מ-Apple. נסה שוב.');
+                        Alert.alert(t('common.error'), t('auth.appleTokenError'));
                         return;
                       }
 
@@ -1083,7 +1083,7 @@ export default function LoginScreen({
                       logger.error('❌ Apple Sign-In Error:', e.code, e.message);
                       if (e.code !== 'ERR_REQUEST_CANCELED' && e.code !== 'ERR_CANCELED' && e.code !== 'ERR_REQUEST_UNKNOWN') {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                        Alert.alert('שגיאת Apple', e.message || 'שגיאה לא ידועה');
+                        Alert.alert(t('auth.appleError'), e.message || t('auth.unknownError'));
                       }
                     } finally {
                       setLoading(false);
@@ -1203,13 +1203,13 @@ export default function LoginScreen({
                     if (!permission?.granted) {
                       const result = await requestPermission();
                       if (!result.granted) {
-                        Alert.alert(t('common.error'), 'יש לאשר גישה למצלמה כדי לסרוק את הקוד');
+                        Alert.alert(t('common.error'), t('auth.cameraPermRequired'));
                         return;
                       }
                     }
                     setShowScanner(true);
                   }}
-                  accessibilityLabel="סרוק ברקוד"
+                  accessibilityLabel={t('auth.scanBarcode')}
                 >
                   <QrCode size={22} color={theme.primary} strokeWidth={2} />
                 </TouchableOpacity>

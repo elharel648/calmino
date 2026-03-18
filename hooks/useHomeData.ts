@@ -274,7 +274,7 @@ export const useHomeData = (
                     }
                     const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
                     if (eventDate >= last24h) {
-                        if (event.type === 'supplement') healthCount++;
+                        if (event.type === 'supplement' || event.type === 'supplements') healthCount++;
                         if (event.type === 'medication') medCount++;
                     }
                 });

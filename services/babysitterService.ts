@@ -452,7 +452,8 @@ export async function getBabysitterReviews(babysitterId: string): Promise<Review
                     parentName = parentDoc.data().displayName || 'הורה';
                 }
             } catch (e) {
-                logger.error('getParentName error:', e);
+                // Expected: Firestore rules may block cross-user reads
+                logger.debug('getParentName: insufficient permissions for', data.parentId);
             }
         }
 

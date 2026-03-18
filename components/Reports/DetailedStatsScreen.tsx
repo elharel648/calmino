@@ -16,7 +16,7 @@ import {
     TrendingUp, TrendingDown, Clock, Award, Star, Zap
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { format, subWeeks, subMonths, startOfDay, endOfDay, eachDayOfInterval, differenceInHours } from 'date-fns';
+import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, eachWeekOfInterval, differenceInHours } from 'date-fns';
 import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../services/firebaseConfig';
@@ -40,6 +40,7 @@ interface DetailedStatsScreenProps {
     onClose: () => void;
     metricType: MetricType;
     childId: string;
+    initialTimeRange?: TimeRange;
 }
 
 type FeedingSubType = 'all' | 'bottle' | 'breast_right' | 'breast_left' | 'solids' | 'pumping';
@@ -48,6 +49,7 @@ export default function DetailedStatsScreen({
     onClose,
     metricType,
     childId,
+    initialTimeRange = 'week',
 }: DetailedStatsScreenProps) {
     const { theme } = useTheme();
     const { t, language } = useLanguage();
@@ -78,7 +80,7 @@ export default function DetailedStatsScreen({
             color: '#F59E0B',
             lightBg: '#FFFBEB',
             barColors: ['#F59E0B', '#FBBF24', '#FCD34D'],
-            unit: t('reports.units.hours'),
+            unit: t('detailedStats.ml'),
             avgLabel: t('reports.insights.avgDailyFeeding'),
             insights: [
                 { icon: Zap, title: t('reports.insights.biggestFeeding'), key: 'biggestFeeding' },
@@ -116,11 +118,10 @@ export default function DetailedStatsScreen({
         },
     }), [t]);
 
-    const TIME_RANGE_LABELS = useMemo<Record<TimeRange, string>>(() => ({
+    const TIME_RANGE_LABELS = useMemo<Record<Exclude<TimeRange, 'custom'>, string>>(() => ({
         day: t('reports.tabs.daily'),
         week: t('reports.tabs.weekly'),
         month: t('reports.tabs.monthly'),
-        custom: t('reports.tabs.custom'),
     }), [t]);
 
     const FEEDING_SUBTYPES = useMemo<{ id: FeedingSubType; label: string; color: string }[]>(() => [
@@ -149,7 +150,7 @@ export default function DetailedStatsScreen({
         ],
     }), [t]);
 
-    const [timeRange, setTimeRange] = useState<TimeRange>('week');
+    const [timeRange, setTimeRange] = useState<TimeRange>(initialTimeRange);
     const [data, setData] = useState<DayData[]>([]);
     const [prevWeekData, setPrevWeekData] = useState<DayData[]>([]);
     const [allFoodEvents, setAllFoodEvents] = useState<any[]>([]);
@@ -226,31 +227,46 @@ export default function DetailedStatsScreen({
                     setAllFoodEvents([]);
                 }
 
-                // Fetch previous week data for comparison (only for week view)
-                let prevWeekEvents: any[] = [];
-                if (timeRange === 'week' && metricType === 'sleep') {
-                    try {
-                        const prevWeekStart = subWeeks(dateRange.start, 1);
-                        const prevWeekEnd = subWeeks(dateRange.end, 1);
-                        const prevStartTimestamp = Timestamp.fromDate(prevWeekStart);
-                        const prevEndTimestamp = Timestamp.fromDate(prevWeekEnd);
-
-                        const prevQ = query(
-                            eventsRef,
-                            where('childId', '==', childId),
-                            where('timestamp', '>=', prevStartTimestamp),
-                            where('timestamp', '<=', prevEndTimestamp),
-                            orderBy('timestamp', 'asc')
-                        );
-
-                        const prevSnapshot = await getDocs(prevQ);
-                        prevWeekEvents = prevSnapshot.docs.map(doc => ({
-                            ...doc.data(),
-                            timestamp: doc.data().timestamp?.toDate() || new Date(),
-                        }));
-                    } catch (error) {
-                        logger.error('Error fetching previous week data:', error);
+                // Fetch previous period data for comparison (all metrics, all time ranges)
+                let prevPeriodEvents: any[] = [];
+                try {
+                    let prevStart: Date;
+                    let prevEnd: Date;
+                    switch (timeRange) {
+                        case 'day':
+                            prevStart = startOfDay(subDays(dateRange.start, 1));
+                            prevEnd = endOfDay(subDays(dateRange.end, 1));
+                            break;
+                        case 'week':
+                            prevStart = subWeeks(dateRange.start, 1);
+                            prevEnd = subWeeks(dateRange.end, 1);
+                            break;
+                        case 'month':
+                            prevStart = subMonths(dateRange.start, 1);
+                            prevEnd = subMonths(dateRange.end, 1);
+                            break;
+                        default:
+                            prevStart = subMonths(dateRange.start, 6);
+                            prevEnd = subMonths(dateRange.end, 6);
                     }
+                    const prevStartTimestamp = Timestamp.fromDate(prevStart);
+                    const prevEndTimestamp = Timestamp.fromDate(prevEnd);
+
+                    const prevQ = query(
+                        eventsRef,
+                        where('childId', '==', childId),
+                        where('timestamp', '>=', prevStartTimestamp),
+                        where('timestamp', '<=', prevEndTimestamp),
+                        orderBy('timestamp', 'asc')
+                    );
+
+                    const prevSnapshot = await getDocs(prevQ);
+                    prevPeriodEvents = prevSnapshot.docs.map(doc => ({
+                        ...doc.data(),
+                        timestamp: doc.data().timestamp?.toDate() || new Date(),
+                    }));
+                } catch (error) {
+                    logger.error('Error fetching previous period data:', error);
                 }
 
                 // Create day-by-day data
@@ -288,12 +304,13 @@ export default function DetailedStatsScreen({
                             return false;
                         }).forEach((e: any) => {
                             const amount = parseInt(String(e.amount || 0).replace(/[^\d]/g, '')) || 0;
-                            value += amount;
+                            // If no ml amount (e.g. direct breastfeeding), count as 1 occurrence
+                            value += amount > 0 ? amount : 1;
                         });
                     } else if (metricType === 'diapers') {
                         value = dayEvents.filter((e: any) => e.type === 'diaper').length;
                     } else if (metricType === 'supplements') {
-                        value = dayEvents.filter((e: any) => e.type === 'supplement').length;
+                        value = dayEvents.filter((e: any) => e.type === 'supplement' || e.type === 'supplements').length;
                     }
 
                     return { date: day, value, segments: segments.length > 0 ? segments : undefined };
@@ -301,26 +318,68 @@ export default function DetailedStatsScreen({
 
                 setData(dayData);
 
-                // Calculate previous week data for comparison
-                if (timeRange === 'week' && metricType === 'sleep' && prevWeekEvents.length > 0) {
-                    const prevDays = eachDayOfInterval({
-                        start: subWeeks(dateRange.start, 1),
-                        end: subWeeks(dateRange.end, 1)
+                // For monthly/custom views, aggregate days into weeks
+                if (timeRange === 'month' || timeRange === 'custom') {
+                    const weekStarts = eachWeekOfInterval(
+                        { start: dateRange.start, end: dateRange.end },
+                        { weekStartsOn: 0 } // Sunday
+                    );
+                    const weeklyData: DayData[] = weekStarts.map(weekStart => {
+                        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
+                        const clampedEnd = weekEnd > dateRange.end ? dateRange.end : weekEnd;
+                        // Sum all day values in this week
+                        const weekDays = dayData.filter(d => d.date >= weekStart && d.date <= clampedEnd);
+                        const total = weekDays.reduce((sum, d) => sum + d.value, 0);
+                        return { date: weekStart, value: total };
                     });
+                    setData(weeklyData);
+                }
+
+                // Calculate previous period data for comparison
+                if (prevPeriodEvents.length > 0) {
+                    let prevStart: Date;
+                    let prevEnd: Date;
+                    switch (timeRange) {
+                        case 'day':
+                            prevStart = startOfDay(subDays(dateRange.start, 1));
+                            prevEnd = endOfDay(subDays(dateRange.end, 1));
+                            break;
+                        case 'week':
+                            prevStart = subWeeks(dateRange.start, 1);
+                            prevEnd = subWeeks(dateRange.end, 1);
+                            break;
+                        case 'month':
+                            prevStart = subMonths(dateRange.start, 1);
+                            prevEnd = subMonths(dateRange.end, 1);
+                            break;
+                        default:
+                            prevStart = subMonths(dateRange.start, 6);
+                            prevEnd = subMonths(dateRange.end, 6);
+                    }
+                    const prevDays = eachDayOfInterval({ start: prevStart, end: prevEnd });
                     const prevDayData: DayData[] = prevDays.map(day => {
                         const dayStart = startOfDay(day);
                         const dayEnd = endOfDay(day);
 
-                        const dayEvents = prevWeekEvents.filter((e: any) => {
+                        const dayEvents = prevPeriodEvents.filter((e: any) => {
                             const eventDate = new Date(e.timestamp);
                             return eventDate >= dayStart && eventDate <= dayEnd;
                         });
 
                         let value = 0;
-                        dayEvents.filter((e: any) => e.type === 'sleep').forEach((e: any) => {
-                            const hours = (e.duration || 0) / 3600;
-                            value += hours;
-                        });
+                        if (metricType === 'sleep') {
+                            dayEvents.filter((e: any) => e.type === 'sleep').forEach((e: any) => {
+                                value += (e.duration || 0) / 3600;
+                            });
+                        } else if (metricType === 'food') {
+                            dayEvents.filter((e: any) => e.type === 'food' || e.type === 'feeding').forEach((e: any) => {
+                                value += parseInt(String(e.amount || 0).replace(/[^\d]/g, '')) || 0;
+                            });
+                        } else if (metricType === 'diapers') {
+                            value = dayEvents.filter((e: any) => e.type === 'diaper').length;
+                        } else if (metricType === 'supplements') {
+                            value = dayEvents.filter((e: any) => e.type === 'supplement' || e.type === 'supplements').length;
+                        }
 
                         return { date: day, value };
                     });
@@ -353,23 +412,23 @@ export default function DetailedStatsScreen({
         return { total, average, max, maxDay };
     }, [data]);
 
-    // Calculate week change for sleep
+    // Calculate period change (all metrics)
     const weekChange = useMemo(() => {
-        if (metricType !== 'sleep' || prevWeekData.length === 0 || data.length === 0) {
+        if (prevWeekData.length === 0 || data.length === 0) {
             return null;
         }
 
-        const currentWeekTotal = data.reduce((sum, day) => sum + day.value, 0);
-        const prevWeekTotal = prevWeekData.reduce((sum, day) => sum + day.value, 0);
+        const currentTotal = data.reduce((sum, day) => sum + day.value, 0);
+        const prevTotal = prevWeekData.reduce((sum, day) => sum + day.value, 0);
 
-        if (prevWeekTotal === 0) {
-            return currentWeekTotal > 0 ? '+100%' : '0%';
+        if (prevTotal === 0) {
+            return currentTotal > 0 ? '+100%' : '0%';
         }
 
-        const change = ((currentWeekTotal - prevWeekTotal) / prevWeekTotal) * 100;
+        const change = ((currentTotal - prevTotal) / prevTotal) * 100;
         const sign = change >= 0 ? '+' : '';
         return `${sign}${change.toFixed(0)}%`;
-    }, [data, prevWeekData, metricType]);
+    }, [data, prevWeekData]);
 
     // Calculate average interval between feedings
     const avgInterval = useMemo(() => {
@@ -428,7 +487,7 @@ export default function DetailedStatsScreen({
         } else {
             return {
                 consistency: stats.average > 0 ? t('detailedStats.good') : '--',
-                commonTime: t('reports.time.morning'),
+                commonTime: '--',
                 totalDoses: `${Math.round(stats.total)} ${t('detailedStats.doses')}`,
             };
         }
@@ -441,17 +500,26 @@ export default function DetailedStatsScreen({
             const minutes = Math.round((value - hours) * 60);
             return { main: hours.toString(), sub: `${minutes} ${t('detailedStats.minuteShort')}`, unit: t('detailedStats.hourShort') };
         }
-        return { main: Math.round(value).toString(), sub: '', unit: config.unit };
+        return { main: Math.round(value).toString(), sub: '', unit: metricType === 'food' ? (value > 50 ? t('detailedStats.ml') : t('reports.units.times')) : config.unit };
     };
 
     const formattedAvg = formatValue(stats.average);
 
     // Prepare chart data
     const chartData = useMemo(() => data.map(d => d.value), [data]);
-    const chartLabels = useMemo(() =>
-        data.map(d => format(d.date, timeRange === 'custom' ? 'd/M' : 'EEE', { locale: dateFnsLocale })),
-        [data, timeRange, dateFnsLocale]
-    );
+    const chartLabels = useMemo(() => {
+        if (timeRange === 'month' || timeRange === 'custom') {
+            // Weekly labels: show date range like "10-17/3"
+            return data.map(d => {
+                const weekEnd = endOfWeek(d.date, { weekStartsOn: 0 });
+                const startDay = format(d.date, 'd', { locale: dateFnsLocale });
+                const endDay = format(weekEnd, 'd', { locale: dateFnsLocale });
+                const month = format(d.date, '/M', { locale: dateFnsLocale });
+                return `${startDay}-${endDay}${month}`;
+            });
+        }
+        return data.map(d => format(d.date, 'EEE', { locale: dateFnsLocale }));
+    }, [data, timeRange, dateFnsLocale]);
 
     // Calculate goals progress
     const goalsProgress = useMemo(() => {
@@ -466,19 +534,29 @@ export default function DetailedStatsScreen({
         });
     }, [data, metricType]);
 
-    // Calculate comparison to previous period
+    // Calculate comparison to previous period (real data)
     const comparison = useMemo(() => {
-        if (data.length === 0) return { change: 0, isPositive: true, prevAvg: 0 };
-        // Simulate previous period (would need real data fetch)
-        const currentAvg = stats.average;
-        const prevAvg = currentAvg * 0.9; // Simulated 10% lower previous period
-        const change = prevAvg > 0 ? Math.round(((currentAvg - prevAvg) / prevAvg) * 100) : 0;
+        if (data.length === 0 || prevWeekData.length === 0) {
+            return { change: 0, isPositive: true, prevAvg: 0, hasData: false };
+        }
+        const currentTotal = data.reduce((sum, day) => sum + day.value, 0);
+        const prevTotal = prevWeekData.reduce((sum, day) => sum + day.value, 0);
+        const currentNonZero = data.filter(d => d.value > 0);
+        const prevNonZero = prevWeekData.filter(d => d.value > 0);
+        const currentAvg = currentNonZero.length > 0 ? currentTotal / currentNonZero.length : 0;
+        const prevAvg = prevNonZero.length > 0 ? prevTotal / prevNonZero.length : 0;
+
+        if (prevAvg === 0) {
+            return { change: currentAvg > 0 ? 100 : 0, isPositive: true, prevAvg: 0, hasData: true };
+        }
+        const change = Math.round(((currentAvg - prevAvg) / prevAvg) * 100);
         return {
             change: Math.abs(change),
             isPositive: change >= 0,
             prevAvg,
+            hasData: true,
         };
-    }, [data, stats]);
+    }, [data, prevWeekData]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -507,7 +585,7 @@ export default function DetailedStatsScreen({
             >
                 {/* Time Range Tabs */}
                 <View style={[styles.timeRangeTabs, { backgroundColor: theme.cardSecondary }]}>
-                    {(Object.entries(TIME_RANGE_LABELS) as [TimeRange, string][]).map(([range, label]) => {
+                    {(Object.entries(TIME_RANGE_LABELS) as [Exclude<TimeRange, 'custom'>, string][]).map(([range, label]) => {
                         const isActive = timeRange === range;
                         return (
                             <TouchableOpacity
@@ -646,11 +724,17 @@ export default function DetailedStatsScreen({
                     ))}
                 </View>
 
-                {/* Comparison Section */}
+                {/* Comparison Section - only show if we have previous period data */}
+                {comparison.hasData && (
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <TrendingUp size={18} color={theme.textSecondary} />
-                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.comparison.previousPeriod')}</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                            {timeRange === 'day' ? t('reports.comparison.vsYesterday') :
+                             timeRange === 'week' ? t('reports.comparison.vsLastWeek') :
+                             timeRange === 'month' ? t('reports.comparison.vsLastMonth') :
+                             t('reports.comparison.previousPeriod')}
+                        </Text>
                     </View>
                     <View style={[styles.comparisonCard, { backgroundColor: theme.card }]}>
                         <View style={[styles.comparisonIconWrap, { backgroundColor: config.lightBg }]}>
@@ -674,6 +758,7 @@ export default function DetailedStatsScreen({
                         </View>
                     </View>
                 </View>
+                )}
 
                 {/* Insights Section */}
                 <View style={styles.section}>

@@ -42,9 +42,23 @@
           <string>calmparentapp</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505</string>
+          <string>calmparentapp</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505</string>
+          <string>calmparentapp</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>3</string>
+    <string>4</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
@@ -65,7 +79,7 @@
     <key>NSCalendarsUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your calendars</string>
     <key>NSCameraUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your camera</string>
+    <string>האפליקציה צריכה גישה למצלמה כדי לסרוק ברקוד ולהצטרף למשפחה</string>
     <key>NSFaceIDUsageDescription</key>
     <string>אפשר כניסה מהירה ומאובטחת באמצעות Face ID</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -84,12 +98,13 @@
     <string>Allow $(PRODUCT_NAME) to access your reminders</string>
     <key>NSSupportsLiveActivities</key>
     <true/>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>audio</string>
-    </array>
     <key>RCTNewArchEnabled</key>
     <true/>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>audio</string>
+      <string>audio</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

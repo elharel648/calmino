@@ -15,6 +15,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { PrivacyContentAR, TermsContentAR } from './LegalContentAR';
+import { PrivacyContentFR, TermsContentFR } from './LegalContentFR';
+import { PrivacyContentDE, TermsContentDE } from './LegalContentDE';
+import { PrivacyContentES, TermsContentES } from './LegalContentES';
 
 export type LegalType = 'terms' | 'privacy';
 
@@ -50,8 +54,9 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     <Text style={[styles.subsection, { color: textColor }]}>א. מידע שאתה מספק ישירות:{'\n'}</Text>
     • פרטי חשבון: שם מלא, כתובת אימייל, סיסמה מוצפנת{'\n'}
     • פרופיל ילד: שם, תאריך לידה, מגדר, תמונת פרופיל{'\n'}
-    • נתוני מעקב: האכלה (שעה, כמות, סוג), שינה (שעות כניסה ויציאה), החלפת חיתול, תוספי תזונה, חיסונים, מדדי גדילה (משקל, גובה, היקף ראש){'\n'}
+    • נתוני מעקב: האכלה (שעה, כמות, סוג), שינה (שעות כניסה ויציאה), החלפת חיתול, תוספי תזונה, חיסונים, תרופות, מדדי גדילה (משקל, גובה, היקף ראש){'\n'}
     • נתוני מיקום (GPS) — לצורך שירותי איתור בייביסיטרים בסביבתך בלבד, באישורך המפורש{'\n'}
+    • הודעות צ'אט שנשלחו בין הורים לבייביסיטרים דרך האפליקציה{'\n'}
     • הערות ותיעוד שתזין ידנית{'\n'}
     • תמונות ורגעים קסומים שתבחר לשמור{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>ב. מידע הנאסף אוטומטית:{'\n'}</Text>
@@ -78,7 +83,9 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     <Text style={[styles.subsection, { color: textColor }]}>ספקי שירות חיוניים (מעבדי מידע מאושרים):{'\n'}</Text>
     • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — אחסון נתונים, אימות משתמשים ועיבוד בק-אנד. Firebase עומד ב-GDPR ובמסגרת EU-US Data Privacy Framework. חתמנו על הסכם עיבוד נתונים (DPA) מול Google בהתאם לדרישות GDPR Article 28. מדיניות Firebase: firebase.google.com/support/privacy{'\n'}
     • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — אימות משתמשים ושליחת התראות ל-iOS{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — פלטפורמת פיתוח ושליחת התראות Push חוצות-פלטפורמות{'\n\n'}
+    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — פלטפורמת פיתוח ושליחת התראות Push חוצות-פלטפורמות{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> — ניהול מנויים ורכישות In-App. מעבד מזהה משתמש והיסטוריית רכישות בלבד. מדיניות: revenuecat.com/privacy{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> — נתוני מזג אוויר. עשוי להשתמש בנתוני מיקום כללי להצגת תחזית{'\n\n'}
     אנחנו <Text style={styles.bold}>לא</Text> מוכרים, משכירים, מחליפים, או מסחרים במידע שלך בשום אופן.{'\n'}
     נחשוף מידע לגורם חיצוני רק אם: (1) נדרשנו לכך בצו שיפוטי תקף; (2) נדרש לפי חוק; (3) הכרחי להגנה על בטיחות הציבור.{'\n\n'}
 
@@ -90,7 +97,7 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • הצפנת כל תעבורת הנתונים (TLS 1.2+){'\n'}
     • הצפנת נתונים באחסון באמצעות Firebase Security Rules{'\n'}
     • הרשאות גישה מחמירות — כל משתמש ניגש רק לנתוניו{'\n'}
-    • אימות דו-שלבי אופציונלי (Face ID / Touch ID){'\n'}
+
     • ניטור חריגות ורישום אירועי אבטחה{'\n\n'}
     חשוב להבין: אין מערכת דיגיטלית בטוחה לחלוטין. אם יש לך חשד לפרצת אבטחה, הודע לנו מיד בכתובת {CONTACT_EMAIL}.{'\n\n'}
 
@@ -150,8 +157,9 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     <Text style={[styles.subsection, { color: textColor }]}>a. Information you provide directly:{'\n'}</Text>
     • Account details: full name, email address, encrypted password{'\n'}
     • Child profile: name, date of birth, gender, profile photo{'\n'}
-    • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, growth measurements (weight, height, head circumference){'\n'}
+    • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, medications, growth measurements (weight, height, head circumference){'\n'}
     • Location data (GPS) — solely for babysitter discovery services in your area, with your explicit permission{'\n'}
+    • Chat messages sent between parents and babysitters through the app{'\n'}
     • Notes and records you enter manually{'\n'}
     • Photos and magic moments you choose to save{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Information collected automatically:{'\n'}</Text>
@@ -178,7 +186,9 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     <Text style={[styles.subsection, { color: textColor }]}>Essential service providers (authorized data processors):{'\n'}</Text>
     • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — data storage, user authentication, and backend processing. Firebase complies with GDPR and the EU-US Data Privacy Framework. We have signed a Data Processing Agreement (DPA) with Google in accordance with GDPR Article 28. Firebase policy: firebase.google.com/support/privacy{'\n'}
     • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — user authentication and sending iOS notifications{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — development platform and cross-platform push notifications{'\n\n'}
+    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — development platform and cross-platform push notifications{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> — subscription and in-app purchase management. Processes user identifier and purchase history only. Policy: revenuecat.com/privacy{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> — weather data. May use general location data to display forecasts{'\n\n'}
     We do <Text style={styles.bold}>not</Text> sell, rent, exchange, or commercialize your information in any way.{'\n'}
     We will disclose information to an external party only if: (1) required by a valid court order; (2) required by law; (3) necessary to protect public safety.{'\n\n'}
 
@@ -190,7 +200,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Encryption of all data in transit (TLS 1.2+){'\n'}
     • Encryption of data at rest via Firebase Security Rules{'\n'}
     • Strict access controls — each user can only access their own data{'\n'}
-    • Optional two-factor authentication (Face ID / Touch ID){'\n'}
+
     • Anomaly monitoring and security event logging{'\n\n'}
     Important: no digital system is completely secure. If you suspect a security breach, notify us immediately at {CONTACT_EMAIL}.{'\n\n'}
 
@@ -241,13 +251,13 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
 
     <Text style={[styles.section, { color: textColor }]}>2. תיאור השירות{'\n'}</Text>
     Calmino היא אפליקציית מעקב ובריאות לתינוקות וילדים, המאפשרת:{'\n'}
-    • מעקב אחר האכלה, שינה, חיתולים, תוספי תזונה וחיסונים{'\n'}
+    • מעקב אחר האכלה, שינה, חיתולים, תוספי תזונה, חיסונים ותרופות{'\n'}
     • מדידת מדדי גדילה ועקומות צמיחה{'\n'}
     • שיתוף נתונים עם בני / בנות משפחה ובייביסיטרים{'\n'}
     • יצירת סטטיסטיקות, דוחות ותובנות{'\n'}
     • תיעוד רגעים קסומים ואבני דרך{'\n'}
     • ניהול תזכורות והתראות מותאמות אישית{'\n'}
-    • שירותי איתור בייביסיטרים ותיאום הזמנות{'\n\n'}
+    • שירותי איתור בייביסיטרים, תיאום הזמנות והודעות צ'אט{'\n\n'}
     <Text style={styles.bold}>הגיל המינימלי לשימוש: 16.</Text> השירות אינו מיועד למשתמשים מתחת לגיל 16.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. חשבון משתמש{'\n'}</Text>
@@ -285,7 +295,9 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
     האפליקציה מסתמכת על שירותים חיצוניים:{'\n'}
     • <Text style={styles.bold}>Google Firebase</Text> — אחסון נתונים, אימות, ותשתית{'\n'}
     • <Text style={styles.bold}>Apple</Text> — אימות ו-Push Notifications{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — פלטפורמת פיתוח ועדכונים{'\n\n'}
+    • <Text style={styles.bold}>Expo</Text> — פלטפורמת פיתוח ועדכונים{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> — ניהול מנויים ורכישות{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> — נתוני מזג אוויר{'\n\n'}
     שימושך בשירותים אלה כפוף גם למדיניות ותנאי השימוש שלהם. Calmino אינה אחראית לזמינות, ביצועים, או שינויים בשירותי צד שלישי.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. הגבלת אחריות, אחריות רפואית ושירותי בייביסיטר{'\n'}</Text>
@@ -335,13 +347,13 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
 
     <Text style={[styles.section, { color: textColor }]}>2. Service Description{'\n'}</Text>
     Calmino is a baby and child health tracking application that enables:{'\n'}
-    • Tracking feeding, sleep, diapers, nutritional supplements, and vaccinations{'\n'}
+    • Tracking feeding, sleep, diapers, nutritional supplements, vaccinations, and medications{'\n'}
     • Measuring growth metrics and growth curves{'\n'}
     • Sharing data with family members and babysitters{'\n'}
     • Creating statistics, reports, and insights{'\n'}
     • Recording magic moments and milestones{'\n'}
     • Managing customized reminders and notifications{'\n'}
-    • Babysitter discovery and booking coordination services{'\n\n'}
+    • Babysitter discovery, booking coordination, and chat messaging{'\n\n'}
     <Text style={styles.bold}>Minimum age for use: 16.</Text> The service is not intended for users under the age of 16.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. User Account{'\n'}</Text>
@@ -379,7 +391,9 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     The app relies on external services:{'\n'}
     • <Text style={styles.bold}>Google Firebase</Text> — data storage, authentication, and infrastructure{'\n'}
     • <Text style={styles.bold}>Apple</Text> — authentication and Push Notifications{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — development platform and updates{'\n\n'}
+    • <Text style={styles.bold}>Expo</Text> — development platform and updates{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> — subscription and purchase management{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> — weather data{'\n\n'}
     Your use of these services is also subject to their respective policies and terms of service. Calmino is not responsible for the availability, performance, or changes in third-party services.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability, Medical Disclaimer, and Babysitter Services{'\n'}</Text>
@@ -419,17 +433,47 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
 // ─────────────────────────────────────────────
 // Main Modal Component
 // ─────────────────────────────────────────────
+const TITLES: Record<string, { privacy: string; terms: string; close: string }> = {
+  he: { privacy: 'מדיניות פרטיות', terms: 'תנאי שימוש', close: 'סגור' },
+  en: { privacy: 'Privacy Policy', terms: 'Terms of Service', close: 'Close' },
+  ar: { privacy: 'سياسة الخصوصية', terms: 'شروط الاستخدام', close: 'إغلاق' },
+  fr: { privacy: 'Politique de Confidentialité', terms: "Conditions d'Utilisation", close: 'Fermer' },
+  de: { privacy: 'Datenschutzrichtlinie', terms: 'Nutzungsbedingungen', close: 'Schließen' },
+  es: { privacy: 'Política de Privacidad', terms: 'Términos de Servicio', close: 'Cerrar' },
+};
+
+function getPrivacyContent(lang: string, textColor: string, subtitleColor: string) {
+  const props = { textColor, subtitleColor };
+  switch (lang) {
+    case 'he': return <PrivacyContentHE {...props} />;
+    case 'ar': return <PrivacyContentAR {...props} />;
+    case 'fr': return <PrivacyContentFR {...props} />;
+    case 'de': return <PrivacyContentDE {...props} />;
+    case 'es': return <PrivacyContentES {...props} />;
+    default:  return <PrivacyContentEN {...props} />;
+  }
+}
+
+function getTermsContent(lang: string, textColor: string, subtitleColor: string) {
+  const props = { textColor, subtitleColor };
+  switch (lang) {
+    case 'he': return <TermsContentHE {...props} />;
+    case 'ar': return <TermsContentAR {...props} />;
+    case 'fr': return <TermsContentFR {...props} />;
+    case 'de': return <TermsContentDE {...props} />;
+    case 'es': return <TermsContentES {...props} />;
+    default:  return <TermsContentEN {...props} />;
+  }
+}
+
 export default function LegalModal({ visible, type, onClose }: LegalModalProps) {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const insets = useSafeAreaInsets();
-  const isHebrew = language === 'he';
 
-  const title = type === 'privacy'
-    ? (isHebrew ? 'מדיניות פרטיות' : 'Privacy Policy')
-    : (isHebrew ? 'תנאי שימוש' : 'Terms of Service');
-
-  const closeLabel = isHebrew ? 'סגור' : 'Close';
+  const labels = TITLES[language] || TITLES.en;
+  const title = type === 'privacy' ? labels.privacy : labels.terms;
+  const closeLabel = labels.close;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -455,15 +499,10 @@ export default function LegalModal({ visible, type, onClose }: LegalModalProps) 
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {type === 'privacy' ? (
-              isHebrew
-                ? <PrivacyContentHE textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
-                : <PrivacyContentEN textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
-            ) : (
-              isHebrew
-                ? <TermsContentHE textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
-                : <TermsContentEN textColor={theme.textPrimary} subtitleColor={theme.textSecondary} />
-            )}
+            {type === 'privacy'
+              ? getPrivacyContent(language, theme.textPrimary, theme.textSecondary)
+              : getTermsContent(language, theme.textPrimary, theme.textSecondary)
+            }
           </ScrollView>
 
           {/* Close button at bottom */}

@@ -86,7 +86,7 @@ export default function ProfileScreen() {
       await refreshChildren();
       refresh();
     } catch (e) {
-      Alert.alert('שגיאה', 'שגיאה בשמירת הפרטים. נסה שוב.');
+      Alert.alert(t('common.error'), t('profile.saveErrorProfile'));
     }
   }, [updateBasicInfo, refresh, refreshChildren]);
 
@@ -100,12 +100,12 @@ export default function ProfileScreen() {
   const getAgeDisplay = () => {
     if (babyAgeMonths < 1) {
       const days = Math.floor((new Date().getTime() - birthDateObj.getTime()) / (1000 * 60 * 60 * 24));
-      return `${days} ימים`;
+      return t('profile.ageDays', { count: days });
     }
-    if (babyAgeMonths < 12) return `${babyAgeMonths} חודשים`;
+    if (babyAgeMonths < 12) return t('profile.ageMonths', { count: babyAgeMonths });
     const years = Math.floor(babyAgeMonths / 12);
     const months = babyAgeMonths % 12;
-    return months > 0 ? `${years} שנה ו-${months} חודשים` : `${years} שנה`;
+    return months > 0 ? t('profile.ageYearsMonths', { years, months }) : t('profile.ageYears', { years });
   };
 
   // Get gender icon instead of emoji
@@ -160,7 +160,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <View style={styles.profileInfo}>
-              <Text style={[styles.profileName, { color: theme.textPrimary }]}>{baby?.name || 'הילד שלי'}</Text>
+              <Text style={[styles.profileName, { color: theme.textPrimary }]}>{baby?.name || t('profile.myChildFallback')}</Text>
               <Text style={[styles.profileAge, { color: theme.primary }]}>{getAgeDisplay()}</Text>
               <Text style={[styles.profileDate, { color: theme.textSecondary }]}>{birthDateObj.toLocaleDateString('he-IL')}</Text>
             </View>
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <TrendingUp size={18} color="#10B981" />
-              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>צמיחה והתפתחות</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('profile.growthTitle')}</Text>
             </View>
             <GrowthSection
               stats={baby?.stats}
@@ -220,7 +220,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Sparkles size={18} color="#8B5CF6" />
-              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>רגעים קסומים</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('profile.magicMoments')}</Text>
             </View>
             <AlbumCarousel
               album={baby?.album}
@@ -271,7 +271,7 @@ export default function ProfileScreen() {
             visible={inviteModalVisible}
             onClose={() => setInviteModalVisible(false)}
             babyId={baby.id}
-            babyName={baby.name || 'הילד'}
+            babyName={baby.name || t('profile.childFallback')}
           />
         )}
 

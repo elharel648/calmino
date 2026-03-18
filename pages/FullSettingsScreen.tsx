@@ -114,7 +114,7 @@ export default function SettingsScreen() {
       if (userSnap.exists()) {
         const data = userSnap.data();
         setUserData({
-          name: data.displayName || user.displayName || 'הורה יקר',
+          name: data.displayName || user.displayName || t('settings.parentFallback'),
           email: user.email || '',
           photoURL: data.photoURL || user.photoURL || null
         });
@@ -128,7 +128,7 @@ if (data.settings.language !== undefined) {
         }
       } else {
         setUserData({
-          name: user.displayName || 'הורה יקר',
+          name: user.displayName || t('settings.parentFallback'),
           email: user.email || '',
           photoURL: user.photoURL || null
         });
@@ -223,14 +223,14 @@ if (data.settings.language !== undefined) {
         await setDoc(mailRef, {
           to: ['calminogroup@gmail.com'],
           message: {
-            subject: `📩 פנייה חדשה מ-${userData.name || 'משתמש'}`,
+            subject: `${t('settings.contactSubject', { name: userData.name || t('settings.userFallback') })}`,
             html: `
               <div dir="rtl" style="font-family: sans-serif; max-width: 500px;">
-                <h2 style="color: #007AFF;">פנייה חדשה מהאפליקציה</h2>
+                <h2 style="color: #007AFF;">${t('settings.contactTitle')}</h2>
                 <p><strong>שם:</strong> ${userData.name || t('common.unknown')}</p>
-                <p><strong>מייל:</strong> ${user.email || t('common.unknown')}</p>
+                <p><strong>${t('settings.contactEmailLabel')}:</strong> ${user.email || t('common.unknown')}</p>
                 <hr/>
-                <p><strong>הודעה:</strong></p>
+                <p><strong>${t('settings.contactMessageLabel')}:</strong></p>
                 <p style="background: #f5f5f5; padding: 12px; border-radius: 8px;">${contactMessage}</p>
               </div>
             `,
@@ -276,7 +276,7 @@ if (data.settings.language !== undefined) {
     // Only the baby's creator (parentUid) can delete the child
     const currentUid = auth.currentUser?.uid;
     if (activeChild.parentUid && activeChild.parentUid !== currentUid) {
-      return Alert.alert(t('common.error'), 'רק ההורה שיצר את הפרופיל יכול למחוק אותו');
+      return Alert.alert(t('common.error'), t('settings.onlyCreatorCanDelete'));
     }
 
     const childName = activeChild.childName;
@@ -601,8 +601,8 @@ if (data.settings.language !== undefined) {
           </View>
 
           <PremiumNotificationSettings supplements={[
-            ...(!meds.hiddenDefaults?.includes('vitaminD') ? [{ id: 'vitaminD', name: 'ויטמין D' }] : []),
-            ...(!meds.hiddenDefaults?.includes('iron') ? [{ id: 'iron', name: 'ברזל' }] : []),
+            ...(!meds.hiddenDefaults?.includes('vitaminD') ? [{ id: 'vitaminD', name: t('settings.vitaminD') }] : []),
+            ...(!meds.hiddenDefaults?.includes('iron') ? [{ id: 'iron', name: t('settings.ironSupplement') }] : []),
             ...customSupplements.map(s => ({ id: s.id, name: s.name })),
           ]} />
         </View>
@@ -733,8 +733,8 @@ if (data.settings.language !== undefined) {
                   <Instagram size={18} color="#E1306C" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
-                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>עקבו אחרינו באינסטגרם</Text>
-                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>הצטרפו לקהילה שלנו</Text>
+                  <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.followInstagram')}</Text>
+                  <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>{t('settings.joinCommunity')}</Text>
                 </View>
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
@@ -799,7 +799,7 @@ if (data.settings.language !== undefined) {
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.deleteCurrentChild')}</Text>
                   <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                    {activeChild ? `מחק את ${activeChild.childName}` : 'אין ילד נבחר'}
+                    {activeChild ? t('settings.deleteChildLabel', { name: activeChild.childName }) : t('settings.noChildSelected')}
                   </Text>
                 </View>
               </View>
@@ -968,8 +968,8 @@ if (data.settings.language !== undefined) {
                         animate={{ opacity: 1, translateY: 0 }}
                         transition={{ type: 'timing', duration: 400, delay: 200 }}
                       >
-                        <Text style={[styles.successTitle, { color: theme.textPrimary }]}>ההודעה נשלחה!</Text>
-                        <Text style={[styles.successDesc, { color: theme.textSecondary }]}>נחזור אליך בהקדם 🙏</Text>
+                        <Text style={[styles.successTitle, { color: theme.textPrimary }]}>{t('settings.messageSent')}</Text>
+                        <Text style={[styles.successDesc, { color: theme.textSecondary }]}>{t('settings.messageSentDesc')}</Text>
                       </MotiView>
                     </MotiView>
                   ) : (
@@ -996,7 +996,7 @@ if (data.settings.language !== undefined) {
 
                       {/* Subtitle */}
                       <Text style={[styles.contactSheetDesc, { color: theme.textSecondary }]}>
-                        יש לך שאלה או הצעה? נשמח לשמוע ממך!
+                        {t('settings.contactPrompt')}
                       </Text>
 
                       {/* Text area */}
@@ -1014,7 +1014,7 @@ if (data.settings.language !== undefined) {
                           textAlign="right"
                           multiline
                           numberOfLines={5}
-                          placeholder="כתוב את ההודעה שלך..."
+                          placeholder={t('settings.contactPlaceholder')}
                           placeholderTextColor={theme.textSecondary}
                           textAlignVertical="top"
                         />

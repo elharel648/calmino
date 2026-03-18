@@ -121,6 +121,22 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         latitude: loc.coords.latitude,
                         longitude: loc.coords.longitude,
                     });
+
+                    // Reverse geocode to auto-fill city
+                    try {
+                        const addresses = await Location.reverseGeocodeAsync({
+                            latitude: loc.coords.latitude,
+                            longitude: loc.coords.longitude,
+                        });
+                        if (addresses && addresses.length > 0) {
+                            const detectedCity = addresses[0]?.city || addresses[0]?.subregion || addresses[0]?.region;
+                            if (detectedCity && typeof detectedCity === 'string') {
+                                setCity(detectedCity);
+                            }
+                        }
+                    } catch (geocodeError) {
+                        logger.debug('Reverse geocode failed:', geocodeError);
+                    }
                 }
             } catch (e) {
                 logger.debug('Auto-capture location failed:', e);
@@ -199,6 +215,22 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
             });
+
+            // Reverse geocode to auto-fill city
+            try {
+                const addresses = await Location.reverseGeocodeAsync({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                });
+                if (addresses && addresses.length > 0) {
+                    const detectedCity = addresses[0]?.city || addresses[0]?.subregion || addresses[0]?.region;
+                    if (detectedCity && typeof detectedCity === 'string') {
+                        setCity(detectedCity);
+                    }
+                }
+            } catch (geocodeError) {
+                logger.debug('Reverse geocode failed:', geocodeError);
+            }
 
             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (error) {

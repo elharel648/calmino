@@ -9,7 +9,7 @@ import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/bab
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
 import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2 } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2, CalendarDays } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -37,6 +37,7 @@ interface SitterData {
     name: string;
     age: number;
     image: string;
+    coverPhoto?: string;
     rating: number;
     reviews: number;
     reviewsList?: Review[];
@@ -70,6 +71,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     const [sitterVideoUri, setSitterVideoUri] = useState<string | undefined>(sitterData.videoUri);
     const [sitterIsAvailable, setSitterIsAvailable] = useState(false);
     const [sitterIsVerified, setSitterIsVerified] = useState(false);
+    const [sitterCoverPhoto, setSitterCoverPhoto] = useState<string | undefined>(sitterData.coverPhoto);
 
     // Check if sitter has a video
     const hasVideo = Boolean(sitterVideoUri && sitterVideoUri.trim());
@@ -186,7 +188,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
                     // Load availability
                     if (data.sitterAvailableDays) setAvailabilityDays(data.sitterAvailableDays);
-                    if (data.sitterAvailableHours) setAvailabilityHours(data.sitterAvailableHours);
+                    if (data.sitterAvailableHours) {
+                        logger.log('📅 Loading sitterAvailableHours:', JSON.stringify(data.sitterAvailableHours));
+                        setAvailabilityHours(data.sitterAvailableHours);
+                    } else {
+                        logger.log('📅 No sitterAvailableHours found in Firestore');
+                    }
 
                     // Get videoUri from Firebase if not already in sitterData
                     if (!videoUri) {
@@ -194,6 +201,11 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                     }
                     if (videoUri) {
                         setSitterVideoUri(videoUri);
+                    }
+
+                    // Load cover photo
+                    if (data.sitterCoverPhoto) {
+                        setSitterCoverPhoto(data.sitterCoverPhoto);
                     }
 
                     // Read cached badges from Firestore (no extra reads needed)
@@ -494,7 +506,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             )}
                             {!imageError ? (
                                 <Image
-                                    source={{ uri: sitterData.image }}
+                                    source={{ uri: sitterCoverPhoto || sitterData.image }}
                                     style={[styles.heroVideo, { opacity: imageLoading ? 0 : 1 }]}
                                     resizeMode="cover"
                                     onLoad={() => setImageLoading(false)}
@@ -716,47 +728,94 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {/* Availability */}
                 {availabilityDays.length > 0 && (() => {
                     const ALL_DAYS = [
-                        { key: '0', short: 'א׳' },
-                        { key: '1', short: 'ב׳' },
-                        { key: '2', short: 'ג׳' },
-                        { key: '3', short: 'ד׳' },
-                        { key: '4', short: 'ה׳' },
-                        { key: '5', short: 'ו׳' },
-                        { key: '6', short: 'ש׳' },
+                        { key: '0', short: 'א׳', full: 'ראשון' },
+                        { key: '1', short: 'ב׳', full: 'שני' },
+                        { key: '2', short: 'ג׳', full: 'שלישי' },
+                        { key: '3', short: 'ד׳', full: 'רביעי' },
+                        { key: '4', short: 'ה׳', full: 'חמישי' },
+                        { key: '5', short: 'ו׳', full: 'שישי' },
+                        { key: '6', short: 'ש׳', full: 'שבת' },
                     ];
+                    const activeDaysCount = availabilityDays.length;
                     return (
-                        <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
-                            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>זמינות שבועית</Text>
-                            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', direction: 'rtl' }}>
+                        <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
+                            {/* Section Header */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, direction: 'rtl' }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <CalendarDays size={16} color="#10B981" strokeWidth={2} />
+                                    <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginBottom: 0 }]}>זמינות שבועית</Text>
+                                </View>
+                                <View style={{
+                                    backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.08)',
+                                    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
+                                }}>
+                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#10B981' }}>
+                                        {activeDaysCount}/7 ימים
+                                    </Text>
+                                </View>
+                            </View>
+                            
+                            {/* Days Grid */}
+                            <View style={{ flexDirection: 'row', gap: 6, direction: 'rtl' }}>
                                 {ALL_DAYS.map((day) => {
                                     const isAvailable = availabilityDays.includes(day.key);
                                     const hours = availabilityHours[day.key];
                                     return (
-                                        <View key={day.key} style={{ alignItems: 'center', minWidth: 36 }}>
-                                            <View style={{
-                                                width: 38, height: 38, borderRadius: 12,
-                                                backgroundColor: isAvailable
-                                                    ? (isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)')
-                                                    : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
-                                                borderWidth: 1,
-                                                borderColor: isAvailable
-                                                    ? (isDarkMode ? 'rgba(16,185,129,0.4)' : 'rgba(16,185,129,0.3)')
-                                                    : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'),
-                                                alignItems: 'center', justifyContent: 'center',
+                                        <View key={day.key} style={{
+                                            flex: 1,
+                                            backgroundColor: isAvailable
+                                                ? (isDarkMode ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.06)')
+                                                : (isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+                                            borderRadius: 14,
+                                            borderWidth: 1,
+                                            borderColor: isAvailable
+                                                ? (isDarkMode ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.2)')
+                                                : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                                            paddingVertical: 10,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            minHeight: 72,
+                                        }}>
+                                            {/* Day Letter */}
+                                            <Text style={{
+                                                fontSize: 15, fontWeight: '800',
+                                                color: isAvailable ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'),
+                                                marginBottom: isAvailable ? 6 : 0,
                                             }}>
+                                                {day.short}
+                                            </Text>
+                                            {/* Hours */}
+                                            {isAvailable && hours ? (
+                                                <View style={{ alignItems: 'center' }}>
+                                                    <Text style={{
+                                                        fontSize: 9.5, fontWeight: '700',
+                                                        color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                                                        letterSpacing: -0.3,
+                                                    }}>
+                                                        {hours.start}
+                                                    </Text>
+                                                    <View style={{
+                                                        width: 8, height: 1,
+                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+                                                        marginVertical: 2,
+                                                        borderRadius: 1,
+                                                    }} />
+                                                    <Text style={{
+                                                        fontSize: 9.5, fontWeight: '700',
+                                                        color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                                                        letterSpacing: -0.3,
+                                                    }}>
+                                                        {hours.end}
+                                                    </Text>
+                                                </View>
+                                            ) : isAvailable ? (
                                                 <Text style={{
-                                                    fontSize: 12, fontWeight: '700',
-                                                    color: isAvailable ? '#10B981' : theme.textSecondary,
-                                                    opacity: isAvailable ? 1 : 0.4,
+                                                    fontSize: 9, fontWeight: '600',
+                                                    color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
                                                 }}>
-                                                    {day.short}
+                                                    כל היום
                                                 </Text>
-                                            </View>
-                                            {isAvailable && hours && (
-                                                <Text style={{ fontSize: 8.5, color: theme.textSecondary, marginTop: 4, textAlign: 'center' }}>
-                                                    {hours.start.replace(':00', '')}–{hours.end.replace(':00', '')}
-                                                </Text>
-                                            )}
+                                            ) : null}
                                         </View>
                                     );
                                 })}

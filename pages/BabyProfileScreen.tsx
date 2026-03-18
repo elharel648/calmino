@@ -69,7 +69,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     }
     if (!birthDate) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert(t('common.error'), 'יש לבחור תאריך לידה');
+      Alert.alert(t('common.error'), t('babyProfile.birthdateError'));
       return;
     }
 
@@ -156,8 +156,8 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 <Sparkles size={14} color="#8B5CF6" strokeWidth={2} />
               </View>
             </View>
-            <Text style={styles.title}>רישום ילד חדש</Text>
-            <Text style={styles.subtitle}>נא למלא את הפרטים הבאים</Text>
+            <Text style={styles.title}>{t('babyProfile.title')}</Text>
+            <Text style={styles.subtitle}>{t('babyProfile.subtitle')}</Text>
           </Animated.View>
 
           {/* Name Input Card */}
@@ -175,7 +175,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
 
               <TextInput
                 style={styles.input}
-                placeholder="הקלידו את השם..."
+                placeholder={t('babyProfile.namePlaceholder')}
                 placeholderTextColor="#9CA3AF"
                 value={name}
                 onChangeText={setName}
@@ -213,7 +213,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 <Text style={[styles.dateText, !birthDate && { color: '#9CA3AF', fontWeight: '400' }]}>
                   {birthDate
                     ? birthDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
-                    : 'בחר תאריך לידה...'}
+                    : t('babyProfile.selectBirthdate')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -255,7 +255,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
 
           {/* Gender Selection */}
           <Animated.View>
-            <Text style={styles.sectionTitle}>מין הילד</Text>
+            <Text style={styles.sectionTitle}>{t('babyProfile.gender')}</Text>
             <View style={styles.genderRow}>
               {/* Boy Option */}
               <TouchableOpacity
@@ -315,7 +315,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <>
-                    <Text style={styles.submitText}>שמירה והמשך</Text>
+                    <Text style={styles.submitText}>{t('babyProfile.saveAndContinue')}</Text>
                     <ChevronRight size={22} color="#fff" style={{ marginLeft: -4 }} />
                   </>
                 )}
@@ -326,7 +326,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           {/* Bottom tip */}
           <Animated.View style={styles.tipContainer}>
             <Heart size={14} color="#EC4899" />
-            <Text style={styles.tipText}>אפשר לערוך את הפרופיל בהמשך בכל עת</Text>
+            <Text style={styles.tipText}>{t('babyProfile.editLater')}</Text>
           </Animated.View>
 
           {/* Bottom Actions for Guest/Sitter/Skip */}
@@ -336,12 +336,12 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
               onPress={() => setShowJoinModal(true)}
               activeOpacity={0.7}
             >
-              <Text style={styles.joinText}>יש לך קוד הזמנה? הצטרף כאורח/בייביסיטר</Text>
+              <Text style={styles.joinText}>{t('babyProfile.joinInvite')}</Text>
             </TouchableOpacity>
 
             {onSkip && (
               <TouchableOpacity style={styles.skipButton} onPress={onSkip} activeOpacity={0.7}>
-                <Text style={styles.skipText}>דלג לעכשיו (אפשר למלא אחר כך)</Text>
+                <Text style={styles.skipText}>{t('babyProfile.skipForNow')}</Text>
               </TouchableOpacity>
             )}
           </Animated.View>
@@ -371,9 +371,9 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             </View>
 
             {/* Text — RTL aligned */}
-            <Text style={styles.welcomeTitle}>איזה כיף!</Text>
+            <Text style={styles.welcomeTitle}>{t('babyProfile.welcomeTitle')}</Text>
             <Text style={styles.welcomeMessage}>
-              {`ברוכים הבאים ${savedName} למשפחת Calmino!`}
+              {t('babyProfile.welcomeMessage', { name: savedName })}
             </Text>
 
             {/* Button */}
@@ -385,7 +385,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
               }}
               activeOpacity={0.85}
             >
-              <Text style={styles.welcomeBtnText}>!בואו נתחיל</Text>
+              <Text style={styles.welcomeBtnText}>{t('babyProfile.letsStart')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>

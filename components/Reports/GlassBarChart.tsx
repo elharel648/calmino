@@ -64,7 +64,7 @@ const GlassBarChartPerfect: React.FC<GlassBarChartProps> = ({
     const { t } = useLanguage();
     // ==================== LAYOUT MATH ====================
     const chartWidth = SCREEN_WIDTH - 64;
-    const padding = { top: 20, bottom: 50, left: 50, right: 30 }; // Increased padding for labels
+    const padding = { top: 20, bottom: 60, left: 50, right: 30 }; // Increased bottom padding for longer labels
     const chartAreaWidth = chartWidth - padding.left - padding.right;
     const chartAreaHeight = height - padding.top - padding.bottom - 20; // Extra for title
 
@@ -387,7 +387,7 @@ const GlassBarChartPerfect: React.FC<GlassBarChartProps> = ({
 
                                 // Calculate label position relative to left edge of container
                                 // cellCenterX already includes padding.left offset
-                                const labelLeft = cell.cellCenterX - 18; // half of label width (36)
+                                const labelLeft = cell.cellCenterX - 21; // half of label width (42)
 
                                 return (
                                     <Text
@@ -396,7 +396,7 @@ const GlassBarChartPerfect: React.FC<GlassBarChartProps> = ({
                                             styles.xAxisLabel,
                                             {
                                                 left: labelLeft,
-                                                width: 36,
+                                                width: 42,
                                             },
                                             selectedIndex === index && styles.axisLabelActive,
                                         ]}
@@ -518,12 +518,13 @@ const styles = StyleSheet.create({
     // X-Axis (absolute positioning for perfect alignment)
     xAxisContainer: {
         position: 'relative',
-        height: 20,
+        height: 24,
         marginTop: 6,
+        overflow: 'visible',
     },
     xAxisLabel: {
         position: 'absolute',
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: '500',
         color: '#9CA3AF',
         textAlign: 'center',

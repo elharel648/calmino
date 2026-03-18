@@ -50,7 +50,7 @@ const BabySitterScreen = ({ navigation }: any) => {
     }, [sitters, isLoading]);
 
     // State
-    const [userMode, setUserMode] = useState<'parent' | 'sitter'>('parent');
+    // userMode toggle removed — parent mode is always shown, sitter access via + button
     const [isPaywallOpen, setIsPaywallOpen] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance' | 'favorites'>('rating');
@@ -296,33 +296,22 @@ const BabySitterScreen = ({ navigation }: any) => {
         }
     }, [isSitterRegistered, loadUserPhoto]); // Reload when sitter status changes
 
-    // Check sitter status on every screen focus
+    // Check sitter status on every screen focus (for the + button)
     useFocusEffect(
         useCallback(() => {
-            if (userMode === 'sitter') {
-                checkSitterStatus();
-            }
-        }, [userMode])
+            checkSitterStatus();
+        }, [])
     );
 
-    // Navigate directly to dashboard when sitter mode selected and user is registered
-    const navigatedToDashboard = useRef(false);
-
-    useEffect(() => {
-        if (userMode === 'sitter' &&
-            isSitterRegistered === true &&
-            !checkingStatus &&
-            !navigatedToDashboard.current) {
-            navigatedToDashboard.current = true;
+    // Handle sitter button press — navigate to dashboard or registration
+    const handleSitterButtonPress = useCallback(() => {
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (isSitterRegistered === true) {
             navigation.navigate('SitterDashboard');
-
-            // Reset to parent mode after navigation completes
-            setTimeout(() => {
-                setUserMode('parent');
-                navigatedToDashboard.current = false;
-            }, 100);
+        } else {
+            navigation.navigate('SitterRegistration');
         }
-    }, [userMode, isSitterRegistered, checkingStatus]);
+    }, [isSitterRegistered, navigation]);
 
     // Refresh handler
     const onRefresh = useCallback(async () => {
@@ -569,10 +558,10 @@ const BabySitterScreen = ({ navigation }: any) => {
 
     // Sort Pills
     const SORT_OPTIONS = [
-        { key: 'rating' as const, label: t('sitter.rating'), icon: '⭐' },
-        { key: 'price' as const, label: t('sitter.price'), icon: '₪' },
-        { key: 'distance' as const, label: t('sitter.distance'), icon: '📍' },
-        { key: 'favorites' as const, label: t('sitter.favorites'), icon: '❤️' },
+        { key: 'rating' as const, label: t('sitter.rating'), IconComp: Star },
+        { key: 'price' as const, label: t('sitter.price'), IconComp: null, iconText: '₪' },
+        { key: 'distance' as const, label: t('sitter.distance'), IconComp: MapPin },
+        { key: 'favorites' as const, label: t('sitter.favorites'), IconComp: Heart },
     ];
 
     const SortPills = () => (
@@ -600,7 +589,11 @@ const BabySitterScreen = ({ navigation }: any) => {
                         }}
                         activeOpacity={0.7}
                     >
-                        <Text style={{ fontSize: 11 }}>{opt.icon}</Text>
+                        {opt.IconComp ? (
+                            <opt.IconComp size={12} color={isActive ? theme.card : theme.textSecondary} strokeWidth={2} />
+                        ) : (
+                            <Text style={{ fontSize: 12, color: isActive ? theme.card : theme.textSecondary, fontWeight: '700' }}>{opt.iconText}</Text>
+                        )}
                         <Text style={[styles.sortPillText, { color: isActive ? theme.card : theme.textSecondary, fontWeight: isActive ? '700' : '500' }]}>
                             {opt.label}
                         </Text>
@@ -614,7 +607,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                 onPress={() => navigation.navigate('BlockedUsers')}
                 activeOpacity={0.7}
             >
-                <Text style={{ fontSize: 11 }}>🚫</Text>
+                <Ban size={12} color={theme.textSecondary} strokeWidth={2} />
                 <Text style={[styles.sortPillText, { color: theme.textSecondary, fontWeight: '500' }]}>{t('sitter.blocked')}</Text>
             </TouchableOpacity>
 
@@ -697,6 +690,21 @@ const BabySitterScreen = ({ navigation }: any) => {
                     <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('sitter.findSitter')}</Text>
 
                     <View style={styles.headerRight}>
+                        {/* Join / Open Sitter button */}
+                        <TouchableOpacity
+                            onPress={handleSitterButtonPress}
+                            style={[styles.headerBackBtn, {
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                marginRight: 8,
+                            }]}
+                            activeOpacity={0.7}
+                        >
+                            {isSitterRegistered === true ? (
+                                <Briefcase size={16} color={theme.textPrimary} strokeWidth={2} />
+                            ) : (
+                                <UserPlus size={16} color={theme.textPrimary} strokeWidth={2} />
+                            )}
+                        </TouchableOpacity>
 
                         {userPhoto ? (
                             <Image source={{ uri: userPhoto }} style={styles.userPhoto} />
@@ -710,49 +718,10 @@ const BabySitterScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {/* Mode Toggle - Monochromatic Pill */}
-                <View style={[styles.modeToggle, {
-                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
-                }]}>
-                    <TouchableOpacity
-                        style={[styles.modeBtn, userMode === 'parent' && [styles.modeBtnActive, {
-                            backgroundColor: isDarkMode ? '#fff' : '#000',
-                        }]]}
-                        onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setUserMode('parent');
-                        }}
-                        activeOpacity={0.8}
-                    >
-                        <Search size={14} color={userMode === 'parent' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} strokeWidth={2} />
-                        <Text style={[styles.modeBtnText, {
-                            color: userMode === 'parent' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary,
-                            fontWeight: userMode === 'parent' ? '700' : '500',
-                        }]}>{t('sitter.parentMode')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.modeBtn, userMode === 'sitter' && [styles.modeBtnActive, {
-                            backgroundColor: isDarkMode ? '#fff' : '#000',
-                        }]]}
-                        onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setIsSitterRegistered(null);
-                            setUserMode('sitter');
-                            checkSitterStatus();
-                        }}
-                        activeOpacity={0.8}
-                    >
-                        <Briefcase size={14} color={userMode === 'sitter' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} strokeWidth={2} />
-                        <Text style={[styles.modeBtnText, {
-                            color: userMode === 'sitter' ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary,
-                            fontWeight: userMode === 'sitter' ? '700' : '500',
-                        }]}>{t('sitter.sitterMode')}</Text>
-                    </TouchableOpacity>
-                </View>
+                {/* Mode toggle removed — sitter access via + button in header */}
             </View>
 
-            {/* Parent Mode Content */}
-            {userMode === 'parent' && (
+            {/* Sitter Search Content (always shown) */}
                 <>
                     {/* Location Search Bar */}
                     <View style={styles.locationSection}>
@@ -919,23 +888,6 @@ const BabySitterScreen = ({ navigation }: any) => {
                         />
                     )}
                 </>
-            )}
-
-            {/* Sitter Mode */}
-            {userMode === 'sitter' && (
-                <>
-                    {checkingStatus || isSitterRegistered === null ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={theme.textPrimary} />
-                            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>{t('babysitter.checkingStatus')}</Text>
-                        </View>
-                    ) : isSitterRegistered === true ? (
-                        <SitterDashboardCTA />
-                    ) : (
-                        <SitterRegistrationCTA />
-                    )}
-                </>
-            )}
             <DynamicPromoModal
                 currentScreenName="BabySitter"
                 onNavigateToPaywall={() => setIsPaywallOpen(true)}

@@ -310,7 +310,7 @@ export default function ReportsScreen() {
           sleepByDay[dayName] = (sleepByDay[dayName] || 0) + hours;
         }
 
-        if (data.type === 'supplement') {
+        if (data.type === 'supplement' || data.type === 'supplements') {
           stats.supplements += 1;
           if (dayMap[dayKey]) dayMap[dayKey].supplements += 1;
         }
@@ -435,6 +435,7 @@ export default function ReportsScreen() {
             prevStats.sleep += (data.duration / 3600);
             prevStats.sleepCount += 1;
           }
+          if (data.type === 'supplement' || data.type === 'supplements') prevStats.supplements += 1;
         });
 
         setPrevWeekStats(prevStats);
@@ -473,7 +474,7 @@ export default function ReportsScreen() {
       ? (dailyStats.sleep / dailyStats.sleepCount).toFixed(1)
       : '0';
 
-    const periodText = timeRange === 'week' ? `תקופה: שבוע` : timeRange === 'month' ? `תקופה: חודש` : `תקופה: יום`;
+    const periodText = timeRange === 'week' ? `${t('reports.misc.period')}: ${t('reports.misc.periodWeek')}` : timeRange === 'month' ? `${t('reports.misc.period')}: ${t('reports.misc.periodMonth')}` : `${t('reports.misc.period')}: ${t('reports.misc.periodDay')}`;
     const dateText = format(selectedDate || new Date(), 'd MMMM yyyy', { locale: he });
 
     // Generate table rows for daily breakdown (if week or month)
@@ -484,8 +485,8 @@ export default function ReportsScreen() {
         dailyRows += `
           <tr>
             <td style="font-weight: 600;">${day}</td>
-            <td>${stats.food} מ"ל (${stats.foodCount})</td>
-            <td>${stats.sleep.toFixed(1)} שעות</td>
+            <td>${stats.food > 0 ? `${stats.food} ${t('detailedStats.ml')}` : ''} (${stats.foodCount} ${t('reports.misc.meals')})</td>
+            <td>${stats.sleep.toFixed(1)} ${t('reports.units.hours')}</td>
             <td>${stats.diapers}</td>
             <td>${stats.supplements}</td>
           </tr>
@@ -511,7 +512,7 @@ export default function ReportsScreen() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דוח התפתחות מקיף - ${activeChild?.childName || t('reports.misc.baby')}</title>
+    <title>${t('reports.misc.reportTitle')} - ${activeChild?.childName || t('reports.misc.baby')}</title>
     <style>
         body {
             font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
@@ -786,7 +787,7 @@ export default function ReportsScreen() {
     <div class="report-header">
         ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" class="report-header-logo" />` : ''}
         <div class="report-header-text">
-            <h1>דוח מעקב - ${activeChild?.childName || t('reports.misc.baby')}</h1>
+            <h1>${t('reports.misc.reportTitle')} - ${activeChild?.childName || t('reports.misc.baby')}</h1>
             <p>${dateText} | ${periodText}</p>
         </div>
     </div>
@@ -804,7 +805,7 @@ export default function ReportsScreen() {
                 ${weeklyGoals.sleepDaysMet}/${weeklyGoals.sleepDaysGoal}
             </div>
             <h3 style="margin-bottom: 4px;">{t('reports.goals.sleepGoals')}</h3>
-            <span style="color:#64748B; font-size:14px;">ימים עם 8+ שעות שינה</span>
+            <span style="color:#64748B; font-size:14px;">${t('reports.goals.daysOver8Hours')}</span>
         </div>
         <div class="goal-item">
             <div class="goal-circle" style="background:#FFF7ED; color:#EA580C; border-color:#FFEDD5;">
@@ -824,20 +825,20 @@ export default function ReportsScreen() {
                 <h3>{t('reports.sections.nutritionFeeding')}</h3>
             </div>
             <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">{t('reports.sections.totalMeals')}</span></div>
-            <div class="stat-sub">כמות כוללת: ${dailyStats.food} מ"ל</div>
+            <div class="stat-sub">${t('reports.misc.totalAmount')}: ${dailyStats.food} ${t('detailedStats.ml')}</div>
             
             <div class="details-list">
                 <div class="detail-item">
                     <span>{t('reports.feeding.formulaPumped')}</span>
-                    <span class="detail-value">${dailyStats.feedingTypes.bottle} ארוחות</span>
+                    <span class="detail-value">${dailyStats.feedingTypes.bottle} ${t('reports.misc.meals')}</span>
                 </div>
                 <div class="detail-item">
                     <span>{t('reports.feeding.directBreastfeeding')}</span>
-                    <span class="detail-value">${dailyStats.feedingTypes.breast} ארוחות</span>
+                    <span class="detail-value">${dailyStats.feedingTypes.breast} ${t('reports.misc.meals')}</span>
                 </div>
                 <div class="detail-item">
                     <span>{t('reports.feeding.solids')}</span>
-                    <span class="detail-value">${dailyStats.feedingTypes.solids} ארוחות</span>
+                    <span class="detail-value">${dailyStats.feedingTypes.solids} ${t('reports.misc.meals')}</span>
                 </div>
             </div>
         </div>
@@ -849,12 +850,12 @@ export default function ReportsScreen() {
                 <h3>{t('reports.sections.sleepRest')}</h3>
             </div>
             <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">{t('reports.sections.cumulativeSleepHours')}</span></div>
-            <div class="stat-sub">ממוצע לתנומה: ${avgSleep} שעות</div>
+            <div class="stat-sub">${t('reports.misc.avgPerNap')}: ${avgSleep} ${t('reports.units.hours')}</div>
             
             <div class="details-list">
                 <div class="detail-item">
                     <span>{t('reports.sleep.longestNap')}</span>
-                    <span class="detail-value">${timeInsights?.longestSleep || 0} שעות</span>
+                    <span class="detail-value">${timeInsights?.longestSleep || 0} ${t('reports.units.hours')}</span>
                 </div>
                 <div class="detail-item">
                     <span>{t('reports.sleep.idealDay')}</span>
@@ -947,7 +948,7 @@ export default function ReportsScreen() {
     ` : ''}
 
     <div class="footer">
-        הופק באמצעות מערכת <span class="brand">Calmino</span>
+        ${t('reports.misc.generatedBy')} <span class="brand">Calmino</span>
         <br>
         <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">{t('reports.share.dataDisclaimer')}</span>
     </div>
@@ -1353,7 +1354,7 @@ export default function ReportsScreen() {
                 icon={Utensils}
                 value={dailyStats.foodCount}
                 label={t('reports.metrics.feeding')}
-                subValue={dailyStats.food > 0 ? `${dailyStats.food} מ"ל` : undefined}
+                subValue={dailyStats.food > 0 ? `${dailyStats.food} ${t('detailedStats.ml')}` : (dailyStats.foodCount > 0 ? `${dailyStats.foodCount} ${t('reports.misc.meals')}` : undefined)}
                 change={comparison?.feedingChange}
                 accentColor="#F59E0B"
                 iconColor="#F59E0B"
@@ -1369,7 +1370,7 @@ export default function ReportsScreen() {
                 icon={Moon}
                 value={dailyStats.sleep > 0 ? dailyStats.sleep.toFixed(1) : (dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount}` : '—')}
                 label={dailyStats.sleep > 0 ? t('reports.charts.sleepHours') : (dailyStats.sleepCount > 0 ? t('reports.charts.naps') : t('reports.charts.sleepHours'))}
-                subValue={dailyStats.sleep > 0 && dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount} תנומות` : undefined}
+                subValue={dailyStats.sleep > 0 && dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount} ${t('reports.misc.naps')}` : undefined}
                 change={comparison?.sleepChange}
                 accentColor="#6366F1"
                 iconColor="#6366F1"
@@ -1698,21 +1699,21 @@ export default function ReportsScreen() {
           <PremiumInsightCard
             icon={Moon}
             title={t('reports.sleep.longestSleep')}
-            value={`${timeInsights?.longestSleep || 0} שעות`}
+            value={`${timeInsights?.longestSleep || 0} ${t('reports.units.hours')}`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={0}
           />
           <PremiumInsightCard
             icon={Utensils}
             title={t('reports.feeding.biggestFeeding')}
-            value={`${timeInsights?.biggestFeeding || 0} מ"ל`}
+            value={`${timeInsights?.biggestFeeding || 0} ${t('detailedStats.ml')}`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={50}
           />
           <PremiumInsightCard
             icon={Clock}
             title={t('reports.feeding.avgTimeBetween')}
-            value={`${timeInsights?.avgFeedingInterval || 0} שעות`}
+            value={`${timeInsights?.avgFeedingInterval || 0} ${t('reports.units.hours')}`}
             color={isDarkMode ? '#fff' : '#000'}
             delay={100}
           />
@@ -1806,7 +1807,7 @@ export default function ReportsScreen() {
           data={weeklyData.sleep}
           labels={weeklyData.labels}
           title={t('reports.charts.sleepInHours')}
-          unit="ש'"
+          unit={t('detailedStats.hourShort')}
           gradientColors={['#8B5CF6', '#8B5CF620']}
           height={260}
           yAxisSteps={[0, 4, 8, 12, 16]}
@@ -1817,8 +1818,8 @@ export default function ReportsScreen() {
         <GlassBarChartPerfect
           data={weeklyData.food}
           labels={weeklyData.labels}
-          title={'אוכל (מ"ל)'}
-          unit={'מ"ל'}
+          title={t('reports.charts.feedingAmountMeals')}
+          unit={t('detailedStats.ml')}
           gradientColors={['#3B82F6', '#3B82F620']}
           height={260}
         />
@@ -2051,6 +2052,7 @@ export default function ReportsScreen() {
             onClose={() => setSelectedMetric(null)}
             metricType={selectedMetric}
             childId={activeChild?.childId || ''}
+            initialTimeRange={timeRange}
           />
         )}
       </Modal>

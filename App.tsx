@@ -18,10 +18,14 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
   I18nManager.allowRTL(false);
   I18nManager.forceRTL(false);
   I18nManager.swapLeftAndRightInRTL(false);
-  // NOTE: Do NOT call Updates.reloadAsync() here — it causes infinite reload loop
-  // because I18nManager changes require a restart to take effect, but on restart
-  // isRTL may still be true causing another reload. The settings take effect
-  // on the NEXT cold start naturally.
+
+  if (__DEV__) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { DevSettings } = require('react-native');
+    try { DevSettings.reload(); } catch (e) { }
+  } else {
+    Updates.reloadAsync().catch(() => { });
+  }
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -78,6 +82,14 @@ import { PremiumProvider } from './context/PremiumContext';
 import { AudioProvider, useAudio } from './context/AudioContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { navigationRef, navigateFromNotification } from './services/navigationService';
 import { registerForPushNotifications } from './services/pushNotificationService';
 import * as Notifications from 'expo-notifications';
@@ -122,13 +134,52 @@ const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
   const activeColor = '#007AFF';
   const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
   const iconColor = focused ? activeColor : inactiveColor;
+
+  // Track previous focused state to only animate on change
+  const prevFocused = React.useRef(focused);
+  const iconScale = useSharedValue(1);
+  const iconRotate = useSharedValue(0);
+  const iconY = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (focused && !prevFocused.current) {
+      // Juicy bounce: squish down → elastic overshoot → settle
+      iconScale.value = withSequence(
+        withTiming(0.55, { duration: 100, easing: Easing.out(Easing.quad) }),
+        withSpring(1, { damping: 6, stiffness: 280, mass: 0.5 }),
+      );
+      // Tiny playful wiggle
+      iconRotate.value = withSequence(
+        withTiming(-8, { duration: 60 }),
+        withTiming(6, { duration: 80 }),
+        withSpring(0, { damping: 8, stiffness: 300 }),
+      );
+      // Subtle lift-up bounce
+      iconY.value = withSequence(
+        withTiming(-4, { duration: 100, easing: Easing.out(Easing.quad) }),
+        withSpring(0, { damping: 10, stiffness: 250 }),
+      );
+    }
+    prevFocused.current = focused;
+  }, [focused]);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: iconScale.value },
+      { rotate: `${iconRotate.value}deg` },
+      { translateY: iconY.value },
+    ] as any,
+  }));
+
   return (
     <View style={{
       alignItems: 'center',
       justifyContent: 'center',
       width: 72,
     }}>
-      <Icon color={iconColor} size={25} strokeWidth={focused ? 2.0 : 1.5} />
+      <Reanimated.View style={animatedIconStyle}>
+        <Icon color={iconColor} size={25} strokeWidth={focused ? 2.0 : 1.5} />
+      </Reanimated.View>
       <Text numberOfLines={2} style={{
         color: iconColor, fontSize: 9, marginTop: 2,
         fontWeight: focused ? '600' : '400', textAlign: 'center',
@@ -155,7 +206,7 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
   return (
     <Tab.Navigator
       id="MainTabs"
-      initialRouteName={homeTabName}
+      initialRouteName={isAppSitter ? babysitterTabName : homeTabName}
       tabBar={(props) => <LiquidGlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -484,175 +535,171 @@ export default function App() {
   const [childrenReady, setChildrenReady] = useState(false);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
-  const isAuthenticatingRef = useRef(false);
 
   // Clean up any stuck Live Activities from previous session on cold launch
   useEffect(() => {
     if (Platform.OS === 'ios') {
-      // Delay to avoid TurboModule crash during early startup on iOS 26+
-      const timer = setTimeout(() => {
-        import('./services/liveActivityService').then(({ liveActivityService }) => {
-          liveActivityService.stopAllLiveActivities().catch(() => {});
-        });
-      }, 3000);
-      return () => clearTimeout(timer);
+      import('./services/liveActivityService').then(({ liveActivityService }) => {
+        liveActivityService.stopAllLiveActivities().catch(() => {});
+      });
     }
   }, []);
 
   // Configure notification handler on app start
-  // CRITICAL: ALL notification native module calls are deferred by 3s to avoid
-  // TurboModule crash (EXC_BAD_ACCESS/SIGSEGV) during early Hermes initialization on iOS 26+.
   useEffect(() => {
-    let responseSubscription: ReturnType<typeof Notifications.addNotificationResponseReceivedListener> | null = null;
-    let syncTimer: ReturnType<typeof setTimeout> | null = null;
+    // Set notification handler for when app is in foreground/background
+    // This handler is called for ALL notifications (local + push)
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        // Always show notification
+        const shouldShow = {
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        };
 
-    const initTimer = setTimeout(() => {
-      try {
-        // Set notification handler for when app is in foreground/background
-        Notifications.setNotificationHandler({
-          handleNotification: async (notification) => {
-            const shouldShow = {
-              shouldShowAlert: true,
-              shouldPlaySound: true,
-              shouldSetBadge: true,
-              shouldShowBanner: true,
-              shouldShowList: true,
-            };
-
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-              setTimeout(async () => {
-                try {
-                  const notificationData = notification.request.content.data as any;
-                  const notificationType = notificationData?.type || 'reminder';
-                  const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
-                    'feeding_reminder': 'feed',
-                    'sleep_reminder': 'sleep',
-                    'supplement_reminder': 'medication',
-                    'vaccine_reminder': 'medication',
-                    'daily_summary': 'reminder',
-                    'custom_reminder': 'reminder',
-                    'booking_new': 'reminder',
-                    'booking_update': 'reminder',
-                    'booking_cancelled': 'reminder',
-                    'chat_message': 'reminder',
-                  };
-
-                  await notificationStorageService.saveNotification({
-                    userId,
-                    type: typeMap[notificationType] || 'reminder',
-                    title: notification.request.content.title || 'התראה',
-                    message: notification.request.content.body || '',
-                    timestamp: new Date(),
-                    isRead: false,
-                    isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
-                  });
-                } catch (error) {
-                  logger.error('Failed to save notification:', error);
-                }
-              }, 0);
-            }
-
-            return shouldShow;
-          },
-        });
-      } catch (err) {
-        logger.error('Failed to set notification handler:', err);
-      }
-
-      // Handle notification taps (when user taps on notification from background/closed)
-      responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-        const type = (response.notification.request.content.data as any)?.type as string;
-        const data = response.notification.request.content.data;
-
+        // Try to save to Firebase (but don't block notification if it fails)
         const userId = auth.currentUser?.uid;
         if (userId) {
-          const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
-            'feeding_reminder': 'feed',
-            'sleep_reminder': 'sleep',
-            'supplement_reminder': 'medication',
-            'vaccine_reminder': 'medication',
-            'daily_summary': 'reminder',
-            'custom_reminder': 'reminder',
-            'booking_new': 'reminder',
-            'booking_update': 'reminder',
-            'booking_cancelled': 'reminder',
-            'chat_message': 'reminder',
-          };
-          notificationStorageService.saveNotification({
-            userId,
-            type: typeMap[type] || 'reminder',
-            title: response.notification.request.content.title || 'התראה',
-            message: response.notification.request.content.body || '',
-            timestamp: new Date(),
-            isRead: false,
-            isUrgent: type === 'vaccine_reminder' || type === 'booking_new',
-          }).catch((e) => logger.warn('Failed to save tapped notification:', e));
-        }
+          // Use setTimeout to not block the notification handler
+          setTimeout(async () => {
+            try {
+              const notificationData = notification.request.content.data as any;
+              const notificationType = notificationData?.type || 'reminder';
+              const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+                'feeding_reminder': 'feed',
+                'sleep_reminder': 'sleep',
+                'supplement_reminder': 'medication',
+                'vaccine_reminder': 'medication',
+                'daily_summary': 'reminder',
+                'custom_reminder': 'reminder',
+                'booking_new': 'reminder',
+                'booking_update': 'reminder',
+                'booking_cancelled': 'reminder',
+                'chat_message': 'reminder',
+              };
 
-        if (type) {
-          const tryNavigate = (attempts = 0) => {
-            if (navigationRef.isReady()) {
-              navigateFromNotification(type, data);
-            } else if (attempts < 20) {
-              setTimeout(() => tryNavigate(attempts + 1), 100);
+              // Save notification to Firebase
+              await notificationStorageService.saveNotification({
+                userId,
+                type: typeMap[notificationType] || 'reminder',
+                title: notification.request.content.title || 'התראה',
+                message: notification.request.content.body || '',
+                timestamp: new Date(),
+                isRead: false,
+                isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
+              });
+            } catch (error) {
+              logger.error('Failed to save notification:', error);
+              // Don't throw - notification should still show
             }
-          };
-          tryNavigate();
+          }, 0);
         }
-      });
 
-      // Sync missed background notifications
-      const syncBackgroundNotifications = async () => {
-        try {
-          const userId = auth.currentUser?.uid;
-          if (!userId) return;
+        return shouldShow;
+      },
+    });
 
-          const presented = await Notifications.getPresentedNotificationsAsync();
-          if (presented.length === 0) return;
+    // Handle notification taps (when user taps on notification from background/closed)
+    // This listener is set here in App.tsx to ensure it works globally
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const type = (response.notification.request.content.data as any)?.type as string;
+      const data = response.notification.request.content.data;
 
-          const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
-            'feeding_reminder': 'feed',
-            'sleep_reminder': 'sleep',
-            'supplement_reminder': 'medication',
-            'vaccine_reminder': 'medication',
-            'daily_summary': 'reminder',
-            'custom_reminder': 'reminder',
-            'booking_new': 'reminder',
-            'booking_update': 'reminder',
-            'booking_cancelled': 'reminder',
-            'chat_message': 'reminder',
-          };
+      // Save to Firebase so it appears in NotificationsScreen (covers background/closed case)
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+          'feeding_reminder': 'feed',
+          'sleep_reminder': 'sleep',
+          'supplement_reminder': 'medication',
+          'vaccine_reminder': 'medication',
+          'daily_summary': 'reminder',
+          'custom_reminder': 'reminder',
+          'booking_new': 'reminder',
+          'booking_update': 'reminder',
+          'booking_cancelled': 'reminder',
+          'chat_message': 'reminder',
+        };
+        notificationStorageService.saveNotification({
+          userId,
+          type: typeMap[type] || 'reminder',
+          title: response.notification.request.content.title || 'התראה',
+          message: response.notification.request.content.body || '',
+          timestamp: new Date(),
+          isRead: false,
+          isUrgent: type === 'vaccine_reminder' || type === 'booking_new',
+        }).catch((e) => logger.warn('Failed to save tapped notification:', e));
+      }
 
-          for (const notification of presented) {
-            const content = notification.request.content;
-            const notificationData = content.data as any;
-            const notificationType = notificationData?.type || 'reminder';
-
-            await notificationStorageService.saveNotification({
-              userId,
-              type: typeMap[notificationType] || 'reminder',
-              title: content.title || 'התראה',
-              message: content.body || '',
-              timestamp: notification.date ? new Date(notification.date * 1000) : new Date(),
-              isRead: false,
-              isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
-            });
+      // Navigate based on notification type
+      if (type) {
+        // Poll until navigation is ready instead of a fixed delay
+        const tryNavigate = (attempts = 0) => {
+          if (navigationRef.isReady()) {
+            navigateFromNotification(type, data);
+          } else if (attempts < 20) {
+            setTimeout(() => tryNavigate(attempts + 1), 100);
           }
+        };
+        tryNavigate();
+      }
+    });
 
-          logger.log(`🔔 Synced ${presented.length} background notification(s)`);
-        } catch (error) {
-          logger.log('Failed to sync background notifications:', error);
+    // Sync missed background notifications on app resume
+    // When notifications arrive while app is in background, the foreground handler
+    // doesn't fire. This catches them by reading the OS notification tray.
+    const syncBackgroundNotifications = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        if (presented.length === 0) return;
+
+        const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+          'feeding_reminder': 'feed',
+          'sleep_reminder': 'sleep',
+          'supplement_reminder': 'medication',
+          'vaccine_reminder': 'medication',
+          'daily_summary': 'reminder',
+          'custom_reminder': 'reminder',
+          'booking_new': 'reminder',
+          'booking_update': 'reminder',
+          'booking_cancelled': 'reminder',
+          'chat_message': 'reminder',
+        };
+
+        for (const notification of presented) {
+          const content = notification.request.content;
+          const notificationData = content.data as any;
+          const notificationType = notificationData?.type || 'reminder';
+
+          // Save each missed notification (duplicate check in service prevents re-saves)
+          await notificationStorageService.saveNotification({
+            userId,
+            type: typeMap[notificationType] || 'reminder',
+            title: content.title || 'התראה',
+            message: content.body || '',
+            timestamp: notification.date ? new Date(notification.date * 1000) : new Date(),
+            isRead: false,
+            isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
+          });
         }
-      };
 
-      syncTimer = setTimeout(() => syncBackgroundNotifications(), 500);
-    }, 3000);
+        logger.log(`🔔 Synced ${presented.length} background notification(s)`);
+      } catch (error) {
+        logger.log('Failed to sync background notifications:', error);
+      }
+    };
+
+    // Run sync immediately and also on app returning from background
+    syncBackgroundNotifications();
 
     return () => {
-      clearTimeout(initTimer);
-      if (responseSubscription) responseSubscription.remove();
-      if (syncTimer) clearTimeout(syncTimer);
+      responseSubscription.remove();
     };
   }, []);
 
@@ -673,16 +720,12 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       // Reload user to ensure we have the latest emailVerified status
-      // Use timeout to prevent blocking on poor connectivity
       if (currentUser) {
         try {
-          await Promise.race([
-            currentUser.reload(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('reload timeout')), 3000))
-          ]);
+          await currentUser.reload();
         } catch (e) {
-          // If reload fails or times out, continue with cached value
-          logger.log('User reload skipped:', e);
+          // If reload fails (e.g. network), we continue with cached value
+          logger.log('User reload failed:', e);
         }
       }
 
@@ -696,26 +739,21 @@ export default function App() {
           setUser(currentUser);
           await checkBiometricSettingsAndProfile(currentUser.uid);
 
-          // CRITICAL FIX: Delay push notification registration to avoid crash.
-          // RNFBMessagingModule.getToken() calls [UIApplication isRegisteredForRemoteNotifications]
-          // which triggers a synchronous PushKit XPC call that crashes (SIGABRT) when called
-          // during app startup on iOS 26+. Delaying 5s ensures TurboModules are fully initialized.
-          setTimeout(() => {
-            registerForPushNotifications().catch((err) => {
-              logger.log('Push registration:', err);
-            });
+          // Register for push notifications
+          registerForPushNotifications().catch((err) => {
+            logger.log('Push registration:', err);
+          });
 
-            // Initialize notification service and schedule recurring reminders (once per login)
-            notificationService.initialize().then((success) => {
-              if (success) {
-                notificationService.scheduleSupplementReminder();
-                notificationService.scheduleSleepReminder();
-                notificationService.scheduleDailySummary();
-              }
-            }).catch((err) => {
-              logger.log('Notification init:', err);
-            });
-          }, 5000);
+          // Initialize notification service and schedule recurring reminders (once per login)
+          notificationService.initialize().then((success) => {
+            if (success) {
+              notificationService.scheduleSupplementReminder();
+              notificationService.scheduleSleepReminder();
+              notificationService.scheduleDailySummary();
+            }
+          }).catch((err) => {
+            logger.log('Notification init:', err);
+          });
         } else {
           // Email/password user who hasn't verified email yet
           setChildrenReady(false);
@@ -752,8 +790,7 @@ export default function App() {
         appStateRef.current.match(/inactive|background/) &&
         nextState === 'active' &&
         biometricsEnabledRef.current &&
-        user &&
-        !isAuthenticatingRef.current
+        user
       ) {
         setIsLocked(true);
         setTimeout(() => authenticateUser(), 150);
@@ -764,23 +801,9 @@ export default function App() {
   }, [user]);
 
   const checkBiometricSettingsAndProfile = async (uid: string) => {
-    // Safety timeout — if Firestore hangs (App Check, network), force past splash after 5s
-    const safetyTimer = setTimeout(() => {
-      logger.warn('⚠️ Startup safety timeout triggered — forcing past splash screen');
-      setHasBabyProfile(true); // Assume profile exists to show main app
-      setIsAppLoading(false);
-    }, 5000);
-
     try {
       const userRef = doc(db, 'users', uid);
-      let userSnap;
-      try {
-        userSnap = await getDoc(userRef);
-      } catch (firestoreErr) {
-        logger.warn('Firestore getDoc failed, trying cache:', firestoreErr);
-        const { getDocFromCache } = require('firebase/firestore');
-        userSnap = await getDocFromCache(userRef);
-      }
+      const userSnap = await getDoc(userRef);
 
       let needsUnlock = false;
       let sitterFlag = false;
@@ -803,19 +826,15 @@ export default function App() {
       const babyExists = await checkIfBabyExists();
       setHasBabyProfile(babyExists);
       setIsAppLoading(false);
-      clearTimeout(safetyTimer);
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);
 
     } catch (error) {
       logger.log('Error during startup checks:', error);
-      clearTimeout(safetyTimer);
       setIsAppLoading(false);
     }
   };
 
   const authenticateUser = async () => {
-    if (isAuthenticatingRef.current) return;
-    isAuthenticatingRef.current = true;
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       if (!hasHardware) { setIsLocked(false); return; }
@@ -827,11 +846,7 @@ export default function App() {
       });
 
       if (result.success) setIsLocked(false);
-    } catch (e) {
-      logger.log('Authentication error:', e);
-    } finally {
-      isAuthenticatingRef.current = false;
-    }
+    } catch (e) { logger.log('Authentication error:', e); }
   };
 
   // Keep splash visible while loading - return null to not render anything
@@ -886,12 +901,10 @@ export default function App() {
         <LanguageProvider>
           <ThemeProvider>
             <SafeAreaProvider>
-              <ActiveChildProvider onReady={() => {}}>
-                <BabyProfileScreen
-                  onProfileSaved={() => setHasBabyProfile(true)}
-                  onSkip={() => setHasBabyProfile(true)}
-                />
-              </ActiveChildProvider>
+              <BabyProfileScreen
+                onProfileSaved={() => setHasBabyProfile(true)}
+                onSkip={() => setHasBabyProfile(true)}
+              />
             </SafeAreaProvider>
           </ThemeProvider>
         </LanguageProvider>

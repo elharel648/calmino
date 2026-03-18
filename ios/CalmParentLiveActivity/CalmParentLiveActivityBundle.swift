@@ -8,8 +8,6 @@ struct CalmParentLiveActivityBundle: WidgetBundle {
             BabysitterShiftLiveActivity()
             SleepLiveActivity()
             FeedingLiveActivity()
-            WhiteNoiseLiveActivity()
-            BreastfeedingLiveActivity()
         }
     }
 }

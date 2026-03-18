@@ -48,7 +48,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import { uploadSitterPhoto } from '../services/imageUploadService';
-import { Camera } from 'lucide-react-native';
+import { Camera, Image as LucideImage } from 'lucide-react-native';
 import { useBookings } from '../hooks/useBookings';
 import { startShift, getProfileViewStats, getResponseRateStats } from '../services/babysitterService';
 import { Play } from 'lucide-react-native';
@@ -169,7 +169,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [isLoadingLocation, setIsLoadingLocation] = useState(false); // Loading state for GPS
     const [hourlyRate, setHourlyRate] = useState(50); // Price per hour
     const [profilePhoto, setProfilePhoto] = useState<string | null>(null); // Profile photo URL
+    const [coverPhoto, setCoverPhoto] = useState<string | null>(null); // Cover photo URL
     const [uploadingPhoto, setUploadingPhoto] = useState(false); // Photo upload loading state
+    const [uploadingCoverPhoto, setUploadingCoverPhoto] = useState(false); // Cover photo upload loading state
 
     // Social media links
     const [socialInstagram, setSocialInstagram] = useState('');
@@ -287,6 +289,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 setHourlyRate(data.sitterPrice || 50);
                 setProfilePhoto(data.photoUrl || auth.currentUser?.photoURL || null);
                 if (data.sitterAvailableDays) setAvailableDays(data.sitterAvailableDays);
+                if (data.sitterAvailableHours && typeof data.sitterAvailableHours === 'object') {
+                    logger.log('📅 Dashboard: Loading hours from Firestore:', JSON.stringify(data.sitterAvailableHours));
+                    setAvailableHours(prev => ({ ...prev, ...data.sitterAvailableHours }));
+                } else {
+                    logger.log('📅 Dashboard: No sitterAvailableHours in Firestore data');
+                }
                 // Load GPS location if exists
                 if (data.sitterLocation &&
                     typeof data.sitterLocation.latitude === 'number' &&
@@ -318,6 +326,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     setCertifications(data.sitterCertifications);
                 }
                 setVideoUri(data.sitterVideo || null);
+                setCoverPhoto(data.sitterCoverPhoto || null);
 
                 // Load availability exceptions & vacations
                 if (Array.isArray(data.sitterAvailabilityExceptions)) {
@@ -454,6 +463,44 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             logger.error('Image picker error:', error);
         } finally {
             setUploadingPhoto(false);
+        }
+    };
+
+    // Cover photo upload handler
+    const handleChangeCoverPhoto = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [16, 9],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                const uri = result.assets[0].uri;
+                setUploadingCoverPhoto(true);
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+                try {
+                    const downloadUrl = await uploadSitterPhoto(uri);
+                    const userId = auth.currentUser?.uid;
+                    if (userId) {
+                        await updateDoc(doc(db, 'users', userId), {
+                            sitterCoverPhoto: downloadUrl,
+                        });
+                    }
+                    setCoverPhoto(downloadUrl);
+                    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Alert.alert('✅', t('sitterDash.photoUpdated'));
+                } catch (uploadError) {
+                    logger.error('Failed to upload cover photo:', uploadError);
+                    Alert.alert(t('common.error'), t('sitterDash.photoError'));
+                }
+            }
+        } catch (error) {
+            logger.error('Cover image picker error:', error);
+        } finally {
+            setUploadingCoverPhoto(false);
         }
     };
 
@@ -1348,6 +1395,77 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </Text>
                             </TouchableOpacity>
 
+                            {/* ─── Cover Photo ─── */}
+                            <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitter.backgroundPhoto')}</Text>
+                            <TouchableOpacity
+                                style={[styles.settingsCard, {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
+                                    padding: 0,
+                                    overflow: 'hidden',
+                                }]}
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    handleChangeCoverPhoto();
+                                }}
+                                disabled={uploadingCoverPhoto}
+                                activeOpacity={0.7}
+                            >
+                                {coverPhoto ? (
+                                    <View style={{ width: '100%', height: 120 }}>
+                                        <Image
+                                            source={{ uri: coverPhoto }}
+                                            style={{ width: '100%', height: '100%' }}
+                                            resizeMode="cover"
+                                        />
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.4)']}
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                height: 44,
+                                            }}
+                                        />
+                                        <View style={{
+                                            position: 'absolute',
+                                            bottom: 10,
+                                            right: 12,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                        }}>
+                                            {uploadingCoverPhoto ? (
+                                                <ActivityIndicator size="small" color="#fff" />
+                                            ) : (
+                                                <>
+                                                    <Camera size={13} color="rgba(255,255,255,0.9)" strokeWidth={2} />
+                                                    <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: '600' }}>{t('sitter.changePhoto')}</Text>
+                                                </>
+                                            )}
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View style={{
+                                        width: '100%',
+                                        height: 90,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 8,
+                                    }}>
+                                        {uploadingCoverPhoto ? (
+                                            <ActivityIndicator size="small" color={theme.textSecondary} />
+                                        ) : (
+                                            <>
+                                                <LucideImage size={22} color={theme.textSecondary} strokeWidth={1.5} />
+                                                <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '500' }}>{t('sitter.addBackgroundPhoto')}</Text>
+                                            </>
+                                        )}
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+
                             {/* ─── Contact ─── */}
                             <Text style={[styles.settingsSectionLabel, { color: theme.textSecondary }]}>{t('sitter.contactPhone')}</Text>
                             <View style={[styles.settingsCard, {
@@ -1497,8 +1615,6 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         { id: 'facebook', icon: Facebook, color: '#1877F2', value: socialFacebook, setValue: setSocialFacebook, placeholder: 'username', prefix: 'facebook.com/', name: 'Facebook' },
                                         { id: 'linkedin', icon: Linkedin, color: '#0077B5', value: socialLinkedin, setValue: setSocialLinkedin, placeholder: 'username', prefix: 'linkedin.com/in/', name: 'LinkedIn' },
                                         { id: 'whatsapp', icon: WhatsAppIcon, color: '#25D366', value: socialWhatsapp, setValue: setSocialWhatsapp, placeholder: '+972...', prefix: 'wa.me/', name: 'WhatsApp' },
-
-                                        { id: 'telegram', icon: Send, color: '#0088CC', value: socialTelegram, setValue: setSocialTelegram, placeholder: 'username', prefix: 't.me/', name: 'Telegram' }
                                     ].map((social) => {
                                         // Type assertion for map callback to allow specific string literal types from state
                                         const isConnected = !!social.value;
@@ -1842,6 +1958,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             sitterPrice: hourlyRate,
                                             sitterAvailableDays: availableDays,
                                             sitterAvailableHours: availableHours,
+                                            // Debug: log what we're saving
+                                            ...((() => { logger.log('📅 Dashboard: Saving hours:', JSON.stringify(availableHours)); return {}; })()),
                                             // Availability exceptions & vacations
                                             sitterAvailabilityExceptions: exceptions,
                                             sitterAvailabilityVacations: vacations,
@@ -2010,10 +2128,29 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 }]}
                                                 value={activeSocialPlatform.value}
                                                 onChangeText={(text) => {
-                                                    activeSocialPlatform.setValue(text);
-                                                    setActiveSocialPlatform(prev => prev ? ({ ...prev, value: text }) : null);
+                                                    // Auto-extract username from pasted URLs
+                                                    let cleaned = text.trim();
+                                                    
+                                                    // Instagram: instagram.com/username or https://www.instagram.com/username/
+                                                    if (activeSocialPlatform.id === 'instagram') {
+                                                        const igMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9_.]+)\/?/);
+                                                        if (igMatch) cleaned = igMatch[1];
+                                                    }
+                                                    // Facebook: facebook.com/username or fb.com/username
+                                                    if (activeSocialPlatform.id === 'facebook') {
+                                                        const fbMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?(?:facebook|fb)\.com\/(?:profile\.php\?id=)?([a-zA-Z0-9_.]+)\/?/);
+                                                        if (fbMatch) cleaned = fbMatch[1];
+                                                    }
+                                                    // LinkedIn: linkedin.com/in/username
+                                                    if (activeSocialPlatform.id === 'linkedin') {
+                                                        const liMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/([a-zA-Z0-9_-]+)\/?/);
+                                                        if (liMatch) cleaned = liMatch[1];
+                                                    }
+                                                    
+                                                    activeSocialPlatform.setValue(cleaned);
+                                                    setActiveSocialPlatform(prev => prev ? ({ ...prev, value: cleaned }) : null);
                                                 }}
-                                                placeholder={activeSocialPlatform.placeholder}
+                                                placeholder={activeSocialPlatform.id === 'whatsapp' ? activeSocialPlatform.placeholder : `${activeSocialPlatform.placeholder} ${t('sitter.orPasteLink')}`}
                                                 placeholderTextColor={theme.textSecondary}
                                                 autoCapitalize="none"
                                                 autoCorrect={false}
@@ -2032,6 +2169,52 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 )}
                                             </View>
                                         </View>
+
+                                        {/* Open App Button - for Instagram, Facebook, LinkedIn */}
+                                        {activeSocialPlatform.id !== 'whatsapp' && (
+                                            <TouchableOpacity
+                                                style={{
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 8,
+                                                    paddingVertical: 11,
+                                                    borderRadius: 12,
+                                                    backgroundColor: `${activeSocialPlatform.color}12`,
+                                                    borderWidth: 1,
+                                                    borderColor: `${activeSocialPlatform.color}25`,
+                                                }}
+                                                onPress={() => {
+                                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                    const appUrls: Record<string, string> = {
+                                                        instagram: 'instagram://user?username=',
+                                                        facebook: 'fb://profile',
+                                                        linkedin: 'linkedin://profile',
+                                                    };
+                                                    const webUrls: Record<string, string> = {
+                                                        instagram: 'https://www.instagram.com/',
+                                                        facebook: 'https://www.facebook.com/me',
+                                                        linkedin: 'https://www.linkedin.com/in/me',
+                                                    };
+                                                    const appUrl = appUrls[activeSocialPlatform.id];
+                                                    const webUrl = webUrls[activeSocialPlatform.id];
+                                                    if (appUrl) {
+                                                        Linking.canOpenURL(appUrl).then(can => {
+                                                            if (can) Linking.openURL(appUrl);
+                                                            else if (webUrl) Linking.openURL(webUrl);
+                                                        }).catch(() => {
+                                                            if (webUrl) Linking.openURL(webUrl);
+                                                        });
+                                                    }
+                                                }}
+                                                activeOpacity={0.7}
+                                            >
+                                                <ExternalLink size={15} color={activeSocialPlatform.color} strokeWidth={2} />
+                                                <Text style={{ fontSize: 13, fontWeight: '600', color: activeSocialPlatform.color }}>
+                                                    {t('sitter.openToCopyUsername', { name: activeSocialPlatform.name })}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
 
                                         {/* Test Link Button */}
                                         {activeSocialPlatform.value && validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) && (
@@ -2314,45 +2497,86 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                             backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
                                                         }]}>
                                                             <View style={styles.timePickerRow}>
-                                                                <TextInput
-                                                                    style={[styles.timeInput, {
-                                                                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                                                                        color: theme.textPrimary,
-                                                                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                                                                    }]}
-                                                                    value={tempStartTime}
-                                                                    onChangeText={setTempStartTime}
-                                                                    placeholder="09:00"
-                                                                    placeholderTextColor={theme.textSecondary}
-                                                                    textAlign="center"
-                                                                />
+                                                                <View style={[styles.timeInput, {
+                                                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                                                                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                                                                    overflow: 'hidden',
+                                                                }]}>
+                                                                    <DateTimePicker
+                                                                        value={(() => {
+                                                                            const [h = '9', m = '0'] = tempStartTime.split(':');
+                                                                            const d = new Date();
+                                                                            d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+                                                                            return d;
+                                                                        })()}
+                                                                        mode="time"
+                                                                        display="compact"
+                                                                        locale="en-GB"
+                                                                        minuteInterval={15}
+                                                                        onChange={(event, date) => {
+                                                                            if (date && event.type === 'set') {
+                                                                                const hh = String(date.getHours()).padStart(2, '0');
+                                                                                const mm = String(date.getMinutes()).padStart(2, '0');
+                                                                                setTempStartTime(`${hh}:${mm}`);
+                                                                            }
+                                                                        }}
+                                                                        style={{ height: 34 }}
+                                                                    />
+                                                                </View>
                                                                 <Text style={[styles.timeDash, { color: theme.textSecondary }]}>—</Text>
-                                                                <TextInput
-                                                                    style={[styles.timeInput, {
-                                                                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                                                                        color: theme.textPrimary,
-                                                                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                                                                    }]}
-                                                                    value={tempEndTime}
-                                                                    onChangeText={setTempEndTime}
-                                                                    placeholder="18:00"
-                                                                    placeholderTextColor={theme.textSecondary}
-                                                                    textAlign="center"
-                                                                />
+                                                                <View style={[styles.timeInput, {
+                                                                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                                                                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                                                                    overflow: 'hidden',
+                                                                }]}>
+                                                                    <DateTimePicker
+                                                                        value={(() => {
+                                                                            const [h = '18', m = '0'] = tempEndTime.split(':');
+                                                                            const d = new Date();
+                                                                            d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+                                                                            return d;
+                                                                        })()}
+                                                                        mode="time"
+                                                                        display="compact"
+                                                                        locale="en-GB"
+                                                                        minuteInterval={15}
+                                                                        onChange={(event, date) => {
+                                                                            if (date && event.type === 'set') {
+                                                                                const hh = String(date.getHours()).padStart(2, '0');
+                                                                                const mm = String(date.getMinutes()).padStart(2, '0');
+                                                                                setTempEndTime(`${hh}:${mm}`);
+                                                                            }
+                                                                        }}
+                                                                        style={{ height: 34 }}
+                                                                    />
+                                                                </View>
                                                                 <TouchableOpacity
                                                                     style={[styles.timePickerSaveBtn, {
                                                                         backgroundColor: isDarkMode ? '#fff' : '#000',
                                                                     }]}
-                                                                    onPress={() => {
+                                                                    onPress={async () => {
                                                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                                                        setAvailableHours(prev => ({
-                                                                            ...prev,
+                                                                        const newHours = {
+                                                                            ...availableHours,
                                                                             [day.key]: {
                                                                                 start: tempStartTime,
                                                                                 end: tempEndTime,
                                                                             }
-                                                                        }));
+                                                                        };
+                                                                        setAvailableHours(newHours);
                                                                         setEditingDayKey(null);
+                                                                        // Auto-save to Firestore immediately
+                                                                        const userId = auth.currentUser?.uid;
+                                                                        if (userId) {
+                                                                            try {
+                                                                                await updateDoc(doc(db, 'users', userId), {
+                                                                                    sitterAvailableHours: newHours,
+                                                                                });
+                                                                                logger.log('📅 Hours auto-saved to Firestore:', JSON.stringify(newHours));
+                                                                            } catch (e) {
+                                                                                logger.error('📅 Failed to auto-save hours:', e);
+                                                                            }
+                                                                        }
                                                                     }}
                                                                     activeOpacity={0.7}
                                                                 >
@@ -3937,13 +4161,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     timeInput: {
-        width: 70,
+        width: 90,
         paddingVertical: 10,
-        paddingHorizontal: 12,
+        paddingHorizontal: 8,
         borderRadius: 10,
         fontSize: 15,
         fontWeight: '600',
         borderWidth: 1.5,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     timeDash: {
         fontSize: 18,

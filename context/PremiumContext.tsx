@@ -1,5 +1,6 @@
 // context/PremiumContext.tsx - Premium Subscription State Management
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+// Supports Feature Flags via Firebase: system/settings → lockedFeatures
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { PurchasesPackage, PurchasesOfferings, CustomerInfo } from 'react-native-purchases';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
@@ -14,6 +15,29 @@ import {
     logoutRevenueCat,
 } from '../services/revenueCatService';
 import { logger } from '../utils/logger';
+
+// All lockable feature keys — add new ones here as needed
+export type FeatureKey =
+    | 'statistics'
+    | 'growth_charts'
+    | 'babysitter'
+    | 'babysitter_calculator'
+    | 'export_reports'
+    | 'white_noise'
+    | 'night_light'
+    | 'milestones'
+    | 'magic_moments'
+    | 'medications'
+    | 'supplements'
+    | 'health_card'
+    | 'branded_share'
+    | 'quick_reminder'
+    | 'sleep_calculator'
+    | 'teeth_tracker'
+    | 'custom_actions'
+    | 'family_sharing'
+    | 'calm_mode'
+    | 'checklist';
 
 // Feature limits for free users
 export const FREE_LIMITS = {
@@ -49,6 +73,10 @@ interface PremiumContextType {
     // Feature checks
     getLimit: (feature: keyof typeof FREE_LIMITS) => number | boolean;
     canUseFeature: (feature: keyof typeof FREE_LIMITS) => boolean;
+
+    // Feature Flags (remote lock/unlock from Firebase)
+    isFeatureLocked: (feature: FeatureKey) => boolean;
+    lockedFeatures: Record<string, boolean>;
 }
 
 const PremiumContext = createContext<PremiumContextType | undefined>(undefined);
@@ -63,14 +91,24 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
     const [isLoading, setIsLoading] = useState(true);
     const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
     const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+    const [lockedFeatures, setLockedFeatures] = useState<Record<string, boolean>>({});
 
-    // Listen to global system settings for Remote Premium Unlock
+    // Listen to global system settings for Remote Premium Unlock + Feature Flags
     useEffect(() => {
         const unsub = onSnapshot(doc(db, 'system', 'settings'), (docSnap) => {
-            if (docSnap.exists() && docSnap.data().globalPremiumUnlock === true) {
-                setGlobalOverride(true);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // Global premium override
+                setGlobalOverride(data.globalPremiumUnlock === true);
+                // Feature flags — locked features map
+                if (data.lockedFeatures && typeof data.lockedFeatures === 'object') {
+                    setLockedFeatures(data.lockedFeatures);
+                } else {
+                    setLockedFeatures({});
+                }
             } else {
                 setGlobalOverride(false);
+                setLockedFeatures({});
             }
         });
         return () => unsub();
@@ -172,20 +210,31 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
         return typeof limit === 'boolean' ? limit : limit > 0;
     }, [getLimit]);
 
+    // Feature Flags: check if a specific feature is locked
+    // Returns true (locked) only if: feature is flagged in Firebase AND user is NOT premium
+    // Premium users bypass all feature locks
+    const isFeatureLocked = useCallback((feature: FeatureKey): boolean => {
+        if (finalIsPremium) return false; // Premium users always have access
+        return lockedFeatures[feature] === true;
+    }, [finalIsPremium, lockedFeatures]);
+
+    // Memoize provider value to prevent unnecessary re-renders
+    const contextValue = useMemo(() => ({
+        isPremium: finalIsPremium,
+        isLoading,
+        offerings,
+        customerInfo,
+        purchase,
+        restore,
+        refresh,
+        getLimit,
+        canUseFeature,
+        isFeatureLocked,
+        lockedFeatures,
+    }), [finalIsPremium, isLoading, offerings, customerInfo, purchase, restore, refresh, getLimit, canUseFeature, isFeatureLocked, lockedFeatures]);
+
     return (
-        <PremiumContext.Provider
-            value={{
-                isPremium: finalIsPremium,
-                isLoading,
-                offerings,
-                customerInfo,
-                purchase,
-                restore,
-                refresh,
-                getLimit,
-                canUseFeature,
-            }}
-        >
+        <PremiumContext.Provider value={contextValue}>
             {children}
         </PremiumContext.Provider>
     );

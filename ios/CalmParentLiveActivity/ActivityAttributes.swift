@@ -155,27 +155,6 @@ public struct PlayActivityAttributes: ActivityAttributes {
     }
 }
 
-// MARK: - White Noise Activity Attributes
-
-@available(iOS 16.2, *)
-public struct WhiteNoiseActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        public var startTime: Date
-
-        public init(startTime: Date) {
-            self.startTime = startTime
-        }
-    }
-
-    public var soundId: String    // "lullaby" | "gentle" | "birds" | "rain"
-    public var soundName: String  // Hebrew display name
-
-    public init(soundId: String, soundName: String) {
-        self.soundId = soundId
-        self.soundName = soundName
-    }
-}
-
 // MARK: - Meditation Activity Attributes
 
 @available(iOS 16.2, *)

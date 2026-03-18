@@ -290,7 +290,10 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   }, []);
 
   // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
+  // Disabled when any picker overlay is visible so spinner scrolls aren't intercepted
+  const isPickerOpen = showDiaperDatePicker || showDiaperTimePicker || showSleepStartPicker || showSleepEndPicker || showFoodStartTimePicker || showFoodEndTimePicker;
   const panGesture = Gesture.Pan()
+    .enabled(!isPickerOpen)
     .activeOffsetY([-2, 2])
     .simultaneousWithExternalGesture(nativeScrollRef)
     .onStart(() => {
@@ -1799,6 +1802,20 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       {showDiaperDatePicker && (
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
+            {/* Done button — small, top-right */}
+            {Platform.OS === 'ios' && (
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowDiaperDatePicker(false);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
+                >
+                  <Text style={{ color: theme.primary, fontSize: 16, fontWeight: '600' }}>{t('common.done')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <DateTimePicker
               value={diaperTime}
               mode="date"
@@ -1815,17 +1832,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 }
               }}
             />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
-                onPress={() => {
-                  setShowDiaperDatePicker(false);
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       )}
@@ -1834,6 +1840,20 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       {showDiaperTimePicker && (
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
+            {/* Done button — small, top-right */}
+            {Platform.OS === 'ios' && (
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowDiaperTimePicker(false);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
+                >
+                  <Text style={{ color: theme.primary, fontSize: 16, fontWeight: '600' }}>{t('common.done')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <DateTimePicker
               value={diaperTime}
               mode="time"
@@ -1850,17 +1870,6 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
                 }
               }}
             />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
-                onPress={() => {
-                  setShowDiaperTimePicker(false);
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       )}
@@ -2182,6 +2191,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           </GestureDetector>
         </KeyboardAvoidingView>
       </Modal>
+
 
       {/* Calendar Modal */}
       <Modal

@@ -556,31 +556,8 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 {/* Time Selection - Ultra Minimalist */}
                                 <Text style={[styles.minimalLabel, { color: theme.textTertiary }]}>מתי?</Text>
 
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    style={styles.timePresetsScroll}
-                                    contentContainerStyle={styles.timePresetsContainer}
-                                >
-                                    <TouchableOpacity
-                                        style={[styles.minimalTimeChip, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}
-                                        onPress={() => addTime(15)}
-                                    >
-                                        <Text style={[styles.minimalTimeText, { color: theme.primary }]}>+15 דק׳</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.minimalTimeChip, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}
-                                        onPress={() => addTime(60)}
-                                    >
-                                        <Text style={[styles.minimalTimeText, { color: theme.primary }]}>+1 שעה</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.minimalTimeChip, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}
-                                        onPress={() => setTimeForTomorrow(8)}
-                                    >
-                                        <Text style={[styles.minimalTimeText, { color: theme.primary }]}>מחר 08:00</Text>
-                                    </TouchableOpacity>
-                                </ScrollView>
+
+
 
                                 {/* Date & Time Selection - Split Row */}
                                 <View style={styles.dateTimeRow}>

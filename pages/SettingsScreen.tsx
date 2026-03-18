@@ -100,7 +100,7 @@ export default function SettingsScreen() {
     return months > 0 ? t('age.yearsMonths', { count: years, months }) : t('age.years', { count: years });
   };
 
-  const renderLockedSection = (children: React.ReactNode, title: string = "תכונת Premium") => {
+  const renderLockedSection = (children: React.ReactNode, title: string = t('settings.premiumFeature')) => {
     if (isPremium) return children;
 
     return (
@@ -155,7 +155,7 @@ export default function SettingsScreen() {
       await refreshChildren();
       refresh();
     } catch (e) {
-      Alert.alert(t('common.error'), 'שגיאה בשמירת הפרטים. נסה שוב.');
+      Alert.alert(t('common.error'), t('settings.saveError'));
     }
   }, [updateBasicInfo, refresh, refreshChildren, t]);
 
@@ -197,12 +197,12 @@ export default function SettingsScreen() {
   const handleRemoveMember = useCallback((memberId: string, memberName: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'הסרת חבר',
-      `להסיר את ${memberName} מהמשפחה?`,
+      t('settings.removeMemberTitle'),
+      t('settings.removeMemberMessage', { name: memberName }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'הסר',
+          text: t('settings.remove'),
           style: 'destructive',
           onPress: async () => {
             const success = await removeMember(memberId);
@@ -218,15 +218,15 @@ export default function SettingsScreen() {
   const handleLeaveGuestAccess = useCallback(() => {
     const familyId = activeChild?.familyId;
     if (!familyId) return;
-    const childName = activeChild?.childName || 'הילד';
+    const childName = activeChild?.childName || t('settings.theChild');
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'עזיבת גישת אורח',
-      `האם לעזוב את גישת האורח ל-${childName}? תאבד גישה לנתוני הילד.`,
+      t('settings.leaveGuestTitle'),
+      t('settings.leaveGuestMessage', { name: childName }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'עזוב',
+          text: t('settings.leave'),
           style: 'destructive',
           onPress: async () => {
             const success = await leaveGuestAccess(familyId);
@@ -245,12 +245,12 @@ export default function SettingsScreen() {
   const handleLeaveFamily = useCallback(() => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'עזיבת משפחה',
-      'האם אתה בטוח שברצונך לעזוב את המשפחה? תאבד גישה לכל הנתונים המשותפים.',
+      t('settings.leaveFamilyTitle'),
+      t('settings.leaveFamilyMessage'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'עזוב',
+          text: t('settings.leave'),
           style: 'destructive',
           onPress: async () => {
             const success = await leaveFamily();
@@ -274,11 +274,11 @@ export default function SettingsScreen() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'חובה לאשר הרשאות',
-        'נדרשת הרשאת גלריה כדי לבחור תמונה',
+        t('settings.permissionRequired'),
+        t('settings.galleryPermission'),
         [
           { text: t('common.cancel'), style: 'cancel' },
-          { text: 'פתח הגדרות', onPress: openSettings }
+          { text: t('settings.openSettings'), onPress: openSettings }
         ]
       );
       return;
@@ -313,8 +313,8 @@ export default function SettingsScreen() {
 
     if (Platform.OS === 'ios') {
       Alert.prompt(
-        'ערוך שם',
-        'הזן שם חדש',
+        t('settings.editName'),
+        t('settings.enterNewName'),
         [
           { text: t('common.cancel'), style: 'cancel' },
           {
@@ -328,7 +328,7 @@ export default function SettingsScreen() {
                   setUserName(newName.trim());
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 } catch (error) {
-                  Alert.alert(t('common.error'), 'לא הצלחנו לשמור את השם');
+                  Alert.alert(t('common.error'), t('settings.saveNameError'));
                 }
               }
             },
@@ -338,7 +338,7 @@ export default function SettingsScreen() {
         userName || ''
       );
     } else {
-      Alert.alert('ערוך שם', 'הפונקציה זמינה רק ב-iOS');
+      Alert.alert(t('settings.editName'), t('settings.editNameiOSOnly'));
     }
   }, [user, userName]);
 
@@ -487,17 +487,17 @@ export default function SettingsScreen() {
                   const isMe = member.id === auth.currentUser?.uid;
                   const roleConfig = {
                     admin: { label: t('family.admin'), color: isDarkMode ? '#fff' : '#000' },
-                    member: { label: 'חבר', color: isDarkMode ? '#fff' : '#000' },
-                    viewer: { label: 'צופה', color: isDarkMode ? '#fff' : '#000' },
+                    member: { label: t('settings.roleMember'), color: isDarkMode ? '#fff' : '#000' },
+                    viewer: { label: t('settings.roleViewer'), color: isDarkMode ? '#fff' : '#000' },
                     guest: { label: t('family.guest'), color: isDarkMode ? '#fff' : '#000' },
-                  }[member.role] || { label: 'חבר', color: isDarkMode ? '#fff' : '#000' };
+                  }[member.role] || { label: t('settings.memberFallback'), color: isDarkMode ? '#fff' : '#000' };
 
                   return (
                     <View key={member.id || index} style={[styles.memberRow, index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.divider }]}>
                       {/* Remove button - only for admin, not for self */}
                       {isAdmin && !isMe && member.id && (
                         <TouchableOpacity
-                          onPress={() => handleRemoveMember(member.id!, member.name || 'חבר')}
+                          onPress={() => handleRemoveMember(member.id!, member.name || t('settings.memberFallback'))}
                           style={styles.removeButton}
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
@@ -509,7 +509,7 @@ export default function SettingsScreen() {
                       </View>
                       <View style={styles.memberInfo}>
                         <Text style={[styles.memberName, { color: theme.textPrimary }]}>
-                          {member.name || 'משתמש'}{isMe ? ' (אני)' : ''}
+                          {member.name || t('settings.userFallback')}{isMe ? ` (${t('settings.meLabel')})` : ''}
                         </Text>
                         {member.email && (
                           <Text style={[styles.memberEmail, { color: theme.textSecondary }]}>{member.email}</Text>
@@ -574,7 +574,7 @@ export default function SettingsScreen() {
                     <View style={styles.familyActionTitleRow}>
                       <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
                       <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>זמני</Text>
+                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>{t('settings.badgeTemporary')}</Text>
                       </View>
                     </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
@@ -602,7 +602,7 @@ export default function SettingsScreen() {
                     <View style={styles.familyActionTitleRow}>
                       <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
                       <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>אוטומטי</Text>
+                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>{t('settings.badgeAutomatic')}</Text>
                       </View>
                     </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
@@ -613,7 +613,7 @@ export default function SettingsScreen() {
                 <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
               </TouchableOpacity>
             </Animated.View>,
-            "ניהול משפחה שיתופית"
+            t('settings.familyManagement')
           )}
 
           {/* Leave Family - for non-admin members only */}
@@ -631,7 +631,7 @@ export default function SettingsScreen() {
                   <View style={styles.listItemTextContainer}>
                     <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('family.leaveFamily')}</Text>
                     <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                      יניתק אותך מהמשפחה המשותפת
+                      {t('settings.disconnectWarning')}
                     </Text>
                   </View>
                 </View>
@@ -655,9 +655,9 @@ export default function SettingsScreen() {
                     <LogOut size={20} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2.5} />
                   </View>
                   <View style={styles.listItemTextContainer}>
-                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>עזוב גישת אורח</Text>
+                    <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.leaveGuestAccess')}</Text>
                     <Text style={[styles.listItemSubtext, { color: theme.textSecondary }]}>
-                      יסיר את גישתך כאורח ל-{activeChild.childName}
+                      {t('settings.removeGuestWarning', { name: activeChild.childName })}
                     </Text>
                   </View>
                 </View>
@@ -672,7 +672,7 @@ export default function SettingsScreen() {
         {/* Child Profile Section */}
         {baby?.id && (
           <Animated.View entering={ANIMATIONS.fadeInDown(800)} style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>הילד שלי</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('settings.myChild')}</Text>
             <TouchableOpacity
               style={[styles.familyActionMinimal, { backgroundColor: theme.card, borderColor: theme.divider }]}
               onPress={() => {
@@ -687,10 +687,10 @@ export default function SettingsScreen() {
                 </View>
                 <View style={styles.familyActionText}>
                   <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
-                    {baby.name || 'הילד שלי'}
+                    {baby.name || t('settings.myChildFallback')}
                   </Text>
                   <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
-                    עריכת שם, מין ותאריך לידה
+                    {t('settings.editChildDetails')}
                   </Text>
                 </View>
               </View>
@@ -707,7 +707,7 @@ export default function SettingsScreen() {
       {guestInvitedNames && (
         <RNAnimated.View style={[styles.guestBanner, { opacity: guestBannerOpacity }]}>
           <Text style={styles.guestBannerText}>
-            ✅ קוד אורח נוצר עבור {guestInvitedNames.join(', ')}
+            {t('settings.guestCodeCreated', { names: guestInvitedNames.join(', ') })}
           </Text>
         </RNAnimated.View>
       )}
@@ -778,7 +778,7 @@ export default function SettingsScreen() {
                 CalmParent Premium
               </Text>
               <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-                גישה מלאה לכל התכונות המתקדמות
+                {t('settings.fullPremiumAccess')}
               </Text>
             </Animated.View>
 

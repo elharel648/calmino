@@ -301,6 +301,14 @@ export default function GrowthModal({
         try {
             if (isEditMode && editMeasurement) {
                 await updateGrowthMeasurement(editMeasurement.id, historyData);
+                // Also update baby profile stats so current measurements reflect the edit
+                const statsToSave: { weight?: string; height?: string; headCircumference?: string } = {};
+                if (weight.trim()) statsToSave.weight = weight.trim();
+                if (height.trim()) statsToSave.height = height.trim();
+                if (headCircumference.trim()) statsToSave.headCircumference = headCircumference.trim();
+                if (Object.keys(statsToSave).length > 0) {
+                    await updateAllStats(statsToSave);
+                }
             } else if (childId) {
                 await addGrowthMeasurement(childId, historyData);
 

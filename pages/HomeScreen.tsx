@@ -301,37 +301,37 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
         // Age formatting
         const ageStr = profile.ageMonths < 12
-            ? `${profile.ageMonths} חודשים`
-            : `${Math.floor(profile.ageMonths / 12)} שנה${profile.ageMonths % 12 > 0 ? ` ו-${profile.ageMonths % 12} חודשים` : ''}`;
+            ? `${profile.ageMonths} ${t('home.share.months')}`
+            : `${Math.floor(profile.ageMonths / 12)} ${t('home.share.years')}${profile.ageMonths % 12 > 0 ? ` ${t('home.share.yearsAnd', { months: profile.ageMonths % 12 })}` : ''}`;
 
         // Sleep duration formatting
         const sleepH = Math.floor(dailyStats.sleepMinutes / 60);
         const sleepM = dailyStats.sleepMinutes % 60;
         const sleepStr = sleepH > 0
-            ? `${sleepH} שעות${sleepM > 0 ? ` ו-${sleepM} דקות` : ''}`
+            ? `${sleepH} ${t('home.share.hoursOnly', { hours: sleepH })}${sleepM > 0 ? ` ${t('home.share.hoursAnd', { hours: sleepH, minutes: sleepM })}` : ''}`
             : sleepM > 0 ? t('home.minutesDuration', { count: sleepM }) : t('home.notRecorded');
 
-        let msg = `🌟 *סיכום יומי — ${profile.name}*\n`;
+        let msg = `${t('home.share.dailySummary', { name: profile.name })}\n`;
         msg += `📅 ${dateStr}`;
-        if (ageStr) msg += ` · גיל: ${ageStr}`;
+        if (ageStr) msg += ` · ${t('home.share.age')}: ${ageStr}`;
         msg += `\n\n`;
 
-        msg += `📊 *סטטיסטיקות היום:*\n`;
-        msg += `🍼 האכלה: ${dailyStats.feedCount > 0 ? t('home.feedCountTimes', { count: dailyStats.feedCount }) : t('home.feedNotRecorded')}\n`;
-        msg += `💤 שינה כוללת: ${sleepStr}\n`;
-        msg += `🫧 החלפות חיתול: ${dailyStats.diaperCount > 0 ? t('home.diaperCountTimes', { count: dailyStats.diaperCount }) : t('home.notRecorded')}\n`;
+        msg += `${t('home.share.todayStats')}\n`;
+        msg += `${t('home.share.feeding')}: ${dailyStats.feedCount > 0 ? t('home.feedCountTimes', { count: dailyStats.feedCount }) : t('home.feedNotRecorded')}\n`;
+        msg += `${t('home.share.totalSleep')}: ${sleepStr}\n`;
+        msg += `${t('home.share.diaperChanges')}: ${dailyStats.diaperCount > 0 ? t('home.diaperCountTimes', { count: dailyStats.diaperCount }) : t('home.notRecorded')}\n`;
 
-        msg += `\n⏱️ *פעילות אחרונה:*\n`;
-        msg += `🍼 האכלה אחרונה: ${lastFeedTime}\n`;
-        msg += `😴 שינה אחרונה: ${lastSleepTime}\n`;
+        msg += `\n${t('home.share.lastActivity')}\n`;
+        msg += `${t('home.share.lastFeed')}: ${lastFeedTime}\n`;
+        msg += `${t('home.share.lastSleep')}: ${lastSleepTime}\n`;
 
         if (growthStats?.currentWeight || growthStats?.currentHeight) {
-            msg += `\n📏 *מדידות:*\n`;
-            if (growthStats.currentHeight) msg += `📐 גובה: ${growthStats.currentHeight}\n`;
-            if (growthStats.currentWeight) msg += `⚖️ משקל: ${growthStats.currentWeight}\n`;
+            msg += `\n${t('home.share.measurements')}\n`;
+            if (growthStats.currentHeight) msg += `${t('home.share.height')}: ${growthStats.currentHeight}\n`;
+            if (growthStats.currentWeight) msg += `${t('home.share.weight')}: ${growthStats.currentWeight}\n`;
         }
 
-        msg += `\n_נשלח מ-Calmino 💙_`;
+        msg += `\n${t('home.share.sentFrom')}`;
         return msg;
     }, [profile.name, profile.ageMonths, lastFeedTime, lastSleepTime, dailyStats, growthStats]);
 
@@ -463,7 +463,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                         await handleSaveTracking({
                                             type: 'food',
                                             subType,
-                                            note: side ? `${side}: ${timeStr}` : `זמן: ${timeStr}`,
+                                            note: side ? `${side}: ${timeStr}` : `${t('home.share.time')}: ${timeStr}`,
                                             timestamp: new Date()
                                         });
                                     }}
@@ -473,7 +473,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                         const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
                                         await handleSaveTracking({
                                             type: 'sleep',
-                                            note: `משך שינה: ${timeStr}`,
+                                            note: `${t('home.share.sleepDuration')}: ${timeStr}`,
                                             duration: seconds,
                                             timestamp: new Date()
                                         });
