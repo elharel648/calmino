@@ -6,8 +6,6 @@ import Animated, {
     withSpring,
     withTiming,
     runOnJS,
-    interpolate,
-    Extrapolate,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react-native';
@@ -42,8 +40,8 @@ const Toast: React.FC<ToastProps> = ({
     onHide,
 }) => {
     const { theme, isDarkMode } = useTheme();
-    const translateY = useSharedValue(100);
-    const scale = useSharedValue(0.9);
+    const translateY = useSharedValue(80);
+    const scale = useSharedValue(0.85);
     const opacity = useSharedValue(0);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -62,15 +60,15 @@ const Toast: React.FC<ToastProps> = ({
 
             // Show animation - spring for bounce effect
             translateY.value = withSpring(0, {
-                damping: 18,
-                stiffness: 250,
-                mass: 0.8,
+                damping: 20,
+                stiffness: 280,
+                mass: 0.7,
             });
             scale.value = withSpring(1, {
-                damping: 15,
+                damping: 16,
                 stiffness: 300,
             });
-            opacity.value = withTiming(1, { duration: 250 });
+            opacity.value = withTiming(1, { duration: 200 });
 
             // Auto hide
             if (duration > 0) {
@@ -90,9 +88,9 @@ const Toast: React.FC<ToastProps> = ({
     }, [visible, duration]);
 
     const hide = () => {
-        translateY.value = withSpring(100, { damping: 20, stiffness: 200 });
-        scale.value = withTiming(0.9, { duration: 200 });
-        opacity.value = withTiming(0, { duration: 200 }, () => {
+        translateY.value = withSpring(80, { damping: 20, stiffness: 200 });
+        scale.value = withTiming(0.85, { duration: 180 });
+        opacity.value = withTiming(0, { duration: 180 }, () => {
             runOnJS(onHide)();
             if (onDismiss) {
                 runOnJS(onDismiss)();
@@ -117,76 +115,65 @@ const Toast: React.FC<ToastProps> = ({
                 return {
                     icon: CheckCircle,
                     backgroundColor: '#10B981',
-                    useGlass: false,
+                    iconBg: 'rgba(255,255,255,0.2)',
                 };
             case 'error':
                 return {
                     icon: XCircle,
                     backgroundColor: '#EF4444',
-                    useGlass: false,
+                    iconBg: 'rgba(255,255,255,0.2)',
                 };
             case 'warning':
                 return {
                     icon: AlertCircle,
                     backgroundColor: '#F59E0B',
-                    useGlass: false,
+                    iconBg: 'rgba(255,255,255,0.2)',
                 };
             case 'info':
             default:
                 return {
                     icon: Info,
-                    backgroundColor: isDarkMode ? '#3B82F6' : '#2563EB',
-                    useGlass: true,
+                    backgroundColor: isDarkMode ? 'rgba(30, 30, 40, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+                    iconBg: isDarkMode ? 'rgba(59,130,246,0.25)' : 'rgba(37,99,235,0.12)',
                 };
         }
     };
 
     const config = getConfig();
     const Icon = config.icon;
+    const isInfoType = type === 'info';
+    const textColor = isInfoType ? theme.textPrimary : '#fff';
+    const iconColor = isInfoType ? (isDarkMode ? '#60A5FA' : '#2563EB') : '#fff';
 
     if (!visible) return null;
 
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
             <View style={[
-                styles.toastWrapper,
-                !config.useGlass && { backgroundColor: config.backgroundColor }
+                styles.pill,
+                { backgroundColor: config.backgroundColor }
             ]}>
-                {/* Glass background - only for info type */}
-                {config.useGlass && Platform.OS === 'ios' && (
+                {/* Blur only for info type */}
+                {isInfoType && Platform.OS === 'ios' && (
                     <BlurView
-                        intensity={80}
+                        intensity={60}
                         tint={isDarkMode ? 'dark' : 'light'}
                         style={StyleSheet.absoluteFill}
                     />
                 )}
 
-                {/* Overlay for glass type */}
-                {config.useGlass && (
-                    <View style={[
-                        styles.toastOverlay,
-                        {
-                            backgroundColor: isDarkMode
-                                ? 'rgba(30, 30, 35, 0.85)'
-                                : 'rgba(255, 255, 255, 0.9)',
-                        }
-                    ]} />
-                )}
-
-                {/* Content */}
-                <View style={styles.toastContent}>
-                    {/* Icon */}
-                    <Icon size={20} color="#fff" strokeWidth={2.5} />
-
-                    {/* Message */}
-                    <Text
-                        style={[styles.message, { color: '#fff' }]}
-                        numberOfLines={2}
-                    >
-                        {message}
-                    </Text>
-
+                {/* Icon in circle */}
+                <View style={[styles.iconCircle, { backgroundColor: config.iconBg }]}>
+                    <Icon size={16} color={iconColor} strokeWidth={2.5} />
                 </View>
+
+                {/* Message */}
+                <Text
+                    style={[styles.message, { color: textColor }]}
+                    numberOfLines={1}
+                >
+                    {message}
+                </Text>
             </View>
         </Animated.View>
     );
@@ -195,70 +182,42 @@ const Toast: React.FC<ToastProps> = ({
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 100,
-        left: 16,
-        right: 16,
+        bottom: 110,
+        left: 0,
+        right: 0,
         zIndex: 10000,
         alignItems: 'center',
     },
-    toastWrapper: {
-        width: '100%',
-        borderRadius: 18,
-        overflow: 'hidden',
-        // Premium shadow
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-        elevation: 12,
-    },
-    toastOverlay: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    toastContent: {
+    pill: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 14,
+        paddingVertical: 10,
         paddingHorizontal: 16,
-        gap: 12,
+        borderRadius: 50,
+        gap: 10,
+        overflow: 'hidden',
+        // Shadow
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        elevation: 10,
+        maxWidth: '80%',
     },
-    iconContainer: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
+    iconCircle: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
     message: {
-        flex: 1,
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
+        letterSpacing: -0.2,
         textAlign: 'right',
-        letterSpacing: -0.3,
-    },
-    actionButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 10,
-    },
-    actionText: {
-        color: '#fff',
-        fontSize: 13,
-        fontWeight: '700',
-    },
-    closeButton: {
-        padding: 8,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        marginLeft: 4,
-    },
-    accentLine: {
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: 4,
     },
 });
 
 export default Toast;
+

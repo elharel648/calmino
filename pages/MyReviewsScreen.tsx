@@ -111,7 +111,7 @@ export default function MyReviewsScreen({ navigation }: any) {
                 >
                     <ChevronRight size={20} color={theme.textPrimary} strokeWidth={2.5} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('rating.myReviews')}</Text>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('sitterDash.myReviews')}</Text>
                 <View style={{ width: 36 }} />
             </View>
 
@@ -123,9 +123,9 @@ export default function MyReviewsScreen({ navigation }: any) {
                     }]}>
                         <Star size={32} color={theme.textSecondary} strokeWidth={1.5} />
                     </View>
-                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>עדיין אין ביקורות</Text>
+                    <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('sitterDash.noReviewsYet')}</Text>
                     <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                        השלם הזמנות ותקבל ביקורות מהורים
+                        {t('rating.thankYouMessage')}
                     </Text>
                 </View>
             ) : (
@@ -143,19 +143,19 @@ export default function MyReviewsScreen({ navigation }: any) {
                                 <Text style={[styles.statsValue, { color: theme.textPrimary }]}>
                                     {stats.average?.toFixed(1) || '0.0'}
                                 </Text>
-                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>דירוג ממוצע</Text>
+                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>{t('babysitter.sortByRating')}</Text>
                             </View>
                             <View style={[styles.statsDivider, { backgroundColor: theme.divider }]} />
                             <View style={styles.statsItem}>
                                 {renderStars(Math.round(stats.average || 0), 16)}
-                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>{stats.total} ביקורות</Text>
+                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>{stats.total} {t('sitterDash.reviews')}</Text>
                             </View>
                             <View style={[styles.statsDivider, { backgroundColor: theme.divider }]} />
                             <View style={styles.statsItem}>
                                 <Text style={[styles.statsValue, { color: theme.textPrimary }]}>
                                     {stats.verifiedCount || 0}
                                 </Text>
-                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>מאומתות</Text>
+                                <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>{t('rating.verified')}</Text>
                             </View>
                         </View>
                     )}
@@ -181,7 +181,7 @@ export default function MyReviewsScreen({ navigation }: any) {
                                     </View>
                                     <View style={styles.reviewNameRow}>
                                         <Text style={[styles.reviewName, { color: theme.textPrimary }]}>
-                                            {review.parentName || 'הורה'}
+                                            {review.parentName || t('babysitter.parent')}
                                         </Text>
                                         {review.isVerified && (
                                             <View style={[styles.verifiedDot, { backgroundColor: '#10B981' }]} />

@@ -40,8 +40,8 @@ function DrumColumn({
 
   const gesture = Gesture.Pan()
     .blocksExternalGesture(modalGesture)
-    .activeOffsetY([-8, 8])
-    .failOffsetX([-15, 15])
+    .activeOffsetY([-4, 4])
+    .failOffsetX([-20, 20])
     .onUpdate((e) => {
       dragY.value = e.translationY;
       const step = Math.abs(Math.floor(e.translationY / DRUM_ITEM_H));
@@ -51,7 +51,10 @@ function DrumColumn({
       }
     })
     .onEnd((e) => {
-      const totalSteps = -Math.round(e.translationY / DRUM_ITEM_H);
+      // Add velocity-based momentum for fast flicks
+      const velocitySteps = Math.round(-e.velocityY / 800);
+      const dragSteps = -Math.round(e.translationY / DRUM_ITEM_H);
+      const totalSteps = dragSteps + velocitySteps;
       dragY.value = withSpring(0, { damping: 22, stiffness: 280 });
       lastHapticStep.value = 0;
       if (totalSteps !== 0) runOnJS(onSteps)(totalSteps);
@@ -123,14 +126,16 @@ const IsolatedDurationPicker = ({
   t: any;
 }) => {
   const [date, setDate] = useState(() => {
+    // Use UTC to avoid timezone offset corrupting the duration
     const d = new Date(0);
-    d.setHours(initialHours, initialMinutes, 0, 0);
+    d.setUTCHours(initialHours, initialMinutes, 0, 0);
     return d;
   });
 
   useEffect(() => {
-    const h = date.getHours();
-    const m = date.getMinutes();
+    // Read UTC values — countdown picker stores duration relative to epoch UTC
+    const h = date.getUTCHours();
+    const m = date.getUTCMinutes();
     const timer = setTimeout(() => onChange(h, m), 300);
     return () => clearTimeout(timer);
   }, [date, onChange]);
@@ -1585,12 +1590,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         </View>
       )}
 
-      {/* Duration Mode — native iOS-style spinner in card */}
+      {/* Duration Mode — simple drum wheels, NO DateTimePicker */}
       {sleepMode === 'duration' && (
         <View style={{
           backgroundColor: isDarkMode ? '#2C2C2E' : '#FFFFFF',
           borderRadius: 24,
-          paddingVertical: 16,
+          paddingVertical: 20,
           paddingHorizontal: 16,
           marginVertical: 8,
           shadowColor: '#000',
@@ -1600,17 +1605,48 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           elevation: 8,
           alignItems: 'center',
         }}>
-          <IsolatedDurationPicker
-            initialHours={sleepHours}
-            initialMinutes={sleepMinutes}
-            onChange={(h, m) => {
-              setSleepHours(h);
-              setSleepMinutes(m);
-            }}
-            onDone={() => handleSave()}
-            theme={theme}
-            t={t}
-          />
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {/* Hours column */}
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: isDarkMode ? '#8E8E93' : '#8E8E93', marginBottom: 8 }}>{t('tracking.hours')}</Text>
+              <DrumColumn
+                value={sleepHours}
+                min={0}
+                max={23}
+                wrap={false}
+                onSteps={handleHourSteps}
+                isDarkMode={isDarkMode}
+                accentColor={TYPE_CONFIG.sleep.accent}
+                modalGesture={panGesture}
+              />
+            </View>
+            {/* Separator */}
+            <Text style={{ fontSize: 28, fontWeight: '300', color: isDarkMode ? '#555' : '#C7C7CC', marginTop: 20 }}>:</Text>
+            {/* Minutes column */}
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: isDarkMode ? '#8E8E93' : '#8E8E93', marginBottom: 8 }}>{t('tracking.minutes')}</Text>
+              <DrumColumn
+                value={sleepMinutes}
+                min={0}
+                max={59}
+                wrap={true}
+                onSteps={handleMinuteSteps}
+                isDarkMode={isDarkMode}
+                accentColor={TYPE_CONFIG.sleep.accent}
+                modalGesture={panGesture}
+              />
+            </View>
+          </View>
+
+          {/* Confirm button */}
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={{ backgroundColor: theme.primary, marginTop: 16, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 24, minWidth: 140, alignItems: 'center' }}
+              onPress={() => handleSave()}
+            >
+              <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>{t('common.done')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 

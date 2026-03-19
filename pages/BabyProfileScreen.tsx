@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 32,
     paddingHorizontal: 28,
-    alignItems: 'flex-end',
+    alignItems: 'center',
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },

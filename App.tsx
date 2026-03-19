@@ -206,7 +206,7 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
   return (
     <Tab.Navigator
       id="MainTabs"
-      initialRouteName={isAppSitter ? babysitterTabName : homeTabName}
+      initialRouteName={homeTabName}
       tabBar={(props) => <LiquidGlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,

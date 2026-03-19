@@ -4,7 +4,6 @@ import { Phone, Siren, Shield, Skull } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withDelay, withSpring } from 'react-native-reanimated';
-import ScrollFadeWrapper from './Common/ScrollFadeWrapper';
 import { useLanguage } from '../context/LanguageContext';
 import SOSIcon from './Common/SOSIcon';
 
@@ -236,7 +235,6 @@ export default function CalmModeModal({
           </View>
 
           {/* Content */}
-          <ScrollFadeWrapper fadeHeight={80}>
             <ScrollView
               ref={scrollViewRef}
               style={styles.content}
@@ -258,8 +256,8 @@ export default function CalmModeModal({
                       style={[
                         styles.emergencyCard,
                         {
-                          backgroundColor: '#F9FAFB',
-                          borderColor: 'rgba(0,0,0,0.06)',
+                          backgroundColor: '#FFFFFF',
+                          borderColor: 'rgba(0,0,0,0.08)',
                         }
                       ]}
                       onPress={() => makeCall(contact.number, contact.name)}
@@ -286,7 +284,7 @@ export default function CalmModeModal({
 
               {/* HMO - Clean List */}
               <Text style={[styles.sectionTitle, { color: '#6B7280' }]}>קופות חולים</Text>
-              <View style={[styles.hmoContainer, { backgroundColor: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)' }]}>
+              <View style={[styles.hmoContainer, { backgroundColor: '#FFFFFF', borderColor: 'rgba(0,0,0,0.08)' }]}>
                 {hmoContacts.map((hmo, index) => (
                   <TouchableOpacity
                     key={index}
@@ -314,7 +312,6 @@ export default function CalmModeModal({
                 ))}
               </View>
             </ScrollView>
-          </ScrollFadeWrapper>
         </RNAnimatedView>
       </View>
     </Modal>
@@ -359,7 +356,6 @@ const styles = StyleSheet.create({
 
   // Glass Header - Centered
   header: {
-    marginHorizontal: -24,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: 'hidden',
@@ -421,6 +417,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 24,
     paddingBottom: 150,
+    backgroundColor: '#FFFFFF',
   },
   sectionTitle: {
     fontSize: 13,

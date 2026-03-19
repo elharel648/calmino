@@ -1422,7 +1422,8 @@
     "loginRequired": "You must be logged in to rate.",
     "thankYou": "Thank you! 🎉",
     "thankYouMessage": "Your rating helps other parents find the best babysitter.",
-    "serverError": "A connection error occurred. Please try again."
+    "serverError": "A connection error occurred. Please try again.",
+    "verified": "Verified"
   },
   "subscription": {
     "subscription": "Subscription",
