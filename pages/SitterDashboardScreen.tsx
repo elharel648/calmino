@@ -1593,7 +1593,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         { id: 'instagram', icon: Instagram, color: '#E1306C', value: socialInstagram, setValue: setSocialInstagram, placeholder: 'username', prefix: 'instagram.com/', name: 'Instagram' },
                                         { id: 'facebook', icon: Facebook, color: '#1877F2', value: socialFacebook, setValue: setSocialFacebook, placeholder: 'username', prefix: 'facebook.com/', name: 'Facebook' },
                                         { id: 'linkedin', icon: Linkedin, color: '#0077B5', value: socialLinkedin, setValue: setSocialLinkedin, placeholder: 'username', prefix: 'linkedin.com/in/', name: 'LinkedIn' },
-                                        { id: 'whatsapp', icon: WhatsAppIcon, color: '#25D366', value: socialWhatsapp, setValue: setSocialWhatsapp, placeholder: '+972...', prefix: 'wa.me/', name: 'WhatsApp' },
+                                        { id: 'whatsapp', icon: MessageCircle, color: '#25D366', value: socialWhatsapp, setValue: setSocialWhatsapp, placeholder: '+972...', prefix: 'wa.me/', name: 'WhatsApp' },
                                     ].map((social) => {
                                         // Type assertion for map callback to allow specific string literal types from state
                                         const isConnected = !!social.value;
@@ -1609,9 +1609,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     borderWidth: 1,
-                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', // Neutral Background
+                                                    backgroundColor: isConnected
+                                                        ? (isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)')
+                                                        : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'), // Neutral Background
                                                     borderColor: isConnected
-                                                        ? 'rgba(16, 185, 129, 0.4)' // Subtle Green Border
+                                                        ? (isDarkMode ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.3)') // Subtle Green Border
                                                         : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'),
                                                     shadowColor: '#000',
                                                     shadowOffset: { width: 0, height: 2 },
@@ -1635,16 +1637,16 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                         position: 'absolute',
                                                         bottom: -4,
                                                         right: -4,
-                                                        width: 18,
-                                                        height: 18,
-                                                        borderRadius: 9,
+                                                        width: 20,
+                                                        height: 20,
+                                                        borderRadius: 10,
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         borderWidth: 2,
                                                         borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF', // Match modal background
                                                         backgroundColor: '#10B981', // Cute Green V
                                                     }}>
-                                                        <Check size={10} color="#fff" strokeWidth={4} />
+                                                        <Check size={12} color="#fff" strokeWidth={3.5} />
                                                     </View>
                                                 )}
                                             </TouchableOpacity>
@@ -2347,7 +2349,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 paddingHorizontal: 20,
                                                 borderRadius: 14,
                                                 backgroundColor: availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
-                                                    ? (isDarkMode ? '#fff' : '#000')
+                                                    ? theme.primary
                                                     : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
                                                 borderWidth: 1,
                                                 borderColor: availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
@@ -2381,7 +2383,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             <CheckCircle
                                                 size={16}
                                                 color={availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
-                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                    ? '#fff'
                                                     : theme.textSecondary}
                                                 strokeWidth={2.5}
                                             />
@@ -2389,7 +2391,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 fontSize: 14,
                                                 fontWeight: '700',
                                                 color: availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0
-                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                    ? '#fff'
                                                     : theme.textPrimary,
                                             }}>
                                                 {t('sitterDash.alwaysAvailable')}
@@ -2501,26 +2503,24 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
                                                             backgroundColor: isSelected
-                                                                ? (isDarkMode ? '#fff' : '#000')
-                                                                : hasOverride
-                                                                    ? (isAvailable
-                                                                        ? (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
-                                                                        : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'))
-                                                                    : 'transparent',
-                                                            borderWidth: isToday ? 2 : hasOverride ? 1.5 : 0,
-                                                            borderColor: isSelected
-                                                                ? 'transparent'
-                                                                : isToday
-                                                                    ? (isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.25)')
+                                                                ? theme.primary
+                                                                : isToday && !hasOverride
+                                                                    ? theme.primary
                                                                     : hasOverride
+                                                                        ? (isAvailable
+                                                                            ? (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
+                                                                            : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'))
+                                                                        : 'transparent',
+                                                            borderWidth: hasOverride && !isSelected && !isToday ? 1.5 : 0,
+                                                            borderColor: hasOverride
                                                                         ? (isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)')
                                                                         : 'transparent',
                                                         }}>
                                                             <Text style={{
                                                                 fontSize: 15,
                                                                 fontWeight: isToday || isSelected ? '800' : '600',
-                                                                color: isSelected
-                                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                                color: isSelected || (isToday && !hasOverride)
+                                                                    ? '#fff'
                                                                     : !isAvailable
                                                                         ? (isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)')
                                                                         : theme.textPrimary,
@@ -3123,13 +3123,9 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 style={[styles.saveAvailabilityBtn, {
                                     backgroundColor: isDarkMode ? '#fff' : '#000',
                                     shadowColor: isDarkMode ? '#fff' : '#000',
-                                    opacity: availableDays.length === 0 ? 0.5 : 1,
+                                    opacity: 1,
                                 }]}
                                 onPress={async () => {
-                                    if (availableDays.length === 0) {
-                                        Alert.alert(t('common.error'), t('sitterDash.selectAtLeastOneDay'));
-                                        return;
-                                    }
 
                                     try {
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -3166,7 +3162,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         setSavingSettings(false);
                                     }
                                 }}
-                                disabled={availableDays.length === 0 || savingSettings}
+                                disabled={savingSettings}
                                 activeOpacity={0.8}
                             >
                                 {savingSettings ? (

@@ -20,7 +20,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGlobalPresence } from '../hooks/useGlobalPresence';
 import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
-import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send } from 'lucide-react-native';
+import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send, Check } from 'lucide-react-native';
 import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
 
 interface SocialLinks {
@@ -868,12 +868,12 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {sitterData.socialLinks && Object.values(sitterData.socialLinks).some(v => v) && (
                     <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
                         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>רשתות חברתיות</Text>
-                        <View style={styles.socialRow}>
+                        <View style={[styles.socialRow, { gap: 14 }]}>
                             {([
-                                { key: 'instagram', icon: Instagram, color: '#E1306C', label: 'Instagram' },
-                                { key: 'facebook', icon: Facebook, color: '#1877F2', label: 'Facebook' },
-                                { key: 'linkedin', icon: Linkedin, color: '#0077B5', label: 'LinkedIn' },
                                 { key: 'whatsapp', icon: MessageCircle, color: '#25D366', label: 'WhatsApp' },
+                                { key: 'linkedin', icon: Linkedin, color: '#0077B5', label: 'LinkedIn' },
+                                { key: 'facebook', icon: Facebook, color: '#1877F2', label: 'Facebook' },
+                                { key: 'instagram', icon: Instagram, color: '#E1306C', label: 'Instagram' },
                                 { key: 'tiktok', icon: Music, color: isDarkMode ? '#fff' : '#000', label: 'TikTok' },
                                 { key: 'telegram', icon: Send, color: '#0088CC', label: 'Telegram' },
                             ] as const).filter(s => sitterData.socialLinks?.[s.key as keyof SocialLinks]).map((s) => {
@@ -881,12 +881,40 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 return (
                                     <TouchableOpacity
                                         key={s.key}
-                                        style={[styles.socialChip, { borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}
+                                        style={{
+                                            width: 56,
+                                            height: 56,
+                                            borderRadius: 18,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderWidth: 1,
+                                            backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+                                            borderColor: isDarkMode ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.3)',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.1,
+                                            shadowRadius: 4,
+                                            elevation: 3,
+                                        }}
                                         onPress={() => openSocialLink(s.key as SocialPlatform, sitterData.socialLinks![s.key as keyof SocialLinks]!)}
                                         activeOpacity={0.7}
                                     >
-                                        <Icon size={15} color={s.color} strokeWidth={2} />
-                                        <Text style={[styles.socialChipText, { color: theme.textPrimary }]}>{s.label}</Text>
+                                        <Icon size={24} color={isDarkMode ? '#ffffff' : '#000000'} strokeWidth={1.5} />
+                                        <View style={{
+                                            position: 'absolute',
+                                            bottom: -4,
+                                            right: -4,
+                                            width: 20,
+                                            height: 20,
+                                            borderRadius: 10,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderWidth: 2,
+                                            borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                            backgroundColor: '#10B981',
+                                        }}>
+                                            <Check size={12} color="#fff" strokeWidth={3.5} />
+                                        </View>
                                     </TouchableOpacity>
                                 );
                             })}

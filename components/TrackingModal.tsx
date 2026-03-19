@@ -11,13 +11,14 @@ import { useFoodTimer } from '../context/FoodTimerContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useActiveChild } from '../context/ActiveChildContext';
+import { useToast } from '../context/ToastContext';
 import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, withDelay, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
 import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const TIME_PICKER_STYLE = { width: SCREEN_WIDTH * 0.8, height: 200 };
+const TIME_PICKER_STYLE = { width: 300, height: 216, alignSelf: 'center' as const };
 
 // ─── Drum Swipe Picker ────────────────────────────────────────────────────────
 const DRUM_ITEM_H = 48;
@@ -106,6 +107,58 @@ function DrumColumn({
     </GestureDetector>
   );
 }
+const IsolatedDurationPicker = ({
+  initialHours,
+  initialMinutes,
+  onChange,
+  onDone,
+  theme,
+  t,
+}: {
+  initialHours: number;
+  initialMinutes: number;
+  onChange: (h: number, m: number) => void;
+  onDone: () => void;
+  theme: any;
+  t: any;
+}) => {
+  const [date, setDate] = useState(() => {
+    const d = new Date(0);
+    d.setHours(initialHours, initialMinutes, 0, 0);
+    return d;
+  });
+
+  useEffect(() => {
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const timer = setTimeout(() => onChange(h, m), 300);
+    return () => clearTimeout(timer);
+  }, [date, onChange]);
+
+  return (
+    <>
+      <DateTimePicker
+        value={date}
+        mode="countdown"
+        minuteInterval={1}
+        display="spinner"
+        style={{ width: '100%', height: 180 }}
+        onChange={(event, selectedDate) => {
+          if (selectedDate) setDate(selectedDate);
+        }}
+        locale="he-IL"
+      />
+      {Platform.OS === 'ios' && (
+        <TouchableOpacity
+          style={[{ marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' }, { backgroundColor: theme.primary, marginTop: 12 }]}
+          onPress={onDone}
+        >
+          <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>{t('common.done')}</Text>
+        </TouchableOpacity>
+      )}
+    </>
+  );
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TrackingModalProps {
@@ -118,6 +171,7 @@ interface TrackingModalProps {
 export default function TrackingModal({ visible, type, onClose, onSave }: TrackingModalProps) {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
+  const { showError } = useToast();
   const foodTimerContext = useFoodTimer();
   const { activeChild } = useActiveChild();
 
@@ -848,22 +902,22 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     // Validate sleep duration > 0
     if (type === 'sleep') {
       if (sleepMode === 'timer' && (!data.duration || data.duration === 0)) {
-        Alert.alert(t('common.error'), 'יש להפעיל את הטיימר לפני השמירה.');
+        showError('יש להפעיל את הטיימר לפני השמירה.');
         return;
       }
       if (sleepMode === 'duration' && (!data.duration || data.duration === 0)) {
-        Alert.alert(t('common.error'), 'יש להזין משך שינה גדול מ-0.');
+        showError('יש להזין משך שינה גדול מ-0.');
         return;
       }
       if (sleepMode === 'timerange' && data.duration === 0) {
-        Alert.alert(t('common.error'), 'שעת הסיום חייבת להיות שונה משעת ההתחלה.');
+        showError('שעת הסיום חייבת להיות שונה משעת ההתחלה.');
         return;
       }
     }
 
     // Validate diaper type selected
     if (type === 'diaper' && !subType) {
-      Alert.alert(t('common.error'), 'יש לבחור סוג חיתול לפני השמירה.');
+      showError('יש לבחור סוג חיתול לפני השמירה.');
       return;
     }
 
@@ -871,12 +925,12 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     if (type === 'sleep' && sleepMode === 'timerange') {
       if (!data.timestamp) {
         logger.error('❌ Missing timestamp');
-        Alert.alert(t('common.error'), 'שגיאה: חסר timestamp. נא לנסות שוב.');
+        showError('שגיאה: חסר timestamp. נא לנסות שוב.');
         return;
       }
       if (data.duration === undefined || data.duration === null) {
         logger.error('❌ Missing duration');
-        Alert.alert(t('common.error'), 'שגיאה: חסר duration. נא לנסות שוב.');
+        showError('שגיאה: חסר duration. נא לנסות שוב.');
         return;
       }
     }
@@ -933,7 +987,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       }, 1500);
     } catch (error) {
       logger.error('Save failed', error);
-      Alert.alert(t('common.error'), t('common.saveFailed'));
+      showError(t('common.saveFailed') || 'שגיאה בשמירת הנתונים');
     } finally {
       setIsSaving(false);
     }
@@ -1546,35 +1600,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           elevation: 8,
           alignItems: 'center',
         }}>
-          <DateTimePicker
-            value={(() => {
-              const d = new Date(0);
-              d.setHours(sleepHours, sleepMinutes, 0, 0);
-              return d;
-            })()}
-            mode="countdown"
-            minuteInterval={1}
-            display="spinner"
-            style={{ width: '100%', height: 180 }}
-            onChange={(event, date) => {
-              if (date) {
-                const totalSecs = Math.floor(date.getTime() / 1000) % 86400;
-                const h = Math.floor(totalSecs / 3600);
-                const m = Math.floor((totalSecs % 3600) / 60);
-                setSleepHours(h);
-                setSleepMinutes(m);
-              }
+          <IsolatedDurationPicker
+            initialHours={sleepHours}
+            initialMinutes={sleepMinutes}
+            onChange={(h, m) => {
+              setSleepHours(h);
+              setSleepMinutes(m);
             }}
-            locale="he-IL"
+            onDone={() => handleSave()}
+            theme={theme}
+            t={t}
           />
-          {Platform.OS === 'ios' && (
-            <TouchableOpacity
-              style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary, marginTop: 12 }]}
-              onPress={() => handleSave()}
-            >
-              <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
-            </TouchableOpacity>
-          )}
         </View>
       )}
 
@@ -2982,8 +3018,8 @@ const styles = StyleSheet.create({
 
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
-  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'stretch', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
-  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 48, paddingVertical: 14, backgroundColor: '#1C1C1E', borderRadius: 14, width: '100%', alignItems: 'center' },
+  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
+  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, backgroundColor: '#1C1C1E', borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' },
   timePickerDoneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 
   // Pumping Row Layout (Timer + Amount side by side)
