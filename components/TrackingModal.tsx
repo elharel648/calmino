@@ -1570,7 +1570,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           {Platform.OS === 'ios' && (
             <TouchableOpacity
               style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary, marginTop: 12 }]}
-              onPress={() => setSleepMode('timer')}
+              onPress={() => handleSave()}
             >
               <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
             </TouchableOpacity>

@@ -2357,14 +2357,24 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             }}
                                             onPress={() => {
                                                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                                setAvailableDays(['0', '1', '2', '3', '4', '5', '6']);
-                                                const fullHours: Record<string, { start: string; end: string }> = {};
-                                                ['0', '1', '2', '3', '4', '5', '6'].forEach(d => {
-                                                    fullHours[d] = { start: '07:00', end: '23:00' };
-                                                });
-                                                setAvailableHours(fullHours);
-                                                setMonthlyOverrides({});
-                                                setSelectedCalendarDate(null);
+                                                const isCurrentlyAlwaysAvailable = availableDays.length === 7 && Object.keys(monthlyOverrides).length === 0;
+                                                if (isCurrentlyAlwaysAvailable) {
+                                                    // Toggle OFF — clear all days
+                                                    setAvailableDays([]);
+                                                    setAvailableHours({});
+                                                    setMonthlyOverrides({});
+                                                    setSelectedCalendarDate(null);
+                                                } else {
+                                                    // Toggle ON — set all days
+                                                    setAvailableDays(['0', '1', '2', '3', '4', '5', '6']);
+                                                    const fullHours: Record<string, { start: string; end: string }> = {};
+                                                    ['0', '1', '2', '3', '4', '5', '6'].forEach(d => {
+                                                        fullHours[d] = { start: '07:00', end: '23:00' };
+                                                    });
+                                                    setAvailableHours(fullHours);
+                                                    setMonthlyOverrides({});
+                                                    setSelectedCalendarDate(null);
+                                                }
                                             }}
                                             activeOpacity={0.7}
                                         >
