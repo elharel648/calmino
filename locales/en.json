@@ -1657,5 +1657,15 @@
     "firstSounds": "First Sounds",
     "firstSteps": "First Steps",
     "dateLabel": "Date"
+  },
+  "sitterOnboarding": {
+    "profileTitle": "Welcome!",
+    "profileSubtitle": "Parents nearby can already see your profile and send babysitting requests",
+    "availabilityTitle": "Set Availability & Get Bookings",
+    "availabilitySubtitle": "Mark which days and hours you're free — parents search for available sitters in their area",
+    "reputationTitle": "Build Your Reputation & Earn More ⭐",
+    "reputationSubtitle": "Get reviews from parents, track profile views, and share your profile on WhatsApp",
+    "next": "Next",
+    "letsStart": "Let's Start!"
   }
 }

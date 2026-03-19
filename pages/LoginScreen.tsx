@@ -21,6 +21,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User, QrCode } from 'lucide-react-native';
 import LegalModal, { LegalType } from '../components/Legal/LegalModal';
+import ConfettiBurst from '../components/Effects/ConfettiBurst';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
@@ -163,6 +164,9 @@ export default function LoginScreen({
 
   // Terms and Privacy Agreement
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Confetti celebration
+  const [showConfetti, setShowConfetti] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [agreedToAge, setAgreedToAge] = useState(false);
 
@@ -451,6 +455,7 @@ export default function LoginScreen({
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setLoading(false);
+        setShowConfetti(true);
 
         // Sign out immediately so they have to log in (and trigger the verification check)
         await auth.signOut();
@@ -529,6 +534,7 @@ export default function LoginScreen({
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="light" />
+      <ConfettiBurst visible={showConfetti} onFinish={() => setShowConfetti(false)} />
 
       {/* Premium Header */}
       <View style={styles.header}>

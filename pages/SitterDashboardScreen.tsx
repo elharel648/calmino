@@ -54,6 +54,7 @@ import { startShift, getProfileViewStats, getResponseRateStats } from '../servic
 import { Play } from 'lucide-react-native';
 import DayHoursEditor from '../components/BabySitter/DayHoursEditor';
 import { logger } from '../utils/logger';
+import SitterOnboarding from '../components/BabySitter/SitterOnboarding';
 import * as Location from 'expo-location';
 import { validateUsername, openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -113,6 +114,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const [refreshing, setRefreshing] = useState(false);
     // Removed tabs - only showing completed history now
     const [settingsVisible, setSettingsVisible] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     // Settings state
     const [preferredLocation, setPreferredLocation] = useState('');
@@ -312,6 +314,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 }
                 setVideoUri(data.sitterVideo || null);
                 setCoverPhoto(data.sitterCoverPhoto || null);
+
+                // Show onboarding for first-time sitters
+                if (!data.hasSeenSitterOnboarding) {
+                    setShowOnboarding(true);
+                }
 
 
 
@@ -3179,6 +3186,24 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 </View>
 
             </Modal>
+
+            {/* First-time sitter onboarding */}
+            <SitterOnboarding
+                visible={showOnboarding}
+                onComplete={async () => {
+                    setShowOnboarding(false);
+                    try {
+                        const userId = auth.currentUser?.uid;
+                        if (userId) {
+                            await updateDoc(doc(db, 'users', userId), {
+                                hasSeenSitterOnboarding: true,
+                            });
+                        }
+                    } catch (e) {
+                        logger.error('Failed to save onboarding flag:', e);
+                    }
+                }}
+            />
         </View>
     );
 };

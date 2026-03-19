@@ -129,19 +129,19 @@ export const setupPresenceListener = (familyId: string): (() => void) => {
     };
 };
 
-// --- Global User Presence (For Chat/Sitters outside of families) ---
 export const setGlobalUserOnline = async (): Promise<void> => {
     const userId = getCurrentUserId();
     if (!userId) return;
 
     try {
         const userRef = doc(db, 'users', userId);
+        // MUST use updateDoc (not setDoc) to avoid recreating deleted user docs
         await updateDoc(userRef, {
             isOnline: true,
             lastActive: serverTimestamp(),
         });
     } catch (e) {
-        logger.error('setGlobalUserOnline error:', e);
+        // Silently ignore — doc may not exist (e.g. after account deletion)
     }
 };
 
@@ -151,12 +151,13 @@ export const setGlobalUserOffline = async (): Promise<void> => {
 
     try {
         const userRef = doc(db, 'users', userId);
+        // MUST use updateDoc (not setDoc) to avoid recreating deleted user docs
         await updateDoc(userRef, {
             isOnline: false,
             lastActive: serverTimestamp(),
         });
     } catch (e) {
-        logger.error('setGlobalUserOffline error:', e);
+        // Silently ignore — doc may not exist (e.g. after account deletion)
     }
 };
 

@@ -26,6 +26,15 @@ interface JoinFamilyModalProps {
     onSuccess?: () => void;
 }
 
+// Safe hook — ActiveChildProvider may not be mounted during initial registration
+const useSafeActiveChild = () => {
+    try {
+        return useActiveChild();
+    } catch {
+        return { refreshChildren: () => {} };
+    }
+};
+
 export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
     visible,
     onClose,
@@ -33,7 +42,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
 }) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
-    const { refreshChildren } = useActiveChild();
+    const { refreshChildren } = useSafeActiveChild();
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

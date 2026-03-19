@@ -524,36 +524,26 @@ if (data.settings.language !== undefined) {
                       }
 
                       // 9. Delete user from Firebase Auth (this must be last)
-                      await deleteUser(user);
-
-                      // User is automatically signed out after deletion
                       try {
-                        await signOut(auth);
-                      } catch (e) {
-                        // Ignore - user already deleted
+                        await deleteUser(user);
+                        logger.log('✅ Firebase Auth user deleted');
+                      } catch (authErr: any) {
+                        if (authErr?.code === 'auth/requires-recent-login') {
+                          logger.warn('requires-recent-login — Firestore data already cleaned, signing out');
+                        } else {
+                          logger.error('Failed to delete Auth user:', authErr);
+                        }
                       }
 
+                      // 10. Always sign out — whether deleteUser succeeded or not
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      // No alert needed - navigation will handle redirect to login
-                    } catch (e: any) {
                       setLoading(false);
-                      if (e?.code === 'auth/requires-recent-login') {
-                        Alert.alert(
-                          t('account.reauthRequired'),
-                          t('account.reauthRequiredMessage'),
-                          [
-                            { text: t('common.cancel'), style: 'cancel' },
-                            {
-                              text: t('account.logoutNow'),
-                              style: 'destructive',
-                              onPress: () => signOut(auth)
-                            }
-                          ]
-                        );
-                      } else {
-                        logger.error('Delete account error:', e);
-                        Alert.alert(t('common.error'), t('alerts.deleteAccountError'));
-                      }
+                      try { await signOut(auth); } catch (_) {}
+                    } catch (e: any) {
+                      // Catastrophic failure — sign out anyway to prevent stuck state
+                      logger.error('Delete account catastrophic error:', e);
+                      setLoading(false);
+                      try { await signOut(auth); } catch (_) {}
                     }
                   }
                 }
