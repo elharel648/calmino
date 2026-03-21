@@ -55,7 +55,7 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • פרטי חשבון: שם מלא, כתובת אימייל, סיסמה מוצפנת{'\n'}
     • פרופיל ילד: שם, תאריך לידה, מגדר, תמונת פרופיל{'\n'}
     • נתוני מעקב: האכלה (שעה, כמות, סוג), שינה (שעות כניסה ויציאה), החלפת חיתול, תוספי תזונה, חיסונים, תרופות, מדדי גדילה (משקל, גובה, היקף ראש){'\n'}
-    • נתוני מיקום (GPS) — לצורך שירותי איתור בייביסיטרים בסביבתך בלבד, באישורך המפורש{'\n'}
+    • נתוני מיקום (GPS) — כדי לאפשר איתור בייביסיטרים קרובים, האפליקציה אוספת נתוני מיקום כלליים ומדויקים שלך אך ורק באישורך הברור ובזמן השימוש. נתונים אלו אינם נשמרים בהיסטוריה, אינם נסחרים וניתן לבטלם מתי שתרצה דרך ההגדרות.{'\n'}
     • הודעות צ'אט שנשלחו בין הורים לבייביסיטרים דרך האפליקציה{'\n'}
     • הערות ותיעוד שתזין ידנית{'\n'}
     • תמונות ורגעים קסומים שתבחר לשמור{'\n\n'}
@@ -63,7 +63,7 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • סוג מכשיר, גרסת מערכת הפעלה, ומזהה מכשיר ייחודי{'\n'}
     • Token להתראות Push (לצורך שליחת תזכורות בלבד){'\n'}
     • כתובת IP (לצרכי אבטחה וזיהוי תקלות בלבד — אינה נשמרת לאורך זמן){'\n'}
-    • Crash reports אנונימיים לשיפור יציבות האפליקציה{'\n\n'}
+    • נתוני שימוש אנונימיים ודיווחי קריסה (Crash Reports) דרך שירותים חיצוניים (כדוגמת Sentry) לאיתור באגים מהיר ושיפור יציבות. המידע אינו מכיל נתונים מזהים כלל.{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>ג. מידע מצדדים שלישיים:{'\n'}</Text>
     • בהתחברות עם Google: שם מלא וכתובת אימייל מחשבון Google בלבד{'\n'}
     • בהתחברות עם Apple: כתובת אימייל (שיכולה להיות מוסתרת על ידי Apple){'\n\n'}
@@ -80,12 +80,12 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     אנחנו <Text style={styles.bold}>לא</Text> משתמשים במידע שלך לפרסום ממוקד, ולא מוכרים נתונים לגורמים מסחריים.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>5. שיתוף מידע עם צדדים שלישיים{'\n'}</Text>
-    <Text style={[styles.subsection, { color: textColor }]}>ספקי שירות חיוניים (מעבדי מידע מאושרים):{'\n'}</Text>
-    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — אחסון נתונים, אימות משתמשים ועיבוד בק-אנד. Firebase עומד ב-GDPR ובמסגרת EU-US Data Privacy Framework. חתמנו על הסכם עיבוד נתונים (DPA) מול Google בהתאם לדרישות GDPR Article 28. מדיניות Firebase: firebase.google.com/support/privacy{'\n'}
-    • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — אימות משתמשים ושליחת התראות ל-iOS{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — פלטפורמת פיתוח ושליחת התראות Push חוצות-פלטפורמות{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — ניהול מנויים ורכישות In-App. מעבד מזהה משתמש והיסטוריית רכישות בלבד. מדיניות: revenuecat.com/privacy{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — נתוני מזג אוויר. עשוי להשתמש בנתוני מיקום כללי להצגת תחזית{'\n\n'}
+    אנו נעזרים בספקי שירות חיצוניים ומוכרים לתפעול האפליקציה:{'\n'}
+    • תשתיות, ניהול משתמשים ואחסון נתונים במסד מאובטח (<Text style={styles.bold}>Google Firebase</Text>){'\n'}
+    • מערכת התחברות לחשבון ושירותי התראות (<Text style={styles.bold}>Apple</Text>){'\n'}
+    • פלטפורמת פיתוח ושליחת התראות למכשיר (<Text style={styles.bold}>Expo / EAS</Text>){'\n'}
+    • ניהול מנויים ורכישות מאובטח מול חנויות האפליקציות (<Text style={styles.bold}>RevenueCat</Text>){'\n'}
+    • טעינת נתוני מזג אוויר מקומי מבוססי מיקום (<Text style={styles.bold}>Apple WeatherKit</Text>){'\n\n'}
     אנחנו <Text style={styles.bold}>לא</Text> מוכרים, משכירים, מחליפים, או מסחרים במידע שלך בשום אופן.{'\n'}
     נחשוף מידע לגורם חיצוני רק אם: (1) נדרשנו לכך בצו שיפוטי תקף; (2) נדרש לפי חוק; (3) הכרחי להגנה על בטיחות הציבור.{'\n\n'}
 
@@ -108,12 +108,10 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • מידע הנדרש לשמירה על פי חוק (כגון: עסקאות כספיות) יישמר לתקופה הנדרשת בחוק{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. פרטיות ילדים{'\n'}</Text>
-    האפליקציה מיועדת להורים ומטפלים בגירים (16+). מידע על ילדים נאסף אך ורק:{'\n'}
-    • על ידי הוריהם / אפוטרופוסיהם החוקיים{'\n'}
-    • למטרות מעקב בריאות אישי בלבד{'\n'}
-    • ללא שיתוף עם גורמים מסחריים{'\n'}
-    • ללא פרסום ממוקד הקשור לילדים{'\n\n'}
-    אנחנו אינם אוספים מידע ישירות מילדים. אם הגעת למסקנה שילד מתחת לגיל 13 יצר חשבון ללא הסכמת הורה, אנא פנה אלינו ונמחק את הנתונים מיד.{'\n\n'}
+    השירות מיועד להורים (16+) בלבד. המידע הנוגע לילדים נאסף אך ורק:{'\n'}
+    • מיוזמתם, הזנתם ושליטתם המלאה של הוריהם / אפוטרופוסיהם החוקיים{'\n'}
+    • למטרות מעקב בריאות אישי בלבד, ללא כל שיתוף מסחרי וללא פרסום ממוקד{'\n\n'}
+    כהורה, שמורה לך הזכות המוחלטת למחוק את כל נתוני ילדיך מהשרתים שלנו לצמיתות ובאופן מיידי ("הזכות להישכח") דרך האפליקציה. איננו אוספים מידע ישירות מילדים.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. זכויותיך{'\n'}</Text>
     בהתאם לחוק הגנת הפרטיות הישראלי ול-GDPR, יש לך:{'\n'}
@@ -158,7 +156,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Account details: full name, email address, encrypted password{'\n'}
     • Child profile: name, date of birth, gender, profile photo{'\n'}
     • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, medications, growth measurements (weight, height, head circumference){'\n'}
-    • Location data (GPS) — solely for babysitter discovery services in your area, with your explicit permission{'\n'}
+    • Location data (GPS) — to enable the discovery of nearby babysitters, the app collects exact and coarse location data only with your explicit permission and only while using the app. This data is not retained in history, is not sold, and can be revoked at any time.{'\n'}
     • Chat messages sent between parents and babysitters through the app{'\n'}
     • Notes and records you enter manually{'\n'}
     • Photos and magic moments you choose to save{'\n\n'}
@@ -166,7 +164,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Device type, operating system version, and unique device identifier{'\n'}
     • Push notification token (for sending reminders only){'\n'}
     • IP address (for security and troubleshooting only — not stored long-term){'\n'}
-    • Anonymous crash reports to improve app stability{'\n\n'}
+    • Anonymous usage data and crash reports via external services (e.g., Sentry) purely to identify bugs and improve stability. This information does not contain personally identifiable data.{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>c. Information from third parties:{'\n'}</Text>
     • When signing in with Google: full name and email address from your Google account only{'\n'}
     • When signing in with Apple: email address (which may be hidden by Apple){'\n\n'}
@@ -183,12 +181,12 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     We do <Text style={styles.bold}>not</Text> use your information for targeted advertising, and we do not sell data to commercial entities.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>5. Sharing Information with Third Parties{'\n'}</Text>
-    <Text style={[styles.subsection, { color: textColor }]}>Essential service providers (authorized data processors):{'\n'}</Text>
-    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — data storage, user authentication, and backend processing. Firebase complies with GDPR and the EU-US Data Privacy Framework. We have signed a Data Processing Agreement (DPA) with Google in accordance with GDPR Article 28. Firebase policy: firebase.google.com/support/privacy{'\n'}
-    • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — user authentication and sending iOS notifications{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — development platform and cross-platform push notifications{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — subscription and in-app purchase management. Processes user identifier and purchase history only. Policy: revenuecat.com/privacy{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — weather data. May use general location data to display forecasts{'\n\n'}
+    We use reputable external service providers to operate the App:{'\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Data storage and user management (complies with international security standards).{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Account sign-in and notification system.{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - App infrastructure and push notifications.{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Secure subscription and purchase management via app stores.{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Local weather data services.{'\n\n'}
     We do <Text style={styles.bold}>not</Text> sell, rent, exchange, or commercialize your information in any way.{'\n'}
     We will disclose information to an external party only if: (1) required by a valid court order; (2) required by law; (3) necessary to protect public safety.{'\n\n'}
 
@@ -211,12 +209,10 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Information required by law (such as financial transactions) will be retained for the legally required period{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Children's Privacy{'\n'}</Text>
-    The app is intended for parents and caregivers aged 16 and above. Information about children is collected exclusively:{'\n'}
-    • By their parents / legal guardians{'\n'}
-    • For personal health tracking purposes only{'\n'}
-    • Without sharing with commercial entities{'\n'}
-    • Without child-related targeted advertising{'\n\n'}
-    We do not collect information directly from children. If you believe a child under 13 has created an account without parental consent, please contact us and we will delete the data immediately.{'\n\n'}
+    The service is exclusively for use by parents (16+). Information regarding children is collected solely:{'\n'}
+    • Under the direct initiative, entry, and full control of their parents / guardians{'\n'}
+    • For personal health tracking only, with zero commercial sharing or targeted advertising{'\n\n'}
+    As a parent, you retain the absolute right to delete all of your children's data from our servers permanently and immediately ("Right to be Forgotten") via the App. We never collect information directly from children.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Your Rights{'\n'}</Text>
     Under Israeli Privacy Protection Law and GDPR, you have:{'\n'}
@@ -293,17 +289,18 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
 
     <Text style={[styles.section, { color: textColor }]}>7. שירותים של צדדים שלישיים{'\n'}</Text>
     האפליקציה מסתמכת על שירותים חיצוניים:{'\n'}
-    • <Text style={styles.bold}>Google Firebase</Text> — אחסון נתונים, אימות, ותשתית{'\n'}
-    • <Text style={styles.bold}>Apple</Text> — אימות ו-Push Notifications{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — פלטפורמת פיתוח ועדכונים{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — ניהול מנויים ורכישות{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — נתוני מזג אוויר{'\n\n'}
+    • תשתית, אחסון נתונים ואימות משתמשים (<Text style={styles.bold}>Google Firebase</Text>){'\n'}
+    • אימות ומערכת התראות (<Text style={styles.bold}>Apple</Text>){'\n'}
+    • פלטפורמת פיתוח ועדכונים (<Text style={styles.bold}>Expo / EAS</Text>){'\n'}
+    • ניהול מנויים ורכישות מאובטח (<Text style={styles.bold}>RevenueCat</Text>){'\n'}
+    • שירות נתוני מזג אוויר (<Text style={styles.bold}>Apple WeatherKit</Text>){'\n\n'}
     שימושך בשירותים אלה כפוף גם למדיניות ותנאי השימוש שלהם. Calmino אינה אחראית לזמינות, ביצועים, או שינויים בשירותי צד שלישי.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. הגבלת אחריות, אחריות רפואית ושירותי בייביסיטר{'\n'}</Text>
     8.1 השירות מסופק <Text style={styles.bold}>"כפי שהוא" (AS IS)</Text> ו-"כפי שהוא זמין" (AS AVAILABLE) ללא אחריות מכל סוג.{'\n'}
     8.2 <Text style={styles.bold}>האפליקציה אינה מחליפה ייעוץ רפואי מקצועי.</Text> המידע המוצג הוא לצרכי תיעוד ומעקב בלבד. תמיד התייעץ עם רופא ילדים מוסמך בכל שאלה רפואית.{'\n'}
-    8.3 <Text style={styles.bold}>שירותי בייביסיטר — פלטפורמת חיבור בלבד:</Text> Calmino משמשת כפלטפורמת חיבור בלבד בין הורים לבייביסיטרים. Calmino <Text style={styles.bold}>אינה מעסיקה, ממליצה, מאשרת, מאמתת, אחראית על, או ערבה</Text> לאף בייביסיטר/ית המופיע/ה באפליקציה. פרופילי הבייביסיטרים מבוססים על מידע שהוזן על ידי הבייביסיטרים עצמם ולא אומת על ידי Calmino. <Text style={styles.bold}>האחריות הבלעדית</Text> על בדיקת התאמה, אימות זהות, בדיקת רקע, הערכת כישורים, וקבלת החלטה לגבי מפגש או העסקה — היא של ההורה בלבד. Calmino לא תישא באחריות כלשהי לכל נזק, אובדן, פגיעה, או תוצאה הנובעים ממפגש, העסקה, או כל אינטראקציה בין הורה לבייביסיטר שנוצרה באמצעות האפליקציה.{'\n'}
+    8.3 <Text style={styles.bold}>שירות העסקת בייביסיטרים — פטור מוחלט ויסודי מאחריות:</Text> Calmino מספקת פלטפורמה דיגיטלית ("לוח מודעות") המקשרת בין הורים לבייביסיטרים עצמאיים. <Text style={styles.bold}>החברה אינה סוכנות כוח אדם, אינה מעסיקה את הבייביסיטרים, אינה מראיינת אותם, אינה מבצעת בדיקות רקע, יושר או רישום פלילי מכל סוג שהוא, ואינה ערבה להם.</Text> כל התקשרות, העסקה או מפגש שנוצרים דרך האפליקציה נעשים על אחריותם הבלעדית והמלאה של ההורים. חלה עליך (ההורה) החובה לבצע משנה זהירות, לבקש תעודות מזהות ולבדוק המלצות לפני הפקדת ילדיך.{'\n'}
+    <Text style={styles.bold}>ויתור מוחלט על תביעות:</Text> בעצם השימוש באפליקציה לאיתור בייביסיטר, אתה מוותר בזאת ויתור מוחלט, סופי ובלתי חוזר על כל טענה, דרישה או תביעה כלפי Calmino, מנהליה, או עובדיה בגין כל נזק ישיר או עקיף, פגיעה גופנית, נזק לרכוש, גניבה, רשלנות או מעשה פלילי שייגרמו על ידי בייביסיטר שמצאת דרך הפלטפורמה.{'\n'}
     8.4 Calmino אינה נושאת באחריות לנזקים ישירים, עקיפים, נסיבתיים, מיוחדים, עונשיים, או תוצאתיים הנובעים מ: שימוש או אי-יכולת לשתמש בשירות; אובדן נתונים; הסתמכות על מידע מהאפליקציה; מפגש עם בייביסיטר; או כשל טכני.{'\n'}
     8.5 אחריותנו הכוללת לא תעלה על הסכום שאתה שילמת בשנת הרישום האחרונה, או 200 ₪ — הנמוך מביניהם.{'\n\n'}
 
@@ -389,17 +386,18 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
 
     <Text style={[styles.section, { color: textColor }]}>7. Third-Party Services{'\n'}</Text>
     The app relies on external services:{'\n'}
-    • <Text style={styles.bold}>Google Firebase</Text> — data storage, authentication, and infrastructure{'\n'}
-    • <Text style={styles.bold}>Apple</Text> — authentication and Push Notifications{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — development platform and updates{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — subscription and purchase management{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — weather data{'\n\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Data storage, authentication, and infrastructure{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Authentication and push notifications{'\n'}
+    • <Text style={styles.bold}>Expo</Text> - Development platform and updates{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Subscription and purchase management{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Weather data{'\n\n'}
     Your use of these services is also subject to their respective policies and terms of service. Calmino is not responsible for the availability, performance, or changes in third-party services.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability, Medical Disclaimer, and Babysitter Services{'\n'}</Text>
     8.1 The service is provided <Text style={styles.bold}>"AS IS"</Text> and "AS AVAILABLE" without warranty of any kind.{'\n'}
     8.2 <Text style={styles.bold}>The app does not replace professional medical advice.</Text> The information displayed is for documentation and tracking purposes only. Always consult a qualified pediatrician for any medical questions.{'\n'}
-    8.3 <Text style={styles.bold}>Babysitter Services — Connection Platform Only:</Text> Calmino serves solely as a connection platform between parents and babysitters. Calmino <Text style={styles.bold}>does not employ, recommend, endorse, verify, vouch for, or assume responsibility</Text> for any babysitter listed on the application. Babysitter profiles are based on information provided by the babysitters themselves and have not been verified by Calmino. <Text style={styles.bold}>The sole responsibility</Text> for evaluating suitability, verifying identity, conducting background checks, assessing qualifications, and making decisions regarding meetings or employment — lies entirely with the parent. Calmino shall bear no liability whatsoever for any damage, loss, injury, or consequence arising from any meeting, employment, or interaction between a parent and a babysitter facilitated through the application.{'\n'}
+    8.3 <Text style={styles.bold}>Babysitter Marketplace — Absolute and Fundamental Waiver of Liability:</Text> Calmino provides a digital platform ("bulletin board") connecting parents with independent babysitters. <Text style={styles.bold}>The Company is not an employment agency, does not employ the babysitters, does not interview them, does not conduct any background, integrity, or criminal record checks whatsoever, and does not vouch for them in any way.</Text> Any engagement, employment, or meeting facilitated through the App is at the sole risk and responsibility of the parents. It is your strict obligation as a parent to exercise due diligence, request identification, and verify references before leaving your children in their care.{'\n'}
+    <Text style={styles.bold}>Complete Waiver of Claims:</Text> By using the App to find a babysitter, you hereby completely, conclusively, and irrevocably waive any claim, demand, or lawsuit against Calmino, its directors, or employees for any direct or indirect damage, bodily injury, property damage, theft, negligence, or criminal act caused by a babysitter found through the platform.{'\n'}
     8.4 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; meetings with babysitters; or technical failure.{'\n'}
     8.5 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
 
@@ -558,11 +556,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 24,
     textAlign: 'right',
+    writingDirection: 'rtl',
   },
   bodyTextLTR: {
     fontSize: 14,
     lineHeight: 24,
     textAlign: 'left',
+    writingDirection: 'ltr',
   },
   updated: {
     fontSize: 12,
