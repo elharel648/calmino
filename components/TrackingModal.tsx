@@ -824,7 +824,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       if (sleepMode === 'timer' && sleepContext.elapsedSeconds > 0) {
         durationText = `${t('tracking.sleepDuration')}: ${sleepContext.formatTime(sleepContext.elapsedSeconds)}`;
         data.duration = sleepContext.elapsedSeconds;
-        if (sleepContext.isRunning) sleepContext.stop();
+        if (sleepContext.isRunning || (sleepContext as any).isPaused) sleepContext.stop();
       } else if (sleepMode === 'duration') {
         const totalMinutes = (sleepHours * 60) + sleepMinutes;
         if (totalMinutes > 0) {
@@ -1554,13 +1554,17 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             ]}
             onPress={() => {
               if (sleepContext.isRunning) {
-                sleepContext.stop();
-                const totalMins = Math.floor(sleepContext.elapsedSeconds / 60);
-                setSleepHours(Math.floor(totalMins / 60));
-                setSleepMinutes(totalMins % 60);
-                setSleepMode('duration');
+                if (sleepContext.pause) {
+                  sleepContext.pause();
+                } else {
+                  sleepContext.stop();
+                }
               } else {
-                sleepContext.start();
+                if (sleepContext.isPaused && sleepContext.resume) {
+                  sleepContext.resume();
+                } else {
+                  sleepContext.start();
+                }
               }
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }}

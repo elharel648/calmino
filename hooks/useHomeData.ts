@@ -110,8 +110,11 @@ export const useHomeData = (
                         feedCount++;
                         break;
                     case 'sleep':
-                        // Extract sleep duration from note if available
-                        if (event.note) {
+                        if (typeof event.duration === 'number') {
+                            // Extract sleep duration from duration field (stored in seconds)
+                            sleepMinutes += Math.round(event.duration / 60);
+                        } else if (event.note) {
+                            // Legacy fallback: extract from note
                             const match = event.note.match(/(\d+):(\d+)/);
                             if (match) {
                                 sleepMinutes += parseInt(match[1]) * 60 + parseInt(match[2]);

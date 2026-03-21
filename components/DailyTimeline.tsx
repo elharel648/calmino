@@ -284,14 +284,21 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       if (event.duration && event.duration > 0) {
         const h = Math.floor(event.duration / 3600);
         const m = Math.floor((event.duration % 3600) / 60);
+        const s = Math.floor(event.duration % 60);
+        
         if (h > 0) {
           return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
         }
-        // Don't show "0 דקות" - show sleep label instead
-        if (m === 0) {
-          return t('timeline.sleep');
+        if (m > 0 && s > 0) {
+          return `${m} דק' ו-${s} שנ'`;
         }
-        return `${m} דקות`;
+        if (m > 0) {
+          return `${m} דקות`;
+        }
+        if (s > 0) {
+          return `${s} שניות`;
+        }
+        return t('timeline.sleep');
       }
       // Handle "שינה חדשה" (new sleep) - show as sleep label
       if (event.note && event.note.includes('שינה חדשה')) {
