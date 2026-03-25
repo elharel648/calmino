@@ -33,7 +33,7 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     • Kontodaten: vollständiger Name, E-Mail-Adresse, verschlüsseltes Passwort{'\n'}
     • Kinderprofil: Name, Geburtsdatum, Geschlecht, Profilbild{'\n'}
     • Tracking-Daten: Fütterung (Zeit, Menge, Art), Schlaf (Start-/Endzeiten), Windelwechsel, Nahrungsergänzungsmittel, Impfungen, Medikamente, Wachstumsmessungen (Gewicht, Größe, Kopfumfang){'\n'}
-    • Standortdaten (GPS) — ausschließlich für Babysitter-Suchdienste in Ihrer Nähe, mit Ihrer ausdrücklichen Genehmigung{'\n'}
+    • Standortdaten (GPS) — um das Auffinden von Babysittern in der Nähe zu ermöglichen, erfasst die App genaue und grobe Standortdaten nur mit Ihrer ausdrücklichen Zustimmung und nur während der Nutzung. Diese Daten werden nicht historisch gespeichert, nicht verkauft und die Zustimmung kann jederzeit widerrufen werden.{'\n'}
     • Chat-Nachrichten zwischen Eltern und Babysittern über die App{'\n'}
     • Notizen und Aufzeichnungen, die Sie manuell eingeben{'\n'}
     • Fotos und magische Momente, die Sie speichern möchten{'\n\n'}
@@ -41,7 +41,7 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     • Gerätetyp, Betriebssystemversion und eindeutige Gerätekennung{'\n'}
     • Push-Benachrichtigungstoken (nur zum Senden von Erinnerungen){'\n'}
     • IP-Adresse (nur für Sicherheits- und Fehlerbehebungszwecke — nicht langfristig gespeichert){'\n'}
-    • Anonyme Absturzberichte zur Verbesserung der App-Stabilität{'\n\n'}
+    • Wir verwenden anonyme Nutzungsdaten und Absturzberichte über externe Dienste, um Fehler schnell zu identifizieren und die Stabilität zu verbessern. Diese Informationen enthalten keine identifizierbaren Daten.{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>c. Informationen von Dritten:{'\n'}</Text>
     • Bei Anmeldung mit Google: vollständiger Name und E-Mail-Adresse aus Ihrem Google-Konto{'\n'}
     • Bei Anmeldung mit Apple: E-Mail-Adresse (die von Apple verborgen werden kann){'\n\n'}
@@ -58,12 +58,12 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     Wir verwenden Ihre Informationen <Text style={styles.bold}>nicht</Text> für gezielte Werbung und verkaufen keine Daten an kommerzielle Unternehmen.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>5. Weitergabe von Informationen an Dritte{'\n'}</Text>
-    <Text style={[styles.subsection, { color: textColor }]}>Wesentliche Dienstleister (autorisierte Auftragsverarbeiter):{'\n'}</Text>
-    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — Datenspeicherung, Benutzerauthentifizierung und Backend-Verarbeitung. Firebase entspricht der DSGVO und dem EU-US Data Privacy Framework. Wir haben eine Auftragsverarbeitungsvereinbarung (AVV) mit Google gemäß Art. 28 DSGVO geschlossen.{'\n'}
-    • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — Benutzerauthentifizierung und iOS-Benachrichtigungen{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — Entwicklungsplattform und plattformübergreifende Push-Benachrichtigungen{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — Verwaltung von Abonnements und In-App-Käufen. Verarbeitet nur Benutzer-ID und Kaufhistorie{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — Wetterdaten. Kann allgemeine Standortdaten zur Anzeige von Vorhersagen verwenden{'\n\n'}
+    Wir nutzen seriöse externe Dienstleister für den Betrieb der App:{'\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Datenspeicherung, Authentifizierung und Infrastruktur.{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Kontoanmeldung und Push-Benachrichtigungen.{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - Entwicklungsplattform und Updates.{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Sichere Verwaltung von Abonnements und Käufen.{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Lokale Wetterdaten.{'\n\n'}
     Wir verkaufen, vermieten, tauschen oder vermarkten Ihre Informationen <Text style={styles.bold}>in keiner Weise</Text>.{'\n'}
     Wir geben Informationen nur weiter, wenn: (1) durch eine gültige gerichtliche Anordnung verlangt; (2) gesetzlich vorgeschrieben; (3) zum Schutz der öffentlichen Sicherheit erforderlich.{'\n\n'}
 
@@ -86,12 +86,10 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     • Gesetzlich erforderliche Informationen werden für die gesetzlich vorgeschriebene Dauer aufbewahrt{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Datenschutz für Kinder{'\n'}</Text>
-    Die App ist für Eltern und erwachsene Betreuer (16+) bestimmt. Informationen über Kinder werden ausschließlich erhoben:{'\n'}
-    • Von ihren Eltern / gesetzlichen Vormündern{'\n'}
-    • Nur zu persönlichen Gesundheits-Tracking-Zwecken{'\n'}
-    • Ohne Weitergabe an kommerzielle Unternehmen{'\n'}
-    • Ohne kinderbezogene gezielte Werbung{'\n\n'}
-    Wir erheben keine Informationen direkt von Kindern. Wenn Sie glauben, dass ein Kind unter 13 Jahren ohne elterliche Zustimmung ein Konto erstellt hat, kontaktieren Sie uns und wir werden die Daten sofort löschen.{'\n\n'}
+    Der Dienst ist ausschließlich für Eltern und Betreuer (16+) bestimmt. Informationen über Kinder werden nur erhoben:{'\n'}
+    • Auf direkte Initiative, Eingabe und unter voller Kontrolle ihrer Eltern / gesetzlichen Vormünder{'\n'}
+    • Nur zu persönlichen Gesundheits-Tracking-Zwecken, ohne kommerzielle Weitergabe oder gezielte Werbung{'\n\n'}
+    Als Elternteil behalten Sie das absolute Recht, alle Daten Ihrer Kinder über die App dauerhaft und sofort von unseren Servern löschen zu lassen ("Recht auf Vergessenwerden"). Wir erheben niemals direkt Informationen von Kindern.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Ihre Rechte{'\n'}</Text>
     Gemäß dem israelischen Datenschutzgesetz und der DSGVO haben Sie:{'\n'}
@@ -164,16 +162,17 @@ export const TermsContentDE = ({ textColor, subtitleColor }: { textColor: string
 
     <Text style={[styles.section, { color: textColor }]}>7. Dienste Dritter{'\n'}</Text>
     Die App nutzt externe Dienste:{'\n'}
-    • <Text style={styles.bold}>Google Firebase</Text> — Datenspeicherung, Authentifizierung und Infrastruktur{'\n'}
-    • <Text style={styles.bold}>Apple</Text> — Authentifizierung und Push-Benachrichtigungen{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — Entwicklungsplattform und Updates{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — Verwaltung von Abonnements und Käufen{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — Wetterdaten{'\n\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Datenspeicherung, Authentifizierung und Infrastruktur{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Authentifizierung und Push-Benachrichtigungen{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - Entwicklungsplattform und Updates{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Verwaltung von Abonnements und Käufen{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Wetterdaten{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. Haftungsbeschränkung, medizinischer Haftungsausschluss und Babysitter-Dienste{'\n'}</Text>
     8.1 Der Dienst wird <Text style={styles.bold}>"wie besehen"</Text> ohne jegliche Garantie bereitgestellt.{'\n'}
     8.2 <Text style={styles.bold}>Die App ersetzt keine professionelle medizinische Beratung.</Text> Konsultieren Sie immer einen qualifizierten Kinderarzt.{'\n'}
-    8.3 <Text style={styles.bold}>Babysitter-Dienste — nur Vermittlungsplattform:</Text> Calmino <Text style={styles.bold}>beschäftigt, empfiehlt, befürwortet, überprüft, garantiert und übernimmt keine Verantwortung</Text> für Babysitter. <Text style={styles.bold}>Die alleinige Verantwortung</Text> für Eignungsprüfung, Identitätsverifizierung und Hintergrundüberprüfung liegt beim Elternteil.{'\n'}
+    8.3 <Text style={styles.bold}>Babysitter-Marktplatz — Absoluter Haftungsausschluss:</Text> Calmino bietet eine digitale Plattform ("Schwarzes Brett"), die Eltern mit unabhängigen Babysittern verbindet. <Text style={styles.bold}>Das Unternehmen ist keine Arbeitsagentur, beschäftigt keine Babysitter, führt keine Interviews mit ihnen durch, macht keinerlei Hintergrund-, Integritäts- oder Vorstrafenprüfungen und bürgt in keiner Weise für sie.</Text> Jedes Engagement, jede Beschäftigung oder jedes Treffen, das über die App zustande kommt, liegt in der alleinigen Verantwortung der Eltern. Es ist Ihre strikte Pflicht, Vorsicht walten zu lassen, Ausweise zu verlangen und Referenzen zu überprüfen, bevor Sie Ihre Kinder anvertrauen.{'\n'}
+    <Text style={styles.bold}>Vollständiger Verzicht:</Text> Durch die Nutzung der App zur Suche nach einem Babysitter verzichten Sie hiermit vollständig, endgültig und unwiderruflich auf alle Ansprüche, Forderungen oder Klagen gegen Calmino, seine Direktoren oder Mitarbeiter für jeglichen direkten oder indirekten Schaden, Personenschaden, Sachschaden, Diebstahl, Fahrlässigkeit oder kriminelle Handlungen, die durch einen über die Plattform gefundenen Babysitter verursacht wurden.{'\n'}
     8.4 Calmino haftet nicht für direkte, indirekte, zufällige, besondere oder Folgeschäden.{'\n'}
     8.5 Unsere Gesamthaftung übersteigt nicht den im letzten Jahr gezahlten Betrag oder 200 ₪ — je nachdem, welcher Betrag geringer ist.{'\n\n'}
 

@@ -1606,7 +1606,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,
-          elevation: 8,
+          elevation: 0,
           alignItems: 'center',
         }}>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -2415,7 +2415,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: -8 },
-    elevation: 12,
+    elevation: 0,
   },
   // Mid swipe zone - between header and scroll content
   midSwipeZone: {
@@ -2481,7 +2481,7 @@ const styles = StyleSheet.create({
   calendarOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   calendarInlineOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
   calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
-  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 10, zIndex: 1001 },
+  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 0, zIndex: 1001 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   calendarMonthText: { fontSize: 16, fontWeight: '600' },
   calendarNavBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
@@ -2519,7 +2519,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   foodTabIconContainer: {
     marginBottom: 4,
@@ -2680,7 +2680,7 @@ const styles = StyleSheet.create({
   // New Modern Sleep UI
   sleepModeRow: { flexDirection: 'row-reverse', justifyContent: 'center', gap: 4, marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 14, padding: 4 },
   sleepModeBtn: { flex: 1, flexDirection: 'column', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 10 },
-  sleepModeBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  sleepModeBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 0 },
   sleepModeText: { fontSize: 13, fontWeight: '500', color: '#8E8E93' },
   sleepModeTextActive: { color: '#1C1C1E' },
 
@@ -2699,7 +2699,7 @@ const styles = StyleSheet.create({
   sleepDurationSeparator: { fontSize: 28, fontWeight: '300', color: '#C7C7CC' },
 
   sleepSlider: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 4 },
-  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 0 },
   sleepSliderBtnText: { fontSize: 20, fontWeight: '400', color: '#1C1C1E' },
   sleepSliderValue: { fontSize: 34, fontWeight: '700', color: '#1C1C1E', minWidth: 54, textAlign: 'center', letterSpacing: -1 },
 
@@ -2735,7 +2735,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   premiumTimeLabel: {
     fontSize: 11,
@@ -2790,7 +2790,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   premiumAmountDisplay: {
     alignItems: 'center',
@@ -2834,7 +2834,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   premiumBreastTimeLabel: {
     fontSize: 11,
@@ -2889,7 +2889,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   premiumPumpingTimerLabel: {
     fontSize: 11,
@@ -2939,7 +2939,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   premiumPumpingAmountDisplay: {
     alignItems: 'center',
@@ -2972,7 +2972,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   premiumSolidsInput: {
     fontSize: 16,
@@ -3001,7 +3001,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   premiumNoteInput: {
     fontSize: 14,
@@ -3050,7 +3050,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 0,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
   saveBtnSuccess: { backgroundColor: '#34C759', shadowColor: '#34C759' },
@@ -3058,7 +3058,7 @@ const styles = StyleSheet.create({
 
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
-  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 },
+  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 0 },
   timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, backgroundColor: '#1C1C1E', borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' },
   timePickerDoneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 

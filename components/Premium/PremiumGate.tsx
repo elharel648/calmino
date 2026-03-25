@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
-        elevation: 6,
+        elevation: 0,
     },
     upgradeGradient: {
         flexDirection: 'row',

@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
-        elevation: 3,
+        elevation: 0,
         overflow: 'hidden',
     },
     thumbGradient: {

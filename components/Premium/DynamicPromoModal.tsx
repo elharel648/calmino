@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.15,
         shadowRadius: 20,
-        elevation: 10,
+        elevation: 0,
     },
     closeBtn: {
         position: 'absolute',
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 5,
+        elevation: 0,
     },
     bannerImage: {
         width: 80,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
-        elevation: 8,
+        elevation: 0,
     },
     ctaButton: {
         width: '100%',

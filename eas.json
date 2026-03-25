@@ -11,7 +11,15 @@
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAdESrCDWktlnZGyDrSeqElw3WL7Q9MPUQ",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "baby-app-42b3b.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "baby-app-42b3b",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "baby-app-42b3b.appspot.com",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "16421819020",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:16421819020:web:2c87cd757d69fae199a1a9"
+      }
     },
     "production": {
       "autoIncrement": true,

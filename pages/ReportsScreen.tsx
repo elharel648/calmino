@@ -1655,7 +1655,7 @@ export default function ReportsScreen() {
             shadowOffset: { width: 0, height: compact ? 4 : 6 },
             shadowOpacity: 0.15,
             shadowRadius: compact ? 8 : 12,
-            elevation: 8,
+            elevation: 0,
             maxWidth: '100%',
           }}>
             <Lock size={compact ? 14 : 18} color={theme.card} strokeWidth={2} />
@@ -1908,7 +1908,7 @@ export default function ReportsScreen() {
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: isDarkMode ? 0.4 : 0.12,
               shadowRadius: 10,
-              elevation: 6,
+              elevation: 0,
             }]}
             onPress={handleExport}
             activeOpacity={0.7}
@@ -2110,7 +2110,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20, justifyContent: 'space-between' },
   editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 4 },
   editStatsText: { fontSize: 13 },
-  statCard: { width: '100%', minHeight: 150, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  statCard: { width: '100%', minHeight: 150, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   statIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statValue: { fontSize: 24, fontWeight: '700' },
@@ -2176,7 +2176,7 @@ const styles = StyleSheet.create({
   sectionTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 8 },
 
   // Goals Section
-  goalsSection: { borderRadius: 20, padding: 20, marginTop: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  goalsSection: { borderRadius: 20, padding: 20, marginTop: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   goalsSectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 16 },
   goalItem: { marginBottom: 16 },
   goalItemHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 8 },
@@ -2243,7 +2243,7 @@ const styles = StyleSheet.create({
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 },
 
   // Comparison Section
-  comparisonSection: { borderRadius: 20, padding: 20, marginTop: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  comparisonSection: { borderRadius: 20, padding: 20, marginTop: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   comparisonGrid: { flexDirection: 'row-reverse', justifyContent: 'space-between', gap: 8 },
   comparisonItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   comparisonIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
@@ -2254,7 +2254,7 @@ const styles = StyleSheet.create({
   comparisonBarFill: { height: '100%', borderRadius: 2 },
 
   // Growth Section
-  growthSection: { borderRadius: 20, padding: 20, marginTop: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  growthSection: { borderRadius: 20, padding: 20, marginTop: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   growthGrid: { flexDirection: 'row-reverse', justifyContent: 'space-around', gap: 12 },
   growthItem: { alignItems: 'center', flex: 1 },
   growthValue: { fontSize: 22, fontWeight: '700' },

@@ -1,5 +1,6 @@
 // services/firebaseConfig.ts
 import { logger } from '../utils/logger';
+import { Platform } from 'react-native';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
 // @ts-ignore - getReactNativePersistence exists but TypeScript may not recognize it
@@ -11,14 +12,27 @@ import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
 import rnAppCheck from '@react-native-firebase/app-check'; // Native SDK
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-};
+// Platform-specific Firebase config:
+// Android needs the Android API key from google-services.json;
+// iOS/web use the web API key from .env
+const firebaseConfig = Platform.select({
+  android: {
+    apiKey: 'AIzaSyBx1NPMwIcedexasiHfQHPdCrmzlRv33f0',
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || 'baby-app-42b3b.firebaseapp.com',
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'baby-app-42b3b',
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || 'baby-app-42b3b.appspot.com',
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '16421819020',
+    appId: '1:16421819020:android:20bcb67741688c2d99a1a9',
+  },
+  default: {
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  },
+})!;
 
 // אתחול ה-App פעם אחת (Web SDK)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();

@@ -19,7 +19,7 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import { I18nManager } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -104,9 +104,14 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   // restart prompt in FullSettingsScreen if needed.
   const applyRTL = (lang: Language) => {
     const shouldBeRTL = RTL_LANGUAGES.includes(lang);
-    if (I18nManager.isRTL !== shouldBeRTL) {
+    // On Android, the app uses manual RTL styles (row-reverse, textAlign: 'right').
+    // Enabling I18nManager.forceRTL on Android causes the system to DOUBLE-FLIP
+    // these manual styles, making the layout look LTR. So we skip it on Android.
+    // On iOS, forceRTL is safe because UIKit handles text direction natively.
+    if (Platform.OS === 'ios' && I18nManager.isRTL !== shouldBeRTL) {
       I18nManager.allowRTL(shouldBeRTL);
       I18nManager.forceRTL(shouldBeRTL);
+      I18nManager.swapLeftAndRightInRTL(false);
       // App restart is handled by FullSettingsScreen (shows Alert + Updates.reloadAsync)
     }
   };

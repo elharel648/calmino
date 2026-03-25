@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 0,
   },
   submitButtonDisabled: {
     shadowOpacity: 0,
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 24,
-    elevation: 10,
+    elevation: 0,
   },
   welcomeIconWrap: {
     width: 56,

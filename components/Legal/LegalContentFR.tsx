@@ -33,7 +33,7 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     • Détails du compte : nom complet, adresse email, mot de passe chiffré{'\n'}
     • Profil de l'enfant : nom, date de naissance, sexe, photo de profil{'\n'}
     • Données de suivi : alimentation (heure, quantité, type), sommeil (heures de début/fin), changes de couches, compléments alimentaires, vaccinations, médicaments, mesures de croissance (poids, taille, périmètre crânien){'\n'}
-    • Données de localisation (GPS) — uniquement pour les services de recherche de baby-sitters dans votre zone, avec votre permission explicite{'\n'}
+    • Données de localisation (GPS) — pour permettre la découverte de baby-sitters à proximité, l'application collecte des données de localisation (précises et générales) uniquement avec votre autorisation explicite et pendant l'utilisation. Ces données ne sont pas conservées dans l'historique, ne sont pas vendues et l'autorisation peut être révoquée à tout moment.{'\n'}
     • Messages de chat envoyés entre parents et baby-sitters via l'application{'\n'}
     • Notes et enregistrements que vous saisissez manuellement{'\n'}
     • Photos et moments magiques que vous choisissez de sauvegarder{'\n\n'}
@@ -41,7 +41,7 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     • Type d'appareil, version du système d'exploitation et identifiant unique de l'appareil{'\n'}
     • Token de notification push (pour l'envoi de rappels uniquement){'\n'}
     • Adresse IP (à des fins de sécurité et de dépannage uniquement — non stockée à long terme){'\n'}
-    • Rapports de plantage anonymes pour améliorer la stabilité de l'application{'\n\n'}
+    • Nous utilisons des données d'utilisation anonymes et des rapports de plantage via des services externes pour identifier rapidement les bugs et améliorer la stabilité. Ces informations ne contiennent aucune donnée d'identification.{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>c. Informations provenant de tiers :{'\n'}</Text>
     • Lors de la connexion avec Google : nom complet et adresse email de votre compte Google uniquement{'\n'}
     • Lors de la connexion avec Apple : adresse email (qui peut être masquée par Apple){'\n\n'}
@@ -58,12 +58,12 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     Nous n'utilisons <Text style={styles.bold}>pas</Text> vos informations pour de la publicité ciblée, et nous ne vendons pas de données à des entités commerciales.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>5. Partage d'informations avec des tiers{'\n'}</Text>
-    <Text style={[styles.subsection, { color: textColor }]}>Fournisseurs de services essentiels (sous-traitants autorisés) :{'\n'}</Text>
-    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — stockage de données, authentification des utilisateurs et traitement backend. Firebase est conforme au RGPD et au cadre EU-US Data Privacy Framework. Nous avons signé un Accord de Traitement des Données (DPA) avec Google conformément à l'article 28 du RGPD.{'\n'}
-    • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — authentification des utilisateurs et envoi de notifications iOS{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — plateforme de développement et notifications push multiplateforme{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — gestion des abonnements et achats intégrés. Traite uniquement l'identifiant utilisateur et l'historique des achats{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — données météorologiques. Peut utiliser des données de localisation générales pour afficher les prévisions{'\n\n'}
+    Nous utilisons des prestataires de services externes reconnus pour faire fonctionner l'application :{'\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Stockage des données, authentification et infrastructure.{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Authentification et système de notification push.{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - Plateforme de développement et mises à jour.{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Gestion sécurisée des abonnements et des achats.{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Données météorologiques locales.{'\n\n'}
     Nous ne vendons, ne louons, n'échangeons ni ne commercialisons <Text style={styles.bold}>en aucun cas</Text> vos informations.{'\n'}
     Nous ne divulguerons des informations à un tiers que si : (1) requis par une ordonnance judiciaire valide ; (2) requis par la loi ; (3) nécessaire pour protéger la sécurité publique.{'\n\n'}
 
@@ -86,12 +86,10 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     • Les informations requises par la loi (comme les transactions financières) seront conservées pour la période légalement requise{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Vie privée des enfants{'\n'}</Text>
-    L'application est destinée aux parents et soignants adultes (16+). Les informations sur les enfants sont collectées exclusivement :{'\n'}
-    • Par leurs parents / tuteurs légaux{'\n'}
-    • À des fins de suivi de santé personnel uniquement{'\n'}
-    • Sans partage avec des entités commerciales{'\n'}
-    • Sans publicité ciblée liée aux enfants{'\n\n'}
-    Nous ne collectons pas d'informations directement auprès des enfants. Si vous pensez qu'un enfant de moins de 13 ans a créé un compte sans le consentement parental, veuillez nous contacter et nous supprimerons les données immédiatement.{'\n\n'}
+    Le service est exclusivement destiné aux parents et tuteurs (16+). Les informations concernant les enfants sont collectées uniquement :{'\n'}
+    • À l'initiative, avec la saisie et sous le contrôle total de leurs parents / tuteurs légaux{'\n'}
+    • À des fins de suivi personnel de la santé, sans aucun partage commercial ni publicité ciblée{'\n\n'}
+    En tant que parent, vous conservez le droit absolu de supprimer toutes les données de vos enfants de nos serveurs de manière permanente et immédiate ("Droit à l'oubli") via l'application. Nous ne collectons jamais d'informations directement auprès des enfants.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Vos droits{'\n'}</Text>
     En vertu de la loi israélienne sur la protection de la vie privée et du RGPD, vous disposez de :{'\n'}
@@ -164,16 +162,17 @@ export const TermsContentFR = ({ textColor, subtitleColor }: { textColor: string
 
     <Text style={[styles.section, { color: textColor }]}>7. Services tiers{'\n'}</Text>
     L'application repose sur des services externes :{'\n'}
-    • <Text style={styles.bold}>Google Firebase</Text> — stockage, authentification et infrastructure{'\n'}
-    • <Text style={styles.bold}>Apple</Text> — authentification et notifications Push{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — plateforme de développement et mises à jour{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — gestion des abonnements et achats{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — données météorologiques{'\n\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Stockage des données, authentification et infrastructure.{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Authentification et notifications push.{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - Plateforme de développement et mises à jour.{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Gestion des abonnements et achats.{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Données météorologiques.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. Limitation de responsabilité, avertissement médical et services de baby-sitter{'\n'}</Text>
     8.1 Le service est fourni <Text style={styles.bold}>"tel quel"</Text> sans garantie d'aucune sorte.{'\n'}
     8.2 <Text style={styles.bold}>L'application ne remplace pas un avis médical professionnel.</Text> Consultez toujours un pédiatre qualifié.{'\n'}
-    8.3 <Text style={styles.bold}>Services de baby-sitter — Plateforme de mise en relation uniquement :</Text> Calmino <Text style={styles.bold}>n'emploie, ne recommande, n'approuve, ne vérifie, ne garantit ni n'assume la responsabilité</Text> d'aucun baby-sitter. <Text style={styles.bold}>La responsabilité exclusive</Text> de l'évaluation, la vérification d'identité et de compétences incombe entièrement au parent.{'\n'}
+    8.3 <Text style={styles.bold}>Marché des baby-sitters — Renonciation absolue de responsabilité :</Text> Calmino fournit une plateforme numérique ("tableau d'affichage") reliant les parents et les baby-sitters indépendants. <Text style={styles.bold}>La Société n'est pas une agence pour l'emploi, n'emploie pas les baby-sitters, ne les interviewe pas, n'effectue aucune vérification des antécédents, d'intégrité ou de casier judiciaire d'aucune sorte, et ne se porte pas garante pour eux.</Text> Tout engagement, emploi ou rencontre facilité par l'application se fait à vos risques et sous votre seule responsabilité de parent. Il est de votre stricte obligation de faire preuve de diligence, de demander une pièce d'identité et de vérifier les références avant de leur confier vos enfants.{'\n'}
+    <Text style={styles.bold}>Renonciation complète :</Text> En utilisant l'application pour trouver une baby-sitter, vous renoncez par la présente, de manière complète, définitive et irrévocable, à toute réclamation, demande ou poursuite contre Calmino, ses administrateurs ou employés pour tout dommage direct ou indirect, blessure corporelle, dommage matériel, vol, négligence ou acte criminel causé par une baby-sitter trouvée via la plateforme.{'\n'}
     8.4 Calmino n'est pas responsable des dommages directs, indirects, accessoires, spéciaux ou consécutifs.{'\n'}
     8.5 Notre responsabilité totale ne dépassera pas le montant payé la dernière année, ou 200 ₪ — le montant le moins élevé.{'\n\n'}
 

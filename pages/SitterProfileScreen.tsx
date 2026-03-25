@@ -894,7 +894,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                             shadowOffset: { width: 0, height: 2 },
                                             shadowOpacity: 0.1,
                                             shadowRadius: 4,
-                                            elevation: 3,
+                                            elevation: 0,
                                         }}
                                         onPress={() => openSocialLink(s.key as SocialPlatform, sitterData.socialLinks![s.key as keyof SocialLinks]!)}
                                         activeOpacity={0.7}
@@ -1468,7 +1468,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 0,
     },
 
     // Hero
@@ -1499,7 +1499,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
-        elevation: 8,
+        elevation: 0,
     },
     profileAvatar: {
         width: 110,
@@ -1518,7 +1518,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
-        elevation: 6,
+        elevation: 0,
     },
     heroName: {
         fontSize: 28,
@@ -1543,7 +1543,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 0,
     },
     ratingText: {
         color: '#fff',
@@ -1631,7 +1631,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 4,
+        elevation: 0,
     },
     reviewHeader: {
         flexDirection: 'row-reverse',
@@ -1691,7 +1691,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 3,
+        elevation: 0,
     },
     reviewStatsRow: {
         flexDirection: 'row-reverse',
@@ -1733,7 +1733,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 4,
+        elevation: 0,
     },
     ratingBarRow: {
         flexDirection: 'row-reverse',
@@ -1763,7 +1763,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.4,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 0,
     },
     ratingBarCount: {
         fontSize: 14,
@@ -1794,7 +1794,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.03,
         shadowRadius: 2,
-        elevation: 1,
+        elevation: 0,
     },
     filterChipContent: {
         flexDirection: 'row-reverse',
@@ -1824,7 +1824,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 4,
-        elevation: 2,
+        elevation: 0,
     },
     sortButtonText: {
         fontSize: 14,
@@ -1851,7 +1851,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 2,
+        elevation: 0,
     },
     verifiedText: {
         fontSize: 11,
@@ -1898,7 +1898,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
-        elevation: 2,
+        elevation: 0,
     },
     sitterResponseHeader: {
         marginBottom: 8,
@@ -1985,7 +1985,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 8,
+        elevation: 0,
         borderTopWidth: StyleSheet.hairlineWidth,
     },
     iconBtn: {
@@ -2058,7 +2058,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 8,
-        elevation: 5,
+        elevation: 0,
     },
     badge: {
         flexDirection: 'row',

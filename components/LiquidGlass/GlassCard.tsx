@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.06,
         shadowRadius: 32,  // High spread
-        elevation: 6,
+        elevation: 0,
     },
     cardContainer: {
         overflow: 'hidden',

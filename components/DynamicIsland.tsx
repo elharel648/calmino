@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 8,
+        elevation: 0,
     },
     content: {
         flex: 1,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: 2,
+        elevation: 0,
     },
     textContainer: {
         flex: 1,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
         shadowRadius: 6,
-        elevation: 5,
+        elevation: 0,
         // Subtle border for depth
         borderWidth: 0.5,
         borderColor: 'rgba(255, 255, 255, 0.2)',

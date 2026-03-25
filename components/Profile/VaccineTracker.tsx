@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 5,
-        elevation: 2,
+        elevation: 0,
     },
     headerRow: {
         flexDirection: 'row-reverse',

@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 10,
-        elevation: 5,
+        elevation: 0,
     },
     statItem: {
         alignItems: 'center',

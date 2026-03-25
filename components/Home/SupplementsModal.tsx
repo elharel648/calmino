@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 16 },
         shadowOpacity: 0.25,
         shadowRadius: 32,
-        elevation: 16,
+        elevation: 0,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
     },
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        elevation: 5,
+        elevation: 0,
     },
     progressContainer: {
         marginTop: 28,

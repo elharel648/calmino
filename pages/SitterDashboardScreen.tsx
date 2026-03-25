@@ -1626,7 +1626,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     shadowOffset: { width: 0, height: 2 },
                                                     shadowOpacity: 0.1,
                                                     shadowRadius: 4,
-                                                    elevation: 3,
+                                                    elevation: 0,
                                                 }}
                                                 onPress={() => {
                                                     setActiveSocialPlatform(social as any);
@@ -2067,7 +2067,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             shadowOffset: { width: 0, height: -4 },
                             shadowOpacity: 0.15,
                             shadowRadius: 12,
-                            elevation: 10,
+                            elevation: 0,
                             borderWidth: 1,
                             borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                         }}>
@@ -3341,7 +3341,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 3,
+        elevation: 0,
     },
     quickActionIconCircle: {
         width: 52,
@@ -3413,7 +3413,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
-        elevation: 2,
+        elevation: 0,
     },
     tabTextGlass: {
         fontSize: 15,
@@ -3630,7 +3630,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 4,
+        elevation: 0,
     },
     bookingCardContent: {
         padding: 18,
@@ -3660,7 +3660,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
-        elevation: 3,
+        elevation: 0,
     },
     parentPhotoPlaceholderGlass: {
         width: 52,
@@ -3762,7 +3762,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
-        elevation: 6,
+        elevation: 0,
     },
     acceptBtnTextGlass: {
         fontSize: 15,
@@ -3780,7 +3780,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
-        elevation: 6,
+        elevation: 0,
     },
     startShiftTextGlass: {
         fontSize: 16,
@@ -4024,7 +4024,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
-        elevation: 10,
+        elevation: 0,
     },
     availabilityHeader: {
         paddingHorizontal: 20,
@@ -4218,7 +4218,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
         shadowRadius: 14,
-        elevation: 8,
+        elevation: 0,
     },
     saveAvailabilityBtnText: {
         fontSize: 17,
@@ -4512,7 +4512,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 0,
     },
     profilePhotoPlaceholderGlass: {
         width: 72,
@@ -4536,7 +4536,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.4,
         shadowRadius: 6,
-        elevation: 4,
+        elevation: 0,
     },
     profileInfoGlass: {
         flex: 1,
@@ -4618,7 +4618,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 3,
+        elevation: 0,
     },
     reviewsIconCircle: {
         width: 52,
@@ -4695,7 +4695,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 0,
     },
     profilePhotoPlaceholderLarge: {
         width: 100,
@@ -4719,7 +4719,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.4,
         shadowRadius: 6,
-        elevation: 5,
+        elevation: 0,
     },
     changePhotoText: {
         fontSize: 15,
@@ -4933,7 +4933,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 }, // Reduced shadow
         shadowOpacity: 0.2,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 0,
         minHeight: 48, // Slightly larger than inputs for emphasis
     },
     saveSettingsBtnTextGlass: {

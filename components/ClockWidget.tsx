@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 8,
+        elevation: 0,
     },
     content: {
         flexDirection: 'row',
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
         shadowRadius: 6,
-        elevation: 5,
+        elevation: 0,
         borderWidth: 0.5,
         borderColor: 'rgba(255, 255, 255, 0.2)',
     },

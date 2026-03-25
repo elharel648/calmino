@@ -1303,7 +1303,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 24,
-    elevation: 12,
+    elevation: 0,
   },
   glassLogoBackground: {
     width: 84,
@@ -1347,7 +1347,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 0,
   },
   formTitle: {
     fontSize: 24,
@@ -1560,12 +1560,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 0,
   },
   mainButtonDisabled: {
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    elevation: 1,
+    elevation: 0,
   },
   gradientBtn: {
     paddingVertical: 17,
@@ -1668,7 +1668,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.2,
     shadowRadius: 32,
-    elevation: 16,
+    elevation: 0,
     alignItems: 'center',
   },
   joinModalClose: {

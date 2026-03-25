@@ -1363,7 +1363,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             shadowOffset: { width: 0, height: 1 },
                             shadowOpacity: 0.04,
                             shadowRadius: 4,
-                            elevation: 1,
+                            elevation: 0,
                         }}>
                             {/* Header row */}
                             <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 10 }}>
@@ -1562,7 +1562,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                         shadowOffset: { width: 0, height: 1 },
                                         shadowOpacity: 0.05,
                                         shadowRadius: 4,
-                                        elevation: 2,
+                                        elevation: 0,
                                     }}>
                                         {/* Icon Badge - circular like menu */}
                                         <View style={{
@@ -1748,7 +1748,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
-        elevation: 2
+        elevation: 0
     },
     cardContent: { flexDirection: 'row-reverse', alignItems: 'center' },
     cardIconWrapper: {
@@ -1765,7 +1765,7 @@ const styles = StyleSheet.create({
     cardArrow: { opacity: 0.6 },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 44, maxHeight: '92%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 12, flex: 1, width: '100%' },
+    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 44, maxHeight: '92%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 0, flex: 1, width: '100%' },
     dragHandle: { alignItems: 'center', paddingTop: 16, paddingBottom: 4, paddingHorizontal: 50, zIndex: 10, minHeight: 40 },
     dragHandleBar: { width: 36, height: 4, borderRadius: 2 },
     modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
@@ -1784,7 +1784,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
-        elevation: 3,
+        elevation: 0,
     },
     modalTitle: { fontSize: 17, fontWeight: '600', color: '#1F2937' },
     modalBody: { flex: 1, backgroundColor: '#FFFFFF' },
@@ -1830,7 +1830,7 @@ const styles = StyleSheet.create({
     ageBadgeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
     ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
     ageBadgeTextMinimal: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
-    vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+    vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 0 },
     vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#10B981' },
     vaccineName: { fontSize: 15, color: '#1F2937', fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
     vaccineNameDone: { fontSize: 15, color: '#10B981', fontWeight: '600', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },

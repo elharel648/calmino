@@ -946,21 +946,21 @@ const SHADOWS = {
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.03,
         shadowRadius: 4,
-        elevation: 1,
+        elevation: 0,
     },
     medium: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 2,
+        elevation: 0,
     },
     elevated: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 16,
-        elevation: 4,
+        elevation: 0,
     },
 };
 
@@ -1040,7 +1040,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.12,
         shadowRadius: 6,
-        elevation: 3,
+        elevation: 0,
     },
     modeBtnText: {
         fontSize: 13,
@@ -1319,7 +1319,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 5,
+        elevation: 0,
         overflow: 'hidden',
     },
     citySuggestionItem: {
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
         shadowRadius: 24,
-        elevation: 12,
+        elevation: 0,
     },
     photoPreviewImage: {
         width: 250,

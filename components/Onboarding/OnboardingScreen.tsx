@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
         shadowRadius: 24,
-        elevation: 12,
+        elevation: 0,
     },
     iconShine: {
         position: 'absolute',
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 6,
-        elevation: 4,
+        elevation: 0,
     },
     buttons: {
         flexDirection: 'row',
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
         shadowColor: '#6366F1',
         shadowOffset: { width: 0, height: 8 },
         shadowRadius: 16,
-        elevation: 8,
+        elevation: 0,
     },
     nextButton: {
         flexDirection: 'row',

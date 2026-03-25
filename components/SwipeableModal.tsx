@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
         shadowRadius: 20,
-        elevation: 10,
+        elevation: 0,
     },
     dragHandleContainer: {
         alignItems: 'center',

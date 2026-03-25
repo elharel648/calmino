@@ -33,7 +33,7 @@ export const PrivacyContentES = ({ textColor, subtitleColor }: { textColor: stri
     • Datos de cuenta: nombre completo, dirección de correo electrónico, contraseña cifrada{'\n'}
     • Perfil del niño: nombre, fecha de nacimiento, género, foto de perfil{'\n'}
     • Datos de seguimiento: alimentación (hora, cantidad, tipo), sueño (horas de inicio/fin), cambios de pañal, suplementos nutricionales, vacunas, medicamentos, medidas de crecimiento (peso, altura, circunferencia de cabeza){'\n'}
-    • Datos de ubicación (GPS) — únicamente para servicios de búsqueda de niñeras en su zona, con su permiso explícito{'\n'}
+    • Datos de ubicación (GPS) — para permitir el descubrimiento de niñeras cercanas, la aplicación recopila datos de ubicación (exacta y aproximada) solo con su permiso explícito y durante el uso. Estos datos no se guardan en el historial, no se venden y el permiso se puede revocar en cualquier momento.{'\n'}
     • Mensajes de chat enviados entre padres y niñeras a través de la aplicación{'\n'}
     • Notas y registros que ingresa manualmente{'\n'}
     • Fotos y momentos mágicos que elige guardar{'\n\n'}
@@ -41,7 +41,7 @@ export const PrivacyContentES = ({ textColor, subtitleColor }: { textColor: stri
     • Tipo de dispositivo, versión del sistema operativo e identificador único del dispositivo{'\n'}
     • Token de notificaciones push (solo para enviar recordatorios){'\n'}
     • Dirección IP (solo para seguridad y solución de problemas — no almacenada a largo plazo){'\n'}
-    • Informes de fallos anónimos para mejorar la estabilidad de la aplicación{'\n\n'}
+    • Usamos datos de uso anónimos e informes de fallos a través de servicios externos para identificar rápidamente errores y mejorar la estabilidad. Esta información no contiene datos de identificación.{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>c. Información de terceros:{'\n'}</Text>
     • Al iniciar sesión con Google: nombre completo y dirección de correo de su cuenta de Google{'\n'}
     • Al iniciar sesión con Apple: dirección de correo (que puede ser ocultada por Apple){'\n\n'}
@@ -58,12 +58,12 @@ export const PrivacyContentES = ({ textColor, subtitleColor }: { textColor: stri
     <Text style={styles.bold}>No</Text> usamos su información para publicidad dirigida, ni vendemos datos a entidades comerciales.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>5. Compartir información con terceros{'\n'}</Text>
-    <Text style={[styles.subsection, { color: textColor }]}>Proveedores de servicios esenciales (procesadores de datos autorizados):{'\n'}</Text>
-    • <Text style={styles.bold}>Google Firebase</Text> (Firestore, Authentication, Cloud Storage, Cloud Functions) — almacenamiento de datos, autenticación de usuarios y procesamiento backend. Firebase cumple con el RGPD y el marco EU-US Data Privacy Framework. Hemos firmado un Acuerdo de Procesamiento de Datos (DPA) con Google según el Artículo 28 del RGPD.{'\n'}
-    • <Text style={styles.bold}>Apple</Text> (Sign in with Apple, APNs) — autenticación de usuarios y envío de notificaciones iOS{'\n'}
-    • <Text style={styles.bold}>Expo (Expo Go / EAS)</Text> — plataforma de desarrollo y notificaciones push multiplataforma{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — gestión de suscripciones y compras dentro de la aplicación. Procesa solo el identificador de usuario y el historial de compras{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — datos meteorológicos. Puede usar datos de ubicación generales para mostrar pronósticos{'\n\n'}
+    Utilizamos proveedores de servicios externos reputables para operar la aplicación:{'\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Almacenamiento de datos, autenticación e infraestructura.{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Inicio de sesión y notificaciones push.{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - Plataforma de desarrollo y actualizaciones.{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Gestión segura de suscripciones y compras.{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Datos meteorológicos locales.{'\n\n'}
     <Text style={styles.bold}>No</Text> vendemos, alquilamos, intercambiamos ni comercializamos su información de ninguna manera.{'\n'}
     Solo divulgaremos información si: (1) requerido por una orden judicial válida; (2) requerido por ley; (3) necesario para proteger la seguridad pública.{'\n\n'}
 
@@ -86,12 +86,10 @@ export const PrivacyContentES = ({ textColor, subtitleColor }: { textColor: stri
     • La información requerida por ley se conservará por el período legalmente establecido{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Privacidad de los niños{'\n'}</Text>
-    La aplicación está destinada a padres y cuidadores adultos (16+). La información sobre niños se recopila exclusivamente:{'\n'}
-    • Por sus padres / tutores legales{'\n'}
-    • Solo con fines de seguimiento de salud personal{'\n'}
-    • Sin compartir con entidades comerciales{'\n'}
-    • Sin publicidad dirigida relacionada con niños{'\n\n'}
-    No recopilamos información directamente de niños. Si cree que un menor de 13 años ha creado una cuenta sin consentimiento parental, contáctenos y eliminaremos los datos de inmediato.{'\n\n'}
+    El servicio es exclusivamente para padres y cuidadores (16+). La información sobre niños se recopila únicamente:{'\n'}
+    • Por iniciativa directa, ingreso y bajo el control total de sus padres / tutores legales{'\n'}
+    • Solo con fines de seguimiento de salud personal, sin intercambio comercial ni publicidad dirigida{'\n\n'}
+    Como padre, conserva el derecho absoluto de eliminar todos los datos de sus hijos de nuestros servidores de forma permanente e inmediata ("Derecho al olvido") a través de la App. Nunca recopilamos información directamente de los niños.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Sus derechos{'\n'}</Text>
     Según la ley israelí de protección de privacidad y el RGPD, usted tiene:{'\n'}
@@ -164,16 +162,17 @@ export const TermsContentES = ({ textColor, subtitleColor }: { textColor: string
 
     <Text style={[styles.section, { color: textColor }]}>7. Servicios de terceros{'\n'}</Text>
     La aplicación depende de servicios externos:{'\n'}
-    • <Text style={styles.bold}>Google Firebase</Text> — almacenamiento, autenticación e infraestructura{'\n'}
-    • <Text style={styles.bold}>Apple</Text> — autenticación y notificaciones Push{'\n'}
-    • <Text style={styles.bold}>Expo</Text> — plataforma de desarrollo y actualizaciones{'\n'}
-    • <Text style={styles.bold}>RevenueCat</Text> — gestión de suscripciones y compras{'\n'}
-    • <Text style={styles.bold}>Apple WeatherKit</Text> — datos meteorológicos{'\n\n'}
+    • <Text style={styles.bold}>Google Firebase</Text> - Almacenamiento, autenticación e infraestructura{'\n'}
+    • <Text style={styles.bold}>Apple</Text> - Autenticación y notificaciones push{'\n'}
+    • <Text style={styles.bold}>Expo / EAS</Text> - Plataforma de desarrollo y actualizaciones{'\n'}
+    • <Text style={styles.bold}>RevenueCat</Text> - Gestión de suscripciones y compras{'\n'}
+    • <Text style={styles.bold}>Apple WeatherKit</Text> - Datos meteorológicos{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>8. Limitación de responsabilidad, descargo médico y servicios de niñera{'\n'}</Text>
     8.1 El servicio se proporciona <Text style={styles.bold}>"tal cual"</Text> sin garantía de ningún tipo.{'\n'}
     8.2 <Text style={styles.bold}>La aplicación no reemplaza el consejo médico profesional.</Text> Consulte siempre a un pediatra calificado.{'\n'}
-    8.3 <Text style={styles.bold}>Servicios de niñera — Solo plataforma de conexión:</Text> Calmino <Text style={styles.bold}>no emplea, recomienda, respalda, verifica, garantiza ni asume responsabilidad</Text> por ninguna niñera. <Text style={styles.bold}>La responsabilidad exclusiva</Text> de evaluación, verificación de identidad y antecedentes recae en el padre.{'\n'}
+    8.3 <Text style={styles.bold}>Mercado de Niñeras — Renuncia Absoluta de Responsabilidad:</Text> Calmino proporciona una plataforma digital ("tablón de anuncios") que conecta a padres con niñeras independientes. <Text style={styles.bold}>La Empresa no es una agencia de empleo, no emplea a las niñeras, no las entrevista, no realiza verificaciones de antecedentes, integridad o antecedentes penales de ningún tipo, y no las respalda.</Text> Cualquier compromiso, empleo o encuentro facilitado a través de la App se realiza bajo el riesgo y responsabilidad exclusivos de los padres. Es su estricta obligación actuar con debida diligencia, solicitar identificación y verificar referencias antes de confiarles a sus hijos.{'\n'}
+    <Text style={styles.bold}>Renuncia Completa:</Text> Al usar la App para encontrar a una niñera, usted renuncia por la presente de manera completa, definitiva e irrevocable a cualquier reclamo, demanda o demanda contra Calmino, sus directores o empleados por cualquier daño directo o indirecto, daño corporal, daño a la propiedad, robo, negligencia o acto criminal causado por una niñera encontrada a través de la plataforma.{'\n'}
     8.4 Calmino no es responsable de daños directos, indirectos, incidentales, especiales o consecuentes.{'\n'}
     8.5 Nuestra responsabilidad total no excederá el monto pagado en el último año, o 200 ₪ — lo que sea menor.{'\n\n'}
 

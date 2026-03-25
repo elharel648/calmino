@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.04,
         shadowRadius: 16,
-        elevation: 2,
+        elevation: 0,
     },
     iconContainerDashed: {
         borderWidth: 1.5,
