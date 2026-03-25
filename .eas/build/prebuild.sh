@@ -5,7 +5,7 @@ set -e
 echo "🔧 Fixing Xcode project compatibility for CocoaPods..."
 
 # Path to the project.pbxproj file
-PBXPROJ_PATH="${EAS_BUILD_WORKINGDIR}/ios/CalmParentApp.xcodeproj/project.pbxproj"
+PBXPROJ_PATH="${EAS_BUILD_WORKINGDIR}/ios/Calmino.xcodeproj/project.pbxproj"
 
 # Check if file exists
 if [ ! -f "$PBXPROJ_PATH" ]; then
@@ -49,7 +49,7 @@ if [ -f "$PBXPROJ_REAL" ]; then
 fi
 
 # Ensure CFBundleIconName is in Info.plist
-INFOPLIST_PATH="${EAS_BUILD_WORKINGDIR}/ios/CalmParentApp/Info.plist"
+INFOPLIST_PATH="${EAS_BUILD_WORKINGDIR}/ios/Calmino/Info.plist"
 
 if [ -f "$INFOPLIST_PATH" ]; then
   echo "📱 Verifying CFBundleIconName in Info.plist..."
