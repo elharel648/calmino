@@ -8,6 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "eas-build-pre-install": "bash .eas/build/prebuild-icons.sh && bash .eas/build/prebuild.sh",
     "postinstall": "patch-package"
   },
   "dependencies": {
