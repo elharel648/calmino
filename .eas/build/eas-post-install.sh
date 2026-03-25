@@ -9,7 +9,6 @@ if [ -z "$EAS_BUILD_PLATFORM" ]; then
 else
     npx expo prebuild --platform $EAS_BUILD_PLATFORM --no-install
     if [ "$EAS_BUILD_PLATFORM" = "ios" ]; then
-        bash .eas/build/prebuild-icons.sh
         bash .eas/build/prebuild.sh
     fi
 fi
