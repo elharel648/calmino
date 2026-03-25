@@ -15,7 +15,7 @@ import { useToast } from '../context/ToastContext';
 import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withSpring, withDelay, runOnJS, interpolate, useAnimatedScrollHandler, Easing } from 'react-native-reanimated';
-import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView, NativeViewGestureHandler } from 'react-native-gesture-handler';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TIME_PICKER_STYLE = { width: 300, height: 216, alignSelf: 'center' as const };
@@ -2002,6 +2002,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
   return (
     <>
       <Modal visible={visible && !!type} transparent animationType="none">
+        <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'height' : 'height'} style={styles.overlay}>
           <Animated.View style={[StyleSheet.absoluteFill, backdropAnimStyle]}>
             <View
@@ -2288,6 +2289,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             </Animated.View>
           </GestureDetector>
         </KeyboardAvoidingView>
+        </GestureHandlerRootView>
       </Modal>
 
 

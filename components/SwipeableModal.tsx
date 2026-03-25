@@ -11,6 +11,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -164,6 +165,7 @@ export const SwipeableModal: React.FC<SwipeableModalProps> = ({
         >
             <TouchableWithoutFeedback onPress={handleClose}>
                 <Animated.View style={[styles.overlay, { opacity: backdropOpacity }]}>
+                    <GestureHandlerRootView style={{ flex: 1, justifyContent: 'flex-end' }}>
                     <TouchableWithoutFeedback>
                         <Animated.View
                             style={[
@@ -193,6 +195,7 @@ export const SwipeableModal: React.FC<SwipeableModalProps> = ({
                             </View>
                         </Animated.View>
                     </TouchableWithoutFeedback>
+                    </GestureHandlerRootView>
                 </Animated.View>
             </TouchableWithoutFeedback>
         </Modal>
