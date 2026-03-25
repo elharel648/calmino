@@ -1,5 +1,6 @@
 # EAS Build ignore file
-# Excludes local build artifacts to keep upload small
+# Excludes local build artifacts and native directories
+# EAS Cloud runs `npx expo prebuild` to generate fresh native projects
 
 node_modules/
 .expo/
@@ -7,11 +8,10 @@ node_modules/
 *.log
 dist/
 
-# Local build artifacts (regenerated in EAS Cloud)
-android/app/build/
-android/.gradle/
-ios/build/
-ios/Pods/
+# Native directories — generated fresh by EAS prebuild
+# Do NOT include local android/ or ios/ builds (causes variant mismatches)
+android/
+ios/
 
 # IDE & tooling
 .claude/
