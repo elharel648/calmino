@@ -10,8 +10,11 @@ dist/
 
 # Native directories — generated fresh by EAS prebuild
 # Do NOT include local android/ or ios/ builds (causes variant mismatches)
-android/
-ios/
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/
+ios/DerivedData/
 
 # IDE & tooling
 .claude/
