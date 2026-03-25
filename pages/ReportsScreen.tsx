@@ -1854,30 +1854,7 @@ export default function ReportsScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Dot Pattern Texture */}
-      <Svg
-        style={StyleSheet.absoluteFill}
-        width={SCREEN_WIDTH}
-        height={SCREEN_HEIGHT}
-        preserveAspectRatio="none"
-      >
-        <Defs>
-          <Pattern
-            id="dotPatternReports"
-            patternUnits="userSpaceOnUse"
-            width={28}
-            height={28}
-          >
-            <Circle
-              cx={14}
-              cy={14}
-              r={1.5}
-              fill={isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.035)'}
-            />
-          </Pattern>
-        </Defs>
-        <Rect width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="url(#dotPatternReports)" />
-      </Svg>
+
 
       {/* Radial Glow at Top */}
       <LinearGradient
