@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Alert, Linking, Modal, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Alert, Linking, Modal, Animated as RNAnimated, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -68,6 +68,15 @@ export default function SettingsScreen() {
   const [photoError, setPhotoError] = useState(false);
   const [guestInvitedNames, setGuestInvitedNames] = useState<string[] | null>(null);
   const guestBannerOpacity = useRef(new RNAnimated.Value(0)).current;
+
+  // Android prompt modal state (replaces iOS-only Alert.prompt)
+  const [androidPrompt, setAndroidPrompt] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    value: string;
+    onSave: (value: string) => void;
+  }>({ visible: false, title: '', message: '', value: '', onSave: () => {} });
 
   const showGuestBanner = useCallback((names: string[]) => {
     setGuestInvitedNames(names);
@@ -182,7 +191,18 @@ export default function SettingsScreen() {
         family?.babyName || ''
       );
     } else {
-      Alert.alert(t('account.editFamilyName'), t('account.editFamilyNameIOS'));
+      setAndroidPrompt({
+        visible: true,
+        title: t('account.editFamilyName'),
+        message: t('account.enterNewFamilyName'),
+        value: family?.babyName || '',
+        onSave: async (newName: string) => {
+          if (newName.trim()) {
+            const success = await renameFamily(newName.trim());
+            if (success) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        },
+      });
     }
   }, [family?.babyName, renameFamily]);
 
@@ -338,7 +358,25 @@ export default function SettingsScreen() {
         userName || ''
       );
     } else {
-      Alert.alert(t('settings.editName'), t('settings.editNameiOSOnly'));
+      setAndroidPrompt({
+        visible: true,
+        title: t('settings.editName'),
+        message: t('settings.enterNewName'),
+        value: userName || '',
+        onSave: async (newName: string) => {
+          if (newName.trim() && user) {
+            try {
+              await updateProfile(user, { displayName: newName.trim() });
+              const userRef = doc(db, 'users', user.uid);
+              await updateDoc(userRef, { displayName: newName.trim() });
+              setUserName(newName.trim());
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (error) {
+              Alert.alert(t('common.error'), t('settings.saveNameError'));
+            }
+          }
+        },
+      });
     }
   }, [user, userName]);
 
@@ -746,6 +784,47 @@ export default function SettingsScreen() {
         onSave={handleSaveBasicInfo}
         onClose={() => setIsEditBasicInfoOpen(false)}
       />
+
+      {/* Android Text Input Prompt (replaces iOS-only Alert.prompt) */}
+      {Platform.OS !== 'ios' && (
+        <Modal
+          visible={androidPrompt.visible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAndroidPrompt(p => ({ ...p, visible: false }))}
+        >
+          <View style={styles.androidPromptOverlay}>
+            <View style={[styles.androidPromptCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.androidPromptTitle, { color: theme.textPrimary }]}>{androidPrompt.title}</Text>
+              {androidPrompt.message ? <Text style={[styles.androidPromptMessage, { color: theme.textSecondary }]}>{androidPrompt.message}</Text> : null}
+              <TextInput
+                style={[styles.androidPromptInput, { color: theme.textPrimary, borderColor: theme.divider, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                value={androidPrompt.value}
+                onChangeText={(text) => setAndroidPrompt(p => ({ ...p, value: text }))}
+                autoFocus
+                selectTextOnFocus
+              />
+              <View style={styles.androidPromptButtons}>
+                <TouchableOpacity
+                  onPress={() => setAndroidPrompt(p => ({ ...p, visible: false }))}
+                  style={styles.androidPromptBtn}
+                >
+                  <Text style={[styles.androidPromptBtnText, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    androidPrompt.onSave(androidPrompt.value);
+                    setAndroidPrompt(p => ({ ...p, visible: false }));
+                  }}
+                  style={styles.androidPromptBtn}
+                >
+                  <Text style={[styles.androidPromptBtnText, { color: theme.primary || '#6366f1' }]}>{t('common.save')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
 
       {/* Premium Modal - Apple Style */}
       <Modal
@@ -1679,5 +1758,50 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '400',
     letterSpacing: -0.41,
+  },
+  androidPromptOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  androidPromptCard: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 24,
+  },
+  androidPromptTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'right',
+  },
+  androidPromptMessage: {
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'right',
+  },
+  androidPromptInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'right',
+  },
+  androidPromptButtons: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
+    gap: 20,
+  },
+  androidPromptBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  androidPromptBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
