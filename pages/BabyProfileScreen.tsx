@@ -23,6 +23,7 @@ import { saveBabyProfile } from '../services/babyService';
 import { LiquidGlassBackground } from '../components/LiquidGlass';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useGuest } from '../context/GuestContext';
 import JoinFamilyModal from '../components/Family/JoinFamilyModal';
 
 const { width, height } = Dimensions.get('window');
@@ -36,6 +37,7 @@ type BabyProfileScreenProps = {
 export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: BabyProfileScreenProps) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { isGuest, promptLogin } = useGuest();
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [gender, setGender] = useState<'boy' | 'girl'>('boy');
@@ -62,6 +64,12 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   }));
 
   const handleSave = async () => {
+    // Guest guard — show login prompt instead of Firebase error
+    if (isGuest) {
+      promptLogin();
+      return;
+    }
+
     if (!name.trim()) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert(t('baby.nameRequired'), t('baby.nameRequiredMessage'));

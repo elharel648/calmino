@@ -928,7 +928,7 @@ export default function App() {
           <LanguageProvider>
             <ThemeProvider>
               <ToastProvider>
-                <GuestProvider>
+                <GuestProvider initialIsGuest={isGuestMode}>
                 <ActiveChildProvider onReady={() => {
                   setChildrenReady(true);
                   SplashScreen.hideAsync();

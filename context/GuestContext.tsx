@@ -18,8 +18,8 @@ const GuestContext = createContext<GuestContextType>({
 
 export const useGuest = () => useContext(GuestContext);
 
-export const GuestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isGuest, setIsGuest] = useState(false);
+export const GuestProvider: React.FC<{ children: React.ReactNode; initialIsGuest?: boolean }> = ({ children, initialIsGuest = false }) => {
+  const [isGuest, setIsGuest] = useState(initialIsGuest);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const promptLogin = useCallback(() => {
