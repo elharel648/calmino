@@ -2519,7 +2519,7 @@ PODS:
     - ZXingObjC/Core
 
 DEPENDENCIES:
-  - ActivityKitModule (from `../node_modules/activity-kit-module/ios`)
+  - ActivityKitModule (from `../local-modules/activity-kit-module-v2/ios`)
   - EASClient (from `../node_modules/expo-eas-client/ios`)
   - EXApplication (from `../node_modules/expo-application/ios`)
   - EXAV (from `../node_modules/expo-av/ios`)
@@ -2646,7 +2646,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
-  - SharedAttributes (from `../node_modules/shared-attributes`)
+  - SharedAttributes (from `../local-modules/shared-attributes`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2684,7 +2684,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   ActivityKitModule:
-    :path: "../node_modules/activity-kit-module/ios"
+    :path: "../local-modules/activity-kit-module-v2/ios"
   EASClient:
     :path: "../node_modules/expo-eas-client/ios"
   EXApplication:
@@ -2937,7 +2937,7 @@ EXTERNAL SOURCES:
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
   SharedAttributes:
-    :path: "../node_modules/shared-attributes"
+    :path: "../local-modules/shared-attributes"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3101,6 +3101,6 @@ SPEC CHECKSUMS:
   Yoga: 65431d43277b661ebc7289c6c5d82f64ce42cfe0
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: 22c4cadde485a6960db822869817c059754d4e42
+PODFILE CHECKSUM: cc3b0e40611400087d6900920fe8480e330b1c34
 
 COCOAPODS: 1.16.2

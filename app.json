@@ -35,7 +35,8 @@
             "deploymentTarget": "16.1"
           }
         }
-      ]
+      ],
+      "./plugins/withModularHeaders"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
