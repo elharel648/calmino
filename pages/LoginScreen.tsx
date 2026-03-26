@@ -1132,13 +1132,22 @@ export default function LoginScreen({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   onGuestMode();
                 }}
-                style={[styles.exploreBtn, { borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}
-                activeOpacity={0.7}
+                style={styles.exploreBtn}
+                activeOpacity={0.8}
               >
-                <Compass size={18} color={theme.primary} strokeWidth={2} />
-                <Text style={[styles.exploreBtnText, { color: theme.primary }]}>
-                  {t('login.exploreApp') || 'גלה את Calmino'}
-                </Text>
+                <LinearGradient
+                  colors={isDarkMode
+                    ? ['rgba(99,102,241,0.15)', 'rgba(139,92,246,0.10)']
+                    : ['rgba(99,102,241,0.08)', 'rgba(139,92,246,0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.exploreBtnGradient}
+                >
+                  <Compass size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
+                  <Text style={[styles.exploreBtnText, { color: isDarkMode ? '#818CF8' : '#6366F1' }]}>
+                    {t('login.exploreApp')}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             )}
 
@@ -1657,20 +1666,24 @@ const styles = StyleSheet.create({
 
   // ===== EXPLORE / GUEST MODE =====
   exploreBtn: {
+    marginTop: 14,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.15)',
+  },
+  exploreBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 13,
-    marginTop: 12,
-    borderWidth: 1.5,
-    borderRadius: 14,
-    borderStyle: 'dashed',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
   },
   exploreBtnText: {
     fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
 
   // ===== SECURITY FOOTER =====
