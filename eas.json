@@ -27,7 +27,8 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "ios": {
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "image": "macos-sequoia-15.3-xcode-16.2"
       },
       "channel": "production"
     }
