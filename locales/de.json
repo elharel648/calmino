@@ -800,7 +800,14 @@
       "message": "Aus Sicherheitsgründen für 30 Sekunden gesperrt"
     },
     "appName": "Calmino",
-    "appSubtitle": "Smarte und ruhige Verwaltung für neue Eltern"
+    "appSubtitle": "Smarte und ruhige Verwaltung für neue Eltern",
+    "exploreApp": "Calmino entdecken"
+  },
+  "guest": {
+    "loginRequiredTitle": "Anmeldung erforderlich",
+    "loginRequiredMessage": "Um Daten zu speichern und Ihr Profil zu verwalten, erstellen Sie bitte ein Konto oder melden Sie sich an",
+    "loginNow": "Jetzt anmelden",
+    "notNow": "Nicht jetzt"
   },
   "alerts": {
     "notAvailable": "Nicht verfügbar",

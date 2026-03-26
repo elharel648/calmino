@@ -830,7 +830,14 @@
       "message": "נחסמת ל-30 שניות מסיבות אבטחה"
     },
     "appName": "Calmino",
-    "appSubtitle": "ניהול חכם ושקט להורים"
+    "appSubtitle": "ניהול חכם ושקט להורים",
+    "exploreApp": "גלה את Calmino"
+  },
+  "guest": {
+    "loginRequiredTitle": "נדרשת התחברות",
+    "loginRequiredMessage": "כדי לשמור נתונים ולנהל את הפרופיל, יש ליצור חשבון או להתחבר",
+    "loginNow": "התחבר עכשיו",
+    "notNow": "לא עכשיו"
   },
   "alerts": {
     "notAvailable": "לא זמין",

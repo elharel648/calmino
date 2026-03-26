@@ -830,7 +830,14 @@
       "message": "Locked for 30 seconds for security reasons"
     },
     "appName": "Calmino",
-    "appSubtitle": "Smart and quiet management for new parents"
+    "appSubtitle": "Smart and quiet management for new parents",
+    "exploreApp": "Explore Calmino"
+  },
+  "guest": {
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredMessage": "To save data and manage your profile, please create an account or log in",
+    "loginNow": "Log In Now",
+    "notNow": "Not Now"
   },
   "alerts": {
     "notAvailable": "Not Available",

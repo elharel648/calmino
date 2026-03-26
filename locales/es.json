@@ -800,7 +800,14 @@
       "message": "Bloqueado por 30 segundos por razones de seguridad"
     },
     "appName": "Calmino",
-    "appSubtitle": "Gestión inteligente y tranquila para nuevos padres"
+    "appSubtitle": "Gestión inteligente y tranquila para nuevos padres",
+    "exploreApp": "Explorar Calmino"
+  },
+  "guest": {
+    "loginRequiredTitle": "Inicio de sesión requerido",
+    "loginRequiredMessage": "Para guardar datos y gestionar tu perfil, crea una cuenta o inicia sesión",
+    "loginNow": "Iniciar sesión",
+    "notNow": "Ahora no"
   },
   "alerts": {
     "notAvailable": "No Disponible",

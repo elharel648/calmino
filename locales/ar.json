@@ -800,7 +800,14 @@
       "message": "مقفل لمدة 30 ثانية لأسباب أمنية"
     },
     "appName": "Calmino",
-    "appSubtitle": "إدارة ذكية وهادئة للآباء الجدد"
+    "appSubtitle": "إدارة ذكية وهادئة للآباء الجدد",
+    "exploreApp": "استكشف Calmino"
+  },
+  "guest": {
+    "loginRequiredTitle": "يلزم تسجيل الدخول",
+    "loginRequiredMessage": "لحفظ البيانات وإدارة ملفك الشخصي، يرجى إنشاء حساب أو تسجيل الدخول",
+    "loginNow": "تسجيل الدخول الآن",
+    "notNow": "ليس الآن"
   },
   "alerts": {
     "notAvailable": "غير متاح",
