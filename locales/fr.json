@@ -807,7 +807,8 @@
     "loginRequiredTitle": "Connexion requise",
     "loginRequiredMessage": "Pour enregistrer des données et gérer votre profil, veuillez créer un compte ou vous connecter",
     "loginNow": "Se connecter",
-    "notNow": "Pas maintenant"
+    "notNow": "Pas maintenant",
+    "exitGuestMode": "Quitter le mode invité"
   },
   "alerts": {
     "notAvailable": "Non Disponible",

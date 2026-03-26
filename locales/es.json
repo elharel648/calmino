@@ -807,7 +807,8 @@
     "loginRequiredTitle": "Inicio de sesión requerido",
     "loginRequiredMessage": "Para guardar datos y gestionar tu perfil, crea una cuenta o inicia sesión",
     "loginNow": "Iniciar sesión",
-    "notNow": "Ahora no"
+    "notNow": "Ahora no",
+    "exitGuestMode": "Salir del modo invitado"
   },
   "alerts": {
     "notAvailable": "No Disponible",

@@ -59,18 +59,5 @@ target 'Calmino' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
-
-    # Fix: Firebase build errors with useFrameworks: static
-    # 1. Allow non-modular includes in framework modules
-    # 2. Disable DEFINES_MODULE for Firebase pods to prevent module import ordering errors
-    firebase_pods = ['RNFBApp', 'RNFBFunctions', 'RNFBCrashlytics', 'RNFBAppCheck']
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |build_config|
-        build_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        if firebase_pods.include?(target.name)
-          build_config.build_settings['DEFINES_MODULE'] = 'NO'
-        end
-      end
-    end
   end
 end

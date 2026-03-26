@@ -63,6 +63,7 @@ import { IntervalPicker } from '../components/Settings/IntervalPicker';
 import { TimePicker } from '../components/Settings/TimePicker';
 import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
 import { useMedications } from '../hooks/useMedications';
+import { useGuest } from '../context/GuestContext';
 import { logger } from '../utils/logger';
 
 const LANGUAGES = [
@@ -81,6 +82,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
   const { meds, customSupplements, refresh: refreshMeds } = useMedications(activeChild?.childId);
+  const { isGuest, exitGuestMode } = useGuest();
   useEffect(() => { refreshMeds(); }, [activeChild?.childId]);
   const { settings: notifSettings, updateSettings: updateNotifSettings } = useNotifications();
 
@@ -253,6 +255,11 @@ if (data.settings.language !== undefined) {
   };
 
   const handleLogout = () => {
+    if (isGuest) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      exitGuestMode();
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(t('alerts.logoutTitle'), t('alerts.logoutQuestion'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -758,6 +765,8 @@ if (data.settings.language !== undefined) {
           </View>
 
           <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
+            {!isGuest && (
+              <>
             <TouchableOpacity
               style={[styles.listItem, styles.listItemFirst]}
               onPress={handleChangePassword}
@@ -797,21 +806,31 @@ if (data.settings.language !== undefined) {
             </TouchableOpacity>
 
             <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
+              </>
+            )}
 
             <TouchableOpacity
-              style={styles.listItem}
+              style={isGuest ? [styles.listItem, styles.listItemFirst] : styles.listItem}
               onPress={handleLogout}
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)' }]}>
-                  <LogOut size={18} color="#EF4444" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isGuest
+                  ? (isDarkMode ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)')
+                  : (isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)') }]}>
+                  <LogOut size={18} color={isGuest ? '#6366F1' : '#EF4444'} strokeWidth={2} />
                 </View>
-                <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.logout')}</Text>
+                <Text style={[styles.listItemText, { color: isGuest
+                  ? (isDarkMode ? '#818CF8' : '#6366F1')
+                  : (isDarkMode ? '#FCA5A5' : '#F87171') }]}>
+                  {isGuest ? t('guest.exitGuestMode') : t('settings.logout')}
+                </Text>
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
 
+            {!isGuest && (
+              <>
             <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />
 
             <TouchableOpacity
@@ -830,6 +849,8 @@ if (data.settings.language !== undefined) {
               </View>
               <ChevronLeft size={20} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 

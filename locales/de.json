@@ -807,7 +807,8 @@
     "loginRequiredTitle": "Anmeldung erforderlich",
     "loginRequiredMessage": "Um Daten zu speichern und Ihr Profil zu verwalten, erstellen Sie bitte ein Konto oder melden Sie sich an",
     "loginNow": "Jetzt anmelden",
-    "notNow": "Nicht jetzt"
+    "notNow": "Nicht jetzt",
+    "exitGuestMode": "Gastmodus verlassen"
   },
   "alerts": {
     "notAvailable": "Nicht verfügbar",

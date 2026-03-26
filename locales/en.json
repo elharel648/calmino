@@ -837,7 +837,8 @@
     "loginRequiredTitle": "Login Required",
     "loginRequiredMessage": "To save data and manage your profile, please create an account or log in",
     "loginNow": "Log In Now",
-    "notNow": "Not Now"
+    "notNow": "Not Now",
+    "exitGuestMode": "Exit Guest Mode"
   },
   "alerts": {
     "notAvailable": "Not Available",

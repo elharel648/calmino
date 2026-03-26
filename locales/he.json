@@ -837,7 +837,8 @@
     "loginRequiredTitle": "נדרשת התחברות",
     "loginRequiredMessage": "כדי לשמור נתונים ולנהל את הפרופיל, יש ליצור חשבון או להתחבר",
     "loginNow": "התחבר עכשיו",
-    "notNow": "לא עכשיו"
+    "notNow": "לא עכשיו",
+    "exitGuestMode": "יציאה ממצב אורח"
   },
   "alerts": {
     "notAvailable": "לא זמין",

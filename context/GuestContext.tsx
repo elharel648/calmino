@@ -6,6 +6,7 @@ interface GuestContextType {
   promptLogin: () => void;
   showLoginPrompt: boolean;
   dismissLoginPrompt: () => void;
+  exitGuestMode: () => void;
 }
 
 const GuestContext = createContext<GuestContextType>({
@@ -14,6 +15,7 @@ const GuestContext = createContext<GuestContextType>({
   promptLogin: () => {},
   showLoginPrompt: false,
   dismissLoginPrompt: () => {},
+  exitGuestMode: () => {},
 });
 
 export const useGuest = () => useContext(GuestContext);
@@ -30,8 +32,12 @@ export const GuestProvider: React.FC<{ children: React.ReactNode; initialIsGuest
     setShowLoginPrompt(false);
   }, []);
 
+  const exitGuestMode = useCallback(() => {
+    setIsGuest(false);
+  }, []);
+
   return (
-    <GuestContext.Provider value={{ isGuest, setIsGuest, promptLogin, showLoginPrompt, dismissLoginPrompt }}>
+    <GuestContext.Provider value={{ isGuest, setIsGuest, promptLogin, showLoginPrompt, dismissLoginPrompt, exitGuestMode }}>
       {children}
     </GuestContext.Provider>
   );

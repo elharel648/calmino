@@ -807,7 +807,8 @@
     "loginRequiredTitle": "يلزم تسجيل الدخول",
     "loginRequiredMessage": "لحفظ البيانات وإدارة ملفك الشخصي، يرجى إنشاء حساب أو تسجيل الدخول",
     "loginNow": "تسجيل الدخول الآن",
-    "notNow": "ليس الآن"
+    "notNow": "ليس الآن",
+    "exitGuestMode": "الخروج من وضع الضيف"
   },
   "alerts": {
     "notAvailable": "غير متاح",
