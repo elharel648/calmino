@@ -3,7 +3,6 @@
   "EX_DEV_CLIENT_NETWORK_INSPECTOR": "true",
   "newArchEnabled": "true",
   "ios.deploymentTarget": "16.1",
-  "ios.useFrameworks": "dynamic",
   "ios.forceStaticLinking": "[]",
   "apple.privacyManifestAggregationEnabled": "true"
 }
