@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User, QrCode } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User, QrCode, Compass } from 'lucide-react-native';
 import LegalModal, { LegalType } from '../components/Legal/LegalModal';
 import ConfettiBurst from '../components/Effects/ConfettiBurst';
 import * as Google from 'expo-auth-session/providers/google';
@@ -50,6 +50,7 @@ import { logger } from '../utils/logger';
 
 type LoginScreenProps = {
   onLoginSuccess: () => void;
+  onGuestMode?: () => void;
 };
 
 // Custom password input that avoids iOS AutoFill entirely (no secureTextEntry)
@@ -128,7 +129,7 @@ const getPasswordStrengthColor = (password: string): string => {
 };
 
 export default function LoginScreen({
-  onLoginSuccess }: LoginScreenProps) {
+  onLoginSuccess, onGuestMode }: LoginScreenProps) {
   const { theme, isDarkMode } = useTheme();
   const { t, isRTL } = useLanguage();
   const { showSuccess } = useToast();
@@ -1124,6 +1125,23 @@ export default function LoginScreen({
               </Text>
             </TouchableOpacity>
 
+            {/* Guest Mode / Explore */}
+            {onGuestMode && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  onGuestMode();
+                }}
+                style={[styles.exploreBtn, { borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}
+                activeOpacity={0.7}
+              >
+                <Compass size={18} color={theme.primary} strokeWidth={2} />
+                <Text style={[styles.exploreBtnText, { color: theme.primary }]}>
+                  {t('login.exploreApp') || 'גלה את Calmino'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             {/* Security footer */}
             <View style={styles.securityFooter}>
               <Shield size={12} color={theme.textTertiary} />
@@ -1635,6 +1653,24 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontWeight: '800',
+  },
+
+  // ===== EXPLORE / GUEST MODE =====
+  exploreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+    marginTop: 12,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    borderStyle: 'dashed',
+  },
+  exploreBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
 
   // ===== SECURITY FOOTER =====

@@ -80,8 +80,10 @@ import { ScrollTrackingProvider } from './context/ScrollTrackingContext';
 import { ToastProvider } from './context/ToastContext';
 import { PremiumProvider } from './context/PremiumContext';
 import { AudioProvider, useAudio } from './context/AudioContext';
+import { GuestProvider } from './context/GuestContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
+import GuestLoginPrompt from './components/GuestLoginPrompt';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -528,6 +530,7 @@ function LiveActivityURLHandler() {
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const [hasBabyProfile, setHasBabyProfile] = useState<boolean | null>(null);
   const [isAppSitter, setIsAppSitter] = useState<boolean>(false);
   const [isAppLoading, setIsAppLoading] = useState(true);
@@ -869,18 +872,24 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  if (!user && !isGuestMode) {
     return (
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <LanguageProvider>
           <ThemeProvider>
             <SafeAreaProvider>
               <ToastProvider>
-                <LoginScreen onLoginSuccess={() => {
-                  // Removed setIsAppLoading(true) because onAuthStateChanged handles state reactively
-                  // and setting it here caused a race condition resulting in an endless white screen.
-                  logger.debug('✅', 'LoginScreen reported success');
-                }} />
+                <LoginScreen
+                  onLoginSuccess={() => {
+                    // Removed setIsAppLoading(true) because onAuthStateChanged handles state reactively
+                    // and setting it here caused a race condition resulting in an endless white screen.
+                    logger.debug('✅', 'LoginScreen reported success');
+                  }}
+                  onGuestMode={() => {
+                    setIsGuestMode(true);
+                    SplashScreen.hideAsync();
+                  }}
+                />
               </ToastProvider>
             </SafeAreaProvider>
           </ThemeProvider>
@@ -889,12 +898,12 @@ export default function App() {
     );
   }
 
-  // Show loading while checking baby profile
-  if (hasBabyProfile === null) {
+  // Show loading while checking baby profile (skip for guests)
+  if (!isGuestMode && hasBabyProfile === null) {
     return null; // Keep splash visible
   }
 
-  // Only force BabyProfileScreen for parents (non-sitters)
+  // Only force BabyProfileScreen for parents (non-sitters, non-guests)
   if (user && hasBabyProfile === false && !isAppSitter) {
     return (
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
@@ -919,6 +928,7 @@ export default function App() {
           <LanguageProvider>
             <ThemeProvider>
               <ToastProvider>
+                <GuestProvider>
                 <ActiveChildProvider onReady={() => {
                   setChildrenReady(true);
                   SplashScreen.hideAsync();
@@ -969,6 +979,8 @@ export default function App() {
                     </SleepTimerProvider>
                   </QuickActionsProvider>
                 </ActiveChildProvider>
+                <GuestLoginPrompt onLoginPress={() => setIsGuestMode(false)} />
+                </GuestProvider>
               </ToastProvider>
             </ThemeProvider>
           </LanguageProvider>

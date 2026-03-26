@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Alert, Linking, Modal, Animated as RNAnimated, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Alert, Modal, Animated as RNAnimated, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -206,13 +206,7 @@ export default function SettingsScreen() {
     }
   }, [family?.babyName, renameFamily]);
 
-  const openSettings = useCallback(() => {
-    if (Platform.OS === 'ios') {
-      Linking.openURL('app-settings:');
-    } else {
-      Linking.openSettings();
-    }
-  }, []);
+
 
   const handleRemoveMember = useCallback((memberId: string, memberName: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -293,14 +287,6 @@ export default function SettingsScreen() {
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        t('settings.permissionRequired'),
-        t('settings.galleryPermission'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('settings.openSettings'), onPress: openSettings }
-        ]
-      );
       return;
     }
 
@@ -324,7 +310,7 @@ export default function SettingsScreen() {
         Alert.alert(t('account.error'), t('account.couldNotSavePhoto'));
       }
     }
-  }, [user, openSettings]);
+  }, [user]);
 
   const handleEditUserName = useCallback(() => {
     if (Platform.OS !== 'web') {

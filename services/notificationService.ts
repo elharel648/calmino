@@ -141,16 +141,16 @@ export interface NotificationSettings {
 }
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
-    enabled: true,
-    feedingReminder: true,
+    enabled: false,
+    feedingReminder: false,
     feedingIntervalHours: 3,
     feedingStartTime: '08:00',
-    sleepReminder: true,
+    sleepReminder: false,
     sleepTime: '20:00',
-    supplementReminder: true,
+    supplementReminder: false,
     supplementTime: '09:00',
     supplementTimes: { vitaminD: '09:00', iron: '09:00' },
-    vaccineReminder: true,
+    vaccineReminder: false,
     dailySummary: false,
     dailySummaryTime: '20:00',
 };
@@ -187,24 +187,29 @@ class NotificationService {
     private settings: NotificationSettings = DEFAULT_NOTIFICATION_SETTINGS;
     private scheduledNotifications: Map<string, string> = new Map(); // type -> notificationId
 
-    // Initialize
+    // Initialize — loads settings only; does NOT request permissions automatically.
+    // Permissions are requested on-demand when user enables notifications via the toggle.
     async initialize(): Promise<boolean> {
         try {
             // Load saved settings
             await this.loadSettings();
 
-            // Request permissions
-            const hasPermission = await this.requestPermissions();
-            if (!hasPermission) {
-                logger.warn('Notification permissions not granted');
-                return false;
+            // Only request permissions if user previously enabled notifications
+            if (this.settings.enabled) {
+                const hasPermission = await this.requestPermissions();
+                if (!hasPermission) {
+                    logger.warn('Notification permissions not granted');
+                    return false;
+                }
             }
 
             // CLEANUP: Cancel any legacy diaper notifications (feature removed)
             await this.cancelLegacyDiaperNotifications();
 
             // FCM: Sync Push Token asynchronously in the background
-            this.syncPushTokenToFirestore();
+            if (this.settings.enabled) {
+                this.syncPushTokenToFirestore();
+            }
 
             return true;
         } catch (error) {

@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Alert, Platform, ActionSheetIOS, Linking } from 'react-native';
+import { Alert, Platform, ActionSheetIOS } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
@@ -150,34 +150,10 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         setBaby(prev => prev ? { ...prev, ...updates, birthDate: timestamp } : null);
     }, [baby?.id]);
 
-    const openSettings = useCallback(() => {
-        if (Platform.OS === 'ios') {
-            Linking.openURL('app-settings:');
-        } else {
-            Linking.openSettings();
-        }
-    }, []);
-
-    const handlePermissionDenied = useCallback((permissionType: 'camera' | 'gallery') => {
-        const message = permissionType === 'camera'
-            ? 'נדרשת הרשאת מצלמה כדי לצלם תמונה'
-            : 'נדרשת הרשאת גלריה כדי לבחור תמונה';
-
-        Alert.alert(
-            'חובה לאשר הרשאות',
-            message,
-            [
-                { text: 'ביטול', style: 'cancel' },
-                { text: 'פתח הגדרות', onPress: openSettings }
-            ]
-        );
-    }, [openSettings]);
-
     const pickImageFromLibrary = useCallback(async (type: 'profile' | 'album', monthIndex?: number) => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                handlePermissionDenied('gallery');
                 return null;
             }
 
@@ -197,12 +173,11 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
             Alert.alert('שגיאה', 'לא הצלחנו לפתוח את הגלריה');
             return null;
         }
-    }, [handlePermissionDenied]);
+    }, []);
 
     const takePhotoWithCamera = useCallback(async (type: 'profile' | 'album') => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
-            handlePermissionDenied('camera');
             return;
         }
 
@@ -214,7 +189,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         });
 
         return result;
-    }, [handlePermissionDenied]);
+    }, []);
 
     const processImage = useCallback(async (result: ImagePicker.ImagePickerResult | null, type: 'profile' | 'album', monthIndex?: number) => {
         if (!result) {

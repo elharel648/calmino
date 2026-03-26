@@ -58,7 +58,6 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
         "UIBackgroundModes": [
-          "audio",
           "audio"
         ],
         "CFBundleURLTypes": [

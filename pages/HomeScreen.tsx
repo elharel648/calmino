@@ -13,6 +13,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useScrollTracking } from '../context/ScrollTrackingContext';
+import { useGuest } from '../context/GuestContext';
 
 // Components
 import HeaderSection from '../components/Home/HeaderSection';
@@ -198,6 +199,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [editingChild, setEditingChild] = useState<any>(null);
     const [isEditChildModalOpen, setIsEditChildModalOpen] = useState(false);
     const user = auth.currentUser;
+    const { isGuest, promptLogin } = useGuest();
 
     // Fetch reminder count
     const fetchReminderCount = useCallback(async () => {
@@ -259,9 +261,13 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         const t0 = Date.now();
         logger.log('⏱️ [PERF] handleSaveTracking START', { type: data.type });
 
-        if (!user) {
-            logger.error('❌ No user found');
-            showError(t('errors.loginRequired'));
+        if (isGuest || !user) {
+            if (isGuest) {
+                promptLogin();
+            } else {
+                logger.error('❌ No user found');
+                showError(t('errors.loginRequired'));
+            }
             return;
         }
 

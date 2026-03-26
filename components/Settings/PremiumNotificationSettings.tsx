@@ -8,6 +8,8 @@ import { IntervalPicker } from './IntervalPicker';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../../context/LanguageContext';
 
+import { notificationService } from '../../services/notificationService';
+
 const ACCENT_COLOR = '#6366F1';
 
 // Compact time chip used inside supplement rows
@@ -268,9 +270,17 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
             trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
-            onValueChange={(val) => {
+            onValueChange={async (val) => {
               if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              if (val) {
+                // Request OS permission when user explicitly enables notifications
+                const granted = await notificationService.requestPermissions();
+                if (!granted) {
+                  // User denied — keep toggle OFF
+                  return;
+                }
               }
               updateSettings({ enabled: val });
             }}
