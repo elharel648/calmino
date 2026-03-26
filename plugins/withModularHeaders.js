@@ -3,16 +3,17 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Fix for react-native-firebase v23 + useFrameworks: static + New Architecture.
+ * Combined fix for react-native-firebase v23 + useFrameworks: static.
  * 
- * Problem: When building with static frameworks, all pods must be compiled as 
- * modular frameworks. But RNFB Obj-C headers use #import <React/RCTBridgeModule.h> 
- * which is not a modular import, causing "must be imported from module" errors.
- *
- * Solution: Add `use_modular_headers!` globally so React headers become proper 
- * module headers accessible from other frameworks.
+ * TWO separate issues require TWO fixes applied together:
  * 
- * This is the approach recommended by the react-native-firebase team.
+ * 1. use_modular_headers! — Makes React headers available as proper module 
+ *    headers. Without this: "RCTBridgeModule must be imported from module" error.
+ * 
+ * 2. CLANG_ALLOW_NON_MODULAR_INCLUDES — Allows the remaining non-modular 
+ *    includes that React-Core still has. Without this: "include of non-modular 
+ *    header inside framework module" treated as error by -Werror.
+ *    MUST run AFTER react_native_post_install to avoid being overridden.
  */
 const withModularHeaders = (config) => {
   return withDangerousMod(config, [
@@ -26,19 +27,42 @@ const withModularHeaders = (config) => {
 
       let podfileContent = fs.readFileSync(podfilePath, 'utf8');
 
-      if (podfileContent.includes('MODULAR_HEADERS_FIX')) {
+      if (podfileContent.includes('RNFB_COMBINED_FIX')) {
         return config;
       }
 
-      // Add use_modular_headers! after platform line
-      // This allows React headers to be imported as module headers from RNFB frameworks
+      // FIX 1: Add use_modular_headers! after platform line
       podfileContent = podfileContent.replace(
         /(platform :ios.*\n)/,
-        `$1\n# MODULAR_HEADERS_FIX - Required for react-native-firebase + static frameworks\nuse_modular_headers!\n`
+        `$1\n# RNFB_COMBINED_FIX Part 1 - Enable modular headers globally\nuse_modular_headers!\n`
       );
 
+      // FIX 2: Add CLANG_ALLOW AFTER react_native_post_install
+      const postInstallFix = `
+    # RNFB_COMBINED_FIX Part 2 - Allow non-modular includes (runs AFTER react_native_post_install)
+    installer.pods_project.build_configurations.each do |bc|
+      bc.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+    end
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |bc|
+        bc.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+    end
+`;
+
+      const reactPostInstallRegex = /react_native_post_install\(\s*installer[\s\S]*?\)\s*\n/;
+      const match = podfileContent.match(reactPostInstallRegex);
+      
+      if (match) {
+        const insertPos = podfileContent.indexOf(match[0]) + match[0].length;
+        podfileContent = 
+          podfileContent.substring(0, insertPos) + 
+          postInstallFix + 
+          podfileContent.substring(insertPos);
+      }
+
       fs.writeFileSync(podfilePath, podfileContent);
-      console.log('✅ Applied use_modular_headers! fix for RNFB static framework compatibility');
+      console.log('✅ Applied RNFB combined fix (modular_headers + CLANG_ALLOW)');
       return config;
     },
   ]);
