@@ -31,6 +31,7 @@ const withLiveActivity = (config) => {
         'BabysitterShiftLiveActivity.swift',
         'SleepLiveActivity.swift',
         'FeedingLiveActivity.swift',
+        'BreastfeedingLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
         'Info.plist',
         'CalmParentLiveActivity.entitlements',
@@ -104,6 +105,7 @@ const withLiveActivity = (config) => {
       'BabysitterShiftLiveActivity.swift',
       'SleepLiveActivity.swift',
       'FeedingLiveActivity.swift',
+      'BreastfeedingLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
       'ActivityAttributes.swift', // הכרחי שיהיה בשניהם!
       'GlassComponents.swift', // הכרחי שיהיה בשניהם!
@@ -156,6 +158,7 @@ const withLiveActivity = (config) => {
             comment.includes('BabysitterShiftLiveActivity.swift') ||
             comment.includes('SleepLiveActivity.swift') ||
             comment.includes('FeedingLiveActivity.swift') ||
+            comment.includes('BreastfeedingLiveActivity.swift') ||
             comment.includes('CalmParentLiveActivityBundle.swift')
           ) {
             return false; // strip them from Calmino target
