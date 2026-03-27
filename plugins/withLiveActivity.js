@@ -181,7 +181,7 @@ const withLiveActivity = (config) => {
           settings.CODE_SIGN_ENTITLEMENTS = `"${widgetName}/${widgetName}.entitlements"`;
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          settings.CODE_SIGN_STYLE = 'Manual';
+          settings.CODE_SIGN_STYLE = 'Automatic';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
         }
       }
