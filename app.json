@@ -31,11 +31,12 @@
         "expo-build-properties",
         {
           "ios": {
+            "useFrameworks": "static",
             "deploymentTarget": "16.1"
           }
         }
       ],
-      "./plugins/withModularHeaders"
+      "./plugins/withFirebaseWarningFix"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
