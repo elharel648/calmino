@@ -3,49 +3,47 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Surgical fix for RN Firebase v23 + Expo 52 New Architecture + Static Frameworks.
- * 
- * Problem:
- * When using `useFrameworks: static` (required for Firebase Swift bridging like 
- * FirebaseCrashlytics-Swift.h), the RN Firebase targets encounter a warning about 
- * non-modular includes in framework modules. Because the project treats warnings 
- * as errors (-Werror), the build fails.
- * 
- * Previous attempts used `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES`, 
- * but that aggressively broke the module maps, causing `RCTBridgeModule` macros 
- * to fail parsing (type specifier missing, etc.).
- * 
- * Solution:
- * Instead of breaking the module map, we simply tell CocoaPods to NOT treat 
- * warnings as compilation errors (`GCC_TREAT_WARNINGS_AS_ERRORS = 'NO'`) 
- * specifically for the RN Firebase pods. This allows the non-modular include 
- * warning to cleanly pass through without breaking macro parsing.
+ * Definitive fix for RN Firebase v23 + Expo 52 New Architecture + Static Frameworks.
+ *
+ * ROOT CAUSE:
+ * `useFrameworks: static` makes CocoaPods set DEFINES_MODULE=YES on every pod.
+ * This generates a .modulemap for each pod. However, RNFB pods do
+ * `#import <React/RCTBridgeModule.h>` — pulling React-Core headers into
+ * the RNFB module boundary. Clang then enforces strict module import rules,
+ * causing a HARD ERROR (not a warning):
+ *   "declaration of 'RCTBridgeModule' must be imported from module
+ *    'RNFBApp.RNFBAppModule' before it is required"
+ *
+ * SOLUTION:
+ * Set DEFINES_MODULE=NO for all RNFB pods. This prevents module map
+ * generation for these pods, so Clang never enforces modular include
+ * rules on them. The pods still compile and link as static frameworks.
+ * Firebase SDK pods keep their module maps and Swift bridging works fine.
  */
 const withFirebaseWarningFix = (config) => {
   return withDangerousMod(config, [
     'ios',
     async (config) => {
       const podfilePath = path.join(config.modRequest.platformProjectRoot, 'Podfile');
-      
+
       if (!fs.existsSync(podfilePath)) {
         return config;
       }
 
       let podfileContent = fs.readFileSync(podfilePath, 'utf8');
 
-      if (podfileContent.includes('RNFB_WARNING_FIX')) {
+      if (podfileContent.includes('RNFB_MODULE_FIX')) {
         return config;
       }
 
-      // Inject the compiler warning bypass into the post_install block,
-      // specifically AFTER react_native_post_install has run.
       const postInstallFix = `
-    # RNFB_WARNING_FIX: Disable -Werror for RNFB pods to bypass non-modular include failures
+    # RNFB_MODULE_FIX: Disable module map generation for RNFB pods.
+    # This prevents the hard Clang module import error where RCTBridgeModule
+    # gets incorrectly scoped into RNFB's module boundary.
     installer.pods_project.targets.each do |target|
       if target.name.start_with?('RNFB')
         target.build_configurations.each do |bc|
-          bc.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-          bc.build_settings['WARNING_CFLAGS'] = '-Wno-error=non-modular-include-in-framework-module'
+          bc.build_settings['DEFINES_MODULE'] = 'NO'
         end
       end
     end
@@ -53,15 +51,15 @@ const withFirebaseWarningFix = (config) => {
 
       const reactPostInstallRegex = /react_native_post_install\(\s*installer[\s\S]*?\)\s*\n/;
       const match = podfileContent.match(reactPostInstallRegex);
-      
+
       if (match) {
         const insertPos = podfileContent.indexOf(match[0]) + match[0].length;
-        podfileContent = 
-          podfileContent.substring(0, insertPos) + 
-          postInstallFix + 
+        podfileContent =
+          podfileContent.substring(0, insertPos) +
+          postInstallFix +
           podfileContent.substring(insertPos);
       } else {
-        // Fallback if react_native_post_install isn't found
+        // Fallback: append to post_install block
         podfileContent = podfileContent.replace(
           /post_install do \|installer\|\n/,
           `post_install do |installer|\n${postInstallFix}`
@@ -69,7 +67,7 @@ const withFirebaseWarningFix = (config) => {
       }
 
       fs.writeFileSync(podfilePath, podfileContent);
-      console.log('✅ Injected targeted -Werror bypass for RN Firebase pods.');
+      console.log('✅ RNFB_MODULE_FIX: Disabled DEFINES_MODULE for RNFB pods.');
       return config;
     },
   ]);

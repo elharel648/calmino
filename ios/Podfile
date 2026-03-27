@@ -60,12 +60,13 @@ target 'Calmino' do
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
 
-    # RNFB_WARNING_FIX: Disable -Werror for RNFB pods to bypass non-modular include failures
+    # RNFB_MODULE_FIX: Disable module map generation for RNFB pods.
+    # This prevents the hard Clang module import error where RCTBridgeModule
+    # gets incorrectly scoped into RNFB's module boundary.
     installer.pods_project.targets.each do |target|
       if target.name.start_with?('RNFB')
         target.build_configurations.each do |bc|
-          bc.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-          bc.build_settings['WARNING_CFLAGS'] = '-Wno-error=non-modular-include-in-framework-module'
+          bc.build_settings['DEFINES_MODULE'] = 'NO'
         end
       end
     end
