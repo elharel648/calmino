@@ -36,8 +36,7 @@
           }
         }
       ],
-      "./plugins/withFirebaseWarningFix",
-      "./plugins/withLiveActivity"
+      "./plugins/withFirebaseWarningFix"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
