@@ -166,7 +166,8 @@ const withLiveActivity = (config) => {
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
           settings.CODE_SIGN_STYLE = 'Manual';
-          settings.PROVISIONING_PROFILE_SPECIFIER = '"CalmParent Live Activity Provisioning Profile"';
+          settings.PROVISIONING_PROFILE = '"41bf35a3-1ee2-4f05-a0a7-33dafdccc9b6"';
+          settings.PROVISIONING_PROFILE_SPECIFIER = '"CalmParent Live Activity"';
           
           if (configObj.name === 'Release') {
             settings['"CODE_SIGN_IDENTITY"'] = '"Apple Distribution"';
