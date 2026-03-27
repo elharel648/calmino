@@ -124,12 +124,7 @@
               "appExtensions": [
                 {
                   "targetName": "CalmParentLiveActivity",
-                  "bundleIdentifier": "com.harel.calmparentapp.LiveActivity",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.harel.calmparentapp"
-                    ]
-                  }
+                  "bundleIdentifier": "com.harel.calmparentapp.LiveActivity"
                 }
               ]
             }
