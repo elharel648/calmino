@@ -165,7 +165,17 @@ const withLiveActivity = (config) => {
           settings.SWIFT_VERSION = '5.0';
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          settings.CODE_SIGN_STYLE = 'Automatic';
+          settings.CODE_SIGN_STYLE = 'Manual';
+          settings.PROVISIONING_PROFILE_SPECIFIER = '"CalmParent Live Activity Provisioning Profile"';
+          
+          if (configObj.name === 'Release') {
+            settings['"CODE_SIGN_IDENTITY"'] = '"Apple Distribution"';
+            settings['"CODE_SIGN_IDENTITY[sdk=iphoneos*]"'] = '"Apple Distribution"';
+          } else {
+            settings['"CODE_SIGN_IDENTITY"'] = '"Apple Development"';
+            settings['"CODE_SIGN_IDENTITY[sdk=iphoneos*]"'] = '"Apple Development"';
+          }
+
           settings.CODE_SIGN_ENTITLEMENTS = '';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
         }
