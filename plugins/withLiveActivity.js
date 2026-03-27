@@ -165,7 +165,7 @@ const withLiveActivity = (config) => {
           settings.SWIFT_VERSION = '5.0';
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          settings.CODE_SIGN_STYLE = 'Manual';
+          settings.CODE_SIGN_STYLE = 'Automatic';
           settings.CODE_SIGN_ENTITLEMENTS = '';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
         }
