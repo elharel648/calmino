@@ -34,7 +34,6 @@ const withLiveActivity = (config) => {
         'BreastfeedingLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
         'Info.plist',
-        'CalmParentLiveActivity.entitlements',
         'GlassComponents.swift',
       ];
 
@@ -52,17 +51,8 @@ const withLiveActivity = (config) => {
         }
       });
 
-      // יצירת Entitlements (אם לא הועתק)
-      const entitlementsPath = path.join(targetDir, `${widgetName}.entitlements`);
-      if (!fs.existsSync(entitlementsPath)) {
-        const entitlementsContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-</dict>
-</plist>`;
-        fs.writeFileSync(entitlementsPath, entitlementsContent);
-      }
+
+
 
       return config;
     }
@@ -173,10 +163,9 @@ const withLiveActivity = (config) => {
           settings.PRODUCT_BUNDLE_IDENTIFIER = `"${bundleId}"`;
           settings.IPHONEOS_DEPLOYMENT_TARGET = '16.1';
           settings.SWIFT_VERSION = '5.0';
-          settings.CODE_SIGN_ENTITLEMENTS = `"${widgetName}/${widgetName}.entitlements"`;
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          settings.CODE_SIGN_STYLE = 'Automatic';
+          settings.CODE_SIGN_STYLE = 'Manual';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
         }
       }
