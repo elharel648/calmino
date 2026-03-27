@@ -746,7 +746,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
+				"CODE_SIGN_IDENTITY" = "Apple Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+				PROVISIONING_PROFILE_SPECIFIER = "CalmParent Live Activity Provisioning Profile";
 				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
