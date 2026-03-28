@@ -802,11 +802,7 @@ export default function MagicMomentsModal({
                         <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
                             {t('magicMoments.addPhotoRange')}
                         </Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.monthPickerScroll}
-                        >
+                        <View style={styles.monthPickerGrid}>
                             {Array.from({ length: 24 }, (_, i) => i + 13).map(month => (
                                 <TouchableOpacity
                                     key={month}
@@ -814,7 +810,10 @@ export default function MagicMomentsModal({
                                     onPress={() => {
                                         setMonthPickerOpen(false);
                                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        handleAddCustomPhoto(month);
+                                        // ✅ FIX: Wait for Modal dismiss animation before ActionSheetIOS
+                                        setTimeout(() => {
+                                            handleAddCustomPhoto(month);
+                                        }, 350);
                                     }}
                                     activeOpacity={0.7}
                                 >
@@ -826,7 +825,7 @@ export default function MagicMomentsModal({
                                     </View>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -1315,7 +1314,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 16,
     },
-    monthPickerScroll: {
+    monthPickerGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
         gap: 10,
         paddingVertical: 8,
     },
