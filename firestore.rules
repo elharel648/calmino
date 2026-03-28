@@ -19,16 +19,18 @@ service cloud.firestore {
       return babyDoc != null && babyDoc.data.parentId == request.auth.uid;
     }
 
-    // Check if the current user is a member of the family that owns the baby
+    // Check if the current user is a member of the family that owns the baby.
+    // Supports multi-child families: accepts if baby.parentId == family.createdBy (admin).
+    // Also accepts the legacy single babyId field for backward compat.
     function hasFamilyAccessToBaby(babyId) {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      // Ensure user document exists and has a familyId
       let familyId = userDoc != null ? userDoc.data.familyId : null;
-
-      // If no familyId, return false immediately to save reads
-      return familyId != null &&
-             get(/databases/$(database)/documents/families/$(familyId)).data.babyId == babyId &&
-             get(/databases/$(database)/documents/families/$(familyId)).data.members[request.auth.uid] != null;
+      let familyDoc = familyId != null ? get(/databases/$(database)/documents/families/$(familyId)) : null;
+      let isMember = familyDoc != null && familyDoc.data.members[request.auth.uid] != null;
+      let isLegacyBaby = isMember && familyDoc.data.babyId == babyId;
+      let babyDoc = get(/databases/$(database)/documents/babies/$(babyId));
+      let isAdminBaby = isMember && babyDoc != null && babyDoc.data.parentId == familyDoc.data.createdBy;
+      return isLegacyBaby || isAdminBaby;
     }
 
     // Check guest access — guests have guestChildIds array in their user doc (1 get, no family read)
