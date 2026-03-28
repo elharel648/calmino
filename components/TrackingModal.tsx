@@ -727,8 +727,8 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     if (type === 'food') {
       let durationText = '';
 
-      // Handle timerange mode for food
-      if (foodMode === 'timerange') {
+      // Handle timerange mode for food (and force for solids)
+      if (foodMode === 'timerange' || foodType === 'solids') {
         const startHours = foodStartTime.getHours();
         const startMinutes = foodStartTime.getMinutes();
         const endHours = foodEndTime.getHours();
@@ -809,7 +809,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
         data.subType = 'pumping';
       } else if (foodType === 'solids') {
         data.note = solidsFoodName ? (foodNote ? `${solidsFoodName} | ${foodNote}` : solidsFoodName) : (foodNote || t('tracking.solidsFood'));
-        if (foodMode === 'timerange' && durationText) {
+        if (durationText) {
           data.note = data.note ? `${durationText} | ${data.note}` : durationText;
         }
         data.subType = 'solids';
