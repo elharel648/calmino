@@ -274,7 +274,11 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                                     onPress={() => {
                                         setMonthPickerOpen(false);
                                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        onAddCustomPhoto?.(month);
+                                        // ✅ FIX: Wait for Modal dismiss animation to complete
+                                        // before calling ActionSheetIOS, otherwise iOS freezes.
+                                        setTimeout(() => {
+                                            onAddCustomPhoto?.(month);
+                                        }, 350);
                                     }}
                                     activeOpacity={0.7}
                                 >
