@@ -131,13 +131,14 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
 
-        // Get activity ID from current state before clearing
-        const activityId = timers[activeChildId]?.activityId;
-
+        // ✅ FIX: Do NOT clear elapsedSeconds here.
+        // The TrackingModal reads elapsedSeconds AFTER stop() is called (from DynamicIsland button).
+        // If we reset to 0 immediately, the modal saves 0 duration.
+        // We only clear isRunning/isPaused — elapsedSeconds is preserved until start() resets it.
         updateChildState(activeChildId, {
             isRunning: false,
             isPaused: false,
-            activityId: undefined // Clear activity ID
+            activityId: undefined
         });
 
         // Stop iOS Live Activity
