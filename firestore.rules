@@ -19,14 +19,17 @@ service cloud.firestore {
       return babyDoc != null && babyDoc.data.parentId == request.auth.uid;
     }
 
-    // Check if the current user is a member of the family that owns the baby.
-    // LEGACY: checks the single babyId field stored on the family doc.
+    // LEGACY + MULTI-CHILD: used from events, medications, teeth, etc. (NOT from babies rule - would be recursive).
+    // Checks legacy babyId field AND multi-child (get baby doc to compare parentId with family admin).
     function hasFamilyAccessToBaby(babyId) {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
       let familyId = userDoc != null ? userDoc.data.familyId : null;
       let familyDoc = familyId != null ? get(/databases/$(database)/documents/families/$(familyId)) : null;
       let isMember = familyDoc != null && familyDoc.data.members[request.auth.uid] != null;
-      return isMember && familyDoc.data.babyId == babyId;
+      let isLegacy = isMember && familyDoc.data.babyId == babyId;
+      let babyDoc = get(/databases/$(database)/documents/babies/$(babyId));
+      let isAdminChild = isMember && babyDoc != null && babyDoc.data.parentId == familyDoc.data.createdBy;
+      return isLegacy || isAdminChild;
     }
 
     // MULTI-CHILD: check access by the baby's parentId (no recursive get needed).
@@ -104,11 +107,11 @@ service cloud.firestore {
     // BABIES COLLECTION
     // ===================
     match /babies/{babyId} {
-      // Read: parent OR family member (by babyId OR by admin parentId) OR guest with access
+      // Read: parent OR family member (hasFamilyAccessToBabyByParentId covers both legacy + multi-child)
+      // hasFamilyAccessToBaby is intentionally NOT used here to avoid recursive get(babies/...)
       allow read: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
         hasFamilyAccessToBabyByParentId(resource.data.parentId) ||
-        hasFamilyAccessToBaby(babyId) ||
         hasGuestAccessToBaby(babyId)
       );
       
