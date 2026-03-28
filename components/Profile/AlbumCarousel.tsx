@@ -266,11 +266,7 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                         <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
                             הוסיפו תמונה לחודש 13-36
                         </Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.monthPickerScroll}
-                        >
+                        <View style={[styles.monthPickerGrid]}>
                             {Array.from({ length: 24 }, (_, i) => i + 13).map(month => (
                                 <TouchableOpacity
                                     key={month}
@@ -287,7 +283,7 @@ const AlbumCarousel = memo(({ album, albumNotes, onMonthPress, onAddCustomPhoto,
                                     </View>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -465,7 +461,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 16,
     },
-    monthPickerScroll: {
+    monthPickerGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
         gap: 10,
         paddingVertical: 8,
     },
