@@ -343,7 +343,8 @@ function LiveActivityURLHandler() {
         const path = url.pathname || url.hostname;
 
         if (path === 'pause-timer' || url.href.includes('pause-timer')) {
-          // Pause timer based on current activity
+          // Small delay so React context is hydrated after app wakes from background
+          await new Promise(r => setTimeout(r, 250));
           try {
             if (foodTimer.pumpingIsRunning && !foodTimer.pumpingIsPaused) {
               await foodTimer.pausePumping();
@@ -356,7 +357,8 @@ function LiveActivityURLHandler() {
             logger.error('Error pausing timer from Live Activity:', error);
           }
         } else if (path === 'resume-timer' || url.href.includes('resume-timer')) {
-          // Resume timer
+          // Small delay so React context is hydrated after app wakes from background
+          await new Promise(r => setTimeout(r, 250));
           try {
             if (foodTimer.pumpingIsRunning && foodTimer.pumpingIsPaused) {
               await foodTimer.resumePumping();
