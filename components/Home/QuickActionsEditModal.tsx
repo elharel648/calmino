@@ -47,9 +47,10 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
 
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => false,
+            onStartShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponderCapture: () => false,
             onMoveShouldSetPanResponder: (_, gs) =>
-                gs.dy > 8 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+                gs.dy > 10 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
             onPanResponderMove: (_, gs) => {
                 if (gs.dy > 0) slideAnim.setValue(gs.dy);
             },
@@ -255,8 +256,10 @@ const styles = StyleSheet.create({
     },
     handleContainer: {
         alignItems: 'center',
-        paddingTop: 12,
-        paddingBottom: 8,
+        paddingTop: 14,
+        paddingBottom: 14,
+        paddingHorizontal: 40,
+        minHeight: 44,
     },
     handle: {
         width: 40,

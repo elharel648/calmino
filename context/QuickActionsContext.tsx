@@ -9,10 +9,10 @@ export type QuickActionKey =
     | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'custom'
     | 'teeth' | 'nightLight' | 'quickReminder';
 
-// Default order of actions (right to left in RTL)
+// Default order of actions (top to bottom natively, reversed for horizontal slider)
 const DEFAULT_ORDER: QuickActionKey[] = [
-    'custom', 'quickReminder', 'health', 'growth', 'teeth', 'nightLight', 'magicMoments', 'milestones',
-    'sos', 'whiteNoise', 'supplements', 'diaper', 'sleep', 'food'
+    'food', 'sleep', 'diaper', 'supplements', 'whiteNoise', 'sos', 'milestones', 'magicMoments',
+    'nightLight', 'teeth', 'growth', 'health', 'quickReminder', 'custom'
 ];
 
 // Actions that cannot be hidden (core functionality)
@@ -53,7 +53,14 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
             ]);
 
             if (savedOrder) {
-                const parsed = JSON.parse(savedOrder) as QuickActionKey[];
+                let parsed = JSON.parse(savedOrder) as QuickActionKey[];
+
+                // Migration: if the user's saved list ends with 'food',
+                // it's the old inverted hack layout. Reverse it permanently to the new logical layout.
+                if (parsed.length > 0 && parsed[parsed.length - 1] === 'food') {
+                    parsed = parsed.reverse();
+                }
+
                 // Ensure all actions are present (in case new ones were added)
                 const merged = [...parsed, ...DEFAULT_ORDER.filter(k => !parsed.includes(k))];
                 setActionOrder(merged);

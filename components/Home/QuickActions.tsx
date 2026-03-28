@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     sliderContent: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         paddingHorizontal: SPACING.sm,
         gap: 18,
     },
