@@ -326,7 +326,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
 
   // Drum swipe step handlers (use refs to always get latest values, even mid-gesture)
   const handleHourSteps = React.useCallback((steps: number) => {
-    setSleepHours(Math.max(0, Math.min(12, sleepHoursRef.current + steps)));
+    setSleepHours(Math.max(0, Math.min(23, sleepHoursRef.current + steps)));
   }, []);
 
   const handleMinuteSteps = React.useCallback((steps: number) => {
@@ -335,7 +335,7 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     const total = cur + steps;
     if (total >= 60) {
       const carry = Math.floor(total / 60);
-      setSleepHours(Math.min(12, curH + carry));
+      setSleepHours(Math.min(23, curH + carry));
       setSleepMinutes(total % 60);
     } else if (total < 0) {
       const borrow = Math.ceil(-total / 60);
