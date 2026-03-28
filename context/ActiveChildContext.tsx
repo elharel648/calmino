@@ -124,23 +124,68 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                 if (familyDoc.exists()) {
                     const familyData = familyDoc.data();
                     const memberData = familyData.members?.[userId];
+
+                    // Get ALL babies belonging to the family admin — not just the single babyId field.
+                    // This supports families with multiple children.
+                    const adminUid: string = familyData.createdBy || '';
                     const isAdmin = memberData?.role === 'admin';
+                    const memberRole = memberData?.role;
 
-                    // Get baby info
-                    if (familyData.babyId && !childrenList.find(c => c.childId === familyData.babyId)) {
-                        const babyDoc = await getDoc(doc(db, 'babies', familyData.babyId));
-                        const babyData = babyDoc.exists() ? babyDoc.data() : null;
+                    try {
+                        // Query all babies created by the family admin
+                        const familyBabiesQuery = query(
+                            collection(db, 'babies'),
+                            where('parentId', '==', adminUid)
+                        );
+                        const familyBabiesSnap = await getDocs(familyBabiesQuery);
 
-                        childrenList.push({
-                            childId: familyData.babyId,
-                            childName: babyData?.name || familyData.babyName || 'תינוק',
-                            photoUrl: babyData?.photoUrl,
-                            role: isAdmin ? 'parent' : (memberData?.role === 'guest' ? 'guest' : 'parent'),
-                            accessLevel: memberData?.accessLevel || (isAdmin ? 'full' : 'actions_only'),
-                            familyId: userData.familyId,
-                            parentUid: babyData?.parentId, // actual baby creator UID
+                        familyBabiesSnap.forEach((babyDoc) => {
+                            if (!childrenList.find(c => c.childId === babyDoc.id)) {
+                                const babyData = babyDoc.data();
+                                childrenList.push({
+                                    childId: babyDoc.id,
+                                    childName: babyData?.name || familyData.babyName || 'תינוק',
+                                    photoUrl: babyData?.photoUrl,
+                                    role: isAdmin ? 'parent' : (memberRole === 'guest' ? 'guest' : 'parent'),
+                                    accessLevel: memberData?.accessLevel || (isAdmin ? 'full' : 'actions_only'),
+                                    familyId: userData.familyId,
+                                    parentUid: adminUid,
+                                });
+                            }
                         });
+
+                        // Fallback: if query returned nothing, use the stored babyId
+                        if (familyBabiesSnap.empty && familyData.babyId && !childrenList.find(c => c.childId === familyData.babyId)) {
+                            const babyDoc = await getDoc(doc(db, 'babies', familyData.babyId));
+                            const babyData = babyDoc.exists() ? babyDoc.data() : null;
+                            childrenList.push({
+                                childId: familyData.babyId,
+                                childName: babyData?.name || familyData.babyName || 'תינוק',
+                                photoUrl: babyData?.photoUrl,
+                                role: isAdmin ? 'parent' : (memberRole === 'guest' ? 'guest' : 'parent'),
+                                accessLevel: memberData?.accessLevel || (isAdmin ? 'full' : 'actions_only'),
+                                familyId: userData.familyId,
+                                parentUid: babyData?.parentId,
+                            });
+                        }
+                    } catch (familyBabiesErr) {
+                        // Permission denied — fall back to the single babyId
+                        logger.warn('Family babies query failed, falling back to babyId:', familyBabiesErr);
+                        if (familyData.babyId && !childrenList.find(c => c.childId === familyData.babyId)) {
+                            const babyDoc = await getDoc(doc(db, 'babies', familyData.babyId));
+                            const babyData = babyDoc.exists() ? babyDoc.data() : null;
+                            childrenList.push({
+                                childId: familyData.babyId,
+                                childName: babyData?.name || familyData.babyName || 'תינוק',
+                                photoUrl: babyData?.photoUrl,
+                                role: isAdmin ? 'parent' : (memberRole === 'guest' ? 'guest' : 'parent'),
+                                accessLevel: memberData?.accessLevel || (isAdmin ? 'full' : 'actions_only'),
+                                familyId: userData.familyId,
+                                parentUid: babyData?.parentId,
+                            });
+                        }
                     }
+
                 }
             }
 
