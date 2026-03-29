@@ -37,7 +37,8 @@
         }
       ],
       "./plugins/withFirebaseWarningFix",
-      "./plugins/withLiveActivity"
+      "./plugins/withLiveActivity",
+      "@react-native-google-signin/google-signin"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
@@ -47,7 +48,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harel.calmparentapp",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {

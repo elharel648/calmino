@@ -46,6 +46,7 @@ interface DailyTimelineProps {
   showOnlyToday?: boolean;
   preloadedEvents?: any[];
   useGrouping?: boolean;
+  onEditEvent?: (event: TimelineEvent) => void;
 }
 
 
@@ -59,7 +60,7 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r},${g},${b},${alpha})`;
 };
 
-const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false }) => {
+const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false, onEditEvent }) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { family } = useFamily();
@@ -592,7 +593,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         onDelete={() => handleDelete(event.id)}
                       >
                         {/* Simple 3-part RTL row: [time] [content] [icon] */}
-                        <View style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]} collapsable={false}>
+                        <TouchableOpacity 
+                          activeOpacity={0.7} 
+                          onPress={() => onEditEvent?.(event)} 
+                          style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+                        >
 
                           {/* LEFT (RTL: last in JSX): time */}
                           <Text style={[styles.historyTime, { color: theme.textSecondary }]}>{timeStr}</Text>
@@ -614,7 +619,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             <Icon size={17} color={config.color} strokeWidth={2} />
                           </View>
 
-                        </View>
+                        </TouchableOpacity>
                       </SwipeableRow>
                     </Animated.View>
                   );
@@ -674,7 +679,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                 <SwipeableRow
                   onDelete={() => handleDelete(event.id)}
                 >
-                  <View style={styles.eventRow} collapsable={false}>
+                  <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.eventRow}>
                     {/* Left side: Time + Dot */}
                     <View style={styles.leftSection}>
                       <Text style={[styles.time, { color: theme.textPrimary }]}>
@@ -751,7 +756,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         })()}
                       </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 </SwipeableRow>
               </Animated.View>
             );

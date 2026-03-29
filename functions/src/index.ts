@@ -8,6 +8,9 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ══════════════════════════════════════════════════════════════════════════════
+// EOF
+
+// ══════════════════════════════════════════════════════════════════════════════
 // EMAIL TEMPLATES — HTML email generator for branded Calmino emails
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -19,58 +22,65 @@ function calminoEmailTemplate(heTitle: string, heBody: string, enTitle: string =
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <meta name="color-scheme" content="light"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+  </style>
   <title>${heTitle} | ${enTitle}</title>
 </head>
-<body style="margin:0;padding:0;background:#f0f0f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f7;padding:40px 16px;">
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:'Heebo', 'Inter', -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:40px 16px;">
   <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(108,92,231,0.12);">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 12px 40px rgba(108,92,231,0.08), 0 4px 12px rgba(0,0,0,0.04);">
 
       <!-- HEADER -->
       <tr>
-        <td style="background:linear-gradient(135deg,#5f50e0 0%,#8c7df7 60%,#b39dfe 100%);padding:36px 32px;text-align:center;" role="banner">
-          <div style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;margin-bottom:12px;" aria-hidden="true">👶</div>
-          <h1 style="color:#ffffff;margin:0;font-size:30px;font-weight:800;letter-spacing:-0.5px;">Calmino</h1>
-          <p style="color:rgba(255,255,255,0.82);margin:6px 0 0;font-size:13px;font-weight:500;" dir="rtl" lang="he">ההורות שלך, בקצב שלך</p>
-          <p style="color:rgba(255,255,255,0.65);margin:2px 0 0;font-size:12px;" dir="ltr" lang="en">Parenting, at your pace</p>
+        <td style="background:linear-gradient(135deg,#6C5CE7 0%,#8c7df7 60%,#b39dfe 100%);padding:48px 32px 40px;text-align:center;" role="banner">
+          <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/48/28/82/4828828b-b804-996c-0e5d-ff89f9e1fd4d/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg" alt="Calmino Logo" width="84" height="84" style="border-radius: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.8); margin-bottom: 20px; display: inline-block;" />
+          <h1 style="color:#ffffff;margin:0;font-size:38px;font-weight:800;letter-spacing:-1px;font-family:'Inter', sans-serif;text-shadow:0 2px 8px rgba(0,0,0,0.1);">Calmino</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:16px;font-weight:500;letter-spacing:0.5px;" dir="rtl" lang="he">ההורות שלך, בקצב שלך.</p>
+          <p style="color:rgba(255,255,255,0.7);margin:4px 0 0;font-size:13px;font-weight:400;font-family:'Inter', sans-serif;letter-spacing:0.2px;" dir="ltr" lang="en">Parenting, at your pace.</p>
         </td>
       </tr>
 
       <!-- DIVIDER -->
-      <tr><td style="height:4px;background:linear-gradient(90deg,#6C5CE7,#a29bfe,#6C5CE7);"></td></tr>
+      <tr><td style="height:4px;background:linear-gradient(90deg,#a29bfe,#dfe6e9,#a29bfe);"></td></tr>
 
-      <!-- HEBREW SECTION -->
+      <!-- CONTENT WRAPPER -->
       <tr>
-        <td dir="rtl" lang="he" style="padding:36px 36px 24px;" role="main">
-          <h2 style="color:#2d3436;margin:0 0 20px;font-size:22px;font-weight:700;text-align:right;">${heTitle}</h2>
-          ${heBody}
-        </td>
-      </tr>
-
-      ${enTitle ? `
-      <!-- SEPARATOR -->
-      <tr>
-        <td style="padding:0 36px;">
-          <div style="border-top:1px dashed #d9d9f0;margin:4px 0;position:relative;text-align:center;">
-            <span style="background:#ffffff;color:#a29bfe;font-size:11px;font-weight:600;padding:0 12px;position:relative;top:-9px;letter-spacing:1px;">✦ ENGLISH BELOW ✦</span>
+        <td style="padding:48px 40px 40px;">
+          <!-- HEBREW SECTION -->
+          <div dir="rtl" lang="he" style="text-align:right;">
+            <h2 style="color:#0f172a;margin:0 0 24px;font-size:26px;font-weight:800;line-height:1.3;">${heTitle}</h2>
+            <div style="color:#334155;font-size:16px;line-height:1.8;font-weight:400;">
+              ${heBody}
+            </div>
           </div>
+
+          ${enTitle ? `
+          <!-- SEPARATOR -->
+          <div style="margin:48px 0 40px;position:relative;text-align:center;border-top:1px dashed #cbd5e1;">
+            <span style="background:#ffffff;color:#94a3b8;font-size:11px;font-weight:700;padding:0 16px;position:relative;top:-9px;letter-spacing:1.5px;font-family:'Inter', sans-serif;text-transform:uppercase;">✦ English Below ✦</span>
+          </div>
+
+          <!-- ENGLISH SECTION -->
+          <div dir="ltr" lang="en" style="text-align:left;font-family:'Inter', sans-serif;">
+            <h2 style="color:#0f172a;margin:0 0 24px;font-size:24px;font-weight:800;line-height:1.3;">${enTitle}</h2>
+            <div style="color:#334155;font-size:16px;line-height:1.8;font-weight:400;">
+              ${enBody}
+            </div>
+          </div>` : ''}
         </td>
       </tr>
-
-      <!-- ENGLISH SECTION -->
-      <tr>
-        <td dir="ltr" lang="en" style="padding:24px 36px 36px;">
-          <h2 style="color:#2d3436;margin:0 0 20px;font-size:22px;font-weight:700;text-align:left;">${enTitle}</h2>
-          ${enBody}
-        </td>
-      </tr>` : ''}
 
       <!-- FOOTER -->
       <tr>
-        <td style="background:#f7f7fd;padding:24px 32px;text-align:center;border-top:1px solid #ebebf5;" role="contentinfo">
-          <p style="margin:0;color:#b2b2cc;font-size:12px;">Calmino &copy; ${year}</p>
-          <p style="margin:4px 0 0;color:#b2b2cc;font-size:12px;">
-            <a href="mailto:calminogroup@gmail.com" style="color:#8c7df7;text-decoration:none;">calminogroup@gmail.com</a>
+        <td style="background:#F8FAFC;padding:32px 40px;text-align:center;border-top:1px solid #E2E8F0;" role="contentinfo">
+          <p style="margin:0;color:#94A3B8;font-size:13px;font-family:'Inter', sans-serif;font-weight:500;">Calmino &copy; ${year}</p>
+          <p style="margin:8px 0 0;color:#94A3B8;font-size:13px;font-weight:400;">
+            <a href="mailto:calminogroup@gmail.com" style="color:#6C5CE7;text-decoration:none;font-weight:600;">calminogroup@gmail.com</a>
+          </p>
+          <p style="margin:24px 0 0;color:#CBD5E1;font-size:11px;letter-spacing:0.2px;">
+            נשלח באהבה מצוות Calmino 🤍
           </p>
         </td>
       </tr>
@@ -106,55 +116,63 @@ export const sendVerificationEmail = onCall(async (request) => {
     const displayName = userRecord.displayName || 'הורה יקר/ה';
 
     const heBodyContent = `
-        <p style="color:#555;line-height:1.9;font-size:15px;text-align:right;">שלום <strong style="color:#2d3436;">${displayName}</strong> 👋</p>
-        <p style="color:#555;line-height:1.9;font-size:15px;text-align:right;">נשאר רק צעד אחד קטן — לחצו על הכפתור למטה כדי לאמת את כתובת המייל שלכם ולהתחיל להשתמש ב-Calmino.</p>
+        <p style="margin:0 0 16px;">שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
+        <p style="margin:0 0 24px;">נשאר רק צעד אחד קטן — לחצו על הכפתור למטה כדי לאמת את כתובת המייל שלכם, ולהתחיל להשתמש ב-Calmino.</p>
 
-        <div style="text-align:center;margin:28px 0;">
-            <a href="${verificationLink}" role="button"
-               aria-label="אמתו את המייל שלכם ב-Calmino"
-               style="background:linear-gradient(135deg,#5f50e0,#a29bfe);color:#ffffff;text-decoration:none;padding:16px 44px;border-radius:50px;font-size:16px;font-weight:700;display:inline-block;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(108,92,231,0.35);">
-                ✅ אמתו את המייל שלכם
+        <div style="text-align:center;margin:40px 0;">
+            <a href="${verificationLink}" role="button" aria-label="אמתו את המייל שלכם ב-Calmino"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
+                אימות המייל החשבון
             </a>
         </div>
 
-        <p style="color:#aaa;font-size:13px;text-align:center;line-height:1.8;">
-            הקישור תקף לשעה אחת.<br/>
-            לא נרשמתם ל-Calmino? ניתן להתעלם ממייל זה.
-        </p>
+        <div style="background:#F8FAFC;border-radius:16px;padding:20px;text-align:center;margin:32px 0 0;border:1px solid #F1F5F9;">
+            <p style="color:#64748B;font-size:13px;line-height:1.6;margin:0;">
+                הקישור מאובטח ותקף לשעה אחת.<br/>
+                לא נרשמתם ל-Calmino? אפשר להתעלם ממייל זה בבטחה.
+            </p>
+        </div>
 
-        <details style="margin-top:16px;">
-            <summary style="color:#a29bfe;font-size:12px;cursor:pointer;text-align:right;">הכפתור לא עובד? לחצו לקישור ישיר</summary>
-            <p style="color:#aaa;font-size:11px;word-break:break-all;margin-top:8px;text-align:right;direction:ltr;">${verificationLink}</p>
-        </details>`;
+        <div style="margin-top:24px;text-align:center;">
+            <p style="color:#94A3B8;font-size:12px;margin:0 0 8px;">הכפתור לא עובד? העתיקו והדביקו את הקישור בדפדפן:</p>
+            <p style="color:#6C5CE7;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
+        </div>`;
 
     const enBodyContent = `
-        <p style="color:#555;line-height:1.9;font-size:15px;">Hi <strong style="color:#2d3436;">${displayName}</strong> 👋</p>
-        <p style="color:#555;line-height:1.9;font-size:15px;">Just one small step left — click the button below to verify your email address and start using Calmino.</p>
+        <p style="margin:0 0 16px;">Hi <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
+        <p style="margin:0 0 24px;">Just one small step left — click the button below to verify your email address and start using Calmino.</p>
 
-        <div style="text-align:center;margin:28px 0;">
-            <a href="${verificationLink}" role="button"
-               aria-label="Verify your email address for Calmino"
-               style="background:linear-gradient(135deg,#5f50e0,#a29bfe);color:#ffffff;text-decoration:none;padding:16px 44px;border-radius:50px;font-size:16px;font-weight:700;display:inline-block;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(108,92,231,0.35);">
-                ✅ Verify My Email
+        <div style="text-align:center;margin:40px 0;">
+            <a href="${verificationLink}" role="button" aria-label="Verify your email address for Calmino"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
+                Verify Email Address
             </a>
         </div>
 
-        <p style="color:#aaa;font-size:13px;text-align:center;line-height:1.8;">
-            This link expires in 1 hour.<br/>
-            Didn't sign up for Calmino? You can safely ignore this email.
-        </p>
+        <div style="background:#F8FAFC;border-radius:16px;padding:20px;text-align:center;margin:32px 0 0;border:1px solid #F1F5F9;">
+            <p style="color:#64748B;font-size:13px;line-height:1.6;margin:0;">
+                This link is secure and expires in 1 hour.<br/>
+                Didn't sign up for Calmino? You can safely ignore this email.
+            </p>
+        </div>
 
-        <details style="margin-top:16px;">
-            <summary style="color:#a29bfe;font-size:12px;cursor:pointer;">Button not working? Click for direct link</summary>
-            <p style="color:#aaa;font-size:11px;word-break:break-all;margin-top:8px;direction:ltr;">${verificationLink}</p>
-        </details>`;
+        <div style="margin-top:24px;text-align:center;">
+            <p style="color:#94A3B8;font-size:12px;margin:0 0 8px;">Button not working? Copy and paste this link in your browser:</p>
+            <p style="color:#6C5CE7;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
+        </div>`;
 
     await db.collection('mail').add({
         to: [email],
+        replyTo: 'calminogroup@gmail.com',
+        headers: {
+            'X-Priority': '1',
+            'X-Mailer': 'Calmino App',
+            'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+        },
         message: {
-            subject: '✅ אמתו את המייל שלכם ל-Calmino | Verify your Calmino email',
+            subject: 'אמתו את המייל שלכם ל-Calmino | Verify your Calmino email',
             text: `שלום ${displayName}, לחצו על הקישור הבא כדי לאמת את המייל שלכם: ${verificationLink}\n\nHi ${displayName}, click the link below to verify your email: ${verificationLink}`,
-            html: calminoEmailTemplate('אימות אחד — וסיימנו! 🎉', heBodyContent, 'Almost there — we\'re done! 🎉', enBodyContent),
+            html: calminoEmailTemplate('אימות אחד — וסיימנו!', heBodyContent, 'Almost there — verify your email!', enBodyContent),
         },
     });
 
@@ -183,47 +201,59 @@ export const sendPasswordResetEmailBranded = onCall(async (request) => {
     const resetLink = await admin.auth().generatePasswordResetLink(email);
 
     const heBody = `
-        <p style="color:#555;line-height:1.9;font-size:15px;text-align:right;">
-            ${displayName ? `שלום ${displayName},<br/><br/>` : ''}
-            קיבלנו בקשה לאיפוס הסיסמא לחשבון Calmino שלך.<br/>
-            לחצו על הכפתור למטה כדי לבחור סיסמא חדשה:
+        <p style="margin:0 0 16px;">
+            ${displayName ? `שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>` : ''}
+            קיבלנו בקשה לאיפוס הסיסמא לחשבון ה-Calmino שלך.<br/>
+            לחצו על הכפתור למטה כדי לבחור סיסמא חדשה.
         </p>
-        <div style="text-align:center;margin:28px 0;">
+        <div style="text-align:center;margin:40px 0;">
             <a href="${resetLink}"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:700;letter-spacing:-0.3px;"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;"
                aria-label="איפוס סיסמא עבור Calmino">
-                🔑 אפס את הסיסמא
+                איפוס סיסמא
             </a>
         </div>
-        <p style="color:#999;font-size:13px;text-align:right;line-height:1.7;">
-            הקישור תקף ל-24 שעות.<br/>
-            לא ביקשת איפוס סיסמא? אפשר להתעלם מהמייל הזה בבטחה.
-        </p>`;
+        
+        <div style="background:#F8FAFC;border-radius:16px;padding:20px;text-align:center;margin:32px 0 0;border:1px solid #F1F5F9;">
+            <p style="color:#64748B;font-size:13px;line-height:1.6;margin:0;">
+                הקישור מאובטח ותקף ל-24 שעות.<br/>
+                לא ביקשת איפוס סיסמא? אין בעיה, אפשר פשוט להתעלם ממייל זה בבטחה, החשבון שלך מוגן.
+            </p>
+        </div>`;
 
     const enBody = `
-        <p style="color:#555;line-height:1.9;font-size:15px;">
-            ${displayName ? `Hi ${displayName},<br/><br/>` : ''}
+        <p style="margin:0 0 16px;">
+            ${displayName ? `Hi <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>` : ''}
             We received a request to reset your Calmino password.<br/>
-            Click the button below to choose a new password:
+            Click the button below to choose a new, secure password.
         </p>
-        <div style="text-align:center;margin:28px 0;">
+        <div style="text-align:center;margin:40px 0;">
             <a href="${resetLink}"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:700;letter-spacing:-0.3px;"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;"
                aria-label="Reset your Calmino password">
-                🔑 Reset My Password
+                Reset Password
             </a>
         </div>
-        <p style="color:#999;font-size:13px;line-height:1.7;">
-            This link expires in 24 hours.<br/>
-            Didn't request a password reset? You can safely ignore this email.
-        </p>`;
+        
+        <div style="background:#F8FAFC;border-radius:16px;padding:20px;text-align:center;margin:32px 0 0;border:1px solid #F1F5F9;">
+            <p style="color:#64748B;font-size:13px;line-height:1.6;margin:0;">
+                This link is secure and expires in 24 hours.<br/>
+                Didn't request a password reset? No problem, you can safely ignore this email — your account is protected.
+            </p>
+        </div>`;
 
     await db.collection('mail').add({
         to: [email],
+        replyTo: 'calminogroup@gmail.com',
+        headers: {
+            'X-Priority': '1',
+            'X-Mailer': 'Calmino App',
+            'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+        },
         message: {
-            subject: '🔑 איפוס סיסמא | Reset your Calmino password',
+            subject: 'איפוס סיסמא - Calmino | Reset your Calmino password',
             text: `לאיפוס הסיסמא לחצו: ${resetLink}\n\nTo reset your password click: ${resetLink}`,
-            html: calminoEmailTemplate('איפוס סיסמא 🔑', heBody, 'Password Reset 🔑', enBody),
+            html: calminoEmailTemplate('איפוס סיסמא באפליקציה', heBody, 'Reset your password', enBody),
         },
     });
 
@@ -246,27 +276,54 @@ export const sendWelcomeEmail = onDocumentCreated('users/{userId}', async (event
     const displayName = userData.displayName || userData.name || 'הורה יקר/ה';
 
     const bodyContent = `
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">שלום <strong>${displayName}</strong> 👋</p>
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">שמחים שהצטרפת ל-<strong>Calmino</strong>! האפליקציה שתעזור לך לעקוב אחרי התינוק ולעשות סדר בהורות.</p>
-        
-        <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
-            <p style="color:#2d3436;font-weight:600;margin:0 0 12px;">הנה כמה דברים שאפשר להתחיל איתם:</p>
-            <p style="color:#636e72;margin:6px 0;">🍼 <strong>מעקב יומי</strong> — תעדו האכלה, שינה, והחתלות בלחיצה</p>
-            <p style="color:#636e72;margin:6px 0;">👶 <strong>פרופיל תינוק</strong> — הוסיפו תמונה ופרטים</p>
-            <p style="color:#636e72;margin:6px 0;">👨‍👩‍👧 <strong>שיתוף משפחתי</strong> — הזמינו בן/בת זוג לצפות בזמן אמת</p>
-            <p style="color:#636e72;margin:6px 0;">📊 <strong>דו"חות חכמים</strong> — גלו דפוסים ותובנות</p>
-            <p style="color:#636e72;margin:6px 0;">📏 <strong>מעקב גדילה</strong> — לפי תקני WHO עם גרפים</p>
+        <p style="margin:0 0 16px;color:#334155;font-size:16px;">
+            שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋
+        </p>
+        <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">
+            אנחנו כל כך שמחים שהצטרפת ל-<strong style="color:#6C5CE7;font-weight:700;">Calmino</strong>!<br/>
+            אנחנו יודעים שהימים (והלילות...) הראשונים עם התינוק יכולים להיות עמוסים ומבלבלים. המטרה שלנו היא פשוטה: לעזור לך לרכז את כל המידע במקום אחד, כדי שתוכלי להתמקד במה שחשוב באמת – בתינוק שלך.
+        </p>
+
+        <div style="background:#F8FAFC;border-radius:16px;padding:24px;margin:32px 0;border:1px solid #F1F5F9;box-shadow:inset 0 2px 4px rgba(0,0,0,0.02);">
+            <p style="color:#0f172a;font-weight:800;margin:0 0 16px;font-size:17px;">הנה מה שאפשר להתחיל לעשות כבר עכשיו:</p>
+            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">🍼 <strong style="color:#334155;">מעקב יומי חכם</strong> – מתעדים האכלות, שינה והחתלות בקליק אחד. בלי דפים ובלי לנסות לזכור הכל בראש.</p>
+            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">👶 <strong style="color:#334155;">פרופיל אישי לתינוק</strong> – יוצרים עולם שלם שמוקדש לקטנטנים שלכם, כולל תמונות ופרטים אישיים.</p>
+            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">👨‍👩‍👧 <strong style="color:#334155;">שיתוף משפחתי</strong> – לא חייבים לעשות הכל לבד! מזמינים את בן/בת הזוג או הסבתא לצפייה ועדכון בזמן אמת.</p>
+            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">📊 <strong style="color:#334155;">דו"חות ותובנות</strong> – מגלים את הדפוסים של התינוק ומבינים טוב יותר את הצרכים שלו.</p>
+            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">📏 <strong style="color:#334155;">מעקב גדילה מקצועי</strong> – מוודאים שהכל תקין עם גרפים מדויקים לפי תקני ה-WHO (ארגון הבריאות העולמי).</p>
         </div>
-        
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">יש שאלות? פשוט שלחו לנו מייל ל-<a href="mailto:calminogroup@gmail.com" style="color:#6C5CE7;">calminogroup@gmail.com</a> 💌</p>
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">בהצלחה!<br/>צוות Calmino 💛</p>`;
+
+        <p style="color:#334155;font-size:16px;margin:32px 0 16px;font-weight:600;text-align:center;">מוכנה להתחיל?</p>
+
+        <div style="text-align:center;margin:24px 0 48px;">
+            <a href="https://calmino.co.il" role="button" aria-label="יצירת פרופיל ראשון לתינוק"
+               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
+                יצירת פרופיל ראשון לתינוק
+            </a>
+        </div>
+
+        <p style="color:#475569;font-size:15px;line-height:1.8;margin:0 0 12px;">
+            יש לך שאלה? הצעה? או סתם רוצה לשתף?<br/>
+            אנחנו כאן בשבילך. פשוט תעני למייל הזה או כתבי לנו לכתובת:<br/>
+            📩 <a href="mailto:calminogroup@gmail.com" style="color:#6C5CE7;font-weight:600;text-decoration:none;">calminogroup@gmail.com</a>
+        </p>
+
+        <p style="color:#0f172a;font-size:15px;line-height:1.8;margin:24px 0 0;font-weight:500;">
+            באהבה,<br/>צוות Calmino 🤍
+        </p>`;
 
     await db.collection('mail').add({
         to: [email],
+        replyTo: 'calminogroup@gmail.com',
+        headers: {
+            'X-Priority': '1',
+            'X-Mailer': 'Calmino App',
+            'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+        },
         message: {
-            subject: 'ברוכים הבאים ל-Calmino! 👶',
+            subject: `הצעד הראשון לשקט נפשי מתחיל כאן 👣 | ברוכה הבאה ל-Calmino, ${displayName}!`,
             text: `שלום ${displayName}, שמחים שהצטרפת ל-Calmino! פתחו את האפליקציה כדי להתחיל.`,
-            html: calminoEmailTemplate('!ברוכים הבאים 🎉', bodyContent),
+            html: calminoEmailTemplate('ברוכים הבאים למשפחה 🎉', bodyContent),
         },
     });
 
@@ -330,10 +387,15 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
 
         await db.collection('mail').add({
             to: [targetEmail],
+            headers: {
+                'X-Priority': '1',
+                'X-Mailer': 'Calmino App',
+                'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+            },
             message: {
-                subject: `🍼 ${creatorName} הזמין/ה אותך לשמור על ${childName}`,
+                subject: `${creatorName} הזמין/ה אותך לשמור על ${childName} - Calmino`,
                 text: `${creatorName} הזמין/ה אותך לשמור על ${childName} דרך Calmino. קוד הגישה: ${inviteCode}. הורד את האפליקציה והזן את הקוד.`,
-                html: calminoEmailTemplate('!קיבלת הזמנה לשמרטפות 🍼', bodyContent),
+                html: calminoEmailTemplate('!קיבלת הזמנה לשמרטפות', bodyContent),
             },
         });
 
@@ -358,10 +420,15 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
 
         await db.collection('mail').add({
             to: [targetEmail],
+            headers: {
+                'X-Priority': '1',
+                'X-Mailer': 'Calmino App',
+                'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+            },
             message: {
-                subject: `👨‍👩‍👧 ${creatorName} הזמין/ה אותך להצטרף למשפחה ב-Calmino`,
+                subject: `${creatorName} הזמין/ה אותך להצטרף למשפחה ב-Calmino`,
                 text: `${creatorName} הזמין/ה אותך להצטרף למשפחה ב-Calmino. קוד ההצטרפות: ${inviteCode}. הורד את האפליקציה והזן את הקוד.`,
-                html: calminoEmailTemplate('!הוזמנת להצטרף למשפחה 👨‍👩‍👧', bodyContent),
+                html: calminoEmailTemplate('!הוזמנת להצטרף למשפחה', bodyContent),
             },
         });
 
@@ -411,10 +478,15 @@ export const onReviewCreated = onDocumentCreated('reviews/{reviewId}', async (ev
 
     await db.collection('mail').add({
         to: [sitterEmail],
+        headers: {
+            'X-Priority': '1',
+            'X-Mailer': 'Calmino App',
+            'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+        },
         message: {
-            subject: `⭐ קיבלת דירוג חדש מ${parentName}!`,
+            subject: `קיבלת דירוג חדש מ${parentName}! - Calmino`,
             text: `שלום ${sitterName}, ${parentName} השאיר/ה לך דירוג ${rating}/5. ${comment ? `"${comment}"` : ''} פתחו את Calmino לפרטים.`,
-            html: calminoEmailTemplate('!קיבלת דירוג חדש ⭐', bodyContent),
+            html: calminoEmailTemplate('!קיבלת דירוג חדש', bodyContent),
         },
     });
 
@@ -732,10 +804,15 @@ export const onChatMessageCreated = onDocumentCreated('chats/{chatId}/messages/{
 
         await db.collection('mail').add({
             to: [userData.email],
+            headers: {
+                'X-Priority': '1',
+                'X-Mailer': 'Calmino App',
+                'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
+            },
             message: {
-                subject: `💬 הודעה חדשה מ${senderName || 'משתמש'} ב-Calmino`,
+                subject: `הודעה חדשה מ${senderName || 'משתמש'} ב-Calmino`,
                 text: `יש לך הודעה חדשה מ${senderName || 'משתמש'}: ${previewText}. פתחו את Calmino כדי להשיב.`,
-                html: calminoEmailTemplate('💬 הודעה חדשה', bodyContent),
+                html: calminoEmailTemplate('הודעה חדשה', bodyContent),
             },
         });
 
@@ -786,4 +863,3 @@ export const onBookingCreated = onDocumentCreated('bookings/{bookingId}', async 
         console.error('Error sending push for booking:', error);
     }
 });
-

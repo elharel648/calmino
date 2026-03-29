@@ -23,6 +23,7 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcas
 import LegalModal, { LegalType } from '../components/Legal/LegalModal';
 import ConfettiBurst from '../components/Effects/ConfettiBurst';
 import * as Google from 'expo-auth-session/providers/google';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
@@ -31,15 +32,13 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithCredential,
   OAuthProvider,
   updateProfile,
 } from 'firebase/auth';
 
-import { auth, db } from '../services/firebaseConfig';
+import { auth, db, callFirebaseFunction } from '../services/firebaseConfig';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { joinFamily } from '../services/familyService';
 import { useTheme } from '../context/ThemeContext';
@@ -179,11 +178,71 @@ export default function LoginScreen({
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
-  // Google Auth - Using iOS native client ID from GoogleService-Info.plist
+  // Google Auth — iOS: expo-auth-session (works) / Android: native SDK
+  // iOS uses expo-auth-session which works perfectly via native deep link
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: '16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505.apps.googleusercontent.com',
-    clientId: '16421819020-82oc8291kgi171lnqu2cthh1kb2htkr4.apps.googleusercontent.com', // Web client for fallback
+    clientId: '16421819020-82oc8291kgi171lnqu2cthh1kb2htkr4.apps.googleusercontent.com',
   });
+
+  // Configure native Google Sign-In for Android
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      GoogleSignin.configure({
+        webClientId: '16421819020-82oc8291kgi171lnqu2cthh1kb2htkr4.apps.googleusercontent.com',
+      });
+    }
+  }, []);
+
+  // Native Google Sign-In handler for Android
+  const handleNativeGoogleSignIn = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setLoading(true);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = (userInfo as any).data?.idToken || (userInfo as any).idToken;
+      logger.debug('\ud83d\udd10', 'Native Google Sign-In - Got idToken:', !!idToken);
+
+      if (!idToken) {
+        throw new Error('No idToken received from Google Sign-In');
+      }
+
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      logger.debug('\u2705', 'Google Sign-In Success!');
+
+      // Check if this is a new user and save agreement
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          agreements: {
+            termsOfService: { agreed: true, agreedAt: serverTimestamp(), version: '2026-01-20' },
+            privacyPolicy: { agreed: true, agreedAt: serverTimestamp(), version: '2026-01-20' },
+          },
+        }, { merge: true });
+
+        if (pendingInviteCode.trim().length === 6) {
+          const result = await joinFamily(pendingInviteCode.trim());
+          if (result.success) {
+            logger.debug('\u2705', 'Joined family via Google Auth:', result.currentFamilyName);
+          }
+        }
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onLoginSuccess();
+    } catch (error: any) {
+      logger.error('\u274c Native Google Sign-In Error:', error.code, error.message);
+      if (error.code !== 'SIGN_IN_CANCELLED' && error.code !== '12501') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert(t('common.error'), t('auth.googleLoginError', { code: error.code || 'unknown' }));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Entry animation
   useEffect(() => {
@@ -204,44 +263,34 @@ export default function LoginScreen({
     }
   }, [lockoutTime]);
 
-  // Google response handler
+  // Google response handler — iOS only (expo-auth-session)
   useEffect(() => {
-    logger.debug('🔐', 'Google Auth - request:', !!request, 'response type:', response?.type);
+    if (Platform.OS !== 'ios') return; // Android uses native handler above
+    logger.debug('\ud83d\udd10', 'Google Auth - request:', !!request, 'response type:', response?.type);
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      logger.debug('🔐', 'Google Auth - Got id_token, length:', id_token?.length);
+      logger.debug('\ud83d\udd10', 'Google Auth - Got id_token, length:', id_token?.length);
       const credential = GoogleAuthProvider.credential(id_token);
 
       setLoading(true);
       signInWithCredential(auth, credential)
         .then(async (userCredential) => {
-          logger.debug('✅', 'Google Sign-In Success!');
+          logger.debug('\u2705', 'Google Sign-In Success!');
 
-          // Check if this is a new user and save agreement
           const userRef = doc(db, 'users', userCredential.user.uid);
           const userSnap = await getDoc(userRef);
           if (!userSnap.exists()) {
-            // New user - save agreement
             await setDoc(userRef, {
               agreements: {
-                termsOfService: {
-                  agreed: true,
-                  agreedAt: serverTimestamp(),
-                  version: '2026-01-20',
-                },
-                privacyPolicy: {
-                  agreed: true,
-                  agreedAt: serverTimestamp(),
-                  version: '2026-01-20',
-                },
+                termsOfService: { agreed: true, agreedAt: serverTimestamp(), version: '2026-01-20' },
+                privacyPolicy: { agreed: true, agreedAt: serverTimestamp(), version: '2026-01-20' },
               },
             }, { merge: true });
 
-            // If user has a pending invite code, join the family
             if (pendingInviteCode.trim().length === 6) {
               const result = await joinFamily(pendingInviteCode.trim());
               if (result.success) {
-                logger.debug('✅', 'Joined family via Google Auth:', result.currentFamilyName);
+                logger.debug('\u2705', 'Joined family via Google Auth:', result.currentFamilyName);
               }
             }
           }
@@ -250,16 +299,16 @@ export default function LoginScreen({
           onLoginSuccess();
         })
         .catch((error) => {
-          logger.error('❌ Google Sign-In Firebase Error:', error.code, error.message);
+          logger.error('\u274c Google Sign-In Firebase Error:', error.code, error.message);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           Alert.alert(t('common.error'), t('auth.googleLoginError', { code: error.code }));
         })
         .finally(() => setLoading(false));
     } else if (response?.type === 'error') {
-      logger.error('❌ Google Auth Error:', response.error);
+      logger.error('\u274c Google Auth Error:', response.error);
       Alert.alert(t('auth.googleError'), response.error?.message || t('auth.unknownError'));
     } else if (response?.type === 'dismiss') {
-      logger.debug('🔐', 'Google Auth - User dismissed');
+      logger.debug('\ud83d\udd10', 'Google Auth - User dismissed');
     }
   }, [response]);
 
@@ -286,7 +335,7 @@ export default function LoginScreen({
     }
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await callFirebaseFunction('sendPasswordResetEmailBranded', { email });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(t('login.passwordReset.sent'), t('login.passwordReset.sentMessage'));
     } catch (error) {
@@ -366,7 +415,7 @@ export default function LoginScreen({
                 text: t('auth.resendEmail'),
                 onPress: async () => {
                   try {
-                    await sendEmailVerification(user);
+                    await callFirebaseFunction('sendVerificationEmail');
                     Alert.alert(t('auth.emailSent'), t('auth.emailSentMessage'));
                   } catch (e) {
                     Alert.alert(t('common.error'), t('auth.cannotSendEmail'));
@@ -419,7 +468,7 @@ export default function LoginScreen({
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: displayName.trim() });
-        await sendEmailVerification(userCredential.user);
+        await callFirebaseFunction('sendVerificationEmail');
 
         // Save user agreement and profile to Firestore
         const userRef = doc(db, 'users', userCredential.user.uid);
@@ -979,15 +1028,17 @@ export default function LoginScreen({
                 style={[
                   styles.socialBtn,
                   { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0' },
-                  !request && { opacity: 0.4 }
+                  Platform.OS === 'ios' && !request && { opacity: 0.4 }
                 ]}
                 onPress={() => {
-                  if (request) {
+                  if (Platform.OS === 'android') {
+                    handleNativeGoogleSignIn();
+                  } else if (request) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     promptAsync();
                   }
                 }}
-                disabled={!request}
+                disabled={Platform.OS === 'ios' && !request}
                 accessibilityLabel={t('auth.googleLoginLabel')}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !request }}

@@ -171,9 +171,10 @@ interface TrackingModalProps {
   type: 'food' | 'sleep' | 'diaper' | null;
   onClose: () => void;
   onSave: (data: any) => Promise<void> | void;
+  editingEvent?: any;
 }
 
-export default function TrackingModal({ visible, type, onClose, onSave }: TrackingModalProps) {
+export default function TrackingModal({ visible, type, onClose, onSave, editingEvent }: TrackingModalProps) {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { showError } = useToast();
@@ -397,32 +398,108 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
       const timer = setTimeout(() => {
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        setSaveSuccess(false);
-        setSubType(null);
-        setBottleAmount('');
-        setPumpingAmount('');
-        setSolidsFoodName('');
-        setFoodNote('');
-        setSleepHours(0);
-        setSleepMinutes(30);
-        setSleepNote('');
-        setDiaperNote('');
-        setDiaperTime(new Date(now));
-        setShowDiaperTimePicker(false);
-        setShowDiaperDatePicker(false);
-        setSleepMode('timer');
-        setSleepStartTime(timeStr);
-        setSleepEndTime(timeStr);
-        setSleepStartTimeDate(new Date(now));
-        setSleepEndTimeDate(new Date(now));
-        setShowSleepStartPicker(false);
-        setShowSleepEndPicker(false);
-        setSelectedDate(new Date(now));
-        setFoodMode('normal');
-        setFoodStartTime(new Date(now));
-        setFoodEndTime(new Date(now));
-        setShowFoodStartTimePicker(false);
-        setShowFoodEndTimePicker(false);
+        
+        const cleanNote = (rawNote: string = '') => {
+          const parts = rawNote.split('|').map(p => p.trim());
+          if (parts.length > 1 && (parts[0].match(/\d+:\d+/) || parts[0].includes(':'))) {
+             return parts.slice(1).join(' | ');
+          }
+          return rawNote;
+        };
+
+        if (editingEvent) {
+          setSaveSuccess(false);
+          const eventDate = editingEvent.timestamp ? (editingEvent.timestamp instanceof Date ? editingEvent.timestamp : new Date(editingEvent.timestamp)) : new Date(now);
+          setSelectedDate(eventDate);
+          
+          if (type === 'food') {
+            setFoodType(editingEvent.subType || 'bottle');
+            setFoodNote(cleanNote(editingEvent.note));
+            
+            if (editingEvent.startTime && editingEvent.endTime) {
+              setFoodMode('timerange');
+              const [sH, sM] = editingEvent.startTime.split(':').map(Number);
+              const [eH, eM] = editingEvent.endTime.split(':').map(Number);
+              const sDate = new Date(eventDate); sDate.setHours(sH, sM, 0, 0);
+              const eDate = new Date(eventDate); eDate.setHours(eH, eM, 0, 0);
+              setFoodStartTime(sDate);
+              setFoodEndTime(eDate);
+            } else {
+              setFoodMode('normal');
+              if (editingEvent.amount) {
+                 const amtMatch = String(editingEvent.amount).match(/\d+/);
+                 if (amtMatch) {
+                   if (editingEvent.subType === 'bottle') setBottleAmount(amtMatch[0]);
+                   if (editingEvent.subType === 'pumping') setPumpingAmount(amtMatch[0]);
+                 }
+              }
+              if (editingEvent.subType === 'solids') {
+                 // Try to recover the solid food name from the note (often 'NAME | NOTE' or just 'NAME')
+                 const parts = (editingEvent.note || '').split('|').map((p: string) => p.trim());
+                 if (parts.length > 1 && !parts[0].match(/\d+:\d+/)) {
+                   setSolidsFoodName(parts[0]);
+                   setFoodNote(parts.slice(1).join(' | '));
+                 } else {
+                   setSolidsFoodName(editingEvent.note || '');
+                   setFoodNote('');
+                 }
+              }
+            }
+          } else if (type === 'sleep') {
+            setSleepNote(cleanNote(editingEvent.note));
+            if (editingEvent.startTime && editingEvent.endTime) {
+              setSleepMode('timerange');
+              const [sH, sM] = editingEvent.startTime.split(':').map(Number);
+              const [eH, eM] = editingEvent.endTime.split(':').map(Number);
+              const sDate = new Date(eventDate); sDate.setHours(sH, sM, 0, 0);
+              const eDate = new Date(eventDate); eDate.setHours(eH, eM, 0, 0);
+              setSleepStartTimeDate(sDate);
+              setSleepEndTimeDate(eDate);
+              setSleepStartTime(editingEvent.startTime);
+              setSleepEndTime(editingEvent.endTime);
+            } else if (editingEvent.duration) {
+               setSleepMode('duration');
+               const totalMins = Math.floor(editingEvent.duration / 60);
+               setSleepHours(Math.floor(totalMins / 60));
+               setSleepMinutes(totalMins % 60);
+            } else {
+               setSleepMode('timer');
+               setSleepHours(0);
+               setSleepMinutes(30);
+            }
+          } else if (type === 'diaper') {
+            setSubType(editingEvent.subType || null);
+            setDiaperNote(cleanNote(editingEvent.note));
+            setDiaperTime(eventDate);
+          }
+        } else {
+          setSaveSuccess(false);
+          setSubType(null);
+          setBottleAmount('');
+          setPumpingAmount('');
+          setSolidsFoodName('');
+          setFoodNote('');
+          setSleepHours(0);
+          setSleepMinutes(30);
+          setSleepNote('');
+          setDiaperNote('');
+          setDiaperTime(new Date(now));
+          setShowDiaperTimePicker(false);
+          setShowDiaperDatePicker(false);
+          setSleepMode('timer');
+          setSleepStartTime(timeStr);
+          setSleepEndTime(timeStr);
+          setSleepStartTimeDate(new Date(now));
+          setSleepEndTimeDate(new Date(now));
+          setShowSleepStartPicker(false);
+          setShowSleepEndPicker(false);
+          setSelectedDate(new Date(now));
+          setFoodMode('normal');
+          setFoodStartTime(new Date(now));
+          setFoodEndTime(new Date(now));
+          setShowFoodStartTimePicker(false);
+          setShowFoodEndTimePicker(false);
+        }
         // Enable content rendering AFTER state is ready
         setContentReady(true);
       }, 50);
@@ -723,6 +800,9 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
     logger.log(`⏱️ [PERF] haptics done in ${Date.now() - t0}ms`);
 
     let data: any = { type };
+    if (editingEvent?.id) {
+      data.id = editingEvent.id;
+    }
 
     if (type === 'food') {
       let durationText = '';
@@ -1553,18 +1633,18 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
               sleepContext.isRunning && styles.sleepTimerCardActive,
             ]}
             onPress={() => {
-              if (sleepContext.isRunning) {
+              if (sleepContext.isRunning && !sleepContext.isPaused) {
                 if (sleepContext.pause) {
                   sleepContext.pause();
                 } else {
                   sleepContext.stop();
                 }
-              } else {
-                if (sleepContext.isPaused && sleepContext.resume) {
+              } else if (sleepContext.isRunning && sleepContext.isPaused) {
+                if (sleepContext.resume) {
                   sleepContext.resume();
-                } else {
-                  sleepContext.start();
                 }
+              } else {
+                sleepContext.start();
               }
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }}
@@ -1580,16 +1660,16 @@ export default function TrackingModal({ visible, type, onClose, onSave }: Tracki
             <View style={[
               styles.sleepTimerPlayBtn,
               { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' },
-              sleepContext.isRunning && styles.sleepTimerPlayBtnActive,
+              sleepContext.isRunning && !sleepContext.isPaused && styles.sleepTimerPlayBtnActive,
             ]}>
-              {sleepContext.isRunning
+              {sleepContext.isRunning && !sleepContext.isPaused
                 ? <Pause size={16} color="#fff" strokeWidth={2} />
                 : <Play size={16} color={isDarkMode ? 'rgba(255,255,255,0.7)' : '#1C1C1E'} strokeWidth={2} />
               }
             </View>
           </TouchableOpacity>
           <Text style={[styles.sleepTimerHint, { color: theme.textTertiary }]}>
-            {sleepContext.isRunning ? t('tracking.pressToStop') : t('tracking.pressToStart')}
+            {sleepContext.isRunning && !sleepContext.isPaused ? t('tracking.pressToStop') : t('tracking.pressToStart')}
           </Text>
         </View>
       )}

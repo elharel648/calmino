@@ -793,51 +793,51 @@ export default function ReportsScreen() {
     </div>
 
     <!-- Goals & Consistency -->
-    <div class="section-title">{t('reports.sections.consistencyGoals')}</div>
+    <div class="section-title">${t('reports.sections.consistencyGoals')}</div>
     <div class="goals-container">
         <div class="goal-item">
             <div class="goal-circle">${weeklyGoals.streak}</div>
-            <h3 style="margin-bottom: 4px;">{t('reports.sections.trackingStreak')}</h3>
-            <span style="color:#64748B; font-size:14px;">{t('reports.sections.consecutiveDays')}</span>
+            <h3 style="margin-bottom: 4px;">${t('reports.sections.trackingStreak')}</h3>
+            <span style="color:#64748B; font-size:14px;">${t('reports.sections.consecutiveDays')}</span>
         </div>
         <div class="goal-item">
             <div class="goal-circle" style="background:#F0FDF4; color:#16A34A; border-color:#DCFCE7;">
                 ${weeklyGoals.sleepDaysMet}/${weeklyGoals.sleepDaysGoal}
             </div>
-            <h3 style="margin-bottom: 4px;">{t('reports.goals.sleepGoals')}</h3>
+            <h3 style="margin-bottom: 4px;">${t('reports.goals.sleepGoals')}</h3>
             <span style="color:#64748B; font-size:14px;">${t('reports.goals.daysOver8Hours')}</span>
         </div>
         <div class="goal-item">
             <div class="goal-circle" style="background:#FFF7ED; color:#EA580C; border-color:#FFEDD5;">
                 ${weeklyGoals.docDaysMet}/${weeklyGoals.docDaysGoal}
             </div>
-            <h3 style="margin-bottom: 4px;">{t('reports.goals.trackingGoals')}</h3>
-            <span style="color:#64748B; font-size:14px;">{t('reports.goals.dailyJournalDays')}</span>
+            <h3 style="margin-bottom: 4px;">${t('reports.goals.trackingGoals')}</h3>
+            <span style="color:#64748B; font-size:14px;">${t('reports.goals.dailyJournalDays')}</span>
         </div>
     </div>
 
-    <div class="section-title section-title-summary">{t('reports.sections.overallSummary')}</div>
+    <div class="section-title section-title-summary">${t('reports.sections.overallSummary')}</div>
     <div class="grid">
         <!-- Feeding Card -->
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-food"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
-                <h3>{t('reports.sections.nutritionFeeding')}</h3>
+                <h3>${t('reports.sections.nutritionFeeding')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">{t('reports.sections.totalMeals')}</span></div>
+            <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">${t('reports.sections.totalMeals')}</span></div>
             <div class="stat-sub">${t('reports.misc.totalAmount')}: ${dailyStats.food} ${t('detailedStats.ml')}</div>
             
             <div class="details-list">
                 <div class="detail-item">
-                    <span>{t('reports.feeding.formulaPumped')}</span>
+                    <span>${t('reports.feeding.formulaPumped')}</span>
                     <span class="detail-value">${dailyStats.feedingTypes.bottle} ${t('reports.misc.meals')}</span>
                 </div>
                 <div class="detail-item">
-                    <span>{t('reports.feeding.directBreastfeeding')}</span>
+                    <span>${t('reports.feeding.directBreastfeeding')}</span>
                     <span class="detail-value">${dailyStats.feedingTypes.breast} ${t('reports.misc.meals')}</span>
                 </div>
                 <div class="detail-item">
-                    <span>{t('reports.feeding.solids')}</span>
+                    <span>${t('reports.feeding.solids')}</span>
                     <span class="detail-value">${dailyStats.feedingTypes.solids} ${t('reports.misc.meals')}</span>
                 </div>
             </div>
@@ -847,22 +847,22 @@ export default function ReportsScreen() {
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-sleep"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
-                <h3>{t('reports.sections.sleepRest')}</h3>
+                <h3>${t('reports.sections.sleepRest')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">{t('reports.sections.cumulativeSleepHours')}</span></div>
+            <div class="stat-main">${dailyStats.sleep.toFixed(1)} <span class="stat-unit">${t('reports.sections.cumulativeSleepHours')}</span></div>
             <div class="stat-sub">${t('reports.misc.avgPerNap')}: ${avgSleep} ${t('reports.units.hours')}</div>
             
             <div class="details-list">
                 <div class="detail-item">
-                    <span>{t('reports.sleep.longestNap')}</span>
+                    <span>${t('reports.sleep.longestNap')}</span>
                     <span class="detail-value">${timeInsights?.longestSleep || 0} ${t('reports.units.hours')}</span>
                 </div>
                 <div class="detail-item">
-                    <span>{t('reports.sleep.idealDay')}</span>
+                    <span>${t('reports.sleep.idealDay')}</span>
                     <span class="detail-value">${timeInsights?.bestSleepDay || '-'}</span>
                 </div>
                 <div class="detail-item">
-                    <span>{t('reports.sleep.avgBedtime')}</span>
+                    <span>${t('reports.sleep.avgBedtime')}</span>
                     <span class="detail-value">${timeInsights?.avgSleepTime || '-'}</span>
                 </div>
             </div>
@@ -872,51 +872,51 @@ export default function ReportsScreen() {
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-diaper"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-                <h3>{t('reports.sections.diaperingHygiene')}</h3>
+                <h3>${t('reports.sections.diaperingHygiene')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">{t('reports.sections.diaperChanges')}</span></div>
-            <div class="stat-sub">{t('reports.sections.normalTracking')}</div>
+            <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">${t('reports.sections.diaperChanges')}</span></div>
+            <div class="stat-sub">${t('reports.sections.normalTracking')}</div>
         </div>
 
         <!-- Supplements Card -->
         <div class="card">
             <div class="card-header">
                 <div class="icon icon-supplements"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
-                <h3>{t('reports.sections.supplementsMeds')}</h3>
+                <h3>${t('reports.sections.supplementsMeds')}</h3>
             </div>
-            <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">{t('reports.sections.dosesGiven')}</span></div>
-            <div class="stat-sub">{t('reports.sections.perParentTracking')}</div>
+            <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">${t('reports.sections.dosesGiven')}</span></div>
+            <div class="stat-sub">${t('reports.sections.perParentTracking')}</div>
         </div>
     </div>
 
     <!-- Analytics & Comparisons -->
     ${comparison && (comparison.sleepChange !== 0 || comparison.feedingChange !== 0 || comparison.diaperChange !== 0) ? `
     <div class="section-block">
-    <div class="section-title section-title-trends">{t('reports.sections.weeklyTrends')}</div>
+    <div class="section-title section-title-trends">${t('reports.sections.weeklyTrends')}</div>
     <div class="card">
         <div class="card-header">
             <div class="icon icon-trends"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-            <h3>{t('reports.comparison.previousPeriod')}</h3>
+            <h3>${t('reports.comparison.previousPeriod')}</h3>
         </div>
-        <p style="color:#64748B; margin-top:0; font-size:16px;">{t('reports.comparison.patternDetection')}</p>
+        <p style="color:#64748B; margin-top:0; font-size:16px;">${t('reports.comparison.patternDetection')}</p>
         
         <div class="trends-grid">
             <div class="trend-card" style="border-top: 4px solid ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#CBD5E1'};">
-                <span class="trend-label">{t('reports.sections.sleepRest')}</span>
+                <span class="trend-label">${t('reports.sections.sleepRest')}</span>
                 <span class="trend-value" style="color: ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#1E293B'}">
                     ${comparison.sleepChange > 0 ? '+' : ''}${comparison.sleepChange}%
                 </span>
             </div>
             
             <div class="trend-card" style="border-top: 4px solid ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#CBD5E1'};">
-                <span class="trend-label">{t('reports.sections.feedingAmounts')}</span>
+                <span class="trend-label">${t('reports.sections.feedingAmounts')}</span>
                 <span class="trend-value" style="color: ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#1E293B'}">
                     ${comparison.feedingChange > 0 ? '+' : ''}${comparison.feedingChange}%
                 </span>
             </div>
             
             <div class="trend-card" style="border-top: 4px solid ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#CBD5E1'};">
-                <span class="trend-label">{t('reports.sections.diaperChanges')}</span>
+                <span class="trend-label">${t('reports.sections.diaperChanges')}</span>
                 <span class="trend-value" style="color: ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#1E293B'}">
                     ${comparison.diaperChange > 0 ? '+' : ''}${comparison.diaperChange}%
                 </span>
@@ -929,15 +929,15 @@ export default function ReportsScreen() {
     <!-- Daily Breakdown Table -->
     ${dailyRows ? `
     <div class="section-block">
-    <div class="section-title section-title-daily">{t('reports.sections.dailyBreakdown')}</div>
+    <div class="section-title section-title-daily">${t('reports.sections.dailyBreakdown')}</div>
     <table class="data-table">
         <thead>
             <tr>
-                <th>{t('reports.dates.date')}</th>
-                <th>{t('reports.charts.feedingAmountMeals')}</th>
-                <th>{t('reports.charts.sleepHours')}</th>
-                <th>{t('reports.metrics.diapers')}</th>
-                <th>{t('reports.metrics.supplements')}</th>
+                <th>${t('reports.dates.date')}</th>
+                <th>${t('reports.charts.feedingAmountMeals')}</th>
+                <th>${t('reports.charts.sleepHours')}</th>
+                <th>${t('reports.metrics.diapers')}</th>
+                <th>${t('reports.metrics.supplements')}</th>
             </tr>
         </thead>
         <tbody>
@@ -950,7 +950,7 @@ export default function ReportsScreen() {
     <div class="footer">
         ${t('reports.misc.generatedBy')} <span class="brand">Calmino</span>
         <br>
-        <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">{t('reports.share.dataDisclaimer')}</span>
+        <span style="font-weight:400; font-size:14px; margin-top:8px; display:block;">${t('reports.share.dataDisclaimer')}</span>
     </div>
 
 </body>

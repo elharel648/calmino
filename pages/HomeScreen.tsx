@@ -193,6 +193,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isMagicMomentsOpen, setIsMagicMomentsOpen] = useState(false);
     const [customActions, setCustomActions] = useState<CustomAction[]>([]);
     const [trackingModalType, setTrackingModalType] = useState<TrackingType>(null);
+    const [editingEvent, setEditingEvent] = useState<any>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [timelineRefresh, setTimelineRefresh] = useState(0);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
@@ -493,7 +494,17 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
                             <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => setIsHealthOpen(false)} />
 
-                            <DailyTimeline refreshTrigger={timelineRefresh} childId={profile.id} showOnlyToday={true} />
+                            <DailyTimeline 
+                                refreshTrigger={timelineRefresh} 
+                                childId={profile.id} 
+                                showOnlyToday={true} 
+                                onEditEvent={(event) => {
+                                    if (event.type === 'food' || event.type === 'sleep' || event.type === 'diaper') {
+                                        setEditingEvent(event);
+                                        setTrackingModalType(event.type);
+                                    }
+                                }}
+                            />
 
                             <ShareStatusButton onShare={shareStatus} message={shareMessage} />
                         </>
@@ -536,7 +547,11 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 <TrackingModal
                     visible={!!trackingModalType}
                     type={trackingModalType || 'food'}
-                    onClose={() => setTrackingModalType(null)}
+                    editingEvent={editingEvent}
+                    onClose={() => {
+                        setTrackingModalType(null);
+                        setEditingEvent(null);
+                    }}
                     onSave={handleSaveTracking}
                 />
                 <JoinFamilyModal

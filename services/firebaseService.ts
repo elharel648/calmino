@@ -11,7 +11,8 @@ import {
   Timestamp,
   doc,
   getDoc,
-  deleteDoc
+  deleteDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 
@@ -157,9 +158,20 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       childId: anyEventData.childId
     }, null, 2));
 
-    const docRef = await addDoc(eventsRef, eventData);
-    logger.log('✅ Event saved successfully with ID:', docRef.id);
-    return docRef.id; // Return event ID for undo functionality
+    if (data.id) {
+      const eventRef = doc(db, EVENTS_COLLECTION, data.id);
+      const updateData = { ...eventData } as any;
+      delete updateData.id;
+      await updateDoc(eventRef, updateData);
+      logger.log('✅ Event updated successfully with ID:', data.id);
+      return data.id;
+    } else {
+      const insertData = { ...eventData } as any;
+      delete insertData.id;
+      const docRef = await addDoc(eventsRef, insertData);
+      logger.log('✅ Event saved successfully with ID:', docRef.id);
+      return docRef.id; // Return event ID for undo functionality
+    }
   } catch (error: any) {
     logger.error('❌ saveEventToFirebase error:', error?.code, error?.message);
     logger.error('❌ Full error:', error);
