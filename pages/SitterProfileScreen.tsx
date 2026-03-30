@@ -1206,8 +1206,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 {!isCurrentUserSitter && (
                     <TouchableOpacity
                         style={[styles.bookBtn, {
-                            backgroundColor: '#FBBF24', // Review yellow
-                            flex: 0.8,
+                            backgroundColor: '#FBBF24',
+                            flex: 1,
                             marginRight: 8,
                         }]}
                         onPress={() => {
@@ -1219,19 +1219,19 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                             });
                         }}
                     >
-                        <Star size={18} color="#000" fill="#000" />
-                        <Text style={[styles.bookBtnText, { color: '#000', marginLeft: 6 }]}>כתוב ביקורת</Text>
+                        <Star size={16} color="#000" fill="#000" />
+                        <Text style={[styles.bookBtnText, { color: '#000' }]} numberOfLines={1} adjustsFontSizeToFit>כתוב ביקורת</Text>
                     </TouchableOpacity>
                 )}
 
                 <TouchableOpacity
                     style={[styles.bookBtn, {
-                        backgroundColor: '#25D366' // WhatsApp Green
+                        backgroundColor: '#25D366'
                     }]}
                     onPress={handleWhatsApp}
                 >
-                    <Ionicons name="logo-whatsapp" size={18} color="#fff" />
-                    <Text style={[styles.bookBtnText, { color: '#fff', marginLeft: 6 }]}>שלח הודעה</Text>
+                    <Ionicons name="logo-whatsapp" size={16} color="#fff" />
+                    <Text style={[styles.bookBtnText, { color: '#fff' }]} numberOfLines={1} adjustsFontSizeToFit>שלח הודעה</Text>
                 </TouchableOpacity>
             </View>
 
