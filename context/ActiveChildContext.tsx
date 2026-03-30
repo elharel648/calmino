@@ -4,6 +4,7 @@ import { auth, db } from '../services/firebaseConfig';
 import { doc, onSnapshot, getDoc, collection, query, where, getDocs, getDocFromCache, getDocsFromCache } from 'firebase/firestore';
 import { AccessLevel, FamilyRole } from '../services/familyService';
 import { useLanguage } from './LanguageContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const safeGetDocs = async (q: any) => {
     try {
@@ -283,7 +284,28 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
 
             if (!isMountedRef.current) return;
 
+            if (!isMountedRef.current) return;
+
+            // OFFLINE FALLBACK: If Firebase queries yielded nothing (e.g. cache miss when offline), pull from AsyncStorage
+            if (childrenList.length === 0) {
+                try {
+                    const cached = await AsyncStorage.getItem('offline_childrenList');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+                            logger.log('Restored childrenList from AsyncStorage fallback');
+                            childrenList.push(...parsed);
+                        }
+                    }
+                } catch (e) {
+                    logger.log('Failed to restore offline_childrenList:', e);
+                }
+            }
+
             setAllChildren(childrenList);
+            if (childrenList.length > 0) {
+                AsyncStorage.setItem('offline_childrenList', JSON.stringify(childrenList)).catch(() => {});
+            }
 
             // Update activeChild using ref to avoid infinite loop (ref doesn't cause callback recreation)
             const currentId = activeChildRef.current?.childId;
