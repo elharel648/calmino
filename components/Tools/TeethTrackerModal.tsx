@@ -608,8 +608,22 @@ export default function TeethTrackerModal({
                                         <DateTimePicker
                                             value={currentDate}
                                             mode="date"
-                                            display="spinner"
+                                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                                             onChange={(event, date) => {
+                                                if (Platform.OS === 'android') {
+                                                    // Android default picker auto-closes, handle immediately
+                                                    if (event.type === 'dismissed') {
+                                                        setShowDatePicker(false);
+                                                        setSelectedTooth(null);
+                                                        return;
+                                                    }
+                                                    if (date && selectedTooth && activeChild?.childId) {
+                                                        setCurrentDate(date);
+                                                        handleDateChange({} as any, date);
+                                                        return;
+                                                    }
+                                                }
+                                                // iOS: spinner updates live, user confirms with button
                                                 if (date) {
                                                     setCurrentDate(date);
                                                 }
