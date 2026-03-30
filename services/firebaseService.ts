@@ -12,7 +12,8 @@ import {
   doc,
   getDoc,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  setDoc
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 
@@ -168,9 +169,11 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
     } else {
       const insertData = { ...eventData } as any;
       delete insertData.id;
-      const docRef = await addDoc(eventsRef, insertData);
-      logger.log('✅ Event saved successfully with ID:', docRef.id);
-      return docRef.id; // Return event ID for undo functionality
+      // Use synchronous doc() + setDoc() to avoid addDoc hanging on strict offline modes
+      const newDocRef = doc(eventsRef);
+      await setDoc(newDocRef, insertData);
+      logger.log('✅ Event saved successfully with ID:', newDocRef.id);
+      return newDocRef.id; // Return event ID for undo functionality
     }
   } catch (error: any) {
     logger.error('❌ saveEventToFirebase error:', error?.code, error?.message);

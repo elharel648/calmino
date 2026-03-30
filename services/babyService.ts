@@ -15,6 +15,7 @@ import {
   getDocFromCache,
   deleteDoc
 } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type BabyData = {
   id?: string;
@@ -330,8 +331,23 @@ export const toggleCustomVaccine = async (babyId: string, allCustomVaccines: any
 };
 
 export const checkIfBabyExists = async (): Promise<boolean> => {
-  const babyData = await getBabyData();
-  return babyData !== null;
+  try {
+    const babyData = await getBabyData();
+    if (babyData !== null) return true;
+
+    // OFFLINE FALLBACK: If Firebase queries yielded nothing (e.g. cache miss when offline), pull from AsyncStorage
+    const cached = await AsyncStorage.getItem('offline_childrenList');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+        return true;
+      }
+    }
+  } catch (e) {
+    logger.warn('checkIfBabyExists failed, returning fallback true', e);
+  }
+  
+  return false;
 };
 
 export const saveBabyProfile = async (name: string, birthDate: Date, gender: string) => {
