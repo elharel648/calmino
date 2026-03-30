@@ -163,16 +163,17 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       const eventRef = doc(db, EVENTS_COLLECTION, data.id);
       const updateData = { ...eventData } as any;
       delete updateData.id;
-      await updateDoc(eventRef, updateData);
-      logger.log('✅ Event updated successfully with ID:', data.id);
+      // Fire and forget to avoid hanging offline
+      updateDoc(eventRef, updateData).catch(e => logger.warn('Deferred updateDoc failed:', e));
+      logger.log('✅ Event queued for update with ID:', data.id);
       return data.id;
     } else {
       const insertData = { ...eventData } as any;
       delete insertData.id;
-      // Use synchronous doc() + setDoc() to avoid addDoc hanging on strict offline modes
+      // Use synchronous doc() + fire-and-forget setDoc() to avoid hanging on strict offline modes
       const newDocRef = doc(eventsRef);
-      await setDoc(newDocRef, insertData);
-      logger.log('✅ Event saved successfully with ID:', newDocRef.id);
+      setDoc(newDocRef, insertData).catch(e => logger.warn('Deferred setDoc failed:', e));
+      logger.log('✅ Event queued for save with ID:', newDocRef.id);
       return newDocRef.id; // Return event ID for undo functionality
     }
   } catch (error: any) {
@@ -291,7 +292,8 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
 export const deleteEvent = async (eventId: string) => {
   try {
     const eventRef = doc(db, EVENTS_COLLECTION, eventId);
-    await deleteDoc(eventRef);
+    // Fire and forget to avoid hanging offline 
+    deleteDoc(eventRef).catch(e => logger.warn('Deferred deleteDoc failed:', e));
     return true;
   } catch (error) {
     throw error;
