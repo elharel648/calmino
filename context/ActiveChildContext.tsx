@@ -1,9 +1,33 @@
 import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef, useMemo } from 'react';
 import { auth, db } from '../services/firebaseConfig';
-import { doc, onSnapshot, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, collection, query, where, getDocs, getDocFromCache, getDocsFromCache } from 'firebase/firestore';
 import { AccessLevel, FamilyRole } from '../services/familyService';
-import { useLanguage } from './/LanguageContext';
+import { useLanguage } from './LanguageContext';
+
+const safeGetDocs = async (q: any) => {
+    try {
+        return await getDocs(q);
+    } catch (e: any) {
+        try {
+            return await getDocsFromCache(q);
+        } catch (e2) {
+            return { empty: true, docs: [], forEach: () => {} } as any;
+        }
+    }
+};
+
+const safeGetDoc = async (docRef: any) => {
+    try {
+        return await getDoc(docRef);
+    } catch (e: any) {
+        try {
+            return await getDocFromCache(docRef);
+        } catch (e2) {
+            return { exists: () => false, data: () => null } as any;
+        }
+    }
+};
 
 // --- Types ---
 export interface ActiveChild {
@@ -108,7 +132,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                 collection(db, 'babies'),
                 where('parentId', '==', userId)
             );
-            const babiesSnapshot = await getDocs(babiesQuery);
+            const babiesSnapshot = await safeGetDocs(babiesQuery);
 
             if (!babiesSnapshot.empty) {
                 babiesSnapshot.forEach((babyDoc) => {
@@ -129,11 +153,11 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
             }
 
             // 2. Also check via family (for shared family access)
-            const userDoc = await getDoc(doc(db, 'users', userId));
+            const userDoc = await safeGetDoc(doc(db, 'users', userId));
             const userData = userDoc.data();
 
             if (userData?.familyId) {
-                const familyDoc = await getDoc(doc(db, 'families', userData.familyId));
+                const familyDoc = await safeGetDoc(doc(db, 'families', userData.familyId));
                 if (familyDoc.exists()) {
                     const familyData = familyDoc.data();
                     const memberData = familyData.members?.[userId];
@@ -150,7 +174,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                             collection(db, 'babies'),
                             where('parentId', '==', adminUid)
                         );
-                        const familyBabiesSnap = await getDocs(familyBabiesQuery);
+                        const familyBabiesSnap = await safeGetDocs(familyBabiesQuery);
 
                         familyBabiesSnap.forEach((babyDoc) => {
                             if (!childrenList.find(c => c.childId === babyDoc.id)) {
@@ -169,7 +193,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
 
                         // Fallback: if query returned nothing, use the stored babyId
                         if (familyBabiesSnap.empty && familyData.babyId && !childrenList.find(c => c.childId === familyData.babyId)) {
-                            const babyDoc = await getDoc(doc(db, 'babies', familyData.babyId));
+                            const babyDoc = await safeGetDoc(doc(db, 'babies', familyData.babyId));
                             const babyData = babyDoc.exists() ? babyDoc.data() : null;
                             childrenList.push({
                                 childId: familyData.babyId,
