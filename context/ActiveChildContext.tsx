@@ -52,10 +52,21 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
 
     useEffect(() => {
         isMountedRef.current = true;
+
+        // Failsafe: unconditionally unblock the Splash Screen globally after 1500ms 
+        // regardless of whether Firebase fetch succeeds, fails, or hangs endlessly on 3G
+        const failsafeTimeout = setTimeout(() => {
+            if (!hasCalledOnReady.current && onReady) {
+                hasCalledOnReady.current = true;
+                onReady();
+            }
+        }, 1500);
+
         return () => {
             isMountedRef.current = false;
+            clearTimeout(failsafeTimeout);
         };
-    }, []);
+    }, [onReady]);
 
     // Ref to track activeChild without causing refreshChildren to recreate
     // This fixes the infinite loop when joining with code

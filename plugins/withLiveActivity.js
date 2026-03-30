@@ -32,6 +32,7 @@ const withLiveActivity = (config) => {
         'SleepLiveActivity.swift',
         'FeedingLiveActivity.swift',
         'BreastfeedingLiveActivity.swift',
+        'WhiteNoiseLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
         'Info.plist',
         'GlassComponents.swift',
@@ -91,6 +92,7 @@ const withLiveActivity = (config) => {
       'SleepLiveActivity.swift',
       'FeedingLiveActivity.swift',
       'BreastfeedingLiveActivity.swift',
+      'WhiteNoiseLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
       'ActivityAttributes.swift', // הכרחי שיהיה בשניהם!
       'GlassComponents.swift', // הכרחי שיהיה בשניהם!
@@ -144,6 +146,7 @@ const withLiveActivity = (config) => {
             comment.includes('SleepLiveActivity.swift') ||
             comment.includes('FeedingLiveActivity.swift') ||
             comment.includes('BreastfeedingLiveActivity.swift') ||
+            comment.includes('WhiteNoiseLiveActivity.swift') ||
             comment.includes('CalmParentLiveActivityBundle.swift')
           ) {
             return false; // strip them from Calmino target
@@ -165,9 +168,7 @@ const withLiveActivity = (config) => {
           settings.SWIFT_VERSION = '5.0';
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          settings.CODE_SIGN_STYLE = 'Manual';
-          settings.PROVISIONING_PROFILE = '"41bf35a3-1ee2-4f05-a0a7-33dafdccc9b6"';
-          settings.PROVISIONING_PROFILE_SPECIFIER = '"CalmParent Live Activity"';
+          settings.CODE_SIGN_STYLE = 'Automatic';
           
           if (configObj.name === 'Release') {
             settings['"CODE_SIGN_IDENTITY"'] = '"Apple Distribution"';
