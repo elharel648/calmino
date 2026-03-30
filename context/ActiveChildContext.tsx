@@ -57,6 +57,8 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
         // regardless of whether Firebase fetch succeeds, fails, or hangs endlessly on 3G
         const failsafeTimeout = setTimeout(() => {
             if (!hasCalledOnReady.current && onReady) {
+                logger.warn('ActiveChildContext: Failsafe triggered, resolving childrenReady & isLoading unconditionally');
+                setIsLoading(false);
                 hasCalledOnReady.current = true;
                 onReady();
             }
