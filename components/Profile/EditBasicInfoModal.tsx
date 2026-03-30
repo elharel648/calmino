@@ -14,6 +14,7 @@ import { X, Check, Calendar, Camera, User } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 interface EditBasicInfoModalProps {
     visible: boolean;

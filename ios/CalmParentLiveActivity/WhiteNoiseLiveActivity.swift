@@ -22,7 +22,7 @@ struct WhiteNoiseLiveActivity: Widget {
                         Image(systemName: "waveform")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(noiseColor)
-                            .symbolEffect(.variableColor.iterative.reversing)
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("רעש לבן")
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
@@ -72,7 +72,7 @@ struct WhiteNoiseLiveActivity: Widget {
                 Image(systemName: "waveform")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(noiseColor)
-                    .symbolEffect(.variableColor.iterative.reversing)
+
             } compactTrailing: {
                 Text(context.state.startTime, style: .timer)
                     .monospacedDigit()
@@ -113,7 +113,7 @@ struct WhiteNoiseLockScreenView: View {
                         Image(systemName: "waveform")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(noiseColor)
-                            .symbolEffect(.variableColor.iterative.reversing)
+
                         Text(context.attributes.soundName)
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.75))

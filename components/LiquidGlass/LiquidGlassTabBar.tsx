@@ -19,11 +19,18 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import {
-  LiquidGlassView,
-  LiquidGlassContainerView,
-  isLiquidGlassSupported,
-} from '@callstack/liquid-glass';
+let LiquidGlassView: any = View;
+let LiquidGlassContainerView: any = View;
+let isLiquidGlassSupported = false;
+
+try {
+  const LiquidGlass = require('@callstack/liquid-glass');
+  LiquidGlassView = LiquidGlass.LiquidGlassView;
+  LiquidGlassContainerView = LiquidGlass.LiquidGlassContainerView;
+  isLiquidGlassSupported = LiquidGlass.isLiquidGlassSupported;
+} catch (e) {
+  console.log('LiquidGlass native module not found, falling back to BlurView');
+}
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';

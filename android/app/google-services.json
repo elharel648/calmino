@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "16421819020-dsbspbb1iiacik9dhrhl2euk61d9kufd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.harel.calmparentapp",
+            "certificate_hash": "bd71c38e929fe4eef7e54012f7152a27cef3e2b5"
+          }
+        },
+        {
+          "client_id": "16421819020-tp19ond3iin9og4qom37vad5m97o32mr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.harel.calmparentapp",
+            "certificate_hash": "ad3f0011ef021d7c0cac78908f3ecaedc2291147"
+          }
+        },
+        {
           "client_id": "16421819020-pmin47sc98p2h64a3bu1dp5k5mfj4qe9.apps.googleusercontent.com",
           "client_type": 3
         }

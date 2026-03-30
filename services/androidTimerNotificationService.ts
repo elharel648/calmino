@@ -81,6 +81,7 @@ class AndroidTimerNotificationService {
                 android: {
                     channelId: CHANNEL_ID,
                     asForegroundService: true,
+                    foregroundServiceTypes: ['dataSync'],
                     ongoing: true,
                     showChronometer: true,
                     chronometerDirection: 'up',
@@ -132,6 +133,7 @@ class AndroidTimerNotificationService {
                 android: {
                     channelId: CHANNEL_ID,
                     asForegroundService: true,
+                    foregroundServiceTypes: ['dataSync'],
                     ongoing: true,
                     showChronometer: false, // Stop the chronometer display
                     smallIcon: 'ic_notification',
@@ -183,6 +185,7 @@ class AndroidTimerNotificationService {
                 android: {
                     channelId: CHANNEL_ID,
                     asForegroundService: true,
+                    foregroundServiceTypes: ['dataSync'],
                     ongoing: true,
                     showChronometer: true,
                     chronometerDirection: 'up',
