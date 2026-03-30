@@ -1976,11 +1976,11 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingTop: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        gap: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
@@ -2012,18 +2012,20 @@ const styles = StyleSheet.create({
     },
     bookBtn: {
         flexDirection: 'row',
-        paddingHorizontal: 20,
+        paddingHorizontal: 12,
         height: 48,
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 6,
         flex: 1,
+        minWidth: 0,
     },
     bookBtnText: {
         color: '#fff',
         fontWeight: '700',
-        fontSize: 15
+        fontSize: 14,
+        flexShrink: 1,
     },
 
     // Video Modal
