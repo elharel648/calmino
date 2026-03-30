@@ -29,7 +29,7 @@ import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { db } from '../services/firebaseConfig';
-import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { format, addDays, subDays, isSameDay, startOfDay, endOfDay, subWeeks, subMonths, differenceInDays, differenceInHours } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
@@ -454,6 +454,25 @@ export default function ReportsScreen() {
   useEffect(() => {
     fetchData();
   }, [selectedDate, timeRange, activeChild?.childId, customStartDate, customEndDate]);
+
+  // Real-time listener: auto-refresh when new events are added for this child
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+
+  useEffect(() => {
+    if (!activeChild?.childId) return;
+    let isFirst = true;
+    const q = query(
+      collection(db, 'events'),
+      where('childId', '==', activeChild.childId),
+      limit(1)
+    );
+    const unsub = onSnapshot(q, () => {
+      if (isFirst) { isFirst = false; return; } // skip initial snapshot
+      fetchDataRef.current();
+    }, () => {}); // ignore errors silently
+    return () => unsub();
+  }, [activeChild?.childId]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
