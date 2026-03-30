@@ -97,12 +97,11 @@ function calminoEmailTemplate(heTitle: string, heBody: string, enTitle: string =
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const sendVerificationEmail = onCall(async (request) => {
-    const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError('unauthenticated', 'יש להתחבר למערכת');
+    // Accept explicit email payload to bypass Android Native token initialization hang during Firebase Auth signup
+    const email = request.auth?.token?.email || request.data?.email;
+    if (!email) throw new HttpsError('invalid-argument', 'יש לספק כתובת מייל');
 
-    const userRecord = await admin.auth().getUser(uid);
-    const email = userRecord.email;
-    if (!email) throw new HttpsError('invalid-argument', 'לא נמצאה כתובת מייל');
+    const userRecord = await admin.auth().getUserByEmail(email);
 
     if (userRecord.emailVerified) {
         return { success: true, alreadyVerified: true };

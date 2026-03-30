@@ -415,7 +415,7 @@ export default function LoginScreen({
                 text: t('auth.resendEmail'),
                 onPress: async () => {
                   try {
-                    await callFirebaseFunction('sendVerificationEmail');
+                    await callFirebaseFunction('sendVerificationEmail', { email: user.email });
                     Alert.alert(t('auth.emailSent'), t('auth.emailSentMessage'));
                   } catch (e) {
                     Alert.alert(t('common.error'), t('auth.cannotSendEmail'));
@@ -468,7 +468,7 @@ export default function LoginScreen({
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: displayName.trim() });
-        await callFirebaseFunction('sendVerificationEmail');
+        await callFirebaseFunction('sendVerificationEmail', { email: email.trim() });
 
         // Save user agreement and profile to Firestore
         const userRef = doc(db, 'users', userCredential.user.uid);

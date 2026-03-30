@@ -7,7 +7,6 @@ import { initializeAuth, getAuth } from 'firebase/auth';
 import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { initializeAppCheck, CustomProvider } from 'firebase/app-check'; // JS SDK
-import rnFunctions from '@react-native-firebase/functions';
 import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
 import rnAppCheck from '@react-native-firebase/app-check'; // Native SDK
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -104,10 +103,42 @@ try {
 
 export const db = firestoreDb;
 
-// Firebase Functions — use native React Native Firebase SDK
-// (JS SDK's getFunctions crashes in Metro with 'Service functions is not available')
+// Firebase Functions — Bypass Native Module requirement by utilizing the standard fetch API REST wrapper
+// for Firebase Callable Functions (solves missing native module panics on OTA updates).
 export const callFirebaseFunction = async (name: string, data?: object): Promise<unknown> => {
-  const fn = rnFunctions().httpsCallable(name);
-  const result = await fn(data);
-  return result.data;
+  try {
+    const user = auth.currentUser;
+    // CRITICAL: Bypassing getIdToken() for sendVerificationEmail to avoid a known React Native
+    // Android bug where native persistence sync causes indefinite hangs after user creation.
+    let token = '';
+    if (user && name !== 'sendVerificationEmail') {
+        token = await user.getIdToken();
+    }
+    
+    const url = `https://us-central1-baby-app-42b3b.cloudfunctions.net/${name}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      // Callable Protocol expects payload to be wrapped in "data"
+      body: JSON.stringify({ data: data || {} })
+    });
+    
+    // The response can sometimes be empty or HTML if it crashes hard, but valid Callable responses return JSON.
+    const responseData = await response.json();
+    
+    if (!response.ok || responseData?.error) {
+      console.error(`Error calling ${name}:`, responseData);
+      throw new Error(responseData?.error?.message || `Function ${name} failed`);
+    }
+    
+    // Callable functions always return data wrapped in {"data": ...}
+    return responseData.data;
+  } catch (err) {
+    console.error(`Firebase function fetch error (${name}):`, err);
+    throw err;
+  }
 };

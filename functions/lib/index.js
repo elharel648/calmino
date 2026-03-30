@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = exports.debugSendEmails = void 0;
+exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
@@ -41,105 +41,7 @@ const firestore_2 = require("firebase-functions/v2/firestore");
 admin.initializeApp();
 const db = admin.firestore();
 // ══════════════════════════════════════════════════════════════════════════════
-// ==============================================================================
-// DEBUG: SEND PREVIEW EMAILS
-// ==============================================================================
-const https_2 = require("firebase-functions/v2/https");
-exports.debugSendEmails = (0, https_2.onRequest)(async (req, res) => {
-    const email = 'calminogroup@gmail.com';
-    const displayName = 'הראל';
-    const heWelcome = `
-        <p style="margin:0 0 16px;color:#334155;font-size:16px;">
-            שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋
-        </p>
-        <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">
-            אנחנו כל כך שמחים שהצטרפת ל-<strong style="color:#6C5CE7;font-weight:700;">Calmino</strong>!<br/>
-            אנחנו יודעים שהימים (והלילות...) הראשונים עם התינוק יכולים להיות עמוסים ומבלבלים. המטרה שלנו היא פשוטה: לעזור לך לרכז את כל המידע במקום אחד, כדי שתוכלי להתמקד במה שחשוב באמת – בתינוק שלך.
-        </p>
-
-        <div style="background:#F8FAFC;border-radius:16px;padding:24px;margin:32px 0;border:1px solid #F1F5F9;box-shadow:inset 0 2px 4px rgba(0,0,0,0.02);">
-            <p style="color:#0f172a;font-weight:800;margin:0 0 16px;font-size:17px;">הנה מה שאפשר להתחיל לעשות כבר עכשיו:</p>
-            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">🍼 <strong style="color:#334155;">מעקב יומי חכם</strong> – מתעדים האכלות, שינה והחתלות בקליק אחד. בלי דפים ובלי לנסות לזכור הכל בראש.</p>
-            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">👶 <strong style="color:#334155;">פרופיל אישי לתינוק</strong> – יוצרים עולם שלם שמוקדש לקטנטנים שלכם, כולל תמונות ופרטים אישיים.</p>
-            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">👨‍👩‍👧 <strong style="color:#334155;">שיתוף משפחתי</strong> – לא חייבים לעשות הכל לבד! מזמינים את בן/בת הזוג או הסבתא לצפייה ועדכון בזמן אמת.</p>
-            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">📊 <strong style="color:#334155;">דו"חות ותובנות</strong> – מגלים את הדפוסים של התינוק ומבינים טוב יותר את הצרכים שלו.</p>
-            <p style="color:#475569;margin:12px 0;font-size:15px;line-height:1.6;">📏 <strong style="color:#334155;">מעקב גדילה מקצועי</strong> – מוודאים שהכל תקין עם גרפים מדויקים לפי תקני ה-WHO (ארגון הבריאות העולמי).</p>
-        </div>
-
-        <p style="color:#334155;font-size:16px;margin:32px 0 16px;font-weight:600;text-align:center;">מוכנה להתחיל?</p>
-
-        <div style="text-align:center;margin:24px 0 48px;">
-            <a href="https://calmino.co.il" role="button" aria-label="יצירת פרופיל ראשון לתינוק"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
-                יצירת פרופיל ראשון לתינוק
-            </a>
-        </div>
-
-        <p style="color:#475569;font-size:15px;line-height:1.8;margin:0 0 12px;">
-            יש לך שאלה? הצעה? או סתם רוצה לשתף?<br/>
-            אנחנו כאן בשבילך. פשוט תעני למייל הזה או כתבי לנו לכתובת:<br/>
-            📩 <a href="mailto:calminogroup@gmail.com" style="color:#6C5CE7;font-weight:600;text-decoration:none;">calminogroup@gmail.com</a>
-        </p>
-
-        <p style="color:#0f172a;font-size:15px;line-height:1.8;margin:24px 0 0;font-weight:500;">
-            באהבה,<br/>צוות Calmino 🤍
-        </p>`;
-    const heVerify = `
-        <p style="margin:0 0 16px;">שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
-        <p style="margin:0 0 24px;">נשאר רק צעד אחד קטן — לחצו על הכפתור למטה כדי לאמת את כתובת המייל שלכם, ולהתחיל להשתמש ב-Calmino.</p>
-
-        <div style="text-align:center;margin:40px 0;">
-            <a href="https://calmino.co.il" role="button" aria-label="אמתו את המייל שלכם ב-Calmino"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
-                אימות המייל החשבון
-            </a>
-        </div>
-
-        <div style="background:#F8FAFC;border-radius:16px;padding:20px;text-align:center;margin:32px 0 0;border:1px solid #F1F5F9;">
-            <p style="color:#64748B;font-size:13px;line-height:1.6;margin:0;">
-                הקישור מאובטח ותקף לשעה אחת.<br/>
-                לא נרשמתם ל-Calmino? אפשר להתעלם ממייל זה בבטחה.
-            </p>
-        </div>`;
-    const heReset = `
-        <p style="margin:0 0 16px;">
-            שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>
-            קיבלנו בקשה לאיפוס הסיסמא לחשבון ה-Calmino שלך.<br/>
-            לחצו על הכפתור למטה כדי לבחור סיסמא חדשה.
-        </p>
-        <div style="text-align:center;margin:40px 0;">
-            <a href="https://calmino.co.il"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;"
-               aria-label="איפוס סיסמא עבור Calmino">
-                איפוס סיסמא
-            </a>
-        </div>
-        
-        <div style="background:#F8FAFC;border-radius:16px;padding:20px;text-align:center;margin:32px 0 0;border:1px solid #F1F5F9;">
-            <p style="color:#64748B;font-size:13px;line-height:1.6;margin:0;">
-                הקישור מאובטח ותקף ל-24 שעות.<br/>
-                לא ביקשת איפוס סיסמא? אין בעיה, אפשר פשוט להתעלם ממייל זה בבטחה, החשבון שלך מוגן.
-            </p>
-        </div>`;
-    const batch = db.batch();
-    const mailRef1 = db.collection('mail').doc();
-    batch.set(mailRef1, {
-        to: [email], replyTo: 'calminogroup@gmail.com', headers: { 'X-Priority': '1' },
-        message: { subject: 'הצעד הראשון לשקט נפשי מתחיל כאן 👣 | ברוכה הבאה ל-Calmino!', html: calminoEmailTemplate('ברוכים הבאים למשפחה 🎉', heWelcome) }
-    });
-    const mailRef2 = db.collection('mail').doc();
-    batch.set(mailRef2, {
-        to: [email], replyTo: 'calminogroup@gmail.com', headers: { 'X-Priority': '1' },
-        message: { subject: 'אמתו את המייל שלכם ל-Calmino | Verify your Calmino email', html: calminoEmailTemplate('אימות אחד — וסיימנו!', heVerify) }
-    });
-    const mailRef3 = db.collection('mail').doc();
-    batch.set(mailRef3, {
-        to: [email], replyTo: 'calminogroup@gmail.com', headers: { 'X-Priority': '1' },
-        message: { subject: 'איפוס סיסמא - Calmino | Reset your Calmino password', html: calminoEmailTemplate('איפוס סיסמא באפליקציה', heReset) }
-    });
-    await batch.commit();
-    res.send('Preview emails sent to ' + email);
-});
+// EOF
 // ══════════════════════════════════════════════════════════════════════════════
 // EMAIL TEMPLATES — HTML email generator for branded Calmino emails
 // ══════════════════════════════════════════════════════════════════════════════
@@ -224,13 +126,11 @@ function calminoEmailTemplate(heTitle, heBody, enTitle = '', enBody = '') {
 // 0️⃣ SEND VERIFICATION EMAIL — Branded replacement for Firebase's plain email
 // ══════════════════════════════════════════════════════════════════════════════
 exports.sendVerificationEmail = (0, https_1.onCall)(async (request) => {
-    const uid = request.auth?.uid;
-    if (!uid)
-        throw new https_1.HttpsError('unauthenticated', 'יש להתחבר למערכת');
-    const userRecord = await admin.auth().getUser(uid);
-    const email = userRecord.email;
+    // Accept explicit email payload to bypass Android Native token initialization hang during Firebase Auth signup
+    const email = request.auth?.token?.email || request.data?.email;
     if (!email)
-        throw new https_1.HttpsError('invalid-argument', 'לא נמצאה כתובת מייל');
+        throw new https_1.HttpsError('invalid-argument', 'יש לספק כתובת מייל');
+    const userRecord = await admin.auth().getUserByEmail(email);
     if (userRecord.emailVerified) {
         return { success: true, alreadyVerified: true };
     }
