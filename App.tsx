@@ -43,7 +43,10 @@ import * as LocalAuthentication from 'expo-local-authentication';
 // Utility to race network promises against a strict timeout for poor cellular connection resilience
 const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number, defaultVal: T): Promise<T> => {
   return Promise.race([
-    promise,
+    promise.catch((err) => {
+      console.warn(`[fetchWithTimeout] Promise rejected (likely offline), returning default:`, err?.message || err);
+      return defaultVal;
+    }),
     new Promise<T>((resolve) => setTimeout(() => resolve(defaultVal), ms))
   ]);
 };
