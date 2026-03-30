@@ -625,16 +625,22 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
             <TouchableOpacity style={styles.photoUpload} onPress={pickImage}>
                 {profilePhoto ? (
-                    <Image source={{ uri: profilePhoto }} style={styles.photoPreview} />
+                    <View>
+                        <Image source={{ uri: profilePhoto }} style={styles.photoPreview} />
+                        {/* Camera edit badge */}
+                        <View style={[styles.photoEditBadge, { backgroundColor: theme.primary }]}>
+                            <Camera size={16} color="#fff" strokeWidth={2} />
+                        </View>
+                    </View>
                 ) : (
                     <View style={[styles.photoPlaceholder, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <Camera size={40} color={theme.textSecondary} strokeWidth={1} />
+                        <View style={[styles.photoUploadCircle, { backgroundColor: theme.primary + '15' }]}>
+                            <Camera size={32} color={theme.primary} strokeWidth={1.5} />
+                        </View>
                         <Text style={[styles.photoPlaceholderText, { color: theme.textSecondary }]}>{t('sitter.registration.uploadPhoto')}</Text>
-                    </View>
-                )}
-                {profilePhoto && (
-                    <View style={styles.photoCheckmark}>
-                        <Check size={20} color="#fff" />
+                        <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>
+                            {t('common.tapToSelect') || 'לחצ/י לבחירה'}
+                        </Text>
                     </View>
                 )}
             </TouchableOpacity>
@@ -912,6 +918,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#374151',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    photoEditBadge: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    photoUploadCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 4,
+    },
+    photoPlaceholderHint: {
+        fontSize: 12,
+        marginTop: 2,
+        opacity: 0.6,
     },
 
     // Pricing
