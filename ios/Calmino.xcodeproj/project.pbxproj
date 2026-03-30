@@ -779,8 +779,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
 				PRODUCT_NAME = CalmParentLiveActivity;
-				PROVISIONING_PROFILE = "41bf35a3-1ee2-4f05-a0a7-33dafdccc9b6";
-				PROVISIONING_PROFILE_SPECIFIER = "CalmParent Live Activity";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};

@@ -180,6 +180,12 @@ const withLiveActivity = (config) => {
 
           settings.CODE_SIGN_ENTITLEMENTS = '';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
+
+          // Forcefully delete manual provisioning overrides if they exist in the raw Xcode project
+          delete settings.PROVISIONING_PROFILE;
+          delete settings['"PROVISIONING_PROFILE"'];
+          delete settings.PROVISIONING_PROFILE_SPECIFIER;
+          delete settings['"PROVISIONING_PROFILE_SPECIFIER"'];
         }
       }
     });
