@@ -40,6 +40,13 @@ import { Home, BarChart2, User, Settings, Lock, Baby, UserCheck } from 'lucide-r
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import * as LocalAuthentication from 'expo-local-authentication';
+// Utility to race network promises against a strict timeout for poor cellular connection resilience
+const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number, defaultVal: T): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(defaultVal), ms))
+  ]);
+};
 import { BlurView } from 'expo-blur';
 import { Canvas, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -727,10 +734,11 @@ export default function App() {
       // Reload user to ensure we have the latest emailVerified status
       if (currentUser) {
         try {
-          await currentUser.reload();
+          // Bound user reload to 2000ms to heavily prioritize getting offline users past the splash screen
+          await fetchWithTimeout(currentUser.reload(), 2000, undefined);
         } catch (e) {
-          // If reload fails (e.g. network), we continue with cached value
-          logger.log('User reload failed:', e);
+          // If reload fails (e.g. network timeout), we continue with cached value
+          logger.log('User reload failed/timed out:', e);
         }
       }
 
@@ -808,12 +816,14 @@ export default function App() {
   const checkBiometricSettingsAndProfile = async (uid: string) => {
     try {
       const userRef = doc(db, 'users', uid);
-      const userSnap = await getDoc(userRef);
+
+      // 2000ms timeout timeout for loading user profile, defaults to null
+      const userSnap = await fetchWithTimeout(getDoc(userRef), 2000, null);
 
       let needsUnlock = false;
       let sitterFlag = false;
 
-      if (userSnap.exists()) {
+      if (userSnap && userSnap.exists()) {
         const data = userSnap.data();
         sitterFlag = data.isSitter === true;
         setIsAppSitter(sitterFlag);
@@ -828,7 +838,8 @@ export default function App() {
         }
       }
 
-      const babyExists = await checkIfBabyExists();
+      // 2000ms timeout for checking baby exists, defaults to true (assuming returning users mostly have babies)
+      const babyExists = await fetchWithTimeout(checkIfBabyExists(), 2000, true);
       setHasBabyProfile(babyExists);
       setIsAppLoading(false);
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);

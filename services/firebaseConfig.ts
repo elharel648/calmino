@@ -5,7 +5,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
 // @ts-ignore - getReactNativePersistence exists but TypeScript may not recognize it
 import { getReactNativePersistence } from '@firebase/auth';
-import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { initializeAppCheck, CustomProvider } from 'firebase/app-check'; // JS SDK
 import NativeFirebaseApp from '@react-native-firebase/app'; // Native SDK
 import rnAppCheck from '@react-native-firebase/app-check'; // Native SDK
@@ -94,7 +94,7 @@ export { auth };
 let firestoreDb: ReturnType<typeof getFirestore>;
 try {
   firestoreDb = initializeFirestore(app, {
-    localCache: memoryLocalCache()
+    localCache: persistentLocalCache()
   });
 } catch (error) {
   // If already initialized, fallback to getFirestore
