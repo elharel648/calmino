@@ -1347,7 +1347,7 @@ export default function ReportsScreen() {
 
   const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => (
     <RNAnimated.View style={{
-      width: (SCREEN_WIDTH - 52) / 2,
+      width: '48%',
       opacity: cardAnims[Math.min(index, 5)],
       transform: [{ translateY: cardSlides[Math.min(index, 5)] }],
     }}>
