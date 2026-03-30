@@ -1651,6 +1651,7 @@
     "allTeethErupted": "Alle Zähne durchgebrochen! 🎉",
     "editToothDate": "Zahndatum bearbeiten",
     "whenDidToothErupt": "Wann ist der Zahn durchgebrochen?",
-    "removeTooth": "Zahn entfernen"
+    "removeTooth": "Zahn entfernen",
+    "updateDate": "Datum aktualisieren"
   }
 }

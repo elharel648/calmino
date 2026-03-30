@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Settings, Edit2, Camera, ChevronRight } from 'lucide-react-native';
 
@@ -22,6 +23,8 @@ const ProfileHeader = memo(({
     onPhotoPress,
     onAgePress,
 }: ProfileHeaderProps) => {
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     return (
         <View style={styles.container}>
             <LinearGradient
@@ -77,7 +80,7 @@ const ProfileHeader = memo(({
 
 ProfileHeader.displayName = 'ProfileHeader';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
         height: 220,
         paddingTop: 50,
@@ -94,7 +97,7 @@ const styles = StyleSheet.create({
         borderRadius: 50,
     },
     navTitle: {
-        color: 'white',
+        color: theme.card,
         fontWeight: 'bold',
         fontSize: 16,
     },
@@ -112,7 +115,7 @@ const styles = StyleSheet.create({
         height: 80,
         borderRadius: 40,
         borderWidth: 3,
-        borderColor: 'white',
+        borderColor: theme.card,
     },
     avatarPlaceholder: {
         width: 80,
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,
-        borderColor: 'white',
+        borderColor: theme.card,
     },
     avatarEmoji: {
         fontSize: 40,
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         padding: 6,
         borderRadius: 20,
     },
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     babyName: {
-        color: 'white',
+        color: theme.card,
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 5,
@@ -154,7 +157,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     ageText: {
-        color: 'white',
+        color: theme.card,
         fontSize: 12,
         fontWeight: '600',
     },

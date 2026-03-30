@@ -176,6 +176,7 @@ interface TrackingModalProps {
 
 export default function TrackingModal({ visible, type, onClose, onSave, editingEvent }: TrackingModalProps) {
   const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
   const { t } = useLanguage();
   const { showError } = useToast();
   const foodTimerContext = useFoodTimer();
@@ -2482,7 +2483,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
 
 
   overlay: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' },
@@ -2563,7 +2564,7 @@ const styles = StyleSheet.create({
   calendarOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   calendarInlineOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
   calendarInlineBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
-  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 0, zIndex: 1001 },
+  calendarCard: { borderRadius: 20, padding: 20, width: '90%', maxWidth: 350, backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 0, zIndex: 1001 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   calendarMonthText: { fontSize: 16, fontWeight: '600' },
   calendarNavBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
@@ -2648,13 +2649,13 @@ const styles = StyleSheet.create({
   },
   premiumFoodTabText: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: theme.textTertiary,
     textAlign: 'center',
     fontWeight: '600',
     letterSpacing: -0.2,
   },
   premiumFoodTabTextActive: {
-    color: '#fff',
+    color: theme.card,
     fontWeight: '700',
   },
   premiumFoodTabTimer: {
@@ -2663,7 +2664,7 @@ const styles = StyleSheet.create({
     color: '#F59E0B',
   },
   premiumFoodTabTimerActive: {
-    color: '#fff',
+    color: theme.card,
   },
 
   // Premium Date Picker
@@ -2689,71 +2690,71 @@ const styles = StyleSheet.create({
   // Bottle/Pumping
   bottleContainer: { width: '100%' },
   inputWrapper: { flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'center', gap: 8 },
-  bigInput: { fontSize: 48, fontWeight: 'bold', color: '#1F2937', borderBottomWidth: 2, borderBottomColor: '#E5E7EB', width: 120, textAlign: 'center' },
-  unitText: { fontSize: 18, color: '#6B7280', marginBottom: 12 },
+  bigInput: { fontSize: 48, fontWeight: 'bold', color: theme.textPrimary, borderBottomWidth: 2, borderBottomColor: theme.border, width: 120, textAlign: 'center' },
+  unitText: { fontSize: 18, color: theme.textSecondary, marginBottom: 12 },
 
   // Amount Row with +/- buttons
   amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 12 },
-  amountBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  amountBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
   amountDisplay: { alignItems: 'center' },
-  amountValue: { fontSize: 36, fontWeight: '700', color: '#1F2937' },
-  amountUnit: { fontSize: 14, color: '#9CA3AF', marginTop: 2 },
+  amountValue: { fontSize: 36, fontWeight: '700', color: theme.textPrimary },
+  amountUnit: { fontSize: 14, color: theme.textTertiary, marginTop: 2 },
 
   presets: { flexDirection: 'row', gap: 10, marginTop: 20 },
-  presetBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F3F4F6', borderRadius: 12 },
+  presetBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: theme.cardSecondary, borderRadius: 12 },
   presetBtnActive: { backgroundColor: '#1C1C1E' },
   presetText: { fontWeight: '600', color: '#4B5563' },
-  presetTextActive: { color: '#fff' },
+  presetTextActive: { color: theme.card },
 
   // Breastfeeding - Minimalist Style like Sleep
   breastContainer: { alignItems: 'center', paddingHorizontal: 16 },
   breastTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  breastTimeCard: { flex: 1, alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  breastTimeCard: { flex: 1, alignItems: 'center', backgroundColor: theme.cardSecondary, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border },
   breastTimeCardActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
-  breastTimeLabel: { fontSize: 12, color: '#9CA3AF', fontWeight: '600', marginBottom: 8 },
-  breastTimeValue: { fontSize: 32, fontWeight: '300', color: '#1F2937', letterSpacing: -1 },
-  breastTimeValueActive: { color: '#fff' },
-  breastPlayBtn: { marginTop: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  breastTimeLabel: { fontSize: 12, color: theme.textTertiary, fontWeight: '600', marginBottom: 8 },
+  breastTimeValue: { fontSize: 32, fontWeight: '300', color: theme.textPrimary, letterSpacing: -1 },
+  breastTimeValueActive: { color: theme.card },
+  breastPlayBtn: { marginTop: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' },
   breastPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  breastArrow: { fontSize: 20, color: '#9CA3AF', marginHorizontal: 4 },
-  breastTotalLabel: { marginTop: 12, fontSize: 13, color: '#6B7280', fontWeight: '500' },
-  sleepTimeInput: { fontSize: 32, fontWeight: '300', color: '#1F2937', letterSpacing: -1, minWidth: 80, paddingVertical: 4 },
+  breastArrow: { fontSize: 20, color: theme.textTertiary, marginHorizontal: 4 },
+  breastTotalLabel: { marginTop: 12, fontSize: 13, color: theme.textSecondary, fontWeight: '500' },
+  sleepTimeInput: { fontSize: 32, fontWeight: '300', color: theme.textPrimary, letterSpacing: -1, minWidth: 80, paddingVertical: 4 },
 
   // Pumping Timer - Premium Card
-  pumpingTimerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#F3F4F6', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, marginBottom: 24 },
+  pumpingTimerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: theme.cardSecondary, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, marginBottom: 24 },
   pumpingTimerBtnActive: { backgroundColor: '#F59E0B' },
-  pumpingTimerText: { fontSize: 20, fontWeight: '700', color: '#1F2937' },
-  premiumPumpingCard: { alignItems: 'center', alignSelf: 'center', backgroundColor: '#F9FAFB', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  pumpingTimerText: { fontSize: 20, fontWeight: '700', color: theme.textPrimary },
+  premiumPumpingCard: { alignItems: 'center', alignSelf: 'center', backgroundColor: theme.cardSecondary, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginBottom: 12, borderWidth: 1, borderColor: theme.border },
   premiumPumpingCardActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
-  premiumPumpingLabel: { fontSize: 11, color: '#9CA3AF', marginBottom: 4, fontWeight: '600', letterSpacing: 0.3 },
+  premiumPumpingLabel: { fontSize: 11, color: theme.textTertiary, marginBottom: 4, fontWeight: '600', letterSpacing: 0.3 },
   premiumPumpingLabelActive: { color: 'rgba(255,255,255,0.8)' },
-  premiumPumpingTime: { fontSize: 26, fontWeight: '400', color: '#1F2937', letterSpacing: -0.5, marginBottom: 8 },
-  premiumPumpingTimeActive: { color: '#fff' },
-  premiumPumpingIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  premiumPumpingTime: { fontSize: 26, fontWeight: '400', color: theme.textPrimary, letterSpacing: -0.5, marginBottom: 8 },
+  premiumPumpingTimeActive: { color: theme.card },
+  premiumPumpingIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' },
   premiumPumpingIconActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
 
   // Solids
   solidsContainer: { width: '100%' },
-  solidsInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, fontSize: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16 },
+  solidsInput: { width: '100%', backgroundColor: theme.cardSecondary, borderRadius: 12, padding: 16, fontSize: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 16 },
   solidsSuggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
 
   // Sleep (Manual Entry)
-  sleepTimerCompact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#F3F4F6', paddingVertical: 16, paddingHorizontal: 28, borderRadius: 20, marginBottom: 12, alignSelf: 'center' },
+  sleepTimerCompact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: theme.cardSecondary, paddingVertical: 16, paddingHorizontal: 28, borderRadius: 20, marginBottom: 12, alignSelf: 'center' },
   sleepTimerCompactActive: { backgroundColor: '#34C759' },
-  sleepTimerCompactText: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  sleepTimerPulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff', opacity: 0.8 },
+  sleepTimerCompactText: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
+  sleepTimerPulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.card, opacity: 0.8 },
   sleepTimerHint: { fontSize: 12, color: '#34C759', textAlign: 'center', marginBottom: 8, fontWeight: '500' },
   sleepDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, gap: 12 },
-  sleepDividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
-  sleepDividerText: { fontSize: 12, color: '#9CA3AF', fontWeight: '500' },
+  sleepDividerLine: { flex: 1, height: 1, backgroundColor: theme.border },
+  sleepDividerText: { fontSize: 12, color: theme.textTertiary, fontWeight: '500' },
   sleepInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 },
   sleepInputGroup: { alignItems: 'center', gap: 8 },
-  sleepBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  sleepBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
   sleepBtnText: { fontSize: 22, fontWeight: '600', color: '#34C759' },
   sleepValueBox: { alignItems: 'center', minWidth: 60 },
-  sleepValue: { fontSize: 36, fontWeight: '800', color: '#1F2937' },
-  sleepUnit: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
-  sleepSeparator: { fontSize: 32, fontWeight: '700', color: '#D1D5DB' },
+  sleepValue: { fontSize: 36, fontWeight: '800', color: theme.textPrimary },
+  sleepUnit: { fontSize: 12, color: theme.textTertiary, fontWeight: '600' },
+  sleepSeparator: { fontSize: 32, fontWeight: '700', color: theme.border },
   sleepPresets: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   sleepNoteContainer: { marginTop: 16 },
   sleepNoteLabel: { fontSize: 13, fontWeight: '500', textAlign: 'right' },
@@ -2762,15 +2763,15 @@ const styles = StyleSheet.create({
   // New Modern Sleep UI
   sleepModeRow: { flexDirection: 'row-reverse', justifyContent: 'center', gap: 4, marginBottom: 20, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 14, padding: 4 },
   sleepModeBtn: { flex: 1, flexDirection: 'column', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 10 },
-  sleepModeBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 0 },
+  sleepModeBtnActive: { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 0 },
   sleepModeText: { fontSize: 13, fontWeight: '500', color: '#8E8E93' },
   sleepModeTextActive: { color: '#1C1C1E' },
 
   sleepTimerSection: { alignItems: 'center', marginVertical: 20 },
-  sleepTimerCard: { alignItems: 'center', backgroundColor: '#F9FAFB', paddingVertical: 24, paddingHorizontal: 52, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
+  sleepTimerCard: { alignItems: 'center', backgroundColor: theme.cardSecondary, paddingVertical: 24, paddingHorizontal: 52, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
   sleepTimerCardActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
   sleepTimerValue: { fontSize: 48, fontWeight: '200', color: '#1C1C1E', letterSpacing: -2 },
-  sleepTimerValueActive: { color: '#fff' },
+  sleepTimerValueActive: { color: theme.card },
   sleepTimerPlayBtn: { marginTop: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
   sleepTimerPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.15)' },
 
@@ -2781,7 +2782,7 @@ const styles = StyleSheet.create({
   sleepDurationSeparator: { fontSize: 28, fontWeight: '300', color: '#C7C7CC' },
 
   sleepSlider: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 4 },
-  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 0 },
+  sleepSliderBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 0 },
   sleepSliderBtnText: { fontSize: 20, fontWeight: '400', color: '#1C1C1E' },
   sleepSliderValue: { fontSize: 34, fontWeight: '700', color: '#1C1C1E', minWidth: 54, textAlign: 'center', letterSpacing: -1 },
 
@@ -3096,9 +3097,9 @@ const styles = StyleSheet.create({
   timeRangeRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 12 },
   timeRangeItem: { flex: 1, alignItems: 'center' },
   timeRangeLabel: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 8 },
-  timeRangeInput: { width: '100%', backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, fontSize: 24, fontWeight: '700', borderWidth: 1, borderColor: '#E5E7EB', color: '#1F2937' },
-  timeRangeArrow: { fontSize: 24, color: '#9CA3AF', marginTop: 24 },
-  timeRangeHint: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 12 },
+  timeRangeInput: { width: '100%', backgroundColor: theme.cardSecondary, borderRadius: 12, padding: 16, fontSize: 24, fontWeight: '700', borderWidth: 1, borderColor: theme.border, color: theme.textPrimary },
+  timeRangeArrow: { fontSize: 24, color: theme.textTertiary, marginTop: 24 },
+  timeRangeHint: { fontSize: 11, color: theme.textTertiary, textAlign: 'center', marginTop: 12 },
 
   sleepTimerNote: { backgroundColor: 'rgba(52,199,89,0.08)', padding: 12, borderRadius: 12, marginTop: 20 },
   sleepTimerNoteText: { fontSize: 14, color: '#34C759', fontWeight: '600', textAlign: 'center' },
@@ -3107,8 +3108,8 @@ const styles = StyleSheet.create({
   timerCircle: { marginVertical: 20 },
   timerCircleActive: {},
   timerGradient: { width: 160, height: 160, borderRadius: 80, alignItems: 'center', justifyContent: 'center' },
-  timerBigText: { fontSize: 36, fontWeight: 'bold', color: '#1F2937' },
-  timerHint: { fontSize: 14, color: '#9CA3AF', textAlign: 'center' },
+  timerBigText: { fontSize: 36, fontWeight: 'bold', color: theme.textPrimary },
+  timerHint: { fontSize: 14, color: theme.textTertiary, textAlign: 'center' },
   persistHint: { fontSize: 12, color: '#10B981', textAlign: 'center', marginTop: 12, fontWeight: '600' },
 
   // Diaper
@@ -3134,48 +3135,48 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 0,
   },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
+  saveBtnText: { color: theme.card, fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
   saveBtnSuccess: { backgroundColor: '#34C759', shadowColor: '#34C759' },
-  saveBtnTextSuccess: { color: '#fff' },
+  saveBtnTextSuccess: { color: theme.card },
 
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
-  timePickerContainer: { backgroundColor: '#fff', borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 0 },
+  timePickerContainer: { backgroundColor: theme.card, borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 0 },
   timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, backgroundColor: '#1C1C1E', borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' },
-  timePickerDoneBtnText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  timePickerDoneBtnText: { color: theme.card, fontSize: 17, fontWeight: '600' },
 
   // Pumping Row Layout (Timer + Amount side by side)
   pumpingRowContainer: { flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: 8, alignItems: 'stretch' },
-  pumpingTimerCard: { flex: 1, backgroundColor: '#F3F4F6', borderRadius: 16, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  pumpingTimerCard: { flex: 1, backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
   pumpingTimerCardActive: { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' },
-  pumpingTimerLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginBottom: 4 },
+  pumpingTimerLabel: { fontSize: 11, color: theme.textTertiary, fontWeight: '600', marginBottom: 4 },
   pumpingTimerLabelActive: { color: '#F59E0B' },
-  pumpingTimerValue: { fontSize: 26, fontWeight: '700', color: '#1F2937', marginBottom: 6 },
+  pumpingTimerValue: { fontSize: 26, fontWeight: '700', color: theme.textPrimary, marginBottom: 6 },
   pumpingTimerValueActive: { color: '#F59E0B' },
-  pumpingTimerIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  pumpingTimerIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: theme.border, alignItems: 'center', justifyContent: 'center' },
   pumpingTimerIconActive: { backgroundColor: '#F59E0B' },
   pumpingAmountSection: { flex: 1, alignItems: 'center' },
-  pumpingAmountLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginBottom: 8 },
+  pumpingAmountLabel: { fontSize: 11, color: theme.textTertiary, fontWeight: '600', marginBottom: 8 },
   pumpingAmountRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pumpingAmountBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
   pumpingAmountDisplay: { alignItems: 'center' },
-  pumpingAmountValue: { fontSize: 28, fontWeight: '700', color: '#1F2937' },
-  pumpingAmountUnit: { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
+  pumpingAmountValue: { fontSize: 28, fontWeight: '700', color: theme.textPrimary },
+  pumpingAmountUnit: { fontSize: 11, color: theme.textTertiary, fontWeight: '600' },
 
   // Pumping - Small Timer (left side)
-  pumpingTimerCardSmall: { flex: 0.35, backgroundColor: '#F3F4F6', borderRadius: 14, padding: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  pumpingTimerLabelSmall: { fontSize: 10, color: '#9CA3AF', fontWeight: '600', marginBottom: 2 },
-  pumpingTimerValueSmall: { fontSize: 20, fontWeight: '700', color: '#1F2937', marginBottom: 4 },
-  pumpingTimerIconSmall: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  pumpingTimerCardSmall: { flex: 0.35, backgroundColor: theme.cardSecondary, borderRadius: 14, padding: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
+  pumpingTimerLabelSmall: { fontSize: 10, color: theme.textTertiary, fontWeight: '600', marginBottom: 2 },
+  pumpingTimerValueSmall: { fontSize: 20, fontWeight: '700', color: theme.textPrimary, marginBottom: 4 },
+  pumpingTimerIconSmall: { width: 22, height: 22, borderRadius: 11, backgroundColor: theme.border, alignItems: 'center', justifyContent: 'center' },
 
   // Pumping - Large Amount (right side)
   pumpingAmountSectionLarge: { flex: 0.65, alignItems: 'center', justifyContent: 'center' },
-  pumpingAmountLabelLarge: { fontSize: 12, color: '#9CA3AF', fontWeight: '600', marginBottom: 10 },
+  pumpingAmountLabelLarge: { fontSize: 12, color: theme.textTertiary, fontWeight: '600', marginBottom: 10 },
   pumpingAmountRowLarge: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   pumpingAmountBtnLarge: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
   pumpingAmountDisplayLarge: { alignItems: 'center', minWidth: 60 },
-  pumpingAmountValueLarge: { fontSize: 36, fontWeight: '700', color: '#1F2937' },
-  pumpingAmountUnitLarge: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
+  pumpingAmountValueLarge: { fontSize: 36, fontWeight: '700', color: theme.textPrimary },
+  pumpingAmountUnitLarge: { fontSize: 12, color: theme.textTertiary, fontWeight: '600' },
 
   // Duration Display
   durationContainer: { alignItems: 'center', marginBottom: 24, marginTop: -12 },
@@ -3218,6 +3219,6 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   modeToggleTextActive: {
-    color: '#fff',
+    color: theme.card,
   },
 });

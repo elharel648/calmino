@@ -24,6 +24,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -52,6 +53,7 @@ import { auth, db, callFirebaseFunction } from '../services/firebaseConfig';
 import LegalModal from '../components/Legal/LegalModal';
 import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
+import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Language } from '../types';
@@ -254,6 +256,23 @@ if (data.settings.language !== undefined) {
     }
   };
 
+  // --- CACHE DELETION HELPER ---
+  // We only target specific keys to avoid deleting user preferences like Language and Theme 
+  const clearUserCache = async () => {
+    try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const keysToRemove = allKeys.filter(k => 
+        k === 'offline_childrenList' || 
+        k.startsWith('history_cache_') ||
+        k === '@sitters_cache' ||
+        k === '@offline_queue'
+      );
+      if (keysToRemove.length > 0) await AsyncStorage.multiRemove(keysToRemove);
+    } catch (e) {
+      logger.warn('Failed to clear specific user cache', e);
+    }
+  };
+
   const handleLogout = () => {
     if (isGuest) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -268,6 +287,7 @@ if (data.settings.language !== undefined) {
         style: 'destructive',
         onPress: async () => {
           try {
+            await clearUserCache();
             await signOut(auth);
           } catch (error) {
             logger.error('Sign out error:', error);
@@ -368,6 +388,18 @@ if (data.settings.language !== undefined) {
 
                       const userId = user.uid;
 
+                      // --- STORAGE DELETION HELPER ---
+                      const deleteStorageObjectByUrl = async (url?: string) => {
+                        if (!url || typeof url !== 'string' || !url.startsWith('https://firebasestorage')) return;
+                        try {
+                          const storageInstance = getStorage();
+                          const fileRef = ref(storageInstance, url);
+                          await deleteObject(fileRef);
+                        } catch (e) {
+                          logger.warn('Failed to clean up storage object during account deletion', url);
+                        }
+                      };
+
                       // 1. Delete all children (babies) created by this user
                       try {
                         const babiesQuery = query(
@@ -377,6 +409,18 @@ if (data.settings.language !== undefined) {
                         const babiesSnapshot = await getDocs(babiesQuery);
                         const deleteBabyPromises = babiesSnapshot.docs.map(async (babyDoc) => {
                           const babyId = babyDoc.id;
+                          const babyData = babyDoc.data();
+                          
+                          // Delete baby's avatar from Storage
+                          if (babyData.photoUrl) {
+                             await deleteStorageObjectByUrl(babyData.photoUrl);
+                          }
+                          // Delete ALL of the baby's album photos from Storage
+                          if (babyData.album && typeof babyData.album === 'object') {
+                             const albumUrls = Object.values(babyData.album) as string[];
+                             await Promise.all(albumUrls.map(url => deleteStorageObjectByUrl(url)));
+                          }
+
                           // Delete all events for this baby
                           const eventsQuery = query(
                             collection(db, 'events'),
@@ -412,6 +456,22 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting events:', error);
                       }
 
+                      // 2.5 Delete all dailyLogs (Charts Data) created by this user
+                      try {
+                        const logsQuery = query(
+                          collection(db, 'dailyLogs'),
+                          where('parentId', '==', userId)
+                        );
+                        const logsSnapshot = await getDocs(logsQuery);
+                        const deleteLogsPromises = logsSnapshot.docs.map((logDoc) =>
+                          deleteDoc(doc(db, 'dailyLogs', logDoc.id))
+                        );
+                        await Promise.all(deleteLogsPromises);
+                        logger.log('✅ Deleted all dailyLogs');
+                      } catch (error) {
+                        logger.error('Error deleting dailyLogs:', error);
+                      }
+
                       // 3. Remove user from families
                       try {
                         const userDoc = await getDoc(doc(db, 'users', userId));
@@ -420,9 +480,18 @@ if (data.settings.language !== undefined) {
                           const familyRef = doc(db, 'families', userData.familyId);
                           const familyDoc = await getDoc(familyRef);
                           if (familyDoc.exists()) {
-                            await updateDoc(familyRef, {
-                              [`members.${userId}`]: deleteField()
-                            });
+                            const familyData = familyDoc.data();
+                            const currentMembers = Object.keys(familyData?.members || {});
+
+                            if (currentMembers.length <= 1 && currentMembers.includes(userId)) {
+                               // Sole member left or owner: scrub the entire orphaned Family logic document
+                               await deleteDoc(familyRef);
+                            } else {
+                               // Others remain: simply sever membership
+                               await updateDoc(familyRef, {
+                                 [`members.${userId}`]: deleteField()
+                               });
+                            }
                             await updateDoc(doc(db, 'users', userId), {
                               familyId: deleteField()
                             });
@@ -499,6 +568,9 @@ if (data.settings.language !== undefined) {
                         const sitterDoc = doc(db, 'sitters', userId);
                         const sitterSnap = await getDoc(sitterDoc);
                         if (sitterSnap.exists()) {
+                          const sitterData = sitterSnap.data();
+                          if (sitterData.image) await deleteStorageObjectByUrl(sitterData.image);
+
                           await deleteDoc(sitterDoc);
                           logger.log('✅ Deleted sitter document');
                         }
@@ -522,8 +594,12 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting notifications:', error);
                       }
 
-                      // 8. Delete user document from Firestore
+                      // 8. Delete user document from Firestore + Storage
                       try {
+                        const userDoc = await getDoc(doc(db, 'users', userId));
+                        if (userDoc.exists() && userDoc.data().photoUrl) {
+                           await deleteStorageObjectByUrl(userDoc.data().photoUrl);
+                        }
                         await deleteDoc(doc(db, 'users', userId));
                         logger.log('✅ Deleted user document');
                       } catch (error) {
@@ -545,12 +621,18 @@ if (data.settings.language !== undefined) {
                       // 10. Always sign out — whether deleteUser succeeded or not
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       setLoading(false);
-                      try { await signOut(auth); } catch (_) {}
+                      try {
+                        await clearUserCache();
+                        await signOut(auth);
+                      } catch (_) {}
                     } catch (e: any) {
                       // Catastrophic failure — sign out anyway to prevent stuck state
                       logger.error('Delete account catastrophic error:', e);
                       setLoading(false);
-                      try { await signOut(auth); } catch (_) {}
+                      try {
+                        await clearUserCache();
+                        await signOut(auth);
+                      } catch (_) {}
                     }
                   }
                 }

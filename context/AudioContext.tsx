@@ -137,7 +137,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 soundRef.current = null;
             }
             setActiveSound(null);
-            if (Platform.OS === 'ios') {
+            if (Platform.OS !== 'web') {
                 liveActivityService.stopWhiteNoise().catch(() => {});
             }
         } catch (error) {
@@ -177,7 +177,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             soundRef.current = sound;
             setActiveSound(id);
 
-            if (Platform.OS === 'ios') {
+            if (Platform.OS !== 'web') {
                 const laInfo = SOUND_LIVE_ACTIVITY[id];
                 if (laInfo) {
                     liveActivityService.startWhiteNoise(laInfo.id, laInfo.name).catch(() => {});

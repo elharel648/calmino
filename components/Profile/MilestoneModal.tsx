@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { Calendar as CalendarIcon } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -13,6 +14,8 @@ interface MilestoneModalProps {
 
 const MilestoneModal = memo(({ visible, onAdd, onClose }: MilestoneModalProps) => {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [title, setTitle] = useState('');
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
@@ -83,7 +86,7 @@ const MilestoneModal = memo(({ visible, onAdd, onClose }: MilestoneModalProps) =
 
 MilestoneModal.displayName = 'MilestoneModal';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     backdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -91,7 +94,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     card: {
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         borderRadius: 20,
         padding: 24,
     },
@@ -100,7 +103,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 15,
-        color: '#1e293b',
+        color: theme.textPrimary,
     },
     input: {
         backgroundColor: '#f8fafc',
@@ -129,7 +132,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     addBtnText: {
-        color: 'white',
+        color: theme.card,
         fontWeight: 'bold',
     },
     cancelBtn: {
@@ -137,7 +140,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
     },
     cancelText: {
-        color: '#64748b',
+        color: theme.textSecondary,
     },
 });
 

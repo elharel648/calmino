@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, PanResponder, Animated as RNAnimated, Platform, TouchableWithoutFeedback, ScrollView } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 import Slider from '@react-native-community/slider';
 import * as SystemBrightness from 'expo-brightness';
 import { Sun, Moon, Sparkles, Zap } from 'lucide-react-native';
@@ -24,6 +25,8 @@ export default function NightLightModal({
     const [controlsVisible, setControlsVisible] = useState(true);
     const originalBrightnessRef = useRef<number | null>(null);
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
     const controlsOpacity = useSharedValue(1);
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
@@ -310,7 +313,7 @@ export default function NightLightModal({
                                                     >
                                                         {colorTemp === 'warm' && (
                                                             <View style={styles.activeIndicator}>
-                                                                <View style={[styles.activeDot, { backgroundColor: '#fff' }]} />
+                                                                <View style={[styles.activeDot, { backgroundColor: theme.card }]} />
                                                             </View>
                                                         )}
                                                     </LinearGradient>
@@ -352,7 +355,7 @@ export default function NightLightModal({
                                                     >
                                                         {colorTemp === 'red' && (
                                                             <View style={styles.activeIndicator}>
-                                                                <View style={[styles.activeDot, { backgroundColor: '#fff' }]} />
+                                                                <View style={[styles.activeDot, { backgroundColor: theme.card }]} />
                                                             </View>
                                                         )}
                                                     </LinearGradient>
@@ -414,7 +417,7 @@ export default function NightLightModal({
     );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     modalBlackBase: {
         flex: 1,
         backgroundColor: '#000',
@@ -512,7 +515,7 @@ const styles = StyleSheet.create({
     },
     colorBtnActive: {
         borderColor: 'rgba(255, 255, 255, 0.6)',
-        shadowColor: '#fff',
+        shadowColor: theme.card,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.8,
         shadowRadius: 20,

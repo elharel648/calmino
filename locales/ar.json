@@ -1651,6 +1651,7 @@
     "allTeethErupted": "ظهرت جميع الأسنان! 🎉",
     "editToothDate": "تعديل تاريخ ظهور السن",
     "whenDidToothErupt": "متى ظهرت السن؟",
-    "removeTooth": "إزالة سن"
+    "removeTooth": "إزالة سن",
+    "updateDate": "تحديث التاريخ"
   }
 }

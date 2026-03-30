@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 import { logger } from '../utils/logger';
+import { androidTimerNotificationService } from './androidTimerNotificationService';
 
 let ActivityKitManager: any = null;
 if (Platform.OS === 'ios') {
@@ -31,17 +32,16 @@ interface LiveActivityService {
     pauseTimer: () => Promise<boolean>;
     resumeTimer: () => Promise<boolean>;
 
-    // Babysitter Shift
-    startBabysitterShift: (babysitterName: string, hourlyRate: number) => Promise<string>;
-    updateBabysitterShift: (isPaused: boolean, totalPausedSeconds: number) => Promise<boolean>;
-    stopBabysitterShift: () => Promise<boolean>;
-
     // White Noise
     startWhiteNoise: (soundId: string, soundName: string) => Promise<string>;
     stopWhiteNoise: () => Promise<boolean>;
 
     isLiveActivitySupported: () => Promise<boolean>;
     updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string, lastDiaperAgo: string, lastDiaperType: string, lastFeedType: string, feedCount: number, sleepMinutes: number, diaperCount: number, lastFeedTimestamp: number, lastSleepTimestamp: number, lastDiaperTimestamp: number, lastHealthTimestamp: number, healthCount: number, lastMedicationTimestamp: number, medicationCount: number) => Promise<boolean>;
+
+    // App Intents sync
+    getPendingTimerAction: () => Promise<{ action: string; timerType: string; timestamp: string } | null>;
+    clearPendingTimerAction: () => Promise<void>;
 }
 
 class LiveActivityServiceClass implements LiveActivityService {
@@ -76,6 +76,9 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Pumping Timer
     async startPumpingTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        if (Platform.OS === 'android') {
+            return androidTimerNotificationService.startPumpingTimer(parentName, childName);
+        }
         await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
@@ -98,6 +101,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async stopPumpingTimer(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.stopPumpingTimer();
         if (!this.isSupported || !ActivityKitManager) {
             return false;
         }
@@ -115,6 +119,9 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Bottle Timer
     async startBottleTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        if (Platform.OS === 'android') {
+            return androidTimerNotificationService.startBottleTimer(parentName, childName);
+        }
         await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
@@ -137,6 +144,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async stopBottleTimer(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.stopBottleTimer();
         if (!this.isSupported || !ActivityKitManager) {
             return false;
         }
@@ -154,6 +162,9 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Sleep Timer
     async startSleepTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
+        if (Platform.OS === 'android') {
+            return androidTimerNotificationService.startSleepTimer(parentName, childName);
+        }
         await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
@@ -176,6 +187,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async stopSleepTimer(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.stopSleepTimer();
         if (!this.isSupported || !ActivityKitManager) {
             return false;
         }
@@ -193,6 +205,9 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Breastfeeding Timer
     async startBreastfeedingTimer(parentName: string = 'הורה', childName: string = 'תינוק', side: 'left' | 'right' = 'left'): Promise<string> {
+        if (Platform.OS === 'android') {
+            return androidTimerNotificationService.startBreastfeedingTimer(parentName, childName, side);
+        }
         await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) {
             throw new Error('Live Activities not supported');
@@ -227,6 +242,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async stopBreastfeedingTimer(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.stopBreastfeedingTimer();
         if (!this.isSupported || !ActivityKitManager) {
             return false;
         }
@@ -244,6 +260,7 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Generic Timer Controls
     async pauseTimer(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.pauseTimer();
         if (!this.isSupported || !ActivityKitManager || !this.activityId) {
             return false;
         }
@@ -259,6 +276,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async resumeTimer(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.resumeTimer();
         if (!this.isSupported || !ActivityKitManager || !this.activityId) {
             return false;
         }
@@ -273,56 +291,11 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
     }
 
-    // MARK: - Babysitter Shift
-    async startBabysitterShift(babysitterName: string, hourlyRate: number): Promise<string> {
-        if (!this.isSupported || !ActivityKitManager) {
-            throw new Error('Live Activities not supported');
-        }
-
-        try {
-            const id = await ActivityKitManager.startBabysitterShift(babysitterName, hourlyRate);
-            this.activityId = id;
-            logger.log('✅ Babysitter Shift Live Activity started:', id);
-            return id;
-        } catch (error: any) {
-            logger.error('Failed to start Babysitter Shift Live Activity:', error);
-            throw error;
-        }
-    }
-
-    async updateBabysitterShift(isPaused: boolean, totalPausedSeconds: number): Promise<boolean> {
-        if (!this.isSupported || !ActivityKitManager || !this.activityId) {
-            return false;
-        }
-
-        try {
-            await ActivityKitManager.updateBabysitterShift(isPaused, totalPausedSeconds);
-            logger.log('✅ Babysitter Shift updated:', { isPaused, totalPausedSeconds });
-            return true;
-        } catch (error: any) {
-            logger.error('Failed to update Babysitter Shift Live Activity:', error);
-            return false;
-        }
-    }
-
-    async stopBabysitterShift(): Promise<boolean> {
-        if (!this.isSupported || !ActivityKitManager) {
-            return false;
-        }
-
-        try {
-            await ActivityKitManager.stopBabysitterShift();
-            this.activityId = null;
-            logger.log('✅ Babysitter Shift Live Activity stopped');
-            return true;
-        } catch (error: any) {
-            logger.error('Failed to stop Babysitter Shift Live Activity:', error);
-            return false;
-        }
-    }
-
     // MARK: - White Noise
     async startWhiteNoise(soundId: string, soundName: string): Promise<string> {
+        if (Platform.OS === 'android') {
+            return androidTimerNotificationService.startWhiteNoise(soundId, soundName);
+        }
         await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) return '';
         try {
@@ -336,6 +309,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     async stopWhiteNoise(): Promise<boolean> {
+        if (Platform.OS === 'android') return androidTimerNotificationService.stopWhiteNoise();
         if (!this.isSupported || !ActivityKitManager) return false;
         try {
             const result = await ActivityKitManager.stopWhiteNoise();
@@ -349,12 +323,15 @@ class LiveActivityServiceClass implements LiveActivityService {
 
     // MARK: - Stop All (called on cold launch to clean up stale activities)
     async stopAllLiveActivities(): Promise<void> {
+        if (Platform.OS === 'android') {
+            await androidTimerNotificationService.stopAll();
+            return;
+        }
         if (!this.isSupported || !ActivityKitManager) return;
         await Promise.allSettled([
             ActivityKitManager.stopMeal?.(),
             ActivityKitManager.stopSleep?.(),
             ActivityKitManager.stopBreastfeeding?.(),
-            ActivityKitManager.stopBabysitterShift?.(),
             ActivityKitManager.stopWhiteNoise?.(),
         ]);
         this.activityId = null;
@@ -376,6 +353,26 @@ class LiveActivityServiceClass implements LiveActivityService {
             return await ActivityKitManager.updateWidgetData(babyName, lastFeedTime, lastFeedAgo, lastSleepTime, lastSleepAgo, babyStatus, lastDiaperAgo, lastDiaperType, lastFeedType, feedCount, sleepMinutes, diaperCount, lastFeedTimestamp, lastSleepTimestamp, lastDiaperTimestamp, lastHealthTimestamp, healthCount, lastMedicationTimestamp, medicationCount);
         } catch {
             return false;
+        }
+    }
+
+    // MARK: - App Intents Sync
+    async getPendingTimerAction(): Promise<{ action: string; timerType: string; timestamp: string } | null> {
+        if (!ActivityKitManager || Platform.OS !== 'ios') return null;
+        try {
+            return await ActivityKitManager.getPendingTimerAction();
+        } catch (error) {
+            logger.warn('Failed to get pending timer action:', error);
+            return null;
+        }
+    }
+
+    async clearPendingTimerAction(): Promise<void> {
+        if (!ActivityKitManager || Platform.OS !== 'ios') return;
+        try {
+            await ActivityKitManager.clearPendingTimerAction();
+        } catch (error) {
+            logger.warn('Failed to clear pending timer action:', error);
         }
     }
 }

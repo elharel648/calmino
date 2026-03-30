@@ -1,5 +1,6 @@
 import React, { memo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, LayoutAnimation, UIManager } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Milestone } from '../../types/profile';
@@ -29,6 +30,8 @@ interface MilestoneRowProps {
 
 const MilestoneRow = memo(({ title, date, ageAtEvent, onDelete }: MilestoneRowProps) => {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     return (
         <SwipeableRow onDelete={onDelete}>
             <View style={styles.row}>
@@ -117,10 +120,10 @@ const MilestoneTimeline = memo(({ milestones, birthDate, onAdd, onDelete }: Mile
 
 MilestoneTimeline.displayName = 'MilestoneTimeline';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {},
     list: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderRadius: 16,
         overflow: 'hidden',
     },
@@ -130,7 +133,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        borderBottomColor: theme.cardSecondary,
     },
     rowContent: {
         flex: 1,
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
     rowTitle: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#1F2937',
+        color: theme.textPrimary,
         marginBottom: 2,
     },
     rowMeta: {
@@ -149,11 +152,11 @@ const styles = StyleSheet.create({
     },
     rowDate: {
         fontSize: 12,
-        color: '#9CA3AF',
+        color: theme.textTertiary,
     },
     dot: {
         fontSize: 12,
-        color: '#D1D5DB',
+        color: theme.border,
     },
     rowAge: {
         fontSize: 12,
@@ -164,7 +167,7 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     emptyState: {
-        backgroundColor: '#F9FAFB',
+        backgroundColor: theme.cardSecondary,
         borderRadius: 16,
         padding: 32,
         alignItems: 'center',
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 14,
-        color: '#9CA3AF',
+        color: theme.textTertiary,
     },
     expandBtn: {
         flexDirection: 'row-reverse',
@@ -185,7 +188,7 @@ const styles = StyleSheet.create({
     expandText: {
         fontSize: 13,
         fontWeight: '500',
-        color: '#6B7280',
+        color: theme.textSecondary,
     },
 });
 

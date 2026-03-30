@@ -64,6 +64,7 @@ type SitterProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Sitt
 const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) => {
     const { sitterData } = route.params || {};
     const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const insets = useSafeAreaInsets();
     const [showFullVideo, setShowFullVideo] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -556,7 +557,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     backgroundColor: isDarkMode ? '#fff' : '#000',
                                     shadowColor: isDarkMode ? '#fff' : '#000'
                                 }]}>
-                                    <MaterialIcons name="verified" size={18} color={isDarkMode ? '#000' : '#fff'} />
+                                    <MaterialIcons name="verified" size={18} color={isDarkMode ? '#1e1e1e' : theme.card} />
                                 </View>
                             )}
                         </View>
@@ -591,7 +592,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                     paddingVertical: 6,
                                     borderRadius: 20,
                                 }}>
-                                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' }} />
+                                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: theme.card }} />
                                     <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>זמין עכשיו</Text>
                                 </View>
                             )}
@@ -910,7 +911,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             borderWidth: 2,
-                                            borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                            borderColor: isDarkMode ? '#1e1e1e' : theme.card,
                                             backgroundColor: '#10B981',
                                         }}>
                                             <Check size={12} color="#fff" strokeWidth={3.5} />
@@ -1040,7 +1041,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 >
                                     <Text style={[styles.filterChipText,
                                     reviewFilter === 'all' && {
-                                        color: isDarkMode ? '#000' : '#fff',
+                                        color: isDarkMode ? '#1e1e1e' : theme.card,
                                         fontWeight: '700'
                                     }
                                     ]}>הכל</Text>
@@ -1058,10 +1059,10 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                         activeOpacity={0.7}
                                     >
                                         <View style={styles.filterChipContent}>
-                                            <Star size={14} color={reviewFilter === String(rating) ? (isDarkMode ? '#000' : '#fff') : theme.textSecondary} fill={reviewFilter === String(rating) ? (isDarkMode ? '#000' : '#fff') : 'transparent'} strokeWidth={1.5} />
+                                            <Star size={14} color={reviewFilter === String(rating) ? (isDarkMode ? '#1e1e1e' : theme.card) : theme.textSecondary} fill={reviewFilter === String(rating) ? (isDarkMode ? '#1e1e1e' : theme.card) : 'transparent'} strokeWidth={1.5} />
                                             <Text style={[styles.filterChipText,
                                             reviewFilter === String(rating) && {
-                                                color: isDarkMode ? '#000' : '#fff',
+                                                color: isDarkMode ? '#1e1e1e' : theme.card,
                                                 fontWeight: '700'
                                             }
                                             ]}>
@@ -1126,8 +1127,8 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                                 backgroundColor: isDarkMode ? '#fff' : '#000',
                                                 shadowColor: isDarkMode ? '#fff' : '#000'
                                             }]}>
-                                                <CheckCircle size={12} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
-                                                <Text style={[styles.verifiedText, { color: isDarkMode ? '#000' : '#fff' }]}>מאומת</Text>
+                                                <CheckCircle size={12} color={isDarkMode ? '#1e1e1e' : theme.card} strokeWidth={2.5} />
+                                                <Text style={[styles.verifiedText, { color: isDarkMode ? '#1e1e1e' : theme.card }]}>מאומת</Text>
                                             </View>
                                         )}
                                         {review.parentId === currentUserId && (
@@ -1446,7 +1447,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
         flex: 1,
     },
@@ -1506,7 +1507,7 @@ const styles = StyleSheet.create({
         height: 110,
         borderRadius: 55,
         borderWidth: 4,
-        borderColor: '#fff',
+        borderColor: theme.card,
     },
     verifiedBadge: {
         position: 'absolute',
@@ -1523,7 +1524,7 @@ const styles = StyleSheet.create({
     heroName: {
         fontSize: 28,
         fontWeight: '800',
-        color: '#fff',
+        color: theme.card,
         marginTop: 14,
         textShadowColor: 'rgba(0,0,0,0.5)',
         textShadowOffset: { width: 0, height: 2 },
@@ -1546,7 +1547,7 @@ const styles = StyleSheet.create({
         elevation: 0,
     },
     ratingText: {
-        color: '#fff',
+        color: theme.card,
         fontWeight: '700',
         fontSize: 14,
         textShadowColor: 'rgba(0,0,0,0.3)',
@@ -1559,7 +1560,7 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     playText: {
-        color: '#fff',
+        color: theme.card,
         fontWeight: '600',
         marginTop: 4,
         fontSize: 13,
@@ -1641,7 +1642,7 @@ const styles = StyleSheet.create({
     },
     reviewerName: {
         fontWeight: '700',
-        color: '#1F2937',
+        color: theme.textPrimary,
         fontSize: 15,
     },
     reviewRating: {
@@ -1651,25 +1652,25 @@ const styles = StyleSheet.create({
     },
     reviewRatingText: {
         fontSize: 12,
-        color: '#6B7280',
+        color: theme.textSecondary,
         fontWeight: '600',
     },
     reviewBody: {
         textAlign: 'right',
-        color: '#374151',
+        color: theme.textPrimary,
         fontSize: 15,
         lineHeight: 22,
         marginTop: 12,
         paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
+        borderTopColor: theme.border,
     },
     emptyReviews: {
         alignItems: 'center',
         paddingVertical: 24,
     },
     emptyReviewsText: {
-        color: '#9CA3AF',
+        color: theme.textTertiary,
         marginTop: 8,
         fontSize: 14,
     },
@@ -1785,7 +1786,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
         paddingVertical: 10,
         borderRadius: 20,
-        backgroundColor: '#F3F4F6',
+        backgroundColor: theme.cardSecondary,
         marginLeft: 10,
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: 'transparent',
@@ -1804,11 +1805,11 @@ const styles = StyleSheet.create({
     },
     filterChipText: {
         fontSize: 14,
-        color: '#6B7280',
+        color: theme.textSecondary,
         fontWeight: '600',
     },
     filterChipTextActive: {
-        color: '#fff',
+        color: theme.card,
         fontWeight: '700',
     },
     sortButton: {
@@ -1860,7 +1861,7 @@ const styles = StyleSheet.create({
     },
     reviewDate: {
         fontSize: 12,
-        color: '#6B7280',
+        color: theme.textSecondary,
         fontWeight: '500',
     },
     reviewActions: {
@@ -1934,15 +1935,15 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     responseInput: {
-        backgroundColor: '#F9FAFB',
+        backgroundColor: theme.cardSecondary,
         borderRadius: 12,
         padding: 12,
         fontSize: 14,
-        color: '#1F2937',
+        color: theme.textPrimary,
         minHeight: 80,
         textAlignVertical: 'top',
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: theme.border,
     },
     responseActions: {
         flexDirection: 'row-reverse',
@@ -1956,7 +1957,7 @@ const styles = StyleSheet.create({
     },
     cancelResponseText: {
         fontSize: 14,
-        color: '#6B7280',
+        color: theme.textSecondary,
         fontWeight: '500',
     },
     submitResponseButton: {
@@ -1967,7 +1968,7 @@ const styles = StyleSheet.create({
     },
     submitResponseText: {
         fontSize: 14,
-        color: '#fff',
+        color: theme.card,
         fontWeight: '600',
     },
 
@@ -2006,7 +2007,7 @@ const styles = StyleSheet.create({
         gap: 6
     },
     whatsappText: {
-        color: '#fff',
+        color: theme.card,
         fontWeight: '700',
         fontSize: 14
     },
@@ -2022,7 +2023,7 @@ const styles = StyleSheet.create({
         minWidth: 0,
     },
     bookBtnText: {
-        color: '#fff',
+        color: theme.card,
         fontWeight: '700',
         fontSize: 14,
         flexShrink: 1,

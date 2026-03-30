@@ -21,7 +21,7 @@
 		A42B8E4D3E58469E84071DC8 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EC3F4E1EC94A4AAC51158B /* FeedingLiveActivity.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		BE3368101EC448E0BC3CE5A8 /* BreastfeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1A1B2A32B0431FA926B7A1 /* BreastfeedingLiveActivity.swift */; };
-		C56571755A7547BE9642D3CF /* BabysitterShiftLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 965F3146FAC74249BBE8E437 /* BabysitterShiftLiveActivity.swift */; };
+		C1A2B3D4E5F60718 /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3D4E5F60719 /* TimerIntents.swift */; };
 		CAF6CA4091054CAF86141AAA /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89AA6929B3F5413D904304D5 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		DB9CD87D93F94F78A8AD02AB /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB8657A1743404DBCC44D13 /* GlassComponents.swift */; };
 		E047FA3885814042BAEE6CC1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC7F267CAD7D4D73B73CF857 /* SwiftUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
@@ -57,10 +57,10 @@
 		87BBC1B94E36028936973EAE /* Pods-Calmino.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Calmino.debug.xcconfig"; path = "Target Support Files/Pods-Calmino/Pods-Calmino.debug.xcconfig"; sourceTree = "<group>"; };
 		89AA6929B3F5413D904304D5 /* ActivityKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
 		8FB8657A1743404DBCC44D13 /* GlassComponents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = GlassComponents.swift; path = CalmParentLiveActivity/GlassComponents.swift; sourceTree = "<group>"; };
-		965F3146FAC74249BBE8E437 /* BabysitterShiftLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = BabysitterShiftLiveActivity.swift; path = CalmParentLiveActivity/BabysitterShiftLiveActivity.swift; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Calmino/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		BD79C16F712644D0826B7466 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Calmino/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		C1A2B3D4E5F60719 /* TimerIntents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = TimerIntents.swift; path = CalmParentLiveActivity/TimerIntents.swift; sourceTree = "<group>"; };
 		C2AF5261A2039AD6B987B220 /* Pods-Calmino.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Calmino.release.xcconfig"; path = "Target Support Files/Pods-Calmino/Pods-Calmino.release.xcconfig"; sourceTree = "<group>"; };
 		E2EC3F4E1EC94A4AAC51158B /* FeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = FeedingLiveActivity.swift; path = CalmParentLiveActivity/FeedingLiveActivity.swift; sourceTree = "<group>"; };
 		E957537D699B442DB36F2233 /* CalmParentLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = CalmParentLiveActivity.appex; path = CalmParentLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -149,11 +149,11 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				965F3146FAC74249BBE8E437 /* BabysitterShiftLiveActivity.swift */,
 				6D35DC26577D443D86954D4C /* SleepLiveActivity.swift */,
 				E2EC3F4E1EC94A4AAC51158B /* FeedingLiveActivity.swift */,
 				6C1A1B2A32B0431FA926B7A1 /* BreastfeedingLiveActivity.swift */,
 				437892F4AD1642AD8497242C /* CalmParentLiveActivityBundle.swift */,
+				C1A2B3D4E5F60719 /* TimerIntents.swift */,
 				2BE1B086A2DD472EAD693AF8 /* ActivityAttributes.swift */,
 				8FB8657A1743404DBCC44D13 /* GlassComponents.swift */,
 				EF93EC3BBCF72495C80F7E36 /* Pods */,
@@ -246,12 +246,12 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = Q5555SW7GS;
 						LastSwiftMigration = 1250;
-						DevelopmentTeam = "Q5555SW7GS";
 						ProvisioningStyle = Automatic;
 					};
 					FB3DD3C20C0245448483B6FD = {
-						DevelopmentTeam = "Q5555SW7GS";
+						DevelopmentTeam = Q5555SW7GS;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -497,13 +497,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C56571755A7547BE9642D3CF /* BabysitterShiftLiveActivity.swift in Sources */,
 				536AB84F62804C2CA082417A /* SleepLiveActivity.swift in Sources */,
 				A42B8E4D3E58469E84071DC8 /* FeedingLiveActivity.swift in Sources */,
 				BE3368101EC448E0BC3CE5A8 /* BreastfeedingLiveActivity.swift in Sources */,
 				364FC37E105449EFA59FE418 /* CalmParentLiveActivityBundle.swift in Sources */,
 				9826719A9F9242A4A78ECD90 /* ActivityAttributes.swift in Sources */,
 				DB9CD87D93F94F78A8AD02AB /* GlassComponents.swift in Sources */,
+				C1A2B3D4E5F60718 /* TimerIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -526,7 +526,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Calmino/Calmino.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q5555SW7GS;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -552,9 +555,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "Q5555SW7GS";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
@@ -565,7 +565,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Calmino/Calmino.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = Calmino/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -585,18 +588,16 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "Q5555SW7GS";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};
 		691C8EC80FF846A387BCBFA9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "Q5555SW7GS";
+				DEVELOPMENT_TEAM = Q5555SW7GS;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -613,7 +614,6 @@
 				PRODUCT_NAME = CalmParentLiveActivity;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
-				CODE_SIGN_IDENTITY = "Apple Development";
 			};
 			name = Debug;
 		};
@@ -764,11 +764,10 @@
 		A11036903E454BCEB5EB383F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "Q5555SW7GS";
+				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (

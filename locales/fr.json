@@ -1651,6 +1651,7 @@
     "allTeethErupted": "Toutes les dents ont poussé ! 🎉",
     "editToothDate": "Modifier la date",
     "whenDidToothErupt": "Quand la dent est-elle apparue ?",
-    "removeTooth": "Retirer la dent"
+    "removeTooth": "Retirer la dent",
+    "updateDate": "Mettre à jour la date"
   }
 }

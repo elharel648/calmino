@@ -623,7 +623,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         >
 
                           {/* LEFT (RTL: last in JSX): time */}
-                          <Text style={[styles.historyTime, { color: theme.textSecondary }]}>{timeStr}</Text>
+                          <Text style={[styles.historyTime, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
 
                           {/* CENTER: title + subtitle */}
                           <View style={styles.historyContent}>
@@ -705,14 +705,14 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.eventRow}>
                     {/* Left side: Time + Dot */}
                     <View style={styles.leftSection}>
-                      <Text style={[styles.time, { color: theme.textPrimary }]}>
+                      <Text style={[styles.time, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
                         {event.timestamp.toLocaleTimeString('he-IL', {
                           hour: '2-digit',
                           minute: '2-digit',
                           hour12: false
                         })}
                       </Text>
-                      <Text style={[styles.timeAgo, { color: theme.textSecondary }]}>{getTimeAgo(event.timestamp)}</Text>
+                      <Text style={[styles.timeAgo, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{getTimeAgo(event.timestamp)}</Text>
                     </View>
 
                     {/* Timeline icon + line */}
@@ -920,10 +920,11 @@ const styles = StyleSheet.create({
 
   // Left: Time
   leftSection: {
-    width: 56,
+    width: 62,
     paddingTop: 3,
     alignItems: 'flex-end',
     paddingRight: 4,
+    flexWrap: 'nowrap',
   },
   time: {
     ...TYPOGRAPHY.labelSmall,
@@ -1187,7 +1188,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
     flexShrink: 0,
-    minWidth: 38,
+    minWidth: 46,
     textAlign: 'left',
   },
   historyAvatar: {

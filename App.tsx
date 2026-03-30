@@ -29,7 +29,7 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState, NativeModules } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -109,6 +109,35 @@ import { notificationStorageService } from './services/notificationStorageServic
 import { notificationService } from './services/notificationService';
 import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
+
+// --- Android Foreground Service Registration (must be at top level, outside components) ---
+if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
+  import('@notifee/react-native').then(({ default: notifee }) => {
+    // Register the foreground service task — keeps the timer alive when app is backgrounded
+    notifee.registerForegroundService(() => {
+      return new Promise(() => {
+        // This promise intentionally never resolves — it keeps the service alive
+        // The service is stopped explicitly by androidTimerNotificationService.stopTimer()
+      });
+    });
+
+    // Handle notification action button presses when app is in background/killed
+    notifee.onBackgroundEvent(async ({ type, detail }) => {
+      const { EventType: ET } = await import('@notifee/react-native');
+      if (type === ET.ACTION_PRESS) {
+        const actionId = detail.pressAction?.id;
+        const { androidTimerNotificationService } = await import('./services/androidTimerNotificationService');
+        if (actionId === 'stop') {
+          await androidTimerNotificationService.stopTimer();
+        } else if (actionId === 'pause') {
+          await androidTimerNotificationService.pauseTimer();
+        } else if (actionId === 'resume') {
+          await androidTimerNotificationService.resumeTimer();
+        }
+      }
+    });
+  }).catch(() => { /* notifee not available */ });
+}
 
 
 
@@ -507,24 +536,34 @@ function LiveActivityURLHandler() {
       }
     });
 
-    // Sync timer state when app comes to foreground (from background AppIntent pause/resume)
+    // Sync timer state when app comes to foreground (from background App Intents)
     const syncFromIntent = async () => {
       if (Platform.OS !== 'ios') return;
       try {
         const { liveActivityService } = await import('./services/liveActivityService');
-        const intent = await liveActivityService.consumeTimerIntent();
-        if (intent === 'paused') {
-          if (foodTimer.pumpingIsRunning && !foodTimer.pumpingIsPaused) foodTimer.pausePumping();
-          else if (foodTimer.bottleIsRunning && !foodTimer.bottleIsPaused) foodTimer.pauseBottle();
-          else if (foodTimer.breastIsRunning && !foodTimer.breastIsPaused) foodTimer.pauseBreast();
-          else if (sleepTimer.isRunning && !sleepTimer.isPaused) sleepTimer.pause();
-        } else if (intent === 'resumed') {
-          if (foodTimer.pumpingIsRunning && foodTimer.pumpingIsPaused) foodTimer.resumePumping();
-          else if (foodTimer.bottleIsRunning && foodTimer.bottleIsPaused) foodTimer.resumeBottle();
-          else if (foodTimer.breastIsRunning && foodTimer.breastIsPaused) foodTimer.resumeBreast();
-          else if (sleepTimer.isRunning && sleepTimer.isPaused) sleepTimer.resume();
+        const pending = await liveActivityService.getPendingTimerAction();
+        
+        if (pending && pending.action) {
+          // Convert Intent to faux-URL to reuse the complex handleURL logic
+          let fauxUrl = '';
+          if (pending.action === 'pause') fauxUrl = 'calmino://pause-timer';
+          else if (pending.action === 'resume') fauxUrl = 'calmino://resume-timer';
+          else if (pending.action === 'switchSide') fauxUrl = 'calmino://switch-side'; // Faux URL without side param will handle internally
+          else if (pending.action === 'stop') {
+             // We need full data for stop
+             fauxUrl = `calmino://save-timer?type=${encodeURIComponent(pending.timerType || '')}`;
+          }
+
+          if (fauxUrl) {
+             logger.log('Executing pending App Intent:', pending.action);
+             await handleURL({ url: fauxUrl });
+          }
+          
+          await liveActivityService.clearPendingTimerAction();
         }
-      } catch {}
+      } catch (err) {
+        logger.warn('Failed to sync pending App Intent:', err);
+      }
     };
 
     const appStateSubscription = AppState.addEventListener('change', (state) => {
@@ -551,13 +590,39 @@ export default function App() {
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
 
-  // Clean up any stuck Live Activities from previous session on cold launch
+  // Clean up any stuck Live Activities / Android notifications from previous session on cold launch
   useEffect(() => {
     if (Platform.OS === 'ios') {
       import('./services/liveActivityService').then(({ liveActivityService }) => {
         liveActivityService.stopAllLiveActivities().catch(() => {});
       });
+    } else if (Platform.OS === 'android') {
+      import('./services/androidTimerNotificationService').then(({ androidTimerNotificationService }) => {
+        androidTimerNotificationService.stopAll().catch(() => {});
+      });
     }
+  }, []);
+
+  // Handle Android notification action button presses when app is in foreground
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !NativeModules.NotifeeApiModule) return;
+    let unsubscribe: (() => void) | undefined;
+    import('@notifee/react-native').then(({ default: notifee, EventType: ET }) => {
+      unsubscribe = notifee.onForegroundEvent(async ({ type, detail }) => {
+        if (type === ET.ACTION_PRESS) {
+          const actionId = detail.pressAction?.id;
+          const { androidTimerNotificationService } = await import('./services/androidTimerNotificationService');
+          if (actionId === 'stop') {
+            await androidTimerNotificationService.stopTimer();
+          } else if (actionId === 'pause') {
+            await androidTimerNotificationService.pauseTimer();
+          } else if (actionId === 'resume') {
+            await androidTimerNotificationService.resumeTimer();
+          }
+        }
+      });
+    }).catch(() => {});
+    return () => { unsubscribe?.(); };
   }, []);
 
   // Configure notification handler on app start

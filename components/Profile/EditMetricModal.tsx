@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 
 interface EditMetricModalProps {
@@ -19,6 +20,8 @@ const EditMetricModal = memo(({
     onSave,
     onClose,
 }: EditMetricModalProps) => {
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [value, setValue] = useState(initialValue);
 
     useEffect(() => {
@@ -69,7 +72,7 @@ const EditMetricModal = memo(({
 
 EditMetricModal.displayName = 'EditMetricModal';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     backdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -77,7 +80,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     card: {
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         borderRadius: 20,
         padding: 24,
     },
@@ -86,7 +89,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 15,
-        color: '#1e293b',
+        color: theme.textPrimary,
     },
     inputRow: {
         flexDirection: 'row-reverse',
@@ -98,7 +101,7 @@ const styles = StyleSheet.create({
     hugeInput: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#1e293b',
+        color: theme.textPrimary,
         borderBottomWidth: 2,
         borderBottomColor: '#e2e8f0',
         textAlign: 'center',
@@ -106,7 +109,7 @@ const styles = StyleSheet.create({
     },
     unit: {
         fontSize: 18,
-        color: '#64748b',
+        color: theme.textSecondary,
         marginBottom: 8,
     },
     btnRow: {
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#4f46e5',
     },
     saveBtnText: {
-        color: 'white',
+        color: theme.card,
         fontWeight: 'bold',
     },
 });

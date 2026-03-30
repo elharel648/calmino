@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import quickActionsService from '../services/quickActionsService';
+import { liveActivityService } from '../services/liveActivityService';
 import { useActiveChild } from '../context/ActiveChildContext';
 
 interface SleepTimerState {
@@ -116,11 +117,15 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             elapsedSeconds: 0,
         });
 
-        // Start iOS Live Activity in background (fire-and-forget)
+        // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS === 'ios' && activeChild) {
             quickActionsService.startSleep(activeChild.childName, '👶', 'שינה')
                 .then(() => logger.log('✅ Sleep Live Activity started for child:', activeChildId))
                 .catch(error => logger.warn('⚠️ Sleep Live Activity not supported:', error));
+        } else if (Platform.OS === 'android' && activeChild) {
+            liveActivityService.startSleepTimer(undefined, activeChild.childName)
+                .then(() => logger.log('✅ Android Sleep Timer Notification started for child:', activeChildId))
+                .catch(error => logger.warn('⚠️ Android Sleep Timer Notification failed:', error));
         }
     }, [activeChildId, activeChild?.childName, updateChildState]);
 
@@ -141,13 +146,20 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             activityId: undefined
         });
 
-        // Stop iOS Live Activity
+        // Stop Live Activity / Android Notification
         if (Platform.OS === 'ios') {
             try {
                 await quickActionsService.stopSleep();
                 logger.log('✅ Sleep Live Activity stopped');
             } catch (error) {
                 logger.warn('⚠️ Error stopping Sleep Live Activity:', error);
+            }
+        } else if (Platform.OS === 'android') {
+            try {
+                await liveActivityService.stopSleepTimer();
+                logger.log('✅ Android Sleep Timer Notification stopped');
+            } catch (error) {
+                logger.warn('⚠️ Error stopping Android Sleep Timer Notification:', error);
             }
         }
     }, [activeChildId, updateChildState, timers]);
@@ -165,6 +177,12 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             } catch (error) {
                 logger.warn('⚠️ Error pausing Sleep Live Activity:', error);
             }
+        } else if (Platform.OS === 'android') {
+            try {
+                await liveActivityService.pauseTimer();
+            } catch (error) {
+                logger.warn('⚠️ Error pausing Android Sleep Timer:', error);
+            }
         }
     }, [activeChildId, timers, updateChildState]);
 
@@ -180,6 +198,12 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
                 await quickActionsService.resumeSleep();
             } catch (error) {
                 logger.warn('⚠️ Error resuming Sleep Live Activity:', error);
+            }
+        } else if (Platform.OS === 'android') {
+            try {
+                await liveActivityService.resumeTimer();
+            } catch (error) {
+                logger.warn('⚠️ Error resuming Android Sleep Timer:', error);
             }
         }
     }, [activeChildId, timers, updateChildState]);

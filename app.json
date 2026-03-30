@@ -3,7 +3,7 @@
     "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.0.9",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -38,6 +38,7 @@
       ],
       "./plugins/withFirebaseWarningFix",
       "./plugins/withLiveActivity",
+      "./plugins/withAndroidForegroundService",
       "@react-native-google-signin/google-signin"
     ],
     "splash": {
@@ -50,6 +51,11 @@
       "bundleIdentifier": "com.harel.calmparentapp",
       "buildNumber": "5",
       "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.harel.calmparentapp"
+        ]
+      },
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "CFBundleIconName": "AppIcon",
@@ -105,12 +111,9 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.RECORD_AUDIO",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.CAMERA",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {

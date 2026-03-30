@@ -41,6 +41,8 @@ export default function EditBasicInfoModal({
     onClose,
 }: EditBasicInfoModalProps) {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [name, setName] = useState(initialData.name);
     const [gender, setGender] = useState<'boy' | 'girl' | 'other'>(initialData.gender);
     const [photoUrl, setPhotoUrl] = useState<string | undefined>(initialData.photoUrl);
@@ -217,14 +219,14 @@ export default function EditBasicInfoModal({
     );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
     },
     modal: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingBottom: 40,
@@ -235,7 +237,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        borderBottomColor: theme.cardSecondary,
     },
     closeBtn: {
         padding: 8,
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 18,
         fontWeight: '700',
-        color: '#111827',
+        color: theme.textPrimary,
         textAlign: 'right',
     },
     content: {
@@ -256,18 +258,18 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
+        color: theme.textPrimary,
         marginBottom: 8,
         textAlign: 'right',
     },
     input: {
-        backgroundColor: '#F9FAFB',
+        backgroundColor: theme.cardSecondary,
         borderRadius: 12,
         padding: 14,
         fontSize: 16,
-        color: '#111827',
+        color: theme.textPrimary,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: theme.border,
     },
     genderRow: {
         flexDirection: 'row-reverse',
@@ -276,11 +278,11 @@ const styles = StyleSheet.create({
     genderBtn: {
         flex: 1,
         paddingVertical: 12,
-        backgroundColor: '#F9FAFB',
+        backgroundColor: theme.cardSecondary,
         borderRadius: 12,
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#E5E7EB',
+        borderColor: theme.border,
     },
     genderBtnActive: {
         backgroundColor: '#EEF2FF',
@@ -289,7 +291,7 @@ const styles = StyleSheet.create({
     genderText: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#6B7280',
+        color: theme.textSecondary,
     },
     genderTextActive: {
         color: '#6366F1',
@@ -298,15 +300,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#F9FAFB',
+        backgroundColor: theme.cardSecondary,
         borderRadius: 12,
         padding: 14,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: theme.border,
     },
     dateText: {
         fontSize: 16,
-        color: '#111827',
+        color: theme.textPrimary,
         fontWeight: '500',
     },
     saveBtn: {
@@ -320,7 +322,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     saveBtnText: {
-        color: '#fff',
+        color: theme.card,
         fontSize: 16,
         fontWeight: '700',
     },
@@ -346,11 +348,11 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: '#F3F4F6',
+        backgroundColor: theme.cardSecondary,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2,
-        borderColor: '#E5E7EB',
+        borderColor: theme.border,
     },
     cameraBadge: {
         position: 'absolute',
@@ -363,11 +365,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,
-        borderColor: '#fff',
+        borderColor: theme.card,
     },
     photoHint: {
         marginTop: 12,
         fontSize: 13,
-        color: '#6B7280',
+        color: theme.textSecondary,
     },
 });

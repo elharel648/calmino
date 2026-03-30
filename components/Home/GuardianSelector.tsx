@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { Users, ChevronDown, Crown, Edit3, Eye } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useFamily } from '../../hooks/useFamily';
@@ -31,6 +32,8 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
     onFamilyPress,
     dynamicStyles,
 }) => {
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const { family, members, myRole } = useFamily();
     const currentUser = auth.currentUser;
 
@@ -121,12 +124,12 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
 
 GuardianSelector.displayName = 'GuardianSelector';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderRadius: 16,
         padding: 14,
         marginBottom: 16,
@@ -161,18 +164,18 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     inviteText: {
-        color: '#6B7280',
+        color: theme.textSecondary,
         fontWeight: '500',
     },
     familyLabel: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#1F2937',
+        color: theme.textPrimary,
         textAlign: 'right',
     },
     familySubtext: {
         fontSize: 12,
-        color: '#6B7280',
+        color: theme.textSecondary,
         textAlign: 'right',
     },
     addBtn: {
@@ -198,9 +201,9 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: '#F3F4F6',
+        backgroundColor: theme.cardSecondary,
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: theme.card,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -211,7 +214,7 @@ const styles = StyleSheet.create({
     moreText: {
         fontSize: 10,
         fontWeight: '700',
-        color: '#6B7280',
+        color: theme.textSecondary,
     },
 });
 

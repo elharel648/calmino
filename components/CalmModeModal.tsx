@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Linking, Platform, Alert, Animated as RNAnimated, PanResponder, Dimensions } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 import { Phone, Siren, Shield, Skull } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -18,6 +19,8 @@ interface CalmModeModalProps {
 export default function CalmModeModal({
   visible, onClose }: CalmModeModalProps) {
   const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
   // Animations
   const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
@@ -199,7 +202,7 @@ export default function CalmModeModal({
             {
               transform: [{ translateY: slideAnim }],
               opacity: fadeAnim,
-              backgroundColor: '#FFFFFF',
+              backgroundColor: theme.card,
               zIndex: 1000,
             }
           ]}
@@ -230,7 +233,7 @@ export default function CalmModeModal({
                   </LinearGradient>
                 </Animated.View>
               </View>
-              <Text style={[styles.mainTitle, { color: '#111827' }]}>SOS</Text>
+              <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>SOS</Text>
             </View>
           </View>
 
@@ -246,7 +249,7 @@ export default function CalmModeModal({
               scrollEventThrottle={16}
             >
               {/* Emergency - Premium Row */}
-              <Text style={[styles.sectionTitle, { color: '#6B7280' }]}>חירום מיידי</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
               <View style={styles.emergencyRow}>
                 {emergencyContacts.map((contact, index) => {
                   const { Icon } = contact;
@@ -256,7 +259,7 @@ export default function CalmModeModal({
                       style={[
                         styles.emergencyCard,
                         {
-                          backgroundColor: '#FFFFFF',
+                          backgroundColor: theme.card,
                           borderColor: 'rgba(0,0,0,0.08)',
                         }
                       ]}
@@ -266,7 +269,7 @@ export default function CalmModeModal({
                       <View style={[styles.emergencyIcon, { backgroundColor: contact.bgColor }]}>
                         <Icon size={22} color={contact.color} strokeWidth={2} />
                       </View>
-                      <Text style={[styles.emergencyName, { color: '#111827' }]}>
+                      <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
                         {contact.name}
                       </Text>
                       <Text
@@ -283,8 +286,8 @@ export default function CalmModeModal({
               </View>
 
               {/* HMO - Clean List */}
-              <Text style={[styles.sectionTitle, { color: '#6B7280' }]}>קופות חולים</Text>
-              <View style={[styles.hmoContainer, { backgroundColor: '#FFFFFF', borderColor: 'rgba(0,0,0,0.08)' }]}>
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
+              <View style={[styles.hmoContainer, { backgroundColor: theme.card, borderColor: 'rgba(0,0,0,0.08)' }]}>
                 {hmoContacts.map((hmo, index) => (
                   <TouchableOpacity
                     key={index}
@@ -299,14 +302,14 @@ export default function CalmModeModal({
                     activeOpacity={0.7}
                   >
                     <View style={styles.hmoInfo}>
-                      <Text style={[styles.hmoName, { color: '#111827' }]}>{hmo.name}</Text>
-                      <Text style={[styles.hmoSubtitle, { color: '#6B7280' }]}>{hmo.subtitle}</Text>
+                      <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
+                      <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
                     </View>
                     <View style={styles.hmoCall}>
                       <View style={[styles.phoneIcon, { backgroundColor: '#DBEAFE' }]}>
                         <Phone size={14} color="#3B82F6" strokeWidth={2} />
                       </View>
-                      <Text style={[styles.hmoNumber, { color: '#6B7280' }]}>{hmo.number}</Text>
+                      <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -318,7 +321,7 @@ export default function CalmModeModal({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalWrapper: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -365,7 +368,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     gap: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.card,
   },
   closeButton: {
     width: 36,
@@ -417,7 +420,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 24,
     paddingBottom: 150,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.card,
   },
   sectionTitle: {
     fontSize: 13,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Animated as RNAnimated, Dimensions, PanResponder, Alert } from 'react-native';
 import { Check, Sparkles, X, Calendar, TrendingUp, Award, Clock } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { TeethIcon } from '../Home/quickActionsConfig';
@@ -166,7 +166,34 @@ export default function TeethTrackerModal({
 
         // If tooth is already erupted, allow editing date or removing
         if (teethData[id]) {
-            // Show date picker with option to edit or remove
+            if (Platform.OS === 'android') {
+                // Android: native DatePicker has no custom UI, so show Alert first
+                Alert.alert(
+                    t('teethTracker.editToothDate'),
+                    '',
+                    [
+                        {
+                            text: t('teethTracker.removeTooth'),
+                            style: 'destructive',
+                            onPress: () => handleRemoveTooth(id),
+                        },
+                        {
+                            text: t('teethTracker.updateDate'),
+                            onPress: () => {
+                                setSelectedTooth(id);
+                                setCurrentDate(teethData[id] || new Date());
+                                setShowDatePicker(true);
+                            },
+                        },
+                        {
+                            text: t('common.cancel'),
+                            style: 'cancel',
+                        },
+                    ]
+                );
+                return;
+            }
+            // iOS: Show date picker with custom modal (has remove button built in)
             setSelectedTooth(id);
             setCurrentDate(teethData[id] || new Date());
             setShowDatePicker(true);

@@ -88,9 +88,9 @@ const FamilyStatusIndicator = memo(({ onPress }: FamilyStatusIndicatorProps) => 
     );
 });
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderRadius: 16,
         padding: 14,
         marginHorizontal: 20,
@@ -119,16 +119,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: theme.card,
     },
     online: {
         backgroundColor: '#10B981',
     },
     offline: {
-        backgroundColor: '#D1D5DB',
+        backgroundColor: theme.border,
     },
     memberInitial: {
-        color: '#fff',
+        color: theme.card,
         fontSize: 14,
         fontWeight: '700',
     },
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: '#10B981',
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: theme.card,
     },
     textSection: {
         alignItems: 'flex-end',
@@ -149,11 +149,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#1F2937',
+        color: theme.textPrimary,
     },
     subtitle: {
         fontSize: 12,
-        color: '#6B7280',
+        color: theme.textSecondary,
         marginTop: 2,
     },
 });

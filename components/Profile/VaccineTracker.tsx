@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, Modal } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Info, Plus, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -23,6 +24,8 @@ const VaccineTracker = memo(({
     onDeleteCustom,
 }: VaccineTrackerProps) => {
 
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [datePickerVisible, setDatePickerVisible] = React.useState(false);
     const [pendingVaccine, setPendingVaccine] = React.useState<{ key: string, isCustom: boolean, customObj?: CustomVaccine } | null>(null);
     const [selectedDate, setSelectedDate] = React.useState(new Date());
@@ -211,9 +214,9 @@ const VaccineTracker = memo(({
 
 VaccineTracker.displayName = 'VaccineTracker';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         marginHorizontal: 20,
         padding: 20,
         borderRadius: 20,
@@ -232,11 +235,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1e293b',
+        color: theme.textPrimary,
     },
     disclaimer: {
         fontSize: 11,
-        color: '#64748b',
+        color: theme.textSecondary,
         textAlign: 'right',
         marginBottom: 20,
     },
@@ -304,7 +307,7 @@ const styles = StyleSheet.create({
     },
     vaccineDate: {
         fontSize: 11,
-        color: '#64748b',
+        color: theme.textSecondary,
         marginTop: 2,
         textAlign: 'right',
     },
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modalContent: {
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         borderRadius: 20,
         padding: 20,
         width: '85%',
@@ -325,7 +328,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 15,
-        color: '#1e293b',
+        color: theme.textPrimary,
     },
     modalButtons: {
         flexDirection: 'row',
@@ -341,7 +344,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     confirmButtonText: {
-        color: 'white',
+        color: theme.card,
         fontWeight: 'bold',
     },
     cancelButton: {
@@ -351,7 +354,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     cancelButtonText: {
-        color: '#64748b',
+        color: theme.textSecondary,
         fontWeight: '600',
     },
 });

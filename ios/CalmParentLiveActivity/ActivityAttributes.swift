@@ -9,33 +9,6 @@
 import ActivityKit
 import Foundation
 
-// MARK: - Babysitter Shift Attributes
-
-@available(iOS 16.2, *)
-public struct BabysitterShiftAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        public var startTime: Date
-        public var isPaused: Bool
-        public var totalPausedSeconds: TimeInterval
-        public var hourlyRate: Double
-        
-        public init(startTime: Date, isPaused: Bool, totalPausedSeconds: TimeInterval, hourlyRate: Double) {
-            self.startTime = startTime
-            self.isPaused = isPaused
-            self.totalPausedSeconds = totalPausedSeconds
-            self.hourlyRate = hourlyRate
-        }
-    }
-    
-    // Static attributes
-    public var babysitterName: String
-    public var babysitterPhoto: String? // URL or emoji
-    
-    public init(babysitterName: String, babysitterPhoto: String? = nil) {
-        self.babysitterName = babysitterName
-        self.babysitterPhoto = babysitterPhoto
-    }
-}
 
 // MARK: - Meal Activity Attributes
 

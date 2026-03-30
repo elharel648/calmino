@@ -350,17 +350,28 @@ export const checkIfBabyExists = async (): Promise<boolean> => {
   return false;
 };
 
-export const saveBabyProfile = async (name: string, birthDate: Date, gender: string) => {
+export const saveBabyProfile = async (name: string, lastName: string, birthDate: Date, gender: string) => {
   const user = auth.currentUser;
   if (!user) throw new Error('No user');
-  await addDoc(collection(db, 'babies'), {
-    name, birthDate, gender, parentId: user.uid, createdAt: Timestamp.now(),
+  
+  // 1. Save Baby Profile
+  const docRef = await addDoc(collection(db, 'babies'), {
+    name, lastName, birthDate, gender, parentId: user.uid, createdAt: Timestamp.now(),
     stats: { weight: '0', height: '0', headCircumference: '0' },
     milestones: [],
     album: {},
     vaccines: {},
     customVaccines: []
   });
+
+  // 2. Auto-Mint Family Document
+  try {
+    const familyName = lastName.trim() ? lastName.trim() : name.trim();
+    const { createFamily } = require('./familyService');
+    await createFamily(docRef.id, familyName);
+  } catch (e) {
+    logger.error('Failed to auto-create family doc during onboarding', e);
+  }
 };
 
 // Delete child completely from database

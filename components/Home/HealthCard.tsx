@@ -64,6 +64,7 @@ const HEALTH_OPTIONS: HealthOption[] = [
 
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
     const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
@@ -1093,16 +1094,16 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         flexDirection: 'row-reverse',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        backgroundColor: '#F9FAFB',
+                        backgroundColor: theme.cardSecondary,
                         borderRadius: 14,
                         padding: 14,
                         borderWidth: 1.5,
-                        borderColor: '#E5E7EB',
+                        borderColor: theme.border,
                         marginBottom: 10,
                     }}
                     onPress={() => setShowIllnessStartPicker(!showIllnessStartPicker)}
                 >
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', textAlign: 'right' }}>{t('health.illnessStart')}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>{t('health.illnessStart')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Clock size={14} color="#EF4444" />
                         <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>
@@ -1112,7 +1113,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 </TouchableOpacity>
 
                 {showIllnessStartPicker && (
-                    <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' }}>
+                    <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                         <DateTimePicker
                             value={illnessStartDate}
                             mode="date"
@@ -1175,7 +1176,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             }}
                             onPress={() => setShowIllnessEndPicker(!showIllnessEndPicker)}
                         >
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', textAlign: 'right' }}>סיום / החלמה</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>סיום / החלמה</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <Clock size={14} color="#10B981" />
                                 <Text style={{ fontSize: 15, fontWeight: '700', color: '#10B981' }}>
@@ -1185,7 +1186,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         </TouchableOpacity>
 
                         {showIllnessEndPicker && illnessEndDate && (
-                            <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' }}>
+                            <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                                 <DateTimePicker
                                     value={illnessEndDate}
                                     mode="date"
@@ -1211,7 +1212,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
                 {/* Duration summary */}
                 {!illnessOngoing && illnessEndDate && (
-                    <View style={{ backgroundColor: '#F9FAFB', borderRadius: 10, padding: 10, alignItems: 'center' }}>
+                    <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 10, padding: 10, alignItems: 'center' }}>
                         <Text style={{ fontSize: 13, color: '#6B7280' }}>
                             משך: {Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24)))} ימים
                         </Text>
@@ -1346,19 +1347,19 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center' }}>
                         <Pill size={36} color="#C4B5FD" />
                     </View>
-                    <Text style={{ fontSize: 16, color: '#374151', fontWeight: '600', marginTop: 16 }}>אין תרופות עדיין</Text>
+                    <Text style={{ fontSize: 16, color: theme.textPrimary, fontWeight: '600', marginTop: 16 }}>אין תרופות עדיין</Text>
                     <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>לחץ על "הוסף תרופה" כדי להתחיל</Text>
                 </View>
             ) : (
                 savedMedications.map((med) => (
                     <SwipeableRow key={med.id} onDelete={() => handleDeleteMedication(med.id)}>
                         <View style={{
-                            backgroundColor: '#FFFFFF',
+                            backgroundColor: theme.card,
                             borderRadius: 16,
                             padding: 16,
                             marginBottom: 12,
                             borderWidth: 1,
-                            borderColor: '#E5E7EB',
+                            borderColor: theme.border,
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 1 },
                             shadowOpacity: 0.04,
@@ -1376,7 +1377,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                     <Pill size={20} color="#8B5CF6" strokeWidth={1.5} />
                                 </View>
                                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', textAlign: 'right' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
                                         {med.name}
                                     </Text>
                                     <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2, textAlign: 'right' }}>
@@ -1581,17 +1582,17 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                             </Text>
 
                                             {item.value && (
-                                                <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
+                                                <Text style={{ fontSize: 15, fontWeight: '500', color: theme.textPrimary, marginTop: 2, textAlign: 'right' }}>
                                                     {item.value}°
                                                 </Text>
                                             )}
                                             {item.name && (
-                                                <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151', marginTop: 2, textAlign: 'right' }}>
+                                                <Text style={{ fontSize: 15, fontWeight: '500', color: theme.textPrimary, marginTop: 2, textAlign: 'right' }}>
                                                     {item.name}
                                                 </Text>
                                             )}
                                             {item.reason && (
-                                                <Text style={{ fontSize: 14, color: '#374151', marginTop: 2, textAlign: 'right' }}>{item.reason}</Text>
+                                                <Text style={{ fontSize: 14, color: theme.textPrimary, marginTop: 2, textAlign: 'right' }}>{item.reason}</Text>
                                             )}
                                             {item.note && (
                                                 <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'right' }}>{item.note}</Text>
@@ -1738,9 +1739,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
 HealthCard.displayName = 'HealthCard';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderRadius: 20,
         padding: 18,
         marginBottom: 16,
@@ -1760,23 +1761,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     cardText: { flex: 1, marginRight: 14, alignItems: 'flex-end' },
-    cardTitle: { fontSize: 17, fontWeight: '700', color: '#1F2937' },
-    cardSubtitle: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+    cardTitle: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
+    cardSubtitle: { fontSize: 12, color: theme.textSecondary, marginTop: 2 },
     cardArrow: { opacity: 0.6 },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 44, maxHeight: '92%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 0, flex: 1, width: '100%' },
+    modalContent: { backgroundColor: theme.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 44, maxHeight: '92%', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 0, flex: 1, width: '100%' },
     dragHandle: { alignItems: 'center', paddingTop: 16, paddingBottom: 4, paddingHorizontal: 50, zIndex: 10, minHeight: 40 },
     dragHandleBar: { width: 36, height: 4, borderRadius: 2 },
-    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-    headerBtn: { padding: 8, backgroundColor: '#F3F4F6', borderRadius: 10 },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: theme.cardSecondary },
+    headerBtn: { padding: 8, backgroundColor: theme.cardSecondary, borderRadius: 10 },
     headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'column' },
     headerIconWrapper: { marginBottom: 8, alignItems: 'center' },
     headerIconCircle: {
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.card,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
@@ -1786,18 +1787,18 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 0,
     },
-    modalTitle: { fontSize: 17, fontWeight: '600', color: '#1F2937' },
-    modalBody: { flex: 1, backgroundColor: '#FFFFFF' },
+    modalTitle: { fontSize: 17, fontWeight: '600', color: theme.textPrimary },
+    modalBody: { flex: 1, backgroundColor: theme.card },
 
     menuContainer: { padding: 16 },
     optionsList: { gap: 10 },
     optionRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        backgroundColor: '#F9FAFB',
+        backgroundColor: theme.cardSecondary,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: theme.border,
         padding: 14,
         gap: 12,
     },
@@ -1805,98 +1806,98 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.card,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#F3F4F6',
+        borderColor: theme.cardSecondary,
     },
-    optionLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: '#374151', textAlign: 'right' },
+    optionLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' },
 
     screenContent: { padding: 20, paddingBottom: 40 },
     screenHeader: { alignItems: 'center', marginBottom: 16 },
     screenHeaderIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-    screenHeaderIconMinimal: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-    screenSubtitle: { fontSize: 13, color: '#9CA3AF', marginTop: 10 },
+    screenHeaderIconMinimal: { width: 56, height: 56, borderRadius: 28, backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
+    screenSubtitle: { fontSize: 13, color: theme.textTertiary, marginTop: 10 },
 
     // Vaccine styles
     addVaccineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EEF2FF', padding: 14, borderRadius: 14, marginBottom: 20 },
     addVaccineBtnText: { fontSize: 15, fontWeight: '600', color: '#6366F1' },
     addVaccineForm: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
-    addVaccineInput: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 15, textAlign: 'right', textAlignVertical: 'center', borderWidth: 1, borderColor: '#E5E7EB', writingDirection: 'rtl' },
+    addVaccineInput: { flex: 1, backgroundColor: theme.card, borderRadius: 12, padding: 14, fontSize: 15, textAlign: 'right', textAlignVertical: 'center', borderWidth: 1, borderColor: theme.border, writingDirection: 'rtl' },
     addVaccineSubmit: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#6366F1', alignItems: 'center', justifyContent: 'center' },
     vaccineGroup: { marginBottom: 20 },
     ageBadge: { alignSelf: 'flex-end', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 12 },
-    ageBadgeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-    ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
-    ageBadgeTextMinimal: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
-    vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 0 },
+    ageBadgeText: { color: theme.card, fontWeight: '700', fontSize: 14 },
+    ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border },
+    ageBadgeTextMinimal: { color: theme.textSecondary, fontWeight: '600', fontSize: 13 },
+    vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.card, padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 0 },
     vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#10B981' },
-    vaccineName: { fontSize: 15, color: '#1F2937', fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
+    vaccineName: { fontSize: 15, color: theme.textPrimary, fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
     vaccineNameDone: { fontSize: 15, color: '#10B981', fontWeight: '600', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
-    checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
+    checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
     checkboxChecked: { backgroundColor: '#10B981', borderColor: '#10B981' },
     modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-    datePickerCard: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', alignItems: 'center' },
-    datePickerTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 4 },
+    datePickerCard: { backgroundColor: theme.card, borderRadius: 20, padding: 20, width: '85%', alignItems: 'center' },
+    datePickerTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 4 },
     datePickerSubtitle: { fontSize: 13, color: '#6366F1', marginBottom: 8 },
     datePickerButtons: { flexDirection: 'row', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' },
     datePickerConfirm: { backgroundColor: '#6366F1', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
-    datePickerConfirmText: { color: '#fff', fontWeight: '700' },
+    datePickerConfirmText: { color: theme.card, fontWeight: '700' },
     datePickerCancel: { backgroundColor: '#F1F5F9', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
-    datePickerCancelText: { color: '#64748b', fontWeight: '600' },
+    datePickerCancelText: { color: theme.textSecondary, fontWeight: '600' },
 
     // Temperature slider
-    temperatureDisplay: { backgroundColor: '#fff', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 3, marginBottom: 20 },
+    temperatureDisplay: { backgroundColor: theme.card, borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 3, marginBottom: 20 },
     temperatureValue: { fontSize: 64, fontWeight: '800' },
-    temperatureUnit: { fontSize: 24, color: '#6B7280', marginTop: -8 },
-    temperatureDisplayMinimal: { backgroundColor: '#F9FAFB', borderRadius: 16, padding: 24, alignItems: 'center', marginBottom: 20 },
-    temperatureValueMinimal: { fontSize: 56, fontWeight: '700', color: '#374151' },
-    temperatureUnitMinimal: { fontSize: 20, color: '#9CA3AF', marginTop: -4 },
-    quickSelectBtnMinimal: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#F3F4F6', marginRight: 8, marginBottom: 8 },
-    quickSelectBtnMinimalActive: { backgroundColor: '#E5E7EB' },
-    quickSelectTextMinimal: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
-    quickSelectTextMinimalActive: { color: '#374151', fontWeight: '600' },
+    temperatureUnit: { fontSize: 24, color: theme.textSecondary, marginTop: -8 },
+    temperatureDisplayMinimal: { backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 24, alignItems: 'center', marginBottom: 20 },
+    temperatureValueMinimal: { fontSize: 56, fontWeight: '700', color: theme.textPrimary },
+    temperatureUnitMinimal: { fontSize: 20, color: theme.textTertiary, marginTop: -4 },
+    quickSelectBtnMinimal: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, backgroundColor: theme.cardSecondary, marginRight: 8, marginBottom: 8 },
+    quickSelectBtnMinimalActive: { backgroundColor: theme.border },
+    quickSelectTextMinimal: { fontSize: 14, fontWeight: '500', color: theme.textSecondary },
+    quickSelectTextMinimalActive: { color: theme.textPrimary, fontWeight: '600' },
     sliderContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    sliderBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+    sliderBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
     slider: { flex: 1, marginHorizontal: 10, height: 40 },
 
     // Forms
     inputGroup: { marginBottom: 20 },
-    inputLabel: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, textAlign: 'right' },
-    textInput: { backgroundColor: '#fff', borderRadius: 16, padding: 16, fontSize: 16, textAlign: 'right', borderWidth: 1, borderColor: '#E5E7EB' },
-    textArea: { backgroundColor: '#fff', borderRadius: 16, padding: 16, fontSize: 16, textAlign: 'right', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 100, textAlignVertical: 'top' },
+    inputLabel: { fontSize: 14, fontWeight: '600', color: theme.textPrimary, marginBottom: 8, textAlign: 'right' },
+    textInput: { backgroundColor: theme.card, borderRadius: 16, padding: 16, fontSize: 16, textAlign: 'right', borderWidth: 1, borderColor: theme.border },
+    textArea: { backgroundColor: theme.card, borderRadius: 16, padding: 16, fontSize: 16, textAlign: 'right', borderWidth: 1, borderColor: theme.border, minHeight: 100, textAlignVertical: 'top' },
     quickSelectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
     quickSelectRowRTL: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 8, marginBottom: 20 },
-    quickSelectBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#E5E7EB' },
+    quickSelectBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border },
     quickSelectBtnActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
     quickSelectBtnWarning: { borderColor: '#EF4444' },
-    quickSelectText: { fontSize: 14, fontWeight: '600', color: '#374151' },
-    quickSelectTextActive: { color: '#fff' },
+    quickSelectText: { fontSize: 14, fontWeight: '600', color: theme.textPrimary },
+    quickSelectTextActive: { color: theme.card },
 
     // Upload
     uploadSection: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-    uploadButton: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 100 },
+    uploadButton: { flex: 1, backgroundColor: theme.card, borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border, minHeight: 100 },
     uploadButtonSuccess: { backgroundColor: '#F0FDF4', borderColor: '#10B981' },
-    uploadButtonText: { fontSize: 14, color: '#6B7280', marginTop: 8, fontWeight: '500' },
+    uploadButtonText: { fontSize: 14, color: theme.textSecondary, marginTop: 8, fontWeight: '500' },
     uploadButtonTextSuccess: { fontSize: 12, color: '#10B981', marginTop: 8, fontWeight: '600' },
     uploadPreview: { width: 50, height: 50, borderRadius: 8 },
 
     // Chips
-    sectionTitle: { fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 12, textAlign: 'right' },
+    sectionTitle: { fontSize: 15, fontWeight: '600', color: theme.textPrimary, marginBottom: 12, textAlign: 'right' },
     chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
     chipsContainerRTL: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-    chip: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F9FAFB', borderRadius: 20, borderWidth: 1, borderColor: '#E5E7EB' },
+    chip: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: theme.cardSecondary, borderRadius: 20, borderWidth: 1, borderColor: theme.border },
     chipPlus: { paddingHorizontal: 12, paddingVertical: 10 },
     chipActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
     chipActivePurple: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
-    chipText: { fontSize: 14, fontWeight: '500', color: '#374151' },
-    chipTextActive: { color: '#fff' },
+    chipText: { fontSize: 14, fontWeight: '500', color: theme.textPrimary },
+    chipTextActive: { color: theme.card },
 
     saveButton: { marginTop: 16 },
-    saveButtonSolid: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24, alignItems: 'center', backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
+    saveButtonSolid: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24, alignItems: 'center', backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border },
     saveButtonSuccess: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
-    saveButtonText: { fontSize: 15, fontWeight: '600', color: '#374151' },
+    saveButtonText: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
 });
 
 export default HealthCard;

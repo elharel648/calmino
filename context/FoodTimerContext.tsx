@@ -244,8 +244,8 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'pumping', { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined });
 
-        // Start iOS Live Activity in background (fire-and-forget)
-        if (Platform.OS === 'ios') {
+        // Start Live Activity / Android Notification in background (fire-and-forget)
+        if (Platform.OS !== 'web') {
             liveActivityService.startPumpingTimer()
                 .then(activityId => { if (activityId) updateNestedState(activeChildId, 'pumping', { activityId }); })
                 .catch(e => logger.warn('startPumpingTimer Live Activity failed:', e));
@@ -259,7 +259,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         const activityId = currentState.pumping.activityId;
         updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, activityId: undefined });
 
-        if (Platform.OS === 'ios' && activityId) {
+        if (Platform.OS !== 'web' && activityId) {
             try { await liveActivityService.stopPumpingTimer(); } catch (e) { logger.warn('liveActivityService.stopPumpingTimer error', e); }
         }
     }, [activeChildId, currentState.pumping.activityId, updateNestedState]);
@@ -267,13 +267,13 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const pausePumping = useCallback(async () => {
         if (!activeChildId || !currentState.pumping.isRunning || currentState.pumping.isPaused) return;
         updateNestedState(activeChildId, 'pumping', { isPaused: true });
-        if (Platform.OS === 'ios' && currentState.pumping.activityId) await liveActivityService.pauseTimer();
+        if (Platform.OS !== 'web' && currentState.pumping.activityId) await liveActivityService.pauseTimer();
     }, [activeChildId, currentState.pumping, updateNestedState]);
 
     const resumePumping = useCallback(async () => {
         if (!activeChildId || !currentState.pumping.isRunning || !currentState.pumping.isPaused) return;
         updateNestedState(activeChildId, 'pumping', { isPaused: false });
-        if (Platform.OS === 'ios' && currentState.pumping.activityId) await liveActivityService.resumeTimer();
+        if (Platform.OS !== 'web' && currentState.pumping.activityId) await liveActivityService.resumeTimer();
     }, [activeChildId, currentState.pumping, updateNestedState]);
 
     const resetPumping = useCallback(() => {
@@ -291,8 +291,8 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'bottle', { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined });
 
-        // Start iOS Live Activity in background (fire-and-forget)
-        if (Platform.OS === 'ios') {
+        // Start Live Activity / Android Notification in background (fire-and-forget)
+        if (Platform.OS !== 'web') {
             liveActivityService.startBottleTimer(activeChild?.childName || 'תינוק')
                 .then(activityId => { if (activityId) updateNestedState(activeChildId, 'bottle', { activityId }); })
                 .catch(e => logger.warn('startBottleTimer Live Activity failed:', e));
@@ -306,7 +306,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         const activityId = currentState.bottle.activityId;
         updateNestedState(activeChildId, 'bottle', { isRunning: false, isPaused: false, activityId: undefined });
 
-        if (Platform.OS === 'ios' && activityId) {
+        if (Platform.OS !== 'web' && activityId) {
             try { await liveActivityService.stopBottleTimer(); } catch (e) { logger.warn('liveActivityService.stopBottleTimer error', e); }
         }
     }, [activeChildId, currentState.bottle.activityId, updateNestedState]);
@@ -314,13 +314,13 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const pauseBottle = useCallback(async () => {
         if (!activeChildId || !currentState.bottle.isRunning || currentState.bottle.isPaused) return;
         updateNestedState(activeChildId, 'bottle', { isPaused: true });
-        if (Platform.OS === 'ios' && currentState.bottle.activityId) await liveActivityService.pauseTimer();
+        if (Platform.OS !== 'web' && currentState.bottle.activityId) await liveActivityService.pauseTimer();
     }, [activeChildId, currentState.bottle, updateNestedState]);
 
     const resumeBottle = useCallback(async () => {
         if (!activeChildId || !currentState.bottle.isRunning || !currentState.bottle.isPaused) return;
         updateNestedState(activeChildId, 'bottle', { isPaused: false });
-        if (Platform.OS === 'ios' && currentState.bottle.activityId) await liveActivityService.resumeTimer();
+        if (Platform.OS !== 'web' && currentState.bottle.activityId) await liveActivityService.resumeTimer();
     }, [activeChildId, currentState.bottle, updateNestedState]);
 
     const resetBottle = useCallback(() => {
@@ -349,7 +349,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'breast', updates);
 
-        // Start iOS Live Activity in background (fire-and-forget)
+        // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS === 'ios') {
             if (currentBreast.isRunning && currentBreast.activityId) {
                 quickActionsService.switchBreastSide(side)
@@ -359,6 +359,10 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
                     .then(activityId => { if (activityId) updateNestedState(activeChildId, 'breast', { activityId }); })
                     .catch(e => logger.warn('startBreastfeeding Live Activity failed:', e));
             }
+        } else if (Platform.OS === 'android') {
+            liveActivityService.startBreastfeedingTimer(undefined, activeChild?.childName || 'תינוק', side)
+                .then(activityId => { if (activityId) updateNestedState(activeChildId, 'breast', { activityId }); })
+                .catch(e => logger.warn('startBreastfeeding Android notification failed:', e));
         }
     }, [activeChildId, currentState.breast, updateNestedState, activeChild?.childName]);
 
@@ -379,6 +383,8 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         if (Platform.OS === 'ios' && currentBreast.activityId) {
             try { await quickActionsService.stopBreastfeeding(); } catch (e) { logger.warn('quickActionsService.stopBreastfeeding error', e); }
+        } else if (Platform.OS === 'android') {
+            try { await liveActivityService.stopBreastfeedingTimer(); } catch (e) { logger.warn('liveActivityService.stopBreastfeedingTimer error', e); }
         }
     }, [activeChildId, currentState.breast, updateNestedState]);
 
@@ -386,12 +392,14 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         if (!activeChildId || !currentState.breast.isRunning || currentState.breast.isPaused) return;
         updateNestedState(activeChildId, 'breast', { isPaused: true });
         if (Platform.OS === 'ios' && currentState.breast.activityId) await quickActionsService.pauseBreastfeeding();
+        else if (Platform.OS === 'android') await liveActivityService.pauseTimer().catch(() => {});
     }, [activeChildId, currentState.breast, updateNestedState]);
 
     const resumeBreast = useCallback(async () => {
         if (!activeChildId || !currentState.breast.isRunning || !currentState.breast.isPaused) return;
         updateNestedState(activeChildId, 'breast', { isPaused: false });
         if (Platform.OS === 'ios' && currentState.breast.activityId) await quickActionsService.resumeBreastfeeding();
+        else if (Platform.OS === 'android') await liveActivityService.resumeTimer().catch(() => {});
     }, [activeChildId, currentState.breast, updateNestedState]);
 
     const resetBreast = useCallback(() => {

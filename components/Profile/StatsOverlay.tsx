@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface StatsOverlayProps {
@@ -9,6 +10,8 @@ interface StatsOverlayProps {
 
 const StatsOverlay = memo(({ weight, height }: StatsOverlayProps) => {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     return (
         <View style={styles.container}>
             <View style={styles.statItem}>
@@ -26,13 +29,13 @@ const StatsOverlay = memo(({ weight, height }: StatsOverlayProps) => {
 
 StatsOverlay.displayName = 'StatsOverlay';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
         position: 'absolute',
         bottom: -30,
         left: 20,
         right: 20,
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         borderRadius: 20,
         padding: 15,
         flexDirection: 'row-reverse',
@@ -49,11 +52,11 @@ const styles = StyleSheet.create({
     statVal: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1e293b',
+        color: theme.textPrimary,
     },
     statLabel: {
         fontSize: 12,
-        color: '#64748b',
+        color: theme.textSecondary,
     },
     verticalLine: {
         width: 1,

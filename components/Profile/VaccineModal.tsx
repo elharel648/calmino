@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -11,6 +12,8 @@ interface VaccineModalProps {
 
 const VaccineModal = memo(({ visible, onAdd, onClose }: VaccineModalProps) => {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [name, setName] = useState('');
 
     useEffect(() => {
@@ -59,7 +62,7 @@ const VaccineModal = memo(({ visible, onAdd, onClose }: VaccineModalProps) => {
 
 VaccineModal.displayName = 'VaccineModal';
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     backdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -67,7 +70,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     card: {
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         borderRadius: 20,
         padding: 24,
     },
@@ -76,7 +79,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 15,
-        color: '#1e293b',
+        color: theme.textPrimary,
     },
     input: {
         backgroundColor: '#f8fafc',
@@ -94,7 +97,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     addBtnText: {
-        color: 'white',
+        color: theme.card,
         fontWeight: 'bold',
     },
     cancelBtn: {
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
     },
     cancelText: {
-        color: '#64748b',
+        color: theme.textSecondary,
     },
 });
 

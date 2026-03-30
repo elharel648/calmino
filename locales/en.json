@@ -1251,6 +1251,8 @@
     "title": "Register New Child",
     "subtitle": "Please fill in the following details",
     "namePlaceholder": "Enter the name...",
+    "lastName": "Last Name (Optional)",
+    "lastNamePlaceholder": "Enter last name...",
     "selectBirthdate": "Select birthdate...",
     "birthdateError": "Please select a birthdate",
     "gender": "Child's Gender",
@@ -1373,7 +1375,8 @@
     "allTeethErupted": "All teeth erupted! 🎉",
     "editToothDate": "Edit tooth eruption date",
     "whenDidToothErupt": "When did the tooth erupt?",
-    "removeTooth": "Remove tooth"
+    "removeTooth": "Remove tooth",
+    "updateDate": "Update date"
   },
   "misc": {
     "uploadPhoto": "Upload Photo",

@@ -1264,6 +1264,8 @@
     "title": "רישום ילד חדש",
     "subtitle": "נא למלא את הפרטים הבאים",
     "namePlaceholder": "הקלידו את השם...",
+    "lastName": "שם משפחה (אופציונלי)",
+    "lastNamePlaceholder": "הקלידו שם משפחה...",
     "selectBirthdate": "בחר תאריך לידה...",
     "birthdateError": "יש לבחור תאריך לידה",
     "gender": "מין הילד",
@@ -1386,7 +1388,8 @@
     "allTeethErupted": "כל השיניים בקעו! 🎉",
     "editToothDate": "ערוך תאריך בקעת השן",
     "whenDidToothErupt": "מתי בקעה השן?",
-    "removeTooth": "הסר שן"
+    "removeTooth": "הסר שן",
+    "updateDate": "עדכן תאריך"
   },
   "misc": {
     "uploadPhoto": "העלה תמונה",

@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { Calendar, Check, User, ChevronRight, Heart, Baby, X, Sparkles } from 'lucide-react-native';
+import { Calendar, Check, User, Users, ChevronRight, Heart, Baby, X, Sparkles } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming } from 'react-native-reanimated';
@@ -39,6 +39,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const { t } = useLanguage();
   const { isGuest, promptLogin } = useGuest();
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [gender, setGender] = useState<'boy' | 'girl'>('boy');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -85,7 +86,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      await saveBabyProfile(name, birthDate, gender);
+      await saveBabyProfile(name, lastName, birthDate, gender);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSavedName(name);
       setWelcomeVisible(true);
@@ -192,6 +193,36 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
               />
 
               {name.length > 0 && (
+                <View style={styles.checkBadge}>
+                  <Check size={14} color="#fff" strokeWidth={3} />
+                </View>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* Last Name Input Card */}
+          <Animated.View>
+            <View style={styles.glassCard}>
+              <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
+              <View style={styles.cardOverlay} />
+
+              <View style={styles.cardRow}>
+                <View style={styles.cardIconWrap}>
+                  <Users size={18} color="#8B5CF6" strokeWidth={1.5} />
+                </View>
+                <Text style={styles.cardLabel}>{t('babyProfile.lastName')}</Text>
+              </View>
+
+              <TextInput
+                style={styles.input}
+                placeholder={t('babyProfile.lastNamePlaceholder')}
+                placeholderTextColor="#9CA3AF"
+                value={lastName}
+                onChangeText={setLastName}
+                textAlign="right"
+              />
+
+              {lastName.length > 0 && (
                 <View style={styles.checkBadge}>
                   <Check size={14} color="#fff" strokeWidth={3} />
                 </View>
