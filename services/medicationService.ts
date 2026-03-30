@@ -23,7 +23,8 @@ export const addMedication = async (babyId: string, med: Omit<Medication, 'id' |
             createdAt: new Date().toISOString(),
         };
 
-        await setDoc(doc(db, 'babies', babyId, 'medications', medId), medication);
+        // Fire and forget to avoid hanging offline
+        setDoc(doc(db, 'babies', babyId, 'medications', medId), medication).catch(e => logger.warn('Deferred setDoc failed:', e));
 
         // Schedule notifications if enabled
         if (medication.remindersEnabled) {
@@ -67,7 +68,8 @@ export const deleteMedication = async (babyId: string, medId: string): Promise<b
         // Cancel notifications for this medication
         await cancelMedicationNotifications(medId);
 
-        await deleteDoc(doc(db, 'babies', babyId, 'medications', medId));
+        // Fire and forget to avoid hanging offline
+        deleteDoc(doc(db, 'babies', babyId, 'medications', medId)).catch(e => logger.warn('Deferred deleteDoc failed:', e));
         logger.log('💊 Medication deleted:', medId);
         return true;
     } catch (error) {
@@ -87,9 +89,10 @@ export const logMedicationTaken = async (babyId: string, med: Medication): Promi
             note: `מינון: ${med.dosage}${med.notes ? ` | ${med.notes}` : ''}`,
             timestamp: new Date().toISOString(),
         };
-        await updateDoc(doc(db, 'babies', babyId), {
+        // Fire and forget to avoid hanging offline
+        updateDoc(doc(db, 'babies', babyId), {
             healthLog: arrayUnion(entry),
-        });
+        }).catch(e => logger.warn('Deferred updateDoc failed:', e));
         logger.log('💊 Medication taken logged:', med.name);
         return true;
     } catch (error) {
