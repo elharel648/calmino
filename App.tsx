@@ -715,19 +715,29 @@ export default function App() {
     };
   }, []);
 
+  // Determine if we are ready to hide splash
+  const shouldHideSplash = !isAppLoading && (
+    !user || // Login screen ready
+    (user && !hasBabyProfile) || // Baby profile creation ready
+    (user && hasBabyProfile && childrenReady) // Main app ready
+  );
+
   // Hide splash when app is FULLY ready (auth + children loaded)
   const onLayoutRootView = useCallback(async () => {
-    // Determine if we are ready to hide splash
-    const shouldHide = !isAppLoading && (
-      !user || // Login screen ready
-      (user && !hasBabyProfile) || // Baby profile creation ready
-      (user && hasBabyProfile && childrenReady) // Main app ready
-    );
-
-    if (shouldHide) {
+    if (shouldHideSplash) {
       await SplashScreen.hideAsync();
     }
-  }, [isAppLoading, childrenReady, user, hasBabyProfile]);
+  }, [shouldHideSplash]);
+
+  // Crucial fix: onLayout only fires once on mount. If offline queries timeout AFTER mount, 
+  // onLayout is never re-triggered. This ensures the splash lifts the exact ms state is ready.
+  useEffect(() => {
+    if (shouldHideSplash) {
+      setTimeout(() => {
+        SplashScreen.hideAsync().catch(() => {});
+      }, 50);
+    }
+  }, [shouldHideSplash]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
