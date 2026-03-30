@@ -567,17 +567,34 @@ export default function TeethTrackerModal({
                             })()}
                         </ScrollView>
 
-                    {/* Date Picker Modal */}
-                    {showDatePicker && (
+                    {/* Date Picker - Android: native dialog, iOS: custom modal */}
+                    {showDatePicker && Platform.OS === 'android' && (
+                        <DateTimePicker
+                            value={currentDate}
+                            mode="date"
+                            display="default"
+                            onChange={(event, date) => {
+                                if (event.type === 'dismissed') {
+                                    setShowDatePicker(false);
+                                    setSelectedTooth(null);
+                                    return;
+                                }
+                                if (date && selectedTooth && activeChild?.childId) {
+                                    setCurrentDate(date);
+                                    handleDateChange({} as any, date);
+                                }
+                            }}
+                            maximumDate={new Date()}
+                        />
+                    )}
+                    {showDatePicker && Platform.OS === 'ios' && (
                         <Modal transparent visible={showDatePicker} animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
                             <View style={styles.datePickerOverlay}>
-                                {Platform.OS === 'ios' && (
-                                    <BlurView
-                                        intensity={20}
-                                        tint={isDarkMode ? 'dark' : 'light'}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-                                )}
+                                <BlurView
+                                    intensity={20}
+                                    tint={isDarkMode ? 'dark' : 'light'}
+                                    style={StyleSheet.absoluteFill}
+                                />
                                 <TouchableOpacity
                                     style={StyleSheet.absoluteFill}
                                     activeOpacity={1}
@@ -608,22 +625,8 @@ export default function TeethTrackerModal({
                                         <DateTimePicker
                                             value={currentDate}
                                             mode="date"
-                                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                            display="spinner"
                                             onChange={(event, date) => {
-                                                if (Platform.OS === 'android') {
-                                                    // Android default picker auto-closes, handle immediately
-                                                    if (event.type === 'dismissed') {
-                                                        setShowDatePicker(false);
-                                                        setSelectedTooth(null);
-                                                        return;
-                                                    }
-                                                    if (date && selectedTooth && activeChild?.childId) {
-                                                        setCurrentDate(date);
-                                                        handleDateChange({} as any, date);
-                                                        return;
-                                                    }
-                                                }
-                                                // iOS: spinner updates live, user confirms with button
                                                 if (date) {
                                                     setCurrentDate(date);
                                                 }
