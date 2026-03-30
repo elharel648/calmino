@@ -160,9 +160,18 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           if (!showOnlyToday) return true;
           const eventDate = new Date(event.timestamp);
           const today = new Date();
-          return eventDate.getDate() === today.getDate() &&
-            eventDate.getMonth() === today.getMonth() &&
-            eventDate.getFullYear() === today.getFullYear();
+          const isSameDay = (d1: Date, d2: Date) =>
+            d1.getDate() === d2.getDate() &&
+            d1.getMonth() === d2.getMonth() &&
+            d1.getFullYear() === d2.getFullYear();
+          // Normal check: event started today
+          if (isSameDay(eventDate, today)) return true;
+          // Overnight sleep: event started yesterday but ended today
+          if (event.type === 'sleep' && event.duration && event.duration > 0) {
+            const endDate = new Date(eventDate.getTime() + event.duration * 1000);
+            if (isSameDay(endDate, today)) return true;
+          }
+          return false;
         });
 
       setEvents(mapped);
@@ -186,27 +195,41 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
 
+    const getLabelForDate = (date: Date): string => {
+      if (date.toDateString() === today.toDateString()) return t('common.today');
+      if (date.toDateString() === yesterday.toDateString()) return t('common.yesterday');
+      return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    };
+
     // Map: dateString → { label, events, dateObj }
     const map = new Map<string, { label: string; dateObj: Date; events: TimelineEvent[] }>();
 
+    const addToDay = (date: Date, event: TimelineEvent) => {
+      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      if (!map.has(dayKey)) {
+        map.set(dayKey, { label: getLabelForDate(date), dateObj: date, events: [] });
+      }
+      // Avoid duplicates (same event id already in this day)
+      const group = map.get(dayKey)!;
+      if (!group.events.some(e => e.id === event.id)) {
+        group.events.push(event);
+      }
+    };
+
     events.forEach(event => {
       const date = new Date(event.timestamp);
-      // Use midnight of the day as stable map key
-      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      // Always add to the start day
+      addToDay(date, event);
 
-      let label: string;
-      if (date.toDateString() === today.toDateString()) {
-        label = t('common.today');
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        label = t('common.yesterday');
-      } else {
-        label = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+      // Overnight sleep: also add to the end day
+      if (event.type === 'sleep' && event.duration && event.duration > 0) {
+        const endDate = new Date(date.getTime() + event.duration * 1000);
+        if (endDate.getDate() !== date.getDate() ||
+            endDate.getMonth() !== date.getMonth() ||
+            endDate.getFullYear() !== date.getFullYear()) {
+          addToDay(endDate, event);
+        }
       }
-
-      if (!map.has(dayKey)) {
-        map.set(dayKey, { label, dateObj: date, events: [] });
-      }
-      map.get(dayKey)!.events.push(event);
     });
 
     // Sort groups: newest first

@@ -104,6 +104,7 @@ export const useHomeData = (
                 return;
             }
 
+            // Normal case: event started within last 24h
             if (eventDate >= last24h) {
                 switch (event.type) {
                     case 'food':
@@ -111,10 +112,8 @@ export const useHomeData = (
                         break;
                     case 'sleep':
                         if (typeof event.duration === 'number') {
-                            // Extract sleep duration from duration field (stored in seconds)
                             sleepMinutes += Math.round(event.duration / 60);
                         } else if (event.note) {
-                            // Legacy fallback: extract from note
                             const match = event.note.match(/(\d+):(\d+)/);
                             if (match) {
                                 sleepMinutes += parseInt(match[1]) * 60 + parseInt(match[2]);
@@ -124,6 +123,12 @@ export const useHomeData = (
                     case 'diaper':
                         diaperCount++;
                         break;
+                }
+            } else if (event.type === 'sleep' && typeof event.duration === 'number' && event.duration > 0) {
+                // Overnight sleep: started before last 24h but ended within it
+                const endDate = new Date(eventDate.getTime() + event.duration * 1000);
+                if (endDate >= last24h) {
+                    sleepMinutes += Math.round(event.duration / 60);
                 }
             }
         });
