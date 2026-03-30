@@ -16,6 +16,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- הגדרות קולקציה קבועות ---
 const EVENTS_COLLECTION = 'events';
@@ -280,8 +281,45 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
       };
     });
 
-    // Already sorted by server, return directly
-    return events;
+    // Indestructible Offline Timeline Merge Protocol:
+    // Firebase SQLite cache systematically fails range queries (timestamp >= X) when strict offline.
+    // It returns ONLY the newly inserted un-synced events, omitting all past history.
+    // We merge the returned events with the most recently known 'offline_history' array stored purely in AsyncStorage.
+    try {
+      const cacheKey = `offline_history_${childId}`;
+      const cached = await AsyncStorage.getItem(cacheKey);
+      let allEvents = [...events];
+      
+      if (cached) {
+         const parsed = JSON.parse(cached).map((item: any) => ({
+             ...item,
+             timestamp: new Date(item.timestamp)
+         }));
+         
+         // Merge events that aren't already explicitly pulled from Firebase cache
+         const existingIds = new Set(allEvents.map(e => e.id));
+         parsed.forEach((e: any) => {
+             if (!existingIds.has(e.id)) {
+                 allEvents.push(e);
+                 existingIds.add(e.id);
+             }
+         });
+         
+         // Re-sort descending by timestamp
+         allEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      }
+      
+      // If we pulled a robust list from the absolute server (snapshot.metadata.fromCache === false)
+      // or if we have results and no memory, update the AsyncStorage shadow cache.
+      if (!snapshot.metadata.fromCache || (!cached && events.length > 0)) {
+         AsyncStorage.setItem(cacheKey, JSON.stringify(events)).catch(()=>{});
+      }
+      
+      return allEvents;
+    } catch (e) {
+      logger.error('Failed to parse offline_history fallback:', e);
+      return events;
+    }
   } catch (e) {
     logger.error('Error getting recent history:', e);
     return [];
