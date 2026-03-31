@@ -44,7 +44,7 @@ struct WhiteNoiseLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack {
                             Spacer()
-                            Link(destination: URL(string: "calmino://stop-timer?type=white_noise")!) {
+                            Button(intent: StopTimerIntent()) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "stop.fill")
                                         .font(.system(size: 12, weight: .bold))
@@ -116,7 +116,7 @@ struct WhiteNoiseLockScreenView: View {
                 Spacer()
                 
                 if #available(iOS 17, *) {
-                    Link(destination: URL(string: "calmino://stop-timer?type=white_noise")!) {
+                    Button(intent: StopTimerIntent()) {
                         Image(systemName: "xmark")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white.opacity(0.8))

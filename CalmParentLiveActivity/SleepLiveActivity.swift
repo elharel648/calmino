@@ -57,7 +57,7 @@ struct SleepLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 10) {
                             if context.state.isPaused {
-                                Link(destination: URL(string: "calmino://resume-timer")!) {
+                                Button(intent: ResumeTimerIntent()) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "play.fill")
                                             .font(.system(size: 12, weight: .bold))
@@ -71,7 +71,7 @@ struct SleepLiveActivity: Widget {
                                     .overlay(Capsule().stroke(sleepColor.opacity(0.5), lineWidth: 1))
                                 }
                             } else {
-                                Link(destination: URL(string: "calmino://pause-timer")!) {
+                                Button(intent: PauseTimerIntent()) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "pause.fill")
                                             .font(.system(size: 12, weight: .bold))
@@ -88,7 +88,7 @@ struct SleepLiveActivity: Widget {
 
                             Spacer()
 
-                            Link(destination: URL(string: "calmino://save-timer?type=sleep&elapsedSeconds=\(context.state.activeSeconds + (context.state.isPaused ? 0 : Int(Date().timeIntervalSince(context.state.startTime))))&childName=\(context.attributes.babyName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!) {
+                            Button(intent: StopTimerIntent()) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "stop.fill")
                                         .font(.system(size: 12, weight: .bold))
@@ -180,7 +180,7 @@ struct SleepLockScreenView: View {
                 if #available(iOS 17, *) {
                     VStack(spacing: 10) {
                         if context.state.isPaused {
-                            Link(destination: URL(string: "calmino://resume-timer")!) {
+                            Button(intent: ResumeTimerIntent()) {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 19, weight: .bold))
                                     .foregroundStyle(.black)
@@ -188,7 +188,7 @@ struct SleepLockScreenView: View {
                                     .background(.white, in: Circle())
                             }
                         } else {
-                            Link(destination: URL(string: "calmino://pause-timer")!) {
+                            Button(intent: PauseTimerIntent()) {
                                 Image(systemName: "pause.fill")
                                     .font(.system(size: 19, weight: .bold))
                                     .foregroundStyle(.black)
@@ -197,7 +197,7 @@ struct SleepLockScreenView: View {
                             }
                         }
 
-                        Link(destination: URL(string: "calmino://save-timer?type=sleep&elapsedSeconds=\(context.state.activeSeconds + (context.state.isPaused ? 0 : Int(Date().timeIntervalSince(context.state.startTime))))&childName=\(context.attributes.babyName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!) {
+                        Button(intent: StopTimerIntent()) {
                             Image(systemName: "stop.fill")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white.opacity(0.8))

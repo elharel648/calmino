@@ -211,6 +211,20 @@ struct StopTimerIntent: LiveActivityIntent {
     init() {}
     
     func perform() async throws -> some IntentResult {
+        // Stop all active Live Activities natively
+        for activity in Activity<SleepActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        for activity in Activity<MealActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        for activity in Activity<BreastfeedingActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        for activity in Activity<BabysitterShiftAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        
         SharedTimerState.writePendingAction(.stop, timerType: "stop")
         return .result()
     }
