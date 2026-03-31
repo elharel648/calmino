@@ -633,6 +633,7 @@ const styles = StyleSheet.create({
         height: 60,
         borderRadius: 16,
         borderWidth: 1.5,
+        gap: 12,
     },
     rowIconCircle: {
         width: 36,
@@ -640,7 +641,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: 12,
     },
     rowName: {
         flex: 1,
@@ -656,7 +656,6 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 4,
     },
     addRowBtn: {
         justifyContent: 'center',
