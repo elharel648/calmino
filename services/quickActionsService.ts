@@ -55,6 +55,17 @@ class QuickActionsService {
             return null;
         }
 
+        // End any existing meal activity before starting a new one
+        if (this.mealActivityId) {
+            try {
+                await ActivityKitManager.stopMeal();
+                this.mealActivityId = null;
+                logger.info('🍽️ Stopped existing Meal Live Activity before starting new one');
+            } catch {
+                this.mealActivityId = null;
+            }
+        }
+
         try {
             const activityId = await ActivityKitManager.startMeal(
                 babyName,

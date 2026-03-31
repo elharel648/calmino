@@ -275,6 +275,29 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     if (days === 1) return t('timeline.yesterday');
     if (days < 7) return t('time.daysAgo', { count: days });
 
+    return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+  };
+
+  const getTimeAgoShort = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const seconds = Math.floor(diffMs / 1000);
+
+    // Future events or within last minute
+    if (seconds < 60 && seconds > -300) return 'עכשיו';
+    // Far future (bad data) — show nothing
+    if (seconds <= -300) return '';
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} דק'`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} שע'`;
+
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'אתמול';
+    if (days < 7) return `${days} ימים`;
+
     // For older events, show date
     return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
   };
@@ -390,13 +413,36 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         if (event.note && event.note !== 'לא צוין') return event.note;
         return '';
       }
-      if (event.subType === 'breast') return event.note || '';
-      if (event.subType === 'solids') {
-        // Don't show the category name as subtext — only a real user-typed note
-        const solidLabel = t('tracking.solidsFood');
-        return (event.note && event.note !== solidLabel && event.note !== 'מזון מוצקים') ? event.note : '';
+      if (event.subType === 'breast') {
+        // Parse structured note "שמאל: MM:SS | ימין: MM:SS" into readable format
+        if (event.note && event.note.includes(' | ')) {
+          const parseBreastTime = (timeStr: string): string => {
+            const match = timeStr.match(/(\d+):(\d+)/);
+            if (!match) return '';
+            const mins = parseInt(match[1]);
+            const secs = parseInt(match[2]);
+            if (mins === 0 && secs < 10) return ''; // threshold: less than 10 seconds = irrelevant
+            if (mins === 0) return `${secs} שנ'`;
+            return `${mins} דק'`;
+          };
+          const parts = event.note.split(' | ');
+          const rightMatch = parts.find(p => p.includes('ימין:'));
+          const leftMatch = parts.find(p => p.includes('שמאל:'));
+          const rightVal = rightMatch ? parseBreastTime(rightMatch) : '';
+          const leftVal = leftMatch ? parseBreastTime(leftMatch) : '';
+          const segments = [
+            rightVal ? `ימין ${rightVal}` : '',
+            leftVal ? `שמאל ${leftVal}` : '',
+          ].filter(Boolean);
+          return segments.join(' · ');
+        }
+        return event.note || '';
       }
-      if (event.subType === 'pumping') return event.note || t('timeline.pumping');
+      if (event.subType === 'solids') {
+        // Note is already shown as the main title — don't repeat as subtext
+        return '';
+      }
+      if (event.subType === 'pumping') return event.note || '';
     } else if (event.type === 'sleep') {
       // For timerange mode: duration is already shown in details — only show user note here
       if (event.startTime && event.endTime && !useGrouping) {
@@ -685,96 +731,79 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
             const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
             const isLast = index === visibleEvents.length - 1;
+            const isFirst = index === 0;
             const details = getEventDetails(event);
             const subtext = getEventSubtext(event);
             const isRecent = isRecentEvent(event.timestamp);
-            const isFirst = index === 0;
+
+            const timeStr = event.timestamp.toLocaleTimeString('he-IL', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+
+            // Calculate colors for the continuous line
+            const prevConfig = isFirst ? null : (TYPE_CONFIG[visibleEvents[index - 1].type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food);
+            const prevColor = prevConfig ? prevConfig.color : 'transparent';
+            const bottomColor = isLast ? 'transparent' : config.color;
+
+            // Optional: reporter badge
+            const showBadge = showReporterBadge && event.reporterName;
+            const reporterInitial = event.reporterName ? event.reporterName.charAt(0) : '';
 
             return (
               <Animated.View
                 key={event.id}
                 entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 80), 300)}
               >
-                <SwipeableRow
-                  onDelete={() => handleDelete(event.id)}
-                >
-                  <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.eventRow}>
-                    {/* Timeline icon + line */}
-                    <View style={styles.timelineTrack}>
-                      <View style={[styles.timelineIcon, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.18 : 0.12) }]}>
-                        <Icon size={15} color={config.color} strokeWidth={2} />
-                      </View>
-                      {/* Line connector */}
-                      {!isLast && <View style={[styles.connector, { backgroundColor: theme.border, opacity: 0.4 }]} />}
+                <SwipeableRow onDelete={() => handleDelete(event.id)}>
+                  <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.elegantEventRow}>
+                    
+                    {/* FAR RIGHT: TIME BLOCK */}
+                    <View style={styles.elegantTimeBlock}>
+                      <Text style={[styles.elegantTimeMain, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
+                      <Text style={[styles.elegantTimeAgo, { color: theme.textSecondary }]} numberOfLines={1}>{getTimeAgoShort(event.timestamp)}</Text>
                     </View>
 
-                    {/* Right side: Content (Left side visually in RTL) */}
-                    <View style={[styles.eventCardContainer]}>
-                      <View style={[styles.eventCard, {
-                        backgroundColor: theme.card,
-                        borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                        borderRightWidth: 3,
-                        borderRightColor: config.color,
-                      }]}>
-                        <View style={styles.cardContent}>
-                          {/* Details — main content, prominent */}
-                          <Text style={{ color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.2, textAlign: 'right', lineHeight: 20 }}>{details}</Text>
+                    {/* MIDDLE RIGHT: TIMELINE TRACK */}
+                    <View style={styles.elegantTrack}>
+                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }]} />
+                      <View style={[styles.elegantIconWrapper, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.12) }]}>
+                        <Icon size={15} color={config.color} strokeWidth={2.5} />
+                      </View>
+                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }]} />
+                    </View>
 
-                          {/* Meta line: label · time — all right-aligned, single line */}
-                          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                            {/* Only show category label if the main detail text has unique content */}
-                            {details !== config.label && (
-                              <Text style={{ fontSize: 10, fontWeight: '600', color: config.color }}>{config.label}</Text>
-                            )}
-                            {details !== config.label && (
-                              <Text style={{ fontSize: 10, color: theme.textTertiary }}>·</Text>
-                            )}
-                            {isFirst && isRecent ? (
-                              <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 3 }}>
-                                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#34D399' }} />
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: '#34D399' }}>
-                                  {t('timeline.now')}
-                                </Text>
-                              </View>
-                            ) : (
-                              <Text style={{ fontSize: 10, fontWeight: '500', color: theme.textTertiary, fontVariant: ['tabular-nums'] }}>
-                                {details === config.label ? config.label + ' · ' : ''}{getTimeAgo(event.timestamp)}
-                              </Text>
+                    {/* LEFT: CARD CONTENT */}
+                    <View style={styles.elegantCardContainer}>
+                      <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                        
+                        {/* Right side of card: Texts */}
+                        <View style={styles.elegantCardTextContainer}>
+                          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 5 }}>
+                            {details !== config.label ? (
+                              <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                            ) : null}
+                            {isRecent && isFirst && (
+                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34D399' }} />
                             )}
                           </View>
-
-                          {/* Subtext — notes, truncated to 2 lines */}
-                          {subtext ? (
-                            <Text style={{ fontSize: 11, fontWeight: '400', color: theme.textSecondary, textAlign: 'right', marginTop: 2, lineHeight: 16 }} numberOfLines={2} ellipsizeMode="tail">
-                              {subtext}
-                            </Text>
-                          ) : null}
+                          <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
+                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}
                         </View>
 
-                        {/* Reporter Badge - Small avatar showing who reported (hidden if single reporter) */}
-                        {showReporterBadge && event.reporterName && (() => {
-                          const memberId = event.creatorId || event.userId;
-                          const member = family?.members[memberId];
-                          const photoUrl = member?.photoURL || event.reporterPhotoUrl;
-
-                          return (
-                            <View style={styles.reporterBadge}>
-                              <View style={[styles.reporterAvatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8E8ED' }]}>
-                                <Text style={[styles.reporterInitial, { color: theme.textSecondary }]}>
-                                  {event.reporterName.charAt(0)}
-                                </Text>
-                              </View>
-                              {photoUrl && (
-                                <Image
-                                  source={{ uri: photoUrl }}
-                                  style={[styles.reporterAvatar, { position: 'absolute' }]}
-                                />
-                              )}
+                        {/* Left side: Reporter Badge only */}
+                        {showBadge ? (
+                          <View style={styles.elegantCardLeft}>
+                            <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.8)' }]}>
+                              <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
                             </View>
-                          );
-                        })()}
+                          </View>
+                        ) : null}
+
                       </View>
                     </View>
+
                   </TouchableOpacity>
                 </SwipeableRow>
               </Animated.View>
@@ -1189,6 +1218,114 @@ const styles = StyleSheet.create({
   },
   historyAvatarText: {
     fontSize: 9,
+    fontWeight: '700',
+  },
+
+  // ===== ELEGANT TIMELINE (HOME/FLAT VIEW) =====
+  elegantEventRow: {
+    flexDirection: 'row-reverse',
+    minHeight: 80,
+    alignItems: 'stretch',
+  },
+  elegantTimeBlock: {
+    width: 58,
+    paddingTop: 16,
+    alignItems: 'center',
+    paddingLeft: 2,
+  },
+  elegantTimeMain: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.2,
+  },
+  elegantTimeAgo: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
+    opacity: 0.6,
+  },
+  elegantTrack: {
+    width: 38,
+    alignItems: 'center',
+  },
+  elegantLineTop: {
+    width: 1.5,
+    flex: 1,
+  },
+  elegantLineBottom: {
+    width: 1.5,
+    flex: 1,
+  },
+  elegantIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4, // connects the lines tightly
+  },
+  elegantCardContainer: {
+    flex: 1,
+    paddingVertical: 5, // Gap between rows
+    paddingRight: 6,
+  },
+  elegantCard: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 62,
+    // Soft shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 0,
+  },
+  elegantCardTextContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  elegantCategoryLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  elegantCardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'right',
+    letterSpacing: -0.3,
+  },
+  elegantCardSubtext: {
+    fontSize: 13,
+    fontWeight: '400',
+    marginTop: 3,
+    opacity: 0.7,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  elegantCardLeft: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingRight: 12,
+  },
+  cardReporterBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardReporterText: {
+    fontSize: 11,
     fontWeight: '700',
   },
 });
