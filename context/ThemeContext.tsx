@@ -220,7 +220,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         toggleTheme,
         setDarkMode,
         setThemePreference,
-    }), [isDarkMode, theme, themePreference]);
+    }), [isDarkMode, theme, themePreference, systemColorScheme]);
 
     return (
         <ThemeContext.Provider value={contextValue}>

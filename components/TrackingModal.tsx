@@ -39,16 +39,17 @@ const IsolatedDurationPicker = ({
   locale?: string;
 }) => {
   const [date, setDate] = useState(() => {
-    // Use UTC to avoid timezone offset corrupting the duration
+    // Countdown picker on iOS uses local time — use setHours (NOT UTC)
+    // to avoid timezone offset corrupting the displayed duration
     const d = new Date(0);
-    d.setUTCHours(initialHours, initialMinutes, 0, 0);
+    d.setHours(initialHours, initialMinutes, 0, 0);
     return d;
   });
 
   useEffect(() => {
-    // Read UTC values — countdown picker stores duration relative to epoch UTC
-    const h = date.getUTCHours();
-    const m = date.getUTCMinutes();
+    // Read local time values — countdown picker stores duration in local time
+    const h = date.getHours();
+    const m = date.getMinutes();
     const timer = setTimeout(() => onChange(h, m), 300);
     return () => clearTimeout(timer);
   }, [date, onChange]);
@@ -3047,7 +3048,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   // Time Picker Overlay - Premium Design
   timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   timePickerContainer: { backgroundColor: theme.card, borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 0 },
-  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, backgroundColor: '#1C1C1E', borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' },
+  timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, backgroundColor: theme.primary, borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' },
   timePickerDoneBtnText: { color: theme.card, fontSize: 17, fontWeight: '600' },
 
   // Pumping Row Layout (Timer + Amount side by side)

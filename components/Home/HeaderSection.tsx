@@ -336,12 +336,19 @@ const HeaderSection = memo<HeaderSectionProps>(({
             {/* Single child - show add button inline */}
             {allChildren.length === 1 && (
                 <TouchableOpacity
-                    style={styles.singleChildAddBtn}
+                    style={[styles.singleChildAddBtn, {
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                    }]}
                     onPress={handlePlusPress}
                     activeOpacity={0.7}
                 >
-                    <Plus size={16} color={theme.textTertiary} />
-                    <Text style={[styles.singleChildAddText, { color: theme.textTertiary }]}>{t('header.addChild')}</Text>
+                    <Text style={[styles.singleChildAddText, { color: theme.textSecondary }]}>{t('header.addChild')}</Text>
+                    <View style={[styles.addChildPlusCircle, {
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                    }]}>
+                        <Plus size={12} color={theme.textSecondary} strokeWidth={2.5} />
+                    </View>
                 </TouchableOpacity>
             )}
 
@@ -438,13 +445,20 @@ const styles = StyleSheet.create({
     singleChildAddBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 6,
-        paddingVertical: SPACING.sm,
-        paddingHorizontal: SPACING.md,
-        borderRadius: SPACING.md,
-        backgroundColor: 'rgba(0,0,0,0.02)',
-        alignSelf: 'flex-start',
+        gap: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        borderWidth: 1,
+        alignSelf: 'flex-end',
         marginBottom: SPACING.md,
+    },
+    addChildPlusCircle: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     singleChildAddText: {
         ...TYPOGRAPHY.labelSmall,

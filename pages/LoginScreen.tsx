@@ -45,6 +45,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { BlurView } from 'expo-blur';
+import LiquidGlassBackground from '../components/LiquidGlass/LiquidGlassBackground';
 import { logger } from '../utils/logger';
 
 type LoginScreenProps = {
@@ -582,49 +583,44 @@ export default function LoginScreen({
   const passwordStrength = validatePassword(password, t);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar style="light" />
+    <View style={styles.container}>
+      <LiquidGlassBackground />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.5)' }]} />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <ConfettiBurst visible={showConfetti} onFinish={() => setShowConfetti(false)} />
 
-      {/* Premium Header */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={['#0F0A1A', '#1a1040', '#2D1B69']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Subtle ambient glow */}
-        <View style={styles.ambientGlow} />
-        <View style={styles.ambientGlow2} />
-
-        <View style={styles.headerContent}>
-          <View style={styles.premiumLogoContainer}>
-            <View style={styles.logoRing}>
-              <View style={styles.glassLogoBackground}>
-                <Image
-                  source={require('../assets/icon.png')}
-                  style={styles.premiumLogoImage}
-                  resizeMode="contain"
-                />
-              </View>
-            </View>
-          </View>
-          <Text style={styles.appTitle}>{t('login.appName')}</Text>
-          <Text style={styles.appSubtitle}>{t('login.appSubtitle')}</Text>
-        </View>
-      </View>
-
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.formContainer}>
-        <Animated.View style={[
-          styles.scrollContent,
-          { backgroundColor: theme.card },
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { translateX: shakeAnim }]
-          }
-        ]}>
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 60, flexGrow: 1, justifyContent: 'center' }}>
+          
+          {/* Logo & Header outside the card */}
+          <Animated.View style={[
+            styles.headerContent,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+          ]}>
+            <View style={[styles.glassLogoBackground, { 
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)',
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,1)',
+              borderWidth: 1,
+            }]}>
+              <Image source={require('../assets/icon.png')} style={styles.premiumLogoImage} resizeMode="contain" />
+            </View>
+            <Text style={[styles.appTitle, { color: theme.textPrimary }]}>{t('login.appName')}</Text>
+            <Text style={[styles.appSubtitle, { color: theme.textSecondary }]}>{t('login.appSubtitle')}</Text>
+          </Animated.View>
+
+          {/* Glass Form Card */}
+          <Animated.View style={[
+            styles.glassCard,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }, { translateX: shakeAnim }]
+            }
+          ]}>
+            <BlurView intensity={isDarkMode ? 40 : 80} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            <View style={[styles.cardInnerOverlay, { backgroundColor: isDarkMode ? 'rgba(30,30,30,0.4)' : 'rgba(255,255,255,0.6)' }]} />
+            <View style={[styles.cardBorder, { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.8)' }]} />
+
+            <View style={styles.innerContent}>
 
             <Text style={[styles.formTitle, { color: theme.textPrimary }]}>
               {isLogin ? t('login.welcomeBack') : t('login.createAccount')}
@@ -1184,21 +1180,18 @@ export default function LoginScreen({
                   onGuestMode();
                 }}
                 style={styles.exploreBtn}
-                activeOpacity={0.8}
+                activeOpacity={0.7}
               >
-                <LinearGradient
-                  colors={isDarkMode
-                    ? ['rgba(99,102,241,0.15)', 'rgba(139,92,246,0.10)']
-                    : ['rgba(99,102,241,0.08)', 'rgba(139,92,246,0.05)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.exploreBtnGradient}
-                >
-                  <Compass size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
-                  <Text style={[styles.exploreBtnText, { color: isDarkMode ? '#818CF8' : '#6366F1' }]}>
+                <View style={[styles.exploreBtnContainer, { 
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                  borderColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                  borderWidth: 1,
+                }]}>
+                  <Text style={[styles.exploreBtnText, { color: theme.textPrimary }]}>
                     {t('login.exploreApp')}
                   </Text>
-                </LinearGradient>
+                  <Compass size={16} color={theme.textPrimary} strokeWidth={2.2} />
+                </View>
               </TouchableOpacity>
             )}
 
@@ -1210,8 +1203,9 @@ export default function LoginScreen({
               </Text>
             </View>
 
-          </ScrollView>
-        </Animated.View>
+            </View>
+          </Animated.View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Join Code Modal */}
@@ -1334,117 +1328,91 @@ export default function LoginScreen({
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  // ===== HEADER =====
-  header: {
-    height: '28%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    overflow: 'hidden',
+  // ===== GLASS LAYOUT =====
+  formContainer: {
+    flex: 1,
   },
   headerContent: {
     alignItems: 'center',
     zIndex: 10,
-  },
-  ambientGlow: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(124, 58, 237, 0.15)',
-    top: -80,
-    right: -80,
-  },
-  ambientGlow2: {
-    position: 'absolute',
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-    bottom: -60,
-    left: -60,
+    marginBottom: 32,
+    paddingTop: Platform.OS === 'ios' ? 70 : 40,
   },
   premiumLogoContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logoRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#7C3AED',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 24,
-    elevation: 0,
   },
   glassLogoBackground: {
-    width: 84,
-    height: 84,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 88,
+    height: 88,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   premiumLogoImage: {
-    width: 72,
-    height: 72,
+    width: 68,
+    height: 68,
   },
   appTitle: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
-    color: '#fff',
-    marginBottom: 4,
-    letterSpacing: -0.5,
+    marginBottom: 6,
+    letterSpacing: -1,
   },
   appSubtitle: {
-    fontSize: 14,
-    color: 'rgba(200, 200, 255, 0.7)',
+    fontSize: 16,
     fontWeight: '500',
     letterSpacing: -0.2,
   },
 
-  // ===== FORM =====
-  formContainer: {
-    flex: 1,
-    marginTop: -24,
-  },
-  scrollContent: {
-    padding: 24,
-    paddingTop: 28,
-    paddingBottom: 32,
-    marginHorizontal: 16,
-    borderRadius: 28,
+  // ===== GLASS CARD =====
+  glassCard: {
+    marginHorizontal: 20,
+    borderRadius: 32,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.1,
+    shadowRadius: 32,
     elevation: 0,
   },
+  cardInnerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cardBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderRadius: 32,
+  },
+  innerContent: {
+    padding: 20,
+    paddingTop: 28,
+    paddingBottom: 28,
+  },
   formTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 4,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   formSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    marginBottom: 28,
-    letterSpacing: -0.2,
-    lineHeight: 20,
+    marginBottom: 32,
+    letterSpacing: -0.3,
+    lineHeight: 22,
   },
 
   // ===== INPUTS =====
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   label: {
     fontSize: 13,
@@ -1456,9 +1424,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
     borderWidth: 1,
     height: 52,
+    borderRadius: 16,
   },
   inputIconWrap: {
     width: 36,
@@ -1721,33 +1689,36 @@ const styles = StyleSheet.create({
 
   // ===== EXPLORE / GUEST MODE =====
   exploreBtn: {
-    marginTop: 14,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.15)',
+    marginTop: 18,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 0,
   },
-  exploreBtnGradient: {
-    flexDirection: 'row',
+  exploreBtnContainer: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 24,
   },
   exploreBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
 
   // ===== SECURITY FOOTER =====
   securityFooter: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    marginTop: 16,
+    gap: 6,
+    marginTop: 8,
     paddingTop: 12,
   },
   securityFooterText: {

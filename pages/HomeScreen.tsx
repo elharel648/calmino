@@ -435,7 +435,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                 </View>
                             )}
 
-                            <View>
+                            <View style={{ marginBottom: 8 }}>
                                 <QuickActions
                                     lastFeedTime={lastFeedTime}
                                     lastSleepTime={lastSleepTime}

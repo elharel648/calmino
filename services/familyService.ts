@@ -371,6 +371,7 @@ export const leaveFamily = async (): Promise<boolean> => {
 
 /**
  * Remove a member from the family (admin only)
+ * Handles both regular members (familyId) and guests (guestAccess/guestFamilyId/guestChildIds)
  */
 export const removeMember = async (memberUserId: string): Promise<boolean> => {
     const userId = getCurrentUserId();
@@ -388,15 +389,35 @@ export const removeMember = async (memberUserId: string): Promise<boolean> => {
         // Can't remove yourself
         if (memberUserId === userId) return false;
 
-        // Remove member
+        // Determine the member's role before removing
+        const memberRole = family.members[memberUserId]?.role;
+
+        // Remove member from family doc
         await updateDoc(doc(db, 'families', family.id), {
             [`members.${memberUserId}`]: deleteField(),
         });
 
-        // Remove familyId from removed user
-        await updateDoc(doc(db, 'users', memberUserId), {
-            familyId: deleteField(),
-        });
+        // Clean up user doc based on role
+        if (memberRole === 'guest') {
+            // Guest cleanup: remove guestAccess, guestFamilyId, guestChildIds
+            const memberUserDoc = await getDoc(doc(db, 'users', memberUserId));
+            const memberUserData = memberUserDoc.data();
+            const childId = memberUserData?.guestAccess?.[family.id]?.childId || family.babyId;
+            const remainingAccess = { ...memberUserData?.guestAccess };
+            delete remainingAccess[family.id];
+            const hasOtherGuestAccess = Object.keys(remainingAccess).length > 0;
+
+            await updateDoc(doc(db, 'users', memberUserId), {
+                [`guestAccess.${family.id}`]: deleteField(),
+                ...(hasOtherGuestAccess ? {} : { guestFamilyId: deleteField() }),
+                ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
+            });
+        } else {
+            // Regular member cleanup: remove familyId
+            await updateDoc(doc(db, 'users', memberUserId), {
+                familyId: deleteField(),
+            });
+        }
 
         return true;
     } catch (error) {

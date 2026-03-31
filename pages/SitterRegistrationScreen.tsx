@@ -1,4 +1,4 @@
-// pages/SitterRegistrationScreen.tsx - Minimalist Sitter Registration
+// pages/SitterRegistrationScreen.tsx - Super Premium Sitter Registration
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
     View,
@@ -18,6 +18,7 @@ import {
 import {
     User, Camera, Clock, MapPin,
     ChevronLeft, ChevronRight, Check, Plus, Minus, Search,
+    Sparkles, Shield, Star,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -307,9 +308,17 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     // Step 1: Personal Info - memoized to prevent input lag
     const PersonalInfoStep = useMemo(() => (
         <View style={styles.stepContent}>
+            {/* Premium Step Header */}
             <View style={styles.stepHeader}>
-                <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
-                    <User size={28} color={theme.textSecondary} strokeWidth={1.5} />
+                <View style={styles.stepIconOuter}>
+                    <LinearGradient
+                        colors={isDarkMode ? ['#2C2C2E', '#3A3A3C'] : ['#F2F2F7', '#E5E5EA']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.stepIconGradient}
+                    >
+                        <User size={26} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={1.8} />
+                    </LinearGradient>
                 </View>
                 <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>{t('sitterReg.personalDetails')}</Text>
                 <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
@@ -318,55 +327,62 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             </View>
 
             <View style={styles.inputsContainer}>
+                {/* Full Name */}
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.fullName')} *</Text>
-                    <View style={styles.inputWrapper}>
-                        {Platform.OS === 'ios' && (
-                            <BlurView
-                                intensity={15}
-                                tint={isDarkMode ? 'dark' : 'light'}
-                                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                            />
-                        )}
+                    <View style={[styles.premiumInputWrapper, {
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    }]}>
                         <TextInput
-                            style={[styles.input, {
-                                backgroundColor: Platform.OS === 'ios' ? 'transparent' : theme.card,
-                                color: theme.textPrimary,
-                                borderColor: theme.border
-                            }]}
+                            style={[styles.premiumInput, { color: theme.textPrimary }]}
                             value={name}
                             onChangeText={setName}
                             placeholder={t('sitterReg.fullName')}
-                            placeholderTextColor={theme.textSecondary}
+                            placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
                             textAlign="right"
                         />
+                        <View style={[styles.inputIconBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7' }]}>
+                            <User size={15} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
+                        </View>
                     </View>
                 </View>
 
+                {/* Age + Phone Row */}
                 <View style={styles.inputRow}>
                     <View style={[styles.inputGroup, { flex: 1 }]}>
                         <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.age')} *</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                            value={age}
-                            onChangeText={setAge}
-                            placeholder="18+"
-                            placeholderTextColor={theme.textSecondary}
-                            keyboardType="numeric"
-                            textAlign="right"
-                        />
+                        <View style={[styles.premiumInputWrapper, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        }]}>
+                            <TextInput
+                                style={[styles.premiumInput, { color: theme.textPrimary }]}
+                                value={age}
+                                onChangeText={setAge}
+                                placeholder="18+"
+                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
+                                keyboardType="numeric"
+                                textAlign="right"
+                            />
+                        </View>
                     </View>
                     <View style={[styles.inputGroup, { flex: 2 }]}>
                         <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.phone')} *</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                            value={phone}
-                            onChangeText={setPhone}
-                            placeholder="050-1234567"
-                            placeholderTextColor={theme.textSecondary}
-                            keyboardType="phone-pad"
-                            textAlign="right"
-                        />
+                        <View style={[styles.premiumInputWrapper, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        }]}>
+                            <TextInput
+                                style={[styles.premiumInput, { color: theme.textPrimary }]}
+                                value={phone}
+                                onChangeText={setPhone}
+                                placeholder="050-1234567"
+                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
+                                keyboardType="phone-pad"
+                                textAlign="right"
+                            />
+                        </View>
                     </View>
                 </View>
 
@@ -374,58 +390,58 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 <View style={styles.inputRow}>
                     <View style={[styles.inputGroup, { flex: 1 }]}>
                         <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.yearsExperience')}</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                            value={experienceYears}
-                            onChangeText={setExperienceYears}
-                            placeholder={t('sitterReg.years')}
-                            placeholderTextColor={theme.textSecondary}
-                            keyboardType="numeric"
-                            textAlign="right"
-                        />
+                        <View style={[styles.premiumInputWrapper, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        }]}>
+                            <TextInput
+                                style={[styles.premiumInput, { color: theme.textPrimary }]}
+                                value={experienceYears}
+                                onChangeText={setExperienceYears}
+                                placeholder={t('sitterReg.years')}
+                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
+                                keyboardType="numeric"
+                                textAlign="right"
+                            />
+                        </View>
                     </View>
                     <View style={[styles.inputGroup, { flex: 1 }]}>
                         <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.pricePerHour')} *</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                            value={pricePerHour}
-                            onChangeText={setPricePerHour}
-                            placeholder="50"
-                            placeholderTextColor={theme.textSecondary}
-                            keyboardType="numeric"
-                            textAlign="right"
-                        />
+                        <View style={[styles.premiumInputWrapper, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        }]}>
+                            <TextInput
+                                style={[styles.premiumInput, { color: theme.textPrimary }]}
+                                value={pricePerHour}
+                                onChangeText={setPricePerHour}
+                                placeholder="₪50"
+                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
+                                keyboardType="numeric"
+                                textAlign="right"
+                            />
+                        </View>
                     </View>
                 </View>
 
-                {/* City Picker - Premium Autocomplete */}
+                {/* ── City Picker ── */}
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.city')} *</Text>
 
                     <View style={styles.cityInputContainer}>
-                        <View style={[styles.cityInputWrapper, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                            {/* Premium Glass Effect */}
-                            {Platform.OS === 'ios' && (
-                                <BlurView
-                                    intensity={20}
-                                    tint={isDarkMode ? 'dark' : 'light'}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                            )}
+                        <View style={[styles.premiumInputWrapper, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                            flexDirection: 'row-reverse',
+                            alignItems: 'center',
+                            gap: 10,
+                        }]}>
+                            <View style={[styles.inputIconBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7' }]}>
+                                <MapPin size={15} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
+                            </View>
 
-                            {/* Search Icon with Gradient */}
-                            <LinearGradient
-                                colors={[theme.primary + '20', theme.primary + '10']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.cityIconContainer}
-                            >
-                                <MapPin size={15} color={theme.primary} strokeWidth={2} />
-                            </LinearGradient>
-
-                            {/* Input Field */}
                             <TextInput
-                                style={[styles.cityInput, { color: theme.textPrimary }]}
+                                style={[styles.premiumInput, { color: theme.textPrimary, flex: 1 }]}
                                 value={city}
                                 onChangeText={(text) => {
                                     setCity(text);
@@ -466,11 +482,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                     setTimeout(() => setShowCitySuggestions(false), 200);
                                 }}
                                 placeholder={t('sitterReg.typeOrSelect')}
-                                placeholderTextColor={theme.textSecondary}
+                                placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
                                 textAlign="right"
                             />
 
-                            {/* Clear Button with Gradient */}
                             {city.length > 0 && (
                                 <TouchableOpacity
                                     onPress={() => {
@@ -482,43 +497,26 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                         setCitySuggestions([]);
                                     }}
                                     activeOpacity={0.7}
+                                    style={[styles.cityClearBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
                                 >
-                                    <LinearGradient
-                                        colors={[theme.primary + '20', theme.primary + '10']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={styles.cityClearButton}
-                                    >
-                                        <Text style={{ color: theme.textSecondary, fontSize: 20, fontWeight: '200', lineHeight: 20 }}>×</Text>
-                                    </LinearGradient>
+                                    <Text style={{ color: theme.textSecondary, fontSize: 16, fontWeight: '300', lineHeight: 18 }}>×</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
 
-                        {/* City Autocomplete Suggestions - Premium Glass Effect */}
+                        {/* City Autocomplete Suggestions */}
                         {showCitySuggestions && citySuggestions.length > 0 && (
                             <View style={[styles.citySuggestionsContainer, {
-                                borderColor: theme.border,
-                                shadowColor: '#000',
+                                backgroundColor: isDarkMode ? '#2C2C2E' : '#FFFFFF',
+                                borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                             }]}>
-                                {Platform.OS === 'ios' && (
-                                    <BlurView
-                                        intensity={60}
-                                        tint={isDarkMode ? 'dark' : 'light'}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-                                )}
-                                <View style={[StyleSheet.absoluteFill, {
-                                    backgroundColor: Platform.OS === 'android' ? theme.card : 'transparent',
-                                    borderRadius: 16,
-                                }]} />
                                 {citySuggestions.map((cityName, index) => (
                                     <TouchableOpacity
                                         key={cityName}
                                         style={[
                                             styles.citySuggestionItem,
                                             {
-                                                borderBottomColor: theme.border,
+                                                borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                                                 borderBottomWidth: index < citySuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
                                             }
                                         ]}
@@ -535,9 +533,12 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={[styles.citySuggestionText, { color: theme.textPrimary }]}>
-                                            {cityName}
-                                        </Text>
+                                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }}>
+                                            <MapPin size={14} color={theme.textSecondary} strokeWidth={1.5} />
+                                            <Text style={[styles.citySuggestionText, { color: theme.textPrimary }]}>
+                                                {cityName}
+                                            </Text>
+                                        </View>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -545,27 +546,19 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {/* GPS Location Button - Premium Design with Gradient */}
+                {/* GPS Location Button */}
                 <TouchableOpacity
                     style={[styles.locationBtn, {
-                        borderColor: gpsLocation ? theme.success : theme.border,
                         overflow: 'hidden',
                     }]}
                     onPress={getLocation}
                     disabled={isLoadingLocation}
                     activeOpacity={0.7}
                 >
-                    {Platform.OS === 'ios' && (
-                        <BlurView
-                            intensity={20}
-                            tint={isDarkMode ? 'dark' : 'light'}
-                            style={StyleSheet.absoluteFill}
-                        />
-                    )}
                     <LinearGradient
                         colors={gpsLocation
-                            ? [theme.success + '20', theme.success + '10']
-                            : [theme.card, theme.card]
+                            ? (isDarkMode ? ['rgba(16,185,129,0.2)', 'rgba(16,185,129,0.1)'] : ['#ECFDF5', '#D1FAE5'])
+                            : (isDarkMode ? ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)'] : ['#F2F2F7', '#E5E5EA'])
                         }
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
@@ -575,47 +568,64 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         <ActivityIndicator size="small" color={theme.textPrimary} />
                     ) : (
                         <>
-                            <LinearGradient
-                                colors={gpsLocation
-                                    ? [theme.success + '30', theme.success + '20']
-                                    : [theme.primary + '20', theme.primary + '10']
-                                }
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.locationIconWrapper}
-                            >
-                                <MapPin size={16} color={gpsLocation ? theme.success : theme.primary} strokeWidth={2} />
-                            </LinearGradient>
-                            <Text style={[styles.locationBtnText, { color: gpsLocation ? theme.success : theme.textPrimary }]}>
+                            <View style={[styles.locationIconBadge, {
+                                backgroundColor: gpsLocation
+                                    ? (isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.15)')
+                                    : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)')
+                            }]}>
+                                {gpsLocation ? (
+                                    <Check size={14} color="#10B981" strokeWidth={2.5} />
+                                ) : (
+                                    <MapPin size={14} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
+                                )}
+                            </View>
+                            <Text style={[styles.locationBtnText, {
+                                color: gpsLocation ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.7)' : '#374151'),
+                                fontWeight: gpsLocation ? '600' : '500',
+                            }]}>
                                 {gpsLocation ? t('sitterReg.locationSaved') : t('sitterReg.shareGps')}
                             </Text>
                         </>
                     )}
                 </TouchableOpacity>
 
+                {/* About You */}
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('sitterReg.aboutYou')}</Text>
-                    <TextInput
-                        style={[styles.input, styles.textArea, { backgroundColor: theme.card, color: theme.textPrimary, borderColor: theme.border }]}
-                        value={bio}
-                        onChangeText={setBio}
-                        placeholder={t('sitterReg.tellAboutExperience')}
-                        placeholderTextColor={theme.textSecondary}
-                        multiline
-                        numberOfLines={4}
-                        textAlign="right"
-                    />
+                    <View style={[styles.premiumInputWrapper, {
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    }]}>
+                        <TextInput
+                            style={[styles.premiumInput, styles.textArea, { color: theme.textPrimary }]}
+                            value={bio}
+                            onChangeText={setBio}
+                            placeholder={t('sitterReg.tellAboutExperience')}
+                            placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'}
+                            multiline
+                            numberOfLines={4}
+                            textAlign="right"
+                        />
+                    </View>
                 </View>
             </View>
         </View>
-    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, experienceYears, pricePerHour, theme]);
+    ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, experienceYears, pricePerHour, theme, isDarkMode]);
 
     // Step 2: Photo - memoized
     const PhotoStep = useMemo(() => (
         <View style={styles.stepContent}>
+            {/* Premium Step Header */}
             <View style={styles.stepHeader}>
-                <View style={[styles.stepIcon, { backgroundColor: theme.cardSecondary }]}>
-                    <Camera size={28} color={theme.textSecondary} strokeWidth={1.5} />
+                <View style={styles.stepIconOuter}>
+                    <LinearGradient
+                        colors={isDarkMode ? ['#2C2C2E', '#3A3A3C'] : ['#F2F2F7', '#E5E5EA']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.stepIconGradient}
+                    >
+                        <Camera size={26} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={1.8} />
+                    </LinearGradient>
                 </View>
                 <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>{t('sitter.registration.uploadPhotoHint')}</Text>
                 <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
@@ -623,70 +633,120 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 </Text>
             </View>
 
-            <TouchableOpacity style={styles.photoUpload} onPress={pickImage}>
+            <TouchableOpacity style={styles.photoUpload} onPress={pickImage} activeOpacity={0.85}>
                 {profilePhoto ? (
-                    <View>
+                    <View style={styles.photoContainer}>
+                        {/* Gradient ring behind photo */}
+                        <LinearGradient
+                            colors={['#1C1C1E', '#3A3A3C', '#636366', '#1C1C1E']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.photoGradientRing}
+                        />
                         <Image source={{ uri: profilePhoto }} style={styles.photoPreview} />
-                        {/* Camera edit badge */}
-                        <View style={[styles.photoEditBadge, { backgroundColor: theme.primary }]}>
-                            <Camera size={16} color="#fff" strokeWidth={2} />
+                        <View style={[styles.photoEditBadge, { backgroundColor: '#1C1C1E' }]}>
+                            <Camera size={14} color="#fff" strokeWidth={2.5} />
                         </View>
                     </View>
                 ) : (
-                    <View style={[styles.photoPlaceholder, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <View style={[styles.photoUploadCircle, { backgroundColor: theme.primary + '15' }]}>
-                            <Camera size={32} color={theme.primary} strokeWidth={1.5} />
-                        </View>
-                        <Text style={[styles.photoPlaceholderText, { color: theme.textSecondary }]}>{t('sitter.registration.uploadPhoto')}</Text>
-                        <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>
-                            {t('common.tapToSelect') || 'לחצ/י לבחירה'}
-                        </Text>
+                    <View style={styles.photoPlaceholderOuter}>
+                        {/* Dashed ring with gradient hint */}
+                        <LinearGradient
+                            colors={isDarkMode ? ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.03)'] : ['#F2F2F7', '#E5E5EA']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.photoPlaceholderInner}
+                        >
+                            <View style={styles.photoUploadIcon}>
+                                <LinearGradient
+                                    colors={['#1C1C1E', '#3A3A3C']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.photoUploadIconGradient}
+                                >
+                                    <Camera size={28} color="#fff" strokeWidth={1.8} />
+                                </LinearGradient>
+                            </View>
+                            <Text style={[styles.photoPlaceholderText, { color: theme.textPrimary }]}>{t('sitter.registration.uploadPhoto')}</Text>
+                            <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>
+                                {t('common.tapToSelect') || 'לחצ/י לבחירה'}
+                            </Text>
+                        </LinearGradient>
                     </View>
                 )}
             </TouchableOpacity>
+
+            {/* Trust badge */}
+            <View style={[styles.trustBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F2F2F7' }]}>
+                <Shield size={16} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
+                <Text style={[styles.trustBadgeText, { color: isDarkMode ? 'rgba(255,255,255,0.6)' : '#64748B' }]}>
+                    {t('sitter.registration.photoPrivacy') || 'התמונה שלך מוצגת רק להורים בסביבתך'}
+                </Text>
+            </View>
         </View>
-    ), [profilePhoto, pickImage, theme]);
+    ), [profilePhoto, pickImage, theme, isDarkMode]);
 
-
-    // Steps are now memoized and won't cause input lag
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {/* Premium Gradient Background */}
+            {/* Premium Atmospheric Background */}
             <LinearGradient
                 colors={isDarkMode
-                    ? [theme.background, theme.cardSecondary + '40', theme.background]
-                    : ['#FAFAFA', '#F5F5F5', '#FAFAFA']
+                    ? ['#0A0A0F', '#0F0F18', '#0A0A0F']
+                    : ['#FAFAFA', '#F5F5F5', '#F5F5F5']
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <ChevronRight size={24} color={theme.textSecondary} />
+            {/* Header — Minimalist Apple Style */}
+            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+                {Platform.OS === 'ios' && (
+                    <BlurView
+                        intensity={isDarkMode ? 40 : 60}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                    />
+                )}
+                {Platform.OS === 'android' && (
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.92)' }]} />
+                )}
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackBtn} activeOpacity={0.6}>
+                    <ChevronRight size={22} color={theme.textSecondary} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('sitter.registration.title')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            {/* Progress */}
+            {/* Premium Progress Bar */}
             <View style={styles.progressContainer}>
-                <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
-                    <Animated.View
-                        style={[
-                            styles.progressFill,
-                            { backgroundColor: theme.textPrimary },
-                            {
-                                width: progressAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: ['0%', '100%']
-                                })
-                            }
-                        ]}
-                    />
+                <View style={styles.progressSteps}>
+                    {[1, 2].map((step) => (
+                        <View key={step} style={styles.progressStepItem}>
+                            <View style={[
+                                styles.progressDot,
+                                currentStep >= step && styles.progressDotActive,
+                                currentStep >= step && { backgroundColor: '#1C1C1E' },
+                                currentStep < step && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' },
+                            ]}>
+                                {currentStep > step ? (
+                                    <Check size={10} color="#fff" strokeWidth={3} />
+                                ) : (
+                                    <Text style={[styles.progressDotText, {
+                                        color: currentStep >= step ? '#fff' : theme.textSecondary,
+                                    }]}>{step}</Text>
+                                )}
+                            </View>
+                            {step < 2 && (
+                                <View style={[styles.progressLine, {
+                                    backgroundColor: currentStep > step
+                                        ? '#1C1C1E'
+                                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                                }]} />
+                            )}
+                        </View>
+                    ))}
                 </View>
                 <Text style={[styles.progressText, { color: theme.textSecondary }]}>
                     {t('sitterReg.stepOf', { current: currentStep.toString(), total: '2' })}
@@ -695,45 +755,85 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
             {/* Content */}
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {currentStep === 1 && PersonalInfoStep}
                     {currentStep === 2 && PhotoStep}
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Footer */}
-            <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border, paddingBottom: insets.bottom + 70 }]}>
-                {currentStep > 1 && (
-                    <TouchableOpacity
-                        style={[styles.secondaryBtn, { borderColor: theme.border }]}
-                        onPress={prevStep}
-                    >
-                        <ChevronRight size={18} color={theme.textSecondary} />
-                        <Text style={[styles.secondaryBtnText, { color: theme.textSecondary }]}>{t('sitter.back')}</Text>
-                    </TouchableOpacity>
+            {/* Premium Footer */}
+            <View style={[styles.footer, { paddingBottom: insets.bottom + 70 }]}>
+                {Platform.OS === 'ios' && (
+                    <BlurView
+                        intensity={isDarkMode ? 40 : 60}
+                        tint={isDarkMode ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                    />
+                )}
+                {Platform.OS === 'android' && (
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.95)' }]} />
                 )}
 
-                {currentStep < 2 ? (
-                    <TouchableOpacity
-                        style={[styles.primaryBtn, { backgroundColor: theme.textPrimary }]}
-                        onPress={nextStep}
-                    >
-                        <Text style={[styles.primaryBtnText, { color: theme.card }]}>{t('common.continue')}</Text>
-                        <ChevronLeft size={18} color={theme.card} />
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity
-                        style={[styles.primaryBtn, { backgroundColor: theme.textPrimary }]}
-                        onPress={handleSubmit}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? (
-                            <ActivityIndicator size="small" color={theme.card} />
-                        ) : (
-                            <Text style={[styles.primaryBtnText, { color: theme.card }]}>{t('sitter.registration.complete')}</Text>
-                        )}
-                    </TouchableOpacity>
-                )}
+                <View style={styles.footerContent}>
+                    {currentStep > 1 && (
+                        <TouchableOpacity
+                            style={[styles.secondaryBtn, {
+                                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
+                            }]}
+                            onPress={prevStep}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={[styles.secondaryBtnText, { color: theme.textSecondary }]}>{t('sitter.back')}</Text>
+                            <ChevronLeft size={16} color={theme.textSecondary} />
+                        </TouchableOpacity>
+                    )}
+
+                    {currentStep < 2 ? (
+                        <TouchableOpacity
+                            style={[styles.primaryBtnWrapper, currentStep > 1 && { flex: 2 }]}
+                            onPress={nextStep}
+                            activeOpacity={0.85}
+                        >
+                            <LinearGradient
+                                colors={['#1C1C1E', '#2C2C2E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.primaryBtnGradient}
+                            >
+                                <ChevronRight size={16} color="#fff" strokeWidth={2.5} />
+                                <Text style={styles.primaryBtnText}>{t('common.continue')}</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.primaryBtnWrapper}
+                            onPress={handleSubmit}
+                            disabled={isSubmitting}
+                            activeOpacity={0.85}
+                        >
+                            <LinearGradient
+                                colors={isSubmitting ? ['#9CA3AF', '#9CA3AF'] : ['#1C1C1E', '#2C2C2E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.primaryBtnGradient}
+                            >
+                                {isSubmitting ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <>
+                                        <Sparkles size={16} color="#fff" strokeWidth={2} />
+                                        <Text style={styles.primaryBtnText}>{t('sitter.registration.complete')}</Text>
+                                    </>
+                                )}
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
         </View>
     );
@@ -742,122 +842,123 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
 
-    // Header
+    // ── Header ──
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 45,
         paddingHorizontal: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
+        paddingBottom: 14,
+        zIndex: 10,
     },
-    backBtn: {
+    headerBackBtn: {
         width: 40,
         height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '600',
+        letterSpacing: -0.3,
     },
 
-    // Progress
+    // ── Progress ──
     progressContainer: {
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingHorizontal: 24,
+        paddingTop: 16,
+        paddingBottom: 20,
+        alignItems: 'center',
+        gap: 10,
     },
-    progressTrack: {
-        height: 4,
-        borderRadius: 2,
-        overflow: 'hidden',
+    progressSteps: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 0,
     },
-    progressFill: {
-        height: '100%',
-        borderRadius: 2,
+    progressStepItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    progressDot: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    progressDotActive: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    progressDotText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    progressLine: {
+        width: 60,
+        height: 2,
+        borderRadius: 1,
+        marginHorizontal: 8,
     },
     progressText: {
         fontSize: 12,
-        textAlign: 'center',
-        marginTop: 8,
+        fontWeight: '500',
+        letterSpacing: 0.2,
     },
 
-    // Content
+    // ── Content ──
     scrollContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 120,
+        paddingHorizontal: 24,
+        paddingTop: 8,
+        paddingBottom: 140,
     },
     stepContent: {
-        gap: 24,
+        gap: 28,
     },
     stepHeader: {
         alignItems: 'center',
         gap: 12,
-        marginBottom: 8,
+        marginBottom: 4,
     },
-    stepIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 16,
+    stepIconOuter: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
+        overflow: 'visible',
+    },
+    stepIconGradient: {
+        width: 60,
+        height: 60,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },
     stepTitle: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: '700',
+        letterSpacing: -0.5,
     },
     stepSubtitle: {
         fontSize: 14,
-        textAlign: 'center',
-    },
-
-    // Social
-    socialButtons: {
-        gap: 12,
-    },
-    socialBtn: {
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    socialBtnContent: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-    },
-    socialBtnText: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    socialBtnConnected: {
-        backgroundColor: '#374151',
-        borderColor: '#374151',
-    },
-    socialBtnConnectedIG: {
-        backgroundColor: '#374151',
-        borderColor: '#374151',
-    },
-
-    // Info Box
-    infoBox: {
-        padding: 16,
-        borderRadius: 12,
-    },
-    infoText: {
-        fontSize: 13,
+        fontWeight: '400',
         textAlign: 'center',
         lineHeight: 20,
     },
 
-    // Inputs
+    // ── Inputs ──
     inputsContainer: {
-        gap: 16,
+        gap: 18,
     },
     inputGroup: {
-        gap: 6,
+        gap: 8,
     },
     inputRow: {
         flexDirection: 'row-reverse',
@@ -865,263 +966,68 @@ const styles = StyleSheet.create({
     },
     inputLabel: {
         fontSize: 13,
-        fontWeight: '500',
-        textAlign: 'right',
-    },
-    inputWrapper: {
-        borderRadius: 16,
-        borderWidth: 1,
-        overflow: 'hidden',
-    },
-    input: {
-        fontSize: 15,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-        borderRadius: 16,
-        borderWidth: 0,
-        minHeight: 48,
-    },
-    textArea: {
-        minHeight: 100,
-        textAlignVertical: 'top',
-    },
-
-    // Photo
-    photoUpload: {
-        alignSelf: 'center',
-    },
-    photoPlaceholder: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        borderWidth: 2,
-        borderStyle: 'dashed',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-    },
-    photoPlaceholderText: {
-        fontSize: 13,
-    },
-    photoPreview: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-    },
-    photoCheckmark: {
-        position: 'absolute',
-        bottom: 8,
-        right: 8,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#374151',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    photoEditBadge: {
-        position: 'absolute',
-        bottom: 8,
-        right: 8,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    photoUploadCircle: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 4,
-    },
-    photoPlaceholderHint: {
-        fontSize: 12,
-        marginTop: 2,
-        opacity: 0.6,
-    },
-
-    // Pricing
-    priceCard: {
-        padding: 20,
-        borderRadius: 14,
-        alignItems: 'center',
-    },
-    priceLabel: {
-        fontSize: 13,
-        marginBottom: 12,
-    },
-    priceRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 24,
-    },
-    priceBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    priceValue: {
-        fontSize: 36,
-        fontWeight: '700',
-    },
-
-    // Availability
-    availabilityCard: {
-        padding: 20,
-        borderRadius: 14,
-    },
-    availabilityLabel: {
-        fontSize: 13,
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    daysRow: {
-        flexDirection: 'row-reverse',
-        justifyContent: 'center',
-        gap: 8,
-    },
-    dayBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dayBtnText: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-
-    // Summary
-    summaryCard: {
-        padding: 16,
-        borderRadius: 14,
-    },
-    summaryTitle: {
-        fontSize: 15,
         fontWeight: '600',
         textAlign: 'right',
-        marginBottom: 12,
+        letterSpacing: 0.1,
     },
-    summaryRow: {
-        flexDirection: 'row-reverse',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-    },
-    summaryLabel: {
-        fontSize: 14,
-    },
-    summaryValue: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-
-    // Footer
-    footer: {
-        flexDirection: 'row',
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 16,
-        gap: 12,
-        borderTopWidth: 1,
-    },
-    secondaryBtn: {
-        flex: 1,
-        flexDirection: 'row',
-        paddingVertical: 14,
-        borderRadius: 12,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-    },
-    secondaryBtnText: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    primaryBtn: {
-        flex: 2,
-        flexDirection: 'row',
-        paddingVertical: 14,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-    },
-    primaryBtnText: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-
-    // City Input - Premium Autocomplete
-    cityInputContainer: {
-        position: 'relative',
-        zIndex: 10,
-    },
-    cityInputWrapper: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 18,
+    premiumInputWrapper: {
+        borderRadius: 14,
         borderWidth: StyleSheet.hairlineWidth,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingHorizontal: 14,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.03,
         shadowRadius: 4,
         elevation: 0,
-        gap: 10,
     },
-    cityIconContainer: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-    },
-    cityInput: {
-        flex: 1,
+    premiumInput: {
         fontSize: 15,
-        fontWeight: '400',
-        paddingHorizontal: 6,
-        paddingVertical: 0,
-        minHeight: 20,
+        fontWeight: '500',
+        paddingVertical: 14,
+        flex: 1,
+        minHeight: 48,
     },
-    cityClearButton: {
+    inputIconBadge: {
         width: 30,
         height: 30,
-        borderRadius: 15,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
+    },
+    textArea: {
+        minHeight: 110,
+        textAlignVertical: 'top',
+        paddingTop: 14,
+    },
+
+    // ── City Picker ──
+    cityInputContainer: {
+        position: 'relative',
+        zIndex: 10,
+    },
+    cityClearBtn: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     citySuggestionsContainer: {
         position: 'absolute',
         top: '100%',
         left: 0,
         right: 0,
-        marginTop: 4,
-        borderRadius: 16,
-        borderWidth: 1,
-        maxHeight: 200,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 0,
+        marginTop: 6,
+        borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 20,
+        elevation: 8,
     },
     citySuggestionItem: {
         paddingHorizontal: 16,
@@ -1133,34 +1039,170 @@ const styles = StyleSheet.create({
         textAlign: 'right',
     },
 
-    // Location button styles - Premium Design
+    // ── Location Button ──
     locationBtn: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 18,
-        borderWidth: StyleSheet.hairlineWidth,
-        marginTop: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 14,
         gap: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        elevation: 0,
     },
-    locationIconWrapper: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+    locationIconBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
     },
     locationBtnText: {
-        fontSize: 15,
+        fontSize: 14,
+        letterSpacing: 0.1,
+    },
+
+    // ── Photo Upload ──
+    photoUpload: {
+        alignSelf: 'center',
+    },
+    photoContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    photoGradientRing: {
+        position: 'absolute',
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+    },
+    photoPreview: {
+        width: 168,
+        height: 168,
+        borderRadius: 84,
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    photoEditBadge: {
+        position: 'absolute',
+        bottom: 6,
+        right: 6,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    photoPlaceholderOuter: {
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: 'rgba(0,0,0,0.15)',
+        overflow: 'hidden',
+    },
+    photoPlaceholderInner: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+    },
+    photoUploadIcon: {
+        marginBottom: 4,
+    },
+    photoUploadIconGradient: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    photoPlaceholderText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    photoPlaceholderHint: {
+        fontSize: 12,
         fontWeight: '400',
+        opacity: 0.6,
+    },
+
+    // ── Trust Badge ──
+    trustBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        alignSelf: 'center',
+    },
+    trustBadgeText: {
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
+        lineHeight: 18,
+    },
+
+    // ── Footer ──
+    footer: {
+        paddingHorizontal: 24,
+        paddingTop: 16,
+        zIndex: 10,
+    },
+    footerContent: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    secondaryBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        paddingVertical: 15,
+        borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+    },
+    secondaryBtnText: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    primaryBtnWrapper: {
+        flex: 2,
+        borderRadius: 14,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    primaryBtnGradient: {
+        flexDirection: 'row',
+        paddingVertical: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    primaryBtnText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#fff',
+        letterSpacing: -0.2,
     },
 });
 

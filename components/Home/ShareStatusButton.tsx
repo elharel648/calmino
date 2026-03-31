@@ -11,7 +11,7 @@ interface ShareStatusButtonProps {
 }
 
 const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -41,9 +41,6 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
         }
     }, [onShare, message]);
 
-    const iconColor = showSuccess ? theme.success : '#007AFF';
-    const textColor = showSuccess ? theme.success : theme.textSecondary;
-
     return (
         <TouchableOpacity
             style={styles.container}
@@ -51,11 +48,11 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
             activeOpacity={0.6}
         >
             {showSuccess ? (
-                <Check size={15} color={iconColor} strokeWidth={2} />
+                <Check size={14} color={theme.success} strokeWidth={2.5} />
             ) : (
-                <Share2 size={15} color={iconColor} strokeWidth={1.8} />
+                <Share2 size={14} color={theme.textTertiary} strokeWidth={1.8} />
             )}
-            <Text style={[styles.text, { color: textColor }]}>
+            <Text style={[styles.text, { color: showSuccess ? theme.success : theme.textTertiary }]}>
                 {showSuccess ? 'נשלח!' : t('export.shareDailySummary')}
             </Text>
         </TouchableOpacity>
@@ -70,10 +67,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        marginTop: 2,
+        marginTop: 6,
         marginBottom: 4,
-        paddingVertical: 6,
-        borderRadius: 12,
+        paddingVertical: 10,
+        alignSelf: 'center',
     },
     text: {
         fontSize: 13,

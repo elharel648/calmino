@@ -116,65 +116,66 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                     <TrendingUp size={20} color="#10B981" strokeWidth={1.5} />
                 </View>
 
-                {/* Content */}
-                <View style={styles.statValueRow}>
-                    {hasData ? (
-                        <>
-                            {weightData.length >= 2 ? (
-                                <View style={styles.sparklineWrap}>
-                                    <Sparkline data={weightData} color="#10B981" />
-                                </View>
-                            ) : (
-                                <Text style={[styles.statValue, { color: theme.textPrimary }]}>
-                                    {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>{t('reports.units.kg')}</Text>
-                                </Text>
-                            )}
-
-                            {hasChange && (
-                                    <View style={[styles.trendBadge, {
-                                    backgroundColor: isPositive
-                                        ? (isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
-                                        : (isDarkMode ? 'rgba(220, 38, 38, 0.22)' : '#FEE2E2')
-                                }]}>
-                                    <ArrowUpRight
-                                        size={10}
-                                        color={isPositive ? '#059669' : '#DC2626'}
-                                        style={!isPositive ? { transform: [{ rotate: '90deg' }] } : undefined}
-                                    />
-                                    <Text style={{
-                                        fontSize: 10,
-                                        color: isPositive ? '#059669' : '#DC2626',
-                                        fontWeight: '600'
-                                    }}>
-                                        {isPositive ? '+' : ''}{change?.weight}
+                <View style={{ flex: 1, alignItems: 'flex-end', width: '100%', justifyContent: 'flex-end' }}>
+                    <View style={styles.statValueRow}>
+                        {hasData ? (
+                            <>
+                                {weightData.length >= 2 ? (
+                                    <View style={styles.sparklineWrap}>
+                                        <Sparkline data={weightData} color="#10B981" />
+                                    </View>
+                                ) : (
+                                    <Text style={[styles.statValue, { color: theme.textPrimary }]}>
+                                        {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>{t('reports.units.kg')}</Text>
                                     </Text>
+                                )}
+
+                                {hasChange && (
+                                    <View style={[styles.trendBadge, {
+                                        backgroundColor: isPositive
+                                            ? (isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
+                                            : (isDarkMode ? 'rgba(220, 38, 38, 0.22)' : '#FEE2E2')
+                                    }]}>
+                                        <ArrowUpRight
+                                            size={10}
+                                            color={isPositive ? '#059669' : '#DC2626'}
+                                            style={!isPositive ? { transform: [{ rotate: '90deg' }] } : undefined}
+                                        />
+                                        <Text style={{
+                                            fontSize: 10,
+                                            color: isPositive ? '#059669' : '#DC2626',
+                                            fontWeight: '600'
+                                        }}>
+                                            {isPositive ? '+' : ''}{change?.weight}
+                                        </Text>
+                                    </View>
+                                )}
+                            </>
+                        ) : (
+                            // Empty state - invite to add first measurement
+                            <View style={styles.emptyState}>
+                                <View style={[styles.addBadge, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
+                                    <Plus size={14} color="#10B981" strokeWidth={2.5} />
                                 </View>
-                            )}
-                        </>
-                    ) : (
-                        // Empty state - invite to add first measurement
-                        <View style={styles.emptyState}>
-                            <View style={[styles.addBadge, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
-                                <Plus size={14} color="#10B981" strokeWidth={2.5} />
                             </View>
-                        </View>
+                        )}
+                    </View>
+
+                    {/* Label */}
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.metrics.growth')}</Text>
+
+                    {/* Sub value - only shown when sparkline is visible (multiple measurements) */}
+                    {hasData && latestWeight && weightData.length >= 2 && (
+                        <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>
+                            {latestWeight} ק"ג
+                        </Text>
+                    )}
+                    {!hasData && (
+                        <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>
+                            הוסף מדידה
+                        </Text>
                     )}
                 </View>
-
-                {/* Label */}
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.metrics.growth')}</Text>
-
-                {/* Sub value - only shown when sparkline is visible (multiple measurements) */}
-                {hasData && latestWeight && weightData.length >= 2 && (
-                    <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>
-                        {latestWeight} ק"ג
-                    </Text>
-                )}
-                {!hasData && (
-                    <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>
-                        הוסף מדידה
-                    </Text>
-                )}
 
                 {/* Chevron */}
                 <ChevronRight size={16} color={theme.textTertiary} style={styles.cardChevron} />
@@ -188,9 +189,11 @@ GrowthStatCube.displayName = 'GrowthStatCube';
 const styles = StyleSheet.create({
     statCard: {
         width: (SCREEN_WIDTH - 52) / 2,
+        height: 165,
         padding: 16,
         borderRadius: 20,
         alignItems: 'flex-end',
+        justifyContent: 'space-between',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,

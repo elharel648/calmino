@@ -33,7 +33,8 @@
     "yesterday": "אתמול",
     "week": "שבוע",
     "month": "חודש",
-    "unknown": "לא ידוע"
+    "unknown": "לא ידוע",
+    "tapToSelect": "לחצ/י לבחירה"
   },
   "errors": {
     "somethingWentWrong": "אופס! משהו השתבש",
@@ -589,7 +590,8 @@
       "loginRequired": "יש להתחבר קודם",
       "cityRequired": "שדה חובה",
       "selectCity": "יש לבחור עיר",
-      "saveError": "לא ניתן לשמור, נסה שוב"
+      "saveError": "לא ניתן לשמור, נסה שוב",
+      "photoPrivacy": "התמונה שלך מוצגת רק להורים בסביבתך"
     },
     "back": "חזרה",
     "year": "שנה",

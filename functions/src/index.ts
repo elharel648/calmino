@@ -877,14 +877,11 @@ export const onFamilyMemberJoined = onDocumentUpdated('families/{familyId}', asy
     const beforeMembers = beforeData.members || {};
     const afterMembers = afterData.members || {};
 
-    // Find if a new UUID was added to members map
     const beforeKeys = Object.keys(beforeMembers);
     const afterKeys = Object.keys(afterMembers);
 
-    // Filter out existing members to find only newly joined ones
+    // ── DETECT NEW MEMBERS ──────────────────────────────────────────────────
     const newMemberIds = afterKeys.filter(key => !beforeKeys.includes(key));
-
-    if (newMemberIds.length === 0) return; // No new members joined
 
     for (const newMemberId of newMemberIds) {
         const newMember = afterMembers[newMemberId];
@@ -937,6 +934,76 @@ export const onFamilyMemberJoined = onDocumentUpdated('families/{familyId}', asy
                     }
                 }
             }
+        }
+    }
+
+    // ── DETECT REMOVED MEMBERS ──────────────────────────────────────────────
+    const removedMemberIds = beforeKeys.filter(key => !afterKeys.includes(key));
+
+    for (const removedMemberId of removedMemberIds) {
+        const removedMember = beforeMembers[removedMemberId];
+        const babyName = afterData.babyName || beforeData.babyName || 'המשפחה';
+
+        // Get the removed user's push token to notify them
+        const removedUserDoc = await db.doc(`users/${removedMemberId}`).get();
+        if (!removedUserDoc.exists) continue;
+
+        const removedUserData = removedUserDoc.data()!;
+        const pushToken = removedUserData.pushToken;
+
+        if (pushToken && pushToken.startsWith('ExponentPushToken[')) {
+            const wasGuest = removedMember.role === 'guest';
+            const title = wasGuest ? 'גישת האורח הסתיימה' : 'הוסרת מהמשפחה';
+            const body = wasGuest
+                ? `הגישה שלך כאורח לפרופיל של ${babyName} הסתיימה`
+                : `הוסרת מפרופיל המשפחה של ${babyName}`;
+
+            try {
+                const message = {
+                    to: pushToken,
+                    sound: 'default',
+                    title,
+                    body,
+                    data: { type: 'family_removed', familyId: event.params.familyId },
+                    channelId: 'default',
+                };
+
+                const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Accept-encoding': 'gzip, deflate',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(message),
+                });
+
+                if (response.ok) {
+                    console.log(`✅ Push notification sent to removed member ${removedMemberId}`);
+                } else {
+                    console.error(`❌ Push notification HTTP error to removed ${removedMemberId}: ${response.status}`, await response.text());
+                }
+            } catch (error) {
+                console.error('Error sending push for family removal:', error);
+            }
+        }
+
+        // Also save an in-app notification for the removed member
+        try {
+            const wasGuest = removedMember.role === 'guest';
+            await db.collection('notifications').add({
+                userId: removedMemberId,
+                type: 'reminder',
+                title: wasGuest ? 'גישת האורח הסתיימה' : 'הוסרת מהמשפחה',
+                message: wasGuest
+                    ? `הגישה שלך כאורח לפרופיל של ${babyName} הסתיימה`
+                    : `הוסרת מפרופיל המשפחה של ${babyName}`,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                isRead: false,
+            });
+            console.log(`✅ In-app notification saved for removed member ${removedMemberId}`);
+        } catch (error) {
+            console.error('Error saving in-app notification for removal:', error);
         }
     }
 });

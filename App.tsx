@@ -54,6 +54,7 @@ import { BlurView } from 'expo-blur';
 import { Canvas, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import LiquidGlassTabBar from './components/LiquidGlass/LiquidGlassTabBar';
+import LiquidGlassBackground from './components/LiquidGlass/LiquidGlassBackground';
 import { auth, db } from './services/firebaseConfig';
 import { useLanguage } from './context/LanguageContext';
 
@@ -676,6 +677,8 @@ export default function App() {
                 'booking_update': 'reminder',
                 'booking_cancelled': 'reminder',
                 'chat_message': 'reminder',
+                'family_join': 'reminder',
+                'family_removed': 'reminder',
               };
 
               // Save notification to Firebase
@@ -719,6 +722,8 @@ export default function App() {
           'booking_update': 'reminder',
           'booking_cancelled': 'reminder',
           'chat_message': 'reminder',
+          'family_join': 'reminder',
+          'family_removed': 'reminder',
         };
         notificationStorageService.saveNotification({
           userId,
@@ -767,6 +772,8 @@ export default function App() {
           'booking_update': 'reminder',
           'booking_cancelled': 'reminder',
           'chat_message': 'reminder',
+          'family_join': 'reminder',
+          'family_removed': 'reminder',
         };
 
         for (const notification of presented) {
@@ -844,6 +851,7 @@ export default function App() {
           p => p.providerId === 'apple.com' || p.providerId === 'google.com'
         );
         if (currentUser.emailVerified || isOAuthUser) {
+          setHasBabyProfile(null); // Ensure no flicker of BabyProfileScreen while fetching
           setUser(currentUser);
           await checkBiometricSettingsAndProfile(currentUser.uid);
 
@@ -866,14 +874,14 @@ export default function App() {
           // Email/password user who hasn't verified email yet
           setChildrenReady(false);
           setUser(null);
-          setHasBabyProfile(false);
+          setHasBabyProfile(null);
           setIsLocked(false);
           setIsAppLoading(false);
         }
       } else {
         setChildrenReady(false);
         setUser(null);
-        setHasBabyProfile(false);
+        setHasBabyProfile(null);
         setIsLocked(false);
         setIsAppLoading(false);
       }
@@ -1006,9 +1014,14 @@ export default function App() {
     );
   }
 
-  // Show loading while checking baby profile (skip for guests)
+  // Show premium loading state while checking baby profile to prevent white screen flash
   if (!isGuestMode && hasBabyProfile === null) {
-    return null; // Keep splash visible
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
+        <LiquidGlassBackground />
+        <ActivityIndicator size="large" color="#7C3AED" />
+      </View>
+    ); // Keep splash visible natively, but show Liquid Glass if splash was already hidden (e.g. after login)
   }
 
   // Only force BabyProfileScreen for parents (non-sitters, non-guests)

@@ -1059,7 +1059,7 @@ export default function ReportsScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.statCard, { backgroundColor: theme.card, justifyContent: 'space-between' }]}
+        style={[styles.statCard, { backgroundColor: theme.card }]}
         onPress={() => {
           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPress?.();
@@ -1072,7 +1072,7 @@ export default function ReportsScreen() {
           <Icon size={20} color={iconColor || theme.textSecondary} strokeWidth={1.5} />
         </View>
 
-        <View style={{ alignItems: 'flex-end', width: '100%', marginTop: 8 }}>
+        <View style={{ flex: 1, alignItems: 'flex-end', width: '100%', justifyContent: 'flex-end' }}>
           <View style={styles.statValueRow}>
             <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
             {trendColor && (
@@ -2119,7 +2119,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20, justifyContent: 'space-between' },
   editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16 },
   editStatsText: { fontSize: 13, fontWeight: '600' },
-  statCard: { width: '100%', minHeight: 150, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
+  statCard: { width: '100%', height: 165, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   statIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statValue: { fontSize: 24, fontWeight: '700' },

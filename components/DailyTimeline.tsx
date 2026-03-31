@@ -777,6 +777,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     {/* LEFT: CARD CONTENT */}
                     <View style={styles.elegantCardContainer}>
                       <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                        {/* Color accent strip - right side for RTL */}
+                        <View style={[styles.accentStrip, { backgroundColor: config.color }]} />
                         
                         {/* Right side of card: Texts */}
                         <View style={styles.elegantCardTextContainer}>
@@ -1243,7 +1245,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     marginTop: 4,
-    opacity: 0.6,
+    opacity: 0.8,
   },
   elegantTrack: {
     width: 38,
@@ -1279,12 +1281,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     minHeight: 62,
-    // Soft shadow
+    overflow: 'hidden',
+    // Premium shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 0,
+  },
+  accentStrip: {
+    width: 3.5,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: 18,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    opacity: 0.7,
   },
   elegantCardTextContainer: {
     flex: 1,
@@ -1294,7 +1307,7 @@ const styles = StyleSheet.create({
   },
   elegantCategoryLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 4,
   },
   elegantCardTitle: {
@@ -1307,7 +1320,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     marginTop: 3,
-    opacity: 0.7,
+    opacity: 0.8,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
