@@ -23,118 +23,93 @@ struct BreastfeedingLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 // ── Expanded Leading ──
-                DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 8) {
-                        Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(breastfeedingColor)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(context.attributes.babyName)
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                            Text(context.state.activeSide == "left" ? "צד שמאל" : "צד ימין")
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
-                    }
-                    .padding(.leading, 4)
-                }
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
 
                 // ── Expanded Trailing ──
-                DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        if context.state.isPaused {
-                            Text("מושהה")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.orange)
-                        } else if let sideStart = context.state.sideStartTime {
-                            Text(sideStart, style: .timer)
-                                .font(.system(size: 22, weight: .bold, design: .rounded))
-                                .monospacedDigit()
-                                .foregroundStyle(.white)
-                        }
-                        // Show total
-                        let total = context.state.leftSideSeconds + context.state.rightSideSeconds
-                        if total > 0 {
-                            Text("סה״כ \(total / 60):\(String(format: "%02d", total % 60))")
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.4))
-                        }
-                    }
-                    .padding(.trailing, 4)
-                }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
 
                 // ── Expanded Bottom — Controls ──
                 DynamicIslandExpandedRegion(.bottom) {
-                    if #available(iOS 17, *) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Header
                         HStack(spacing: 8) {
-                            // Pause/Resume
-                            if context.state.isPaused {
-                                Button(intent: ResumeTimerIntent()) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "play.fill")
-                                            .font(.system(size: 11, weight: .bold))
-                                        Text("המשך")
-                                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(breastfeedingColor.opacity(0.25), in: Capsule())
-                                    .overlay(Capsule().stroke(breastfeedingColor.opacity(0.5), lineWidth: 1))
-                                }
-                            } else {
-                                Button(intent: PauseTimerIntent()) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "pause.fill")
-                                            .font(.system(size: 11, weight: .bold))
-                                        Text("השהה")
-                                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(Color.white.opacity(0.12), in: Capsule())
-                                    .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                                }
+                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(breastfeedingColor)
+                            Text("\(context.attributes.babyName) · \(context.state.activeSide == "left" ? "צד שמאל" : "צד ימין")")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.75))
+                            
+                            Spacer()
+                            
+                            let total = context.state.leftSideSeconds + context.state.rightSideSeconds
+                            if total > 0 {
+                                Text("סה״כ \(total / 60):\(String(format: "%02d", total % 60))")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.5))
                             }
+                        }
+                        .environment(\.layoutDirection, .rightToLeft)
 
-                            // Switch Side
-                            let nextSide = context.state.activeSide == "left" ? "right" : "left"
-                            let nextSideLabel = nextSide == "left" ? "שמאל" : "ימין"
-                            Button(intent: SwitchSideIntent()) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.left.arrow.right")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text(nextSideLabel)
-                                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(breastfeedingColor.opacity(0.15), in: Capsule())
+                        // Timer and Controls
+                        HStack(alignment: .center, spacing: 0) {
+                            if context.state.isPaused {
+                                Text("מושהה")
+                                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.orange)
+                            } else if let sideStart = context.state.sideStartTime {
+                                Text(sideStart, style: .timer)
+                                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                                    .monospacedDigit()
+                                    .foregroundStyle(.white)
                             }
 
                             Spacer()
 
-                            // Stop
-                            Button(intent: StopTimerIntent()) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "stop.fill")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text("סיים")
-                                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            if #available(iOS 17, *) {
+                                HStack(spacing: 10) {
+                                    if context.state.isPaused {
+                                        Button(intent: ResumeTimerIntent()) {
+                                            Image(systemName: "play.fill")
+                                                .font(.system(size: 15, weight: .bold))
+                                                .foregroundStyle(.black)
+                                                .frame(width: 44, height: 44)
+                                                .background(.white, in: Circle())
+                                        }
+                                    } else {
+                                        Button(intent: PauseTimerIntent()) {
+                                            Image(systemName: "pause.fill")
+                                                .font(.system(size: 15, weight: .bold))
+                                                .foregroundStyle(.black)
+                                                .frame(width: 44, height: 44)
+                                                .background(.white, in: Circle())
+                                        }
+                                    }
+
+                                    // Switch Side
+                                    Button(intent: SwitchSideIntent()) {
+                                        Image(systemName: "arrow.left.arrow.right")
+                                            .font(.system(size: 15, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .frame(width: 44, height: 44)
+                                            .background(breastfeedingColor.opacity(0.3), in: Circle())
+                                    }
+
+                                    Button(intent: StopTimerIntent()) {
+                                        Image(systemName: "stop.fill")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundStyle(.white.opacity(0.8))
+                                            .frame(width: 36, height: 36)
+                                            .background(Color(white: 0.18), in: Circle())
+                                    }
                                 }
-                                .foregroundStyle(.white.opacity(0.75))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(Color.white.opacity(0.08), in: Capsule())
+                                .environment(\.layoutDirection, .rightToLeft)
                             }
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 4)
                         .environment(\.layoutDirection, .rightToLeft)
                     }
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
                 }
             } compactLeading: {
                 HStack(spacing: 4) {

@@ -18,93 +18,76 @@ struct SleepLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 // ── Expanded Leading ────────────────────────────────────
-                DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 8) {
-                        Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(sleepColor)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(context.attributes.babyName)
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                            Text(context.state.sleepType)
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
-                    }
-                    .padding(.leading, 4)
-                }
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
 
                 // ── Expanded Trailing ───────────────────────────────────
-                DynamicIslandExpandedRegion(.trailing) {
-                    Group {
-                        if context.state.isPaused {
-                            Text("מושהה")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.orange)
-                        } else {
-                            Text(context.state.startTime, style: .timer)
-                                .font(.system(size: 26, weight: .bold, design: .rounded))
-                                .monospacedDigit()
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .padding(.trailing, 4)
-                }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
 
                 // ── Expanded Bottom ─────────────────────────────────────
                 DynamicIslandExpandedRegion(.bottom) {
-                    if #available(iOS 17, *) {
-                        HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Header
+                        HStack(spacing: 8) {
+                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
+                            Text("\(context.attributes.babyName) · \(context.state.sleepType)")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.75))
+                            Spacer()
+                        }
+                        .environment(\.layoutDirection, .rightToLeft)
+
+                        // Timer and Controls
+                        HStack(alignment: .center, spacing: 0) {
                             if context.state.isPaused {
-                                Button(intent: ResumeTimerIntent()) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "play.fill")
-                                            .font(.system(size: 12, weight: .bold))
-                                        Text("המשך")
-                                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(sleepColor.opacity(0.25), in: Capsule())
-                                    .overlay(Capsule().stroke(sleepColor.opacity(0.5), lineWidth: 1))
-                                }
+                                Text("מושהה")
+                                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.orange)
                             } else {
-                                Button(intent: PauseTimerIntent()) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "pause.fill")
-                                            .font(.system(size: 12, weight: .bold))
-                                        Text("השהה")
-                                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    }
+                                Text(context.state.startTime, style: .timer)
+                                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                                    .monospacedDigit()
                                     .foregroundStyle(.white)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(Color.white.opacity(0.12), in: Capsule())
-                                    .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                                }
                             }
 
                             Spacer()
 
-                            Button(intent: StopTimerIntent()) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "stop.fill")
-                                        .font(.system(size: 12, weight: .bold))
-                                    Text("סיים")
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            if #available(iOS 17, *) {
+                                HStack(spacing: 10) {
+                                    if context.state.isPaused {
+                                        Button(intent: ResumeTimerIntent()) {
+                                            Image(systemName: "play.fill")
+                                                .font(.system(size: 19, weight: .bold))
+                                                .foregroundStyle(.black)
+                                                .frame(width: 52, height: 52)
+                                                .background(.white, in: Circle())
+                                        }
+                                    } else {
+                                        Button(intent: PauseTimerIntent()) {
+                                            Image(systemName: "pause.fill")
+                                                .font(.system(size: 19, weight: .bold))
+                                                .foregroundStyle(.black)
+                                                .frame(width: 52, height: 52)
+                                                .background(.white, in: Circle())
+                                        }
+                                    }
+
+                                    Button(intent: StopTimerIntent()) {
+                                        Image(systemName: "stop.fill")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundStyle(.white.opacity(0.8))
+                                            .frame(width: 36, height: 36)
+                                            .background(Color(white: 0.18), in: Circle())
+                                    }
                                 }
-                                .foregroundStyle(.white.opacity(0.75))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.08), in: Capsule())
+                                .environment(\.layoutDirection, .rightToLeft)
                             }
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 4)
                         .environment(\.layoutDirection, .rightToLeft)
                     }
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
