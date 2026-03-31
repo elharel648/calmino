@@ -683,7 +683,7 @@ export default function LoginScreen({
                   <Mail size={16} color={emailError ? '#EF4444' : theme.textTertiary} />
                 </View>
                 <TextInput
-                  style={[styles.input, { color: theme.textPrimary }]}
+                  style={[styles.input, { color: theme.textPrimary, textAlign: 'right' }]}
                   placeholder="your@email.com"
                   placeholderTextColor={theme.textTertiary}
                   value={email}
@@ -1027,7 +1027,7 @@ export default function LoginScreen({
               <TouchableOpacity
                 style={[
                   styles.socialBtn,
-                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0' },
+                  { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff' },
                   Platform.OS === 'ios' && !request && { opacity: 0.4 }
                 ]}
                 onPress={() => {
@@ -1051,7 +1051,7 @@ export default function LoginScreen({
                 <TouchableOpacity
                   style={[
                     styles.socialBtn,
-                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E8ECF0' },
+                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff' },
                   ]}
                   accessibilityLabel={t('auth.appleLoginLabel')}
                   accessibilityRole="button"
@@ -1689,8 +1689,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 14,
-    borderWidth: 1,
     gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   socialIcon: {
     width: 24,
@@ -1739,7 +1743,7 @@ const styles = StyleSheet.create({
 
   // ===== SECURITY FOOTER =====
   securityFooter: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,

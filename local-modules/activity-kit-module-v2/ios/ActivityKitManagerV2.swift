@@ -8,7 +8,6 @@
 import ExpoModulesCore
 import ActivityKit
 import Foundation
-import SharedAttributes
 import WidgetKit
 
 public class ActivityKitManager: Module {
@@ -397,16 +396,18 @@ public class ActivityKitManager: Module {
 
         // MARK: - App Intent Pending Actions
 
-        Function("getPendingTimerAction") { () -> [String: String]? in
+        Function("getPendingTimerAction") { () -> [String: Any]? in
             let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
             guard let action = defaults?.string(forKey: "pendingTimerAction") else { return nil }
             let timerType = defaults?.string(forKey: "pendingTimerType") ?? ""
             let timestamp = defaults?.double(forKey: "pendingTimerTimestamp") ?? 0
+            let elapsedSeconds = defaults?.integer(forKey: "pendingTimerElapsed") ?? 0
             
             return [
                 "action": action,
                 "timerType": timerType,
-                "timestamp": String(timestamp)
+                "timestamp": String(timestamp),
+                "elapsedSeconds": elapsedSeconds
             ]
         }
 
@@ -414,6 +415,7 @@ public class ActivityKitManager: Module {
             let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
             defaults?.removeObject(forKey: "pendingTimerAction")
             defaults?.removeObject(forKey: "pendingTimerType")
+            defaults?.removeObject(forKey: "pendingTimerElapsed")
             defaults?.removeObject(forKey: "pendingTimerTimestamp")
             defaults?.synchronize()
         }

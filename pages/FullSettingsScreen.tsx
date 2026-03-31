@@ -6,7 +6,6 @@ import {
   Image,
   TouchableOpacity,
   Alert,
-  Switch,
   ScrollView,
   ActivityIndicator,
   Modal,
@@ -79,7 +78,7 @@ const LANGUAGES = [
 
 
 export default function SettingsScreen() {
-  const { isDarkMode, setDarkMode, theme } = useTheme();
+  const { isDarkMode, setDarkMode, theme, themePreference, setThemePreference } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
@@ -705,13 +704,33 @@ if (data.settings.language !== undefined) {
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.nightMode')}</Text>
                 </View>
               </View>
-              <Switch
-                trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
-                thumbColor={isDarkMode ? (isDarkMode ? '#000' : '#999') : '#fff'}
-                ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
-                onValueChange={handleDarkModeToggle}
-                value={isDarkMode}
-              />
+              <View style={{ flexDirection: 'row', backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderRadius: 8, padding: 2 }}>
+                {(['auto', 'light', 'dark'] as const).map((pref) => {
+                  const isSelected = themePreference === pref;
+                  const label = pref === 'auto' ? t('settings.themeAuto') : pref === 'light' ? t('settings.themeLight') : t('settings.themeDark');
+                  return (
+                    <TouchableOpacity
+                      key={pref}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setThemePreference(pref);
+                      }}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 6,
+                        backgroundColor: isSelected ? (isDarkMode ? 'rgba(255,255,255,0.15)' : '#FFFFFF') : 'transparent',
+                        ...(isSelected ? { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : {}),
+                      }}
+                      activeOpacity={0.6}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: isSelected ? '600' : '500', color: isSelected ? theme.textPrimary : theme.textSecondary }}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
             <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />

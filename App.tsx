@@ -29,7 +29,7 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState, NativeModules } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -173,7 +173,8 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
 const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
   const { isDarkMode } = useTheme();
   const activeColor = '#007AFF';
-  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
+  // Increased opacity for better accessibility and readability (Apple standard)
+  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)';
   const iconColor = focused ? activeColor : inactiveColor;
 
   // Track previous focused state to only animate on change
@@ -325,7 +326,6 @@ function AccountStackScreen() {
   );
 }
 
-// Wrapper screen for creating baby from home
 function CreateBabyScreen({ navigation }: any) {
   const { refreshChildren } = useActiveChild();
 
@@ -335,10 +335,12 @@ function CreateBabyScreen({ navigation }: any) {
   };
 
   return (
-    <BabyProfileScreen
-      onProfileSaved={handleProfileSaved}
-      onClose={() => navigation.goBack()}
-    />
+    <Modal visible={true} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => navigation.goBack()}>
+      <BabyProfileScreen
+        onProfileSaved={handleProfileSaved}
+        onClose={() => navigation.goBack()}
+      />
+    </Modal>
   );
 }
 
@@ -420,16 +422,21 @@ function LiveActivityURLHandler() {
           }
 
           try {
-            // Use actual elapsed seconds from RN state (more accurate than URL param)
+            // Use in-app timer state if available, fallback to Swift-provided elapsed from URL
+            const urlElapsed = parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
             let elapsedSeconds = 0;
-            if (type.includes('הנקה') || type.includes('breast')) {
-              elapsedSeconds = foodTimer.breastElapsedSeconds;
+            if (type.includes('הנקה') || type.includes('breast') || type.includes('breastfeeding')) {
+              elapsedSeconds = foodTimer.breastElapsedSeconds || urlElapsed;
             } else if (type.includes('שאיבה') || type.includes('pump')) {
-              elapsedSeconds = foodTimer.pumpingElapsedSeconds;
+              elapsedSeconds = foodTimer.pumpingElapsedSeconds || urlElapsed;
             } else if (type.includes('בקבוק') || type.includes('bottle')) {
-              elapsedSeconds = foodTimer.bottleElapsedSeconds;
+              elapsedSeconds = foodTimer.bottleElapsedSeconds || urlElapsed;
             } else if (type.includes('שינה') || type.includes('sleep')) {
-              elapsedSeconds = sleepTimer.elapsedSeconds ?? parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
+              elapsedSeconds = sleepTimer.elapsedSeconds || urlElapsed;
+            } else if (type.includes('solids') || type.includes('מוצקים')) {
+              elapsedSeconds = urlElapsed; // Solids timer may not have in-app state
+            } else {
+              elapsedSeconds = urlElapsed; // Generic fallback
             }
 
             const mins = Math.floor(elapsedSeconds / 60);
@@ -544,19 +551,29 @@ function LiveActivityURLHandler() {
         const pending = await liveActivityService.getPendingTimerAction();
         
         if (pending && pending.action) {
-          // Convert Intent to faux-URL to reuse the complex handleURL logic
-          let fauxUrl = '';
-          if (pending.action === 'pause') fauxUrl = 'calmino://pause-timer';
-          else if (pending.action === 'resume') fauxUrl = 'calmino://resume-timer';
-          else if (pending.action === 'switchSide') fauxUrl = 'calmino://switch-side'; // Faux URL without side param will handle internally
-          else if (pending.action === 'stop') {
-             // We need full data for stop
-             fauxUrl = `calmino://save-timer?type=${encodeURIComponent(pending.timerType || '')}`;
-          }
-
-          if (fauxUrl) {
-             logger.log('Executing pending App Intent:', pending.action);
-             await handleURL({ url: fauxUrl });
+          logger.log('📱 Syncing pending App Intent:', pending.action, pending.timerType);
+          
+          if (pending.action === 'stop') {
+            // STOP: Save the timer data to Firebase using elapsed seconds from Swift
+            const timerType = pending.timerType || '';
+            const elapsed = pending.elapsedSeconds || 0;
+            
+            // Build the save URL with full data
+            const fauxUrl = `calmino://save-timer?type=${encodeURIComponent(timerType)}&elapsedSeconds=${elapsed}`;
+            await handleURL({ url: fauxUrl });
+            
+          } else if (pending.action === 'pause') {
+            // PAUSE: Sync in-app timer pause state  
+            const fauxUrl = 'calmino://pause-timer';
+            await handleURL({ url: fauxUrl });
+            
+          } else if (pending.action === 'resume') {
+            const fauxUrl = 'calmino://resume-timer';
+            await handleURL({ url: fauxUrl });
+            
+          } else if (pending.action === 'switchSide') {
+            const fauxUrl = 'calmino://switch-side';
+            await handleURL({ url: fauxUrl });
           }
           
           await liveActivityService.clearPendingTimerAction();

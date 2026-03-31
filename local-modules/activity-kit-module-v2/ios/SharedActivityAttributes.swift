@@ -1,14 +1,41 @@
 //
-//  ActivityAttributes.swift
+//  SharedActivityAttributes.swift
 //  CalmParentApp
 //
 //  Shared Activity Attributes for Main App and Widget Extension
-//  This file MUST match the one in SharedAttributes local module!
+//  This file should be added to BOTH targets!
 //
 
 import ActivityKit
 import Foundation
 
+// MARK: - Babysitter Shift Attributes
+
+@available(iOS 16.2, *)
+public struct BabysitterShiftAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+        public var isPaused: Bool
+        public var totalPausedSeconds: TimeInterval
+        public var hourlyRate: Double
+        
+        public init(startTime: Date, isPaused: Bool, totalPausedSeconds: TimeInterval, hourlyRate: Double) {
+            self.startTime = startTime
+            self.isPaused = isPaused
+            self.totalPausedSeconds = totalPausedSeconds
+            self.hourlyRate = hourlyRate
+        }
+    }
+    
+    // Static attributes
+    public var babysitterName: String
+    public var babysitterPhoto: String? // URL or emoji
+    
+    public init(babysitterName: String, babysitterPhoto: String? = nil) {
+        self.babysitterName = babysitterName
+        self.babysitterPhoto = babysitterPhoto
+    }
+}
 
 // MARK: - Meal Activity Attributes
 
@@ -46,14 +73,14 @@ public struct MealActivityAttributes: ActivityAttributes {
 @available(iOS 16.2, *)
 public struct SleepActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        public var startTime: Date
+        public var startTime: Date        // Timer anchor (adjusted on resume to keep elapsed accurate)
         public var babyName: String
-        public var sleepType: String // "תנומת צהריים", "שינת לילה"
+        public var sleepType: String      // "תנומת צהריים", "שינת לילה"
         public var isAwake: Bool
         public var isPaused: Bool
-        public var activeSeconds: Int
-        public var quality: String? // "טוב", "רגיל", "לא טוב"
-        
+        public var activeSeconds: Int     // Accumulated active seconds (used to restore timer on resume)
+        public var quality: String?       // "טוב", "רגיל", "לא טוב"
+
         public init(startTime: Date, babyName: String, sleepType: String, isAwake: Bool, isPaused: Bool = false, activeSeconds: Int = 0, quality: String? = nil) {
             self.startTime = startTime
             self.babyName = babyName
@@ -64,10 +91,10 @@ public struct SleepActivityAttributes: ActivityAttributes {
             self.quality = quality
         }
     }
-    
+
     public var babyName: String
     public var babyEmoji: String
-    
+
     public init(babyName: String, babyEmoji: String) {
         self.babyName = babyName
         self.babyEmoji = babyEmoji
@@ -128,6 +155,27 @@ public struct PlayActivityAttributes: ActivityAttributes {
     }
 }
 
+// MARK: - White Noise Activity Attributes
+
+@available(iOS 16.2, *)
+public struct WhiteNoiseActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var startTime: Date
+
+        public init(startTime: Date) {
+            self.startTime = startTime
+        }
+    }
+
+    public var soundId: String    // "lullaby" | "gentle" | "birds" | "rain"
+    public var soundName: String  // Hebrew display name
+
+    public init(soundId: String, soundName: String) {
+        self.soundId = soundId
+        self.soundName = soundName
+    }
+}
+
 // MARK: - Meditation Activity Attributes
 
 @available(iOS 16.2, *)
@@ -150,26 +198,5 @@ public struct ParentMeditationAttributes: ActivityAttributes {
     
     public init(parentName: String) {
         self.parentName = parentName
-    }
-}
-
-// MARK: - White Noise Activity Attributes
-
-@available(iOS 16.2, *)
-public struct WhiteNoiseActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        public var startTime: Date
-
-        public init(startTime: Date) {
-            self.startTime = startTime
-        }
-    }
-
-    public var soundId: String    // "lullaby" | "gentle" | "birds" | "rain"
-    public var soundName: String  // Hebrew display name
-
-    public init(soundId: String, soundName: String) {
-        self.soundId = soundId
-        self.soundName = soundName
     }
 }

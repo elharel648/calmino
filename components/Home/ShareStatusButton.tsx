@@ -46,7 +46,7 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
 
     return (
         <TouchableOpacity
-            style={[styles.container, { backgroundColor: theme.card }]}
+            style={styles.container}
             onPress={handlePress}
             activeOpacity={0.6}
         >
@@ -69,21 +69,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        marginTop: 20,
-        marginBottom: 16,
-        marginHorizontal: 16,
-        paddingVertical: 14,
-        borderRadius: 16,
-        // Floating shadow
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        elevation: 0,
+        gap: 6,
+        marginTop: 2,
+        marginBottom: 4,
+        paddingVertical: 6,
+        borderRadius: 12,
     },
     text: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '500',
         letterSpacing: -0.2,
     },

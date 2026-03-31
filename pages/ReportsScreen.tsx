@@ -23,7 +23,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
-import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame } from 'lucide-react-native';
+import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame, SlidersHorizontal } from 'lucide-react-native';
+import DiaperIcon from '../components/Common/DiaperIcon';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -1058,35 +1059,39 @@ export default function ReportsScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.statCard, { backgroundColor: theme.card }]}
+        style={[styles.statCard, { backgroundColor: theme.card, justifyContent: 'space-between' }]}
         onPress={() => {
           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPress?.();
         }}
         activeOpacity={0.7}
       >
-        <View style={[styles.statIconWrap, { backgroundColor: iconBg || theme.cardSecondary }]}>
+        <ChevronRight size={16} color={theme.textSecondary} style={styles.cardChevron} />
+        
+        <View style={[styles.statIconWrap, { backgroundColor: iconBg || theme.cardSecondary, alignSelf: 'flex-end' }]}>
           <Icon size={20} color={iconColor || theme.textSecondary} strokeWidth={1.5} />
         </View>
-        <View style={styles.statValueRow}>
-          <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
-          {trendColor && (
-            <View style={[styles.trendBadge, { backgroundColor: trendColor + '18' }]}>
-              {change > 0 ? (
-                <TrendingUp size={11} color={trendColor} strokeWidth={2.5} />
-              ) : (
-                <TrendingDown size={11} color={trendColor} strokeWidth={2.5} />
-              )}
-              <Text style={{ fontSize: 10, color: trendColor, fontWeight: '700' }}>
-                {Math.abs(change)}%
-              </Text>
-            </View>
-          )}
+
+        <View style={{ alignItems: 'flex-end', width: '100%', marginTop: 8 }}>
+          <View style={styles.statValueRow}>
+            <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
+            {trendColor && (
+              <View style={[styles.trendBadge, { backgroundColor: trendColor + '18' }]}>
+                {change > 0 ? (
+                  <TrendingUp size={11} color={trendColor} strokeWidth={2.5} />
+                ) : (
+                  <TrendingDown size={11} color={trendColor} strokeWidth={2.5} />
+                )}
+                <Text style={{ fontSize: 10, color: trendColor, fontWeight: '700' }}>
+                  {Math.abs(change)}%
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
+          {subValue && <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>{subValue}</Text>}
+          {renderSparkline()}
         </View>
-        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
-        {subValue && <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>{subValue}</Text>}
-        {renderSparkline()}
-        <ChevronRight size={16} color={theme.textSecondary} style={styles.cardChevron} />
       </TouchableOpacity>
     );
   };
@@ -1347,9 +1352,8 @@ export default function ReportsScreen() {
 
   const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => (
     <RNAnimated.View style={{
-      flexBasis: '48%',
-      flexGrow: 1,
-      maxWidth: '48%', // Force exact size
+      width: '48%',
+      marginBottom: 14,
       opacity: cardAnims[Math.min(index, 5)],
       transform: [{ translateY: cardSlides[Math.min(index, 5)] }],
     }}>
@@ -1404,13 +1408,13 @@ export default function ReportsScreen() {
           if (key === 'diapers') return (
             <AnimatedCard key="diapers" index={idx}>
               <StatCard
-                icon={Droplets}
+                icon={DiaperIcon}
                 value={dailyStats.diapers}
                 label={t('reports.metrics.diapers')}
                 change={comparison?.diaperChange}
-                accentColor="#0EA5E9"
-                iconColor="#0EA5E9"
-                iconBg={isDarkMode ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)'}
+                accentColor="#34C759"
+                iconColor="#34C759"
+                iconBg={isDarkMode ? 'rgba(52, 199, 89, 0.22)' : 'rgba(52, 199, 89, 0.1)'}
                 sparklineData={weeklyData.diapers}
                 neutralTrend
                 onPress={() => isPremium ? setSelectedMetric('diapers') : setShowPaywall(true)}
@@ -1423,9 +1427,9 @@ export default function ReportsScreen() {
                 icon={Pill}
                 value={dailyStats.supplements}
                 label={t('reports.metrics.supplements')}
-                accentColor="#EC4899"
-                iconColor="#EC4899"
-                iconBg={isDarkMode ? 'rgba(236, 72, 153, 0.15)' : 'rgba(236, 72, 153, 0.1)'}
+                accentColor="#FF6B6B"
+                iconColor="#FF6B6B"
+                iconBg={isDarkMode ? 'rgba(255, 107, 107, 0.22)' : 'rgba(255, 107, 107, 0.1)'}
                 onPress={() => isPremium ? setSelectedMetric('supplements') : setShowPaywall(true)}
               />
             </AnimatedCard>
@@ -1469,9 +1473,16 @@ export default function ReportsScreen() {
           )}
         </AnimatedCard>
 
-        <TouchableOpacity style={styles.editStatsBtn} onPress={() => setShowStatsEdit(true)}>
-          <Edit2 size={16} color={theme.textSecondary} />
-          <Text style={[styles.editStatsText, { color: theme.textSecondary }]}>{t('stats.editOrder')}</Text>
+        <TouchableOpacity
+          style={[styles.editStatsBtn, {
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
+            borderWidth: 0.5,
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+          }]}
+          onPress={() => setShowStatsEdit(true)}
+        >
+          <SlidersHorizontal size={13} color={isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'} strokeWidth={2} />
+          <Text style={[styles.editStatsText, { color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>{t('stats.editOrder')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -1531,8 +1542,8 @@ export default function ReportsScreen() {
 
             {/* Diapers Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)' }]}>
-                <Droplets size={16} color="#0EA5E9" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(52, 199, 89, 0.22)' : 'rgba(52, 199, 89, 0.1)' }]}>
+                <Droplets size={16} color="#34C759" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.diapers')}</Text>
               <Text style={[styles.comparisonValue, {
@@ -2105,9 +2116,9 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 16, fontWeight: '500' },
 
   // Stats Grid - 2x2 Layout
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20, justifyContent: 'space-between' },
-  editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 4 },
-  editStatsText: { fontSize: 13 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20, justifyContent: 'space-between' },
+  editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16 },
+  editStatsText: { fontSize: 13, fontWeight: '600' },
   statCard: { width: '100%', minHeight: 150, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   statIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

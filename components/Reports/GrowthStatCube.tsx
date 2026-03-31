@@ -64,7 +64,7 @@ const Sparkline = memo(({ data, color }: { data: number[]; color: string }) => {
 Sparkline.displayName = 'Sparkline';
 
 const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const [weightData, setWeightData] = useState<number[]>([]);
     const [change, setChange] = useState<{ weight?: number } | null>(null);
@@ -112,7 +112,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                 style={[styles.statCard, { backgroundColor: theme.card }, animatedStyle]}
             >
                 {/* Icon */}
-                <View style={[styles.statIconWrap, { backgroundColor: '#ECFDF5' }]}>
+                <View style={[styles.statIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
                     <TrendingUp size={20} color="#10B981" strokeWidth={1.5} />
                 </View>
 
@@ -131,8 +131,10 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                             )}
 
                             {hasChange && (
-                                <View style={[styles.trendBadge, {
-                                    backgroundColor: isPositive ? '#D1FAE5' : '#FEE2E2'
+                                    <View style={[styles.trendBadge, {
+                                    backgroundColor: isPositive
+                                        ? (isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
+                                        : (isDarkMode ? 'rgba(220, 38, 38, 0.22)' : '#FEE2E2')
                                 }]}>
                                     <ArrowUpRight
                                         size={10}
@@ -152,7 +154,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                     ) : (
                         // Empty state - invite to add first measurement
                         <View style={styles.emptyState}>
-                            <View style={[styles.addBadge, { backgroundColor: '#ECFDF5' }]}>
+                            <View style={[styles.addBadge, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
                                 <Plus size={14} color="#10B981" strokeWidth={2.5} />
                             </View>
                         </View>

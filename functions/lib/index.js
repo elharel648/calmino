@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = void 0;
+exports.onFamilyMemberJoined = exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
@@ -811,6 +811,76 @@ exports.onBookingCreated = (0, firestore_2.onDocumentCreated)('bookings/{booking
     }
     catch (error) {
         console.error('Error sending push for booking:', error);
+    }
+});
+// ══════════════════════════════════════════════════════════════════════════════
+// 6️⃣ FAMILY JOIN PUSH — Sent to admins when a new member/guest joins
+// ══════════════════════════════════════════════════════════════════════════════
+exports.onFamilyMemberJoined = (0, firestore_2.onDocumentUpdated)('families/{familyId}', async (event) => {
+    const change = event.data;
+    if (!change)
+        return;
+    const beforeData = change.before.data() || {};
+    const afterData = change.after.data() || {};
+    const beforeMembers = beforeData.members || {};
+    const afterMembers = afterData.members || {};
+    // Find if a new UUID was added to members map
+    const beforeKeys = Object.keys(beforeMembers);
+    const afterKeys = Object.keys(afterMembers);
+    // Filter out existing members to find only newly joined ones
+    const newMemberIds = afterKeys.filter(key => !beforeKeys.includes(key));
+    if (newMemberIds.length === 0)
+        return; // No new members joined
+    for (const newMemberId of newMemberIds) {
+        const newMember = afterMembers[newMemberId];
+        const memberName = newMember.name || 'משתמש חדש';
+        const roleText = newMember.role === 'guest' ? 'כאורח/בייביסיטר' : 'כחבר משפחה';
+        const babyName = afterData.babyName || 'המשפחה';
+        // Find all admins to notify
+        for (const [uid, memberData] of Object.entries(afterMembers)) {
+            // Don't notify the person who just joined
+            if (uid === newMemberId)
+                continue;
+            const typedMember = memberData;
+            if (typedMember.role === 'admin') {
+                // Get admin push token
+                const adminDoc = await db.doc(`users/${uid}`).get();
+                if (!adminDoc.exists)
+                    continue;
+                const adminData = adminDoc.data();
+                const pushToken = adminData.pushToken;
+                if (pushToken && pushToken.startsWith('ExponentPushToken[')) {
+                    try {
+                        const message = {
+                            to: pushToken,
+                            sound: 'default',
+                            title: 'הצטרפות חדשה למשפחה! 🎉',
+                            body: `${memberName} הצטרף/ה הרגע ${roleText} לפרופיל של ${babyName}`,
+                            data: { type: 'family_join', familyId: event.params.familyId, newMemberId },
+                            channelId: 'default',
+                        };
+                        const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Accept-encoding': 'gzip, deflate',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(message),
+                        });
+                        if (response.ok) {
+                            console.log(`✅ Push notification sent to admin ${uid} for new member ${newMemberId}`);
+                        }
+                        else {
+                            console.error(`❌ Push notification HTTP error to admin ${uid}: ${response.status}`, await response.text());
+                        }
+                    }
+                    catch (error) {
+                        console.error('Error sending push for family join:', error);
+                    }
+                }
+            }
+        }
     }
 });
 //# sourceMappingURL=index.js.map

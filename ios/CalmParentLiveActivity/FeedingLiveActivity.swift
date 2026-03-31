@@ -2,13 +2,12 @@
 //  FeedingLiveActivity.swift
 //  Feeding Live Activity - Bottle, Pumping
 //
-//  Premium design with pause/play/stop controls via App Intents
+//  Premium design with pause/play/stop controls
 //
 
 import ActivityKit
 import WidgetKit
 import SwiftUI
-import AppIntents
 
 // MARK: - Design Tokens
 
@@ -63,7 +62,7 @@ struct FeedingLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 10) {
                             if context.state.isPaused {
-                                Button(intent: ResumeTimerIntent()) {
+                                Link(destination: URL(string: "calmino://resume-timer")!) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "play.fill")
                                             .font(.system(size: 12, weight: .bold))
@@ -76,9 +75,8 @@ struct FeedingLiveActivity: Widget {
                                     .background(feedingAccent.opacity(0.25), in: Capsule())
                                     .overlay(Capsule().stroke(feedingAccent.opacity(0.5), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
                             } else {
-                                Button(intent: PauseTimerIntent()) {
+                                Link(destination: URL(string: "calmino://pause-timer")!) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "pause.fill")
                                             .font(.system(size: 12, weight: .bold))
@@ -91,12 +89,11 @@ struct FeedingLiveActivity: Widget {
                                     .background(Color.white.opacity(0.12), in: Capsule())
                                     .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
                             }
 
                             Spacer()
 
-                            Button(intent: StopTimerIntent()) {
+                            Link(destination: URL(string: "calmino://save-timer?type=\(context.state.mealType.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&elapsedSeconds=0&childName=\(context.attributes.babyName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "stop.fill")
                                         .font(.system(size: 12, weight: .bold))
@@ -108,7 +105,6 @@ struct FeedingLiveActivity: Widget {
                                 .padding(.vertical, 8)
                                 .background(Color.white.opacity(0.08), in: Capsule())
                             }
-                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 8)
                         .padding(.bottom, 4)
@@ -189,33 +185,30 @@ struct FeedingLockScreenView: View {
                 if #available(iOS 17, *) {
                     VStack(spacing: 10) {
                         if context.state.isPaused {
-                            Button(intent: ResumeTimerIntent()) {
+                            Link(destination: URL(string: "calmino://resume-timer")!) {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 19, weight: .bold))
                                     .foregroundStyle(.black)
                                     .frame(width: 52, height: 52)
                                     .background(.white, in: Circle())
                             }
-                            .buttonStyle(.plain)
                         } else {
-                            Button(intent: PauseTimerIntent()) {
+                            Link(destination: URL(string: "calmino://pause-timer")!) {
                                 Image(systemName: "pause.fill")
                                     .font(.system(size: 19, weight: .bold))
                                     .foregroundStyle(.black)
                                     .frame(width: 52, height: 52)
                                     .background(.white, in: Circle())
                             }
-                            .buttonStyle(.plain)
                         }
 
-                        Button(intent: StopTimerIntent()) {
+                        Link(destination: URL(string: "calmino://save-timer?type=\(context.state.mealType.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&elapsedSeconds=0&childName=\(context.attributes.babyName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!) {
                             Image(systemName: "stop.fill")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white.opacity(0.8))
                                 .frame(width: 36, height: 36)
                                 .background(Color(white: 0.18), in: Circle())
                         }
-                        .buttonStyle(.plain)
                     }
                     .environment(\.layoutDirection, .rightToLeft)
                 } else {

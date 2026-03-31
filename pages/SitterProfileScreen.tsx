@@ -1450,6 +1450,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: theme.background,
     },
     scrollContent: {
         // paddingBottom handled dynamically

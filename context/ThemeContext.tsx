@@ -1,11 +1,13 @@
 import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from './/LanguageContext';
 
 const THEME_CACHE_KEY = '@calmino_dark_mode';
+const THEME_MODE_KEY = '@calmino_theme_mode'; // 'auto' | 'manual'
 
 // --- צבעים ---
 export const COLORS = {
@@ -35,23 +37,23 @@ export const COLORS = {
         shadow: '#000000',
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
-        // Action colors for Quick Actions - white bg, dark icon, category accentColor for live states
+        // Action colors for Quick Actions - Functional Minimalism (Soft category bg tint, solid category icon)
         actionColors: {
-            food: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#F59E0B' },
-            sleep: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#8B5CF6' },
-            diaper: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#3B82F6' },
-            supplements: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#34C759' },
-            whiteNoise: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#14B8A6' },
-            sos: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#FF3B30' },
-            custom: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#8E8E93' },
-            health: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#14B8A6' }, // Updated to Teal
-            growth: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#10B981' }, // Updated to Green
-            milestones: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#D97706' },
-            magicMoments: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#BF5AF2' },
-            tools: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#8E8E93' },
-            teeth: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#EC4899' }, // Updated to Pink
-            nightLight: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#F59E0B' },
-            quickReminder: { color: 'rgba(0,0,0,0.65)', lightColor: '#FFFFFF', accentColor: '#007AFF' },
+            food: { color: '#F59E0B', lightColor: 'rgba(245, 158, 11, 0.12)', accentColor: '#F59E0B' },
+            sleep: { color: '#8B5CF6', lightColor: 'rgba(139, 92, 246, 0.12)', accentColor: '#8B5CF6' },
+            diaper: { color: '#34C759', lightColor: 'rgba(52, 199, 89, 0.12)', accentColor: '#34C759' },
+            supplements: { color: '#FF6B6B', lightColor: 'rgba(255, 107, 107, 0.12)', accentColor: '#FF6B6B' },
+            whiteNoise: { color: '#14B8A6', lightColor: 'rgba(20, 184, 166, 0.12)', accentColor: '#14B8A6' },
+            sos: { color: '#FF3B30', lightColor: 'rgba(255, 59, 48, 0.12)', accentColor: '#FF3B30' },
+            custom: { color: '#8E8E93', lightColor: 'rgba(142, 142, 147, 0.12)', accentColor: '#8E8E93' },
+            health: { color: '#14B8A6', lightColor: 'rgba(20, 184, 166, 0.12)', accentColor: '#14B8A6' },
+            growth: { color: '#10B981', lightColor: 'rgba(16, 185, 129, 0.12)', accentColor: '#10B981' },
+            milestones: { color: '#D97706', lightColor: 'rgba(217, 119, 6, 0.12)', accentColor: '#D97706' },
+            magicMoments: { color: '#BF5AF2', lightColor: 'rgba(191, 90, 242, 0.12)', accentColor: '#BF5AF2' },
+            tools: { color: '#8E8E93', lightColor: 'rgba(142, 142, 147, 0.12)', accentColor: '#8E8E93' },
+            teeth: { color: '#EC4899', lightColor: 'rgba(236, 72, 153, 0.12)', accentColor: '#EC4899' },
+            nightLight: { color: '#F59E0B', lightColor: 'rgba(245, 158, 11, 0.12)', accentColor: '#F59E0B' },
+            quickReminder: { color: '#007AFF', lightColor: 'rgba(0, 122, 255, 0.12)', accentColor: '#007AFF' },
         },
     },
     dark: {
@@ -80,23 +82,23 @@ export const COLORS = {
         shadow: '#000000',
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
-        // Action colors for Quick Actions - Dark Mode (white icon, dark bg, vivid accent)
+        // Action colors for Quick Actions - Functional Minimalism
         actionColors: {
-            food: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FBBF24' },
-            sleep: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#A78BFA' },
-            diaper: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#60A5FA' },
-            supplements: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#34D158' },
-            whiteNoise: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#2DD4BF' },
-            sos: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FF6B6B' },
-            custom: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#A8A8AD' },
-            health: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#2DD4BF' }, // Teal
-            growth: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#34D158' }, // Green
-            milestones: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FFD060' },
-            magicMoments: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#D08EF5' },
-            tools: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#A8A8AD' },
-            teeth: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#EC4899' }, // Pink
-            nightLight: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#FBBF24' },
-            quickReminder: { color: 'rgba(255,255,255,0.85)', lightColor: 'rgba(255,255,255,0.08)', accentColor: '#60A5FA' },
+            food: { color: '#FBBF24', lightColor: 'rgba(251, 191, 36, 0.22)', accentColor: '#FBBF24' },
+            sleep: { color: '#A78BFA', lightColor: 'rgba(167, 139, 250, 0.22)', accentColor: '#A78BFA' },
+            diaper: { color: '#34D158', lightColor: 'rgba(52, 209, 88, 0.22)', accentColor: '#34D158' },
+            supplements: { color: '#FF6B6B', lightColor: 'rgba(255, 107, 107, 0.22)', accentColor: '#FF6B6B' },
+            whiteNoise: { color: '#2DD4BF', lightColor: 'rgba(45, 212, 191, 0.22)', accentColor: '#2DD4BF' },
+            sos: { color: '#FF6B6B', lightColor: 'rgba(255, 107, 107, 0.22)', accentColor: '#FF6B6B' },
+            custom: { color: '#A8A8AD', lightColor: 'rgba(168, 168, 173, 0.22)', accentColor: '#A8A8AD' },
+            health: { color: '#2DD4BF', lightColor: 'rgba(45, 212, 191, 0.22)', accentColor: '#2DD4BF' },
+            growth: { color: '#34D158', lightColor: 'rgba(52, 209, 88, 0.22)', accentColor: '#34D158' },
+            milestones: { color: '#FFD060', lightColor: 'rgba(255, 208, 96, 0.22)', accentColor: '#FFD060' },
+            magicMoments: { color: '#D08EF5', lightColor: 'rgba(208, 142, 245, 0.22)', accentColor: '#D08EF5' },
+            tools: { color: '#A8A8AD', lightColor: 'rgba(168, 168, 173, 0.22)', accentColor: '#A8A8AD' },
+            teeth: { color: '#EC4899', lightColor: 'rgba(236, 72, 153, 0.22)', accentColor: '#EC4899' },
+            nightLight: { color: '#FBBF24', lightColor: 'rgba(251, 191, 36, 0.22)', accentColor: '#FBBF24' },
+            quickReminder: { color: '#60A5FA', lightColor: 'rgba(96, 165, 250, 0.22)', accentColor: '#60A5FA' },
         },
     }
 };
@@ -104,18 +106,29 @@ export const COLORS = {
 export type Theme = typeof COLORS.light;
 export type ThemeMode = 'light' | 'dark';
 
+export type ThemePreference = 'auto' | 'light' | 'dark';
+
 interface ThemeContextType {
     isDarkMode: boolean;
     theme: Theme;
+    themePreference: ThemePreference;
     toggleTheme: () => void;
     setDarkMode: (value: boolean) => void;
+    setThemePreference: (pref: ThemePreference) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const { t } = useLanguage();
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const systemColorScheme = useColorScheme();
+    const [themePreference, setThemePreferenceState] = useState<ThemePreference>('auto');
+    const [manualDarkMode, setManualDarkMode] = useState(false);
+
+    // Resolve actual dark mode based on preference
+    const isDarkMode = themePreference === 'auto'
+        ? systemColorScheme === 'dark'
+        : themePreference === 'dark';
 
     // Load theme preference — AsyncStorage first (instant), then Firestore (sync)
     useEffect(() => {
@@ -124,10 +137,17 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     const loadThemePreference = async () => {
         try {
-            // 1. Load from AsyncStorage immediately (synchronous-like, no network)
-            const cached = await AsyncStorage.getItem(THEME_CACHE_KEY);
-            if (cached !== null) {
-                setIsDarkMode(cached === 'true');
+            // 1. Load from AsyncStorage immediately
+            const [cachedMode, cachedPref] = await Promise.all([
+                AsyncStorage.getItem(THEME_CACHE_KEY),
+                AsyncStorage.getItem(THEME_MODE_KEY),
+            ]);
+
+            if (cachedPref !== null) {
+                setThemePreferenceState(cachedPref as ThemePreference);
+            }
+            if (cachedMode !== null) {
+                setManualDarkMode(cachedMode === 'true');
             }
 
             // 2. Sync from Firestore in background
@@ -137,8 +157,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
                     const settings = userSnap.data().settings;
+                    if (settings?.themePreference !== undefined) {
+                        setThemePreferenceState(settings.themePreference);
+                        await AsyncStorage.setItem(THEME_MODE_KEY, settings.themePreference);
+                    }
                     if (settings?.isDarkMode !== undefined) {
-                        setIsDarkMode(settings.isDarkMode);
+                        setManualDarkMode(settings.isDarkMode);
                         await AsyncStorage.setItem(THEME_CACHE_KEY, String(settings.isDarkMode));
                     }
                 }
@@ -148,29 +172,43 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const saveThemePreference = async (value: boolean) => {
+    const saveThemeToStorage = async (darkValue: boolean, pref: ThemePreference) => {
         try {
-            // Save to AsyncStorage immediately so next launch is instant
-            await AsyncStorage.setItem(THEME_CACHE_KEY, String(value));
+            await Promise.all([
+                AsyncStorage.setItem(THEME_CACHE_KEY, String(darkValue)),
+                AsyncStorage.setItem(THEME_MODE_KEY, pref),
+            ]);
             const user = auth.currentUser;
             if (user) {
                 const userRef = doc(db, 'users', user.uid);
-                await setDoc(userRef, { settings: { isDarkMode: value } }, { merge: true });
+                await setDoc(userRef, { settings: { isDarkMode: darkValue, themePreference: pref } }, { merge: true });
             }
         } catch (error) {
             logger.log('Error saving theme preference:', error);
         }
     };
 
+    const setThemePreference = (pref: ThemePreference) => {
+        setThemePreferenceState(pref);
+        const newDark = pref === 'auto' ? systemColorScheme === 'dark' : pref === 'dark';
+        setManualDarkMode(newDark);
+        saveThemeToStorage(newDark, pref);
+    };
+
     const toggleTheme = () => {
-        const newValue = !isDarkMode;
-        setIsDarkMode(newValue);
-        saveThemePreference(newValue);
+        // When toggling manually, switch to explicit light/dark
+        const newDark = !isDarkMode;
+        setManualDarkMode(newDark);
+        const newPref: ThemePreference = newDark ? 'dark' : 'light';
+        setThemePreferenceState(newPref);
+        saveThemeToStorage(newDark, newPref);
     };
 
     const setDarkMode = (value: boolean) => {
-        setIsDarkMode(value);
-        saveThemePreference(value);
+        setManualDarkMode(value);
+        const newPref: ThemePreference = value ? 'dark' : 'light';
+        setThemePreferenceState(newPref);
+        saveThemeToStorage(value, newPref);
     };
 
     const theme = isDarkMode ? COLORS.dark : COLORS.light;
@@ -178,9 +216,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const contextValue = useMemo(() => ({
         isDarkMode,
         theme,
+        themePreference,
         toggleTheme,
-        setDarkMode
-    }), [isDarkMode, theme]);
+        setDarkMode,
+        setThemePreference,
+    }), [isDarkMode, theme, themePreference]);
 
     return (
         <ThemeContext.Provider value={contextValue}>

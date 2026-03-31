@@ -40,7 +40,7 @@ interface LiveActivityService {
     updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string, lastDiaperAgo: string, lastDiaperType: string, lastFeedType: string, feedCount: number, sleepMinutes: number, diaperCount: number, lastFeedTimestamp: number, lastSleepTimestamp: number, lastDiaperTimestamp: number, lastHealthTimestamp: number, healthCount: number, lastMedicationTimestamp: number, medicationCount: number) => Promise<boolean>;
 
     // App Intents sync
-    getPendingTimerAction: () => Promise<{ action: string; timerType: string; timestamp: string } | null>;
+    getPendingTimerAction: () => Promise<{ action: string; timerType: string; timestamp: string; elapsedSeconds: number } | null>;
     clearPendingTimerAction: () => Promise<void>;
 }
 
@@ -357,7 +357,7 @@ class LiveActivityServiceClass implements LiveActivityService {
     }
 
     // MARK: - App Intents Sync
-    async getPendingTimerAction(): Promise<{ action: string; timerType: string; timestamp: string } | null> {
+    async getPendingTimerAction(): Promise<{ action: string; timerType: string; timestamp: string; elapsedSeconds: number } | null> {
         if (!ActivityKitManager || Platform.OS !== 'ios') return null;
         try {
             return await ActivityKitManager.getPendingTimerAction();

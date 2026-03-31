@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,22 +11,19 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { Calendar, Check, User, Users, ChevronRight, Heart, Baby, X, Sparkles } from 'lucide-react-native';
+import { Calendar, User, Users, ChevronRight, Heart, Baby, X, Check } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 import { saveBabyProfile } from '../services/babyService';
-import { LiquidGlassBackground } from '../components/LiquidGlass';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useGuest } from '../context/GuestContext';
 import JoinFamilyModal from '../components/Family/JoinFamilyModal';
-
-const { width, height } = Dimensions.get('window');
+import { TYPOGRAPHY, SPACING } from '../utils/designSystem';
 
 type BabyProfileScreenProps = {
   onProfileSaved: () => void;
@@ -35,7 +32,7 @@ type BabyProfileScreenProps = {
 };
 
 export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: BabyProfileScreenProps) {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { isGuest, promptLogin } = useGuest();
   const [name, setName] = useState('');
@@ -48,6 +45,8 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [welcomeVisible, setWelcomeVisible] = useState(false);
   const [savedName, setSavedName] = useState('');
+
+  const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
   // Subtle pulse animation for button
   const buttonScale = useSharedValue(1);
@@ -65,11 +64,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   }));
 
   const handleSave = async () => {
-    // Guest guard — show login prompt instead of Firebase error
-    if (isGuest) {
-      promptLogin();
-      return;
-    }
+    if (isGuest) { promptLogin(); return; }
 
     if (!name.trim()) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -103,20 +98,17 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
       setShowDatePicker(false);
       if (selectedDate) {
         setBirthDate(selectedDate);
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } else {
-      // iOS: user is still scrolling — just track the pending value, don't commit yet
       if (selectedDate) setPendingDate(selectedDate);
     }
   };
 
   const handleDateConfirm = () => {
-    const chosen = pendingDate ?? birthDate;
-    if (chosen) {
-      setBirthDate(chosen);
-      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    const chosen = pendingDate ?? birthDate ?? new Date();
+    setBirthDate(chosen);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowDatePicker(false);
     setPendingDate(null);
   };
@@ -135,17 +127,14 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
-
-      {/* Premium Liquid Glass Background */}
-      <LiquidGlassBackground />
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
 
       {/* Close button */}
       {onClose && (
         <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
-          <BlurView intensity={60} tint="light" style={styles.closeButtonBlur}>
-            <X size={20} color="#6B7280" strokeWidth={2} />
-          </BlurView>
+          <View style={styles.closeButtonWrap}>
+            <X size={20} color={theme.textSecondary} strokeWidth={2} />
+          </View>
         </TouchableOpacity>
       )}
 
@@ -158,101 +147,103 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           {/* Header */}
           <Animated.View style={styles.header}>
             <View style={styles.iconContainer}>
-              <BlurView intensity={80} tint="light" style={styles.iconBlur}>
-                <Baby size={32} color="#6366F1" strokeWidth={1.5} />
-              </BlurView>
-              <View style={styles.sparkleWrap}>
-                <Sparkles size={14} color="#8B5CF6" strokeWidth={2} />
+              <View style={styles.iconShadowWrap}>
+                <View style={styles.iconWrap}>
+                  <Baby size={34} color={theme.primary} strokeWidth={1.8} />
+                </View>
               </View>
             </View>
             <Text style={styles.title}>{t('babyProfile.title')}</Text>
             <Text style={styles.subtitle}>{t('babyProfile.subtitle')}</Text>
           </Animated.View>
 
-          {/* Name Input Card */}
+          {/* Core Inset Grouped Form */}
           <Animated.View>
-            <View style={styles.glassCard}>
-              <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardOverlay} />
-
-              <View style={styles.cardRow}>
-                <View style={styles.cardIconWrap}>
-                  <User size={18} color="#6366F1" strokeWidth={1.5} />
+            <View style={styles.groupedCard}>
+              
+              {/* Name Row */}
+              <View style={styles.formRow}>
+                <View style={styles.rowRight}>
+                  <View style={[styles.inlineIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                    <User size={16} color={theme.textSecondary} strokeWidth={2} />
+                  </View>
+                  <Text style={styles.rowLabel}>{t('child.name')}</Text>
                 </View>
-                <Text style={styles.cardLabel}>{t('child.name')}</Text>
+                <TextInput
+                  style={styles.inlineInput}
+                  placeholder={t('babyProfile.namePlaceholder')}
+                  placeholderTextColor={theme.textTertiary}
+                  value={name}
+                  onChangeText={setName}
+                  textAlign="right"
+                  autoFocus
+                />
               </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder={t('babyProfile.namePlaceholder')}
-                placeholderTextColor="#9CA3AF"
-                value={name}
-                onChangeText={setName}
-                textAlign="right"
-                autoFocus
-              />
+              <View style={styles.divider} />
 
-              {name.length > 0 && (
-                <View style={styles.checkBadge}>
-                  <Check size={14} color="#fff" strokeWidth={3} />
+              {/* Last Name Row */}
+              <View style={styles.formRow}>
+                <View style={styles.rowRight}>
+                  <View style={[styles.inlineIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                    <Users size={16} color={theme.textSecondary} strokeWidth={2} />
+                  </View>
+                  <Text style={styles.rowLabel}>{t('babyProfile.lastName')}</Text>
                 </View>
-              )}
+                <TextInput
+                  style={styles.inlineInput}
+                  placeholder={t('babyProfile.lastNamePlaceholder')}
+                  placeholderTextColor={theme.textTertiary}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  textAlign="right"
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Birth Date Row */}
+              <TouchableOpacity style={styles.formRow} onPress={() => setShowDatePicker(true)} activeOpacity={0.6}>
+                <View style={styles.rowRight}>
+                  <View style={[styles.inlineIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                    <Calendar size={16} color={theme.textSecondary} strokeWidth={2} />
+                  </View>
+                  <Text style={styles.rowLabel}>{t('child.birthDate')}</Text>
+                </View>
+                <View style={styles.dateSelector}>
+                  <Text style={[styles.dateSelectorText, !birthDate && { color: theme.textTertiary, fontWeight: '400' }]}>
+                    {birthDate
+                      ? birthDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
+                      : t('babyProfile.selectBirthdate')}
+                  </Text>
+                  <ChevronRight size={16} color={theme.textTertiary} />
+                </View>
+              </TouchableOpacity>
             </View>
           </Animated.View>
 
-          {/* Last Name Input Card */}
-          <Animated.View>
-            <View style={styles.glassCard}>
-              <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardOverlay} />
+          {/* Gender Segmented Row */}
+          <Animated.View style={styles.genderSection}>
+            <Text style={styles.sectionTitle}>{t('babyProfile.gender')}</Text>
 
-              <View style={styles.cardRow}>
-                <View style={styles.cardIconWrap}>
-                  <Users size={18} color="#8B5CF6" strokeWidth={1.5} />
-                </View>
-                <Text style={styles.cardLabel}>{t('babyProfile.lastName')}</Text>
-              </View>
-
-              <TextInput
-                style={styles.input}
-                placeholder={t('babyProfile.lastNamePlaceholder')}
-                placeholderTextColor="#9CA3AF"
-                value={lastName}
-                onChangeText={setLastName}
-                textAlign="right"
+            {/* Apple-style Segmented Control */}
+            <View style={styles.segmentedControl}>
+              <View
+                style={[
+                  styles.segmentedActivePill,
+                  gender === 'boy' ? styles.segmentedPillBoy : styles.segmentedPillGirl,
+                ]}
               />
 
-              {lastName.length > 0 && (
-                <View style={styles.checkBadge}>
-                  <Check size={14} color="#fff" strokeWidth={3} />
-                </View>
-              )}
-            </View>
-          </Animated.View>
+              <TouchableOpacity style={styles.segmentedTab} onPress={() => handleGenderSelect('boy')} activeOpacity={1}>
+                <Text style={[styles.segmentedTabText, gender === 'boy' && styles.segmentedTabTextActiveBoy]}>
+                  {t('child.boy')}
+                </Text>
+              </TouchableOpacity>
 
-          {/* Birth Date Card */}
-          <Animated.View>
-            <View style={styles.glassCard}>
-              <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardOverlay} />
-
-              <View style={styles.cardRow}>
-                <View style={styles.cardIconWrap}>
-                  <Calendar size={18} color="#8B5CF6" strokeWidth={1.5} />
-                </View>
-                <Text style={styles.cardLabel}>{t('child.birthDate')}</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-                activeOpacity={0.7}
-              >
-                <ChevronRight size={18} color="#6B7280" />
-                <Text style={[styles.dateText, !birthDate && { color: '#9CA3AF', fontWeight: '400' }]}>
-                  {birthDate
-                    ? birthDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
-                    : t('babyProfile.selectBirthdate')}
+              <TouchableOpacity style={styles.segmentedTab} onPress={() => handleGenderSelect('girl')} activeOpacity={1}>
+                <Text style={[styles.segmentedTabText, gender === 'girl' && styles.segmentedTabTextActiveGirl]}>
+                  {t('child.girl')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -271,10 +262,9 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
 
           {showDatePicker && Platform.OS === 'ios' && (
             <View style={styles.datePickerIosWrapper}>
-              {/* Cancel / Done bar */}
               <View style={styles.datePickerHeader}>
                 <TouchableOpacity onPress={handleDateCancel} style={styles.datePickerHeaderBtn}>
-                  <Text style={[styles.datePickerCancel, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
+                  <Text style={styles.datePickerCancel}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleDateConfirm} style={styles.datePickerHeaderBtn}>
                   <Text style={styles.datePickerConfirm}>{t('common.confirm')}</Text>
@@ -288,93 +278,35 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                 maximumDate={new Date()}
                 onChange={onDateChange}
                 style={{ width: '100%' }}
+                textColor={theme.textPrimary}
               />
             </View>
           )}
 
-          {/* Gender Selection */}
-          <Animated.View>
-            <Text style={styles.sectionTitle}>{t('babyProfile.gender')}</Text>
-            <View style={styles.genderRow}>
-              {/* Boy Option */}
-              <TouchableOpacity
-                style={[styles.genderCard, gender === 'boy' && styles.genderCardActive]}
-                onPress={() => handleGenderSelect('boy')}
-                activeOpacity={0.8}
-              >
-                <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-                <View style={[styles.genderOverlay, gender === 'boy' && styles.genderOverlayBoy]} />
-
-                <View style={[styles.genderIcon, { backgroundColor: gender === 'boy' ? '#3B82F6' : '#E5E7EB' }]}>
-                  <User size={22} color="#fff" strokeWidth={2} />
-                </View>
-                <Text style={[styles.genderText, gender === 'boy' && styles.genderTextActive]}>{t('child.boy')}</Text>
-
-                {gender === 'boy' && (
-                  <View style={[styles.genderBadge, { backgroundColor: '#3B82F6' }]}>
-                    <Check size={12} color="#fff" strokeWidth={3} />
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              {/* Girl Option */}
-              <TouchableOpacity
-                style={[styles.genderCard, gender === 'girl' && styles.genderCardActive]}
-                onPress={() => handleGenderSelect('girl')}
-                activeOpacity={0.8}
-              >
-                <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-                <View style={[styles.genderOverlay, gender === 'girl' && styles.genderOverlayGirl]} />
-
-                <View style={[styles.genderIcon, { backgroundColor: gender === 'girl' ? '#EC4899' : '#E5E7EB' }]}>
-                  <User size={22} color="#fff" strokeWidth={2} />
-                </View>
-                <Text style={[styles.genderText, gender === 'girl' && styles.genderTextActive]}>{t('child.girl')}</Text>
-
-                {gender === 'girl' && (
-                  <View style={[styles.genderBadge, { backgroundColor: '#EC4899' }]}>
-                    <Check size={12} color="#fff" strokeWidth={3} />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-
-          {/* Submit Button */}
+          {/* Premium Submit Button */}
           <Animated.View style={[styles.submitContainer, buttonAnimatedStyle]}>
             <TouchableOpacity
-              style={[styles.submitButton, !isFormValid && styles.submitButtonDisabled]}
+              style={[styles.primaryBtn, !isFormValid && styles.primaryBtnDisabled]}
               onPress={handleSave}
               disabled={loading || !isFormValid}
               activeOpacity={0.9}
             >
-              <BlurView intensity={isFormValid ? 0 : 40} tint="light" style={StyleSheet.absoluteFill} />
-              <View style={[styles.submitGradient, !isFormValid && styles.submitGradientDisabled]}>
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <>
-                    <Text style={styles.submitText}>{t('babyProfile.saveAndContinue')}</Text>
-                    <ChevronRight size={22} color="#fff" style={{ marginLeft: -4 }} />
-                  </>
-                )}
-              </View>
+              {loading ? (
+                <ActivityIndicator color={!isFormValid ? theme.textTertiary : "#fff"} size="small" />
+              ) : (
+                <Text style={[styles.primaryBtnText, !isFormValid && styles.primaryBtnTextDisabled]}>{t('babyProfile.saveAndContinue')}</Text>
+              )}
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Bottom tip */}
-          <Animated.View style={styles.tipContainer}>
-            <Heart size={14} color="#EC4899" />
-            <Text style={styles.tipText}>{t('babyProfile.editLater')}</Text>
-          </Animated.View>
-
-          {/* Bottom Actions for Guest/Sitter/Skip */}
+          {/* Bottom Actions */}
           <Animated.View style={styles.secondaryActions}>
-            <TouchableOpacity
-              style={styles.joinButton}
-              onPress={() => setShowJoinModal(true)}
-              activeOpacity={0.7}
-            >
+            <View style={styles.tipContainer}>
+              <Heart size={14} color={theme.textTertiary} />
+              <Text style={styles.tipText}>{t('babyProfile.editLater')}</Text>
+            </View>
+
+            <TouchableOpacity style={styles.joinButton} onPress={() => setShowJoinModal(true)} activeOpacity={0.7}>
               <Text style={styles.joinText}>{t('babyProfile.joinInvite')}</Text>
             </TouchableOpacity>
 
@@ -388,42 +320,26 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Join Family / Sitter Guest Modal */}
       <JoinFamilyModal
         visible={showJoinModal}
         onClose={() => setShowJoinModal(false)}
         onSuccess={() => {
           setShowJoinModal(false);
-          if (onProfileSaved) {
-            onProfileSaved();
-          }
+          if (onProfileSaved) onProfileSaved();
         }}
       />
 
-      {/* Welcome Modal */}
       <Modal visible={welcomeVisible} transparent animationType="fade">
         <View style={styles.welcomeOverlay}>
           <Animated.View entering={FadeInUp.springify()} style={styles.welcomeCard}>
-            {/* Icon */}
             <View style={styles.welcomeIconWrap}>
-              <Sparkles size={28} color="#8B5CF6" strokeWidth={1.5} />
+              <Check size={28} color={theme.primary} strokeWidth={2.5} />
             </View>
-
-            {/* Text — RTL aligned */}
             <Text style={styles.welcomeTitle}>{t('babyProfile.welcomeTitle')}</Text>
             <Text style={styles.welcomeMessage}>
               {t('babyProfile.welcomeMessage', { name: savedName })}
             </Text>
-
-            {/* Button */}
-            <TouchableOpacity
-              style={styles.welcomeBtn}
-              onPress={() => {
-                setWelcomeVisible(false);
-                onProfileSaved();
-              }}
-              activeOpacity={0.85}
-            >
+            <TouchableOpacity style={styles.welcomeBtn} onPress={() => { setWelcomeVisible(false); onProfileSaved(); }} activeOpacity={0.85}>
               <Text style={styles.welcomeBtnText}>{t('babyProfile.letsStart')}</Text>
             </TouchableOpacity>
           </Animated.View>
@@ -433,165 +349,215 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: theme.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 80,
-    paddingBottom: 30,
+    paddingBottom: 40,
   },
-
-  // Close button
   closeButton: {
     position: 'absolute',
     top: 54,
-    right: 16,
+    right: 20,
     zIndex: 100,
   },
-  closeButtonBlur: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  closeButtonWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
   },
 
   // Header
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   iconContainer: {
-    marginBottom: 12,
-    position: 'relative',
+    marginBottom: 16,
+    alignItems: 'center',
   },
-  iconBlur: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  iconShadowWrap: {
+    shadowColor: theme.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDarkMode ? 0.3 : 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  iconWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: theme.card,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-  },
-  sparkleWrap: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#EDE9FE',
-    padding: 4,
-    borderRadius: 10,
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1E1B4B',
-    marginBottom: 6,
+    ...TYPOGRAPHY.h2,
+    color: theme.textPrimary,
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    ...TYPOGRAPHY.body,
+    fontSize: 15,
+    color: theme.textSecondary,
     textAlign: 'center',
   },
 
-  // Glass Card
-  glassCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
-    position: 'relative',
+  // Apple Inset Grouped List
+  groupedCard: {
+    backgroundColor: theme.card,
+    borderRadius: 18,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDarkMode ? 0.3 : 0.04,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: isDarkMode ? 1 : 0,
+    borderColor: isDarkMode ? theme.border : 'transparent',
   },
-  cardOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-  },
-  cardRow: {
+  formRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 56,
   },
-  cardIconWrap: {
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+    marginLeft: 16,
+    marginRight: 54,
+  },
+  rowRight: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    minWidth: 110,
+  },
+  inlineIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
-    flex: 1,
-    textAlign: 'right',
-  },
-  input: {
-    fontSize: 18,
-    color: '#1F2937',
+  rowLabel: {
+    ...TYPOGRAPHY.body,
     fontWeight: '600',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1.5,
-    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
+    color: theme.textPrimary,
   },
-  checkBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#10B981',
+  inlineInput: {
+    flex: 1,
+    ...TYPOGRAPHY.body,
+    color: theme.textPrimary,
+    paddingVertical: 0,
+    paddingRight: 16,
+    paddingLeft: 8,
+    marginLeft: 12,
+  },
+  dateSelector: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 4,
+  },
+  dateSelectorText: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '500',
+    color: theme.textSecondary,
   },
 
-  // Date button
-  dateButton: {
-    flexDirection: 'row',
+  // Apple Segmented Control for Gender
+  genderSection: {
+    marginBottom: 32,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(249, 250, 251, 0.8)',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
   },
-  dateText: {
-    fontSize: 16,
-    color: '#1F2937',
+  sectionTitle: {
+    ...TYPOGRAPHY.labelSmall,
+    color: theme.textSecondary,
+    marginBottom: 10,
     fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  segmentedControl: {
+    flexDirection: 'row-reverse',
+    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(118,118,128,0.12)',
+    borderRadius: 14,
+    padding: 3,
+    width: '100%',
+    maxWidth: 240,
+    height: 44,
+    position: 'relative',
+  },
+  segmentedActivePill: {
+    position: 'absolute',
+    top: 3,
+    bottom: 3,
+    width: '49%',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDarkMode ? 0.4 : 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  segmentedPillBoy: {
+    right: 3,
+    backgroundColor: isDarkMode ? 'rgba(59,130,246,0.25)' : 'rgba(59,130,246,0.12)',
+  },
+  segmentedPillGirl: {
+    left: 3,
+    backgroundColor: isDarkMode ? 'rgba(236,72,153,0.25)' : 'rgba(236,72,153,0.12)',
+  },
+  segmentedTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  segmentedTabText: {
+    ...TYPOGRAPHY.label,
+    fontWeight: '500',
+    color: isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+  },
+  segmentedTabTextActiveBoy: {
+    fontWeight: '700',
+    color: isDarkMode ? '#93C5FD' : '#2563EB',
+  },
+  segmentedTabTextActiveGirl: {
+    fontWeight: '700',
+    color: isDarkMode ? '#F9A8D4' : '#DB2777',
   },
 
   // iOS date picker wrapper
   datePickerIosWrapper: {
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: -8,
+    marginBottom: 24,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.15)',
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
   },
   datePickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
   },
   datePickerHeaderBtn: {
     minWidth: 60,
@@ -599,167 +565,88 @@ const styles = StyleSheet.create({
   datePickerCancel: {
     fontSize: 16,
     textAlign: 'right',
+    color: theme.textSecondary,
   },
   datePickerConfirm: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6366F1',
+    color: theme.primary,
     textAlign: 'left',
-  },
-
-  // Gender section
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 14,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  genderRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  genderCard: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
-    position: 'relative',
-  },
-  genderCardActive: {
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-  },
-  genderOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-  },
-  genderOverlayBoy: {
-    backgroundColor: 'rgba(219, 234, 254, 0.8)',
-  },
-  genderOverlayGirl: {
-    backgroundColor: 'rgba(252, 231, 243, 0.8)',
-  },
-  genderIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  genderText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#9CA3AF',
-  },
-  genderTextActive: {
-    color: '#1F2937',
-  },
-  genderBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // Submit button
   submitContainer: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
-  submitButton: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 0,
+  primaryBtn: {
+    backgroundColor: theme.primary,
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: theme.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDarkMode ? 0.4 : 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  submitButtonDisabled: {
+  primaryBtnDisabled: {
+    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
     shadowOpacity: 0,
     elevation: 0,
   },
-  submitGradient: {
-    backgroundColor: '#6366F1',
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
   },
-  submitGradientDisabled: {
-    backgroundColor: '#D1D5DB',
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
+  primaryBtnTextDisabled: {
+    color: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
   },
 
-  // Tip
-  tipContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  tipText: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    textAlign: 'center',
-  },
-
-  // Secondary Actions
+  // Bottom Actions
   secondaryActions: {
     alignItems: 'center',
-    gap: 16,
-    marginTop: 8,
-    paddingBottom: 20,
+    marginTop: 12,
+    gap: 24,
+  },
+  tipContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tipText: {
+    ...TYPOGRAPHY.labelSmall,
+    color: theme.textTertiary,
   },
   joinButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(99, 102, 241, 0.08)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.15)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   joinText: {
     fontSize: 14,
-    color: '#6366F1',
-    fontWeight: '700',
-    textAlign: 'center',
+    color: theme.textSecondary,
+    textDecorationLine: 'underline',
   },
   skipButton: {
     paddingVertical: 8,
-    alignItems: 'center',
   },
   skipText: {
-    fontSize: 13,
-    color: '#9CA3AF',
+    fontSize: 14,
+    color: theme.textTertiary,
     textDecorationLine: 'underline',
   },
 
   // Welcome Modal
   welcomeOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
   },
   welcomeCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.card,
     borderRadius: 24,
     paddingVertical: 32,
     paddingHorizontal: 28,
@@ -767,41 +654,40 @@ const styles = StyleSheet.create({
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.2,
     shadowRadius: 24,
-    elevation: 0,
+    elevation: 10,
   },
   welcomeIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#EDE9FE',
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
+    ...TYPOGRAPHY.h2,
+    color: theme.textPrimary,
     textAlign: 'center',
     marginBottom: 8,
     writingDirection: 'rtl',
   },
   welcomeMessage: {
-    fontSize: 15,
-    color: '#6B7280',
+    ...TYPOGRAPHY.body,
+    color: theme.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 28,
+    marginBottom: 32,
     writingDirection: 'rtl',
   },
   welcomeBtn: {
-    backgroundColor: '#6366F1',
-    borderRadius: 14,
+    backgroundColor: theme.primary,
     paddingVertical: 14,
-    paddingHorizontal: 28,
-    alignSelf: 'stretch',
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    width: '100%',
     alignItems: 'center',
   },
   welcomeBtnText: {

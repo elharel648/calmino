@@ -7,36 +7,36 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		001B083AB50A4857A1CBDC98 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BD79C16F712644D0826B7466 /* GoogleService-Info.plist */; };
+		08BD3912B8BA4877A8DEF764 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25AE205384C64BFA9C14BF8F /* WidgetKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		364FC37E105449EFA59FE418 /* CalmParentLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 437892F4AD1642AD8497242C /* CalmParentLiveActivityBundle.swift */; };
+		232847DBD924ADFCD2FFA441 /* Pods_Calmino.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1BD348ED568B333EED0A5ABE /* Pods_Calmino.framework */; };
+		2E1CEB325F29418388638B18 /* CalmParentLiveActivity.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = D858B8E1E4F743B78EA58EC6 /* CalmParentLiveActivity.appex */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		536AB84F62804C2CA082417A /* SleepLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D35DC26577D443D86954D4C /* SleepLiveActivity.swift */; };
-		5727372B8C0147C99D2D0B7A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5406EE3681AC4566B86AFAEB /* WidgetKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
-		5AA08F9957E501C2D3A5A50F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 779C6AB826CFD9AC9BB97CA4 /* PrivacyInfo.xcprivacy */; };
-		64055028AA8947F392C614B5 /* CalmParentLiveActivity.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = E957537D699B442DB36F2233 /* CalmParentLiveActivity.appex */; };
-		6523D7DB307ABF2CE67F53F3 /* Pods_Calmino.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 86B4D27C36B571AE74AD15A7 /* Pods_Calmino.framework */; };
-		6E34AC7597A24F94D9A14EBF /* WhiteNoiseLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351CA614D4F872BC0DB5D1C3 /* WhiteNoiseLiveActivity.swift */; };
-		91C7FF74EF69586E2BB7959C /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B24A6F2FFCFAE8690BB436 /* ExpoModulesProvider.swift */; };
-		9826719A9F9242A4A78ECD90 /* ActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BE1B086A2DD472EAD693AF8 /* ActivityAttributes.swift */; };
-		A42B8E4D3E58469E84071DC8 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EC3F4E1EC94A4AAC51158B /* FeedingLiveActivity.swift */; };
+		48562E188CDB4D3185CD6F7B /* BabysitterShiftLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6E03236B09441D8781284D /* BabysitterShiftLiveActivity.swift */; };
+		737D0D02A4C64AB99DB72F1C /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCB158B4DE6746958E9945DC /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		87AC335393D34C57A808279D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1B06314818245C282C139E5 /* SwiftUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		8EFAF5B261CA49248775348F /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6082F7D56A6A4E7BA281C84A /* GlassComponents.swift */; };
+		A6BC658AF9AB46EC80A5CF9D /* WhiteNoiseLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EA0E1693764CE380044C87 /* WhiteNoiseLiveActivity.swift */; };
+		B01708CD6B1C4E669ABB7A90 /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EE5F22BA2B475CBC6593EC /* TimerIntents.swift */; };
+		B122A19EA4674CE7A50BA3FB /* CalmParentLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE99F8A1BCE64C4AB5BDBC12 /* CalmParentLiveActivityBundle.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		BE3368101EC448E0BC3CE5A8 /* BreastfeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1A1B2A32B0431FA926B7A1 /* BreastfeedingLiveActivity.swift */; };
-		C1A2B3D4E5F60718 /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3D4E5F60719 /* TimerIntents.swift */; };
-		CAF6CA4091054CAF86141AAA /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89AA6929B3F5413D904304D5 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
-		DB9CD87D93F94F78A8AD02AB /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB8657A1743404DBCC44D13 /* GlassComponents.swift */; };
-		E047FA3885814042BAEE6CC1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC7F267CAD7D4D73B73CF857 /* SwiftUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		D56B54779E9348B79577C714 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223E86F20BCB498EA067366C /* FeedingLiveActivity.swift */; };
+		DD9BAA98CF0E037417487088 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCBAD1CF26C6C5CFD9041355 /* ExpoModulesProvider.swift */; };
+		DFFFA543BACCB62752234E1C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3454912EEECC0ADAF0D1493C /* PrivacyInfo.xcprivacy */; };
+		E5A7D29A758F464390D712EE /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 990FB34D6796431CA06B9F3E /* GoogleService-Info.plist */; };
+		E71F88C2889B4A7289C9F66F /* SleepLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366B530F10B040C4A8D511F4 /* SleepLiveActivity.swift */; };
+		E745D1E61008469E8A49E2DB /* BreastfeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFEA28A38AA4458F80AD02CA /* BreastfeedingLiveActivity.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F8A7CA3ABEFC40E28C9FC4C2 /* Copy Files */ = {
+		7573D087A65F45E5925475D5 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				64055028AA8947F392C614B5 /* CalmParentLiveActivity.appex in Copy Files */,
+				2E1CEB325F29418388638B18 /* CalmParentLiveActivity.appex in Copy Files */,
 			);
 			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -47,29 +47,29 @@
 		13B07F961A680F5B00A75B9A /* Calmino.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Calmino.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Calmino/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Calmino/Info.plist; sourceTree = "<group>"; };
-		2BE1B086A2DD472EAD693AF8 /* ActivityAttributes.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = ActivityAttributes.swift; path = CalmParentLiveActivity/ActivityAttributes.swift; sourceTree = "<group>"; };
-		351CA614D4F872BC0DB5D1C3 /* WhiteNoiseLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalmParentLiveActivity/WhiteNoiseLiveActivity.swift; sourceTree = "<group>"; };
-		437892F4AD1642AD8497242C /* CalmParentLiveActivityBundle.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = CalmParentLiveActivityBundle.swift; path = CalmParentLiveActivity/CalmParentLiveActivityBundle.swift; sourceTree = "<group>"; };
-		43B24A6F2FFCFAE8690BB436 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Calmino/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		5406EE3681AC4566B86AFAEB /* WidgetKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		6C1A1B2A32B0431FA926B7A1 /* BreastfeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = BreastfeedingLiveActivity.swift; path = CalmParentLiveActivity/BreastfeedingLiveActivity.swift; sourceTree = "<group>"; };
-		6D35DC26577D443D86954D4C /* SleepLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = SleepLiveActivity.swift; path = CalmParentLiveActivity/SleepLiveActivity.swift; sourceTree = "<group>"; };
-		779C6AB826CFD9AC9BB97CA4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Calmino/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		86B4D27C36B571AE74AD15A7 /* Pods_Calmino.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Calmino.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		87BBC1B94E36028936973EAE /* Pods-Calmino.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Calmino.debug.xcconfig"; path = "Target Support Files/Pods-Calmino/Pods-Calmino.debug.xcconfig"; sourceTree = "<group>"; };
-		89AA6929B3F5413D904304D5 /* ActivityKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
-		8FB8657A1743404DBCC44D13 /* GlassComponents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = GlassComponents.swift; path = CalmParentLiveActivity/GlassComponents.swift; sourceTree = "<group>"; };
+		1BD348ED568B333EED0A5ABE /* Pods_Calmino.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Calmino.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		223E86F20BCB498EA067366C /* FeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = FeedingLiveActivity.swift; path = CalmParentLiveActivity/FeedingLiveActivity.swift; sourceTree = "<group>"; };
+		25AE205384C64BFA9C14BF8F /* WidgetKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		2A6E03236B09441D8781284D /* BabysitterShiftLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = BabysitterShiftLiveActivity.swift; path = CalmParentLiveActivity/BabysitterShiftLiveActivity.swift; sourceTree = "<group>"; };
+		3454912EEECC0ADAF0D1493C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Calmino/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		366B530F10B040C4A8D511F4 /* SleepLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = SleepLiveActivity.swift; path = CalmParentLiveActivity/SleepLiveActivity.swift; sourceTree = "<group>"; };
+		56EA0E1693764CE380044C87 /* WhiteNoiseLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = WhiteNoiseLiveActivity.swift; path = CalmParentLiveActivity/WhiteNoiseLiveActivity.swift; sourceTree = "<group>"; };
+		6082F7D56A6A4E7BA281C84A /* GlassComponents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = GlassComponents.swift; path = CalmParentLiveActivity/GlassComponents.swift; sourceTree = "<group>"; };
+		990FB34D6796431CA06B9F3E /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Calmino/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Calmino/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B1B06314818245C282C139E5 /* SwiftUI.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		BD79C16F712644D0826B7466 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Calmino/GoogleService-Info.plist"; sourceTree = "<group>"; };
-		C1A2B3D4E5F60719 /* TimerIntents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = TimerIntents.swift; path = CalmParentLiveActivity/TimerIntents.swift; sourceTree = "<group>"; };
-		C2AF5261A2039AD6B987B220 /* Pods-Calmino.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Calmino.release.xcconfig"; path = "Target Support Files/Pods-Calmino/Pods-Calmino.release.xcconfig"; sourceTree = "<group>"; };
-		E2EC3F4E1EC94A4AAC51158B /* FeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = FeedingLiveActivity.swift; path = CalmParentLiveActivity/FeedingLiveActivity.swift; sourceTree = "<group>"; };
-		E957537D699B442DB36F2233 /* CalmParentLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = CalmParentLiveActivity.appex; path = CalmParentLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCBAD1CF26C6C5CFD9041355 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Calmino/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		D858B8E1E4F743B78EA58EC6 /* CalmParentLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = CalmParentLiveActivity.appex; path = CalmParentLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE99F8A1BCE64C4AB5BDBC12 /* CalmParentLiveActivityBundle.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = CalmParentLiveActivityBundle.swift; path = CalmParentLiveActivity/CalmParentLiveActivityBundle.swift; sourceTree = "<group>"; };
+		E0BA2C75D78D90959A1DD853 /* Pods-Calmino.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Calmino.debug.xcconfig"; path = "Target Support Files/Pods-Calmino/Pods-Calmino.debug.xcconfig"; sourceTree = "<group>"; };
+		E3EE5F22BA2B475CBC6593EC /* TimerIntents.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = TimerIntents.swift; path = CalmParentLiveActivity/TimerIntents.swift; sourceTree = "<group>"; };
+		E48ABD55B173E3720FF05601 /* Pods-Calmino.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Calmino.release.xcconfig"; path = "Target Support Files/Pods-Calmino/Pods-Calmino.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Calmino/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Calmino-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Calmino-Bridging-Header.h"; path = "Calmino/Calmino-Bridging-Header.h"; sourceTree = "<group>"; };
-		FC7F267CAD7D4D73B73CF857 /* SwiftUI.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		FCB158B4DE6746958E9945DC /* ActivityKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
+		FFEA28A38AA4458F80AD02CA /* BreastfeedingLiveActivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = BreastfeedingLiveActivity.swift; path = CalmParentLiveActivity/BreastfeedingLiveActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,27 +77,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6523D7DB307ABF2CE67F53F3 /* Pods_Calmino.framework in Frameworks */,
+				232847DBD924ADFCD2FFA441 /* Pods_Calmino.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		58906465486A4650AD5BE6BC /* Frameworks */ = {
+		D18ACD33161E45C48B9822B0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CAF6CA4091054CAF86141AAA /* ActivityKit.framework in Frameworks */,
-				5727372B8C0147C99D2D0B7A /* WidgetKit.framework in Frameworks */,
-				E047FA3885814042BAEE6CC1 /* SwiftUI.framework in Frameworks */,
+				737D0D02A4C64AB99DB72F1C /* ActivityKit.framework in Frameworks */,
+				08BD3912B8BA4877A8DEF764 /* WidgetKit.framework in Frameworks */,
+				87AC335393D34C57A808279D /* SwiftUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0073431AD6F139C264302038 /* ExpoModulesProviders */ = {
+		0505701464594940FE3E96F0 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				15A677E4EA6CC22D0D24DECD /* Calmino */,
+				1B4AE4BBF688950EDB5AF50E /* Calmino */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -111,36 +111,28 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				BD79C16F712644D0826B7466 /* GoogleService-Info.plist */,
-				779C6AB826CFD9AC9BB97CA4 /* PrivacyInfo.xcprivacy */,
+				990FB34D6796431CA06B9F3E /* GoogleService-Info.plist */,
+				3454912EEECC0ADAF0D1493C /* PrivacyInfo.xcprivacy */,
 			);
 			name = Calmino;
 			sourceTree = "<group>";
 		};
-		15A677E4EA6CC22D0D24DECD /* Calmino */ = {
+		1B4AE4BBF688950EDB5AF50E /* Calmino */ = {
 			isa = PBXGroup;
 			children = (
-				43B24A6F2FFCFAE8690BB436 /* ExpoModulesProvider.swift */,
+				BCBAD1CF26C6C5CFD9041355 /* ExpoModulesProvider.swift */,
 			);
 			name = Calmino;
-			sourceTree = "<group>";
-		};
-		18B41B3CFF9FB09FACEED268 /* CalmParentLiveActivity */ = {
-			isa = PBXGroup;
-			children = (
-				351CA614D4F872BC0DB5D1C3 /* WhiteNoiseLiveActivity.swift */,
-			);
-			name = CalmParentLiveActivity;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				89AA6929B3F5413D904304D5 /* ActivityKit.framework */,
-				5406EE3681AC4566B86AFAEB /* WidgetKit.framework */,
-				FC7F267CAD7D4D73B73CF857 /* SwiftUI.framework */,
-				86B4D27C36B571AE74AD15A7 /* Pods_Calmino.framework */,
+				FCB158B4DE6746958E9945DC /* ActivityKit.framework */,
+				25AE205384C64BFA9C14BF8F /* WidgetKit.framework */,
+				B1B06314818245C282C139E5 /* SwiftUI.framework */,
+				1BD348ED568B333EED0A5ABE /* Pods_Calmino.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -159,16 +151,16 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				6D35DC26577D443D86954D4C /* SleepLiveActivity.swift */,
-				E2EC3F4E1EC94A4AAC51158B /* FeedingLiveActivity.swift */,
-				6C1A1B2A32B0431FA926B7A1 /* BreastfeedingLiveActivity.swift */,
-				437892F4AD1642AD8497242C /* CalmParentLiveActivityBundle.swift */,
-				C1A2B3D4E5F60719 /* TimerIntents.swift */,
-				2BE1B086A2DD472EAD693AF8 /* ActivityAttributes.swift */,
-				8FB8657A1743404DBCC44D13 /* GlassComponents.swift */,
-				EF93EC3BBCF72495C80F7E36 /* Pods */,
-				0073431AD6F139C264302038 /* ExpoModulesProviders */,
-				18B41B3CFF9FB09FACEED268 /* CalmParentLiveActivity */,
+				2A6E03236B09441D8781284D /* BabysitterShiftLiveActivity.swift */,
+				366B530F10B040C4A8D511F4 /* SleepLiveActivity.swift */,
+				223E86F20BCB498EA067366C /* FeedingLiveActivity.swift */,
+				FFEA28A38AA4458F80AD02CA /* BreastfeedingLiveActivity.swift */,
+				56EA0E1693764CE380044C87 /* WhiteNoiseLiveActivity.swift */,
+				DE99F8A1BCE64C4AB5BDBC12 /* CalmParentLiveActivityBundle.swift */,
+				E3EE5F22BA2B475CBC6593EC /* TimerIntents.swift */,
+				6082F7D56A6A4E7BA281C84A /* GlassComponents.swift */,
+				C53AEE247731C409F238340C /* Pods */,
+				0505701464594940FE3E96F0 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -179,7 +171,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* Calmino.app */,
-				E957537D699B442DB36F2233 /* CalmParentLiveActivity.appex */,
+				D858B8E1E4F743B78EA58EC6 /* CalmParentLiveActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -193,11 +185,11 @@
 			path = Calmino/Supporting;
 			sourceTree = "<group>";
 		};
-		EF93EC3BBCF72495C80F7E36 /* Pods */ = {
+		C53AEE247731C409F238340C /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				87BBC1B94E36028936973EAE /* Pods-Calmino.debug.xcconfig */,
-				C2AF5261A2039AD6B987B220 /* Pods-Calmino.release.xcconfig */,
+				E0BA2C75D78D90959A1DD853 /* Pods-Calmino.debug.xcconfig */,
+				E48ABD55B173E3720FF05601 /* Pods-Calmino.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
@@ -211,16 +203,16 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Calmino" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				36252B18035FB09E9E2E2A3F /* [Expo] Configure project */,
+				E0A87D30012A1040BB4111E0 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				F8A7CA3ABEFC40E28C9FC4C2 /* Copy Files */,
-				5626B4AEC5E16E0D2C929EF6 /* [CP] Embed Pods Frameworks */,
-				B10C87A71C23ED8ECBBA0AF0 /* [CP-User] [RNFB] Core Configuration */,
-				0EA010DBC985798643F28447 /* [CP-User] [RNFB] Crashlytics Configuration */,
+				7573D087A65F45E5925475D5 /* Copy Files */,
+				8A981F225FE2060134EE1315 /* [CP] Embed Pods Frameworks */,
+				589B3F3CCE8C0C29C4B1A168 /* [CP-User] [RNFB] Core Configuration */,
+				10E0C7329BF78E3A332BC620 /* [CP-User] [RNFB] Crashlytics Configuration */,
 			);
 			buildRules = (
 			);
@@ -231,13 +223,13 @@
 			productReference = 13B07F961A680F5B00A75B9A /* Calmino.app */;
 			productType = "com.apple.product-type.application";
 		};
-		FB3DD3C20C0245448483B6FD /* CalmParentLiveActivity */ = {
+		479ABAA1312F456A96B16565 /* CalmParentLiveActivity */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 70D4686C3FF84A2683A74618 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */;
+			buildConfigurationList = D3F504BA40144313B4BCBF93 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */;
 			buildPhases = (
-				126C974AA4F74A2285DD6C53 /* Sources */,
-				58906465486A4650AD5BE6BC /* Frameworks */,
-				ADB0D01FD1AE4BBD82B67073 /* Resources */,
+				EA9E7856D7DB47E8AF28AC96 /* Sources */,
+				D18ACD33161E45C48B9822B0 /* Frameworks */,
+				566E512C3F584C4A8461F4A1 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -245,7 +237,7 @@
 			);
 			name = CalmParentLiveActivity;
 			productName = CalmParentLiveActivity;
-			productReference = E957537D699B442DB36F2233 /* CalmParentLiveActivity.appex */;
+			productReference = D858B8E1E4F743B78EA58EC6 /* CalmParentLiveActivity.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -257,13 +249,7 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = Q5555SW7GS;
 						LastSwiftMigration = 1250;
-						ProvisioningStyle = Automatic;
-					};
-					FB3DD3C20C0245448483B6FD = {
-						DevelopmentTeam = Q5555SW7GS;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -281,7 +267,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* Calmino */,
-				FB3DD3C20C0245448483B6FD /* CalmParentLiveActivity */,
+				479ABAA1312F456A96B16565 /* CalmParentLiveActivity */,
 			);
 		};
 /* End PBXProject section */
@@ -294,12 +280,12 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				001B083AB50A4857A1CBDC98 /* GoogleService-Info.plist in Resources */,
-				5AA08F9957E501C2D3A5A50F /* PrivacyInfo.xcprivacy in Resources */,
+				E5A7D29A758F464390D712EE /* GoogleService-Info.plist in Resources */,
+				DFFFA543BACCB62752234E1C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		ADB0D01FD1AE4BBD82B67073 /* Resources */ = {
+		566E512C3F584C4A8461F4A1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -348,7 +334,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		0EA010DBC985798643F28447 /* [CP-User] [RNFB] Crashlytics Configuration */ = {
+		10E0C7329BF78E3A332BC620 /* [CP-User] [RNFB] Crashlytics Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -362,51 +348,18 @@
 			shellPath = /bin/sh;
 			shellScript = "#!/usr/bin/env bash\n#\n# Copyright (c) 2016-present Invertase Limited & Contributors\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this library except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\nset -e\n\nif [[ ${PODS_ROOT} ]]; then\n  echo \"info: Exec FirebaseCrashlytics Run from Pods\"\n  \"${PODS_ROOT}/FirebaseCrashlytics/run\"\nelse\n  echo \"info: Exec FirebaseCrashlytics Run from framework\"\n  \"${PROJECT_DIR}/FirebaseCrashlytics.framework/run\"\nfi\n";
 		};
-		36252B18035FB09E9E2E2A3F /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/Calmino/Calmino.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-Calmino/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-Calmino/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Calmino/expo-configure-project.sh\"\n";
-		};
-		5626B4AEC5E16E0D2C929EF6 /* [CP] Embed Pods Frameworks */ = {
+		589B3F3CCE8C0C29C4B1A168 /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Calmino/Pods-Calmino-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+				"$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
 			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
+			name = "[CP-User] [RNFB] Core Configuration";
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Calmino/Pods-Calmino-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "#!/usr/bin/env bash\n#\n# Copyright (c) 2016-present Invertase Limited & Contributors\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this library except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\n\n##########################################################################\n##########################################################################\n#\n#  NOTE THAT IF YOU CHANGE THIS FILE YOU MUST RUN pod install AFTERWARDS\n#\n#  This file is installed as an Xcode build script in the project file\n#  by cocoapods, and you will not see your changes until you pod install\n#\n##########################################################################\n##########################################################################\n\nset -e\n\n_MAX_LOOKUPS=2;\n_SEARCH_RESULT=''\n_RN_ROOT_EXISTS=''\n_CURRENT_LOOKUPS=1\n_JSON_ROOT=\"'react-native'\"\n_JSON_FILE_NAME='firebase.json'\n_JSON_OUTPUT_BASE64='e30=' # { }\n_CURRENT_SEARCH_DIR=${PROJECT_DIR}\n_PLIST_BUDDY=/usr/libexec/PlistBuddy\n_TARGET_PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n_DSYM_PLIST=\"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist\"\n\n# plist arrays\n_PLIST_ENTRY_KEYS=()\n_PLIST_ENTRY_TYPES=()\n_PLIST_ENTRY_VALUES=()\n\nfunction setPlistValue {\n  echo \"note:      setting plist entry '$1' of type '$2' in file '$4'\"\n  ${_PLIST_BUDDY} -c \"Add :$1 $2 '$3'\" $4 || echo \"note:      '$1' already exists\"\n}\n\nfunction getFirebaseJsonKeyValue () {\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    ruby -Ku -e \"require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output[$_JSON_ROOT]['$2']\"\n  else\n    echo \"\"\n  fi;\n}\n\nfunction jsonBoolToYesNo () {\n  if [[ $1 == \"false\" ]]; then\n    echo \"NO\"\n  elif [[ $1 == \"true\" ]]; then\n    echo \"YES\"\n  else echo \"NO\"\n  fi\n}\n\necho \"note: -> RNFB build script started\"\necho \"note: 1) Locating ${_JSON_FILE_NAME} file:\"\n\nif [[ -z ${_CURRENT_SEARCH_DIR} ]]; then\n  _CURRENT_SEARCH_DIR=$(pwd)\nfi;\n\nwhile true; do\n  _CURRENT_SEARCH_DIR=$(dirname \"$_CURRENT_SEARCH_DIR\")\n  if [[ \"$_CURRENT_SEARCH_DIR\" == \"/\" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then break; fi;\n  echo \"note:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file.\"\n  _SEARCH_RESULT=$(find \"$_CURRENT_SEARCH_DIR\" -maxdepth 2 -name ${_JSON_FILE_NAME} -print | /usr/bin/head -n 1)\n  if [[ ${_SEARCH_RESULT} ]]; then\n    echo \"note:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT\"\n    break;\n  fi;\n  _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))\ndone\n\nif [[ ${_SEARCH_RESULT} ]]; then\n  _JSON_OUTPUT_RAW=$(cat \"${_SEARCH_RESULT}\")\n  if ! _RN_ROOT_EXISTS=$(ruby -Ku -e \"require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]\"); then\n    echo \"error: Failed to parse firebase.json, check for syntax errors.\"\n    exit 1\n  fi\n\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    if ! python3 --version >/dev/null 2>&1; then echo \"error: python3 not found, firebase.json file processing error.\" && exit 1; fi\n    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('\"'${_SEARCH_RESULT}'\"', '\"'rb'\"').read())['${_JSON_ROOT}']), '\"'utf-8'\"')).decode())' || echo \"e30=\")\n  fi\n\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n\n  # config.app_data_collection_default_enabled\n  _APP_DATA_COLLECTION_ENABLED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"app_data_collection_default_enabled\")\n  if [[ $_APP_DATA_COLLECTION_ENABLED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseDataCollectionDefaultEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_DATA_COLLECTION_ENABLED\")\")\n  fi\n\n  # config.analytics_auto_collection_enabled\n  _ANALYTICS_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_auto_collection_enabled\")\n  if [[ $_ANALYTICS_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_COLLECTION\")\")\n  fi\n\n  # config.analytics_collection_deactivated\n  _ANALYTICS_DEACTIVATED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_collection_deactivated\")\n  if [[ $_ANALYTICS_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_DEACTIVATED\")\")\n  fi\n\n  # config.analytics_idfv_collection_enabled\n  _ANALYTICS_IDFV_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_idfv_collection_enabled\")\n  if [[ $_ANALYTICS_IDFV_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_IDFV_COLLECTION\")\")\n  fi\n\n  # config.analytics_default_allow_analytics_storage\n  _ANALYTICS_STORAGE=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_analytics_storage\")\n  if [[ $_ANALYTICS_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_storage\n  _ANALYTICS_AD_STORAGE=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_storage\")\n  if [[ $_ANALYTICS_AD_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_user_data\n  _ANALYTICS_AD_USER_DATA=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_user_data\")\n  if [[ $_ANALYTICS_AD_USER_DATA ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_USER_DATA\")\")\n  fi\n\n  # config.analytics_default_allow_ad_personalization_signals\n  _ANALYTICS_PERSONALIZATION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_personalization_signals\")\n  if [[ $_ANALYTICS_PERSONALIZATION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_PERSONALIZATION\")\")\n  fi\n\n  # config.analytics_registration_with_ad_network_enabled\n  _ANALYTICS_REGISTRATION_WITH_AD_NETWORK=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"google_analytics_registration_with_ad_network_enabled\")\n  if [[ $_ANALYTICS_REGISTRATION_WITH_AD_NETWORK ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_REGISTRATION_WITH_AD_NETWORK\")\")\n  fi\n\n  # config.google_analytics_automatic_screen_reporting_enabled\n  _ANALYTICS_AUTO_SCREEN_REPORTING=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"google_analytics_automatic_screen_reporting_enabled\")\n  if [[ $_ANALYTICS_AUTO_SCREEN_REPORTING ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAutomaticScreenReportingEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_SCREEN_REPORTING\")\")\n  fi\n\n  # config.perf_auto_collection_enabled\n  _PERF_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"perf_auto_collection_enabled\")\n  if [[ $_PERF_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_enabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_AUTO_COLLECTION\")\")\n  fi\n\n  # config.perf_collection_deactivated\n  _PERF_DEACTIVATED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"perf_collection_deactivated\")\n  if [[ $_PERF_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_deactivated\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_DEACTIVATED\")\")\n  fi\n\n  # config.messaging_auto_init_enabled\n  _MESSAGING_AUTO_INIT=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"messaging_auto_init_enabled\")\n  if [[ $_MESSAGING_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseMessagingAutoInitEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_MESSAGING_AUTO_INIT\")\")\n  fi\n\n  # config.in_app_messaging_auto_colllection_enabled\n  _FIAM_AUTO_INIT=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"in_app_messaging_auto_collection_enabled\")\n  if [[ $_FIAM_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseInAppMessagingAutomaticDataCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_FIAM_AUTO_INIT\")\")\n  fi\n\n  # config.app_check_token_auto_refresh\n  _APP_CHECK_TOKEN_AUTO_REFRESH=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"app_check_token_auto_refresh\")\n  if [[ $_APP_CHECK_TOKEN_AUTO_REFRESH ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAppCheckTokenAutoRefreshEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_CHECK_TOKEN_AUTO_REFRESH\")\")\n  fi\n\n  # config.crashlytics_disable_auto_disabler - undocumented for now - mainly for debugging, document if becomes useful\n  _CRASHLYTICS_AUTO_DISABLE_ENABLED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"crashlytics_disable_auto_disabler\")\n  if [[ $_CRASHLYTICS_AUTO_DISABLE_ENABLED == \"true\" ]]; then\n    echo \"Disabled Crashlytics auto disabler.\" # do nothing\n  else\n    _PLIST_ENTRY_KEYS+=(\"FirebaseCrashlyticsCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"NO\")\n  fi\nelse\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n  echo \"warning:   A firebase.json file was not found, whilst this file is optional it is recommended to include it to configure firebase services in React Native Firebase.\"\nfi;\n\necho \"note: 2) Injecting Info.plist entries: \"\n\n# Log out the keys we're adding\nfor i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n  echo \"    ->  $i) ${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\"\ndone\n\nfor plist in \"${_TARGET_PLIST}\" \"${_DSYM_PLIST}\" ; do\n  if [[ -f \"${plist}\" ]]; then\n\n    # paths with spaces break the call to setPlistValue. temporarily modify\n    # the shell internal field separator variable (IFS), which normally\n    # includes spaces, to consist only of line breaks\n    oldifs=$IFS\n    IFS=\"\n\"\n\n    for i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n      setPlistValue \"${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\" \"${plist}\"\n    done\n\n    # restore the original internal field separator value\n    IFS=$oldifs\n  else\n    echo \"warning:   A Info.plist build output file was not found (${plist})\"\n  fi\ndone\n\necho \"note: <- RNFB build script finished\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -488,43 +441,76 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Calmino/Pods-Calmino-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		B10C87A71C23ED8ECBBA0AF0 /* [CP-User] [RNFB] Core Configuration */ = {
+		8A981F225FE2060134EE1315 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+				"${PODS_ROOT}/Target Support Files/Pods-Calmino/Pods-Calmino-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
-			name = "[CP-User] [RNFB] Core Configuration";
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#!/usr/bin/env bash\n#\n# Copyright (c) 2016-present Invertase Limited & Contributors\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this library except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\n\n##########################################################################\n##########################################################################\n#\n#  NOTE THAT IF YOU CHANGE THIS FILE YOU MUST RUN pod install AFTERWARDS\n#\n#  This file is installed as an Xcode build script in the project file\n#  by cocoapods, and you will not see your changes until you pod install\n#\n##########################################################################\n##########################################################################\n\nset -e\n\n_MAX_LOOKUPS=2;\n_SEARCH_RESULT=''\n_RN_ROOT_EXISTS=''\n_CURRENT_LOOKUPS=1\n_JSON_ROOT=\"'react-native'\"\n_JSON_FILE_NAME='firebase.json'\n_JSON_OUTPUT_BASE64='e30=' # { }\n_CURRENT_SEARCH_DIR=${PROJECT_DIR}\n_PLIST_BUDDY=/usr/libexec/PlistBuddy\n_TARGET_PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n_DSYM_PLIST=\"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist\"\n\n# plist arrays\n_PLIST_ENTRY_KEYS=()\n_PLIST_ENTRY_TYPES=()\n_PLIST_ENTRY_VALUES=()\n\nfunction setPlistValue {\n  echo \"note:      setting plist entry '$1' of type '$2' in file '$4'\"\n  ${_PLIST_BUDDY} -c \"Add :$1 $2 '$3'\" $4 || echo \"note:      '$1' already exists\"\n}\n\nfunction getFirebaseJsonKeyValue () {\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    ruby -Ku -e \"require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output[$_JSON_ROOT]['$2']\"\n  else\n    echo \"\"\n  fi;\n}\n\nfunction jsonBoolToYesNo () {\n  if [[ $1 == \"false\" ]]; then\n    echo \"NO\"\n  elif [[ $1 == \"true\" ]]; then\n    echo \"YES\"\n  else echo \"NO\"\n  fi\n}\n\necho \"note: -> RNFB build script started\"\necho \"note: 1) Locating ${_JSON_FILE_NAME} file:\"\n\nif [[ -z ${_CURRENT_SEARCH_DIR} ]]; then\n  _CURRENT_SEARCH_DIR=$(pwd)\nfi;\n\nwhile true; do\n  _CURRENT_SEARCH_DIR=$(dirname \"$_CURRENT_SEARCH_DIR\")\n  if [[ \"$_CURRENT_SEARCH_DIR\" == \"/\" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then break; fi;\n  echo \"note:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file.\"\n  _SEARCH_RESULT=$(find \"$_CURRENT_SEARCH_DIR\" -maxdepth 2 -name ${_JSON_FILE_NAME} -print | /usr/bin/head -n 1)\n  if [[ ${_SEARCH_RESULT} ]]; then\n    echo \"note:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT\"\n    break;\n  fi;\n  _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))\ndone\n\nif [[ ${_SEARCH_RESULT} ]]; then\n  _JSON_OUTPUT_RAW=$(cat \"${_SEARCH_RESULT}\")\n  if ! _RN_ROOT_EXISTS=$(ruby -Ku -e \"require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]\"); then\n    echo \"error: Failed to parse firebase.json, check for syntax errors.\"\n    exit 1\n  fi\n\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    if ! python3 --version >/dev/null 2>&1; then echo \"error: python3 not found, firebase.json file processing error.\" && exit 1; fi\n    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('\"'${_SEARCH_RESULT}'\"', '\"'rb'\"').read())['${_JSON_ROOT}']), '\"'utf-8'\"')).decode())' || echo \"e30=\")\n  fi\n\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n\n  # config.app_data_collection_default_enabled\n  _APP_DATA_COLLECTION_ENABLED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"app_data_collection_default_enabled\")\n  if [[ $_APP_DATA_COLLECTION_ENABLED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseDataCollectionDefaultEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_DATA_COLLECTION_ENABLED\")\")\n  fi\n\n  # config.analytics_auto_collection_enabled\n  _ANALYTICS_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_auto_collection_enabled\")\n  if [[ $_ANALYTICS_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_COLLECTION\")\")\n  fi\n\n  # config.analytics_collection_deactivated\n  _ANALYTICS_DEACTIVATED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_collection_deactivated\")\n  if [[ $_ANALYTICS_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_DEACTIVATED\")\")\n  fi\n\n  # config.analytics_idfv_collection_enabled\n  _ANALYTICS_IDFV_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_idfv_collection_enabled\")\n  if [[ $_ANALYTICS_IDFV_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_IDFV_COLLECTION\")\")\n  fi\n\n  # config.analytics_default_allow_analytics_storage\n  _ANALYTICS_STORAGE=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_analytics_storage\")\n  if [[ $_ANALYTICS_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_storage\n  _ANALYTICS_AD_STORAGE=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_storage\")\n  if [[ $_ANALYTICS_AD_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_user_data\n  _ANALYTICS_AD_USER_DATA=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_user_data\")\n  if [[ $_ANALYTICS_AD_USER_DATA ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_USER_DATA\")\")\n  fi\n\n  # config.analytics_default_allow_ad_personalization_signals\n  _ANALYTICS_PERSONALIZATION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_personalization_signals\")\n  if [[ $_ANALYTICS_PERSONALIZATION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_PERSONALIZATION\")\")\n  fi\n\n  # config.analytics_registration_with_ad_network_enabled\n  _ANALYTICS_REGISTRATION_WITH_AD_NETWORK=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"google_analytics_registration_with_ad_network_enabled\")\n  if [[ $_ANALYTICS_REGISTRATION_WITH_AD_NETWORK ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_REGISTRATION_WITH_AD_NETWORK\")\")\n  fi\n\n  # config.google_analytics_automatic_screen_reporting_enabled\n  _ANALYTICS_AUTO_SCREEN_REPORTING=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"google_analytics_automatic_screen_reporting_enabled\")\n  if [[ $_ANALYTICS_AUTO_SCREEN_REPORTING ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAutomaticScreenReportingEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_SCREEN_REPORTING\")\")\n  fi\n\n  # config.perf_auto_collection_enabled\n  _PERF_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"perf_auto_collection_enabled\")\n  if [[ $_PERF_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_enabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_AUTO_COLLECTION\")\")\n  fi\n\n  # config.perf_collection_deactivated\n  _PERF_DEACTIVATED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"perf_collection_deactivated\")\n  if [[ $_PERF_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_deactivated\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_DEACTIVATED\")\")\n  fi\n\n  # config.messaging_auto_init_enabled\n  _MESSAGING_AUTO_INIT=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"messaging_auto_init_enabled\")\n  if [[ $_MESSAGING_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseMessagingAutoInitEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_MESSAGING_AUTO_INIT\")\")\n  fi\n\n  # config.in_app_messaging_auto_colllection_enabled\n  _FIAM_AUTO_INIT=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"in_app_messaging_auto_collection_enabled\")\n  if [[ $_FIAM_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseInAppMessagingAutomaticDataCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_FIAM_AUTO_INIT\")\")\n  fi\n\n  # config.app_check_token_auto_refresh\n  _APP_CHECK_TOKEN_AUTO_REFRESH=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"app_check_token_auto_refresh\")\n  if [[ $_APP_CHECK_TOKEN_AUTO_REFRESH ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAppCheckTokenAutoRefreshEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_CHECK_TOKEN_AUTO_REFRESH\")\")\n  fi\n\n  # config.crashlytics_disable_auto_disabler - undocumented for now - mainly for debugging, document if becomes useful\n  _CRASHLYTICS_AUTO_DISABLE_ENABLED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"crashlytics_disable_auto_disabler\")\n  if [[ $_CRASHLYTICS_AUTO_DISABLE_ENABLED == \"true\" ]]; then\n    echo \"Disabled Crashlytics auto disabler.\" # do nothing\n  else\n    _PLIST_ENTRY_KEYS+=(\"FirebaseCrashlyticsCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"NO\")\n  fi\nelse\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n  echo \"warning:   A firebase.json file was not found, whilst this file is optional it is recommended to include it to configure firebase services in React Native Firebase.\"\nfi;\n\necho \"note: 2) Injecting Info.plist entries: \"\n\n# Log out the keys we're adding\nfor i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n  echo \"    ->  $i) ${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\"\ndone\n\nfor plist in \"${_TARGET_PLIST}\" \"${_DSYM_PLIST}\" ; do\n  if [[ -f \"${plist}\" ]]; then\n\n    # paths with spaces break the call to setPlistValue. temporarily modify\n    # the shell internal field separator variable (IFS), which normally\n    # includes spaces, to consist only of line breaks\n    oldifs=$IFS\n    IFS=\"\n\"\n\n    for i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n      setPlistValue \"${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\" \"${plist}\"\n    done\n\n    # restore the original internal field separator value\n    IFS=$oldifs\n  else\n    echo \"warning:   A Info.plist build output file was not found (${plist})\"\n  fi\ndone\n\necho \"note: <- RNFB build script finished\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Calmino/Pods-Calmino-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E0A87D30012A1040BB4111E0 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/Calmino/Calmino.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-Calmino/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-Calmino/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Calmino/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		126C974AA4F74A2285DD6C53 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				536AB84F62804C2CA082417A /* SleepLiveActivity.swift in Sources */,
-				A42B8E4D3E58469E84071DC8 /* FeedingLiveActivity.swift in Sources */,
-				BE3368101EC448E0BC3CE5A8 /* BreastfeedingLiveActivity.swift in Sources */,
-				364FC37E105449EFA59FE418 /* CalmParentLiveActivityBundle.swift in Sources */,
-				9826719A9F9242A4A78ECD90 /* ActivityAttributes.swift in Sources */,
-				DB9CD87D93F94F78A8AD02AB /* GlassComponents.swift in Sources */,
-				C1A2B3D4E5F60718 /* TimerIntents.swift in Sources */,
-				6E34AC7597A24F94D9A14EBF /* WhiteNoiseLiveActivity.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				91C7FF74EF69586E2BB7959C /* ExpoModulesProvider.swift in Sources */,
+				DD9BAA98CF0E037417487088 /* ExpoModulesProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA9E7856D7DB47E8AF28AC96 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				48562E188CDB4D3185CD6F7B /* BabysitterShiftLiveActivity.swift in Sources */,
+				E71F88C2889B4A7289C9F66F /* SleepLiveActivity.swift in Sources */,
+				D56B54779E9348B79577C714 /* FeedingLiveActivity.swift in Sources */,
+				E745D1E61008469E8A49E2DB /* BreastfeedingLiveActivity.swift in Sources */,
+				A6BC658AF9AB46EC80A5CF9D /* WhiteNoiseLiveActivity.swift in Sources */,
+				B122A19EA4674CE7A50BA3FB /* CalmParentLiveActivityBundle.swift in Sources */,
+				B01708CD6B1C4E669ABB7A90 /* TimerIntents.swift in Sources */,
+				8EFAF5B261CA49248775348F /* GlassComponents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -533,15 +519,12 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 87BBC1B94E36028936973EAE /* Pods-Calmino.debug.xcconfig */;
+			baseConfigurationReference = E0BA2C75D78D90959A1DD853 /* Pods-Calmino.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Calmino/Calmino.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Q5555SW7GS;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -572,15 +555,12 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C2AF5261A2039AD6B987B220 /* Pods-Calmino.release.xcconfig */;
+			baseConfigurationReference = E48ABD55B173E3720FF05601 /* Pods-Calmino.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Calmino/Calmino.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = Calmino/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -603,11 +583,12 @@
 			};
 			name = Release;
 		};
-		691C8EC80FF846A387BCBFA9 /* Debug */ = {
+		48F9A23EAEEE411989D48257 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Q5555SW7GS;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -773,11 +754,12 @@
 			};
 			name = Release;
 		};
-		A11036903E454BCEB5EB383F /* Release */ = {
+		E7BE5E0EF4A0449BB220E860 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
@@ -807,20 +789,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		70D4686C3FF84A2683A74618 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				691C8EC80FF846A387BCBFA9 /* Debug */,
-				A11036903E454BCEB5EB383F /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Calmino" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3F504BA40144313B4BCBF93 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				48F9A23EAEEE411989D48257 /* Debug */,
+				E7BE5E0EF4A0449BB220E860 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

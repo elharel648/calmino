@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { Check, Pencil } from 'lucide-react-native';
+import { Check, SlidersHorizontal } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSleepTimer } from '../../context/SleepTimerContext';
 import { useFoodTimer } from '../../context/FoodTimerContext';
@@ -66,7 +66,7 @@ const QuickActions = memo<QuickActionsProps>(({
     supplementsTotalCount,
     dynamicStyles,
 }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const sleepTimer = useSleepTimer();
     const foodTimer = useFoodTimer();
@@ -222,7 +222,7 @@ const QuickActions = memo<QuickActionsProps>(({
                     {t('home.quickActions')}
                 </Text>
                 <TouchableOpacity
-                    style={styles.editBtn}
+                    style={[styles.editBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)', borderWidth: 0.5, borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
                     onPress={() => {
                         setEditModalVisible(true);
                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -231,8 +231,8 @@ const QuickActions = memo<QuickActionsProps>(({
                     accessibilityRole="button"
                     accessibilityLabel={t('stats.editOrder')}
                 >
-                    <Pencil size={13} color="#007AFF" strokeWidth={1.5} />
-                    <Text style={[styles.editBtnText, { color: '#007AFF' }]}>{t('stats.editOrder')}</Text>
+                    <SlidersHorizontal size={13} color={isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'} strokeWidth={2} />
+                    <Text style={[styles.editBtnText, { color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>{t('stats.editOrder')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -301,17 +301,16 @@ const styles = StyleSheet.create({
         letterSpacing: -0.4,
     },
     editBtn: {
-        flexDirection: 'row-reverse',
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
+        gap: 6,
         paddingVertical: 6,
         paddingHorizontal: 12,
-        borderRadius: 100,
-        backgroundColor: 'rgba(0,122,255,0.08)',
+        borderRadius: 16,
     },
     editBtnText: {
         fontSize: 13,
-        fontWeight: '400',
+        fontWeight: '600',
     },
     sliderWrapper: {
         position: 'relative',

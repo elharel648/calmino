@@ -3,8 +3,7 @@ import WidgetKit
 import SwiftUI
 
 // MARK: - Design Tokens
-
-private let noiseColor = Color(red: 0.25, green: 0.72, blue: 0.85)
+private let noiseColor = Color(red: 0.15, green: 0.65, blue: 0.85)
 
 // MARK: - White Noise Live Activity
 
@@ -16,15 +15,13 @@ struct WhiteNoiseLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
-                // ── Expanded Leading ──────────────────────────────────────
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
-                        Image(systemName: "waveform")
+                        Image(systemName: "speaker.wave.2.fill")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(noiseColor)
-
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("רעש לבן")
+                            Text("מנגן כרגע")
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
                             Text(context.attributes.soundName)
@@ -34,8 +31,7 @@ struct WhiteNoiseLiveActivity: Widget {
                     }
                     .padding(.leading, 4)
                 }
-
-                // ── Expanded Trailing ─────────────────────────────────────
+                
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(context.state.startTime, style: .timer)
                         .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -43,24 +39,22 @@ struct WhiteNoiseLiveActivity: Widget {
                         .foregroundStyle(.white)
                         .padding(.trailing, 4)
                 }
-
-                // ── Expanded Bottom ───────────────────────────────────────
+                
                 DynamicIslandExpandedRegion(.bottom) {
                     if #available(iOS 17, *) {
-                        HStack(spacing: 10) {
+                        HStack {
                             Spacer()
-                            Link(destination: URL(string: "calmino://stop-whitenoise")!) {
+                            Link(destination: URL(string: "calmino://stop-timer?type=white_noise")!) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "stop.fill")
                                         .font(.system(size: 12, weight: .bold))
-                                    Text("עצור")
+                                    Text("סגור")
                                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                                 }
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.white.opacity(0.75))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(noiseColor.opacity(0.25), in: Capsule())
-                                .overlay(Capsule().stroke(noiseColor.opacity(0.5), lineWidth: 1))
+                                .background(Color.white.opacity(0.08), in: Capsule())
                             }
                         }
                         .padding(.horizontal, 8)
@@ -69,17 +63,16 @@ struct WhiteNoiseLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: "waveform")
+                Image(systemName: "speaker.wave.2.fill")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(noiseColor)
-
             } compactTrailing: {
                 Text(context.state.startTime, style: .timer)
                     .monospacedDigit()
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
             } minimal: {
-                Image(systemName: "waveform")
+                Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 13))
                     .foregroundStyle(noiseColor)
             }
@@ -92,53 +85,47 @@ struct WhiteNoiseLiveActivity: Widget {
 @available(iOS 16.2, *)
 struct WhiteNoiseLockScreenView: View {
     let context: ActivityViewContext<WhiteNoiseActivityAttributes>
-
+    
     var body: some View {
         ZStack {
-            // Background
             Rectangle()
                 .fill(Color.black)
             RadialGradient(
-                colors: [noiseColor.opacity(0.18), .clear],
+                colors: [noiseColor.opacity(0.25), .clear],
                 center: .topLeading,
                 startRadius: 20,
                 endRadius: 200
             )
-
+            
             HStack(alignment: .center, spacing: 0) {
-                // Left — info + timer
                 VStack(alignment: .leading, spacing: 8) {
-                    // Header
                     HStack(spacing: 8) {
-                        Image(systemName: "waveform")
+                        Image(systemName: "speaker.wave.3.fill")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(noiseColor)
-
                         Text(context.attributes.soundName)
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.75))
                     }
-
-                    // Timer
                     Text(context.state.startTime, style: .timer)
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                 }
-
+                
                 Spacer()
-
-                // Right — Stop button
+                
                 if #available(iOS 17, *) {
-                    Link(destination: URL(string: "calmino://stop-whitenoise")!) {
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 19, weight: .bold))
-                            .foregroundStyle(.black)
-                            .frame(width: 52, height: 52)
-                            .background(.white, in: Circle())
+                    Link(destination: URL(string: "calmino://stop-timer?type=white_noise")!) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .frame(width: 36, height: 36)
+                            .background(Color(white: 0.18), in: Circle())
                     }
+                    .environment(\.layoutDirection, .rightToLeft)
                 } else {
-                    Image(systemName: "waveform.badge.magnifyingglass")
+                    Image(systemName: "music.note")
                         .font(.system(size: 32, weight: .thin))
                         .foregroundStyle(noiseColor.opacity(0.35))
                 }

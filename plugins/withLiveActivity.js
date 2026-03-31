@@ -27,15 +27,17 @@ const withLiveActivity = (config) => {
 
       // רשימה מעודכנת של קבצים להעתקה
       const filesToCopy = [
-        'ActivityAttributes.swift',
         'BabysitterShiftLiveActivity.swift',
         'SleepLiveActivity.swift',
         'FeedingLiveActivity.swift',
         'BreastfeedingLiveActivity.swift',
         'WhiteNoiseLiveActivity.swift',
         'CalmParentLiveActivityBundle.swift',
+        'TimerIntents.swift',
         'Info.plist',
         'GlassComponents.swift',
+        'CalmParentLiveActivity.entitlements',
+        'SharedActivityAttributes.swift',
       ];
 
       let copiedCount = 0;
@@ -43,12 +45,27 @@ const withLiveActivity = (config) => {
         const sourcePath = path.join(sourceDir, fileName);
         const targetPath = path.join(targetDir, fileName);
 
-        if (fs.existsSync(sourcePath)) {
-          fs.copyFileSync(sourcePath, targetPath);
-          console.log(`✅ Copied ${fileName} to ${targetDir}`);
-          copiedCount++;
-        } else {
-          console.warn(`⚠️ Source file not found: ${sourcePath}`);
+        if (!fs.existsSync(targetPath)) {
+          // If copying SharedActivityAttributes, pull it from local-modules/shared-attributes
+          if (fileName === 'SharedActivityAttributes.swift') {
+            const localModulePath = path.join(projectRoot, 'local-modules', 'activity-kit-module-v2', 'ios', 'SharedActivityAttributes.swift');
+            if (fs.existsSync(localModulePath)) {
+              fs.copyFileSync(localModulePath, targetPath);
+              console.log(`✅ Copied ${fileName} from local-modules to ${targetDir}`);
+              copiedCount++;
+            } else {
+              console.warn(`⚠️ SharedActivityAttributes.swift not found in local-modules`);
+            }
+          } else {
+            // standard copy
+            if (fs.existsSync(sourcePath)) {
+              fs.copyFileSync(sourcePath, targetPath);
+              console.log(`✅ Copied ${fileName} to ${targetDir}`);
+              copiedCount++;
+            } else {
+              console.warn(`⚠️ Source file not found: ${sourcePath}`);
+            }
+          }
         }
       });
 
@@ -94,8 +111,8 @@ const withLiveActivity = (config) => {
       'BreastfeedingLiveActivity.swift',
       'WhiteNoiseLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
-      'ActivityAttributes.swift', // הכרחי שיהיה בשניהם!
-      'GlassComponents.swift', // הכרחי שיהיה בשניהם!
+      'TimerIntents.swift',
+      'GlassComponents.swift', 
     ];
 
     const sourcesPhase = target.pbxNativeTarget.buildPhases.find(p => p && p.comment && p.comment.includes('Sources'));
@@ -133,9 +150,6 @@ const withLiveActivity = (config) => {
       const glassPath = path.join(widgetName, 'GlassComponents.swift');
       xcodeProject.addSourceFile(glassPath, { target: mainTargetKey }, mainGroupKey);
 
-      const attributesPath = path.join(widgetName, 'ActivityAttributes.swift');
-      xcodeProject.addSourceFile(attributesPath, { target: mainTargetKey }, mainGroupKey);
-
       // FIX node-xcode BUG: Remove widget-only files leaked into the main target!
       const mainSourcesPhase = xcodeProject.pbxSourcesBuildPhaseObj(mainTargetKey);
       if (mainSourcesPhase && mainSourcesPhase.files) {
@@ -147,7 +161,8 @@ const withLiveActivity = (config) => {
             comment.includes('FeedingLiveActivity.swift') ||
             comment.includes('BreastfeedingLiveActivity.swift') ||
             comment.includes('WhiteNoiseLiveActivity.swift') ||
-            comment.includes('CalmParentLiveActivityBundle.swift')
+            comment.includes('CalmParentLiveActivityBundle.swift') ||
+            comment.includes('TimerIntents.swift')
           ) {
             return false; // strip them from Calmino target
           }
@@ -178,7 +193,7 @@ const withLiveActivity = (config) => {
             settings['"CODE_SIGN_IDENTITY[sdk=iphoneos*]"'] = '"Apple Development"';
           }
 
-          settings.CODE_SIGN_ENTITLEMENTS = '';
+          settings.CODE_SIGN_ENTITLEMENTS = '"CalmParentLiveActivity/CalmParentLiveActivity.entitlements"';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
 
           // Forcefully delete manual provisioning overrides if they exist in the raw Xcode project

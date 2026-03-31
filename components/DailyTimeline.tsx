@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
-import { Utensils, Moon, Droplets, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
+import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
+import DiaperIcon from './Common/DiaperIcon';
 import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
 import Svg, { Path } from 'react-native-svg';
 import { getRecentHistory, deleteEvent } from '../services/firebaseService';
@@ -79,7 +80,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       label: t('actions.sleep'),
     },
     diaper: {
-      icon: Droplets,
+      icon: DiaperIcon,
       color: theme.actionColors.diaper.accentColor,
       label: t('actions.diaper'),
     },
@@ -281,9 +282,18 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   // Format event details
   const getEventDetails = (event: TimelineEvent) => {
     if (event.type === 'food') {
-      // Show start and end times if available (timerange mode)
+      // Timerange mode: show DURATION only (category is already in the meta line below)
+      if (event.startTime && event.endTime && event.duration && event.duration > 0) {
+        const h = Math.floor(event.duration / 3600);
+        const m = Math.floor((event.duration % 3600) / 60);
+        if (h > 0) return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+        if (m > 0) return `${m} דק'`;
+        // Very short — show amount if available
+        return event.amount || t('timeline.food');
+      }
+      // Timerange with no duration: show amount/note or generic subtype
       if (event.startTime && event.endTime) {
-        return `${event.startTime} → ${event.endTime}`;
+        return event.amount || event.note || t('timeline.food');
       }
       if (event.subType === 'bottle') {
         // Handle missing amount gracefully
@@ -300,9 +310,20 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       }
       return event.amount || event.note || t('timeline.food');
     } else if (event.type === 'sleep') {
-      // Show start and end times if available (timerange mode)
+      // Timerange mode: show DURATION as the primary detail
+      if (event.startTime && event.endTime && event.duration && event.duration > 0) {
+        const h = Math.floor(event.duration / 3600);
+        const m = Math.floor((event.duration % 3600) / 60);
+        const s = Math.floor(event.duration % 60);
+        if (h > 0) return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+        if (m > 0 && s > 0) return `${m} דק' ו-${s} שנ'`;
+        if (m > 0) return `${m} דקות`;
+        if (s > 0) return `${s} שניות`;
+        return t('timeline.sleep');
+      }
+      // Timerange with no duration: fallback
       if (event.startTime && event.endTime) {
-        return `${event.startTime} → ${event.endTime}`;
+        return t('timeline.sleep');
       }
       // Extract duration from duration field
       if (event.duration && event.duration > 0) {
@@ -355,25 +376,14 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
   const getEventSubtext = (event: TimelineEvent) => {
     if (event.type === 'food') {
-      // For timerange mode: show total duration in subtext (handled in grouped view separately)
-      if (event.startTime && event.endTime && event.duration && !useGrouping) {
-        const h = Math.floor(event.duration / 3600);
-        const m = Math.floor((event.duration % 3600) / 60);
-        let durationText = '';
-        if (h > 0) {
-          durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
-        } else {
-          durationText = `${m} דקות`;
-        }
-        // Add amount/note if exists
-        if (event.amount) {
-          return `${durationText} • ${event.amount}`;
-        }
+      // For timerange mode: duration is already shown in details — only show amount/note here
+      if (event.startTime && event.endTime && !useGrouping) {
+        if (event.amount) return event.amount;
         if (event.note && event.note.includes(' | ')) {
           const parts = event.note.split(' | ');
-          return parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+          return parts[1] ? parts[1].substring(0, 35) : '';
         }
-        return durationText;
+        return '';
       }
       if (event.subType === 'bottle') {
         // Don't show "לא צוין" - just show bottle label or note
@@ -388,22 +398,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       }
       if (event.subType === 'pumping') return event.note || t('timeline.pumping');
     } else if (event.type === 'sleep') {
-      // For timerange mode: show total duration in subtext (handled in grouped view separately)
-      if (event.startTime && event.endTime && event.duration && !useGrouping) {
-        const h = Math.floor(event.duration / 3600);
-        const m = Math.floor((event.duration % 3600) / 60);
-        let durationText = '';
-        if (h > 0) {
-          durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
-        } else {
-          durationText = `${m} דקות`;
-        }
-        // Add user note if exists
+      // For timerange mode: duration is already shown in details — only show user note here
+      if (event.startTime && event.endTime && !useGrouping) {
         if (event.note && event.note.includes(' | ')) {
           const parts = event.note.split(' | ');
-          return parts[1] ? `${durationText} • ${parts[1].substring(0, 30)}` : durationText;
+          return parts[1] ? parts[1].substring(0, 35) : '';
         }
-        return durationText;
+        return '';
       }
       // Handle "שינה חדשה" - don't show as subtext, already in title
       if (event.note && event.note.includes('שינה חדשה')) {
@@ -438,13 +439,15 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const visibleEvents = isExpanded ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
   const hasMore = events.length > INITIAL_VISIBLE_COUNT;
 
+  // Hide reporter badge when all events share the same reporter
+  const uniqueReporters = new Set(events.map(e => e.creatorId || e.userId).filter(Boolean));
+  const showReporterBadge = uniqueReporters.size > 1;
+
   if (loading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-          </View>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
         </View>
         <TimelineSkeleton />
       </View>
@@ -455,9 +458,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-          </View>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
         </View>
         <View style={[styles.errorContainer, { backgroundColor: theme.card }]}>
           <AlertCircle size={24} color={theme.danger} />
@@ -479,9 +480,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-          </View>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
         </View>
 
         <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -502,21 +501,18 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {/* Header - Only show if NOT in sectioned/grouped mode (e.g. Home Screen) */}
       {!useGrouping && (
         <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-            <View style={[styles.accentLine, { backgroundColor: theme.accent }]} />
-          </View>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
 
-          {/* Stats Pills */}
+          {/* Stats Pills — inline right of title */}
           <View style={styles.statsContainer}>
             {Object.entries(stats).map(([type, count]) => {
               const config = TYPE_CONFIG[type as keyof typeof TYPE_CONFIG];
-              if (!config) return null; // Skip if type not in config
+              if (!config) return null;
               const Icon = config.icon;
               return (
-                <View key={type} style={[styles.statPill, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.18 : 0.1) }]}>
+                <View key={type} style={[styles.statPill, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.08) }]}>
+                  <Icon size={10} color={config.color} strokeWidth={2.5} />
                   <Text style={[styles.statCount, { color: config.color }]}>{count}</Text>
-                  <Icon size={11} color={config.color} strokeWidth={1.5} />
                 </View>
               );
             })}
@@ -598,13 +594,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     hour12: false
                   });
 
-                  // Build subtitle: show "אוכל · 120מ"ל" when there's extra info, or just "אוכל" if the
-                  // details text alone doesn't make the type obvious (i.e. details === config.label)
+                  // Build subtitle: show "אוכל · 120מ"ל" when there's extra info
+                  // When details IS the label (e.g. "אוכל"), don't repeat it — show time instead
                   const detailsIsJustLabel = details === config.label;
                   const subtitle = subtext
                     ? `${config.label} · ${subtext}`
                     : detailsIsJustLabel
-                      ? config.label   // title already IS t('tracking.sleep')/t('tracking.diaper') etc. — still show label for clarity
+                      ? `${config.label} · ${timeStr}`   // Show category + time so there's useful info
                       : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
                   return (
@@ -623,23 +619,23 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         >
 
                           {/* LEFT (RTL: last in JSX): time */}
-                          <Text style={[styles.historyTime, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
+                          <Text style={[styles.historyTime, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
 
                           {/* CENTER: title + subtitle */}
                           <View style={styles.historyContent}>
-                            <Text style={[styles.historyTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+                            <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 16, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
                               {details}
                             </Text>
                             {subtitle ? (
-                              <Text style={[styles.historySubtext, { color: config.color }]} numberOfLines={1}>
+                              <Text style={[styles.historySubtext, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontSize: 13, fontWeight: '400', marginTop: 2 }]} numberOfLines={1}>
                                 {subtitle}
                               </Text>
                             ) : null}
                           </View>
 
                           {/* RIGHT (RTL: first in JSX): icon badge */}
-                          <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.1) }]}>
-                            <Icon size={17} color={config.color} strokeWidth={2} />
+                          <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.1) }]}>
+                            <Icon size={17} color={config.color} strokeWidth={2.5} />
                           </View>
 
                         </TouchableOpacity>
@@ -703,60 +699,60 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   onDelete={() => handleDelete(event.id)}
                 >
                   <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.eventRow}>
-                    {/* Left side: Time + Dot */}
-                    <View style={styles.leftSection}>
-                      <Text style={[styles.time, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
-                        {event.timestamp.toLocaleTimeString('he-IL', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false
-                        })}
-                      </Text>
-                      <Text style={[styles.timeAgo, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{getTimeAgo(event.timestamp)}</Text>
-                    </View>
-
                     {/* Timeline icon + line */}
                     <View style={styles.timelineTrack}>
-                      <View style={[styles.timelineIcon, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.22 : 0.12) }]}>
-                        <Icon size={14} color={config.color} strokeWidth={2} />
+                      <View style={[styles.timelineIcon, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.18 : 0.12) }]}>
+                        <Icon size={15} color={config.color} strokeWidth={2} />
                       </View>
                       {/* Line connector */}
-                      {!isLast && <View style={[styles.connector, { backgroundColor: config.color, opacity: 0.2 }]} />}
+                      {!isLast && <View style={[styles.connector, { backgroundColor: theme.border, opacity: 0.4 }]} />}
                     </View>
 
-                    {/* Right side: Content */}
-                    <View style={[styles.eventCardContainer, isFirst && { shadowOpacity: 0.1, shadowRadius: 14 }]}>
+                    {/* Right side: Content (Left side visually in RTL) */}
+                    <View style={[styles.eventCardContainer]}>
                       <View style={[styles.eventCard, {
-                        backgroundColor: isFirst
-                          ? hexToRgba(config.color, isDarkMode ? 0.1 : 0.05)
-                          : theme.card,
-                        borderColor: isFirst ? hexToRgba(config.color, 0.28) : theme.border,
+                        backgroundColor: theme.card,
+                        borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                        borderRightWidth: 3,
+                        borderRightColor: config.color,
                       }]}>
-                        {/* Right accent strip - only for latest event */}
-                        {isFirst && (
-                          <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, backgroundColor: config.color, borderTopRightRadius: 18, borderBottomRightRadius: 18, opacity: 0.75 }} />
-                        )}
-                        {/* t('timeline.now') / "אחרון" badge for latest event */}
-                        {isFirst && (
-                          <View style={{ position: 'absolute', top: 8, left: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: isRecent ? '#34D399' : config.color }} />
-                            <Text style={{ fontSize: 10, fontWeight: '700', color: isRecent ? '#34D399' : config.color, letterSpacing: 0.3 }}>
-                              {isRecent ? t('timeline.now') : 'אחרון'}
-                            </Text>
-                          </View>
-                        )}
                         <View style={styles.cardContent}>
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: config.color, marginBottom: 1, textAlign: 'right', opacity: 0.75 }}>{config.label}</Text>
-                          <View style={styles.eventHeader}>
-                            <Text style={[styles.eventTitle, { color: theme.textPrimary }]}>{details}</Text>
+                          {/* Details — main content, prominent */}
+                          <Text style={{ color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.2, textAlign: 'right', lineHeight: 20 }}>{details}</Text>
+
+                          {/* Meta line: label · time — all right-aligned, single line */}
+                          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                            {/* Only show category label if the main detail text has unique content */}
+                            {details !== config.label && (
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: config.color }}>{config.label}</Text>
+                            )}
+                            {details !== config.label && (
+                              <Text style={{ fontSize: 10, color: theme.textTertiary }}>·</Text>
+                            )}
+                            {isFirst && isRecent ? (
+                              <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 3 }}>
+                                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#34D399' }} />
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: '#34D399' }}>
+                                  {t('timeline.now')}
+                                </Text>
+                              </View>
+                            ) : (
+                              <Text style={{ fontSize: 10, fontWeight: '500', color: theme.textTertiary, fontVariant: ['tabular-nums'] }}>
+                                {details === config.label ? config.label + ' · ' : ''}{getTimeAgo(event.timestamp)}
+                              </Text>
+                            )}
                           </View>
-                          {subtext && (
-                            <Text style={[styles.eventSubtext, { color: theme.textSecondary }]}>{subtext}</Text>
-                          )}
+
+                          {/* Subtext — notes, truncated to 2 lines */}
+                          {subtext ? (
+                            <Text style={{ fontSize: 11, fontWeight: '400', color: theme.textSecondary, textAlign: 'right', marginTop: 2, lineHeight: 16 }} numberOfLines={2} ellipsizeMode="tail">
+                              {subtext}
+                            </Text>
+                          ) : null}
                         </View>
 
-                        {/* Reporter Badge - Small avatar showing who reported */}
-                        {event.reporterName && (() => {
+                        {/* Reporter Badge - Small avatar showing who reported (hidden if single reporter) */}
+                        {showReporterBadge && event.reporterName && (() => {
                           const memberId = event.creatorId || event.userId;
                           const member = family?.members[memberId];
                           const photoUrl = member?.photoURL || event.reporterPhotoUrl;
@@ -823,66 +819,50 @@ DailyTimeline.displayName = 'DailyTimeline';
 const styles = StyleSheet.create({
   container: {
     marginTop: SPACING.xl,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
 
   // Header
   header: {
     flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
     marginBottom: SPACING.lg,
   },
-  titleSection: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  accentLine: {
-    width: 3,
-    height: 18,
-    borderRadius: 2,
-  },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    letterSpacing: -0.4,
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   statsContainer: {
     flexDirection: 'row-reverse',
-    gap: 6,
+    gap: 8,
   },
   statPill: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 100,
-    borderWidth: 0,
-    // Floating shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 12,
-    elevation: 0,
   },
   statCount: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 11,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
 
-  // Timeline
+  // Timeline — outer margins frame the cards (Law of Proximity)
   timeline: {
     gap: 0,
+    paddingHorizontal: SPACING.lg,
   },
   timelineGrouped: {
-    paddingHorizontal: SPACING.xl,
+    paddingHorizontal: SPACING.xxl,
   },
   eventRow: {
     flexDirection: 'row-reverse',
-    marginBottom: 10,
+    marginBottom: 6,
     alignItems: 'flex-start',
   },
   loadingContainer: {
@@ -946,18 +926,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   timelineIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    marginTop: 3,
-    // Floating premium shadow
+    marginTop: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
     elevation: 0,
   },
   dot: {
@@ -969,29 +948,29 @@ const styles = StyleSheet.create({
   },
   connector: {
     position: 'absolute',
-    top: 28,
-    width: 1,
-    height: '100%',
+    top: 34,
+    bottom: -8,
+    width: 2,
     zIndex: 1,
-    opacity: 0.4,
+    borderRadius: 1,
   },
 
   // Right: Content - Premium Card Style
   eventCardContainer: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.03,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     elevation: 0,
   },
   eventCard: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 60,
+    minHeight: 48,
     borderWidth: 0.5,
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -1001,8 +980,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   cardContent: {
-    paddingVertical: 13,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     flex: 1,
   },
   eventHeader: {
@@ -1075,13 +1054,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    alignSelf: 'center',
+    gap: 6,
     marginTop: 12,
-    paddingVertical: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
   },
   expandText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
     letterSpacing: -0.2,
   },
 

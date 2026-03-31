@@ -2,13 +2,12 @@
 //  BreastfeedingLiveActivity.swift
 //  Breastfeeding Live Activity with side switching
 //
-//  Premium design with pause/play/stop and left/right side controls via App Intents
+//  Premium design with pause/play/stop and left/right side controls
 //
 
 import ActivityKit
 import WidgetKit
 import SwiftUI
-import AppIntents
 
 // MARK: - Design Tokens
 
@@ -71,7 +70,7 @@ struct BreastfeedingLiveActivity: Widget {
                         HStack(spacing: 8) {
                             // Pause/Resume
                             if context.state.isPaused {
-                                Button(intent: ResumeTimerIntent()) {
+                                Link(destination: URL(string: "calmino://resume-breastfeeding")!) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "play.fill")
                                             .font(.system(size: 11, weight: .bold))
@@ -84,9 +83,8 @@ struct BreastfeedingLiveActivity: Widget {
                                     .background(breastfeedingColor.opacity(0.25), in: Capsule())
                                     .overlay(Capsule().stroke(breastfeedingColor.opacity(0.5), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
                             } else {
-                                Button(intent: PauseTimerIntent()) {
+                                Link(destination: URL(string: "calmino://pause-breastfeeding")!) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "pause.fill")
                                             .font(.system(size: 11, weight: .bold))
@@ -99,15 +97,16 @@ struct BreastfeedingLiveActivity: Widget {
                                     .background(Color.white.opacity(0.12), in: Capsule())
                                     .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
                             }
 
                             // Switch Side
-                            Button(intent: SwitchSideIntent()) {
+                            let nextSide = context.state.activeSide == "left" ? "right" : "left"
+                            let nextSideLabel = nextSide == "left" ? "שמאל" : "ימין"
+                            Link(destination: URL(string: "calmino://switch-side?side=\(nextSide)")!) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.left.arrow.right")
                                         .font(.system(size: 11, weight: .bold))
-                                    Text(context.state.activeSide == "left" ? "ימין" : "שמאל")
+                                    Text(nextSideLabel)
                                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                                 }
                                 .foregroundStyle(.white)
@@ -115,12 +114,11 @@ struct BreastfeedingLiveActivity: Widget {
                                 .padding(.vertical, 7)
                                 .background(breastfeedingColor.opacity(0.15), in: Capsule())
                             }
-                            .buttonStyle(.plain)
 
                             Spacer()
 
                             // Stop
-                            Button(intent: StopTimerIntent()) {
+                            Link(destination: URL(string: "calmino://save-timer?type=הנקה&elapsedSeconds=\(context.state.leftSideSeconds + context.state.rightSideSeconds)&childName=\(context.attributes.babyName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&side=L\(context.state.leftSideSeconds)R\(context.state.rightSideSeconds)")!) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "stop.fill")
                                         .font(.system(size: 11, weight: .bold))
@@ -132,7 +130,6 @@ struct BreastfeedingLiveActivity: Widget {
                                 .padding(.vertical, 7)
                                 .background(Color.white.opacity(0.08), in: Capsule())
                             }
-                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 8)
                         .padding(.bottom, 4)
@@ -249,44 +246,41 @@ struct BreastfeedingLockScreenView: View {
                     VStack(spacing: 8) {
                         // Pause/Resume
                         if context.state.isPaused {
-                            Button(intent: ResumeTimerIntent()) {
+                            Link(destination: URL(string: "calmino://resume-breastfeeding")!) {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 19, weight: .bold))
                                     .foregroundStyle(.black)
                                     .frame(width: 48, height: 48)
                                     .background(.white, in: Circle())
                             }
-                            .buttonStyle(.plain)
                         } else {
-                            Button(intent: PauseTimerIntent()) {
+                            Link(destination: URL(string: "calmino://pause-breastfeeding")!) {
                                 Image(systemName: "pause.fill")
                                     .font(.system(size: 19, weight: .bold))
                                     .foregroundStyle(.black)
                                     .frame(width: 48, height: 48)
                                     .background(.white, in: Circle())
                             }
-                            .buttonStyle(.plain)
                         }
 
                         // Switch side
-                        Button(intent: SwitchSideIntent()) {
+                        let nextSide = context.state.activeSide == "left" ? "right" : "left"
+                        Link(destination: URL(string: "calmino://switch-side?side=\(nextSide)")!) {
                             Image(systemName: "arrow.left.arrow.right")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(.white.opacity(0.8))
                                 .frame(width: 36, height: 36)
                                 .background(breastfeedingColor.opacity(0.3), in: Circle())
                         }
-                        .buttonStyle(.plain)
 
                         // Stop
-                        Button(intent: StopTimerIntent()) {
+                        Link(destination: URL(string: "calmino://save-timer?type=הנקה&elapsedSeconds=\(context.state.leftSideSeconds + context.state.rightSideSeconds)&childName=\(context.attributes.babyName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&side=L\(context.state.leftSideSeconds)R\(context.state.rightSideSeconds)")!) {
                             Image(systemName: "stop.fill")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(.white.opacity(0.8))
                                 .frame(width: 32, height: 32)
                                 .background(Color(white: 0.18), in: Circle())
                         }
-                        .buttonStyle(.plain)
                     }
                     .environment(\.layoutDirection, .rightToLeft)
                 } else {

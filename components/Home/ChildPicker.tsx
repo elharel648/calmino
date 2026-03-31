@@ -63,7 +63,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
             <>
                 {/* Active Child Avatar - Clickable to open dropdown */}
                 <TouchableOpacity
-                    style={styles.dropdownTrigger}
+                    style={[styles.dropdownTrigger, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#F3F4F6' }]}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         setDropdownOpen(true);
@@ -147,7 +147,10 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                             key={child.childId}
                                             style={[
                                                 styles.childRow,
-                                                isActive && [styles.childRowActive, { backgroundColor: color.light, borderColor: `${color.bg}40` }]
+                                                isActive && [styles.childRowActive, { 
+                                                    backgroundColor: isDarkMode ? `${color.bg}20` : color.light, 
+                                                    borderColor: `${color.bg}40` 
+                                                }]
                                             ]}
                                             onPress={() => handleSelect(child)}
                                             activeOpacity={0.7}
