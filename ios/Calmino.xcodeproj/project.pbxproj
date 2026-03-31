@@ -626,7 +626,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
 				PRODUCT_NAME = CalmParentLiveActivity;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Calmino_LiveActivity_DEV;
+				
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -796,7 +796,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
 				PRODUCT_NAME = CalmParentLiveActivity;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Calmino_LiveActivity_DEV;
+				
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
