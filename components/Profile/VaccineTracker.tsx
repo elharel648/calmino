@@ -66,16 +66,14 @@ const VaccineTracker = memo(({
             setDatePickerVisible(false);
         }
 
-        if (date && pendingVaccine) {
+        if (event?.type === 'dismissed') {
+            setPendingVaccine(null);
+            return;
+        }
+
+        const selected = date || selectedDate;
+        if (selected && pendingVaccine) {
             if (pendingVaccine.isCustom && pendingVaccine.customObj) {
-                // We need to update the custom vaccine object with the date
-                // For now, the database service needs to handle this. 
-                // But wait, `onToggleCustom` signature in parent might need update too or we pass date separately?
-                // The `toggleCustomVaccine` in service toggles boolean. 
-                // For custom vaccines, they are objects in an array. We need to update the object.
-                // This requires a bit more work in parent, but for now let's pass it.
-                // Actually, onToggleCustom just calls the hook.
-                // We will skip date for custom vaccines for this iteration if it's too complex, OR just toggle.
                 // Let's stick to the plan: standard vaccines first.
                 // Wait, the plan said "VaccineTracker... include date selection".
 

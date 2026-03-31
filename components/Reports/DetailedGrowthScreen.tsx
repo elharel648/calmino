@@ -199,7 +199,7 @@ const PercentileCard = ({ icon: Icon, label, value, unit, percentile, change, co
                             {Math.round(percentile)}%
                         </Text>
                     </View>
-                    <Text style={[percStyles.percentileLabel, { color: theme.textTertiary }]}>{status.status}</Text>
+                    <Text style={[percStyles.percentileLabel, { color: theme.textTertiary }]}>{status.statusHe}</Text>
                 </View>
             )}
         </View>

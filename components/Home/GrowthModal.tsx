@@ -370,7 +370,7 @@ export default function GrowthModal({
 
     return (
         <Modal visible={visible} transparent animationType="none">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
                 <RNAnimatedView style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
                     <BlurView
                         intensity={isDarkMode ? 40 : 20}

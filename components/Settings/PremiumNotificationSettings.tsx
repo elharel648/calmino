@@ -108,23 +108,31 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
 
   return (
     <View style={[styles.card, isLast && styles.cardLast]}>
-      <View style={styles.cardHeader}>
+      <TouchableOpacity 
+        style={styles.cardHeader} 
+        activeOpacity={0.7}
+        disabled={disabled}
+        onPress={() => {
+          if (children && enabled) {
+            toggleExpand();
+          } else {
+            handleToggle(!enabled);
+          }
+        }}
+      >
         {/* Right side: Icon + Title (RTL) */}
         <View style={styles.cardMainContent}>
           <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
             <Icon size={18} color={iconColor} strokeWidth={1.5} />
           </View>
-          <TouchableOpacity
+          <View
             style={styles.cardTextContent}
-            onPress={children && enabled ? toggleExpand : undefined}
-            activeOpacity={children && enabled ? 0.7 : 1}
-            disabled={disabled || !enabled || !children}
           >
             <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{title}</Text>
             <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
               {getSubtitle()}
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Left side: Actions (RTL) */}
@@ -150,10 +158,11 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
             onValueChange={handleToggle}
             value={enabled}
             disabled={disabled}
+            pointerEvents="none"
             style={disabled ? { opacity: 0.4 } : undefined}
           />
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Expanded Content */}
       {expanded && enabled && children && (
@@ -253,7 +262,21 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
     <View style={styles.container}>
       {/* Master Toggle */}
       <View style={[styles.masterCard, { backgroundColor: theme.card }]}>
-        <View style={styles.masterCardRow}>
+        <TouchableOpacity 
+          style={styles.masterCardRow}
+          activeOpacity={0.7}
+          onPress={async () => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            const newVal = !settings.enabled;
+            if (newVal) {
+              const granted = await notificationService.requestPermissions();
+              if (!granted) return;
+            }
+            updateSettings({ enabled: newVal });
+          }}
+        >
           <View style={styles.masterContent}>
             <View style={[styles.masterIcon, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
               <Bell size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
@@ -270,23 +293,10 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
             trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
-            onValueChange={async (val) => {
-              if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }
-              if (val) {
-                // Request OS permission when user explicitly enables notifications
-                const granted = await notificationService.requestPermissions();
-                if (!granted) {
-                  // User denied — keep toggle OFF
-                  return;
-                }
-              }
-              updateSettings({ enabled: val });
-            }}
             value={settings.enabled}
+            pointerEvents="none"
           />
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Notification Cards */}
