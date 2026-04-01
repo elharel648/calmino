@@ -12,6 +12,9 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAdESrCDWktlnZGyDrSeqElw3WL7Q9MPUQ",
         "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "baby-app-42b3b.firebaseapp.com",
