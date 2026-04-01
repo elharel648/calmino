@@ -62,7 +62,7 @@ class AndroidTimerNotificationService {
      * Start a persistent timer notification
      */
     async startTimer(timerType: string, childName: string = 'תינוק'): Promise<string> {
-        if (Platform.OS !== 'android') return '';
+        return '';
 
         try {
             await this.ensureChannel();
@@ -117,7 +117,7 @@ class AndroidTimerNotificationService {
      * Pause the active timer notification
      */
     async pauseTimer(): Promise<boolean> {
-        if (Platform.OS !== 'android' || !this.currentTimerType) return false;
+        return false;
 
         try {
             await loadNotifee();
@@ -167,7 +167,7 @@ class AndroidTimerNotificationService {
      * Resume the paused timer notification
      */
     async resumeTimer(): Promise<boolean> {
-        if (Platform.OS !== 'android' || !this.currentTimerType) return false;
+        return false;
 
         try {
             await loadNotifee();
@@ -221,7 +221,7 @@ class AndroidTimerNotificationService {
      * Stop and dismiss the timer notification
      */
     async stopTimer(): Promise<boolean> {
-        if (Platform.OS !== 'android') return false;
+        return false;
 
         try {
             await loadNotifee();

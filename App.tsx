@@ -111,34 +111,12 @@ import { notificationService } from './services/notificationService';
 import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
 
-// --- Android Foreground Service Registration (must be at top level, outside components) ---
-if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
-  import('@notifee/react-native').then(({ default: notifee }) => {
-    // Register the foreground service task — keeps the timer alive when app is backgrounded
-    notifee.registerForegroundService(() => {
-      return new Promise(() => {
-        // This promise intentionally never resolves — it keeps the service alive
-        // The service is stopped explicitly by androidTimerNotificationService.stopTimer()
-      });
-    });
-
-    // Handle notification action button presses when app is in background/killed
-    notifee.onBackgroundEvent(async ({ type, detail }) => {
-      const { EventType: ET } = await import('@notifee/react-native');
-      if (type === ET.ACTION_PRESS) {
-        const actionId = detail.pressAction?.id;
-        const { androidTimerNotificationService } = await import('./services/androidTimerNotificationService');
-        if (actionId === 'stop') {
-          await androidTimerNotificationService.stopTimer();
-        } else if (actionId === 'pause') {
-          await androidTimerNotificationService.pauseTimer();
-        } else if (actionId === 'resume') {
-          await androidTimerNotificationService.resumeTimer();
-        }
-      }
-    });
-  }).catch(() => { /* notifee not available */ });
-}
+// --- Android Foreground Service Registration (Disabled) ---
+// if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
+//   import('@notifee/react-native').then(({ default: notifee }) => {
+//     // ... logic removed
+//   }).catch(() => { /* notifee not available */ });
+// }
 
 
 
