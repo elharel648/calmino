@@ -86,7 +86,7 @@ class AndroidTimerNotificationService {
                     showChronometer: true,
                     chronometerDirection: 'up',
                     timestamp: this.timerStartTime,
-                    smallIcon: 'ic_notification', // Falls back to app icon if missing
+                    // smallIcon removed to fallback to app icon automatically
                     color: '#6366F1',
                     pressAction: {
                         id: 'default',
@@ -136,7 +136,7 @@ class AndroidTimerNotificationService {
                     foregroundServiceTypes: ['dataSync'],
                     ongoing: true,
                     showChronometer: false, // Stop the chronometer display
-                    smallIcon: 'ic_notification',
+                    // smallIcon removed to fallback to app icon automatically
                     color: '#F59E0B',
                     pressAction: {
                         id: 'default',
@@ -190,7 +190,7 @@ class AndroidTimerNotificationService {
                     showChronometer: true,
                     chronometerDirection: 'up',
                     timestamp: this.timerStartTime,
-                    smallIcon: 'ic_notification',
+                    // smallIcon removed to fallback to app icon
                     color: '#6366F1',
                     pressAction: {
                         id: 'default',
