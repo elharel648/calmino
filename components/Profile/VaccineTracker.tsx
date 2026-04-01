@@ -64,28 +64,22 @@ const VaccineTracker = memo(({
     const onDateConfirm = (event: any, date?: Date) => {
         if (Platform.OS === 'android') {
             setDatePickerVisible(false);
-        }
-
-        if (event?.type === 'dismissed') {
-            setPendingVaccine(null);
-            return;
+            if (event?.type !== 'set') {
+                setPendingVaccine(null);
+                return;
+            }
+        } else {
+            if (event?.type === 'dismissed') {
+                setPendingVaccine(null);
+                return;
+            }
         }
 
         const selected = date || selectedDate;
         if (selected && pendingVaccine) {
             if (pendingVaccine.isCustom && pendingVaccine.customObj) {
-                // Let's stick to the plan: standard vaccines first.
-                // Wait, the plan said "VaccineTracker... include date selection".
-
-                // For simplicity in this step, I will only apply date picker to Standard Vaccines as Custom Vaccines are `arrayUnion` objects and might be trickier to update in place without full object replacement. 
-                // ... Actually, `toggleCustomVaccine` in babyService maps the array. I can update it to take a date too.
-                // Let's focus on Standard Vaccines first as per the main request (Bug 23).
                 onToggleCustom(pendingVaccine.customObj);
             } else {
-                // Standard vaccine
-                // We need to pass the date to `onToggle`.
-                // The prop `onToggle` is `(key: string) => void`. We need to update it to `(key: string, date?: Date) => void`.
-                // I will cast it here for now and update interface.
                 // @ts-ignore
                 onToggle(pendingVaccine.key, date);
             }

@@ -113,7 +113,10 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
         activeOpacity={0.7}
         disabled={disabled}
         onPress={() => {
-          if (children && enabled) {
+          if (!enabled) {
+            handleToggle(true);
+            if (children && !expanded) toggleExpand();
+          } else if (children) {
             toggleExpand();
           } else {
             handleToggle(!enabled);
@@ -158,7 +161,6 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
             onValueChange={handleToggle}
             value={enabled}
             disabled={disabled}
-            pointerEvents="none"
             style={disabled ? { opacity: 0.4 } : undefined}
           />
         </View>
@@ -294,7 +296,16 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
             value={settings.enabled}
-            pointerEvents="none"
+            onValueChange={async (newVal) => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              if (newVal) {
+                const granted = await notificationService.requestPermissions();
+                if (!granted) return;
+              }
+              updateSettings({ enabled: newVal });
+            }}
           />
         </TouchableOpacity>
       </View>
