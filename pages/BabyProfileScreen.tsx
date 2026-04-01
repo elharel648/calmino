@@ -611,7 +611,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     gap: 24,
   },
   tipContainer: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },

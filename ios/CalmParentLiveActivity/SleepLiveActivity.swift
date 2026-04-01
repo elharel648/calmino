@@ -56,56 +56,24 @@ struct SleepLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     if #available(iOS 17, *) {
                         HStack(spacing: 10) {
-                            if context.state.isPaused {
-                                Button(intent: ResumeTimerIntent()) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "play.fill")
-                                            .font(.system(size: 12, weight: .bold))
-                                        Text("המשך")
-                                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(sleepColor.opacity(0.25), in: Capsule())
-                                    .overlay(Capsule().stroke(sleepColor.opacity(0.5), lineWidth: 1))
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                Button(intent: PauseTimerIntent()) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "pause.fill")
-                                            .font(.system(size: 12, weight: .bold))
-                                        Text("השהה")
-                                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(Color.white.opacity(0.12), in: Capsule())
-                                    .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                                }
-                                .buttonStyle(.plain)
-                            }
-
                             Spacer()
-
                             Button(intent: StopTimerIntent()) {
                                 HStack(spacing: 6) {
-                                    Image(systemName: "stop.fill")
-                                        .font(.system(size: 12, weight: .bold))
-                                    Text("סיים")
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 14, weight: .bold))
+                                    Text("סיום ושמירה")
+                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                                 }
-                                .foregroundStyle(.white.opacity(0.75))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.08), in: Capsule())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 22)
+                                .padding(.vertical, 10)
+                                .background(sleepColor, in: Capsule())
                             }
                             .buttonStyle(.plain)
+                            Spacer()
                         }
                         .padding(.horizontal, 8)
-                        .padding(.bottom, 4)
+                        .padding(.bottom, 6)
                         .environment(\.layoutDirection, .rightToLeft)
                     }
                 }
@@ -182,34 +150,19 @@ struct SleepLockScreenView: View {
                 // Right — controls
                 if #available(iOS 17, *) {
                     VStack(spacing: 10) {
-                        if context.state.isPaused {
-                            Button(intent: ResumeTimerIntent()) {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 19, weight: .bold))
-                                    .foregroundStyle(.black)
-                                    .frame(width: 52, height: 52)
-                                    .background(.white, in: Circle())
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            Button(intent: PauseTimerIntent()) {
-                                Image(systemName: "pause.fill")
-                                    .font(.system(size: 19, weight: .bold))
-                                    .foregroundStyle(.black)
-                                    .frame(width: 52, height: 52)
-                                    .background(.white, in: Circle())
-                            }
-                            .buttonStyle(.plain)
-                        }
-
                         Button(intent: StopTimerIntent()) {
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .frame(width: 36, height: 36)
-                                .background(Color(white: 0.18), in: Circle())
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 58, height: 58)
+                                .background(sleepColor, in: Circle())
+                                .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
                         }
                         .buttonStyle(.plain)
+                        
+                        Text("שמירה")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.8))
                     }
                     .environment(\.layoutDirection, .rightToLeft)
                 } else {

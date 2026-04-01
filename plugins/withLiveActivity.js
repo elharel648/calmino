@@ -112,7 +112,8 @@ const withLiveActivity = (config) => {
       'WhiteNoiseLiveActivity.swift',
       'CalmParentLiveActivityBundle.swift',
       'TimerIntents.swift',
-      'GlassComponents.swift', 
+      'GlassComponents.swift',
+      'SharedActivityAttributes.swift', 
     ];
 
     const sourcesPhase = target.pbxNativeTarget.buildPhases.find(p => p && p.comment && p.comment.includes('Sources'));
@@ -185,13 +186,9 @@ const withLiveActivity = (config) => {
           settings.SKIP_INSTALL = 'YES';
           settings.CODE_SIGN_STYLE = 'Automatic';
           
-          if (configObj.name === 'Release') {
-            settings['"CODE_SIGN_IDENTITY"'] = '"Apple Distribution"';
-            settings['"CODE_SIGN_IDENTITY[sdk=iphoneos*]"'] = '"Apple Distribution"';
-          } else {
-            settings['"CODE_SIGN_IDENTITY"'] = '"Apple Development"';
-            settings['"CODE_SIGN_IDENTITY[sdk=iphoneos*]"'] = '"Apple Development"';
-          }
+          // REMOVED manual CODE_SIGN_IDENTITY hardcoding
+          // EAS requires CODE_SIGN_STYLE = Automatic to be paired with either no identity
+          // or explicitly 'Apple Development'. Fastlane dynamically signs Release builds!
 
           settings.CODE_SIGN_ENTITLEMENTS = '"CalmParentLiveActivity/CalmParentLiveActivity.entitlements"';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';

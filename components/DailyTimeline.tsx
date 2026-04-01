@@ -109,6 +109,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       // Map preloaded events to ensure correct timestamp type
       const mapped = preloadedEvents.map(e => ({
         ...e,
+        type: e.type === 'supplement' ? 'supplements' : e.type,
         timestamp: e.dateObj || (e.timestamp instanceof Date ? e.timestamp : new Date(e.timestamp))
       }));
       setEvents(mapped);
@@ -154,6 +155,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       // Map Firebase data directly
       const mapped: TimelineEvent[] = history.map((item: any) => ({
         ...item,
+        type: item.type === 'supplement' ? 'supplements' : item.type,
         timestamp: item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp),
       }))
         // Filter for today if requested

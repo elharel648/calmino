@@ -282,9 +282,16 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                 ]}>
                                     <Icon size={18} color={isActive ? '#fff' : sound.color} strokeWidth={1.8} />
                                 </View>
-                                <Text style={[styles.cardLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>
-                                    {sound.label}
-                                </Text>
+                                <View style={{ alignItems: 'center', gap: 2 }}>
+                                    <Text style={[styles.cardLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>
+                                        {sound.label}
+                                    </Text>
+                                    {isActive && (
+                                        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>
+                                            לחיצה לעצירה
+                                        </Text>
+                                    )}
+                                </View>
                             </TouchableOpacity>
                         );
                     })}

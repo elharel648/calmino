@@ -16,6 +16,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Share,
+  Switch,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
@@ -704,33 +705,16 @@ if (data.settings.language !== undefined) {
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.nightMode')}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderRadius: 8, padding: 2 }}>
-                {(['auto', 'light', 'dark'] as const).map((pref) => {
-                  const isSelected = themePreference === pref;
-                  const label = pref === 'auto' ? t('settings.themeAuto') : pref === 'light' ? t('settings.themeLight') : t('settings.themeDark');
-                  return (
-                    <TouchableOpacity
-                      key={pref}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setThemePreference(pref);
-                      }}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 6,
-                        backgroundColor: isSelected ? (isDarkMode ? 'rgba(255,255,255,0.15)' : '#FFFFFF') : 'transparent',
-                        ...(isSelected ? { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : {}),
-                      }}
-                      activeOpacity={0.6}
-                    >
-                      <Text style={{ fontSize: 12, fontWeight: isSelected ? '600' : '500', color: isSelected ? theme.textPrimary : theme.textSecondary }}>
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={(val) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setThemePreference(val ? 'dark' : 'light');
+                }}
+                trackColor={{ false: theme.divider, true: theme.primary }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={theme.divider}
+              />
             </View>
 
             <View style={[styles.listDivider, { backgroundColor: theme.divider }]} />

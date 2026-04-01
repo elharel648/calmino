@@ -94,11 +94,11 @@ struct PauseTimerIntent: LiveActivityIntent {
                 let r = currentState.rightSideSeconds + (currentState.activeSide == "right" ? elapsed : 0)
                 
                 let newState = BreastfeedingActivityAttributes.ContentState(
-                    activeSide: currentState.activeSide,
-                    isPaused: true,
-                    sideStartTime: nil,
                     leftSideSeconds: l,
-                    rightSideSeconds: r
+                    rightSideSeconds: r,
+                    activeSide: currentState.activeSide,
+                    sideStartTime: nil,
+                    isPaused: true
                 )
                 await activity.update(ActivityContent(state: newState, staleDate: nil))
                 SharedTimerState.writePendingAction(.pause, timerType: "breastfeeding")
@@ -174,11 +174,11 @@ struct ResumeTimerIntent: LiveActivityIntent {
             let currentState = activity.content.state
             if currentState.isPaused {
                 let newState = BreastfeedingActivityAttributes.ContentState(
-                    activeSide: currentState.activeSide,
-                    isPaused: false,
-                    sideStartTime: Date(),
                     leftSideSeconds: currentState.leftSideSeconds,
-                    rightSideSeconds: currentState.rightSideSeconds
+                    rightSideSeconds: currentState.rightSideSeconds,
+                    activeSide: currentState.activeSide,
+                    sideStartTime: Date(),
+                    isPaused: false
                 )
                 await activity.update(ActivityContent(state: newState, staleDate: nil))
                 SharedTimerState.writePendingAction(.resume, timerType: "breastfeeding")
@@ -249,11 +249,11 @@ struct SwitchSideIntent: LiveActivityIntent {
             }
             
             let newState = BreastfeedingActivityAttributes.ContentState(
-                activeSide: newSide,
-                isPaused: false,
-                sideStartTime: Date(),
                 leftSideSeconds: l,
-                rightSideSeconds: r
+                rightSideSeconds: r,
+                activeSide: newSide,
+                sideStartTime: Date(),
+                isPaused: false
             )
             await activity.update(ActivityContent(state: newState, staleDate: nil))
             SharedTimerState.writePendingAction(.switchSide, timerType: "breastfeeding", side: newSide)

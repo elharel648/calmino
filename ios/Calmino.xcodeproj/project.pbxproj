@@ -16,6 +16,7 @@
 		87AC335393D34C57A808279D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1B06314818245C282C139E5 /* SwiftUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		A6BC658AF9AB46EC80A5CF9D /* WhiteNoiseLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EA0E1693764CE380044C87 /* WhiteNoiseLiveActivity.swift */; };
 		B01708CD6B1C4E669ABB7A90 /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EE5F22BA2B475CBC6593EC /* TimerIntents.swift */; };
+		E3EE5F23BA2B475CBC6593EC /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EE5F22BA2B475CBC6593EC /* TimerIntents.swift */; };
 		B122A19EA4674CE7A50BA3FB /* CalmParentLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE99F8A1BCE64C4AB5BDBC12 /* CalmParentLiveActivityBundle.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		D56B54779E9348B79577C714 /* FeedingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223E86F20BCB498EA067366C /* FeedingLiveActivity.swift */; };
@@ -508,6 +509,7 @@
 				DD9BAA98CF0E037417487088 /* ExpoModulesProvider.swift in Sources */,
 				F10EADBA2F7BC7E200119562 /* SharedActivityAttributes.swift in Sources */,
 				F10EADBC2F7BD19500119562 /* GlassComponents.swift in Sources */,
+				E3EE5F23BA2B475CBC6593EC /* TimerIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -559,7 +561,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp;
 				PRODUCT_NAME = Calmino;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Calmino/Calmino-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -594,7 +595,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp;
 				PRODUCT_NAME = Calmino;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Calmino/Calmino-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -625,8 +625,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
 				PRODUCT_NAME = CalmParentLiveActivity;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -795,8 +793,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.harel.calmparentapp.LiveActivity;
 				PRODUCT_NAME = CalmParentLiveActivity;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};

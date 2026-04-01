@@ -423,21 +423,19 @@ function LiveActivityURLHandler() {
           }
 
           try {
-            // Use in-app timer state if available, fallback to Swift-provided elapsed from URL
+            // Critical fix: ALWAYS prioritize Native elapsedSeconds because JS keeps running unpaused in background
             const urlElapsed = parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
-            let elapsedSeconds = 0;
-            if (type.includes('הנקה') || type.includes('breast') || type.includes('breastfeeding')) {
-              elapsedSeconds = foodTimer.breastElapsedSeconds || urlElapsed;
-            } else if (type.includes('שאיבה') || type.includes('pump')) {
-              elapsedSeconds = foodTimer.pumpingElapsedSeconds || urlElapsed;
-            } else if (type.includes('בקבוק') || type.includes('bottle')) {
-              elapsedSeconds = foodTimer.bottleElapsedSeconds || urlElapsed;
-            } else if (type.includes('שינה') || type.includes('sleep')) {
-              elapsedSeconds = sleepTimer.elapsedSeconds || urlElapsed;
-            } else if (type.includes('solids') || type.includes('מוצקים')) {
-              elapsedSeconds = urlElapsed; // Solids timer may not have in-app state
-            } else {
-              elapsedSeconds = urlElapsed; // Generic fallback
+            let elapsedSeconds = urlElapsed;
+            if (elapsedSeconds <= 0) {
+              if (type.includes('הנקה') || type.includes('breast') || type.includes('breastfeeding')) {
+                elapsedSeconds = foodTimer.breastElapsedSeconds;
+              } else if (type.includes('שאיבה') || type.includes('pump')) {
+                elapsedSeconds = foodTimer.pumpingElapsedSeconds;
+              } else if (type.includes('בקבוק') || type.includes('bottle')) {
+                elapsedSeconds = foodTimer.bottleElapsedSeconds;
+              } else if (type.includes('שינה') || type.includes('sleep')) {
+                elapsedSeconds = sleepTimer.elapsedSeconds;
+              }
             }
 
             const mins = Math.floor(elapsedSeconds / 60);

@@ -209,6 +209,12 @@ struct StopTimerIntent: LiveActivityIntent {
             SharedTimerState.defaults?.set("L\(l)R\(r)", forKey: "pendingSide")
             await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
         }
+        // White Noise
+        for activity in Activity<WhiteNoiseActivityAttributes>.activities {
+            let s = activity.content.state
+            SharedTimerState.writePendingAction(.stop, timerType: "white_noise", elapsedSeconds: 0)
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+        }
         return .result()
     }
 }

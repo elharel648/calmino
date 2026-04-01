@@ -24,3 +24,4 @@ ios/DerivedData/
 
 # Keep .env.local out (contains sensitive Sentry token)
 .env.local
+.ios_backup/

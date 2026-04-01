@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { doc, updateDoc, getDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, onSnapshot, collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { db, auth } from '../services/firebaseConfig';
 import { getLastEvent, formatTimeFromTimestamp, getRecentHistory } from '../services/firebaseService';
 import { HomeDataState } from '../types/home';
@@ -260,7 +260,7 @@ export const useHomeData = (
             if (Platform.OS === 'ios') {
                 const currentStatus = snap.exists() ? (snap.data().status || 'awake') : 'awake';
                 const lastDiaper = await getLastEvent(childId, 'diaper', creatorId);
-                const lastHealth = await getLastEvent(childId, 'supplement' as any, creatorId).catch(() => null);
+                const lastHealth = await getLastEvent(childId, 'supplements' as any, creatorId).catch(() => null);
                 const lastMed = await getLastEvent(childId, 'medication' as any, creatorId).catch(() => null);
                 const getTimestamp = (event: any): number => {
                     if (!event?.timestamp) return 0;
@@ -331,6 +331,7 @@ export const useHomeData = (
         const q = query(
             collection(db, 'events'),
             where('childId', '==', childId),
+            orderBy('timestamp', 'desc'),
             limit(1)
         );
         const unsub = onSnapshot(q, () => {
