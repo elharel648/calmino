@@ -184,7 +184,6 @@ const withLiveActivity = (config) => {
           settings.SWIFT_VERSION = '5.0';
           settings.INFOPLIST_FILE = `"${widgetName}/Info.plist"`;
           settings.SKIP_INSTALL = 'YES';
-          settings.CODE_SIGN_STYLE = 'Automatic';
           
           // REMOVED manual CODE_SIGN_IDENTITY hardcoding
           // EAS requires CODE_SIGN_STYLE = Automatic to be paired with either no identity
