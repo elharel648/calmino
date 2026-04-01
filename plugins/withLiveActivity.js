@@ -151,6 +151,11 @@ const withLiveActivity = (config) => {
       const glassPath = path.join(widgetName, 'GlassComponents.swift');
       xcodeProject.addSourceFile(glassPath, { target: mainTargetKey }, mainGroupKey);
 
+      // ADD TimerIntents to main target so iOS can resolve the App Intent from the lock screen!
+      const intentsPath = path.join(widgetName, 'TimerIntents.swift');
+      xcodeProject.addSourceFile(intentsPath, { target: mainTargetKey }, mainGroupKey);
+
+
       // FIX node-xcode BUG: Remove widget-only files leaked into the main target!
       const mainSourcesPhase = xcodeProject.pbxSourcesBuildPhaseObj(mainTargetKey);
       if (mainSourcesPhase && mainSourcesPhase.files) {
@@ -162,9 +167,9 @@ const withLiveActivity = (config) => {
             comment.includes('FeedingLiveActivity.swift') ||
             comment.includes('BreastfeedingLiveActivity.swift') ||
             comment.includes('WhiteNoiseLiveActivity.swift') ||
-            comment.includes('CalmParentLiveActivityBundle.swift') ||
-            comment.includes('TimerIntents.swift')
+            comment.includes('CalmParentLiveActivityBundle.swift')
           ) {
+            // Note: TimerIntents.swift MUST remain in the main target for iOS 17+ interactive buttons to work.
             return false; // strip them from Calmino target
           }
           return true;
