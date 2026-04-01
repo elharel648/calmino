@@ -366,7 +366,7 @@ public class ActivityKitManager: Module {
         // MARK: - Widget Data
 
         AsyncFunction("updateWidgetData") { (babyName: String, lastFeedTime: String, lastFeedAgo: String, lastSleepTime: String, lastSleepAgo: String, babyStatus: String, lastDiaperAgo: String, lastDiaperType: String, lastFeedType: String, feedCount: Int, sleepMinutes: Int, diaperCount: Int, lastFeedTimestamp: Double, lastSleepTimestamp: Double, lastDiaperTimestamp: Double, lastHealthTimestamp: Double, healthCount: Int, lastMedicationTimestamp: Double, medicationCount: Int) -> Bool in
-            let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
+            let defaults = UserDefaults(suiteName: "group.com.calmparent.shared")
             defaults?.set(babyName, forKey: "widget_babyName")
             defaults?.set(lastFeedTime, forKey: "widget_lastFeedTime")
             defaults?.set(lastFeedAgo, forKey: "widget_lastFeedAgo")
@@ -397,7 +397,7 @@ public class ActivityKitManager: Module {
         // MARK: - App Intent Pending Actions
 
         Function("getPendingTimerAction") { () -> [String: Any]? in
-            let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
+            let defaults = UserDefaults(suiteName: "group.com.calmparent.shared")
             guard let action = defaults?.string(forKey: "pendingTimerAction") else { return nil }
             let timerType = defaults?.string(forKey: "pendingTimerType") ?? ""
             let timestamp = defaults?.double(forKey: "pendingTimerTimestamp") ?? 0
@@ -412,7 +412,7 @@ public class ActivityKitManager: Module {
         }
 
         Function("clearPendingTimerAction") { () -> Void in
-            let defaults = UserDefaults(suiteName: "group.com.harel.calmparentapp")
+            let defaults = UserDefaults(suiteName: "group.com.calmparent.shared")
             defaults?.removeObject(forKey: "pendingTimerAction")
             defaults?.removeObject(forKey: "pendingTimerType")
             defaults?.removeObject(forKey: "pendingTimerElapsed")

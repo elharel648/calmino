@@ -12,7 +12,7 @@ import Foundation
 
 // MARK: - Shared Constants
 
-let appGroupID = "group.com.harel.calmparentapp"
+let appGroupID = "group.com.calmparent.shared"
 
 enum TimerAction: String {
     case pause

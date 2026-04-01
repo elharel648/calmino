@@ -53,7 +53,7 @@
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.harel.calmparentapp"
+          "group.com.calmparent.shared"
         ]
       },
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -131,7 +131,7 @@
                   "bundleIdentifier": "com.harel.calmparentapp.LiveActivity",
                   "entitlements": {
                     "com.apple.security.application-groups": [
-                      "group.com.harel.calmparentapp"
+                      "group.com.calmparent.shared"
                     ]
                   }
                 }
