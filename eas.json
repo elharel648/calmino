@@ -32,16 +32,7 @@
       },
       "ios": {
         "credentialsSource": "remote",
-        "image": "macos-sequoia-15.3-xcode-16.2",
-        "appExtensions": [
-          {
-            "targetName": "CalmParentLiveActivity",
-            "bundleIdentifier": "com.harel.calmparentapp.LiveActivity",
-            "entitlements": {
-              "com.apple.security.application-groups": ["group.com.harel.calmparentapp"]
-            }
-          }
-        ]
+        "image": "macos-sequoia-15.3-xcode-16.2"
       },
       "channel": "production"
     }
