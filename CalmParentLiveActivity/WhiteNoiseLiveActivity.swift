@@ -1,6 +1,7 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Design Tokens
 private let noiseColor = Color(red: 0.15, green: 0.65, blue: 0.85)
@@ -44,21 +45,25 @@ struct WhiteNoiseLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack {
                             Spacer()
-                            Button(intent: StopTimerIntent()) {
+                            
+                            // Close/Turn-off (Deep Link to open the app)
+                            Link(destination: URL(string: "calmino://white-noise?action=stop")!) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "stop.fill")
                                         .font(.system(size: 12, weight: .bold))
-                                    Text("סגור")
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    Text("כיבוי")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
                                 }
-                                .foregroundStyle(.white.opacity(0.75))
+                                .foregroundStyle(.white)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.08), in: Capsule())
+                                .background(Color.red.opacity(0.8), in: Capsule())
                             }
+                            
+                            Spacer()
                         }
                         .padding(.horizontal, 8)
-                        .padding(.bottom, 4)
+                        .padding(.bottom, 8)
                         .environment(\.layoutDirection, .rightToLeft)
                     }
                 }
@@ -116,12 +121,24 @@ struct WhiteNoiseLockScreenView: View {
                 Spacer()
                 
                 if #available(iOS 17, *) {
-                    Button(intent: StopTimerIntent()) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.8))
-                            .frame(width: 36, height: 36)
-                            .background(Color(white: 0.18), in: Circle())
+                    HStack {
+                        Spacer()
+                        
+                        // Close/Turn-off (Deep Link to open the app)
+                        Link(destination: URL(string: "calmino://white-noise?action=stop")!) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("כיבוי")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.red.opacity(0.8), in: Capsule())
+                        }
+                        
+                        Spacer()
                     }
                     .environment(\.layoutDirection, .rightToLeft)
                 } else {
