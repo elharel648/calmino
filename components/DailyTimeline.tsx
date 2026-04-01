@@ -1311,7 +1311,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   elegantCardTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     textAlign: 'right',
     letterSpacing: -0.3,
