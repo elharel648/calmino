@@ -669,7 +669,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                           {/* CENTER: title + subtitle */}
                           <View style={styles.historyContent}>
-                            <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 16, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
+                            <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
                               {details}
                             </Text>
                             {subtitle ? (
