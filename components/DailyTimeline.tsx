@@ -752,6 +752,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             // Optional: reporter badge
             const showBadge = showReporterBadge && event.reporterName;
             const reporterInitial = event.reporterName ? event.reporterName.charAt(0) : '';
+            const memberId = event.creatorId || event.userId;
+            const member = family?.members[memberId];
+            const photoUrl = member?.photoURL || event.reporterPhotoUrl;
 
             return (
               <Animated.View
@@ -799,9 +802,23 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         {/* Left side: Reporter Badge only */}
                         {showBadge ? (
                           <View style={styles.elegantCardLeft}>
-                            <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.8)' }]}>
-                              <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
-                            </View>
+                            {photoUrl ? (
+                              <Image 
+                                source={{ uri: photoUrl }} 
+                                style={[
+                                  styles.cardReporterBadge, 
+                                  { 
+                                    borderWidth: 0, 
+                                    padding: 0, 
+                                    backgroundColor: 'transparent' 
+                                  }
+                                ]} 
+                              />
+                            ) : (
+                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.8)' }]}>
+                                <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
+                              </View>
+                            )}
                           </View>
                         ) : null}
 
