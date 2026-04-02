@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -443,14 +442,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                     onFoodPress={() => setTrackingModalType('food')}
                                     onSleepPress={() => setTrackingModalType('sleep')}
                                     onDiaperPress={() => setTrackingModalType('diaper')}
-                                    onBathPress={async () => {
-                                        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                        await handleSaveTracking({
-                                            type: 'bath',
-                                            note: '',
-                                            timestamp: new Date()
-                                        });
-                                    }}
                                     onWhiteNoisePress={() => setIsWhiteNoiseOpen(true)}
                                     onSOSPress={() => setIsCalmModeOpen(true)}
                                     onSupplementsPress={() => setIsSupplementsOpen(true)}

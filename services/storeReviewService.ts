@@ -1,9 +1,4 @@
-let StoreReview: any = null;
-try {
-  StoreReview = require('expo-store-review');
-} catch (e) {
-  // Native module not available (e.g. Expo Go)
-}
+import * as StoreReview from 'expo-store-review';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../utils/logger';
 
@@ -32,7 +27,7 @@ export const storeReviewService = {
 
       // 3. Trigger review prompt at specific milestones (5, 20, 50)
       if (count === 5 || count === 20 || count === 50) {
-        if (StoreReview && await StoreReview.hasAction()) {
+        if (await StoreReview.hasAction()) {
           logger.log(`🌟 [StoreReview] Requesting App Store Review at positive action count: ${count}`);
           await StoreReview.requestReview();
           

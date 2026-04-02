@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
-import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText, Bath } from 'lucide-react-native';
+import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
 import Svg, { Path } from 'react-native-svg';
@@ -28,7 +28,7 @@ const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: stri
 
 interface TimelineEvent {
   id: string;
-  type: 'food' | 'sleep' | 'diaper' | 'bath' | 'supplements' | 'custom' | 'teeth';
+  type: 'food' | 'sleep' | 'diaper' | 'supplements' | 'custom' | 'teeth';
   timestamp: Date;
   amount?: string;
   note?: string;
@@ -98,11 +98,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       icon: TeethIcon,
       color: theme.actionColors.teeth.accentColor,
       label: t('profile.teeth'),
-    },
-    bath: {
-      icon: Bath,
-      color: theme.actionColors.bath.accentColor,
-      label: t('actions.bath'),
     },
   };
 
@@ -400,8 +395,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       return event.note || 'פעולה מותאמת';
     } else if (event.type === 'teeth') {
       return event.toothLabel || event.note || 'בקעה שן';
-    } else if (event.type === 'bath') {
-      return t('actions.bath');
     }
     return '';
   };
