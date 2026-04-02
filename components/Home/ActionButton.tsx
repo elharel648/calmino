@@ -3,6 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { Timer, Pause } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+} from 'react-native-reanimated';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface ActionButtonProps {
     config: {
@@ -35,6 +42,19 @@ const ActionButton = memo(({
 }: ActionButtonProps) => {
     const { theme, isDarkMode } = useTheme();
     const Icon = config.icon;
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.93, { damping: 15, stiffness: 400 });
+    }, [scale]);
+
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    }, [scale]);
 
     const handlePress = useCallback(() => {
         if (Platform.OS !== 'web') {
@@ -43,88 +63,127 @@ const ActionButton = memo(({
         onPress();
     }, [onPress]);
 
+    // Dynamic card background
+    const cardBg = isActive
+        ? config.accentColor
+        : isDarkMode
+            ? `${config.color}18`
+            : config.lightColor;
+
+    // Icon circle background
+    const iconCircleBg = isActive
+        ? 'rgba(255,255,255,0.22)'
+        : isDarkMode
+            ? `${config.color}25`
+            : `${config.color}18`;
+
+    // Text color
+    const textColor = isActive
+        ? '#FFFFFF'
+        : theme.textPrimary;
+
+    const subTextColor = isActive
+        ? 'rgba(255,255,255,0.8)'
+        : `${config.color}CC`;
+
+    // Glow shadow (only in dark mode for premium feel)
+    const glowStyle = isDarkMode ? {
+        shadowColor: isActive ? config.accentColor : config.color,
+        shadowOpacity: isActive ? 0.35 : 0.12,
+        shadowRadius: isActive ? 16 : 10,
+        shadowOffset: { width: 0, height: 4 },
+    } : {
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 3 },
+    };
+
+    // Badge rendering
+    const renderBadge = () => {
+        if (!badge) return null;
+        const parts = badge.split('/');
+        let displayNum: number | null = null;
+
+        if (parts.length === 2) {
+            const done = parseInt(parts[0]);
+            const total = parseInt(parts[1]);
+            if (done < total) displayNum = total - done;
+        } else {
+            const num = parseInt(badge);
+            if (!isNaN(num) && num > 0) displayNum = num;
+        }
+
+        if (displayNum === null) return null;
+
+        return (
+            <View style={styles.badgeDot}>
+                <Text style={styles.badgeDotText}>{displayNum}</Text>
+            </View>
+        );
+    };
+
     return (
-        <TouchableOpacity
-            activeOpacity={0.6}
+        <AnimatedTouchable
+            activeOpacity={1}
             onPress={handlePress}
-            style={styles.actionItem}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={[
+                styles.card,
+                animatedStyle,
+                {
+                    backgroundColor: cardBg,
+                    borderColor: isActive
+                        ? 'transparent'
+                        : isDarkMode
+                            ? `${config.color}20`
+                            : `${config.color}15`,
+                },
+                glowStyle,
+                config.hasBorder && !isActive && styles.cardDashed,
+            ]}
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityState={{ selected: isActive }}
         >
-            {/* Icon Container — Premium rounded square with per-category color tint */}
-            <View style={styles.iconWrapper}>
+            {/* Icon Circle */}
+            <View style={styles.iconRow}>
                 <View style={[
-                    styles.iconContainer,
-                    {
-                        backgroundColor: config.lightColor,
-                        shadowColor: isDarkMode ? 'transparent' : '#000',
-                    },
-                    isActive && {
-                        backgroundColor: config.accentColor,
-                        shadowColor: config.accentColor,
-                        shadowOpacity: 0.3,
-                        shadowRadius: 10,
-                        shadowOffset: { width: 0, height: 4 },
-                    },
-                    config.hasBorder && styles.iconContainerDashed,
+                    styles.iconCircle,
+                    { backgroundColor: iconCircleBg },
                 ]}>
                     {isActive ? (
-                        <Pause size={19} color="#FFFFFF" strokeWidth={1.5} />
+                        <Pause size={16} color="#FFFFFF" strokeWidth={2} />
                     ) : (
-                        <Icon size={19} color={config.color} strokeWidth={1.5} />
+                        <Icon size={16} color={config.color} strokeWidth={2} />
                     )}
                 </View>
-                {/* Badge dot — shown for X/Y format or plain number */}
-                {badge && (() => {
-                    const parts = badge.split('/');
-                    if (parts.length === 2) {
-                        const done = parseInt(parts[0]);
-                        const total = parseInt(parts[1]);
-                        if (done < total) {
-                            const remaining = total - done;
-                            return (
-                                <View style={styles.badgeDot}>
-                                    <Text style={styles.badgeDotText}>{remaining}</Text>
-                                </View>
-                            );
-                        }
-                    } else {
-                        const num = parseInt(badge);
-                        if (!isNaN(num) && num > 0) {
-                            return (
-                                <View style={styles.badgeDot}>
-                                    <Text style={styles.badgeDotText}>{num}</Text>
-                                </View>
-                            );
-                        }
-                    }
-                    return null;
-                })()}
+                {renderBadge()}
             </View>
 
             {/* Label */}
-            <Text style={[styles.label, { color: theme.textPrimary }]} numberOfLines={2}>
+            <Text
+                style={[styles.label, { color: textColor }]}
+                numberOfLines={1}
+            >
                 {label}
             </Text>
 
-            {/* Sub info */}
+            {/* Sub info: timer or last time */}
             {activeTime && isActive ? (
-                <View style={[styles.timerBadge, { backgroundColor: config.accentColor }]}>
-                    <Timer size={7} color="#FFFFFF" strokeWidth={1.5} />
+                <View style={[styles.timerBadge, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
+                    <Timer size={8} color="#FFFFFF" strokeWidth={2} />
                     <Text style={styles.timerText}>{activeTime}</Text>
                 </View>
             ) : lastTime ? (
-                <Text style={[styles.subText, { color: config.accentColor, opacity: 0.75 }]}>
+                <Text style={[styles.subText, { color: subTextColor }]}>
                     {lastTime}
                 </Text>
-            ) : badge ? (
-                // Badge info shown as dot on icon — show empty placeholder here
-                <View style={styles.subPlaceholder} />
             ) : (
                 <View style={styles.subPlaceholder} />
             )}
-        </TouchableOpacity>
+        </AnimatedTouchable>
     );
 });
 
@@ -135,18 +194,34 @@ export const setHasAnimated = (_value: boolean) => { };
 export const getHasAnimated = () => true;
 
 const styles = StyleSheet.create({
-    actionItem: {
+    card: {
+        width: 78,
+        paddingVertical: 12,
+        paddingHorizontal: 6,
+        borderRadius: 22,
         alignItems: 'center',
-        width: 72,
+        borderWidth: 0.5,
+        elevation: 0,
     },
-    iconWrapper: {
+    cardDashed: {
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+    },
+    iconRow: {
         position: 'relative',
         marginBottom: 8,
     },
+    iconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     badgeDot: {
         position: 'absolute',
-        bottom: -4,
-        right: -4,
+        top: -5,
+        right: -8,
         minWidth: 18,
         height: 18,
         borderRadius: 9,
@@ -155,42 +230,27 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 4,
         borderWidth: 1.5,
-        borderColor: '#FFFFFF',
+        borderColor: 'rgba(0,0,0,0.3)',
     },
     badgeDotText: {
         fontSize: 10,
         fontWeight: '700',
         color: '#FFFFFF',
     },
-    iconContainer: {
-        width: 54,
-        height: 54,
-        borderRadius: 17,
-        alignItems: 'center',
-        justifyContent: 'center',
-        // Diffused premium floating shadow
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 16,
-        elevation: 0,
-    },
-    iconContainerDashed: {
-        borderWidth: 1.5,
-        borderStyle: 'dashed',
-    },
     label: {
-        fontSize: 11,
-        fontWeight: '500',
+        fontSize: 12,
+        fontWeight: '600',
         textAlign: 'center',
+        letterSpacing: -0.2,
         marginBottom: 3,
-        letterSpacing: -0.1,
     },
     subText: {
         fontSize: 11,
-        fontWeight: '400',
+        fontWeight: '500',
+        letterSpacing: 0.3,
     },
     subPlaceholder: {
-        height: 14,
+        height: 15,
     },
     timerBadge: {
         flexDirection: 'row',
@@ -202,9 +262,9 @@ const styles = StyleSheet.create({
     },
     timerText: {
         fontSize: 9,
-        fontWeight: '600',
+        fontWeight: '700',
         color: '#FFFFFF',
-        letterSpacing: 0.2,
+        letterSpacing: 0.3,
     },
 });
 
