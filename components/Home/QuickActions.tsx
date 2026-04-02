@@ -21,6 +21,7 @@ interface QuickActionsProps {
     onFoodPress: () => void;
     onSleepPress: () => void;
     onDiaperPress: () => void;
+    onBathPress: () => void;
     onWhiteNoisePress: () => void;
     onSOSPress: () => void;
     onSupplementsPress: () => void;
@@ -47,6 +48,7 @@ const QuickActions = memo<QuickActionsProps>(({
     onFoodPress,
     onSleepPress,
     onDiaperPress,
+    onBathPress,
     onWhiteNoisePress,
     onSOSPress,
     onSupplementsPress,
@@ -193,6 +195,7 @@ const QuickActions = memo<QuickActionsProps>(({
         food: { onPress: handleFoodPress, isActive: foodIsRunning, activeTime: foodIsRunning ? foodFormatTime(foodElapsed) : undefined, lastTime: !foodIsRunning ? lastFeedTime : undefined },
         sleep: { onPress: handleSleepPress, isActive: sleepIsRunning, activeTime: sleepIsRunning ? sleepFormatTime(sleepElapsed) : undefined, lastTime: !sleepIsRunning ? lastSleepTime : undefined },
         diaper: { onPress: onDiaperPress },
+        bath: { onPress: onBathPress },
         supplements: { onPress: onSupplementsPress, badge: `${takenCount}/${totalSupplements}` },
         whiteNoise: {
             onPress: activeSound ? () => { stopSound(); if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } : onWhiteNoisePress,
