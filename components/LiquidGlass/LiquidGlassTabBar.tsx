@@ -29,7 +29,7 @@ try {
   LiquidGlassContainerView = LiquidGlass.LiquidGlassContainerView;
   isLiquidGlassSupported = LiquidGlass.isLiquidGlassSupported;
 } catch (e) {
-  console.log('LiquidGlass native module not found, falling back to BlurView');
+  if (__DEV__) console.log('LiquidGlass native module not found, falling back to BlurView');
 }
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
