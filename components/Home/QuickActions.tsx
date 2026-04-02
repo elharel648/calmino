@@ -292,24 +292,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: SPACING.lg,
+        marginBottom: SPACING.xl,
         paddingHorizontal: SPACING.xs,
     },
     sectionTitle: {
         fontSize: 20,
-        fontWeight: '700',
-        letterSpacing: -0.5,
+        fontWeight: '600',
+        letterSpacing: -0.4,
     },
     editBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
+        gap: 6,
         paddingVertical: 6,
         paddingHorizontal: 12,
-        borderRadius: 20,
+        borderRadius: 16,
     },
     editBtnText: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '600',
     },
     sliderWrapper: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     sliderContent: {
         flexDirection: 'row-reverse',
         paddingHorizontal: SPACING.sm,
-        gap: 12,
+        gap: 18,
     },
 });
 
