@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calmino – Dual Screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,::before,::after{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+
+body{
+  background:radial-gradient(ellipse at 30% 20%,#F2E8F5 0%,#EDE6F0 40%,#E8EDF5 100%);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:0;padding:48px 32px;font-family:'Heebo',sans-serif;
+}
+
+/* ── Ambient blobs ── */
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:0;
+}
+body::before{width:600px;height:600px;top:-120px;left:-200px;background:radial-gradient(circle,rgba(200,180,230,.22),transparent 70%)}
+body::after{width:500px;height:500px;bottom:-100px;right:-150px;background:radial-gradient(circle,rgba(180,210,240,.18),transparent 70%)}
+
+/* star/cloud bg pattern */
+.scene{
+  position:relative;z-index:1;
+  display:flex;align-items:flex-start;justify-content:center;
+  gap:52px;flex-wrap:wrap;
+}
+
+/* ── Shared phone shell ── */
+.phone{
+  width:370px;height:800px;border-radius:50px;
+  position:relative;overflow:hidden;flex-shrink:0;
+  box-shadow:
+    0 0 0 1.5px #C8BEC8,
+    0 0 0 4px #1A1418,
+    0 60px 120px rgba(0,0,0,.60),
+    0 20px 40px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.45);
+}
+/* bg per phone */
+.phone-food{background:linear-gradient(175deg,#FEF9F6 0%,#FAF4F0 100%)}
+.phone-sleep{background:linear-gradient(175deg,#F8F5FE 0%,#F0ECFA 100%)}
+
+/* faint texture pattern */
+.phone::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Ccircle cx='18' cy='18' r='1' fill='%23C0B0C8' opacity='.3'/%3E%3Ccircle cx='60' cy='10' r='.8' fill='%23B8B0C8' opacity='.22'/%3E%3Ccircle cx='85' cy='45' r='1.2' fill='%23C0B0C8' opacity='.25'/%3E%3Ccircle cx='30' cy='75' r='.9' fill='%23B8B0C8' opacity='.18'/%3E%3Ccircle cx='80' cy='82' r='1' fill='%23C0B0C8' opacity='.2'/%3E%3Cpath d='M48 38Q52 32 56 38Q60 32 64 38Q64 43 48 43Z' fill='%23D0C8DC' opacity='.10'/%3E%3C/svg%3E");
+  background-size:100px 100px;
+}
+
+/* inner scroll container */
+.pscroll{position:absolute;inset:0;z-index:1;overflow-y:auto;scrollbar-width:none}
+.pscroll::-webkit-scrollbar{display:none}
+
+/* ── Dynamic Island shared ── */
+.island-wrap{position:relative;top:10px;display:flex;justify-content:center;margin-bottom:4px;z-index:10}
+.island{
+  background:#0C0A14;border-radius:20px;width:120px;height:34px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  box-shadow:0 2px 16px rgba(0,0,0,.55);cursor:pointer;transition:all .4s cubic-bezier(.34,1.4,.64,1);
+}
+.island.open{width:320px;height:70px;border-radius:30px}
+.idot{width:5px;height:5px;border-radius:50%;animation:idblink 2s infinite}
+.idot.green{background:#4ADE80}
+.idot.purple{background:#9B7EC8}
+@keyframes idblink{0%,100%{opacity:1}50%{opacity:.25}}
+.itxt{font-size:11px;font-weight:500;color:#fff}
+
+/* ── Status bar ── */
+.sbar{display:flex;align-items:flex-end;justify-content:space-between;padding:6px 22px 4px;height:44px}
+.sb-t{font-size:15px;font-weight:500;color:#1A1A1A;letter-spacing:-.2px}
+.sb-r{display:flex;gap:4px;align-items:center;opacity:.55}
+
+/* ── Shared section header ── */
+.ph-head{padding:14px 22px 0;margin-bottom:14px}
+.ph-head-row{display:flex;align-items:center;justify-content:space-between}
+
+/* avatar same as home */
+.avatar{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(145deg,#F4DED8,#ECC8C2);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 3px rgba(240,200,192,.3),0 3px 12px rgba(200,120,110,.15);
+  cursor:pointer;transition:transform .14s;flex-shrink:0;
+}
+.avatar:active{transform:scale(.9)}
+
+/* ── CATEGORY ICON HEADER ── */
+.cat-header{
+  display:flex;flex-direction:column;align-items:center;
+  padding:6px 22px 18px;gap:8px;
+}
+.cat-icon-ring{
+  width:76px;height:76px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,.09),
+    0 8px 28px rgba(0,0,0,.06),
+    inset 0 1.5px 0 rgba(255,255,255,.8),
+    inset 0 -1px 0 rgba(0,0,0,.04);
+}
+.cat-food-ring{background:linear-gradient(145deg,#F8DDD0,#F0CDB8)}
+.cat-sleep-ring{background:linear-gradient(145deg,#E8DCFC,#D8C8F4)}
+.cat-title{font-size:11px;font-weight:500;color:#C0B0A8;text-transform:uppercase;letter-spacing:1.8px}
+
+/* ── BACK BUTTON ── */
+.back-btn{
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  padding:6px 2px;
+}
+.back-lbl{font-size:14px;font-weight:400;color:#C09480}
+
+/* ── SEGMENT GRID ── */
+.seg-wrap{padding:0 22px;margin-bottom:20px}
+.seg-label{font-size:10.5px;font-weight:500;color:#C0B8B0;text-transform:uppercase;letter-spacing:1.6px;margin-bottom:10px;text-align:right}
+.seg-grid{display:flex;gap:10px;flex-direction:row-reverse}
+.seg-btn{
+  flex:1;border-radius:16px;padding:14px 10px;text-align:center;
+  font-size:13px;font-weight:500;cursor:pointer;
+  transition:transform .14s cubic-bezier(.34,1.56,.64,1);
+  position:relative;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(0,0,0,.04);
+}
+.seg-btn:active{transform:scale(.96)}
+.seg-inactive{background:rgba(255,255,255,.7);color:#B0A8A4;border:1px solid rgba(0,0,0,.04)}
+.seg-active-food{background:linear-gradient(145deg,#F4CEB8,#EAC0A8);color:#7A3A20;border:1px solid rgba(240,180,140,.3)}
+.seg-active-sleep{background:linear-gradient(145deg,#DDD0F8,#CCC0EE);color:#4A2880;border:1px solid rgba(180,150,240,.3)}
+/* wave on selected food */
+.seg-wave{position:absolute;bottom:0;left:0;right:0;height:18px;overflow:hidden;pointer-events:none}
+.seg-wave svg{animation:wv 3.5s ease-in-out infinite alternate;display:block}
+@keyframes wv{0%{transform:translateX(-8%)}100%{transform:translateX(8%)}}
+
+/* ── AMOUNT CONTROL ── */
+.amnt-wrap{padding:0 22px;margin-bottom:20px}
+.amnt-label{font-size:10.5px;font-weight:500;color:#C0B8B0;text-transform:uppercase;letter-spacing:1.6px;margin-bottom:12px;text-align:right}
+.amnt-card{
+  background:rgba(255,255,255,.75);border-radius:20px;
+  padding:18px 20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.03);
+  border:1px solid rgba(255,255,255,.9);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.amnt-btn{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(145deg,#F4DDD0,#EED0C0);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 3px 10px rgba(200,120,80,.16),inset 0 1px 0 rgba(255,255,255,.6);
+  transition:transform .14s cubic-bezier(.34,1.56,.64,1);
+}
+.amnt-btn:active{transform:scale(.88)}
+.amnt-val{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.amnt-num{
+  font-size:42px;font-weight:700;color:#1C1A18;letter-spacing:-2px;
+  position:relative;
+  text-shadow:0 0 20px rgba(180,120,80,.0);
+  animation:amnt-glow 2.6s ease-in-out infinite;
+}
+@keyframes amnt-glow{
+  0%,100%{text-shadow:0 0 0 rgba(200,140,100,.0),0 0 0 rgba(200,140,100,.0)}
+  50%{text-shadow:0 0 18px rgba(200,140,100,.22),0 0 32px rgba(200,140,100,.10)}
+}
+.amnt-unit{font-size:14px;font-weight:300;color:#B8B0A8}
+
+/* ── TIME SELECT ── */
+.time-wrap{padding:0 22px;margin-bottom:20px}
+.time-label{font-size:10.5px;font-weight:500;color:#C0B8B0;text-transform:uppercase;letter-spacing:1.6px;margin-bottom:10px;text-align:right}
+.time-seg{display:flex;gap:8px;flex-direction:row-reverse}
+.time-btn{
+  border-radius:12px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;
+  transition:transform .14s;
+  box-shadow:0 2px 6px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.7);
+}
+.time-active{background:linear-gradient(145deg,#F4CEB8,#EEBAA0);color:#7A3A20}
+.time-inactive{background:rgba(255,255,255,.65);color:#B0A8A4;border:1px solid rgba(0,0,0,.04)}
+.time-btn:active{transform:scale(.93)}
+
+/* ── TIMER DISPLAY (Sleep) ── */
+.timer-wrap{padding:0 22px;margin-bottom:22px}
+.timer-card{
+  background:rgba(255,255,255,.78);border-radius:22px;padding:22px 20px;
+  border:1px solid rgba(255,255,255,.95);
+  display:flex;align-items:center;justify-content:space-between;
+  animation:tglow 2.6s ease-in-out infinite;
+  position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.03);
+}
+@keyframes tglow{
+  0%,100%{box-shadow:0 4px 18px rgba(155,126,200,.14),0 0 30px rgba(155,126,200,.09),inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.03)}
+  50%{box-shadow:0 6px 28px rgba(155,126,200,.25),0 0 52px rgba(155,126,200,.18),inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.03)}
+}
+.timer-left{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.timer-label{font-size:10px;font-weight:500;color:#A898C8;text-transform:uppercase;letter-spacing:1.2px}
+.timer-val{font-size:44px;font-weight:700;color:#1C1A18;letter-spacing:-2px;line-height:1}
+.timer-play{
+  width:58px;height:58px;border-radius:50%;
+  background:linear-gradient(145deg,#5B4AD8,#7B66E8);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 5px 20px rgba(91,74,216,.35),0 0 0 6px rgba(91,74,216,.10),inset 0 1px 0 rgba(255,255,255,.2);
+  transition:transform .14s cubic-bezier(.34,1.56,.64,1);
+  animation:play-glow 2.6s ease-in-out infinite;
+}
+@keyframes play-glow{
+  0%,100%{box-shadow:0 5px 20px rgba(91,74,216,.30),0 0 0 6px rgba(91,74,216,.08)}
+  50%{box-shadow:0 8px 28px rgba(91,74,216,.45),0 0 0 12px rgba(91,74,216,.12)}
+}
+.timer-play:active{transform:scale(.9)}
+
+/* ── SLEEP SUB TYPES ── */
+.sleep-grid{display:flex;gap:10px;flex-direction:row-reverse}
+
+/* ── NOTE FIELD ── */
+.note-wrap{padding:0 22px;margin-bottom:20px}
+.note-label{font-size:10.5px;font-weight:500;color:#C0B8B0;text-transform:uppercase;letter-spacing:1.6px;margin-bottom:10px;text-align:right}
+.note-field{
+  width:100%;background:rgba(255,255,255,.68);border-radius:16px;
+  padding:13px 15px;min-height:60px;text-align:right;
+  font-size:13px;font-weight:300;color:#B8B0A8;
+  font-family:'Heebo',sans-serif;
+  box-shadow:0 2px 8px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(0,0,0,.02);
+  border:1px solid rgba(240,230,220,.6);
+  line-height:1.5;
+}
+
+/* ── SAVE BUTTON ── */
+.save-wrap{padding:0 22px 24px}
+.save-btn{
+  width:100%;border-radius:18px;padding:16px;
+  background:linear-gradient(145deg,#5B84E0,#4A72CE);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  cursor:pointer;
+  box-shadow:0 6px 22px rgba(91,132,224,.36),0 2px 6px rgba(91,132,224,.22),inset 0 1px 0 rgba(255,255,255,.14);
+  transition:transform .14s cubic-bezier(.34,1.56,.64,1);
+}
+.save-btn:active{transform:scale(.97)}
+.save-lbl{font-size:15px;font-weight:700;color:rgba(255,255,255,.95);letter-spacing:.1px}
+
+/* ── SECTION DIVIDER ── */
+.sdiv{height:1px;margin:0 22px 20px;background:linear-gradient(to left,transparent,rgba(200,180,170,.18),transparent)}
+
+/* ── RIPPLE INDICATOR on seg button ── */
+.ripple-cue{
+  position:absolute;inset:-6px;border-radius:22px;
+  border:1.5px solid rgba(240,160,120,.25);
+  animation:seg-ripple 2.2s ease-out infinite;pointer-events:none;
+}
+@keyframes seg-ripple{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.08);opacity:0}}
+
+/* ── Label above content area ── */
+.screen-lbl{
+  text-align:center;margin-bottom:16px;
+  font-size:12px;font-weight:500;color:rgba(80,60,90,.35);
+  text-transform:uppercase;letter-spacing:2px;
+}
+
+/* ── Glow pill badge ── */
+.glow-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  background:#F0EAF8;border-radius:10px;padding:3px 10px;margin-top:6px;
+  animation:pillglow 2.6s ease-in-out infinite;
+}
+@keyframes pillglow{0%,100%{box-shadow:0 0 8px rgba(155,126,200,.2)}50%{box-shadow:0 0 20px rgba(155,126,200,.42)}}
+.gpill-dot{width:5px;height:5px;border-radius:50%;background:#9B7EC8;animation:idblink 2s infinite}
+.gpill-txt{font-size:10px;font-weight:500;color:#7A5CA8}
+</style>
+</head>
+<body>
+
+<div class="scene">
+
+  <!-- ════════════════════════════════════
+       SCREEN 1 — אוכל (Food)
+  ═════════════════════════════════════ -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div class="screen-lbl">מסך האכלה</div>
+    <div class="phone phone-food">
+      <div class="pscroll">
+
+        <!-- Island -->
+        <div class="island-wrap">
+          <div class="island" onclick="this.classList.toggle('open')">
+            <div class="idot green"></div>
+            <span class="itxt">האכלה · 18 דקות</span>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="sbar">
+          <span class="sb-t">03:54</span>
+          <div class="sb-r">
+            <svg width="15" height="11" viewBox="0 0 16 11" fill="#1A1A1A"><rect x="0" y="3.5" width="2.7" height="7.5" rx=".7"/><rect x="4.4" y="2" width="2.7" height="9" rx=".7"/><rect x="8.8" y="0" width="2.7" height="11" rx=".7"/><rect x="13.2" y="0" width="2.7" height="11" rx=".7" opacity=".15"/></svg>
+            <svg width="16" height="11" viewBox="0 0 24 17" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"><path d="M1 6C5 2 19 2 23 6"/><path d="M4 10c3-3 13-3 16 0"/><path d="M8 14c2-2 6-2 8 0"/><circle cx="12" cy="16.5" r="1" fill="#1A1A1A"/></svg>
+            <svg width="26" height="11" viewBox="0 0 26 11" fill="none"><rect x=".5" y=".5" width="22" height="10" rx="2.8" stroke="#1A1A1A" stroke-opacity=".22"/><rect x="2" y="2" width="16" height="7" rx="1.5" fill="#1A1A1A"/><path d="M24 3.5v4c.85-.3 1.4-.9 1.4-2s-.55-1.7-1.4-2z" fill="#1A1A1A" opacity=".22"/></svg>
+          </div>
+        </div>
+
+        <!-- Header row -->
+        <div class="ph-head">
+          <div class="ph-head-row">
+            <!-- Back button — left (start in RTL = right physically but visually left) -->
+            <div class="back-btn" style="flex-direction:row-reverse">
+              <svg width="9" height="16" viewBox="0 0 9 16" fill="none" stroke="#B08870" stroke-width="1.8" stroke-linecap="round"><polyline points="8,1 1.5,8 8,15"/></svg>
+              <span class="back-lbl">חזרה</span>
+            </div>
+            <!-- Avatar right (RTL = start) -->
+            <div class="avatar">
+              <svg width="22" height="22" viewBox="0 0 28 28" fill="none" stroke="rgba(168,88,76,.52)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="10" y="12" width="8" height="13" rx="3"/>
+                <path d="M11 12 V8 Q14 5 17 8 V12"/>
+                <path d="M12 5.5 Q14 3.5 16 5.5"/>
+                <line x1="10" y1="18" x2="18" y2="18" stroke-opacity=".4"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category icon -->
+        <div class="cat-header">
+          <div class="cat-icon-ring cat-food-ring">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="rgba(160,80,50,.55)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Fork -->
+              <line x1="12" y1="8" x2="12" y2="28"/>
+              <path d="M9 8 v6 a3 3 0 006 0 V8"/>
+              <!-- Knife -->
+              <path d="M23 8 c3 3 3 9 0 10 v10"/>
+            </svg>
+          </div>
+          <div class="cat-title">אוכל</div>
+        </div>
+
+        <!-- Sub-type buttons -->
+        <div class="seg-wrap">
+          <div class="seg-label">סוג האכלה</div>
+          <div class="seg-grid">
+            <!-- בקבוק selected -->
+            <div class="seg-btn seg-active-food" style="position:relative;flex:1.2">
+              <div class="ripple-cue"></div>
+              <div class="seg-wave">
+                <svg viewBox="0 0 200 18" width="110%" height="18" preserveAspectRatio="none">
+                  <path d="M0,10 C25,4 45,16 70,10 C95,4 115,16 140,10 C165,4 185,16 210,10 L210,18 L0,18Z" fill="rgba(200,100,60,.10)"/>
+                </svg>
+              </div>
+              בקבוק
+            </div>
+            <div class="seg-btn seg-inactive">הנקה</div>
+            <div class="seg-btn seg-inactive">שאיבה</div>
+          </div>
+        </div>
+
+        <div class="sdiv"></div>
+
+        <!-- Amount control -->
+        <div class="amnt-wrap">
+          <div class="amnt-label">כמה אכלנו?</div>
+          <div class="amnt-card">
+            <!-- + button LEFT (end in RTL) -->
+            <div class="amnt-btn">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(140,70,40,.7)" stroke-width="2.2" stroke-linecap="round"><line x1="9" y1="3" x2="9" y2="15"/><line x1="3" y1="9" x2="15" y2="9"/></svg>
+            </div>
+            <!-- Value center -->
+            <div class="amnt-val">
+              <div class="amnt-num">0</div>
+              <div class="amnt-unit">מ"ל</div>
+            </div>
+            <!-- - button RIGHT (start in RTL) -->
+            <div class="amnt-btn">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(140,70,40,.7)" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="9" x2="15" y2="9"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="sdiv"></div>
+
+        <!-- Time selection -->
+        <div class="time-wrap">
+          <div class="time-label">מתי?</div>
+          <div class="time-seg">
+            <div class="time-btn time-active">עכשיו</div>
+            <div class="time-btn time-inactive">בחר שעה</div>
+          </div>
+        </div>
+
+        <div class="sdiv"></div>
+
+        <!-- Note -->
+        <div class="note-wrap">
+          <div class="note-label">הערה</div>
+          <div class="note-field">הערה (אופציונלי)...</div>
+        </div>
+
+        <!-- Save -->
+        <div class="save-wrap">
+          <div class="save-btn">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round"><polyline points="3,9 7,13 15,5"/></svg>
+            <span class="save-lbl">שמור תיעוד</span>
+          </div>
+        </div>
+
+      </div><!-- /pscroll -->
+    </div><!-- /phone-food -->
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN 2 — תיעוד שינה (Sleep)
+  ═════════════════════════════════════ -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div class="screen-lbl">מסך שינה</div>
+    <div class="phone phone-sleep">
+      <div class="pscroll">
+
+        <!-- Island -->
+        <div class="island-wrap">
+          <div class="island" onclick="this.classList.toggle('open')">
+            <div class="idot purple"></div>
+            <span class="itxt">שינה · 02:22</span>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="sbar">
+          <span class="sb-t">03:54</span>
+          <div class="sb-r">
+            <svg width="15" height="11" viewBox="0 0 16 11" fill="#1A1A1A"><rect x="0" y="3.5" width="2.7" height="7.5" rx=".7"/><rect x="4.4" y="2" width="2.7" height="9" rx=".7"/><rect x="8.8" y="0" width="2.7" height="11" rx=".7"/><rect x="13.2" y="0" width="2.7" height="11" rx=".7" opacity=".15"/></svg>
+            <svg width="16" height="11" viewBox="0 0 24 17" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"><path d="M1 6C5 2 19 2 23 6"/><path d="M4 10c3-3 13-3 16 0"/><path d="M8 14c2-2 6-2 8 0"/><circle cx="12" cy="16.5" r="1" fill="#1A1A1A"/></svg>
+            <svg width="26" height="11" viewBox="0 0 26 11" fill="none"><rect x=".5" y=".5" width="22" height="10" rx="2.8" stroke="#1A1A1A" stroke-opacity=".22"/><rect x="2" y="2" width="16" height="7" rx="1.5" fill="#1A1A1A"/><path d="M24 3.5v4c.85-.3 1.4-.9 1.4-2s-.55-1.7-1.4-2z" fill="#1A1A1A" opacity=".22"/></svg>
+          </div>
+        </div>
+
+        <!-- Header row -->
+        <div class="ph-head">
+          <div class="ph-head-row">
+            <div class="back-btn" style="flex-direction:row-reverse">
+              <svg width="9" height="16" viewBox="0 0 9 16" fill="none" stroke="#9070A8" stroke-width="1.8" stroke-linecap="round"><polyline points="8,1 1.5,8 8,15"/></svg>
+              <span class="back-lbl" style="color:#9070A8">חזרה</span>
+            </div>
+            <div class="avatar" style="background:linear-gradient(145deg,#EAD8F8,#D8C8F0)">
+              <svg width="22" height="22" viewBox="0 0 28 28" fill="none" stroke="rgba(100,60,160,.45)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="10" y="12" width="8" height="13" rx="3"/>
+                <path d="M11 12 V8 Q14 5 17 8 V12"/>
+                <path d="M12 5.5 Q14 3.5 16 5.5"/>
+                <line x1="10" y1="18" x2="18" y2="18" stroke-opacity=".4"/>
+              </svg>
+            </div>
+          </div>
+          <!-- Name & subtitle below -->
+          <div style="margin-top:10px;text-align:right">
+            <div style="font-size:12px;font-weight:300;color:#B0A8B8;letter-spacing:.2px">לילה טוב,</div>
+            <div style="font-size:26px;font-weight:700;color:#1C1A20;letter-spacing:-1.2px;line-height:1.05">דניאל</div>
+            <div style="font-size:12.5px;font-weight:300;color:#BCB4C4;margin-top:3px;display:flex;align-items:center;gap:5px;justify-content:flex-end">
+              <span>בן 6 ימים</span>
+              <span style="width:3px;height:3px;border-radius:50%;background:#D0C8D8;flex-shrink:0;display:inline-block"></span>
+              <span>3 באפריל 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category icon -->
+        <div class="cat-header" style="padding-top:6px">
+          <div class="cat-icon-ring cat-sleep-ring">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="rgba(100,60,170,.5)" stroke-width="1.8" stroke-linecap="round">
+              <path d="M27 18A10 10 0 1116 7 7.5 7.5 0 0027 18z"/>
+              <circle cx="23" cy="10" r="1" fill="rgba(100,60,170,.35)"/>
+              <circle cx="27" cy="7" r=".7" fill="rgba(100,60,170,.25)"/>
+            </svg>
+          </div>
+          <div class="cat-title" style="color:#B0A0C4">תיעוד שינה</div>
+        </div>
+
+        <!-- Sub-type -->
+        <div class="seg-wrap">
+          <div class="seg-label" style="color:#B0A8C0">סוג תיעוד</div>
+          <div class="sleep-grid">
+            <div class="seg-btn seg-active-sleep" style="position:relative">
+              <div class="ripple-cue" style="border-color:rgba(160,128,230,.25)"></div>
+              טיימר
+            </div>
+            <div class="seg-btn seg-inactive">ידני</div>
+            <div class="seg-btn seg-inactive">נמנום</div>
+          </div>
+        </div>
+
+        <div class="sdiv" style="background:linear-gradient(to left,transparent,rgba(180,160,210,.15),transparent)"></div>
+
+        <!-- Timer display -->
+        <div class="timer-wrap">
+          <div class="timer-card" style="backdrop-filter:blur(8px)">
+            <div class="timer-left">
+              <div class="timer-label">זמן שינה</div>
+              <div class="timer-val">0:00</div>
+              <div class="glow-pill" style="margin-top:8px">
+                <div class="gpill-dot"></div>
+                <span class="gpill-txt">מוכן להתחיל</span>
+              </div>
+            </div>
+            <div class="timer-play">
+              <!-- play triangle -->
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="rgba(255,255,255,.92)"><path d="M7 4.5l12 6.5-12 6.5V4.5z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="sdiv" style="background:linear-gradient(to left,transparent,rgba(180,160,210,.15),transparent)"></div>
+
+        <!-- Recent sleep events (skeleton context) -->
+        <div style="padding:0 22px;margin-bottom:18px">
+          <div class="seg-label" style="color:#B0A8C0;margin-bottom:10px">שינות אחרונות</div>
+          <!-- mini card -->
+          <div style="background:rgba(255,255,255,.65);border-radius:14px;padding:11px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.9)">
+            <span style="font-size:12px;font-weight:300;color:#B0A8C0">02:22 שעות · הלילה</span>
+            <span style="font-size:13px;font-weight:600;color:#6848A8">שינה לילה</span>
+          </div>
+          <div style="background:rgba(255,255,255,.45);border-radius:14px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.03),inset 0 1px 0 rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.8);opacity:.7">
+            <span style="font-size:12px;font-weight:300;color:#B0A8C0">45 דקות · אתמול</span>
+            <span style="font-size:13px;font-weight:600;color:#7A60B8">נמנום</span>
+          </div>
+        </div>
+
+        <div class="sdiv" style="background:linear-gradient(to left,transparent,rgba(180,160,210,.15),transparent)"></div>
+
+        <!-- Note -->
+        <div class="note-wrap">
+          <div class="note-label" style="color:#B8B0C8">הערה</div>
+          <div class="note-field" style="background:rgba(245,240,255,.65);border-color:rgba(210,190,240,.4);color:#B0A8C0">ישן עמוק, התעורר פעם אחת...</div>
+        </div>
+
+        <!-- Save -->
+        <div class="save-wrap">
+          <div class="save-btn" style="background:linear-gradient(145deg,#7B60D8,#6048C0);box-shadow:0 6px 22px rgba(100,74,196,.38),0 2px 6px rgba(100,74,196,.22),inset 0 1px 0 rgba(255,255,255,.14)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round"><polyline points="3,9 7,13 15,5"/></svg>
+            <span class="save-lbl">שמור תיעוד</span>
+          </div>
+        </div>
+
+      </div><!-- /pscroll -->
+    </div><!-- /phone-sleep -->
+  </div>
+
+</div><!-- /scene -->
+</body>
+</html>
