@@ -222,7 +222,7 @@ const QuickActions = memo<QuickActionsProps>(({
                     {t('home.quickActions')}
                 </Text>
                 <TouchableOpacity
-                    style={[styles.editBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)', borderWidth: 0.5, borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+                    style={[styles.editBtn, { opacity: 0.5, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.05)', borderWidth: 0.5, borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
                     onPress={() => {
                         setEditModalVisible(true);
                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -231,8 +231,7 @@ const QuickActions = memo<QuickActionsProps>(({
                     accessibilityRole="button"
                     accessibilityLabel={t('stats.editOrder')}
                 >
-                    <SlidersHorizontal size={13} color={isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'} strokeWidth={2} />
-                    <Text style={[styles.editBtnText, { color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>{t('stats.editOrder')}</Text>
+                    <SlidersHorizontal size={14} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={2} />
                 </TouchableOpacity>
             </View>
 
@@ -297,7 +296,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 20,
-        fontWeight: '600',
+        fontWeight: '500',
         letterSpacing: -0.4,
     },
     editBtn: {
@@ -314,11 +313,12 @@ const styles = StyleSheet.create({
     },
     sliderWrapper: {
         position: 'relative',
+        marginHorizontal: -20, // Break out of HomeScreen's 20px padding so icons reach edges
     },
     sliderContent: {
         flexDirection: 'row-reverse',
-        paddingHorizontal: SPACING.sm,
-        gap: 18,
+        paddingHorizontal: 20,
+        gap: 14,
     },
 });
 

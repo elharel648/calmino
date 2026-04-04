@@ -95,6 +95,12 @@ import { GuestProvider } from './context/GuestContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import GuestLoginPrompt from './components/GuestLoginPrompt';
+import { 
+  AnimatedHomeIcon, 
+  AnimatedTimelineIcon, 
+  AnimatedSitterIcon, 
+  AnimatedAccountIcon 
+} from './components/AnimatedTabIcons';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -149,48 +155,14 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
   );
 };
 
-const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
+const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => {
   const { isDarkMode } = useTheme();
-  const activeColor = '#007AFF';
-  // Increased opacity for better accessibility and readability (Apple standard)
-  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)';
-  const iconColor = focused ? activeColor : inactiveColor;
-
-  // Track previous focused state to only animate on change
-  const prevFocused = React.useRef(focused);
-  const iconScale = useSharedValue(1);
-  const iconRotate = useSharedValue(0);
-  const iconY = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (focused && !prevFocused.current) {
-      // Juicy bounce: squish down → elastic overshoot → settle
-      iconScale.value = withSequence(
-        withTiming(0.55, { duration: 100, easing: Easing.out(Easing.quad) }),
-        withSpring(1, { damping: 6, stiffness: 280, mass: 0.5 }),
-      );
-      // Tiny playful wiggle
-      iconRotate.value = withSequence(
-        withTiming(-8, { duration: 60 }),
-        withTiming(6, { duration: 80 }),
-        withSpring(0, { damping: 8, stiffness: 300 }),
-      );
-      // Subtle lift-up bounce
-      iconY.value = withSequence(
-        withTiming(-4, { duration: 100, easing: Easing.out(Easing.quad) }),
-        withSpring(0, { damping: 10, stiffness: 250 }),
-      );
-    }
-    prevFocused.current = focused;
-  }, [focused]);
-
-  const animatedIconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: iconScale.value },
-      { rotate: `${iconRotate.value}deg` },
-      { translateY: iconY.value },
-    ] as any,
-  }));
+  
+  // Strict palette from mockup exactly: Solid black when inactive, brand terracotta when active.
+  const activeColor = '#C8806A'; 
+  const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000'; 
+  const currentColor = focused ? activeColor : inactiveColor;
+  const iconSize = 26;
 
   return (
     <View style={{
@@ -198,14 +170,19 @@ const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
       justifyContent: 'center',
       width: 72,
     }}>
-      <Reanimated.View style={animatedIconStyle}>
-        <Icon color={iconColor} size={25} strokeWidth={focused ? 2.0 : 1.5} />
-      </Reanimated.View>
-      <Text numberOfLines={2} style={{
-        color: iconColor, fontSize: 9, marginTop: 2,
-        fontWeight: focused ? '600' : '400', textAlign: 'center',
-        letterSpacing: -0.1,
-        lineHeight: 12,
+      {/* 
+        We pass the dynamic color directly to our custom SVGs.
+        Each SVG handles its own completely unique interaction choreography! 
+      */}
+      <AnimatedIconComponent focused={focused} color={currentColor} size={iconSize} />
+
+      <Text numberOfLines={1} style={{
+        color: currentColor, 
+        fontSize: 11, 
+        marginTop: 6,
+        fontWeight: focused ? '800' : '700', // Very bold black text like mockup
+        textAlign: 'center',
+        letterSpacing: -0.2,
       }}>
         {label}
       </Text>
@@ -236,34 +213,32 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
         tabBarInactiveTintColor: theme.textSecondary,
       }}
     >
-      {/* Account - always visible (renamed from Settings) */}
+      {/* Account - always visible */}
       < Tab.Screen name={accountTabName} component={AccountStackScreen} options={{
-        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={User} label={t('navigation.account')} />
+        tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedAccountIcon} label={t('navigation.account')} />
       }} />
-
-
 
       {/* Reports - only for users with children */}
       {
         canAccessReports && (
           <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
-            tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={BarChart2} label={t('navigation.reports')} />
+            tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedTimelineIcon} label={t('navigation.reports')} />
           }} />
         )
       }
 
-      {/* Babysitter - for parents AND sitters */}
+      {/* Babysitter */}
       {
-        (canAccessBabysitter || isAppSitter) && (
+        canAccessBabysitter && (
           <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
-            tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label={t('navigation.babysitter')} />
+            tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedSitterIcon} label={t('navigation.babysitter')} />
           }} />
         )
       }
 
-      {/* Home - always visible for everyone (parents, sitters crossing over, etc.) */}
+      {/* Home - always visible */}
       <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
-        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={Home} label={t('navigation.home')} />
+        tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedHomeIcon} label={t('navigation.home')} />
       }} />
 
     </Tab.Navigator >
@@ -278,7 +253,7 @@ function HomeStackScreen() {
       id="HomeStack"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' }
+        contentStyle: { backgroundColor: '#F8F6F4' }
       }}
     >
       <HomeStack.Screen name="Home" component={HomeScreen} />

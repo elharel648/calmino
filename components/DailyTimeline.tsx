@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Animated as RNAnimated } from 'react-native';
 import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
@@ -17,6 +17,25 @@ import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
+
+// ─── Pulsing 'now' dot ───────────────────────────────────────────────────────
+const PulseDot = () => {
+  const scale = useRef(new RNAnimated.Value(1)).current;
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(scale, { toValue: 1.7, duration: 950, useNativeDriver: true }),
+        RNAnimated.timing(scale, { toValue: 1,   duration: 950, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>
+      <RNAnimated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34D399', transform: [{ scale }], opacity: 0.9 }} />
+    </View>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Custom Tooth Icon from QuickActions
 const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: string; strokeWidth?: number }) => (
@@ -72,31 +91,37 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     food: {
       icon: Utensils,
       color: theme.actionColors.food.accentColor,
+      lightColor: theme.actionColors.food.lightColor,
       label: t('actions.food'),
     },
     sleep: {
       icon: Moon,
       color: theme.actionColors.sleep.accentColor,
+      lightColor: theme.actionColors.sleep.lightColor,
       label: t('actions.sleep'),
     },
     diaper: {
       icon: DiaperIcon,
       color: theme.actionColors.diaper.accentColor,
+      lightColor: theme.actionColors.diaper.lightColor,
       label: t('actions.diaper'),
     },
     supplements: {
       icon: Pill,
       color: theme.actionColors.supplements.accentColor,
+      lightColor: theme.actionColors.supplements.lightColor,
       label: t('actions.supplements'),
     },
     custom: {
       icon: Plus,
       color: theme.actionColors.custom.accentColor,
+      lightColor: theme.actionColors.custom.lightColor,
       label: t('actions.custom'),
     },
     teeth: {
       icon: TeethIcon,
       color: theme.actionColors.teeth.accentColor,
+      lightColor: theme.actionColors.teeth.lightColor,
       label: t('profile.teeth'),
     },
   };
@@ -550,21 +575,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {!useGrouping && (
         <View style={styles.header}>
           <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-
-          {/* Stats Pills — inline right of title */}
-          <View style={styles.statsContainer}>
-            {Object.entries(stats).map(([type, count]) => {
-              const config = TYPE_CONFIG[type as keyof typeof TYPE_CONFIG];
-              if (!config) return null;
-              const Icon = config.icon;
-              return (
-                <View key={type} style={[styles.statPill, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.08) }]}>
-                  <Icon size={10} color={config.color} strokeWidth={2.5} />
-                  <Text style={[styles.statCount, { color: config.color }]}>{count}</Text>
-                </View>
-              );
-            })}
-          </View>
         </View>
       )}
 
@@ -766,22 +776,29 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     
                     {/* FAR RIGHT: TIME BLOCK */}
                     <View style={styles.elegantTimeBlock}>
-                      <Text style={[styles.elegantTimeMain, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
-                      <Text style={[styles.elegantTimeAgo, { color: theme.textSecondary }]} numberOfLines={1}>{getTimeAgoShort(event.timestamp)}</Text>
+                      <Text style={[styles.elegantTimeMain, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
                     </View>
 
                     {/* MIDDLE RIGHT: TIMELINE TRACK */}
                     <View style={styles.elegantTrack}>
-                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }]} />
-                      <View style={[styles.elegantIconWrapper, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.12) }]}>
-                        <Icon size={15} color={config.color} strokeWidth={2.5} />
+                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : config.color }]} />
+                      <View style={[styles.elegantIconWrapper, { 
+                        backgroundColor: config.color,
+                        shadowColor: isDarkMode ? 'transparent' : config.color,
+                        shadowOpacity: 0.2,
+                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 2 },
+                        borderWidth: 1.5,
+                        borderColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                      }]}>
+                        <Icon size={14} color="#FFFFFF" strokeWidth={2.5} />
                       </View>
-                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }]} />
+                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : config.color }]} />
                     </View>
 
                     {/* LEFT: CARD CONTENT */}
                     <View style={styles.elegantCardContainer}>
-                      <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                      <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }]}>
                         {/* Color accent strip - right side for RTL */}
                         <View style={[styles.accentStrip, { backgroundColor: config.color }]} />
                         
@@ -789,11 +806,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         <View style={styles.elegantCardTextContainer}>
                           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 5 }}>
                             {details !== config.label ? (
-                              <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                              <Text style={[styles.elegantCategoryLabel, { color: isDarkMode ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)' }]}>{config.label}</Text>
                             ) : null}
-                            {isRecent && isFirst && (
-                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34D399' }} />
-                            )}
+                            {isRecent && isFirst && <PulseDot />}
                           </View>
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
                           {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}
@@ -837,7 +852,14 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {hasMore && (
         <Animated.View entering={ANIMATIONS.fadeIn(ANIMATIONS.stagger(visibleEvents.length, 80), 300)}>
           <TouchableOpacity
-            style={styles.expandButton}
+            style={[
+              styles.expandButton,
+              {
+                borderWidth: 0.75,
+                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.025)',
+              }
+            ]}
             onPress={() => {
               setIsExpanded(!isExpanded);
               if (Platform.OS !== 'web') {
@@ -848,13 +870,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           >
             {isExpanded ? (
               <>
-                <ChevronUp size={14} color={theme.textSecondary} strokeWidth={2} />
-                <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showLess')}</Text>
+                <ChevronUp size={13} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
+                <Text style={[styles.expandText, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('timeline.showLess')}</Text>
               </>
             ) : (
               <>
-                <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
-                <ChevronDown size={14} color={theme.textSecondary} strokeWidth={2} />
+                <Text style={[styles.expandText, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
+                <ChevronDown size={13} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
               </>
             )}
           </TouchableOpacity>
@@ -880,9 +902,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   statsContainer: {
     flexDirection: 'row-reverse',
@@ -1271,24 +1293,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   elegantLineTop: {
-    width: 1.5,
+    width: 1,
     flex: 1,
   },
   elegantLineBottom: {
-    width: 1.5,
+    width: 1,
     flex: 1,
   },
   elegantIconWrapper: {
     width: 32,
     height: 32,
-    borderRadius: 11,
+    borderRadius: 16, // Perfectly circular at 32px
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4, // connects the lines tightly
+    marginVertical: 4,
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 5, // Gap between rows
+    paddingVertical: 8,
     paddingRight: 6,
   },
   elegantCard: {
@@ -1301,22 +1323,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     minHeight: 62,
     overflow: 'hidden',
-    // Premium shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
+    // Warm premium shadow
+    shadowColor: '#8B6B4A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
     elevation: 0,
   },
   accentStrip: {
-    width: 3.5,
+    width: 3,
     borderTopRightRadius: 18,
     borderBottomRightRadius: 18,
     position: 'absolute',
     top: 0,
     bottom: 0,
     right: 0,
-    opacity: 0.7,
+    opacity: 0.85,
   },
   elegantCardTextContainer: {
     flex: 1,
@@ -1325,13 +1347,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   elegantCategoryLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 3,
+    letterSpacing: 0.4,
+    opacity: 0.75,
   },
   elegantCardTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     textAlign: 'right',
     letterSpacing: -0.3,
   },

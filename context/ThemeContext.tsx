@@ -12,7 +12,7 @@ const THEME_MODE_KEY = '@calmino_theme_mode'; // 'auto' | 'manual'
 // --- צבעים ---
 export const COLORS = {
     light: {
-        background: '#F5F7FA', // Premium subtle off-white
+        background: '#F8F6F4', // Warm off-white — premium Apple Health feel
         card: '#FFFFFF',
         cardSecondary: '#F2F2F7',
         textPrimary: '#000000',
@@ -38,22 +38,23 @@ export const COLORS = {
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
         // Action colors for Quick Actions - Functional Minimalism (Soft category bg tint, solid category icon)
+        // Action colors for Quick Actions - Exact 'Structured' App Muted Earth Palette
         actionColors: {
-            food: { color: '#F59E0B', lightColor: 'rgba(245, 158, 11, 0.12)', accentColor: '#F59E0B' },
-            sleep: { color: '#8B5CF6', lightColor: 'rgba(139, 92, 246, 0.12)', accentColor: '#8B5CF6' },
-            diaper: { color: '#34C759', lightColor: 'rgba(52, 199, 89, 0.12)', accentColor: '#34C759' },
-            supplements: { color: '#FF6B6B', lightColor: 'rgba(255, 107, 107, 0.12)', accentColor: '#FF6B6B' },
-            whiteNoise: { color: '#14B8A6', lightColor: 'rgba(20, 184, 166, 0.12)', accentColor: '#14B8A6' },
-            sos: { color: '#FF3B30', lightColor: 'rgba(255, 59, 48, 0.12)', accentColor: '#FF3B30' },
-            custom: { color: '#8E8E93', lightColor: 'rgba(142, 142, 147, 0.12)', accentColor: '#8E8E93' },
-            health: { color: '#14B8A6', lightColor: 'rgba(20, 184, 166, 0.12)', accentColor: '#14B8A6' },
-            growth: { color: '#10B981', lightColor: 'rgba(16, 185, 129, 0.12)', accentColor: '#10B981' },
-            milestones: { color: '#D97706', lightColor: 'rgba(217, 119, 6, 0.12)', accentColor: '#D97706' },
-            magicMoments: { color: '#BF5AF2', lightColor: 'rgba(191, 90, 242, 0.12)', accentColor: '#BF5AF2' },
-            tools: { color: '#8E8E93', lightColor: 'rgba(142, 142, 147, 0.12)', accentColor: '#8E8E93' },
-            teeth: { color: '#EC4899', lightColor: 'rgba(236, 72, 153, 0.12)', accentColor: '#EC4899' },
-            nightLight: { color: '#F59E0B', lightColor: 'rgba(245, 158, 11, 0.12)', accentColor: '#F59E0B' },
-            quickReminder: { color: '#007AFF', lightColor: 'rgba(0, 122, 255, 0.12)', accentColor: '#007AFF' },
+            food:          { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
+            sleep:         { color: '#4A6572', lightColor: 'rgba(74, 101, 114, 0.15)', accentColor: '#4A6572' }, // Muted Navy
+            diaper:        { color: '#6A9C89', lightColor: 'rgba(106, 156, 137, 0.15)', accentColor: '#6A9C89' }, // Sage Teal
+            supplements:   { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' }, // Dusty Rose
+            whiteNoise:    { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)', accentColor: '#557A9D' }, // Slate Blue
+            sos:           { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' }, // Dusty Rose
+            custom:        { color: '#8D4A60', lightColor: 'rgba(141, 74, 96, 0.15)', accentColor: '#8D4A60' }, // Wine/Maroon
+            health:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.15)', accentColor: '#8EB168' }, // Soft Olive
+            growth:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.15)', accentColor: '#8EB168' }, // Soft Olive
+            milestones:    { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
+            magicMoments:  { color: '#8D4A60', lightColor: 'rgba(141, 74, 96, 0.15)', accentColor: '#8D4A60' }, // Wine/Maroon
+            tools:         { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)', accentColor: '#557A9D' }, // Slate Blue
+            teeth:         { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' }, // Dusty Rose
+            nightLight:    { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
+            quickReminder: { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)', accentColor: '#557A9D' }, // Slate Blue
         },
     },
     dark: {
@@ -83,22 +84,23 @@ export const COLORS = {
         // Shadow colors for dynamic shadows
         shadowColor: '#000000',
         // Action colors for Quick Actions - Functional Minimalism
+        // Action colors for Quick Actions - Exact 'Structured' App Muted Earth Palette
         actionColors: {
-            food: { color: '#FBBF24', lightColor: 'rgba(251, 191, 36, 0.22)', accentColor: '#FBBF24' },
-            sleep: { color: '#A78BFA', lightColor: 'rgba(167, 139, 250, 0.22)', accentColor: '#A78BFA' },
-            diaper: { color: '#34D158', lightColor: 'rgba(52, 209, 88, 0.22)', accentColor: '#34D158' },
-            supplements: { color: '#FF6B6B', lightColor: 'rgba(255, 107, 107, 0.22)', accentColor: '#FF6B6B' },
-            whiteNoise: { color: '#2DD4BF', lightColor: 'rgba(45, 212, 191, 0.22)', accentColor: '#2DD4BF' },
-            sos: { color: '#FF6B6B', lightColor: 'rgba(255, 107, 107, 0.22)', accentColor: '#FF6B6B' },
-            custom: { color: '#A8A8AD', lightColor: 'rgba(168, 168, 173, 0.22)', accentColor: '#A8A8AD' },
-            health: { color: '#2DD4BF', lightColor: 'rgba(45, 212, 191, 0.22)', accentColor: '#2DD4BF' },
-            growth: { color: '#34D158', lightColor: 'rgba(52, 209, 88, 0.22)', accentColor: '#34D158' },
-            milestones: { color: '#FFD060', lightColor: 'rgba(255, 208, 96, 0.22)', accentColor: '#FFD060' },
-            magicMoments: { color: '#D08EF5', lightColor: 'rgba(208, 142, 245, 0.22)', accentColor: '#D08EF5' },
-            tools: { color: '#A8A8AD', lightColor: 'rgba(168, 168, 173, 0.22)', accentColor: '#A8A8AD' },
-            teeth: { color: '#EC4899', lightColor: 'rgba(236, 72, 153, 0.22)', accentColor: '#EC4899' },
-            nightLight: { color: '#FBBF24', lightColor: 'rgba(251, 191, 36, 0.22)', accentColor: '#FBBF24' },
-            quickReminder: { color: '#60A5FA', lightColor: 'rgba(96, 165, 250, 0.22)', accentColor: '#60A5FA' },
+            food:          { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            sleep:         { color: '#4A6572', lightColor: 'rgba(74, 101, 114, 0.22)', accentColor: '#4A6572' },
+            diaper:        { color: '#6A9C89', lightColor: 'rgba(106, 156, 137, 0.22)', accentColor: '#6A9C89' },
+            supplements:   { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
+            whiteNoise:    { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)', accentColor: '#557A9D' },
+            sos:           { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
+            custom:        { color: '#8D4A60', lightColor: 'rgba(141, 74, 96, 0.22)', accentColor: '#8D4A60' },
+            health:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.22)', accentColor: '#8EB168' },
+            growth:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.22)', accentColor: '#8EB168' },
+            milestones:    { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            magicMoments:  { color: '#8D4A60', lightColor: 'rgba(141, 74, 96, 0.22)', accentColor: '#8D4A60' },
+            tools:         { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)', accentColor: '#557A9D' },
+            teeth:         { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
+            nightLight:    { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            quickReminder: { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)', accentColor: '#557A9D' },
         },
     }
 };

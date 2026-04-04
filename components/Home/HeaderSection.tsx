@@ -119,6 +119,12 @@ const HeaderSection = memo<HeaderSectionProps>(({
         return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
     }, [profile.birthDate, profile.gender]);
 
+    // Today's date string — shown next to age
+    const todayDateStr = useMemo(() => {
+        const today = new Date();
+        return today.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    }, []);
+
     // Photo upload handler
     const handlePhotoPress = async () => {
         if (Platform.OS !== 'web') {
@@ -231,12 +237,18 @@ const HeaderSection = memo<HeaderSectionProps>(({
             {/* Top Row: Greeting + Weather */}
             <View style={styles.topRow}>
                 <View style={styles.greetingSection}>
-                    <Text style={[styles.greetingLarge, { color: theme.textPrimary }]}>
-                        {greeting}, {profile.name}
+                    {/* Line 1: small muted greeting */}
+                    <Text style={[styles.greetingSmall, { color: theme.textSecondary }]}>
+                        {greeting},
                     </Text>
+                    {/* Line 2: large bold name */}
+                    <Text style={[styles.greetingName, { color: theme.textPrimary }]}>
+                        {profile.name}
+                    </Text>
+                    {/* Line 3: age + today's date */}
                     {ageText ? (
                         <Text style={[styles.ageText, { color: theme.textSecondary }]}>
-                            {ageText}
+                            {ageText}{todayDateStr ? ` · ${todayDateStr}` : ''}
                         </Text>
                     ) : null}
                 </View>
@@ -256,7 +268,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     >
                         <Bell size={22} color={theme.textSecondary} strokeWidth={1.5} />
                         {unreadCount > 0 && (
-                            <View style={[styles.notificationDot, { backgroundColor: '#007AFF' }]} />
+                            <View style={[styles.notificationDot, { backgroundColor: '#C8806A' }]} />
                         )}
                     </TouchableOpacity>
 
@@ -421,15 +433,26 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         flex: 1,
     },
-    greetingLarge: {
-        fontSize: 22,
-        fontWeight: '600',
-        letterSpacing: -0.4,
-    },
-    ageText: {
+    greetingSmall: {
         fontSize: 15,
         fontWeight: '400',
-        marginTop: 2,
+        letterSpacing: -0.2,
+        textAlign: 'right',
+    },
+    greetingName: {
+        fontSize: 30,
+        fontWeight: '700',
+        letterSpacing: -0.7,
+        marginTop: -2,
+        lineHeight: 36,
+        textAlign: 'right',
+    },
+    ageText: {
+        fontSize: 13,
+        fontWeight: '400',
+        marginTop: 4,
+        opacity: 0.55,
+        textAlign: 'right',
     },
     weatherText: {
         fontSize: 13,

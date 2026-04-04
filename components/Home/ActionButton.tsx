@@ -57,22 +57,24 @@ const ActionButton = memo(({
                 <View style={[
                     styles.iconContainer,
                     {
-                        backgroundColor: config.lightColor,
-                        shadowColor: isDarkMode ? 'transparent' : '#000',
+                        backgroundColor: config.color, // Solid earthy color exactly like Structured
+                        // Colored shadow matches the icon
+                        shadowColor: isDarkMode ? 'transparent' : config.color,
+                        shadowOpacity: isActive ? 0.35 : 0.12,
+                        shadowRadius: isActive ? 12 : 8,
+                        shadowOffset: isActive ? { width: 0, height: 6 } : { width: 0, height: 3 },
                     },
                     isActive && {
-                        backgroundColor: config.accentColor,
-                        shadowColor: config.accentColor,
-                        shadowOpacity: 0.3,
-                        shadowRadius: 10,
-                        shadowOffset: { width: 0, height: 4 },
+                        // Apple selection indicator rings can be achieved cleanly with thick border
+                        borderWidth: 2,
+                        borderColor: isDarkMode ? '#FFFFFF' : '#FFFFFF',
                     },
                     config.hasBorder && styles.iconContainerDashed,
                 ]}>
                     {isActive ? (
-                        <Pause size={19} color="#FFFFFF" strokeWidth={1.5} />
+                        <Pause size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
                     ) : (
-                        <Icon size={19} color={config.color} strokeWidth={1.5} />
+                        <Icon size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
                     )}
                 </View>
                 {/* Badge dot — shown for X/Y format or plain number */}
@@ -137,11 +139,11 @@ export const getHasAnimated = () => true;
 const styles = StyleSheet.create({
     actionItem: {
         alignItems: 'center',
-        width: 72,
+        width: 80,
     },
     iconWrapper: {
         position: 'relative',
-        marginBottom: 8,
+        marginBottom: 9,
     },
     badgeDot: {
         position: 'absolute',
@@ -163,16 +165,19 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     iconContainer: {
-        width: 54,
-        height: 54,
-        borderRadius: 17,
+        width: 62,
+        height: 62,
+        borderRadius: 31,
         alignItems: 'center',
         justifyContent: 'center',
-        // Diffused premium floating shadow
+        // Premium floating shadow — colored glow
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 16,
+        shadowOpacity: 0.14,
+        shadowRadius: 10,
         elevation: 0,
+        // Glass highlight edge
+        borderWidth: 0.8,
+        borderColor: 'rgba(255,255,255,0.80)',
     },
     iconContainerDashed: {
         borderWidth: 1.5,
@@ -180,13 +185,13 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 11,
-        fontWeight: '500',
+        fontWeight: '600',
         textAlign: 'center',
         marginBottom: 3,
-        letterSpacing: -0.1,
+        letterSpacing: -0.2,
     },
     subText: {
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '400',
     },
     subPlaceholder: {

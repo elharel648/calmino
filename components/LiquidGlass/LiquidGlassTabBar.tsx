@@ -38,7 +38,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const ACTIVE_COLOR = '#007AFF';
+const ACTIVE_COLOR = '#C8806A'; // Warm terracotta — matches app pastel palette
 const SCREEN_W = Dimensions.get('window').width;
 const BAR_MARGIN_H = 16;
 const BAR_W = SCREEN_W - BAR_MARGIN_H * 2;
@@ -181,8 +181,8 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
                         color: isFocused
                           ? ACTIVE_COLOR
                           : isDarkMode
-                            ? 'rgba(255,255,255,0.4)'
-                            : 'rgba(0,0,0,0.3)',
+                            ? 'rgba(255,255,255,0.5)'
+                            : 'rgba(0,0,0,0.4)',
                         size: 24,
                       })}
                   </View>
