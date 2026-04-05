@@ -23,7 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
-import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame, SlidersHorizontal } from 'lucide-react-native';
+import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame, SlidersHorizontal } from 'lucide-react-native';
 import DiaperIcon from '../components/Common/DiaperIcon';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import { BlurView } from 'expo-blur';
@@ -991,23 +991,23 @@ export default function ReportsScreen() {
         <p style="color:#64748B; margin-top:0; font-size:16px;">${t('reports.comparison.patternDetection')}</p>
         
         <div class="trends-grid">
-            <div class="trend-card" style="border-top: 4px solid ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#CBD5E1'};">
+            <div class="trend-card" style="border-top: 4px solid ${comparison.sleepChange > 0 ? '#6BAF8A' : comparison.sleepChange < 0 ? '#D4837A' : '#CBD5E1'};">
                 <span class="trend-label">${t('reports.sections.sleepRest')}</span>
-                <span class="trend-value" style="color: ${comparison.sleepChange > 0 ? '#10B981' : comparison.sleepChange < 0 ? '#EF4444' : '#1E293B'}">
+                <span class="trend-value" style="color: ${comparison.sleepChange > 0 ? '#6BAF8A' : comparison.sleepChange < 0 ? '#D4837A' : '#1E293B'}">
                     ${comparison.sleepChange > 0 ? '+' : ''}${comparison.sleepChange}%
                 </span>
             </div>
-            
-            <div class="trend-card" style="border-top: 4px solid ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#CBD5E1'};">
+
+            <div class="trend-card" style="border-top: 4px solid ${comparison.feedingChange > 0 ? '#6BAF8A' : comparison.feedingChange < 0 ? '#D4837A' : '#CBD5E1'};">
                 <span class="trend-label">${t('reports.sections.feedingAmounts')}</span>
-                <span class="trend-value" style="color: ${comparison.feedingChange > 0 ? '#10B981' : comparison.feedingChange < 0 ? '#EF4444' : '#1E293B'}">
+                <span class="trend-value" style="color: ${comparison.feedingChange > 0 ? '#6BAF8A' : comparison.feedingChange < 0 ? '#D4837A' : '#1E293B'}">
                     ${comparison.feedingChange > 0 ? '+' : ''}${comparison.feedingChange}%
                 </span>
             </div>
-            
-            <div class="trend-card" style="border-top: 4px solid ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#CBD5E1'};">
+
+            <div class="trend-card" style="border-top: 4px solid ${comparison.diaperChange > 0 ? '#6BAF8A' : comparison.diaperChange < 0 ? '#D4837A' : '#CBD5E1'};">
                 <span class="trend-label">${t('reports.sections.diaperChanges')}</span>
-                <span class="trend-value" style="color: ${comparison.diaperChange > 0 ? '#10B981' : comparison.diaperChange < 0 ? '#EF4444' : '#1E293B'}">
+                <span class="trend-value" style="color: ${comparison.diaperChange > 0 ? '#6BAF8A' : comparison.diaperChange < 0 ? '#D4837A' : '#1E293B'}">
                     ${comparison.diaperChange > 0 ? '+' : ''}${comparison.diaperChange}%
                 </span>
             </div>
@@ -1099,8 +1099,8 @@ export default function ReportsScreen() {
     // Smart trend color: green = positive, red = negative, amber = neutral metric (e.g. diapers), gray = no change
     const getTrendColor = (val: number) => {
       if (neutralTrend) return '#F59E0B'; // Amber - neither good nor bad
-      if (val > 0) return '#10B981'; // Green
-      if (val < 0) return '#EF4444'; // Red
+      if (val > 0) return '#6BAF8A'; // Green
+      if (val < 0) return '#D4837A'; // Red
       return theme.textSecondary;
     };
     const trendColor = change !== undefined && change !== 0 ? getTrendColor(change) : null;
@@ -1645,7 +1645,7 @@ export default function ReportsScreen() {
             {/* Diapers Comparison */}
             <View style={styles.comparisonItem}>
               <View style={[styles.comparisonIconWrap, { backgroundColor: theme.actionColors.diaper.color }]}>
-                <Droplets size={16} color="#FFFFFF" strokeWidth={2} />
+                <DiaperIcon size={16} color="#FFFFFF" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.diapers')}</Text>
               <Text style={[styles.comparisonValue, {

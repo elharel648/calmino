@@ -107,9 +107,9 @@ export const PremiumInsightCard: React.FC<PremiumInsightCardProps> = ({
                             { backgroundColor: trend === 'up' ? '#D1FAE5' : '#FEE2E2' }
                         ]}>
                             {trend === 'up' ? (
-                                <TrendingUp size={12} color="#059669" strokeWidth={2.5} />
+                                <TrendingUp size={12} color="#6BAF8A" strokeWidth={2.5} />
                             ) : (
-                                <TrendingDown size={12} color="#DC2626" strokeWidth={2.5} />
+                                <TrendingDown size={12} color="#D4837A" strokeWidth={2.5} />
                             )}
                         </View>
                     )}

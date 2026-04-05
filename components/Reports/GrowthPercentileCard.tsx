@@ -62,13 +62,13 @@ const MetricRow = memo(({ icon: Icon, label, value, unit, percentile, change, co
                         </Text>
                         <Text style={[styles.metricUnit, { color: theme.textTertiary }]}>{unit}</Text>
                         {hasChange && (
-                            <View style={[styles.changeBadge, { backgroundColor: isPositive ? 'rgba(125,175,143,0.15)' : '#FEE2E2' }]}>
+                            <View style={[styles.changeBadge, { backgroundColor: isPositive ? 'rgba(107,175,138,0.15)' : 'rgba(212,131,122,0.15)' }]}>
                                 {isPositive ? (
                                     <ArrowUpRight size={10} color="#7DAF8F" strokeWidth={3} />
                                 ) : (
-                                    <ArrowDownRight size={10} color="#EF4444" strokeWidth={3} />
+                                    <ArrowDownRight size={10} color="#D4837A" strokeWidth={3} />
                                 )}
-                                <Text style={[styles.changeText, { color: isPositive ? '#7DAF8F' : '#EF4444' }]}>
+                                <Text style={[styles.changeText, { color: isPositive ? '#6BAF8A' : '#D4837A' }]}>
                                     {isPositive ? '+' : ''}{change}
                                 </Text>
                             </View>
@@ -204,7 +204,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
             {/* Legend & Source */}
             <View style={styles.legend}>
                 <Text style={[styles.legendText, { color: theme.textTertiary }]}>
-                    פרצנטיל לפי תקן WHO · גיל {safeAge} חודשים
+                    {t('detailedGrowth.percentileLegend', { age: safeAge })}
                 </Text>
             </View>
 
@@ -212,7 +212,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
             <View style={[styles.disclaimer, { backgroundColor: theme.background }]}>
                 <Info size={12} color={theme.textTertiary} strokeWidth={2} />
                 <Text style={[styles.disclaimerText, { color: theme.textTertiary }]}>
-                    לייעוץ בלבד. לחששות בנושא גדילה יש להתייעץ עם רופא.
+                    {t('detailedGrowth.growthDisclaimer')}
                 </Text>
             </View>
         </Animated.View>

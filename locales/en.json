@@ -1178,7 +1178,10 @@
     "editSubtitle": "Update the measurement",
     "hideNotes": "Hide Notes",
     "kg": "kg",
-    "cm": "cm"
+    "cm": "cm",
+    "deleteMeasurement": "Delete Measurement",
+    "additionalNotes": "Additional notes...",
+    "autoUpdateTooltip": "A measurement saved for today will automatically update the baby's profile statistics"
   },
   "auth": {
     "login": "Login",
@@ -1479,7 +1482,9 @@
     "whoDisclaimer": "Data calculated per WHO standards. Consult a doctor for medical advice.",
     "measurementHistory": "Measurement History",
     "currentMeasurements": "Current Measurements",
-    "growthTrend": "Growth Trend"
+    "growthTrend": "Growth Trend",
+    "percentileLegend": "Percentile by WHO standard · Age {age} months",
+    "growthDisclaimer": "For guidance only. Consult a doctor for growth concerns."
   },
   "sitterReg": {
     "personalDetails": "Personal Details",

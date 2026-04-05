@@ -288,16 +288,16 @@ export const getPercentileStatus = (percentile: number): {
     statusHe: string;
 } => {
     if (percentile < 3) {
-        return { color: '#EF4444', bgColor: '#FEE2E2', status: 'Very Low', statusHe: 'נמוך מאוד' };
+        return { color: '#D4837A', bgColor: 'rgba(212, 131, 122, 0.15)', status: 'Very Low', statusHe: 'נמוך מאוד' };
     }
     if (percentile < 15) {
-        return { color: '#F59E0B', bgColor: '#FEF3C7', status: 'Low', statusHe: 'נמוך' };
+        return { color: '#D4837A', bgColor: 'rgba(212, 131, 122, 0.15)', status: 'Low', statusHe: 'נמוך' };
     }
     if (percentile <= 85) {
-        return { color: '#10B981', bgColor: '#D1FAE5', status: 'Normal', statusHe: 'תקין' };
+        return { color: '#6BAF8A', bgColor: 'rgba(107, 175, 138, 0.15)', status: 'Normal', statusHe: 'תקין' };
     }
     if (percentile <= 97) {
-        return { color: '#F59E0B', bgColor: '#FEF3C7', status: 'High', statusHe: 'גבוה' };
+        return { color: '#D4837A', bgColor: 'rgba(212, 131, 122, 0.15)', status: 'High', statusHe: 'גבוה' };
     }
-    return { color: '#EF4444', bgColor: '#FEE2E2', status: 'Very High', statusHe: 'גבוה מאוד' };
+    return { color: '#D4837A', bgColor: 'rgba(212, 131, 122, 0.15)', status: 'Very High', statusHe: 'גבוה מאוד' };
 };

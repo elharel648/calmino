@@ -928,7 +928,9 @@
     "whoDisclaimer": "Données calculées selon les normes de l'OMS. Consultez un médecin pour des conseils médicaux.",
     "measurementHistory": "Historique des mesures",
     "currentMeasurements": "Mesures actuelles",
-    "growthTrend": "Tendance de croissance"
+    "growthTrend": "Tendance de croissance",
+    "percentileLegend": "Percentile selon la norme OMS · Âge {age} mois",
+    "growthDisclaimer": "À titre indicatif uniquement. Consultez un médecin pour toute préoccupation de croissance."
   },
   "sitterReg": {
     "personalDetails": "Informations personnelles",
@@ -1329,7 +1331,10 @@
     "editSubtitle": "Mettez à jour la mesure",
     "hideNotes": "Masquer les notes",
     "kg": "kg",
-    "cm": "cm"
+    "cm": "cm",
+    "deleteMeasurement": "Supprimer la mesure",
+    "additionalNotes": "Notes supplémentaires...",
+    "autoUpdateTooltip": "Une mesure enregistrée pour aujourd'hui mettra automatiquement à jour les statistiques du profil du bébé"
   },
   "auth": {
     "login": "Connexion",

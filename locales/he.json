@@ -1193,7 +1193,10 @@
     "editSubtitle": "עדכנו את המדידה",
     "hideNotes": "הסתר הערות",
     "kg": "ק\"ג",
-    "cm": "ס\"מ"
+    "cm": "ס\"מ",
+    "deleteMeasurement": "מחק מדידה",
+    "additionalNotes": "הערות נוספות...",
+    "autoUpdateTooltip": "מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק"
   },
   "auth": {
     "login": "התחברות",
@@ -1494,7 +1497,9 @@
     "whoDisclaimer": "הנתונים מחושבים לפי תקן WHO. לייעוץ רפואי יש לפנות לרופא.",
     "measurementHistory": "היסטוריית מדידות",
     "currentMeasurements": "מדידות נוכחיות",
-    "growthTrend": "מגמת גדילה"
+    "growthTrend": "מגמת גדילה",
+    "percentileLegend": "פרצנטיל לפי תקן WHO · גיל {age} חודשים",
+    "growthDisclaimer": "לייעוץ בלבד. לחששות בנושא גדילה יש להתייעץ עם רופא."
   },
   "sitterReg": {
     "personalDetails": "פרטים אישיים",

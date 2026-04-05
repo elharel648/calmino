@@ -419,7 +419,7 @@ export default function GrowthModal({
                         {showInfoTip && (
                             <View style={[styles.tooltip, { backgroundColor: isDarkMode ? '#1C2E26' : '#ECFDF5', borderColor: isDarkMode ? '#2D4A3A' : '#A7F3D0' }]}>
                                 <Text style={[styles.tooltipText, { color: isDarkMode ? '#6EE7B7' : '#065F46' }]}>
-                                    מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק
+                                    {t('growth.autoUpdateTooltip')}
                                 </Text>
                             </View>
                         )}
@@ -644,7 +644,7 @@ export default function GrowthModal({
                                         ]}
                                         value={notes}
                                         onChangeText={setNotes}
-                                        placeholder="הערות נוספות..."
+                                        placeholder={t('growth.additionalNotes')}
                                         placeholderTextColor={theme.textTertiary}
                                         textAlign="right"
                                         multiline
@@ -683,7 +683,7 @@ export default function GrowthModal({
                                         activeOpacity={0.7}
                                     >
                                         <Trash2 size={16} color="#EF4444" strokeWidth={1.5} />
-                                        <Text style={styles.deleteButtonText}>מחק מדידה</Text>
+                                        <Text style={styles.deleteButtonText}>{t('growth.deleteMeasurement')}</Text>
                                     </TouchableOpacity>
                                 )}
                             </Animated.View>
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 4,
-        paddingBottom: 24,
+        paddingBottom: 120,
         flexGrow: 1,
         width: '100%',
     },

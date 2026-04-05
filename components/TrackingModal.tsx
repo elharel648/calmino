@@ -303,11 +303,8 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
   }, []);
 
   // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
-  // Disabled when any picker overlay is visible so spinner scrolls aren't intercepted
-  // Also disabled during sleep duration mode (inline countdown spinner)
-  const isPickerOpen = showDiaperDatePicker || showDiaperTimePicker || showSleepStartPicker || showSleepEndPicker || showFoodStartTimePicker || showFoodEndTimePicker || sleepMode === 'duration';
+  // Always enabled so the drag handle can dismiss the modal at any time
   const panGesture = Gesture.Pan()
-    .enabled(!isPickerOpen)
     .activeOffsetY([-2, 2])
     .simultaneousWithExternalGesture(nativeScrollRef)
     .onStart(() => {

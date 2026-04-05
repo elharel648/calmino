@@ -928,7 +928,9 @@
     "whoDisclaimer": "البيانات محسوبة وفق معايير منظمة الصحة العالمية. استشر طبيبًا للنصيحة الطبية.",
     "measurementHistory": "سجل القياسات",
     "currentMeasurements": "القياسات الحالية",
-    "growthTrend": "اتجاه النمو"
+    "growthTrend": "اتجاه النمو",
+    "percentileLegend": "النسبة المئوية وفقاً لمعيار WHO · العمر {age} أشهر",
+    "growthDisclaimer": "للاستشارة فقط. لمخاوف النمو يرجى استشارة الطبيب."
   },
   "sitterReg": {
     "personalDetails": "البيانات الشخصية",
@@ -1329,7 +1331,10 @@
     "editSubtitle": "حدّث القياس",
     "hideNotes": "إخفاء الملاحظات",
     "kg": "كغ",
-    "cm": "سم"
+    "cm": "سم",
+    "deleteMeasurement": "حذف القياس",
+    "additionalNotes": "ملاحظات إضافية...",
+    "autoUpdateTooltip": "القياس المحفوظ لهذا اليوم سيُحدّث إحصائيات الملف الشخصي للطفل تلقائياً"
   },
   "auth": {
     "login": "تسجيل الدخول",

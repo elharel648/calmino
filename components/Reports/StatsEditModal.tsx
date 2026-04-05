@@ -2,7 +2,8 @@ import React, { memo, useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, GripVertical, RotateCcw, Utensils, Moon, Droplets, Pill } from 'lucide-react-native';
+import { X, GripVertical, RotateCcw, Utensils, Moon, Pill } from 'lucide-react-native';
+import DiaperIcon from '../Common/DiaperIcon';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
@@ -20,7 +21,7 @@ export const STATS_ORDER_KEY = '@stats_order';
 const ICONS: Record<StatKey, any> = {
     food: Utensils,
     sleep: Moon,
-    diapers: Droplets,
+    diapers: DiaperIcon,
     supplements: Pill,
 };
 

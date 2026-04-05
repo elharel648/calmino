@@ -12,9 +12,10 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import {
-    ChevronLeft, Moon, Utensils, Droplets, Pill,
+    ChevronLeft, Moon, Utensils, Pill,
     TrendingUp, TrendingDown, Clock, Award, Star, Zap
 } from 'lucide-react-native';
+import DiaperIcon from '../Common/DiaperIcon';
 import * as Haptics from 'expo-haptics';
 import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, eachWeekOfInterval, differenceInHours } from 'date-fns';
 import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
@@ -90,7 +91,7 @@ export default function DetailedStatsScreen({
         },
         diapers: {
             title: t('reports.metrics.diapers'),
-            icon: Droplets,
+            icon: DiaperIcon,
             color: theme.actionColors.diaper.color,
             lightBg: theme.actionColors.diaper.lightColor,
             barColors: [theme.actionColors.diaper.color, theme.actionColors.diaper.color, theme.actionColors.diaper.accentColor],
@@ -743,13 +744,13 @@ export default function DetailedStatsScreen({
                         <View style={styles.comparisonContent}>
                             <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{config.title}</Text>
                             <View style={styles.comparisonValueRow}>
-                                <Text style={[styles.comparisonValue, { color: comparison.isPositive ? '#10B981' : '#EF4444' }]}>
+                                <Text style={[styles.comparisonValue, { color: comparison.isPositive ? '#6BAF8A' : '#D4837A' }]}>
                                     {comparison.isPositive ? '+' : '-'}{comparison.change}%
                                 </Text>
                                 {comparison.isPositive ? (
-                                    <TrendingUp size={16} color="#10B981" />
+                                    <TrendingUp size={16} color="#6BAF8A" />
                                 ) : (
-                                    <TrendingDown size={16} color="#EF4444" />
+                                    <TrendingDown size={16} color="#D4837A" />
                                 )}
                             </View>
                             <Text style={[styles.comparisonNote, { color: theme.textSecondary }]}>

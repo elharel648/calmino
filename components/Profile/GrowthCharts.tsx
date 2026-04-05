@@ -98,8 +98,8 @@ const GrowthCharts = ({
         if (!current || !previous) return null;
         const diff = current - previous;
 
-        if (diff > 0) return { icon: TrendingUp, color: '#10B981', text: `+${diff.toFixed(1)}` };
-        if (diff < 0) return { icon: TrendingDown, color: '#EF4444', text: diff.toFixed(1) };
+        if (diff > 0) return { icon: TrendingUp, color: '#6BAF8A', text: `+${diff.toFixed(1)}` };
+        if (diff < 0) return { icon: TrendingDown, color: '#D4837A', text: diff.toFixed(1) };
         return { icon: Minus, color: '#6B7280', text: '0' };
     };
 

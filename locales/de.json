@@ -928,7 +928,9 @@
     "whoDisclaimer": "Daten nach WHO-Standards berechnet. Konsultieren Sie einen Arzt für medizinische Beratung.",
     "measurementHistory": "Messungsverlauf",
     "currentMeasurements": "Aktuelle Messungen",
-    "growthTrend": "Wachstumstrend"
+    "growthTrend": "Wachstumstrend",
+    "percentileLegend": "Perzentile nach WHO-Standard · Alter {age} Monate",
+    "growthDisclaimer": "Nur zur Orientierung. Bei Wachstumsbedenken einen Arzt konsultieren."
   },
   "sitterReg": {
     "personalDetails": "Persönliche Daten",
@@ -1329,7 +1331,10 @@
     "editSubtitle": "Aktualisieren Sie die Messung",
     "hideNotes": "Notizen ausblenden",
     "kg": "kg",
-    "cm": "cm"
+    "cm": "cm",
+    "deleteMeasurement": "Messung löschen",
+    "additionalNotes": "Zusätzliche Notizen...",
+    "autoUpdateTooltip": "Eine für heute gespeicherte Messung aktualisiert automatisch die Statistiken im Babyprofil"
   },
   "auth": {
     "login": "Anmelden",

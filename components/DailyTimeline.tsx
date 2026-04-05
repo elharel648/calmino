@@ -892,7 +892,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             {details !== config.label ? (
                               <Text style={[styles.elegantCategoryLabel, { color: isDarkMode ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)' }]}>{config.label}</Text>
                             ) : null}
-                            {isRecent && isFirst && <PulseDot />}
                           </View>
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
                           {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, PanRespond
 import { useTheme } from '../context/ThemeContext';
 import Slider from '@react-native-community/slider';
 import * as SystemBrightness from 'expo-brightness';
-import { Sun, Moon, Sparkles, Zap } from 'lucide-react-native';
+import { Sun, Moon, Sparkles, Lightbulb } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -297,9 +297,9 @@ export default function NightLightModal({
                                                 shadowRadius: 10,
                                                 shadowOffset: { width: 0, height: 5 },
                                                 borderWidth: 2.5,
-                                                borderColor: brightness > 0.5 ? '#FFFFFF' : '#1C1C1E',
+                                                borderColor: '#FFFFFF',
                                             }]}>
-                                                <Zap size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                                <Lightbulb size={28} color="#FFFFFF" strokeWidth={2.2} />
                                             </Animated.View>
                                         </View>
                                         <Text style={[styles.title, { color: getTextColor() }]}>{t('nightLight.title')}</Text>

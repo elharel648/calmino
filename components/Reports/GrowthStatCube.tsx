@@ -133,17 +133,17 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                                 {hasChange && (
                                     <View style={[styles.trendBadge, {
                                         backgroundColor: isPositive
-                                            ? (isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
-                                            : (isDarkMode ? 'rgba(220, 38, 38, 0.22)' : '#FEE2E2')
+                                            ? (isDarkMode ? 'rgba(107, 175, 138, 0.22)' : '#E8F5EE')
+                                            : (isDarkMode ? 'rgba(212, 131, 122, 0.22)' : '#FAEAE8')
                                     }]}>
                                         <ArrowUpRight
                                             size={10}
-                                            color={isPositive ? '#059669' : '#DC2626'}
+                                            color={isPositive ? '#6BAF8A' : '#D4837A'}
                                             style={!isPositive ? { transform: [{ rotate: '90deg' }] } : undefined}
                                         />
                                         <Text style={{
                                             fontSize: 10,
-                                            color: isPositive ? '#059669' : '#DC2626',
+                                            color: isPositive ? '#6BAF8A' : '#D4837A',
                                             fontWeight: '600'
                                         }}>
                                             {isPositive ? '+' : ''}{change?.weight}
@@ -167,12 +167,12 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                     {/* Sub value - only shown when sparkline is visible (multiple measurements) */}
                     {hasData && latestWeight && weightData.length >= 2 && (
                         <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>
-                            {latestWeight} ק"ג
+                            {latestWeight} {t('reports.units.kg')}
                         </Text>
                     )}
                     {!hasData && (
                         <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>
-                            הוסף מדידה
+                            {t('growth.addMeasurement')}
                         </Text>
                     )}
                 </View>

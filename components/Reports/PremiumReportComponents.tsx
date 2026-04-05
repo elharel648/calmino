@@ -147,13 +147,13 @@ export const PremiumStatCard: React.FC<PremiumStatCardProps> = ({
                                 { backgroundColor: change > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)' }
                             ]}>
                                 {change > 0 ? (
-                                    <TrendingUp size={10} color="#10B981" />
+                                    <TrendingUp size={10} color="#6BAF8A" />
                                 ) : (
-                                    <TrendingDown size={10} color="#EF4444" />
+                                    <TrendingDown size={10} color="#D4837A" />
                                 )}
                                 <Text style={[
                                     styles.trendText,
-                                    { color: change > 0 ? '#10B981' : '#EF4444' }
+                                    { color: change > 0 ? '#6BAF8A' : '#D4837A' }
                                 ]}>
                                     {Math.abs(change)}%
                                 </Text>
