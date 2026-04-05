@@ -139,7 +139,7 @@ const VaccineTracker = memo(({
                     <DateTimePicker
                         value={selectedDate}
                         mode="date"
-                        display="default"
+                        display="calendar"
                         onChange={onDateConfirm}
                         maximumDate={new Date()}
                     />

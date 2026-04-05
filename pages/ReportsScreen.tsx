@@ -2094,13 +2094,13 @@ export default function ReportsScreen() {
 
       {/* Date Pickers */}
       {showDatePicker && (
-        <DateTimePicker value={selectedDate} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(false); if (d) setSelectedDate(d); }} maximumDate={new Date()} />
+        <DateTimePicker value={selectedDate} mode="date" display="calendar" onChange={(e, d) => { setShowDatePicker(false); if (d) setSelectedDate(d); }} maximumDate={new Date()} />
       )}
       {showStartPicker && (
-        <DateTimePicker value={customStartDate} mode="date" display="default" onChange={(e, d) => { setShowStartPicker(false); if (d) setCustomStartDate(d); }} maximumDate={customEndDate} />
+        <DateTimePicker value={customStartDate} mode="date" display="calendar" onChange={(e, d) => { setShowStartPicker(false); if (d) setCustomStartDate(d); }} maximumDate={customEndDate} />
       )}
       {showEndPicker && (
-        <DateTimePicker value={customEndDate} mode="date" display="default" onChange={(e, d) => { setShowEndPicker(false); if (d) setCustomEndDate(d); }} minimumDate={customStartDate} maximumDate={new Date()} />
+        <DateTimePicker value={customEndDate} mode="date" display="calendar" onChange={(e, d) => { setShowEndPicker(false); if (d) setCustomEndDate(d); }} minimumDate={customStartDate} maximumDate={new Date()} />
       )}
 
       <DateRangeModal />

@@ -251,8 +251,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             <DateTimePicker
               value={birthDate ?? new Date()}
               mode="date"
-              display="spinner"
-              locale="he"
+              display="calendar"
               maximumDate={new Date()}
               onChange={onDateChange}
             />
