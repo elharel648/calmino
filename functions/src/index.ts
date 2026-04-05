@@ -34,7 +34,7 @@ function calminoEmailTemplate(heTitle: string, heBody: string, enTitle: string =
 
       <!-- HEADER -->
       <tr>
-        <td style="background:linear-gradient(135deg,#6C5CE7 0%,#8c7df7 60%,#b39dfe 100%);padding:48px 32px 40px;text-align:center;" role="banner">
+        <td style="background:linear-gradient(135deg,#C8806A 0%,#D4A373 100%);padding:48px 32px 40px;text-align:center;" role="banner">
           <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/48/28/82/4828828b-b804-996c-0e5d-ff89f9e1fd4d/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg" alt="Calmino Logo" width="84" height="84" style="border-radius: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.8); margin-bottom: 20px; display: inline-block;" />
           <h1 style="color:#ffffff;margin:0;font-size:38px;font-weight:800;letter-spacing:-1px;font-family:'Inter', sans-serif;text-shadow:0 2px 8px rgba(0,0,0,0.1);">Calmino</h1>
           <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:16px;font-weight:500;letter-spacing:0.5px;" dir="rtl" lang="he">ההורות שלך, בקצב שלך.</p>
@@ -43,7 +43,7 @@ function calminoEmailTemplate(heTitle: string, heBody: string, enTitle: string =
       </tr>
 
       <!-- DIVIDER -->
-      <tr><td style="height:4px;background:linear-gradient(90deg,#a29bfe,#dfe6e9,#a29bfe);"></td></tr>
+      <tr><td style="height:4px;background:linear-gradient(90deg,#C8806A,#F8F6F4,#C8806A);"></td></tr>
 
       <!-- CONTENT WRAPPER -->
       <tr>
@@ -77,7 +77,7 @@ function calminoEmailTemplate(heTitle: string, heBody: string, enTitle: string =
         <td style="background:#F8FAFC;padding:32px 40px;text-align:center;border-top:1px solid #E2E8F0;" role="contentinfo">
           <p style="margin:0;color:#94A3B8;font-size:13px;font-family:'Inter', sans-serif;font-weight:500;">Calmino &copy; ${year}</p>
           <p style="margin:8px 0 0;color:#94A3B8;font-size:13px;font-weight:400;">
-            <a href="mailto:calminogroup@gmail.com" style="color:#6C5CE7;text-decoration:none;font-weight:600;">calminogroup@gmail.com</a>
+            <a href="mailto:calminogroup@gmail.com" style="color:#C8806A;text-decoration:none;font-weight:600;">calminogroup@gmail.com</a>
           </p>
           <p style="margin:24px 0 0;color:#CBD5E1;font-size:11px;letter-spacing:0.2px;">
             נשלח באהבה מצוות Calmino 🤍
@@ -108,9 +108,7 @@ export const sendVerificationEmail = onCall(async (request) => {
     }
 
     // Generate a Firebase verification link (valid 1 hour)
-    const verificationLink = await admin.auth().generateEmailVerificationLink(email, {
-        url: 'https://baby-app-42b3b.firebaseapp.com/__/auth/action',
-    });
+    const verificationLink = await admin.auth().generateEmailVerificationLink(email);
 
     const displayName = userRecord.displayName || 'הורה יקר/ה';
 
@@ -120,7 +118,7 @@ export const sendVerificationEmail = onCall(async (request) => {
 
         <div style="text-align:center;margin:40px 0;">
             <a href="${verificationLink}" role="button" aria-label="אמתו את המייל שלכם ב-Calmino"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
+               style="display:inline-block;background:#C8806A;color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(200,128,106,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #B76E59;">
                 אימות המייל החשבון
             </a>
         </div>
@@ -134,7 +132,7 @@ export const sendVerificationEmail = onCall(async (request) => {
 
         <div style="margin-top:24px;text-align:center;">
             <p style="color:#94A3B8;font-size:12px;margin:0 0 8px;">הכפתור לא עובד? העתיקו והדביקו את הקישור בדפדפן:</p>
-            <p style="color:#6C5CE7;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
+            <p style="color:#C8806A;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
         </div>`;
 
     const enBodyContent = `
@@ -143,7 +141,7 @@ export const sendVerificationEmail = onCall(async (request) => {
 
         <div style="text-align:center;margin:40px 0;">
             <a href="${verificationLink}" role="button" aria-label="Verify your email address for Calmino"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
+               style="display:inline-block;background:#C8806A;color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(200,128,106,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #B76E59;">
                 Verify Email Address
             </a>
         </div>
@@ -157,7 +155,7 @@ export const sendVerificationEmail = onCall(async (request) => {
 
         <div style="margin-top:24px;text-align:center;">
             <p style="color:#94A3B8;font-size:12px;margin:0 0 8px;">Button not working? Copy and paste this link in your browser:</p>
-            <p style="color:#6C5CE7;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
+            <p style="color:#C8806A;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
         </div>`;
 
     await db.collection('mail').add({
@@ -207,7 +205,7 @@ export const sendPasswordResetEmailBranded = onCall(async (request) => {
         </p>
         <div style="text-align:center;margin:40px 0;">
             <a href="${resetLink}"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;"
+               style="display:inline-block;background:#C8806A;color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(200,128,106,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #B76E59;"
                aria-label="איפוס סיסמא עבור Calmino">
                 איפוס סיסמא
             </a>
@@ -228,7 +226,7 @@ export const sendPasswordResetEmailBranded = onCall(async (request) => {
         </p>
         <div style="text-align:center;margin:40px 0;">
             <a href="${resetLink}"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;"
+               style="display:inline-block;background:#C8806A;color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(200,128,106,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #B76E59;"
                aria-label="Reset your Calmino password">
                 Reset Password
             </a>
@@ -279,7 +277,7 @@ export const sendWelcomeEmail = onDocumentCreated('users/{userId}', async (event
             שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋
         </p>
         <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">
-            אנחנו כל כך שמחים שהצטרפת ל-<strong style="color:#6C5CE7;font-weight:700;">Calmino</strong>!<br/>
+            אנחנו כל כך שמחים שהצטרפת ל-<strong style="color:#C8806A;font-weight:700;">Calmino</strong>!<br/>
             אנחנו יודעים שהימים (והלילות...) הראשונים עם התינוק יכולים להיות עמוסים ומבלבלים. המטרה שלנו היא פשוטה: לעזור לך לרכז את כל המידע במקום אחד, כדי שתוכלי להתמקד במה שחשוב באמת – בתינוק שלך.
         </p>
 
@@ -296,7 +294,7 @@ export const sendWelcomeEmail = onDocumentCreated('users/{userId}', async (event
 
         <div style="text-align:center;margin:24px 0 48px;">
             <a href="https://calmino.co.il" role="button" aria-label="יצירת פרופיל ראשון לתינוק"
-               style="display:inline-block;background:linear-gradient(135deg,#6C5CE7 0%,#a29bfe 100%);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(108,92,231,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #5F50E0;">
+               style="display:inline-block;background:#C8806A;color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:50px;font-size:17px;font-weight:800;letter-spacing:0.5px;box-shadow:0 8px 24px rgba(200,128,106,0.25), inset 0 2px 0 rgba(255,255,255,0.2);border:1px solid #B76E59;">
                 יצירת פרופיל ראשון לתינוק
             </a>
         </div>
@@ -304,7 +302,7 @@ export const sendWelcomeEmail = onDocumentCreated('users/{userId}', async (event
         <p style="color:#475569;font-size:15px;line-height:1.8;margin:0 0 12px;">
             יש לך שאלה? הצעה? או סתם רוצה לשתף?<br/>
             אנחנו כאן בשבילך. פשוט תעני למייל הזה או כתבי לנו לכתובת:<br/>
-            📩 <a href="mailto:calminogroup@gmail.com" style="color:#6C5CE7;font-weight:600;text-decoration:none;">calminogroup@gmail.com</a>
+            📩 <a href="mailto:calminogroup@gmail.com" style="color:#C8806A;font-weight:600;text-decoration:none;">calminogroup@gmail.com</a>
         </p>
 
         <p style="color:#0f172a;font-size:15px;line-height:1.8;margin:24px 0 0;font-weight:500;">
@@ -371,7 +369,7 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
         const bodyContent = `
             <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך לשמור על <strong>${childName}</strong> דרך Calmino!</p>
             
-            <div style="background:linear-gradient(135deg,#6C5CE7,#a29bfe);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
+            <div style="background:linear-gradient(135deg,#C8806A,#D4A373);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
                 <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד הגישה שלך:</p>
                 <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${inviteCode}</p>
                 <p style="color:rgba(255,255,255,0.7);margin:12px 0 0;font-size:13px;">⏰ הקוד תקף ל-24 שעות</p>
@@ -405,7 +403,7 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
             <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
             <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלה, שינה, גדילה, ועוד.</p>
             
-            <div style="background:linear-gradient(135deg,#6C5CE7,#a29bfe);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
+            <div style="background:linear-gradient(135deg,#C8806A,#D4A373);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
                 <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד ההצטרפות:</p>
                 <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${inviteCode}</p>
             </div>
@@ -795,7 +793,7 @@ export const onChatMessageCreated = onDocumentCreated('chats/{chatId}/messages/{
         const bodyContent = `
             <p style="color:#636e72;line-height:1.8;font-size:15px;">יש לך הודעה חדשה מ-<strong>${senderName || 'משתמש'}</strong>:</p>
             
-            <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;border-right:4px solid #6C5CE7;">
+            <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;border-right:4px solid #C8806A;">
                 <p style="color:#2d3436;margin:0;font-size:15px;line-height:1.6;">${previewText}</p>
             </div>
             

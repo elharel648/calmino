@@ -325,8 +325,13 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
       logger.error('Failed to parse offline_history fallback:', e);
       return events;
     }
-  } catch (e) {
-    logger.error('Error getting recent history:', e);
+  } catch (e: any) {
+    // Demote "insufficient permissions" error to a warning when logging out/deleting account
+    if (e?.code === 'permission-denied' || e?.message?.includes('insufficient permissions')) {
+      logger.warn('Warning: insufficient permissions when fetching recent history (expected during profile deletion).');
+    } else {
+      logger.error('Error getting recent history:', e);
+    }
     return [];
   }
 };

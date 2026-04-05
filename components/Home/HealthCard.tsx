@@ -54,14 +54,7 @@ const COMMON_MEDICATIONS = [
     'טיפות', 'מחטא', 'נוגד חום', 'פרוביוטיקה', 'תרסיסים'
 ];
 
-const HEALTH_OPTIONS: HealthOption[] = [
-    { key: 'doctor', label: 'health.doctorVisit', icon: Stethoscope, iconColor: '#34D399' },
-    { key: 'vaccines', label: 'health.vaccines', icon: Syringe, iconColor: '#9F7AEA' },
-    { key: 'illness', label: 'health.illnesses', icon: Heart, iconColor: '#F87171' },
-    { key: 'temperature', label: 'health.temperature', icon: Thermometer, iconColor: '#FF9F1C' },
-    { key: 'medications', label: 'health.medications', icon: Pill, iconColor: '#A78BFA' },
-    { key: 'history', label: 'health.history', icon: ClipboardList, iconColor: '#C8806A' },
-];
+// Health Options will be defined inside the component to use ThemeContext
 
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
     const { theme, isDarkMode } = useTheme();
@@ -69,6 +62,15 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
+    const HEALTH_OPTIONS: HealthOption[] = useMemo(() => [
+        { key: 'doctor', label: 'health.doctorVisit', icon: Stethoscope, iconColor: theme.actionColors.health.color },
+        { key: 'vaccines', label: 'health.vaccines', icon: Syringe, iconColor: theme.actionColors.tools.color },
+        { key: 'illness', label: 'health.illnesses', icon: Heart, iconColor: theme.actionColors.sos.color },
+        { key: 'temperature', label: 'health.temperature', icon: Thermometer, iconColor: theme.actionColors.food.color },
+        { key: 'medications', label: 'health.medications', icon: Pill, iconColor: theme.actionColors.supplements.color },
+        { key: 'history', label: 'health.history', icon: ClipboardList, iconColor: theme.actionColors.custom.color },
+    ], [theme]);
+
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
 
     // Swipe down animations
@@ -677,8 +679,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 onPressOut={() => handleCardPressOut(index)}
                                 activeOpacity={0.7}
                             >
-                                <View style={styles.optionIconCircle}>
-                                    <Icon size={22} color={option.iconColor} strokeWidth={1.2} />
+                                <View style={[styles.optionIconCircle, { backgroundColor: option.iconColor, borderColor: 'transparent' }]}>
+                                    <Icon size={22} color="#FFFFFF" strokeWidth={1.2} />
                                 </View>
                                 <Text style={styles.optionLabel}>{t(option.label)}</Text>
                                 <ChevronLeft size={18} color="#9CA3AF" />
@@ -694,8 +696,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const renderVaccines = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
             <View style={styles.screenHeader}>
-                <View style={styles.screenHeaderIconMinimal}>
-                    <Syringe size={24} color="#6366F1" strokeWidth={1.2} />
+                <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.tools.color, borderColor: 'transparent' }]}>
+                    <Syringe size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
                 <Text style={styles.screenSubtitle}>{t('health.perHealthMinistry')}</Text>
             </View>
@@ -862,8 +864,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const renderTemperature = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
             <View style={styles.screenHeader}>
-                <View style={styles.screenHeaderIconMinimal}>
-                    <Thermometer size={24} color="#9CA3AF" strokeWidth={1.2} />
+                <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.food.color, borderColor: 'transparent' }]}>
+                    <Thermometer size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
             </View>
 
@@ -951,8 +953,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const renderDoctor = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
             <View style={styles.screenHeader}>
-                <View style={styles.screenHeaderIconMinimal}>
-                    <Stethoscope size={24} color="#10B981" strokeWidth={1.2} />
+                <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.health.color, borderColor: 'transparent' }]}>
+                    <Stethoscope size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
             </View>
 
@@ -1046,8 +1048,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const renderIllness = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
             <View style={styles.screenHeader}>
-                <View style={styles.screenHeaderIconMinimal}>
-                    <Heart size={24} color="#EF4444" strokeWidth={1.2} />
+                <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.sos.color, borderColor: 'transparent' }]}>
+                    <Heart size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
             </View>
 
@@ -1335,18 +1337,18 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 style={styles.addVaccineBtn}
                 onPress={() => setCurrentScreen('medications_add' as any)}
             >
-                <Plus size={20} color="#8B5CF6" />
-                <Text style={[styles.addVaccineBtnText, { color: '#8B5CF6' }]}>הוסף תרופה חדשה</Text>
+                <Plus size={20} color={theme.actionColors.supplements.color} />
+                <Text style={[styles.addVaccineBtnText, { color: theme.actionColors.supplements.color }]}>הוסף תרופה חדשה</Text>
             </TouchableOpacity>
 
             {loadingMeds ? (
                 <View style={{ alignItems: 'center', marginTop: 40 }}>
-                    <InlineLoader size="large" color="#8B5CF6"  />
+                    <InlineLoader size="large" color={theme.actionColors.supplements.color}  />
                 </View>
             ) : savedMedications.length === 0 ? (
                 <View style={{ alignItems: 'center', marginTop: 40 }}>
-                    <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center' }}>
-                        <Pill size={36} color="#C4B5FD" />
+                    <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: theme.actionColors.supplements.lightColor, alignItems: 'center', justifyContent: 'center' }}>
+                        <Pill size={36} color={theme.actionColors.supplements.color} />
                     </View>
                     <Text style={{ fontSize: 16, color: theme.textPrimary, fontWeight: '600', marginTop: 16 }}>אין תרופות עדיין</Text>
                     <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>לחץ על "הוסף תרופה" כדי להתחיל</Text>
@@ -1371,11 +1373,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 10 }}>
                                 <View style={{
                                     width: 40, height: 40, borderRadius: 12,
-                                    backgroundColor: '#F5F3FF',
+                                    backgroundColor: theme.actionColors.supplements.lightColor,
                                     alignItems: 'center', justifyContent: 'center',
                                     marginLeft: 12,
                                 }}>
-                                    <Pill size={20} color="#8B5CF6" strokeWidth={1.5} />
+                                    <Pill size={20} color={theme.actionColors.supplements.color} strokeWidth={1.5} />
                                 </View>
                                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                                     <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
@@ -1391,7 +1393,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                                 {med.times.map((time, idx) => (
                                     <View key={idx} style={{
-                                        backgroundColor: '#F5F3FF',
+                                        backgroundColor: theme.actionColors.supplements.lightColor,
                                         paddingHorizontal: 10,
                                         paddingVertical: 5,
                                         borderRadius: 8,
@@ -1399,8 +1401,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                         alignItems: 'center',
                                         gap: 4,
                                     }}>
-                                        <Clock size={12} color="#8B5CF6" />
-                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#7C3AED' }}>{time}</Text>
+                                        <Clock size={12} color={theme.actionColors.supplements.color} />
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: theme.actionColors.supplements.color }}>{time}</Text>
                                     </View>
                                 ))}
                                 {med.remindersEnabled && (
@@ -1442,7 +1444,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 onPress={() => handleMedTaken(med)}
                             >
                                 <Check size={16} color="#10B981" strokeWidth={2} />
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#10B981' }}>נלקחה ✓</Text>
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#10B981' }}>נלקחה</Text>
                             </TouchableOpacity>
                         </View>
                     </SwipeableRow>
@@ -1477,7 +1479,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 case 'temperature': return { label: 'חום', icon: Thermometer, color: '#F59E0B', bg: '#F3F4F6' };
                 case 'doctor': return { label: 'רופא', icon: Stethoscope, color: '#10B981', bg: '#F3F4F6' };
                 case 'illness': return { label: 'מחלה', icon: Heart, color: '#EF4444', bg: '#F3F4F6' };
-                case 'medication': return { label: 'תרופה', icon: Pill, color: '#8B5CF6', bg: '#F3F4F6' };
+                case 'medication': return { label: 'תרופה', icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor };
                 default: return { label: 'שונות', icon: ClipboardList, color: '#0EA5E9', bg: '#F3F4F6' };
             }
         };
@@ -1654,8 +1656,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             case 'doctor': return ['#10B981', '#059669'];
             case 'illness': return ['#EF4444', '#DC2626'];
             case 'temperature': return ['#F59E0B', '#D97706'];
-            case 'medications': return ['#8B5CF6', '#7C3AED'];
-            case 'medications_add': return ['#8B5CF6', '#7C3AED'];
+            case 'medications': return [theme.actionColors.supplements.color, theme.actionColors.supplements.color];
+            case 'medications_add': return [theme.actionColors.supplements.color, theme.actionColors.supplements.color];
             case 'history': return ['#0EA5E9', '#0284C7'];
             default: return ['#10B981', '#059669'];
         }
@@ -1705,14 +1707,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             {currentScreen === 'menu' && (
                                 <View style={styles.headerIconWrapper}>
                                     <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
-                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#14B8A6' }, healthIconPulseStyle]} />
-                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#14B8A6' }, healthIconPulse2Style]} />
+                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.health.color }, healthIconPulseStyle]} />
+                                        <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.health.color }, healthIconPulse2Style]} />
                                         <ReAnimated.View style={healthIconRotateStyle}>
                                             <ReAnimated.View style={healthIconBounceStyle}>
                                                 <View style={[{
                                                     width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
-                                                    backgroundColor: '#14B8A6',
-                                                    shadowColor: isDarkMode ? 'transparent' : '#14B8A6',
+                                                    backgroundColor: theme.actionColors.health.color,
+                                                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.health.color,
                                                     shadowOpacity: 0.35,
                                                     shadowRadius: 10,
                                                     shadowOffset: { width: 0, height: 5 },

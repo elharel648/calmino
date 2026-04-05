@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Animated as RNAnimated } from 'react-native';
-import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
+import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText, HelpCircle, MousePointer2, PlusCircle } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
 import Svg, { Path } from 'react-native-svg';
@@ -8,7 +8,7 @@ import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withTiming, withRepeat, Easing } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withTiming, withRepeat, Easing, runOnJS, withSpring, Layout, ZoomOut } from 'react-native-reanimated';
 import { ANIMATIONS, TYPOGRAPHY, SPACING } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
@@ -68,55 +68,201 @@ const PremiumTimelineEvent = ({ children, isRecent }: { children: React.ReactNod
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ─── Premium Animated Empty State ───────────────────────────────────────────
-const PremiumEmptyIcon = ({ theme, isDarkMode }: { theme: any, isDarkMode: boolean }) => {
-  const floatAnim = useRef(new RNAnimated.Value(0)).current;
-  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+// ─── Premium Delete Animation Wrapper ────────────────────────────────────────
+const AnimatedTimelineItem = ({
+  children,
+  onDelete,
+}: {
+  children: ((triggerDelete: () => void) => React.ReactNode) | React.ReactNode;
+  onDelete: () => void;
+}) => {
+  const opacity    = useSharedValue(1);
+  const scaleX     = useSharedValue(1);
+  const height     = useSharedValue(-1);   // -1 = not yet measured
+  const measured   = useSharedValue(false);
 
-  useEffect(() => {
-    RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(floatAnim, { toValue: -6, duration: 1500, useNativeDriver: true }),
-        RNAnimated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
-      ])
-    ).start();
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity:   opacity.value,
+    transform: [{ scaleX: scaleX.value }],
+    height:    measured.value && height.value >= 0 ? height.value : undefined,
+    overflow:  'hidden' as const,
+  }));
 
-    RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(pulseAnim, { toValue: 1.05, duration: 1200, useNativeDriver: true }),
-        RNAnimated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
+  const triggerDelete = () => {
+    // Phase 1 – fade + horizontal compress (80ms)
+    opacity.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
+    scaleX.value  = withTiming(0.88, { duration: 200, easing: Easing.in(Easing.quad) });
+
+    // Phase 2 – collapse height (starts at 160ms, 180ms duration)
+    height.value = withTiming(
+      0,
+      { duration: 200, easing: Easing.inOut(Easing.quad) },
+      (finished) => {
+        if (finished) runOnJS(onDelete)();
+      }
+    );
+  };
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 20, marginTop: 10 }}>
-      {/* Outer Pulse */}
-      <RNAnimated.View style={[
+    <Animated.View
+      onLayout={(e) => {
+        if (!measured.value) {
+          height.value = e.nativeEvent.layout.height;
+          measured.value = true;
+        }
+      }}
+      style={containerStyle}
+    >
+      {typeof children === 'function'
+        ? (children as (trigger: () => void) => React.ReactNode)(triggerDelete)
+        : children}
+    </Animated.View>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Premium Animated Clock State (Native CalendarClock) ──────────────────────
+const PremiumEmptyIcon = ({ theme, isDarkMode }: { theme: any, isDarkMode: boolean }) => {
+  const minuteRotation = useSharedValue(0);
+  const hourRotation = useSharedValue(0);
+  const pulseScale = useSharedValue(1);
+  const floatY = useSharedValue(0);
+
+  useEffect(() => {
+    // Breathing background
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) })
+      ),
+      -1,
+      true
+    );
+
+    // Gentle float up and down for the whole calendar
+    floatY.value = withRepeat(
+      withSequence(
+        withTiming(-4, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.sin) })
+      ),
+      -1,
+      true
+    );
+
+    // Minute hand: sweeps smoothly, much slower now
+    minuteRotation.value = withRepeat(
+      withTiming(360, { duration: 12000, easing: Easing.linear }),
+      -1,
+      false
+    );
+    
+    // Hour hand: sweeps smoothly, 12x slower
+    hourRotation.value = withRepeat(
+      withTiming(360, { duration: 144000, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, []);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
+  const minuteStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${minuteRotation.value}deg` }],
+  }));
+
+  const hourStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${hourRotation.value}deg` }],
+  }));
+
+  const floatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 28, marginTop: 12 }}>
+      
+      {/* Soft Breathing Glass Background */}
+      <Animated.View style={[
         {
           position: 'absolute',
-          width: 86, height: 86,
-          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-          borderRadius: 43,
-          transform: [{ scale: pulseAnim }]
-        }
+          width: 100, height: 100, borderRadius: 50,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+        },
+        pulseStyle
       ]} />
       
-      {/* Floating Main Icon */}
-      <RNAnimated.View style={{ transform: [{ translateY: floatAnim }] }}>
-        <View style={{
-          width: 72, height: 72, borderRadius: 36,
-          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-          alignItems: 'center', justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
-        }}>
-          <FileText size={32} color={theme.textSecondary} strokeWidth={1.5} />
+      <Animated.View style={[
+        {
+          position: 'absolute',
+          width: 76, height: 76, borderRadius: 38,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+        },
+        pulseStyle
+      ]} />
+
+      {/* Center Icon Container w/ Float */}
+      <Animated.View style={[{ width: 68, height: 68, alignItems: 'center', justifyContent: 'center' }, floatStyle]}>
+        
+        {/* Main Calendar Body */}
+        <View style={{ position: 'absolute', top: 4, left: 6 }}>
+          <View style={{
+            width: 44, height: 44, 
+            borderRadius: 8, 
+            borderWidth: 2.5, 
+            borderColor: theme.textSecondary,
+            opacity: 0.5,
+          }}>
+            {/* Calendar Rings */}
+            <View style={{ position: 'absolute', top: -4, left: 8, width: 4, height: 8, borderRadius: 2, backgroundColor: theme.textSecondary }} />
+            <View style={{ position: 'absolute', top: -4, right: 8, width: 4, height: 8, borderRadius: 2, backgroundColor: theme.textSecondary }} />
+            {/* Calendar Header Line */}
+            <View style={{ position: 'absolute', top: 8, left: 0, right: 0, height: 2.5, backgroundColor: theme.textSecondary }} />
+            
+            {/* Calendar Dots (Lines) */}
+            <View style={{ position: 'absolute', top: 18, left: 6, width: 8, height: 2.5, borderRadius: 1.5, backgroundColor: theme.textSecondary, opacity: 0.8 }} />
+            <View style={{ position: 'absolute', top: 18, left: 18, width: 14, height: 2.5, borderRadius: 1.5, backgroundColor: theme.textSecondary, opacity: 0.8 }} />
+            <View style={{ position: 'absolute', top: 26, left: 6, width: 14, height: 2.5, borderRadius: 1.5, backgroundColor: theme.textSecondary, opacity: 0.8 }} />
+          </View>
         </View>
-        <RNAnimated.View style={{ position: 'absolute', top: -2, right: -4, transform: [{ scale: pulseAnim }] }}>
-          <Sparkles size={16} color={theme.primary} strokeWidth={2.5} />
-        </RNAnimated.View>
-      </RNAnimated.View>
+
+        {/* Dynamic Clock Overlaid on Bottom Right */}
+        <View style={{
+          position: 'absolute',
+          bottom: 2,
+          right: 2,
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: theme.card, // Important: masks the calendar underneath
+          borderWidth: 2.5,
+          borderColor: theme.textSecondary,
+          opacity: 0.65,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2,
+        }}>
+          
+          {/* Hour Hand Container */}
+          <Animated.View style={[{ position: 'absolute', width: 32, height: 32, alignItems: 'center' }, hourStyle]}>
+            <View style={{ width: 2.5, height: 7, backgroundColor: theme.textSecondary, borderRadius: 2, marginTop: 8 }} />
+          </Animated.View>
+          
+          {/* Minute Hand Container */}
+          <Animated.View style={[{ position: 'absolute', width: 32, height: 32, alignItems: 'center' }, minuteStyle]}>
+            <View style={{ width: 2, height: 10, backgroundColor: theme.textSecondary, borderRadius: 2, marginTop: 6 }} />
+          </Animated.View>
+
+          {/* Center Pin */}
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: theme.textSecondary, position: 'absolute' }} />
+        </View>
+
+      </Animated.View>
     </View>
   );
 };
@@ -743,45 +889,52 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
                   return (
-                    <Animated.View
+                    <AnimatedTimelineItem
                       key={event.id}
-                      entering={FadeInUp.delay(index * 45).springify().damping(22).stiffness(240).mass(1)}
+                      onDelete={() => handleDelete(event.id)}
                     >
-                      <PremiumTimelineEvent isRecent={isRecentEvent(event.timestamp)}>
-                        <SwipeableRow
-                          onDelete={() => handleDelete(event.id)}
+                      {(triggerDelete) => (
+                        <Animated.View
+                          layout={Layout.springify().damping(18).stiffness(200)}
+                          entering={FadeInUp.delay(index * 45).springify().damping(22).stiffness(240).mass(1)}
                         >
-                        {/* Simple 3-part RTL row: [time] [content] [icon] */}
-                        <TouchableOpacity 
-                          activeOpacity={0.7} 
-                          onPress={() => onEditEvent?.(event)} 
-                          style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]}
-                        >
+                          <PremiumTimelineEvent isRecent={isRecentEvent(event.timestamp)}>
+                            <SwipeableRow
+                              onDelete={triggerDelete}
+                            >
+                            {/* Simple 3-part RTL row: [time] [content] [icon] */}
+                            <TouchableOpacity 
+                              activeOpacity={0.7} 
+                              onPress={() => onEditEvent?.(event)} 
+                              style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            >
 
-                          {/* LEFT (RTL: last in JSX): time */}
-                          <Text style={[styles.historyTime, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
+                              {/* LEFT (RTL: last in JSX): time */}
+                              <Text style={[styles.historyTime, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
 
-                          {/* CENTER: title + subtitle */}
-                          <View style={styles.historyContent}>
-                            <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
-                              {details}
-                            </Text>
-                            {subtitle ? (
-                              <Text style={[styles.historySubtext, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontSize: 13, fontWeight: '400', marginTop: 2 }]} numberOfLines={1}>
-                                {subtitle}
-                              </Text>
-                            ) : null}
-                          </View>
+                              {/* CENTER: title + subtitle */}
+                              <View style={styles.historyContent}>
+                                <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
+                                  {details}
+                                </Text>
+                                {subtitle ? (
+                                  <Text style={[styles.historySubtext, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontSize: 13, fontWeight: '400', marginTop: 2 }]} numberOfLines={1}>
+                                    {subtitle}
+                                  </Text>
+                                ) : null}
+                              </View>
 
-                          {/* RIGHT (RTL: first in JSX): icon badge */}
-                          <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.1) }]}>
-                            <Icon size={17} color={config.color} strokeWidth={2.5} />
-                          </View>
+                              {/* RIGHT (RTL: first in JSX): icon badge */}
+                              <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.1) }]}>
+                                <Icon size={17} color={config.color} strokeWidth={2.5} />
+                              </View>
 
-                        </TouchableOpacity>
-                      </SwipeableRow>
-                      </PremiumTimelineEvent>
-                    </Animated.View>
+                            </TouchableOpacity>
+                          </SwipeableRow>
+                          </PremiumTimelineEvent>
+                        </Animated.View>
+                      )}
+                    </AnimatedTimelineItem>
                   );
                 })}
 
@@ -850,12 +1003,17 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const photoUrl = member?.photoURL || event.reporterPhotoUrl;
 
             return (
-              <Animated.View
+              <AnimatedTimelineItem
                 key={event.id}
-                entering={ANIMATIONS.springUp(ANIMATIONS.stagger(index, 40))}
+                onDelete={() => handleDelete(event.id)}
               >
-                <PremiumTimelineEvent isRecent={isRecent}>
-                  <SwipeableRow onDelete={() => handleDelete(event.id)}>
+                {(triggerDelete) => (
+                  <Animated.View
+                    layout={Layout.springify().damping(18).stiffness(200)}
+                    entering={ANIMATIONS.springUp(ANIMATIONS.stagger(index, 40))}
+                  >
+                    <PremiumTimelineEvent isRecent={isRecent}>
+                      <SwipeableRow onDelete={triggerDelete}>
                   <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.elegantEventRow}>
                     
                     {/* FAR RIGHT: TIME BLOCK */}
@@ -924,9 +1082,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     </View>
 
                   </TouchableOpacity>
-                </SwipeableRow>
-                </PremiumTimelineEvent>
-              </Animated.View>
+                    </SwipeableRow>
+                    </PremiumTimelineEvent>
+                  </Animated.View>
+                )}
+              </AnimatedTimelineItem>
             );
           })
         )}

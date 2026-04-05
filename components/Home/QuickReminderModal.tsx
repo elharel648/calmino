@@ -496,23 +496,25 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                     snapToAlignment="end"
                                 >
                                     {[
-                                        { label: t('tracking.bottle'), icon: BottleIcon, color: '#60A5FA' },
-                                        { label: t('tracking.diapers'), icon: DiaperIcon, color: '#34D399' },
-                                        { label: t('health.medicine'), icon: Pill, color: '#F472B6' },
-                                        { label: 'רופא', icon: Stethoscope, color: '#A78BFA' },
-                                        { label: 'לישון', icon: Moon, color: '#818CF8' },
+                                        { label: t('tracking.bottle'), icon: BottleIcon, color: theme.actionColors.food.color, bg: theme.actionColors.food.lightColor },
+                                        { label: t('tracking.diapers'), icon: DiaperIcon, color: theme.actionColors.diaper.color, bg: theme.actionColors.diaper.lightColor },
+                                        { label: t('health.medicine'), icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor },
+                                        { label: 'רופא', icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor },
+                                        { label: 'לישון', icon: Moon, color: theme.actionColors.sleep.color, bg: theme.actionColors.sleep.lightColor },
                                     ].map((p, i) => (
                                         <TouchableOpacity
                                             key={i}
                                             style={[
                                                 styles.premiumSlider,
                                                 message === p.label && [styles.premiumSliderActive, {
-                                                    backgroundColor: p.color + '15',
-                                                    borderColor: p.color
+                                                    backgroundColor: p.bg,
+                                                    borderColor: p.color,
+                                                    borderWidth: 2
                                                 }],
                                                 message !== p.label && {
                                                     backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-                                                    borderColor: isDarkMode ? '#333' : '#E5E7EB'
+                                                    borderColor: isDarkMode ? '#333' : '#F3F4F6',
+                                                    borderWidth: 1.5
                                                 }
                                             ]}
                                             onPress={() => {
@@ -523,7 +525,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                         >
                                             <View style={[
                                                 styles.sliderIconWrapper,
-                                                message === p.label && { backgroundColor: p.color + '20' }
+                                                message === p.label && { backgroundColor: p.color + '25' }
                                             ]}>
                                                 <p.icon
                                                     size={20}
@@ -905,12 +907,11 @@ const styles = StyleSheet.create({
     },
     premiumSlider: {
         width: 110,
-        paddingVertical: 16,
+        paddingVertical: 18,
         paddingHorizontal: 14,
         borderRadius: 20,
-        borderWidth: 2,
         alignItems: 'center',
-        gap: 10,
+        gap: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -923,13 +924,14 @@ const styles = StyleSheet.create({
         elevation: 0,
         transform: [{ scale: 1.02 }],
     },
+
     sliderIconWrapper: {
         width: 44,
         height: 44,
         borderRadius: 22,
+        backgroundColor: '#F3F4F6',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.03)',
     },
     sliderLabel: {
         fontSize: 13,

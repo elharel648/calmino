@@ -130,8 +130,12 @@ export const getGrowthMeasurements = async (
         });
 
         return measurements;
-    } catch (error) {
-        logger.error('Error getting growth measurements:', error);
+    } catch (error: any) {
+        if (error?.code === 'permission-denied' || error?.message?.includes('insufficient permissions')) {
+            logger.warn('Warning: insufficient permissions when fetching growth measurements (expected during profile deletion).');
+        } else {
+            logger.error('Error getting growth measurements:', error);
+        }
         return [];
     }
 };

@@ -82,47 +82,48 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [birthDate, setBirthDate] = useState<Date | null>(null);
     const [gender, setGender] = useState<'boy' | 'girl' | 'other' | undefined>(undefined);
 
+    const fetchBabyData = useCallback(async () => {
+        if (!activeChild?.childId) {
+            setBirthDate(null);
+            setGender(undefined);
+            return;
+        }
+        try {
+            const babyData = await getBabyDataById(activeChild.childId);
+            if (babyData?.birthDate) {
+                // Handle Firebase Timestamp or Date
+                let date: Date;
+                if (babyData.birthDate instanceof Timestamp) {
+                    date = babyData.birthDate.toDate();
+                } else if (babyData.birthDate?.seconds) {
+                    date = new Date(babyData.birthDate.seconds * 1000);
+                } else if (babyData.birthDate instanceof Date) {
+                    date = babyData.birthDate;
+                } else {
+                    date = new Date(babyData.birthDate);
+                }
+                setBirthDate(date);
+            } else {
+                setBirthDate(null);
+            }
+
+            // Set gender
+            if (babyData?.gender) {
+                setGender(babyData.gender);
+            } else {
+                setGender(undefined);
+            }
+        } catch (error) {
+            logger.error('Error fetching baby data:', error);
+            setBirthDate(null);
+            setGender(undefined);
+        }
+    }, [activeChild?.childId]);
+
     // Fetch birth date and gender when active child changes
     useEffect(() => {
-        const fetchBabyData = async () => {
-            if (!activeChild?.childId) {
-                setBirthDate(null);
-                setGender(undefined);
-                return;
-            }
-            try {
-                const babyData = await getBabyDataById(activeChild.childId);
-                if (babyData?.birthDate) {
-                    // Handle Firebase Timestamp or Date
-                    let date: Date;
-                    if (babyData.birthDate instanceof Timestamp) {
-                        date = babyData.birthDate.toDate();
-                    } else if (babyData.birthDate?.seconds) {
-                        date = new Date(babyData.birthDate.seconds * 1000);
-                    } else if (babyData.birthDate instanceof Date) {
-                        date = babyData.birthDate;
-                    } else {
-                        date = new Date(babyData.birthDate);
-                    }
-                    setBirthDate(date);
-                } else {
-                    setBirthDate(null);
-                }
-
-                // Set gender
-                if (babyData?.gender) {
-                    setGender(babyData.gender);
-                } else {
-                    setGender(undefined);
-                }
-            } catch (error) {
-                logger.error('Error fetching baby data:', error);
-                setBirthDate(null);
-                setGender(undefined);
-            }
-        };
         fetchBabyData();
-    }, [activeChild?.childId]);
+    }, [fetchBabyData]);
 
     // Derive profile from active child
     const profile = useMemo(() => {
@@ -240,20 +241,22 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         await Promise.all([
+            fetchBabyData(),
             refreshHomeData(),
             refreshMeds(),
         ]);
         setRefreshing(false);
-    }, [refreshHomeData, refreshMeds]);
+    }, [fetchBabyData, refreshHomeData, refreshMeds]);
 
     // --- Focus Effect ---
     useFocusEffect(
         useCallback(() => {
             if (profile.id) {
+                fetchBabyData();
                 refreshHomeData();
                 refreshMeds();
             }
-        }, [profile.id, refreshHomeData, refreshMeds])
+        }, [profile.id, fetchBabyData, refreshHomeData, refreshMeds])
     );
 
 
@@ -574,7 +577,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                         }}
                         onSave={async (data) => {
                             try {
-                                await updateDoc(doc(db, 'children', editingChild.childId), {
+                                await updateDoc(doc(db, 'babies', editingChild.childId), {
                                     name: data.name,
                                     gender: data.gender,
                                     birthDate: data.birthDate,

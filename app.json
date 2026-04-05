@@ -43,7 +43,7 @@
     "splash": {
       "image": "./assets/splash-clean.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F8F6F4"
     },
     "ios": {
       "supportsTablet": true,

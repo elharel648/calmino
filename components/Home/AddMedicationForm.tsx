@@ -18,6 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Medication } from '../../types/home';
 import { searchMedications, MedicationInfo, CATEGORY_LABELS } from '../../data/medicationsDatabase';
 import { useTheme } from '../../context/ThemeContext';
+import ReAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -45,6 +46,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
     const [notes, setNotes] = useState('');
     const [remindersEnabled, setRemindersEnabled] = useState(true);
     const [nameError, setNameError] = useState(false);
+    const [prevFreq, setPrevFreq] = useState(1);
 
     // Autocomplete state
     const [suggestions, setSuggestions] = useState<MedicationInfo[]>([]);
@@ -61,9 +63,9 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
     ).current;
 
     // Theme-derived colors
-    const accentColor = '#8B5CF6'; // Medication-specific purple accent
-    const accentLight = isDarkMode ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)';
-    const accentBorder = isDarkMode ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.2)';
+    const accentColor = theme.actionColors.supplements.color; // Medication-specific pastel
+    const accentLight = theme.actionColors.supplements.lightColor;
+    const accentBorder = theme.actionColors.supplements.color;
     const inputBg = isDarkMode ? theme.cardSecondary : theme.card;
     const inputBorder = theme.border;
 
@@ -77,6 +79,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             LayoutAnimation.Properties.opacity,
         ));
 
+        setPrevFreq(frequency);
         setFrequency(clamped);
 
         setTimes(prev => {
@@ -175,10 +178,10 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             {/* Header Icon */}
             <View style={styles.headerIcon}>
                 <View style={[styles.headerIconCircle, {
-                    backgroundColor: accentLight,
-                    borderColor: accentBorder,
+                    backgroundColor: accentColor,
+                    borderColor: 'transparent',
                 }]}>
-                    <Pill size={24} color={accentColor} strokeWidth={1.5} />
+                    <Pill size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
             </View>
 
@@ -191,7 +194,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                             backgroundColor: inputBg,
                             borderColor: nameError ? theme.danger : inputBorder,
                             color: theme.textPrimary,
-                        }, nameError && { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }, { paddingLeft: 40 }]}
+                        }, nameError && { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEF2F2' }, { paddingRight: 40, paddingLeft: 16 }]}
                         value={name}
                         onChangeText={handleNameChange}
                         onFocus={() => {
@@ -246,9 +249,8 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                                     setSuggestions([]);
                                     setShowSuggestions(false);
                                     setShowCustomOption(false);
-                                    if (med.form && !dosage) {
-                                        setDosage(med.form);
-                                    }
+                                    
+                                    // Make sure we have a clear transition
                                     if (Platform.OS !== 'web') {
                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     }
@@ -288,10 +290,28 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                         </View>
                         {selectedMedInfo.commonDosage && (
                             <View style={styles.medInfoRow}>
-                                <Pill size={13} color={theme.textSecondary} strokeWidth={1.5} />
-                                <Text style={[styles.medInfoText, { color: theme.textPrimary }]}>
-                                    מינון נפוץ: {selectedMedInfo.commonDosage}
-                                </Text>
+                                <View style={{ flex: 1, flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
+                                    <Pill size={13} color={theme.textSecondary} strokeWidth={1.5} />
+                                    <Text style={[styles.medInfoText, { color: theme.textPrimary, flex: 1 }]}>
+                                        מינון נפוץ: {selectedMedInfo.commonDosage}
+                                    </Text>
+                                </View>
+                                <TouchableOpacity 
+                                    style={{ 
+                                        backgroundColor: theme.card, 
+                                        paddingHorizontal: 10, 
+                                        paddingVertical: 4, 
+                                        borderRadius: 8, 
+                                        borderWidth: 1, 
+                                        borderColor: accentBorder 
+                                    }}
+                                    onPress={() => {
+                                        setDosage(selectedMedInfo.commonDosage || '');
+                                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 11, fontWeight: '600', color: accentColor }}>הוסף לעריכה ✎</Text>
+                                </TouchableOpacity>
                             </View>
                         )}
                         {selectedMedInfo.form && (
@@ -355,7 +375,16 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                     </TouchableOpacity>
 
                     <View style={styles.stepperValueContainer}>
-                        <Text style={[styles.stepperValue, { color: accentColor }]}>{frequency}</Text>
+                        <View style={{ height: 40, justifyContent: 'center', alignItems: 'center' }}>
+                            <ReAnimated.Text
+                                key={`freq_${frequency}`}
+                                entering={frequency > prevFreq ? FadeInUp.springify().damping(15).stiffness(200) : FadeInDown.springify().damping(15).stiffness(200)}
+                                style={[styles.stepperValue, { color: accentColor, position: 'absolute' }]}
+                            >
+                                {frequency}
+                            </ReAnimated.Text>
+                            <Text style={[styles.stepperValue, { opacity: 0 }]}>{frequency}</Text>
+                        </View>
                         <Text style={[styles.stepperUnit, { color: theme.textSecondary }]}>
                             {frequency === 1 ? 'פעם' : 'פעמים'}
                         </Text>
@@ -378,58 +407,56 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             <View style={styles.inputGroup}>
                 <View style={styles.timesHeader}>
                     <Clock size={16} color={accentColor} />
-                    <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>שעות מתן</Text>
+                    <Text style={[styles.inputLabel, { color: theme.textPrimary, marginBottom: 0 }]}>שעות מתן</Text>
                 </View>
 
-                {times.slice(0, frequency).map((time, index) => (
-                    <Animated.View
-                        key={`time_${index}`}
-                        style={[
-                            styles.timePickerRow,
-                            { opacity: index < 1 ? 1 : fadeAnims[index] },
-                        ]}
-                    >
-                        <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>
-                            {frequency === 1 ? 'שעה' : `שעה ${index + 1}`}
-                        </Text>
-
-                        <TouchableOpacity
-                            style={[styles.timeButton, {
-                                backgroundColor: accentLight,
-                                borderColor: accentBorder,
-                            }]}
-                            onPress={() => setShowTimePicker(showTimePicker === index ? null : index)}
+                <View style={styles.timesGrid}>
+                    {times.slice(0, frequency).map((time, index) => (
+                        <Animated.View
+                            key={`time_${index}`}
+                            style={[
+                                styles.timePickerWrapper,
+                                { opacity: index < 1 ? 1 : fadeAnims[index] },
+                            ]}
                         >
-                            <Clock size={16} color={accentColor} strokeWidth={1.5} />
-                            <Text style={[styles.timeButtonText, { color: accentColor }]}>{time}</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.timeButton, {
+                                    backgroundColor: showTimePicker === index ? accentColor : accentLight,
+                                    borderColor: showTimePicker === index ? accentColor : accentBorder,
+                                }]}
+                                onPress={() => setShowTimePicker(showTimePicker === index ? null : index)}
+                            >
+                                <Clock size={15} color={showTimePicker === index ? '#FFFFFF' : accentColor} strokeWidth={showTimePicker === index ? 2 : 1.5} />
+                                <Text style={[styles.timeButtonText, { color: showTimePicker === index ? '#FFFFFF' : accentColor }]}>{time}</Text>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    ))}
+                </View>
 
-                        {showTimePicker === index && (
-                            <View style={[styles.dateTimePickerWrapper, {
-                                backgroundColor: theme.card,
-                                borderColor: inputBorder,
-                            }]}>
-                                <DateTimePicker
-                                    value={getTimeAsDate(time)}
-                                    mode="time"
-                                    is24Hour={true}
-                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                    onChange={(e, d) => handleTimeChange(index, e, d)}
-                                    style={styles.dateTimePicker}
-                                    locale="he-IL"
-                                />
-                                {Platform.OS === 'ios' && (
-                                    <TouchableOpacity
-                                        style={[styles.timePickerDone, { borderTopColor: theme.border }]}
-                                        onPress={() => setShowTimePicker(null)}
-                                    >
-                                        <Text style={[styles.timePickerDoneText, { color: accentColor }]}>אישור</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
+                {showTimePicker !== null && (
+                    <View style={[styles.dateTimePickerWrapper, {
+                        backgroundColor: theme.card,
+                        borderColor: inputBorder,
+                    }]}>
+                        <DateTimePicker
+                            value={getTimeAsDate(times[showTimePicker])}
+                            mode="time"
+                            is24Hour={true}
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={(e, d) => handleTimeChange(showTimePicker, e, d)}
+                            style={styles.dateTimePicker}
+                            locale="he-IL"
+                        />
+                        {Platform.OS === 'ios' && (
+                            <TouchableOpacity
+                                style={[styles.timePickerDone, { borderTopColor: theme.border }]}
+                                onPress={() => setShowTimePicker(null)}
+                            >
+                                <Text style={[styles.timePickerDoneText, { color: accentColor }]}>אישור</Text>
+                            </TouchableOpacity>
                         )}
-                    </Animated.View>
-                ))}
+                    </View>
+                )}
             </View>
 
             {/* Reminders Toggle */}
@@ -442,9 +469,8 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                     <Switch
                         value={remindersEnabled}
                         onValueChange={setRemindersEnabled}
-                        trackColor={{ false: theme.border, true: isDarkMode ? 'rgba(139,92,246,0.4)' : '#C4B5FD' }}
-                        thumbColor={remindersEnabled ? accentColor : theme.card}
-                        ios_backgroundColor={theme.border}
+                        trackColor={{ false: theme.border, true: accentColor }}
+                        thumbColor={Platform.OS === 'android' ? (remindersEnabled ? '#FFFFFF' : theme.card) : undefined}
                     />
                 </View>
                 {remindersEnabled && (
@@ -482,8 +508,10 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             >
                 <View style={[styles.saveButtonInner, {
                     backgroundColor: accentColor,
+                    shadowColor: accentColor,
                 }, saveSuccess && {
                     backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#F0FDF4',
+                    shadowColor: '#10B981',
                 }]}>
                     {saveSuccess ? (
                         <Check size={22} color="#10B981" strokeWidth={2.5} />
@@ -593,30 +621,29 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 6,
-        marginBottom: 4,
+        marginBottom: 12,
     },
-    timePickerRow: {
-        marginBottom: 10,
+    timesGrid: {
+        flexDirection: 'row-reverse',
+        flexWrap: 'wrap',
+        gap: 10,
     },
-    timeLabel: {
-        fontSize: 13,
-        fontWeight: '500',
-        textAlign: 'right',
-        marginBottom: 6,
+    timePickerWrapper: {
+        width: '48%', // roughly 2 columns
     },
     timeButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        borderRadius: 12,
-        padding: 14,
-        borderWidth: 1.5,
+        gap: 6,
+        borderRadius: 14,
+        paddingVertical: 12,
+        borderWidth: 1,
     },
     timeButtonText: {
         fontSize: 18,
         fontWeight: '700',
-        letterSpacing: 2,
+        letterSpacing: 1,
     },
     dateTimePickerWrapper: {
         borderRadius: 12,
@@ -666,7 +693,6 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#8B5CF6',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -684,7 +710,7 @@ const styles = StyleSheet.create({
     },
     searchIcon: {
         position: 'absolute' as const,
-        left: 14,
+        right: 14,
         top: 16,
     },
     suggestionsContainer: {

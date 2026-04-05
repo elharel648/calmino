@@ -167,6 +167,7 @@ export default function LoginScreen({
 
   // Confetti celebration
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [agreedToAge, setAgreedToAge] = useState(false);
 
@@ -510,16 +511,7 @@ export default function LoginScreen({
         // Sign out immediately so they have to log in (and trigger the verification check)
         await auth.signOut();
 
-        Alert.alert(
-          t('auth.accountCreated'),
-          t('auth.accountCreatedMessage'),
-          [{
-            text: t('auth.understood'),
-            onPress: () => {
-              setIsLogin(true);
-            }
-          }]
-        );
+        setShowSuccessModal(true);
       }
     } catch (error: any) {
       // Error logged via logger in catch block
@@ -637,8 +629,8 @@ export default function LoginScreen({
                   { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
                   displayNameError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' }
                 ]}>
-                  <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
-                    <User size={16} color={displayNameError ? '#EF4444' : theme.textTertiary} />
+                  <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(200, 128, 106, 0.15)' : 'rgba(200, 128, 106, 0.1)' }]}>
+                    <User size={18} color={displayNameError ? '#EF4444' : '#C8806A'} strokeWidth={2.5} />
                   </View>
                   <TextInput
                     ref={nameRef}
@@ -674,8 +666,8 @@ export default function LoginScreen({
                 { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
                 emailError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' }
               ]}>
-                <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
-                  <Mail size={16} color={emailError ? '#EF4444' : theme.textTertiary} />
+                <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(125, 175, 143, 0.15)' : 'rgba(125, 175, 143, 0.1)' }]}>
+                  <Mail size={18} color={emailError ? '#EF4444' : '#7DAF8F'} strokeWidth={2.5} />
                 </View>
                 <TextInput
                   style={[styles.input, { color: theme.textPrimary, textAlign: 'right' }]}
@@ -713,8 +705,8 @@ export default function LoginScreen({
                 { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FB', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#E8ECF0' },
                 passwordError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' }
               ]}>
-                <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
-                  <Lock size={16} color={passwordError ? '#EF4444' : theme.textTertiary} />
+                <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(139, 156, 246, 0.15)' : 'rgba(139, 156, 246, 0.1)' }]}>
+                  <Lock size={18} color={passwordError ? '#EF4444' : '#8B9CF6'} strokeWidth={2.5} />
                 </View>
                 <MaskedPasswordInput
                   ref={passwordRef}
@@ -779,8 +771,8 @@ export default function LoginScreen({
                   confirmPasswordError && { borderColor: '#EF4444', backgroundColor: isDarkMode ? 'rgba(239,68,68,0.08)' : '#FEF2F2' },
                   !confirmPasswordError && confirmPassword.length > 0 && confirmPassword === password && { borderColor: '#10B981' }
                 ]}>
-                  <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
-                    <Lock size={16} color={confirmPasswordError ? '#EF4444' : theme.textTertiary} />
+                  <View style={[styles.inputIconWrap, { backgroundColor: isDarkMode ? 'rgba(139, 156, 246, 0.15)' : 'rgba(139, 156, 246, 0.1)' }]}>
+                    <Lock size={18} color={confirmPasswordError ? '#EF4444' : '#8B9CF6'} strokeWidth={2.5} />
                   </View>
                   <MaskedPasswordInput
                     ref={confirmPasswordRef}
@@ -1320,6 +1312,27 @@ export default function LoginScreen({
         type={legalModal ?? 'terms'}
         onClose={() => setLegalModal(null)}
       />
+
+      <Modal visible={showSuccessModal} transparent animationType="fade">
+        <View style={styles.welcomeOverlay}>
+          <View style={[styles.welcomeCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.welcomeIconWrap, { backgroundColor: isDarkMode ? 'rgba(200, 128, 106, 0.15)' : 'rgba(200, 128, 106, 0.1)' }]}>
+              <Check size={32} color="#C8806A" strokeWidth={2.5} />
+            </View>
+            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>{"איזה כיף שהצטרפת!"}</Text>
+            <Text style={[styles.welcomeMessage, { color: theme.textSecondary }]}>
+              {"החשבון שלך נוצר בהצלחה.\nכל מה שנשאר עכשיו זה להתחבר ולהתחיל."}
+            </Text>
+            <TouchableOpacity 
+              style={[styles.welcomeBtn, { backgroundColor: theme.primary }]} 
+              onPress={() => { setShowSuccessModal(false); setIsLogin(true); }} 
+              activeOpacity={0.85}
+            >
+              <Text style={styles.welcomeBtnText}>{"בואו נתחיל"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View >
   );
 }
@@ -1791,5 +1804,62 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: -0.3,
+  },
+
+  // ===== WELCOME MODAL =====
+  welcomeOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  welcomeCard: {
+    borderRadius: 24,
+    paddingVertical: 36,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  welcomeIconWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 10,
+    writingDirection: 'rtl',
+    letterSpacing: -0.5,
+  },
+  welcomeMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+    writingDirection: 'rtl',
+    letterSpacing: -0.2,
+  },
+  welcomeBtn: {
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  welcomeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

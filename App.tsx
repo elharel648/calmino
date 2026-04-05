@@ -29,7 +29,7 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal, useColorScheme } from 'react-native';
 import PremiumLoader from './components/Common/PremiumLoader';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
@@ -296,7 +296,7 @@ function CreateBabyScreen({ navigation }: any) {
 
   const handleProfileSaved = async () => {
     await refreshChildren(); // Refresh to show all tabs
-    navigation.navigate('Home');
+    navigation.goBack();
   };
 
   return (
@@ -575,6 +575,8 @@ export default function App() {
   const [childrenReady, setChildrenReady] = useState(false);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
+  const colorScheme = useColorScheme();
+  const themeBgColor = colorScheme === 'dark' ? '#0F0F0F' : '#F8F6F4';
 
   // Clean up any stuck Live Activities / Android notifications from previous session on cold launch
   useEffect(() => {
@@ -985,7 +987,7 @@ export default function App() {
   // Show premium loading state while checking baby profile to prevent white screen flash
   if (!isGuestMode && hasBabyProfile === null) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>
         <LiquidGlassBackground />
         <PremiumLoader size={48} />
       </View>
@@ -1063,7 +1065,7 @@ export default function App() {
                                   <MainAppNavigator isAppSitter={isAppSitter} />
                                 </NavigationContainer>
                               ) : (
-                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
+                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>
                                   <LiquidGlassBackground />
                                   <PremiumLoader size={48} />
                                 </View>

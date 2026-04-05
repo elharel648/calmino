@@ -119,11 +119,19 @@ const HeaderSection = memo<HeaderSectionProps>(({
         return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
     }, [profile.birthDate, profile.gender]);
 
-    // Today's date string — shown next to age
-    const todayDateStr = useMemo(() => {
-        const today = new Date();
-        return today.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-    }, []);
+    // Birth date string — shown next to age
+    const birthDateStr = useMemo(() => {
+        if (!profile.birthDate) return '';
+        let birth: Date;
+        if ((profile.birthDate as any)?.seconds) {
+            birth = new Date((profile.birthDate as any).seconds * 1000);
+        } else if (profile.birthDate instanceof Date) {
+            birth = profile.birthDate;
+        } else {
+            return '';
+        }
+        return birth.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    }, [profile.birthDate]);
 
     // Photo upload handler
     const handlePhotoPress = async () => {
@@ -248,7 +256,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     {/* Line 3: age + today's date */}
                     {ageText ? (
                         <Text style={[styles.ageText, { color: theme.textSecondary }]}>
-                            {ageText}{todayDateStr ? ` · ${todayDateStr}` : ''}
+                            {ageText}{birthDateStr ? ` · ${birthDateStr}` : ''}
                         </Text>
                     ) : null}
                 </View>

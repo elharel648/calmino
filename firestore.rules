@@ -315,6 +315,23 @@ service cloud.firestore {
     }
 
     // ===================
+    // DAILY LOGS COLLECTION
+    // ===================
+    match /dailyLogs/{logId} {
+      // Read: creator OR family access
+      allow read: if isAuthenticated() && (
+        resource.data.parentId == request.auth.uid ||
+        (resource.data.get('childId', null) != null && (isParentOfBaby(resource.data.childId) || hasFamilyAccessToBaby(resource.data.childId) || hasGuestAccessToBaby(resource.data.childId)))
+      );
+      
+      // Create: any authenticated user
+      allow create: if isAuthenticated();
+      
+      // Update/Delete: creator only
+      allow update, delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
+    }
+
+    // ===================
     // GROWTH MEASUREMENTS COLLECTION
     // ===================
     match /growthMeasurements/{measurementId} {
