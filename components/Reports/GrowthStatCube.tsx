@@ -73,6 +73,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
 
     useEffect(() => {
         if (childId) {
+            
             getMeasurementsForChart(childId, 6).then((measurements) => {
                 const weights = measurements
                     .filter(m => m.weight !== undefined)

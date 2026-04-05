@@ -131,13 +131,20 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             return { id: '', name: t('home.defaultBabyName'), birthDate: new Date(), ageMonths: 0, photoUrl: undefined, parentId: '' };
         }
 
+        let activeBirth: Date | null = null;
+        if (birthDate) {
+            activeBirth = birthDate;
+        } else if ((activeChild as any)?.birthDate) {
+            activeBirth = new Date((activeChild as any).birthDate);
+        }
+
         // Calculate age in months if we have birth date
         let ageMonths = 0;
-        if (birthDate) {
+        if (activeBirth) {
             const now = new Date();
-            ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
-                (now.getMonth() - birthDate.getMonth());
-            if (now.getDate() < birthDate.getDate()) {
+            ageMonths = (now.getFullYear() - activeBirth.getFullYear()) * 12 +
+                (now.getMonth() - activeBirth.getMonth());
+            if (now.getDate() < activeBirth.getDate()) {
                 ageMonths--;
             }
             ageMonths = Math.max(0, ageMonths);
@@ -146,11 +153,11 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         return {
             id: activeChild.childId,
             name: activeChild.childName,
-            birthDate: birthDate || new Date(),
+            birthDate: (activeChild as any)?.birthDate ? new Date((activeChild as any).birthDate) : (birthDate || new Date()),
             ageMonths,
             photoUrl: activeChild.photoUrl,
             parentId: auth.currentUser?.uid || '',
-            gender,
+            gender: (activeChild as any)?.gender || gender,
         };
     }, [activeChild, birthDate]);
 
@@ -424,7 +431,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             </View>
 
                             {/* Network error banner */}
-                            {homeDataError && (
+                            {false && homeDataError && (
                                 <View style={styles.errorBanner}>
                                     <WifiOff size={14} color="#fff" strokeWidth={2} />
                                     <Text style={styles.errorBannerText}>{t('home.connectionError')}</Text>

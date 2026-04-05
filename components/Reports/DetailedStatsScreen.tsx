@@ -204,10 +204,11 @@ export default function DetailedStatsScreen({
                 );
 
                 const snapshot = await getDocs(q);
-                const events = snapshot.docs.map(doc => ({
+                let events = snapshot.docs.map(doc => ({
                     ...doc.data(),
                     timestamp: doc.data().timestamp?.toDate() || new Date(),
                 }));
+
 
                 // Store all food events for interval calculation
                 if (metricType === 'food') {
@@ -264,6 +265,8 @@ export default function DetailedStatsScreen({
                         ...doc.data(),
                         timestamp: doc.data().timestamp?.toDate() || new Date(),
                     }));
+                    
+
                 } catch (error) {
                     logger.error('Error fetching previous period data:', error);
                 }

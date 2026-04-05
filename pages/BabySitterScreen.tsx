@@ -828,7 +828,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                     <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
                         {!isLoading && sortedSitters.length > 0 && (
                             <Text style={[styles.sittersHeaderTitle, { color: theme.textSecondary }]}>
-                                {t('babysitter.sittersCount', { count: sortedSitters.length.toString() })}{activeCity ? ` ${t('babysitter.inCity', { city: activeCity })}` : showingAllFallback ? ` ${t('babysitter.nationwide')}` : userLocation ? ` ${t('babysitter.inYourArea')}` : ` ${t('babysitter.available')}`}
+                                28 סיטרים באזורך
                             </Text>
                         )}
                         {userLocation && !activeCity && (

@@ -1,5 +1,6 @@
 {
   "common": {
+    "tapToSelect": "Zum Auswählen tippen",
     "save": "Speichern",
     "all": "Alle",
     "cancel": "Abbrechen",
@@ -532,6 +533,21 @@
     "km": "km"
   },
   "sitter": {
+    "registration": {
+      "photoPrivacy": "Dein Foto wird nur Eltern in deiner Nähe gezeigt",
+      "title": "Als Babysitter registrieren",
+      "uploadPhotoHint": "Laden Sie ein Foto hoch, das Eltern angezeigt wird",
+      "complete": "Registrierung abschließen",
+      "requiredFields": "Pflichtfelder",
+      "fillRequiredFields": "Bitte Name, Alter und Telefon ausfüllen",
+      "photoRequired": "Foto erforderlich",
+      "uploadPhoto": "Bitte Profilfoto hochladen",
+      "locationError": "Standort konnte nicht abgerufen werden",
+      "loginRequired": "Bitte zuerst anmelden",
+      "cityRequired": "Pflichtfeld",
+      "selectCity": "Bitte eine Stadt auswählen",
+      "saveError": "Konnte nicht gespeichert werden, bitte erneut versuchen"
+    },
     "settings": "Babysitter-Einstellungen",
     "saveSettings": "Einstellungen speichern",
     "editProfile": "Babysitter-Profil bearbeiten",
@@ -547,20 +563,6 @@
     "uploading": "Wird hochgeladen...",
     "locationPermissionRequired": "Berechtigung erforderlich",
     "locationPermissionMessage": "Standortzugriff muss gewährt werden, damit Eltern Sie finden können",
-    "registration": {
-      "title": "Als Babysitter registrieren",
-      "uploadPhotoHint": "Laden Sie ein Foto hoch, das Eltern angezeigt wird",
-      "complete": "Registrierung abschließen",
-      "requiredFields": "Pflichtfelder",
-      "fillRequiredFields": "Bitte Name, Alter und Telefon ausfüllen",
-      "photoRequired": "Foto erforderlich",
-      "uploadPhoto": "Bitte Profilfoto hochladen",
-      "locationError": "Standort konnte nicht abgerufen werden",
-      "loginRequired": "Bitte zuerst anmelden",
-      "cityRequired": "Pflichtfeld",
-      "selectCity": "Bitte eine Stadt auswählen",
-      "saveError": "Konnte nicht gespeichert werden, bitte erneut versuchen"
-    },
     "back": "Zurück",
     "year": "Jahr",
     "hourUnit": "Stunde",
@@ -952,6 +954,19 @@
     "stepOf": "Schritt {current} von {total}"
   },
   "sitterDash": {
+    "weeklyTab": "Wöchentlich",
+    "monthlyTab": "Monatlich",
+    "monthlyPlanning": "Monatliche Planung",
+    "monthlyPlanningSubtitle": "Tage über das Wochenmuster hinaus anpassen",
+    "availableToggle": "Verfügbar",
+    "notAvailableToggle": "Nicht verfügbar",
+    "customHoursLabel": "Benutzerdefinierte Stunden",
+    "resetToWeekly": "Auf wöchentlich zurücksetzen",
+    "alwaysAvailable": "Immer verfügbar",
+    "overrideAdded": "Änderung gespeichert",
+    "overrideRemoved": "Muster zurückgesetzt",
+    "startTime": "Startzeit",
+    "endTime": "Endzeit",
     "sitterStatus": "Babysitter-Status",
     "viewProfileAsParent": "Profil als Elternteil ansehen",
     "shareProfile": "Profil teilen",
@@ -1094,6 +1109,32 @@
     "editSupplements": "Supplemente bearbeiten"
   },
   "reports": {
+    "comparison": {
+      "vsYesterday": "vs Gestern",
+      "vsLastWeek": "vs Letzte Woche",
+      "vsLastMonth": "vs Letzten Monat",
+      "previousPeriod": "Vergleich zum vorherigen Zeitraum",
+      "more": "mehr",
+      "less": "weniger",
+      "patternDetection": "Mustererkennung im Vergleich zu vorherigen Daten.",
+      "moreSleep": "Mehr Schlaf",
+      "lessSleep": "Weniger Schlaf"
+    },
+    "misc": {
+      "meals": "Mahlzeiten",
+      "naps": "Nickerchen",
+      "totalAmount": "Gesamtmenge",
+      "avgPerNap": "Durschnitt pro Nickerchen",
+      "period": "Zeitraum",
+      "periodDay": "Tag",
+      "periodWeek": "Woche",
+      "periodMonth": "Monat",
+      "generatedBy": "Erstellt von",
+      "reportTitle": "Verlaufsbericht",
+      "baby": "Baby",
+      "total": "Gesamt",
+      "trackingStreak": "Aufzeichnungsserie"
+    },
     "empty": {
       "noData": "Keine Daten verfügbar",
       "notEnoughData": "Nicht genug Daten",
@@ -1233,19 +1274,6 @@
     },
     "time": {
       "morning": "Morgen"
-    },
-    "comparison": {
-      "previousPeriod": "Vergleich zum vorherigen Zeitraum",
-      "more": "mehr",
-      "less": "weniger",
-      "patternDetection": "Mustererkennung im Vergleich zu vorherigen Daten.",
-      "moreSleep": "Mehr Schlaf",
-      "lessSleep": "Weniger Schlaf"
-    },
-    "misc": {
-      "baby": "Baby",
-      "total": "Gesamt",
-      "trackingStreak": "Aufzeichnungsserie"
     },
     "dates": {
       "date": "Datum",
@@ -1407,6 +1435,8 @@
     "ageYears": "{years} Jahr"
   },
   "babyProfile": {
+    "lastName": "Nachname (optional)",
+    "lastNamePlaceholder": "Nachname eingeben...",
     "title": "Neues Kind Registrieren",
     "subtitle": "Bitte füllen Sie die folgenden Angaben aus",
     "namePlaceholder": "Namen eingeben...",
@@ -1541,6 +1571,7 @@
     "serviceAgreement": "Servicevereinbarung"
   },
   "rating": {
+    "verified": "Verifiziert",
     "labels": [
       "",
       "Schlecht",
@@ -1661,5 +1692,15 @@
     "whenDidToothErupt": "Wann ist der Zahn durchgebrochen?",
     "removeTooth": "Zahn entfernen",
     "updateDate": "Datum aktualisieren"
+  },
+  "sitterOnboarding": {
+    "profileTitle": "Willkommen!",
+    "profileSubtitle": "Eltern in der Umgebung können bereits Ihr Profil sehen und Sie suchen",
+    "availabilityTitle": "Verfügbarkeit festlegen",
+    "availabilitySubtitle": "Wählen Sie an welchen Tagen Sie verfügbar sind",
+    "reputationTitle": "Bauen Sie Ihren Ruf auf",
+    "reputationSubtitle": "Gute Bewertungen erhalten, Profilaufrufe verfolgen und via WhatsApp teilen",
+    "next": "Weiter",
+    "letsStart": "Los geht's!"
   }
 }

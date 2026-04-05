@@ -13,7 +13,8 @@ interface FamilyStatusIndicatorProps {
 }
 
 const FamilyStatusIndicator = memo(({ onPress }: FamilyStatusIndicatorProps) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const { t } = useLanguage();
     const { family } = useFamily();
     const [members, setMembers] = useState<FamilyMemberPresence[]>([]);

@@ -406,6 +406,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       const historyAccessDays = userId && family?.members[userId]?.historyAccessDays;
 
       const history = await getRecentHistory(childId, undefined, historyAccessDays);
+      
       // Map Firebase data directly
       const mapped: TimelineEvent[] = history.map((item: any) => ({
         ...item,

@@ -79,6 +79,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
             birth = new Date((profile.birthDate as any).seconds * 1000);
         } else if (profile.birthDate instanceof Date) {
             birth = profile.birthDate;
+        } else if (typeof profile.birthDate === 'string' || typeof profile.birthDate === 'number') {
+            birth = new Date(profile.birthDate);
         } else {
             return '';
         }
@@ -127,6 +129,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
             birth = new Date((profile.birthDate as any).seconds * 1000);
         } else if (profile.birthDate instanceof Date) {
             birth = profile.birthDate;
+        } else if (typeof profile.birthDate === 'string' || typeof profile.birthDate === 'number') {
+            birth = new Date(profile.birthDate);
         } else {
             return '';
         }

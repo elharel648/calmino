@@ -48,7 +48,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { activeChild, refreshChildren } = useActiveChild();
   const { baby, updateBasicInfo, updatePhoto, refresh, birthDateObj, babyAgeMonths } = useBabyProfile(activeChild?.childId);
-  const { family, members, rename: renameFamily, isAdmin, remove: removeMember, leave: leaveFamily } = useFamily();
+  const { family, isAdmin, members, rename: renameFamily, remove: removeMember, leave: leaveFamily } = useFamily();
   const { isPremium } = usePremium();
   const user = auth.currentUser;
 

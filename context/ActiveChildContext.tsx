@@ -339,10 +339,8 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                 AsyncStorage.setItem('offline_childrenList', JSON.stringify(childrenList)).catch(() => {});
             }
 
-            // Update activeChild using ref to avoid infinite loop (ref doesn't cause callback recreation)
             const currentId = activeChildRef.current?.childId;
             if (!currentId) {
-                // No active child yet — set to first available
                 if (childrenList.length > 0) {
                     setActiveChildState(childrenList[0]);
                     activeChildRef.current = childrenList[0];
@@ -350,12 +348,10 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
             } else {
                 const stillExists = childrenList.find(c => c.childId === currentId);
                 if (!stillExists) {
-                    // Active child was removed (e.g. left guest access) — switch to first available or null
                     const next = childrenList.length > 0 ? childrenList[0] : null;
                     setActiveChildState(next);
                     activeChildRef.current = next;
                 } else {
-                    // Refresh with latest data (name/photo may have changed)
                     setActiveChildState(stillExists);
                     activeChildRef.current = stillExists;
                 }

@@ -299,6 +299,8 @@ export default function ReportsScreen() {
       const querySnapshot = await getDocs(q);
       const events: any[] = [];
 
+      const itemsToIterate = querySnapshot.docs;
+
       const stats: DailyStats = {
         food: 0, foodCount: 0, sleep: 0, sleepCount: 0,
         diapers: 0, supplements: 0,
@@ -325,7 +327,7 @@ export default function ReportsScreen() {
       let maxFeedingAmount = 0;
       const sleepByDay: { [day: string]: number } = {};
 
-      querySnapshot.forEach((doc) => {
+      itemsToIterate.forEach((doc) => {
         const data = doc.data();
         const dateObj = data.timestamp instanceof Timestamp
           ? data.timestamp.toDate()

@@ -579,6 +579,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             setResponseRateStats(respStats);
         }
 
+
+
         setLoading(false);
         setRefreshing(false);
     };
