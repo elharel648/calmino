@@ -46,7 +46,14 @@ struct PauseTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "השהה טיימר"
     static var description = IntentDescription("השהה את הטיימר המופעל")
     
-    init() {}
+    @Parameter(title: "Activity ID")
+    var activityId: String
+    
+    init() { self.activityId = "" }
+    
+    init(activityId: String) {
+        self.activityId = activityId
+    }
     
     func perform() async throws -> some IntentResult {
         // Sleep
@@ -116,7 +123,14 @@ struct PauseTimerIntent: LiveActivityIntent {
 struct ResumeTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "המשך טיימר"
     
-    init() {}
+    @Parameter(title: "Activity ID")
+    var activityId: String
+    
+    init() { self.activityId = "" }
+    
+    init(activityId: String) {
+        self.activityId = activityId
+    }
     
     func perform() async throws -> some IntentResult {
         // Sleep
@@ -179,7 +193,14 @@ struct ResumeTimerIntent: LiveActivityIntent {
 struct StopTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "סיים טיימר"
 
-    init() {}
+    @Parameter(title: "Activity ID")
+    var activityId: String
+    
+    init() { self.activityId = "" }
+    
+    init(activityId: String) {
+        self.activityId = activityId
+    }
 
     func perform() async throws -> some IntentResult {
         // Sleep
@@ -223,7 +244,14 @@ struct StopTimerIntent: LiveActivityIntent {
 struct SwitchSideIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "החלף צד"
     
-    init() {}
+    @Parameter(title: "Activity ID")
+    var activityId: String
+    
+    init() { self.activityId = "" }
+    
+    init(activityId: String) {
+        self.activityId = activityId
+    }
     
     func perform() async throws -> some IntentResult {
         for activity in Activity<BreastfeedingActivityAttributes>.activities {

@@ -335,21 +335,30 @@ export default function MilestonesModal({
                     {/* Animated Header — matches TrackingModal style */}
                     <View style={styles.header} {...panResponder.panHandlers}>
                         {/* Animated milestone icon */}
-                        <View style={styles.animIconContainer}>
+                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                             {/* Pulse rings */}
-                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
-                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.milestones.color }, pulse1Style]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.milestones.color }, pulse2Style]} />
                             {/* Floating sparkle dots */}
                             <Animated.View style={[styles.floatingNote, { left: 6, top: 8 }, sparkle1Style]}>
-                                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: ACCENT }} />
+                                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: theme.actionColors.milestones.color }} />
                             </Animated.View>
                             <Animated.View style={[styles.floatingNote, { right: 6, top: 8 }, sparkle2Style]}>
-                                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FBBF24' }} />
+                                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: theme.actionColors.milestones.color, opacity: 0.8 }} />
                             </Animated.View>
                             {/* Main icon with bounce */}
                             <Animated.View style={iconBounceStyle}>
-                                <View style={[styles.animIconCircle, { backgroundColor: ACCENT + '22' }]}>
-                                    <Award size={28} color={ACCENT} strokeWidth={2.2} />
+                                <View style={[{
+                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                    backgroundColor: theme.actionColors.milestones.color,
+                                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.milestones.color,
+                                    shadowOpacity: 0.35,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 5 },
+                                    borderWidth: 2.5,
+                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                }]}>
+                                    <Award size={28} color="#FFFFFF" strokeWidth={2.2} />
                                 </View>
                             </Animated.View>
                         </View>
@@ -368,15 +377,12 @@ export default function MilestonesModal({
                                 activeOpacity={0.7}
                             >
                                 {activeTab === 'add' ? (
-                                    <LinearGradient
-                                        colors={['#F59E0B', '#FBBF24']}
-                                        style={styles.tabActiveGradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
+                                    <View
+                                        style={[styles.tabActiveGradient, { backgroundColor: theme.actionColors.milestones.color }]}
                                     >
                                         <Plus size={18} color="#fff" strokeWidth={2.5} />
                                         <Text style={styles.tabTextActive}>{t('milestones.addNew')}</Text>
-                                    </LinearGradient>
+                                    </View>
                                 ) : (
                                     <View style={styles.tabInactive}>
                                         <Plus size={18} color={theme.textSecondary} strokeWidth={2} />
@@ -390,15 +396,12 @@ export default function MilestonesModal({
                                 activeOpacity={0.7}
                             >
                                 {activeTab === 'history' ? (
-                                    <LinearGradient
-                                        colors={['#F59E0B', '#FBBF24']}
-                                        style={styles.tabActiveGradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
+                                    <View
+                                        style={[styles.tabActiveGradient, { backgroundColor: theme.actionColors.milestones.color }]}
                                     >
                                         <Clock size={18} color="#fff" strokeWidth={2.5} />
                                         <Text style={styles.tabTextActive}>{t('milestones.history', { count: milestones.length.toString() })}</Text>
-                                    </LinearGradient>
+                                    </View>
                                 ) : (
                                     <View style={styles.tabInactive}>
                                         <Clock size={18} color={theme.textSecondary} strokeWidth={2} />
@@ -499,8 +502,8 @@ export default function MilestonesModal({
                                         style={[
                                             styles.saveBtnMinimal,
                                             {
-                                                borderColor: ACCENT,
-                                                backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.05)',
+                                                borderColor: theme.actionColors.milestones.color,
+                                                backgroundColor: isDarkMode ? `${theme.actionColors.milestones.color}1A` : `${theme.actionColors.milestones.color}0D`,
                                                 opacity: !title.trim() || loading ? 0.5 : 1
                                             }
                                         ]}
@@ -512,7 +515,7 @@ export default function MilestonesModal({
                                             <ActivityIndicator color={ACCENT} />
                                         ) : (
                                             <>
-                                                <Award size={20} color={ACCENT} strokeWidth={2.5} />
+                                                <Award size={20} color={theme.actionColors.milestones.color} strokeWidth={2.5} />
                                                 <Text style={styles.saveBtnTextMinimal}>{t('milestones.saveMilestone')}</Text>
                                             </>
                                         )}
@@ -534,9 +537,9 @@ export default function MilestonesModal({
                                                 style={styles.emptyIconGradient}
                                             >
                                                 <Animated.View style={sparkle1Style}>
-                                                    <Sparkles size={24} color={ACCENT} strokeWidth={2} style={{ position: 'absolute', top: -8, right: -8 }} />
+                                                    <Sparkles size={24} color={theme.actionColors.milestones.color} strokeWidth={2} style={{ position: 'absolute', top: -8, right: -8 }} />
                                                 </Animated.View>
-                                                <Award size={40} color={ACCENT} strokeWidth={2.5} fill={ACCENT} />
+                                                <Award size={40} color={theme.actionColors.milestones.color} strokeWidth={2.5} fill={theme.actionColors.milestones.color} />
                                             </LinearGradient>
                                             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
                                                 {t('milestones.noMilestonesYet')}
@@ -568,14 +571,11 @@ export default function MilestonesModal({
                                                             <View style={styles.milestoneCard}>
                                                                 <View style={styles.milestoneHeader}>
                                                                     <View style={styles.milestoneInfo}>
-                                                                        <LinearGradient
-                                                                            colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-                                                                            style={styles.milestoneBadgeGradient}
-                                                                            start={{ x: 0, y: 0 }}
-                                                                            end={{ x: 1, y: 1 }}
+                                                                        <View
+                                                                            style={[styles.milestoneBadgeGradient, { backgroundColor: theme.actionColors.milestones.color }]}
                                                                         >
-                                                                            <Award size={18} color="#F59E0B" strokeWidth={2.5} fill="#F59E0B" />
-                                                                        </LinearGradient>
+                                                                            <Award size={18} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
+                                                                        </View>
                                                                         <View style={styles.milestoneTexts}>
                                                                             <Text style={[styles.milestoneTitle, { color: theme.textPrimary }]}>
                                                                                 {milestone.title}

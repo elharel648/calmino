@@ -63,7 +63,7 @@ const PRESET_ICONS = [
     { key: 'heart', icon: Heart, color: '#F43F5E', label: 'אהבה' },
     { key: 'smile', icon: Smile, color: '#22C55E', label: 'חיוך' },
     // Row 3 - More activities
-    { key: 'gamepad', icon: Gamepad2, color: '#3B82F6', label: 'משחק' },
+    { key: 'gamepad', icon: Gamepad2, color: '#C8806A', label: 'משחק' },
     { key: 'sun', icon: Sun, color: '#F97316', label: 'שמש' },
     { key: 'droplets', icon: Droplets, color: '#0EA5E9', label: 'שתייה' },
     { key: 'footprints', icon: Footprints, color: '#84CC16', label: 'הליכה' },
@@ -74,7 +74,7 @@ const PRESET_ICONS = [
 // Quick action presets for common activities
 const QUICK_PRESETS = [
     { name: 'אמבטיה', icon: 'bath', color: '#06B6D4' },
-    { name: 'משחק', icon: 'gamepad', color: '#3B82F6' },
+    { name: 'משחק', icon: 'gamepad', color: '#C8806A' },
     { name: 'סיפור', icon: 'book', color: '#14B8A6' },
     { name: 'שתייה', icon: 'droplets', color: '#0EA5E9' },
     { name: 'טיול', icon: 'footprints', color: '#84CC16' },
@@ -291,13 +291,22 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <View style={{ width: 60, height: 60, alignItems: 'center', justifyContent: 'center' }}>
-                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 30, backgroundColor: '#F97316' }, customIconPulseStyle]} />
-                            <View style={[styles.emojiCircle, { backgroundColor: isDarkMode ? 'rgba(249,115,22,0.2)' : '#F9731615' }]}>
-                                <Reanimated.View style={customIconBounceStyle}>
-                                    <Zap size={28} color="#F97316" strokeWidth={2.5} />
-                                </Reanimated.View>
-                            </View>
+                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
+                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#F97316' }, customIconPulseStyle]} />
+                            <Reanimated.View style={customIconBounceStyle}>
+                                <View style={[{
+                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                    backgroundColor: '#F97316',
+                                    shadowColor: isDarkMode ? 'transparent' : '#F97316',
+                                    shadowOpacity: 0.35,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 5 },
+                                    borderWidth: 2.5,
+                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                }]}>
+                                    <Zap size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                </View>
+                            </Reanimated.View>
                         </View>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
                     </View>

@@ -27,6 +27,7 @@ import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Downloa
 import DiaperIcon from '../components/Common/DiaperIcon';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import { BlurView } from 'expo-blur';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { db } from '../services/firebaseConfig';
@@ -166,6 +167,32 @@ export default function ReportsScreen() {
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Screen-level breathe-in animation
+  const screenFade = useRef(new RNAnimated.Value(0)).current;
+  const screenSlide = useRef(new RNAnimated.Value(24)).current;
+
+  useFocusEffect(
+    React.useCallback(() => {
+      screenFade.setValue(0);
+      screenSlide.setValue(24);
+      RNAnimated.parallel([
+        RNAnimated.timing(screenFade, {
+          toValue: 1,
+          duration: 380,
+          useNativeDriver: true,
+          easing: (t: number) => 1 - Math.pow(1 - t, 3),
+        }),
+        RNAnimated.spring(screenSlide, {
+          toValue: 0,
+          useNativeDriver: true,
+          stiffness: 110,
+          damping: 16,
+          mass: 0.7,
+        } as any),
+      ]).start();
+    }, [])
+  );
   const [allEvents, setAllEvents] = useState<any[]>([]);
   const [weeklyGoals, setWeeklyGoals] = useState<{
     sleepDaysGoal: number;
@@ -585,7 +612,7 @@ export default function ReportsScreen() {
         }
         .section-title-summary { border-right-color: #334155; }
         .section-title-trends  { border-right-color: #10B981; }
-        .section-title-daily   { border-right-color: #3B82F6; }
+        .section-title-daily   { border-right-color: #C8806A; }
 
         .section-block {
             page-break-inside: avoid;
@@ -1169,7 +1196,7 @@ export default function ReportsScreen() {
               setShowRangeModal(false);
               setActivePickerField(null);
             }}>
-              <Check size={22} color="#6366F1" />
+              <Check size={22} color="#C8806A" />
             </TouchableOpacity>
           </View>
 
@@ -1260,7 +1287,7 @@ export default function ReportsScreen() {
                 minimumDate={activePickerField === 'end' ? tempStartDate : undefined}
                 locale="he"
                 themeVariant="light"
-                accentColor="#6366F1"
+                accentColor="#C8806A"
                 style={styles.inlineCalendar}
               />
             </View>
@@ -1328,34 +1355,63 @@ export default function ReportsScreen() {
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // ✨ Staggered entry animation
+  // ✨ Premium Staggered entry animation — spring-based
   const cardAnims = useRef(
-    Array.from({ length: 6 }, () => new RNAnimated.Value(0))
+    Array.from({ length: 8 }, () => new RNAnimated.Value(0))
   ).current;
   const cardSlides = useRef(
-    Array.from({ length: 6 }, () => new RNAnimated.Value(18))
+    Array.from({ length: 8 }, () => new RNAnimated.Value(32))
+  ).current;
+  const cardScales = useRef(
+    Array.from({ length: 8 }, () => new RNAnimated.Value(0.94))
   ).current;
 
   useEffect(() => {
-    // Reset
+    // Reset all
     cardAnims.forEach(a => a.setValue(0));
-    cardSlides.forEach(a => a.setValue(18));
-    // Stagger
+    cardSlides.forEach(a => a.setValue(32));
+    cardScales.forEach(a => a.setValue(0.94));
+
+    // Stagger each card with spring physics
     const animations = cardAnims.map((anim, i) =>
       RNAnimated.parallel([
-        RNAnimated.timing(anim, { toValue: 1, duration: 350, delay: i * 60, useNativeDriver: true }),
-        RNAnimated.timing(cardSlides[i], { toValue: 0, duration: 350, delay: i * 60, useNativeDriver: true }),
+        RNAnimated.timing(anim, {
+          toValue: 1,
+          duration: 420,
+          delay: i * 70,
+          easing: (t: number) => 1 - Math.pow(1 - t, 3), // Ease-out cubic
+          useNativeDriver: true,
+        }),
+        RNAnimated.spring(cardSlides[i], {
+          toValue: 0,
+          delay: i * 70,
+          useNativeDriver: true,
+          stiffness: 120,
+          damping: 14,
+          mass: 0.6,
+        } as any),
+        RNAnimated.spring(cardScales[i], {
+          toValue: 1,
+          delay: i * 70,
+          useNativeDriver: true,
+          stiffness: 120,
+          damping: 14,
+          mass: 0.6,
+        } as any),
       ])
     );
-    RNAnimated.parallel(animations).start();
-  }, [loading]);
+    RNAnimated.stagger(70, animations).start();
+  }, [loading, timeRange]);
 
   const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => (
     <RNAnimated.View style={{
       width: '48%',
       marginBottom: 14,
-      opacity: cardAnims[Math.min(index, 5)],
-      transform: [{ translateY: cardSlides[Math.min(index, 5)] }],
+      opacity: cardAnims[Math.min(index, 7)],
+      transform: [
+        { translateY: cardSlides[Math.min(index, 7)] },
+        { scale: cardScales[Math.min(index, 7)] },
+      ],
     }}>
       {children}
     </RNAnimated.View>
@@ -1381,9 +1437,9 @@ export default function ReportsScreen() {
                 label={t('reports.metrics.feeding')}
                 subValue={dailyStats.food > 0 ? `${dailyStats.food} ${t('detailedStats.ml')}` : (dailyStats.foodCount > 0 ? `${dailyStats.foodCount} ${t('reports.misc.meals')}` : undefined)}
                 change={comparison?.feedingChange}
-                accentColor="#F59E0B"
-                iconColor="#F59E0B"
-                iconBg={isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'}
+                accentColor={theme.actionColors.food.color}
+                iconColor="#FFFFFF"
+                iconBg={theme.actionColors.food.color}
                 sparklineData={weeklyData.food}
                 onPress={() => isPremium ? setSelectedMetric('food') : setShowPaywall(true)}
               />
@@ -1397,9 +1453,9 @@ export default function ReportsScreen() {
                 label={dailyStats.sleep > 0 ? t('reports.charts.sleepHours') : (dailyStats.sleepCount > 0 ? t('reports.charts.naps') : t('reports.charts.sleepHours'))}
                 subValue={dailyStats.sleep > 0 && dailyStats.sleepCount > 0 ? `${dailyStats.sleepCount} ${t('reports.misc.naps')}` : undefined}
                 change={comparison?.sleepChange}
-                accentColor="#6366F1"
-                iconColor="#6366F1"
-                iconBg={isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)'}
+                accentColor={theme.actionColors.sleep.color}
+                iconColor="#FFFFFF"
+                iconBg={theme.actionColors.sleep.color}
                 sparklineData={weeklyData.sleep}
                 onPress={() => isPremium ? setSelectedMetric('sleep') : setShowPaywall(true)}
               />
@@ -1412,9 +1468,9 @@ export default function ReportsScreen() {
                 value={dailyStats.diapers}
                 label={t('reports.metrics.diapers')}
                 change={comparison?.diaperChange}
-                accentColor="#34C759"
-                iconColor="#34C759"
-                iconBg={isDarkMode ? 'rgba(52, 199, 89, 0.22)' : 'rgba(52, 199, 89, 0.1)'}
+                accentColor={theme.actionColors.diaper.color}
+                iconColor="#FFFFFF"
+                iconBg={theme.actionColors.diaper.color}
                 sparklineData={weeklyData.diapers}
                 neutralTrend
                 onPress={() => isPremium ? setSelectedMetric('diapers') : setShowPaywall(true)}
@@ -1427,9 +1483,9 @@ export default function ReportsScreen() {
                 icon={Pill}
                 value={dailyStats.supplements}
                 label={t('reports.metrics.supplements')}
-                accentColor="#FF6B6B"
-                iconColor="#FF6B6B"
-                iconBg={isDarkMode ? 'rgba(255, 107, 107, 0.22)' : 'rgba(255, 107, 107, 0.1)'}
+                accentColor={theme.actionColors.supplements.color}
+                iconColor="#FFFFFF"
+                iconBg={theme.actionColors.supplements.color}
                 onPress={() => isPremium ? setSelectedMetric('supplements') : setShowPaywall(true)}
               />
             </AnimatedCard>
@@ -1456,8 +1512,8 @@ export default function ReportsScreen() {
               onPress={() => setShowHistoryModal(true)}
               activeOpacity={0.7}
             >
-              <View style={[styles.statIconWrap, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }]}>
-                <Clock size={20} color="#3B82F6" strokeWidth={1.5} />
+              <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.tools.color }]}>
+                <Clock size={20} color="#FFFFFF" strokeWidth={1.5} />
               </View>
 
               <View style={styles.statValueRow}>
@@ -1498,13 +1554,13 @@ export default function ReportsScreen() {
           <View style={styles.comparisonGrid}>
             {/* Sleep Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
-                <Moon size={16} color="#6366F1" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: theme.actionColors.sleep.color }]}>
+                <Moon size={16} color="#FFFFFF" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.sleep')}</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.sleepChange !== undefined && comparison.sleepChange !== 0
-                  ? (comparison.sleepChange > 0 ? '#10B981' : '#EF4444')
+                  ? (comparison.sleepChange > 0 ? theme.success : theme.danger)
                   : theme.textSecondary
               }]}>
                 {comparison?.sleepChange !== undefined && comparison.sleepChange !== 0
@@ -1512,21 +1568,21 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.sleepChange !== undefined && comparison.sleepChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.sleepChange))}%`, backgroundColor: '#6366F1' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: theme.actionColors.sleep.lightColor }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.sleepChange))}%`, backgroundColor: theme.actionColors.sleep.color }]} />
                 </View>
               )}
             </View>
 
             {/* Food Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }]}>
-                <Utensils size={16} color="#F59E0B" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: theme.actionColors.food.color }]}>
+                <Utensils size={16} color="#FFFFFF" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.feeding')}</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
-                  ? (comparison.feedingChange > 0 ? '#F59E0B' : '#EF4444')
+                  ? (comparison.feedingChange > 0 ? theme.success : theme.danger)
                   : theme.textSecondary
               }]}>
                 {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0
@@ -1534,21 +1590,21 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.feedingChange !== undefined && comparison.feedingChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: '#F59E0B' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: theme.actionColors.food.lightColor }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.feedingChange))}%`, backgroundColor: theme.actionColors.food.color }]} />
                 </View>
               )}
             </View>
 
             {/* Diapers Comparison */}
             <View style={styles.comparisonItem}>
-              <View style={[styles.comparisonIconWrap, { backgroundColor: isDarkMode ? 'rgba(52, 199, 89, 0.22)' : 'rgba(52, 199, 89, 0.1)' }]}>
-                <Droplets size={16} color="#34C759" strokeWidth={2} />
+              <View style={[styles.comparisonIconWrap, { backgroundColor: theme.actionColors.diaper.color }]}>
+                <Droplets size={16} color="#FFFFFF" strokeWidth={2} />
               </View>
               <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{t('reports.metrics.diapers')}</Text>
               <Text style={[styles.comparisonValue, {
                 color: comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
-                  ? '#10B981'
+                  ? (comparison.diaperChange > 0 ? theme.success : theme.danger)
                   : theme.textSecondary
               }]}>
                 {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0
@@ -1556,8 +1612,8 @@ export default function ReportsScreen() {
                   : '—'}
               </Text>
               {comparison?.diaperChange !== undefined && comparison.diaperChange !== 0 && (
-                <View style={[styles.comparisonBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)' }]}>
-                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: '#10B981' }]} />
+                <View style={[styles.comparisonBar, { backgroundColor: theme.actionColors.diaper.lightColor }]}>
+                  <View style={[styles.comparisonBarFill, { width: `${Math.min(100, Math.abs(comparison.diaperChange))}%`, backgroundColor: theme.actionColors.diaper.color }]} />
                 </View>
               )}
             </View>
@@ -1580,7 +1636,7 @@ export default function ReportsScreen() {
           <View style={styles.goalItem}>
             <View style={styles.goalItemHeader}>
               <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.goals.sleepOver8')}</Text>
-              <Text style={[styles.goalItemProgress, { color: '#3B82F6' }]}>
+              <Text style={[styles.goalItemProgress, { color: '#C8806A' }]}>
                 {weeklyGoals.sleepDaysMet}/{weeklyGoals.sleepDaysGoal}
               </Text>
             </View>
@@ -1590,7 +1646,7 @@ export default function ReportsScreen() {
                   styles.goalProgressFill,
                   {
                     width: `${weeklyGoals.sleepDaysGoal > 0 ? (weeklyGoals.sleepDaysMet / weeklyGoals.sleepDaysGoal) * 100 : 0}%`,
-                    backgroundColor: '#3B82F6'
+                    backgroundColor: '#C8806A'
                   }
                 ]}
               />
@@ -1709,7 +1765,7 @@ export default function ReportsScreen() {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.tabContent}>
       {/* Insights Section */}
       <View style={styles.sectionTitleRow}>
-        <Trophy size={16} color="#6366F1" strokeWidth={1.5} />
+        <Trophy size={16} color="#C8806A" strokeWidth={1.5} />
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.insights.title')}</Text>
       </View>
       {aiInsights.tips.slice(0, 2).map((tipData, index) => (
@@ -1723,7 +1779,7 @@ export default function ReportsScreen() {
 
       {/* Achievements Section */}
       <View style={[styles.sectionTitleRow, { marginTop: 20 }]}>
-        <Award size={16} color="#6366F1" strokeWidth={1.5} />
+        <Award size={16} color="#C8806A" strokeWidth={1.5} />
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.sections.achievements')}</Text>
       </View>
       {renderLockedSection(
@@ -1756,7 +1812,7 @@ export default function ReportsScreen() {
       {aiInsights.patterns.length > 0 && (
         <>
           <View style={[styles.sectionTitleRow, { marginTop: 20 }]}>
-            <Activity size={16} color="#6366F1" strokeWidth={1.5} />
+            <Activity size={16} color="#C8806A" strokeWidth={1.5} />
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.sections.patterns')}</Text>
           </View>
           {renderLockedSection(
@@ -1778,7 +1834,7 @@ export default function ReportsScreen() {
 
       {/* Milestones Section */}
       <View style={[styles.sectionTitleRow, { marginTop: 20 }]}>
-        <TrendingUp size={16} color="#6366F1" strokeWidth={1.5} />
+        <TrendingUp size={16} color="#C8806A" strokeWidth={1.5} />
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('stats.goals')}</Text>
       </View>
       {aiInsights.milestones.map((milestone, index) => (
@@ -1796,7 +1852,7 @@ export default function ReportsScreen() {
       {comparison && (
         <>
           <View style={[styles.sectionTitleRow, { marginTop: 20 }]}>
-            <BarChart2 size={16} color="#6366F1" strokeWidth={1.5} />
+            <BarChart2 size={16} color="#C8806A" strokeWidth={1.5} />
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('stats.comparison')}</Text>
           </View>
           {renderLockedSection(
@@ -1852,7 +1908,7 @@ export default function ReportsScreen() {
           labels={weeklyData.labels}
           title={t('reports.charts.feedingAmountMeals')}
           unit={t('detailedStats.ml')}
-          gradientColors={['#3B82F6', '#3B82F620']}
+          gradientColors={['#C8806A', '#C8806A20']}
           height={260}
         />
       )}
@@ -1873,7 +1929,13 @@ export default function ReportsScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
   const mainContent = (
-    <View style={styles.container}>
+    <RNAnimated.View style={[
+      styles.container,
+      {
+        opacity: screenFade,
+        transform: [{ translateY: screenSlide }],
+      }
+    ]}>
       {/* Enhanced Background - Minimalist Apple Style */}
       <LinearGradient
         colors={isDarkMode
@@ -1888,11 +1950,11 @@ export default function ReportsScreen() {
 
 
 
-      {/* Radial Glow at Top */}
+      {/* Radial Glow at Top - Warm Pink */}
       <LinearGradient
         colors={isDarkMode
-          ? ['rgba(79, 70, 229, 0.15)', 'transparent']
-          : ['rgba(79, 70, 229, 0.08)', 'transparent']
+          ? ['rgba(200, 128, 106, 0.10)', 'transparent']
+          : ['rgba(200, 128, 106, 0.06)', 'transparent']
         }
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 0.6 }}
@@ -1913,7 +1975,7 @@ export default function ReportsScreen() {
               backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF',
               borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.04)',
               borderWidth: 1,
-              shadowColor: isDarkMode ? '#000' : '#6366F1',
+              shadowColor: isDarkMode ? '#000' : '#C8806A',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: isDarkMode ? 0.4 : 0.12,
               shadowRadius: 10,
@@ -2042,7 +2104,7 @@ export default function ReportsScreen() {
           </ScrollView>
         </View>
       </Modal>
-    </View>
+    </RNAnimated.View>
   );
 
   return (

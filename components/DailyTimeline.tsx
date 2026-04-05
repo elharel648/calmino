@@ -8,7 +8,7 @@ import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withTiming, withRepeat, Easing } from 'react-native-reanimated';
 import { ANIMATIONS, TYPOGRAPHY, SPACING } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
@@ -32,6 +32,91 @@ const PulseDot = () => {
   return (
     <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>
       <RNAnimated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34D399', transform: [{ scale }], opacity: 0.9 }} />
+    </View>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Premium Motion Float Wrapper ──────────────────────────────────────────
+const PremiumTimelineEvent = ({ children, isRecent }: { children: React.ReactNode, isRecent: boolean }) => {
+  const opacity = useSharedValue(isRecent ? 0.7 : 1);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    if (isRecent) {
+      // Solidify over 3 seconds (Glass -> Solid morph)
+      opacity.value = withTiming(1, { duration: 3000, easing: Easing.out(Easing.cubic) });
+      
+      // Micro-float +/- 1.5px
+      translateY.value = withRepeat(
+        withSequence(
+          withTiming(-1.5, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.sin) })
+        ),
+        -1,
+        true
+      );
+    }
+  }, [isRecent, opacity, translateY]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }]
+  }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Premium Animated Empty State ───────────────────────────────────────────
+const PremiumEmptyIcon = ({ theme, isDarkMode }: { theme: any, isDarkMode: boolean }) => {
+  const floatAnim = useRef(new RNAnimated.Value(0)).current;
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(floatAnim, { toValue: -6, duration: 1500, useNativeDriver: true }),
+        RNAnimated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
+      ])
+    ).start();
+
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, { toValue: 1.05, duration: 1200, useNativeDriver: true }),
+        RNAnimated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 20, marginTop: 10 }}>
+      {/* Outer Pulse */}
+      <RNAnimated.View style={[
+        {
+          position: 'absolute',
+          width: 86, height: 86,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+          borderRadius: 43,
+          transform: [{ scale: pulseAnim }]
+        }
+      ]} />
+      
+      {/* Floating Main Icon */}
+      <RNAnimated.View style={{ transform: [{ translateY: floatAnim }] }}>
+        <View style={{
+          width: 72, height: 72, borderRadius: 36,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+          alignItems: 'center', justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
+        }}>
+          <FileText size={32} color={theme.textSecondary} strokeWidth={1.5} />
+        </View>
+        <RNAnimated.View style={{ position: 'absolute', top: -2, right: -4, transform: [{ scale: pulseAnim }] }}>
+          <Sparkles size={16} color={theme.primary} strokeWidth={2.5} />
+        </RNAnimated.View>
+      </RNAnimated.View>
     </View>
   );
 };
@@ -557,9 +642,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         </View>
 
         <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={[styles.emptyIcon, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-            <FileText size={32} color={theme.textSecondary} strokeWidth={1.5} />
-          </View>
+          <PremiumEmptyIcon theme={theme} isDarkMode={isDarkMode} />
           <Text style={[styles.emptyText, { color: theme.textPrimary }]}>{t('timeline.noRecordsToday')}</Text>
           <Text style={[styles.emptyHint, { color: theme.textSecondary }]}>
             {t('timeline.emptyHint')}
@@ -664,11 +747,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   return (
                     <Animated.View
                       key={event.id}
-                      entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 50), 300)}
+                      entering={FadeInUp.delay(index * 45).springify().damping(22).stiffness(240).mass(1)}
                     >
-                      <SwipeableRow
-                        onDelete={() => handleDelete(event.id)}
-                      >
+                      <PremiumTimelineEvent isRecent={isRecentEvent(event.timestamp)}>
+                        <SwipeableRow
+                          onDelete={() => handleDelete(event.id)}
+                        >
                         {/* Simple 3-part RTL row: [time] [content] [icon] */}
                         <TouchableOpacity 
                           activeOpacity={0.7} 
@@ -698,6 +782,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                         </TouchableOpacity>
                       </SwipeableRow>
+                      </PremiumTimelineEvent>
                     </Animated.View>
                   );
                 })}
@@ -769,9 +854,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             return (
               <Animated.View
                 key={event.id}
-                entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 80), 300)}
+                entering={FadeInUp.delay(index * 45).springify().damping(22).stiffness(240).mass(1)}
               >
-                <SwipeableRow onDelete={() => handleDelete(event.id)}>
+                <PremiumTimelineEvent isRecent={isRecent}>
+                  <SwipeableRow onDelete={() => handleDelete(event.id)}>
                   <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.elegantEventRow}>
                     
                     {/* FAR RIGHT: TIME BLOCK */}
@@ -842,6 +928,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                   </TouchableOpacity>
                 </SwipeableRow>
+                </PremiumTimelineEvent>
               </Animated.View>
             );
           })

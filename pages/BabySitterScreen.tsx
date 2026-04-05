@@ -31,6 +31,7 @@ import useSitters, { Sitter } from '../hooks/useSitters';
 import { ISRAELI_CITIES } from '../constants/israeliCities';
 import { logger } from '../utils/logger';
 import SitterCard from '../components/BabySitter/SitterCard';
+import { SitterListSkeleton } from '../components/Common/SkeletonLoader';
 import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
 import PremiumPaywall from '../components/Premium/PremiumPaywall';
 import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
@@ -833,9 +834,9 @@ const BabySitterScreen = ({ navigation }: any) => {
                         )}
                         {userLocation && !activeCity && (
                             <View style={[styles.gpsActivePill, {
-                                backgroundColor: isDarkMode ? 'rgba(52,211,153,0.15)' : 'rgba(16,185,129,0.10)',
+                                backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : 'rgba(200,128,106,0.10)',
                             }]}>
-                                <MapPin size={10} color="#10B981" strokeWidth={2.5} />
+                                <MapPin size={10} color="#C8806A" strokeWidth={2.5} />
                                 <Text style={styles.gpsActiveText}>{t('sitter.sortByProximity')}</Text>
                             </View>
                         )}
@@ -843,9 +844,7 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                     {/* Sitters List - Switched to FlatList */}
                     {isLoading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={theme.textPrimary} />
-                        </View>
+                        <SitterListSkeleton />
                     ) : sortedSitters.length === 0 ? (
                         <View style={styles.emptyState}>
                             {sortBy === 'favorites' ? (
@@ -895,8 +894,11 @@ const BabySitterScreen = ({ navigation }: any) => {
                             }
                             contentContainerStyle={styles.scrollContent}
                             ListFooterComponent={<View style={{ height: 180 }} />}
-                            initialNumToRender={5}
-                            windowSize={10}
+                            initialNumToRender={8}
+                            maxToRenderPerBatch={6}
+                            windowSize={8}
+                            removeClippedSubviews={true}
+                            getItemLayout={(_data, index) => ({ length: 90, offset: 90 * index, index })}
                         />
                     )}
                 </>
@@ -1274,7 +1276,7 @@ const styles = StyleSheet.create({
     gpsActiveText: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#10B981',
+        color: '#C8806A',
     },
 
     // Location filter styles - Enhanced with medium shadow

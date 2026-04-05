@@ -247,7 +247,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                 <View style={histStyles.values}>
                     {measurement.weight && (
                         <View style={histStyles.valueItem}>
-                            <Scale size={12} color="#3B82F6" />
+                            <Scale size={12} color="#C8806A" />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
                                 {measurement.weight} {t('reports.units.kg')}
                             </Text>
@@ -475,7 +475,7 @@ export default function DetailedGrowthScreen({
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.currentMeasurements')}</Text>
                             <PercentileCard icon={Scale} label={t('reports.metrics.weight')} value={currentValues.weight} unit={t('reports.units.kg')}
-                                percentile={currentValues.weightPercentile} change={change?.weight} color="#3B82F6" bgColor="#EFF6FF" />
+                                percentile={currentValues.weightPercentile} change={change?.weight} color="#C8806A" bgColor="#EFF6FF" />
                             <PercentileCard icon={Ruler} label={t('reports.metrics.height')} value={currentValues.height} unit={t('reports.units.cm')}
                                 percentile={currentValues.heightPercentile} change={change?.height} color="#10B981" bgColor="#ECFDF5" />
                             <PercentileCard icon={Activity} label={t('reports.metrics.headCircumference')} value={currentValues.head} unit={t('reports.units.cm')}
@@ -485,7 +485,7 @@ export default function DetailedGrowthScreen({
                         {/* Charts */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.trend')}</Text>
-                            <GrowthChart data={chartData.weightData} color="#3B82F6" title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
+                            <GrowthChart data={chartData.weightData} color="#C8806A" title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
                             <GrowthChart data={chartData.heightData} color="#10B981" title={t('reports.metrics.height')} unit={t('reports.units.cm')} />
                             <GrowthChart data={chartData.headData} color="#8B5CF6" title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
                         </View>

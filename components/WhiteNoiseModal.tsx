@@ -210,20 +210,31 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                 {/* Animated header — centered icon on top, text below */}
                 <View style={styles.iconHeader} {...panResponder.panHandlers}>
                     {/* Animated music icon */}
-                    <View style={styles.iconContainer}>
-                        {/* Pulse rings */}
-                        <Animated.View style={[styles.iconPulse, musicPulseStyle, { borderColor: accentColor }]} />
-                        <Animated.View style={[styles.iconPulse, musicPulse2Style, { borderColor: accentColor }]} />
+                    <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
+                        <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.whiteNoise.color }, musicPulseStyle]} />
+                        
                         {/* Main icon with bounce */}
-                        <Animated.View style={[styles.iconCircle, { backgroundColor: accentColor + '22' }, musicBounceStyle]}>
-                            <Music size={30} color={accentColor} strokeWidth={1.75} />
+                        <Animated.View style={musicBounceStyle}>
+                            <View style={[{ 
+                                width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: theme.actionColors.whiteNoise.color,
+                                shadowColor: isDarkMode ? 'transparent' : theme.actionColors.whiteNoise.color,
+                                shadowOpacity: 0.35,
+                                shadowRadius: 10,
+                                shadowOffset: { width: 0, height: 5 },
+                                borderWidth: 2.5,
+                                borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                            }]}>
+                                <Music size={28} color="#FFFFFF" strokeWidth={2.2} />
+                            </View>
                         </Animated.View>
+
                         {/* Floating music notes */}
-                        <Animated.View style={[styles.floatingNote, { top: 10, right: 4 }, musicNote1Style]}>
-                            <Music2 size={13} color={accentColor} strokeWidth={2} />
+                        <Animated.View style={[styles.floatingNote, { top: 0, right: -4, zIndex: 10 }, musicNote1Style]}>
+                            <Music2 size={14} color={isDarkMode ? '#FFFFFF' : theme.actionColors.whiteNoise.color} strokeWidth={2.5} />
                         </Animated.View>
-                        <Animated.View style={[styles.floatingNote, { top: 16, left: 6 }, musicNote2Style]}>
-                            <Music2 size={10} color={accentColor} strokeWidth={2} />
+                        <Animated.View style={[styles.floatingNote, { top: -2, left: -6, zIndex: 10 }, musicNote2Style]}>
+                            <Music2 size={11} color={isDarkMode ? '#FFFFFF' : theme.actionColors.whiteNoise.color} strokeWidth={2.5} />
                         </Animated.View>
                     </View>
 

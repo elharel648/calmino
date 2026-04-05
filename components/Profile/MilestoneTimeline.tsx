@@ -160,7 +160,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     },
     rowAge: {
         fontSize: 12,
-        color: '#6366F1',
+        color: '#C8806A',
         fontWeight: '500',
     },
     deleteBtn: {

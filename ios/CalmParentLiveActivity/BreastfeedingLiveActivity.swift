@@ -69,7 +69,7 @@ struct BreastfeedingLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 8) {
                             // Switch Side
-                            Button(intent: SwitchSideIntent()) {
+                            Button(intent: SwitchSideIntent(activityId: context.activityID)) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.left.arrow.right")
                                         .font(.system(size: 11, weight: .bold))
@@ -86,7 +86,7 @@ struct BreastfeedingLiveActivity: Widget {
                             Spacer()
 
                             // Stop
-                            Button(intent: StopTimerIntent()) {
+                            Button(intent: StopTimerIntent(activityId: context.activityID)) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 12, weight: .bold))
@@ -214,7 +214,7 @@ struct BreastfeedingLockScreenView: View {
                 if #available(iOS 17, *) {
                     VStack(spacing: 12) {
                         // Switch side
-                        Button(intent: SwitchSideIntent()) {
+                        Button(intent: SwitchSideIntent(activityId: context.activityID)) {
                             Image(systemName: "arrow.left.arrow.right")
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(.white)
@@ -224,7 +224,7 @@ struct BreastfeedingLockScreenView: View {
                         .buttonStyle(.plain)
 
                         // Stop
-                        Button(intent: StopTimerIntent()) {
+                        Button(intent: StopTimerIntent(activityId: context.activityID)) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundStyle(.white)

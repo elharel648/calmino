@@ -32,7 +32,7 @@ const slides: OnboardingSlide[] = [
         icon: Baby,
         title: 'ברוכים הבאים ל-Calmino',
         description: 'אפליקציה אחת לכל מה שצריך כדי לטפל בתינוק שלך',
-        gradientColors: ['#6366F1', '#8B5CF6'],
+        gradientColors: ['#C8806A', '#CD8B87'],
         backgroundColor: '#EEF2FF',
     },
     {
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         // Premium shadow
-        shadowColor: '#6366F1',
+        shadowColor: '#C8806A',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
         shadowRadius: 24,
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     nextButtonWrapper: {
         flex: 1,
         borderRadius: 18,
-        shadowColor: '#6366F1',
+        shadowColor: '#C8806A',
         shadowOffset: { width: 0, height: 8 },
         shadowRadius: 16,
         elevation: 0,

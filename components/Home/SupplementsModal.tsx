@@ -238,13 +238,13 @@ const AddSupplementForm = memo(({
                                         ? (isDarkMode ? 'rgba(0,122,255,0.25)' : 'rgba(0,122,255,0.1)')
                                         : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'),
                                     borderColor: isSelected
-                                        ? '#007AFF'
+                                        ? '#C8806A'
                                         : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
                                 }
                             ]}
                             onPress={() => setSelectedIcon(iconKey)}
                         >
-                            <Icon size={20} color={isSelected ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)')} strokeWidth={1.5} />
+                            <Icon size={20} color={isSelected ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)')} strokeWidth={1.5} />
                         </TouchableOpacity>
                     );
                 })}
@@ -440,7 +440,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                             }}
                             activeOpacity={0.7}
                         >
-                            <Pill size={20} color={isEditMode ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)')} strokeWidth={2} />
+                            <Pill size={20} color={isEditMode ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)')} strokeWidth={2} />
                         </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
                             {isEditMode ? t('supplements.editTitle') : t('supplements.dailyTitle')}
@@ -493,8 +493,8 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                         onPress={() => setShowAddForm(true)}
                                         activeOpacity={0.7}
                                     >
-                                        <Plus size={18} color="#007AFF" strokeWidth={2.5} />
-                                        <Text style={[styles.addRowText, { color: '#007AFF' }]}>
+                                        <Plus size={18} color="#C8806A" strokeWidth={2.5} />
+                                        <Text style={[styles.addRowText, { color: '#C8806A' }]}>
                                             {t('supplements.addSupplement')}
                                         </Text>
                                     </TouchableOpacity>
@@ -528,7 +528,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                         styles.progressFill,
                                         {
                                             width: totalCount > 0 ? `${(takenCount / totalCount) * 100}%` : '0%',
-                                            backgroundColor: '#007AFF',
+                                            backgroundColor: '#C8806A',
                                         }
                                     ]}
                                 />
@@ -549,8 +549,8 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                             activeOpacity={0.7}
                         >
                             <View style={styles.editHintRow}>
-                                <Pencil size={14} color="#007AFF" strokeWidth={2} />
-                                <Text style={[styles.editHintText, { color: '#007AFF' }]}>
+                                <Pencil size={14} color="#C8806A" strokeWidth={2} />
+                                <Text style={[styles.editHintText, { color: '#C8806A' }]}>
                                     {t('supplements.editSupplements')}
                                 </Text>
                             </View>
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     confirmBtn: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#C8806A',
         paddingHorizontal: 24,
         paddingVertical: 10,
         borderRadius: 12,

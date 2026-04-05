@@ -230,7 +230,7 @@ if (data.settings.language !== undefined) {
             subject: `${t('settings.contactSubject', { name: userData.name || t('settings.userFallback') })}`,
             html: `
               <div dir="rtl" style="font-family: sans-serif; max-width: 500px;">
-                <h2 style="color: #007AFF;">${t('settings.contactTitle')}</h2>
+                <h2 style="color: #C8806A;">${t('settings.contactTitle')}</h2>
                 <p><strong>שם:</strong> ${userData.name || t('common.unknown')}</p>
                 <p><strong>${t('settings.contactEmailLabel')}:</strong> ${user.email || t('common.unknown')}</p>
                 <hr/>
@@ -673,9 +673,6 @@ if (data.settings.language !== undefined) {
         {/* התראות ותזכורות - Premium Design */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconContainer}>
-              <Bell size={18} color={isDarkMode ? '#E68A00' : '#FF9F1C'} strokeWidth={2} />
-            </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.notifications')}</Text>
           </View>
 
@@ -689,17 +686,14 @@ if (data.settings.language !== undefined) {
         {/* תצוגה והתנהגות */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconContainer}>
-              <Moon size={18} color={isDarkMode ? '#7C3AED' : '#8B5CF6'} strokeWidth={2} />
-            </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.display')}</Text>
           </View>
 
           <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
             <View style={[styles.listItem, styles.listItemFirst]}>
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                  <Moon size={18} color="#8B5CF6" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.sleep.color }]}>
+                  <Moon size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.nightMode')}</Text>
@@ -711,7 +705,7 @@ if (data.settings.language !== undefined) {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setThemePreference(val ? 'dark' : 'light');
                 }}
-                trackColor={{ false: theme.divider, true: theme.primary }}
+                trackColor={{ false: theme.divider, true: '#C8806A' }}
                 thumbColor="#FFFFFF"
                 ios_backgroundColor={theme.divider}
               />
@@ -725,8 +719,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }]}>
-                  <Globe size={18} color="#10B981" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.growth.color }]}>
+                  <Globe size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.language')}</Text>
@@ -744,9 +738,6 @@ if (data.settings.language !== undefined) {
         {/* פרטיות ותמיכה */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconContainer}>
-              <Shield size={18} color={isDarkMode ? '#059669' : '#10B981'} strokeWidth={2} />
-            </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.privacy')}</Text>
           </View>
 
@@ -757,8 +748,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(100, 116, 139, 0.15)' : 'rgba(100, 116, 139, 0.1)' }]}>
-                  <FileText size={18} color="#64748B" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.tools.color }]}>
+                  <FileText size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.privacyPolicy')}</Text>
               </View>
@@ -773,8 +764,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(100, 116, 139, 0.15)' : 'rgba(100, 116, 139, 0.1)' }]}>
-                  <FileText size={18} color="#64748B" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.tools.color }]}>
+                  <FileText size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.termsOfService')}</Text>
               </View>
@@ -789,8 +780,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }]}>
-                  <MessageCircle size={18} color="#3B82F6" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.whiteNoise.color }]}>
+                  <MessageCircle size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.contact')}</Text>
@@ -811,8 +802,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: 'rgba(225, 48, 108, 0.1)' }]}>
-                  <Instagram size={18} color="#E1306C" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.sos.color }]}>
+                  <Instagram size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.followInstagram')}</Text>
@@ -830,8 +821,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                  <Share2 size={18} color="#8B5CF6" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.magicMoments.color }]}>
+                  <Share2 size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.shareFriends')}</Text>
               </View>
@@ -843,9 +834,6 @@ if (data.settings.language !== undefined) {
         {/* אזור מסוכן */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconContainer}>
-              <Trash2 size={18} color={isDarkMode ? '#DC2626' : '#EF4444'} strokeWidth={2} />
-            </View>
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('settings.dangerZone')}</Text>
           </View>
 
@@ -858,8 +846,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }]}>
-                  <Key size={18} color="#3B82F6" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.whiteNoise.color }]}>
+                  <Key size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.changePassword')}</Text>
@@ -877,8 +865,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)' }]}>
-                  <Trash2 size={18} color="#EF4444" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.danger }]}>
+                  <Trash2 size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('settings.deleteCurrentChild')}</Text>
@@ -900,13 +888,11 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isGuest
-                  ? (isDarkMode ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)')
-                  : (isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)') }]}>
-                  <LogOut size={18} color={isGuest ? '#6366F1' : '#EF4444'} strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: isGuest ? theme.actionColors.sleep.color : theme.danger }]}>
+                  <LogOut size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <Text style={[styles.listItemText, { color: isGuest
-                  ? (isDarkMode ? '#818CF8' : '#6366F1')
+                  ? (isDarkMode ? '#818CF8' : '#C8806A')
                   : (isDarkMode ? '#FCA5A5' : '#F87171') }]}>
                   {isGuest ? t('guest.exitGuestMode') : t('settings.logout')}
                 </Text>
@@ -924,8 +910,8 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)' }]}>
-                  <Trash2 size={18} color="#EF4444" strokeWidth={2} />
+                <View style={[styles.listItemIcon, { backgroundColor: theme.danger }]}>
+                  <Trash2 size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
                   <Text style={[styles.listItemText, { color: isDarkMode ? '#FCA5A5' : '#F87171' }]}>{t('account.deleteAccount')}</Text>
@@ -1334,7 +1320,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,

@@ -42,7 +42,7 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                     activeOpacity={0.8}
                 >
                     <LinearGradient
-                        colors={['#6366F1', '#8B5CF6']}
+                        colors={['#C8806A', '#CD8B87']}
                         style={styles.iconContainer}
                     >
                         <Baby size={32} color="#fff" />
@@ -77,12 +77,12 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
 
                         {/* Option 1: Create Own Baby */}
                         <TouchableOpacity
-                            style={[styles.optionCard, { borderColor: '#6366F1' }]}
+                            style={[styles.optionCard, { borderColor: '#C8806A' }]}
                             onPress={handleCreateBaby}
                             activeOpacity={0.8}
                         >
                             <LinearGradient
-                                colors={['#6366F1', '#8B5CF6']}
+                                colors={['#C8806A', '#CD8B87']}
                                 style={styles.optionIcon}
                             >
                                 <Baby size={24} color="#fff" />

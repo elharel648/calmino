@@ -24,8 +24,8 @@ export const COLORS = {
         success: '#34C759',
         successLight: 'rgba(52, 199, 89, 0.12)',
         warning: '#FF9500',
-        primary: '#007AFF',
-        primaryLight: 'rgba(0, 122, 255, 0.12)',
+        primary: '#C8806A',
+        primaryLight: 'rgba(200, 128, 106, 0.12)',
         accent: '#34D399',
         accentLight: 'rgba(52, 211, 153, 0.10)',
         // Specific UI elements
@@ -70,8 +70,8 @@ export const COLORS = {
         success: '#30D158',
         successLight: 'rgba(48, 209, 88, 0.2)',
         warning: '#FFD60A',
-        primary: '#0A84FF',
-        primaryLight: 'rgba(10, 132, 255, 0.2)',
+        primary: '#C8806A',
+        primaryLight: 'rgba(200, 128, 106, 0.2)',
         accent: '#6EE7B7',
         accentLight: 'rgba(110, 231, 183, 0.15)',
         // Specific UI elements

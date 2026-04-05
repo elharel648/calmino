@@ -62,13 +62,13 @@ const MetricRow = memo(({ icon: Icon, label, value, unit, percentile, change, co
                         </Text>
                         <Text style={[styles.metricUnit, { color: theme.textTertiary }]}>{unit}</Text>
                         {hasChange && (
-                            <View style={[styles.changeBadge, { backgroundColor: isPositive ? '#D1FAE5' : '#FEE2E2' }]}>
+                            <View style={[styles.changeBadge, { backgroundColor: isPositive ? 'rgba(125,175,143,0.15)' : '#FEE2E2' }]}>
                                 {isPositive ? (
-                                    <ArrowUpRight size={10} color="#10B981" strokeWidth={3} />
+                                    <ArrowUpRight size={10} color="#7DAF8F" strokeWidth={3} />
                                 ) : (
                                     <ArrowDownRight size={10} color="#EF4444" strokeWidth={3} />
                                 )}
-                                <Text style={[styles.changeText, { color: isPositive ? '#10B981' : '#EF4444' }]}>
+                                <Text style={[styles.changeText, { color: isPositive ? '#7DAF8F' : '#EF4444' }]}>
                                     {isPositive ? '+' : ''}{change}
                                 </Text>
                             </View>
@@ -152,7 +152,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.titleRow}>
-                    <TrendingUp size={18} color="#10B981" strokeWidth={2.5} />
+                    <TrendingUp size={18} color="#C8806A" strokeWidth={2.5} />
                     <Text style={[styles.title, { color: theme.textPrimary }]}>{t('reports.growth.title')}</Text>
                 </View>
                 {onEdit && (
@@ -170,7 +170,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
                     unit={t('reports.units.kg')}
                     percentile={percentiles.weight}
                     change={changes?.weight}
-                    color="#3B82F6"
+                    color="#C8806A"
                     iconBg="#EFF6FF"
                 />
 
@@ -183,8 +183,8 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
                     unit={t('reports.units.cm')}
                     percentile={percentiles.height}
                     change={changes?.height}
-                    color="#10B981"
-                    iconBg="#ECFDF5"
+                    color="#7DAF8F"
+                    iconBg="rgba(125,175,143,0.10)"
                 />
 
                 <View style={[styles.divider, { backgroundColor: theme.divider }]} />

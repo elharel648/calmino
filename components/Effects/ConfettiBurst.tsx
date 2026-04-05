@@ -15,9 +15,9 @@ import Animated, {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CONFETTI_COLORS = [
-  '#8B5CF6', '#F59E0B', '#3B82F6', '#EF4444',
+  '#8B5CF6', '#F59E0B', '#C8806A', '#EF4444',
   '#10B981', '#EC4899', '#F97316', '#06B6D4',
-  '#A855F7', '#14B8A6', '#F43F5E', '#6366F1',
+  '#A855F7', '#14B8A6', '#F43F5E', '#C8806A',
 ];
 
 const PARTICLE_COUNT = 40;

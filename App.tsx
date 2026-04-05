@@ -158,11 +158,21 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
 const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => {
   const { isDarkMode } = useTheme();
   
-  // Strict palette from mockup exactly: Solid black when inactive, brand terracotta when active.
+  // Active = brand terracotta filled, Inactive = solid black (crisp, high-contrast)
   const activeColor = '#C8806A'; 
   const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000'; 
   const currentColor = focused ? activeColor : inactiveColor;
   const iconSize = 26;
+
+  const scale = useSharedValue(focused ? 1.05 : 1);
+
+  React.useEffect(() => {
+    scale.value = withSpring(focused ? 1.05 : 1, { damping: 10, stiffness: 250, mass: 0.8 });
+  }, [focused, scale]);
+
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
 
   return (
     <View style={{
@@ -176,16 +186,16 @@ const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => 
       */}
       <AnimatedIconComponent focused={focused} color={currentColor} size={iconSize} />
 
-      <Text numberOfLines={1} style={{
+      <Reanimated.Text numberOfLines={1} style={[{
         color: currentColor, 
         fontSize: 11, 
         marginTop: 6,
-        fontWeight: focused ? '800' : '700', // Very bold black text like mockup
+        fontWeight: focused ? '800' : '700',
         textAlign: 'center',
         letterSpacing: -0.2,
-      }}>
+      }, animatedTextStyle]}>
         {label}
-      </Text>
+      </Reanimated.Text>
     </View>
   );
 };
@@ -209,7 +219,7 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: theme.textPrimary,
+        tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
       }}
     >

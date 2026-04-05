@@ -1932,7 +1932,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     },
     addResponseText: {
         fontSize: 13,
-        color: '#6366F1',
+        color: '#C8806A',
         fontWeight: '500',
     },
     responseInput: {
@@ -1965,7 +1965,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
     },
     submitResponseText: {
         fontSize: 14,

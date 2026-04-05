@@ -287,8 +287,20 @@ export default function NightLightModal({
                                 <View style={styles.centerControls}>
                                     {/* Premium Title with Icon */}
                                     <View style={styles.titleContainer}>
-                                        <View style={[styles.iconCircle, { backgroundColor: getTextColor() + '15' }]}>
-                                            <Zap size={28} color={getTextColor()} strokeWidth={2} />
+                                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
+                                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.nightLight.color }]} />
+                                            <Animated.View style={[{
+                                                width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                                backgroundColor: theme.actionColors.nightLight.color,
+                                                shadowColor: isDarkMode ? 'transparent' : theme.actionColors.nightLight.color,
+                                                shadowOpacity: 0.35,
+                                                shadowRadius: 10,
+                                                shadowOffset: { width: 0, height: 5 },
+                                                borderWidth: 2.5,
+                                                borderColor: brightness > 0.5 ? '#FFFFFF' : '#1C1C1E',
+                                            }]}>
+                                                <Zap size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                            </Animated.View>
                                         </View>
                                         <Text style={[styles.title, { color: getTextColor() }]}>{t('nightLight.title')}</Text>
                                     </View>

@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
     },
     axisLabelActive: {
-        color: '#6366F1',
+        color: '#C8806A',
         fontWeight: '600',
     },
 
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     avgLabelText: {
         fontSize: 10,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
     },
 
     // Tooltip

@@ -424,13 +424,22 @@ export default function TeethTrackerModal({
                     {/* Header */}
                     <View style={[styles.header, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
                         <View style={styles.headerContent}>
-                            <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                                 <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#8B5CF6' }, teethIconPulseStyle]} />
-                                <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                                    <Animated.View style={teethIconBounceStyle}>
-                                        <TeethIcon size={28} color="#8B5CF6" strokeWidth={2} />
-                                    </Animated.View>
-                                </View>
+                                <Animated.View style={teethIconBounceStyle}>
+                                    <View style={[{
+                                        width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                        backgroundColor: '#8B5CF6',
+                                        shadowColor: isDarkMode ? 'transparent' : '#8B5CF6',
+                                        shadowOpacity: 0.35,
+                                        shadowRadius: 10,
+                                        shadowOffset: { width: 0, height: 5 },
+                                        borderWidth: 2.5,
+                                        borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                    }]}>
+                                        <TeethIcon size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                    </View>
+                                </Animated.View>
                             </View>
                             <Text style={[styles.title, { color: theme.textPrimary }]}>{t('teethTracker.title')}</Text>
                         </View>

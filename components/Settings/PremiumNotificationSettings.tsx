@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform, LayoutAnimation, UIManager, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform, LayoutAnimation, UIManager, Modal, Alert, Linking } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Bell, Utensils, Pill, ChevronDown, ChevronUp, Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,7 +10,7 @@ import { useLanguage } from '../../context/LanguageContext';
 
 import { notificationService } from '../../services/notificationService';
 
-const ACCENT_COLOR = '#6366F1';
+const ACCENT_COLOR = '#C8806A';
 
 // Compact time chip used inside supplement rows
 function CompactTimePicker({ value, onChange, disabled }: { value: string; onChange: (t: string) => void; disabled?: boolean }) {
@@ -155,7 +155,7 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
             </TouchableOpacity>
           )}
           <Switch
-            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
             onValueChange={handleToggle}
@@ -188,8 +188,8 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
   const notificationCards: NotificationCardConfig[] = [
     {
       icon: Utensils,
-      iconColor: isDarkMode ? '#FF9F1C' : '#E68A00',
-      iconBg: isDarkMode ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255, 159, 28, 0.1)',
+      iconColor: '#FFFFFF',
+      iconBg: theme.actionColors.food.color,
       title: t('settings.feedingReminder'),
       getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
       enabled: settings.feedingReminder,
@@ -218,8 +218,8 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
     },
     {
       icon: Pill,
-      iconColor: isDarkMode ? '#34D399' : '#059669',
-      iconBg: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+      iconColor: '#FFFFFF',
+      iconBg: theme.actionColors.supplements.color,
       title: t('settings.supplementsReminder'),
       getSubtitle: () => supplements.length > 0
         ? `${supplements.length} תוספים מוגדרים`
@@ -280,8 +280,8 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
           }}
         >
           <View style={styles.masterContent}>
-            <View style={[styles.masterIcon, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
-              <Bell size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
+            <View style={[styles.masterIcon, { backgroundColor: theme.actionColors.milestones.color }]}>
+              <Bell size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <View style={styles.masterTextContainer}>
               <Text style={[styles.masterTitle, { color: theme.textPrimary }]}>{t('settings.notificationsAndReminders')}</Text>
@@ -292,7 +292,7 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
           </View>
 
           <Switch
-            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
             value={settings.enabled}
@@ -302,7 +302,20 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
               }
               if (newVal) {
                 const granted = await notificationService.requestPermissions();
-                if (!granted) return;
+                if (!granted) {
+                  Alert.alert(
+                    'לא ניתן להפעיל התראות',
+                    'יש לאשר קבלת התראות בהגדרות המכשיר כדי להפעיל תזכורות.',
+                    [
+                      { text: t('common.cancel') || 'ביטול', style: 'cancel' },
+                      { 
+                        text: 'פתח הגדרות', 
+                        onPress: () => Linking.openSettings() 
+                      }
+                    ]
+                  );
+                  return;
+                }
               }
               updateSettings({ enabled: newVal });
             }}

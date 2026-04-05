@@ -57,7 +57,7 @@ struct SleepLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 10) {
                             Spacer()
-                            Button(intent: StopTimerIntent()) {
+                            Button(intent: StopTimerIntent(activityId: context.activityID)) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 14, weight: .bold))
@@ -150,7 +150,7 @@ struct SleepLockScreenView: View {
                 // Right — controls
                 if #available(iOS 17, *) {
                     VStack(spacing: 10) {
-                        Button(intent: StopTimerIntent()) {
+                        Button(intent: StopTimerIntent(activityId: context.activityID)) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundStyle(.white)

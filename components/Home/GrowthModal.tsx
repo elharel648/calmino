@@ -412,7 +412,7 @@ export default function GrowthModal({
                             }}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Info size={18} color={ACCENT} strokeWidth={2} />
+                            <Info size={18} color={theme.actionColors.growth.color} strokeWidth={2} />
                         </TouchableOpacity>
 
                         {/* Tooltip bubble */}
@@ -424,28 +424,32 @@ export default function GrowthModal({
                             </View>
                         )}
 
-                        <View style={styles.iconContainer}>
+                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                             {/* Pulse rings */}
-                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
-                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.growth.color }, pulse1Style]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.growth.color }, pulse2Style]} />
                             {/* Main icon with bounce */}
                             <Animated.View style={bounceStyle}>
-                                <LinearGradient
-                                    colors={[ACCENT, '#34D399']}
-                                    style={styles.iconGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    <TrendingUp size={28} color="#fff" strokeWidth={2} />
-                                </LinearGradient>
+                                <View style={[{
+                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                    backgroundColor: theme.actionColors.growth.color,
+                                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.growth.color,
+                                    shadowOpacity: 0.35,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 5 },
+                                    borderWidth: 2.5,
+                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                }]}>
+                                    <TrendingUp size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                </View>
                             </Animated.View>
                             {/* Sparkle star 1 */}
                             <Animated.View style={[styles.floatingStar, { top: 2, left: 4 }, star1Style]}>
-                                <TrendingUp size={12} color={ACCENT} strokeWidth={2.5} />
+                                <TrendingUp size={12} color={theme.actionColors.growth.color} strokeWidth={2.5} />
                             </Animated.View>
                             {/* Sparkle star 2 */}
                             <Animated.View style={[styles.floatingStar, { top: 6, right: 2 }, star2Style]}>
-                                <TrendingUp size={10} color={ACCENT} strokeWidth={2.5} />
+                                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: theme.actionColors.growth.color, opacity: 0.8 }} />
                             </Animated.View>
                         </View>
 
@@ -507,7 +511,7 @@ export default function GrowthModal({
                                                     }}
                                                     style={styles.datePickerBtn}
                                                 >
-                                                    <Text style={{ color: '#007AFF', fontWeight: '700', fontSize: 15 }}>{t('common.done')}</Text>
+                                                    <Text style={{ color: '#C8806A', fontWeight: '700', fontSize: 15 }}>{t('common.done')}</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         )}
@@ -518,7 +522,7 @@ export default function GrowthModal({
                                             onChange={handleDateChange}
                                             maximumDate={new Date()}
                                             locale="he-IL"
-                                            accentColor={ACCENT}
+                                            accentColor={theme.actionColors.growth.color}
                                             themeVariant={isDarkMode ? 'dark' : 'light'}
                                         />
                                     </View>
@@ -655,11 +659,8 @@ export default function GrowthModal({
                                     disabled={!hasValues || isSaving}
                                     activeOpacity={0.8}
                                 >
-                                    <LinearGradient
-                                        colors={[ACCENT, '#059669']}
-                                        style={styles.saveButtonGradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
+                                    <View
+                                        style={[styles.saveButtonGradient, { backgroundColor: theme.actionColors.growth.color }]}
                                     >
                                         {isSaving ? (
                                             <ActivityIndicator color="#fff" size="small" />
@@ -671,7 +672,7 @@ export default function GrowthModal({
                                                 </Text>
                                             </>
                                         )}
-                                    </LinearGradient>
+                                    </View>
                                 </TouchableOpacity>
 
                                 {/* Delete Button (Edit Mode) */}

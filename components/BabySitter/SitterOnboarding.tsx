@@ -45,7 +45,7 @@ const SLIDES = [
   {
     key: 'availability',
     icon: Calendar,
-    iconColor: '#3B82F6',
+    iconColor: '#C8806A',
     iconBg: '#DBEAFE',
     titleKey: 'sitterOnboarding.availabilityTitle',
     subtitleKey: 'sitterOnboarding.availabilitySubtitle',
@@ -61,7 +61,7 @@ const SLIDES = [
 ];
 
 // ---- Confetti Burst — spreads across the entire popup, then fades ----
-const CONFETTI_COLORS = ['#8B5CF6', '#F59E0B', '#3B82F6', '#EF4444', '#10B981', '#EC4899', '#F97316', '#06B6D4', '#A855F7', '#14B8A6'];
+const CONFETTI_COLORS = ['#8B5CF6', '#F59E0B', '#C8806A', '#EF4444', '#10B981', '#EC4899', '#F97316', '#06B6D4', '#A855F7', '#14B8A6'];
 const BURST_COUNT = 30;
 
 function ConfettiPiece({ index, fire }: { index: number; fire: boolean }) {

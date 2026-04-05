@@ -78,7 +78,7 @@ export const PremiumInsightCard: React.FC<PremiumInsightCardProps> = ({
     title,
     value,
     subtitle,
-    color = '#6366F1',
+    color = '#C8806A',
     trend,
     delay = 0,
 }) => {
@@ -135,7 +135,7 @@ export const AITipCard: React.FC<AITipCardProps> = ({ tip, category, delay = 0 }
     const categoryConfig = {
         sleep: { color: '#8B5CF6', icon: Moon, label: t('reports.tips.sleep') },
         feeding: { color: '#F59E0B', icon: Utensils, label: t('reports.tips.feeding') },
-        general: { color: '#6366F1', icon: Lightbulb, label: t('reports.tips.general') },
+        general: { color: '#C8806A', icon: Lightbulb, label: t('reports.tips.general') },
     };
 
     const config = categoryConfig[category];
@@ -275,7 +275,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
         <TouchableOpacity style={styles.shareButton} onPress={handleShare} activeOpacity={0.7}>
             <BlurView intensity={80} tint="systemUltraThinMaterialLight" style={StyleSheet.absoluteFill} />
             <View style={styles.shareButtonOverlay} />
-            <Share2 size={18} color="#6366F1" strokeWidth={2} />
+            <Share2 size={18} color="#C8806A" strokeWidth={2} />
             <Text style={styles.shareButtonText}>{t('reports.share.summary')}</Text>
         </TouchableOpacity>
     );
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     shareButtonText: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
         zIndex: 10,
     },
 });

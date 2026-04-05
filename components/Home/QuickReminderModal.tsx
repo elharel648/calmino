@@ -353,13 +353,22 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                     <View style={styles.header}>
                         {/* Centered icon + title */}
                         <View style={styles.headerCenter}>
-                            <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                                <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: isDarkMode ? '#E5E7EB' : '#1C1C1E' }, bellIconPulseStyle]} />
-                                <View style={[styles.headerIconBg, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                                    <Reanimated.View style={bellIconBounceStyle}>
-                                        <Bell size={24} color={isDarkMode ? '#E5E7EB' : '#1C1C1E'} />
-                                    </Reanimated.View>
-                                </View>
+                            <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
+                                <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.quickReminder.color }, bellIconPulseStyle]} />
+                                <Reanimated.View style={bellIconBounceStyle}>
+                                    <View style={[{ 
+                                        width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                        backgroundColor: theme.actionColors.quickReminder.color,
+                                        shadowColor: isDarkMode ? 'transparent' : theme.actionColors.quickReminder.color,
+                                        shadowOpacity: 0.35,
+                                        shadowRadius: 10,
+                                        shadowOffset: { width: 0, height: 5 },
+                                        borderWidth: 2.5,
+                                        borderColor: isDarkMode ? '#121212' : '#FFFFFF',
+                                    }]}>
+                                        <Bell size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                    </View>
+                                </Reanimated.View>
                             </View>
                             <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
                                 {viewMode === 'list' ? 'התזכורות שלי' : 'תזכורת חדשה'}

@@ -114,7 +114,7 @@ const Toast: React.FC<ToastProps> = ({
             case 'success':
                 return {
                     icon: CheckCircle,
-                    backgroundColor: '#10B981',
+                    backgroundColor: '#C8806A',
                     iconBg: 'rgba(255,255,255,0.2)',
                 };
             case 'error':

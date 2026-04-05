@@ -179,7 +179,7 @@ export default function CalmModeModal({
 
   const emergencyContacts = [
     { name: 'מד"א', subtitle: 'חירום רפואי', number: '101', Icon: Siren, color: '#EF4444', bgColor: '#FEE2E2' },
-    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield, color: '#3B82F6', bgColor: '#DBEAFE' },
+    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield, color: '#C8806A', bgColor: '#DBEAFE' },
     { name: 'הרעלות', subtitle: 'בליעת חומר', number: '048541900', Icon: Skull, color: '#8B5CF6', bgColor: '#EDE9FE' },
   ];
 
@@ -216,21 +216,25 @@ export default function CalmModeModal({
           <View style={styles.header} {...panResponder.panHandlers}>
             <View style={styles.headerContent}>
               {/* Animated icon with pulse rings */}
-              <View style={styles.iconWrapper}>
+              <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                 {/* Pulse ring 2 (outer) */}
-                <Animated.View style={[styles.pulseRing, ring2Style, { backgroundColor: '#EF4444' }]} />
+                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#EF4444' }, ring2Style]} />
                 {/* Pulse ring 1 (inner) */}
-                <Animated.View style={[styles.pulseRing, ring1Style, { backgroundColor: '#EF4444' }]} />
-                {/* Icon circle */}
+                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#EF4444' }, ring1Style]} />
+                {/* Icon circle (Solid, no gradient, structured) */}
                 <Animated.View style={iconBounceStyle}>
-                  <LinearGradient
-                    colors={['#EF4444', '#FCA5A5']}
-                    style={styles.iconGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <SOSIcon size={32} color="#fff" strokeWidth={2.2} />
-                  </LinearGradient>
+                  <View style={[{
+                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: '#EF4444',
+                    shadowColor: isDarkMode ? 'transparent' : '#EF4444',
+                    shadowOpacity: 0.35,
+                    shadowRadius: 10,
+                    shadowOffset: { width: 0, height: 5 },
+                    borderWidth: 2.5,
+                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                  }]}>
+                    <SOSIcon size={28} color="#FFFFFF" strokeWidth={2.2} />
+                  </View>
                 </Animated.View>
               </View>
               <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>SOS</Text>
@@ -307,7 +311,7 @@ export default function CalmModeModal({
                     </View>
                     <View style={styles.hmoCall}>
                       <View style={[styles.phoneIcon, { backgroundColor: '#DBEAFE' }]}>
-                        <Phone size={14} color="#3B82F6" strokeWidth={2} />
+                        <Phone size={14} color="#C8806A" strokeWidth={2} />
                       </View>
                       <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
                     </View>

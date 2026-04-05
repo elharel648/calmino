@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     errorRetryButton: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         paddingVertical: 14,
         paddingHorizontal: 24,
         borderRadius: 14,
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     emptyButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 12,

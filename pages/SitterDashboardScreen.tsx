@@ -34,7 +34,7 @@ import {
     Calendar, Clock, Users, CheckCircle,
     XCircle, ChevronRight, ChevronLeft, Star, MessageSquare, Settings,
     User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send, DollarSign,
-    Plus, Minus, Eye, Zap, Share2, ExternalLink, Check,
+    Plus, Minus, Eye, Zap, Share2, ExternalLink, Check, Moon,
     Instagram, Facebook, Linkedin, MessageCircle, Twitter, Globe, Link as LinkIcon
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -1174,7 +1174,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     }}>
                         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
                             <View style={[styles.quickActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' }]}>
-                                <Zap size={20} color="#10B981" strokeWidth={2} />
+                                <Moon size={20} color={theme.textSecondary} strokeWidth={1.8} />
                             </View>
                             <View>
                                 <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary, textAlign: 'right' }]}>{t('sitterDash.availableTonight')}</Text>
@@ -1198,7 +1198,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     logger.error('Toggle available tonight failed:', error);
                                 }
                             }}
-                            trackColor={{ false: isDarkMode ? '#333' : '#E5E7EB', true: '#10B981' }}
+                            trackColor={{ false: isDarkMode ? '#333' : '#E5E7EB', true: '#C8806A' }}
                             thumbColor={isDarkMode ? '#fff' : '#fff'}
                         />
                     </View>
@@ -1462,7 +1462,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <TouchableOpacity
                                         style={[styles.gpsCompactBtn, {
                                             backgroundColor: gpsLocation ? (isDarkMode ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.1)') : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
-                                            borderColor: gpsLocation ? '#3B82F6' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
+                                            borderColor: gpsLocation ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
                                         }]}
                                         onPress={async () => {
                                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1486,7 +1486,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             <ActivityIndicator size="small" color={theme.textSecondary} />
                                         ) : (
                                             <View>
-                                                <MapPin size={16} color={gpsLocation ? '#3B82F6' : theme.textSecondary} strokeWidth={2.5} />
+                                                <MapPin size={16} color={gpsLocation ? '#C8806A' : theme.textSecondary} strokeWidth={2.5} />
                                                 {gpsLocation && (<View style={styles.gpsCheckBadge}><Check size={10} color="#fff" strokeWidth={4} /></View>)}
                                             </View>
                                         )}
@@ -1564,7 +1564,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Switch
                                         value={notificationsEnabled}
                                         onValueChange={(v) => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setNotificationsEnabled(v); }}
-                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
                                         thumbColor={isDarkMode ? (notificationsEnabled ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
@@ -1575,7 +1575,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Switch
                                         value={availableForBookings}
                                         onValueChange={(v) => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAvailableForBookings(v); }}
-                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
                                         thumbColor={isDarkMode ? (availableForBookings ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
@@ -4860,7 +4860,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -6,
         right: -6,
-        backgroundColor: '#3B82F6',
+        backgroundColor: '#C8806A',
         borderRadius: 6,
         width: 12,
         height: 12,

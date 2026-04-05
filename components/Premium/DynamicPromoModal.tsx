@@ -127,7 +127,7 @@ const DynamicPromoModal: React.FC<DynamicPromoModalProps> = ({ currentScreenName
                                 activeOpacity={0.9}
                             >
                                 <LinearGradient
-                                    colors={['#6366F1', '#8B5CF6']}
+                                    colors={['#C8806A', '#CD8B87']}
                                     style={styles.ctaGradient}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     },
     btnContainer: {
         width: '100%',
-        shadowColor: '#6366F1',
+        shadowColor: '#C8806A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,

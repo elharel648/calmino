@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { Timer, Pause } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, Easing } from 'react-native-reanimated';
 
 interface ActionButtonProps {
     config: {
@@ -36,6 +37,11 @@ const ActionButton = memo(({
     const { theme, isDarkMode } = useTheme();
     const Icon = config.icon;
 
+    const scale = useSharedValue(1);
+    const rippleOpacity = useSharedValue(0);
+    const rippleScale = useSharedValue(0.1);
+    const iconScale = useSharedValue(1);
+
     const handlePress = useCallback(() => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -43,17 +49,53 @@ const ActionButton = memo(({
         onPress();
     }, [onPress]);
 
+    const handlePressIn = useCallback(() => {
+        // High tension spring down to simulate premium physical button depth
+        scale.value = withSpring(0.97, { stiffness: 400, damping: 25 });
+        
+        // Ripple effect start
+        rippleScale.value = 0.1;
+        rippleOpacity.value = 0.12; // Subtle translucent white
+        rippleScale.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.ease) });
+        rippleOpacity.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.ease) });
+    }, [scale, rippleScale, rippleOpacity]);
+
+    const handlePressOut = useCallback(() => {
+        // Return to scale 1 immediately
+        scale.value = withSpring(1, { stiffness: 250, damping: 25 });
+        // Micro-bounce for the checkmark / central icon
+        iconScale.value = withSequence(
+            withSpring(1.2, { stiffness: 400, damping: 12 }),
+            withSpring(1, { stiffness: 400, damping: 15 })
+        );
+    }, [scale, iconScale]);
+
+    const animatedContainerStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: iconScale.value }],
+    }));
+
+    const animatedRippleStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: rippleScale.value }],
+        opacity: rippleOpacity.value,
+    }));
+
     return (
         <TouchableOpacity
-            activeOpacity={0.6}
+            activeOpacity={0.8}
             onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
             style={styles.actionItem}
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityState={{ selected: isActive }}
         >
             {/* Icon Container — Premium rounded square with per-category color tint */}
-            <View style={styles.iconWrapper}>
+            <Animated.View style={[styles.iconWrapper, animatedContainerStyle]}>
                 <View style={[
                     styles.iconContainer,
                     {
@@ -71,11 +113,14 @@ const ActionButton = memo(({
                     },
                     config.hasBorder && styles.iconContainerDashed,
                 ]}>
-                    {isActive ? (
-                        <Pause size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
-                    ) : (
-                        <Icon size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
-                    )}
+                    <Animated.View style={[styles.ripple, animatedRippleStyle]} />
+                    <Animated.View style={animatedIconStyle}>
+                        {isActive ? (
+                            <Pause size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
+                        ) : (
+                            <Icon size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
+                        )}
+                    </Animated.View>
                 </View>
                 {/* Badge dot — shown for X/Y format or plain number */}
                 {badge && (() => {
@@ -103,7 +148,7 @@ const ActionButton = memo(({
                     }
                     return null;
                 })()}
-            </View>
+            </Animated.View>
 
             {/* Label */}
             <Text style={[styles.label, { color: theme.textPrimary }]} numberOfLines={2}>
@@ -144,6 +189,13 @@ const styles = StyleSheet.create({
     iconWrapper: {
         position: 'relative',
         marginBottom: 9,
+    },
+    ripple: {
+        position: 'absolute',
+        width: 62,
+        height: 62,
+        borderRadius: 31,
+        backgroundColor: '#FFFFFF',
     },
     badgeDot: {
         position: 'absolute',

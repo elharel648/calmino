@@ -182,16 +182,16 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                         <TouchableOpacity
                                             style={[styles.codeBtn, {
                                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#fff',
-                                                borderColor: copied ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
-                                            }, copied && { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}
+                                                borderColor: copied ? '#7DAF8F' : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
+                                            }, copied && { backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : '#F0F7F3' }]}
                                             onPress={handleCopyCode}
                                         >
                                             {copied ? (
-                                                <Check size={18} color="#10B981" />
+                                                <Check size={18} color="#7DAF8F" />
                                             ) : (
-                                                <Copy size={18} color="#6366F1" />
+                                                <Copy size={18} color="#C8806A" />
                                             )}
-                                            <Text style={[styles.codeBtnText, copied && { color: '#10B981' }]}>
+                                            <Text style={[styles.codeBtnText, copied && { color: '#7DAF8F' }]}>
                                                 {copied ? t('familyInvite.copied') : t('familyInvite.copy')}
                                             </Text>
                                         </TouchableOpacity>
@@ -204,7 +204,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                             onPress={handleRefreshCode}
                                             disabled={refreshing}
                                         >
-                                            <RefreshCw size={18} color="#6366F1" style={refreshing ? { opacity: 0.5 } : {}} />
+                                            <RefreshCw size={18} color="#C8806A" style={refreshing ? { opacity: 0.5 } : {}} />
                                             <Text style={styles.codeBtnText}>{t('familyInvite.refresh')}</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -217,7 +217,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                 onPress={handleShare}
                                 disabled={!inviteCode}
                             >
-                                <MessageCircle size={20} color="#fff" />
+                                <MessageCircle size={20} color="#25D366" />
                                 <Text style={styles.shareBtnText}>{t('familyInvite.shareWhatsapp')}</Text>
                             </TouchableOpacity>
 
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     code: {
         fontSize: 36,
         fontWeight: '900',
-        color: '#6366F1',
+        color: '#C8806A',
         letterSpacing: 6,
         marginBottom: 16,
     },
@@ -311,14 +311,16 @@ const styles = StyleSheet.create({
     codeBtnText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
     },
     shareBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        backgroundColor: '#25D366',
+        backgroundColor: 'rgba(37, 211, 102, 0.10)',
+        borderWidth: 1,
+        borderColor: 'rgba(37, 211, 102, 0.30)',
         paddingVertical: 16,
         borderRadius: 14,
         marginBottom: 16,
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
     shareBtnText: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#fff',
+        color: '#1DA851',
     },
     tip: {
         fontSize: 12,
@@ -344,7 +346,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderRadius: 12,

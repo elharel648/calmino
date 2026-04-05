@@ -59,7 +59,7 @@ const HEALTH_OPTIONS: HealthOption[] = [
     { key: 'illness', label: 'health.illnesses', icon: Heart, iconColor: '#F87171' },
     { key: 'temperature', label: 'health.temperature', icon: Thermometer, iconColor: '#FF9F1C' },
     { key: 'medications', label: 'health.medications', icon: Pill, iconColor: '#A78BFA' },
-    { key: 'history', label: 'health.history', icon: ClipboardList, iconColor: '#3B82F6' },
+    { key: 'history', label: 'health.history', icon: ClipboardList, iconColor: '#C8806A' },
 ];
 
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
@@ -1703,16 +1703,25 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <View style={styles.headerTitleContainer}>
                             {currentScreen === 'menu' && (
                                 <View style={styles.headerIconWrapper}>
-                                    <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
+                                    <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                                         <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#14B8A6' }, healthIconPulseStyle]} />
                                         <ReAnimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#14B8A6' }, healthIconPulse2Style]} />
-                                        <View style={[styles.headerIconCircle, { borderColor: theme.border || '#E5E7EB', width: 48, height: 48, borderRadius: 24 }]}>
-                                            <ReAnimated.View style={healthIconRotateStyle}>
-                                                <ReAnimated.View style={healthIconBounceStyle}>
-                                                    <HeartPulse size={22} color="#14B8A6" strokeWidth={2} />
-                                                </ReAnimated.View>
+                                        <ReAnimated.View style={healthIconRotateStyle}>
+                                            <ReAnimated.View style={healthIconBounceStyle}>
+                                                <View style={[{
+                                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                                    backgroundColor: '#14B8A6',
+                                                    shadowColor: isDarkMode ? 'transparent' : '#14B8A6',
+                                                    shadowOpacity: 0.35,
+                                                    shadowRadius: 10,
+                                                    shadowOffset: { width: 0, height: 5 },
+                                                    borderWidth: 2.5,
+                                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                                }]}>
+                                                    <HeartPulse size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                                </View>
                                             </ReAnimated.View>
-                                        </View>
+                                        </ReAnimated.View>
                                     </View>
                                 </View>
                             )}

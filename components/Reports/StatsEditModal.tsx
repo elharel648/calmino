@@ -26,7 +26,7 @@ const ICONS: Record<StatKey, any> = {
 
 const STAT_LABELS: Record<StatKey, { label: string; color: string }> = {
     food: { label: 'האכלה', color: '#F59E0B' },
-    sleep: { label: 'שינה', color: '#6366F1' },
+    sleep: { label: 'שינה', color: '#C8806A' },
     diapers: { label: 'חיתולים', color: '#10B981' },
     supplements: { label: 'תוספים', color: '#EC4899' },
 };
@@ -109,7 +109,7 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
                     activeOpacity={0.7}
                 >
                     <View style={styles.dragHandle}>
-                        <GripVertical size={20} color={isActive ? '#6366F1' : '#9CA3AF'} />
+                        <GripVertical size={20} color={isActive ? '#C8806A' : '#9CA3AF'} />
                     </View>
 
                     <View style={[styles.iconCircle, { backgroundColor: data.color + '20' }]}>
@@ -139,7 +139,7 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
                         </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>{t('reports.tabs.orderTabs')}</Text>
                         <TouchableOpacity style={[styles.resetBtn, { backgroundColor: theme.cardSecondary }]} onPress={handleReset}>
-                            <RotateCcw size={18} color="#6366F1" />
+                            <RotateCcw size={18} color="#C8806A" />
                         </TouchableOpacity>
                     </View>
 
@@ -221,8 +221,8 @@ const styles = StyleSheet.create({
     },
     itemActive: {
         backgroundColor: '#EEF2FF',
-        borderColor: '#6366F1',
-        shadowColor: '#6366F1',
+        borderColor: '#C8806A',
+        shadowColor: '#C8806A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     saveBtn: {
         marginHorizontal: 20,
         marginTop: 16,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         paddingVertical: 14,
         borderRadius: 14,
         alignItems: 'center',

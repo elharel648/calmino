@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     modeBtnActive: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
     },
     modeBtnText: {
         fontSize: 14,
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     submitBtn: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         borderRadius: 16,
         paddingVertical: 18,
         flexDirection: 'row',

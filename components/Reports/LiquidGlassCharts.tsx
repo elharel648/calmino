@@ -44,7 +44,7 @@ const LiquidGlassLineChart: React.FC<LiquidGlassChartProps> = ({
     data,
     labels,
     title,
-    gradientColors = ['#818CF8', '#3B82F6'],
+    gradientColors = ['#CD8B87', '#C8806A'],
     height = 200,
     showLabels = true,
 }) => {

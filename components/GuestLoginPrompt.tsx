@@ -88,7 +88,7 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
               backgroundColor: isDarkMode ? 'rgba(99,102,241,0.18)' : 'rgba(99,102,241,0.06)',
             }]} />
             <LinearGradient
-              colors={['#6366F1', '#8B5CF6']}
+              colors={['#C8806A', '#CD8B87']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconWrap}
@@ -118,7 +118,7 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['#6366F1', '#7C3AED', '#8B5CF6']}
+                colors={['#C8806A', '#CD8B87', '#D4A373']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.loginBtnGradient}
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     overflow: 'hidden',
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 32,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 14,
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 16,

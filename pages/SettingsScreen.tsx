@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download, Lock, Baby } from 'lucide-react-native';
+import { Users, Settings, Camera, User, Pencil, Crown, Sparkles, Check, Star, ChevronLeft, ChevronRight, UserPlus, Link as LinkIcon, Trash2, LogOut, Shield, Download, Lock, Baby } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
-import Animated from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -91,12 +91,37 @@ export default function SettingsScreen() {
   // Read remote config switch globally
   const showPremiumUpgrade = getShowPremiumUpgrade();
 
+  const [isSettingsPressed, setIsSettingsPressed] = useState(false);
+  const settingsScale = useSharedValue(1);
+  const settingsRotation = useSharedValue(0);
+
   const handleSettingsPress = () => {
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('FullSettings');
+    
+    setIsSettingsPressed(true);
+    settingsScale.value = withSequence(
+      withSpring(0.85, { damping: 15, stiffness: 240 }),
+      withSpring(1.1, { damping: 12, stiffness: 240 }),
+      withSpring(1, { damping: 15, stiffness: 240 })
+    );
+    settingsRotation.value = withSpring(settingsRotation.value + 45, { damping: 15, stiffness: 180 });
+
+    setTimeout(() => {
+      navigation.navigate('FullSettings');
+      setTimeout(() => setIsSettingsPressed(false), 200);
+    }, 250);
   };
+
+  const animatedSettingsStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: settingsScale.value },
+        { rotate: `${settingsRotation.value}deg` }
+      ] as any
+    };
+  });
 
   const getAgeDisplay = () => {
     if (babyAgeMonths < 1) {
@@ -377,10 +402,12 @@ export default function SettingsScreen() {
           <TouchableOpacity
             onPress={handleSettingsPress}
             style={styles.settingsButton}
-            activeOpacity={0.6}
+            activeOpacity={1}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Settings size={22} color={theme.textSecondary} strokeWidth={1.5} />
+            <Animated.View style={animatedSettingsStyle}>
+              <Settings size={22} color={isSettingsPressed ? '#C8806A' : theme.textSecondary} strokeWidth={1.5} />
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </View>
@@ -434,7 +461,7 @@ export default function SettingsScreen() {
             <Text style={[styles.userName, { color: theme.textPrimary }]}>
               {userName || t('account.myUser')}
             </Text>
-            <Pencil size={16} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+            <ChevronRight size={16} color='rgba(0,0,0,0.22)' strokeWidth={1.8} />
           </TouchableOpacity>
 
           {user?.email && (
@@ -500,7 +527,7 @@ export default function SettingsScreen() {
                     activeOpacity={0.6}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Pencil size={14} color={theme.textTertiary} strokeWidth={2} />
+                  <ChevronRight size={15} color='rgba(0,0,0,0.22)' strokeWidth={1.8} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -597,8 +624,8 @@ export default function SettingsScreen() {
                   <View style={styles.familyActionText}>
                     <View style={styles.familyActionTitleRow}>
                       <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                      <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>{t('settings.badgeTemporary')}</Text>
+                      <View style={[styles.badgeMinimal, { backgroundColor: isDarkMode ? 'rgba(200,128,106,0.20)' : 'rgba(200,128,106,0.12)' }]}>
+                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#E8A898' : '#A05E48' }]}>{t('settings.badgeTemporary')}</Text>
                       </View>
                     </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
@@ -625,8 +652,8 @@ export default function SettingsScreen() {
                   <View style={styles.familyActionText}>
                     <View style={styles.familyActionTitleRow}>
                       <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                      <View style={[styles.badgeMinimal, { backgroundColor: 'transparent', borderWidth: 1, borderColor: isDarkMode ? '#fff' : '#000' }]}>
-                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? '#fff' : '#000' }]}>{t('settings.badgeAutomatic')}</Text>
+                      <View style={[styles.badgeMinimal, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}>
+                        <Text style={[styles.badgeTextMinimal, { color: isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)' }]}>{t('settings.badgeAutomatic')}</Text>
                       </View>
                     </View>
                     <Text style={[styles.familyActionSubtitle, { color: theme.textSecondary }]}>
@@ -718,7 +745,7 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               </View>
-              <Pencil size={16} color={theme.textTertiary} strokeWidth={2} />
+              <ChevronRight size={16} color='rgba(0,0,0,0.22)' strokeWidth={1.8} />
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -968,7 +995,7 @@ export default function SettingsScreen() {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={['#6366F1', '#8B5CF6']}
+                  colors={['#C8806A', '#8B5CF6']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.subscribeButtonGradient}
@@ -1075,7 +1102,7 @@ const styles = StyleSheet.create({
     borderWidth: 3.5,
     borderRadius: 60,
     padding: 2.5,
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -1112,7 +1139,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3.5,
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -1127,7 +1154,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1506,7 +1533,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 22,
     overflow: 'hidden',
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
@@ -1720,7 +1747,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 12,
-    shadowColor: '#6366F1',
+    shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,

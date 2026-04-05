@@ -365,29 +365,33 @@ export default function MagicMomentsModal({
                     {/* Clean Header */}
                     <Animated.View style={[styles.header, headerStyle]} {...panResponder.panHandlers}>
                         {/* Animated icon with pulse rings + sparkles */}
-                        <View style={styles.iconContainer}>
+                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                             {/* Pulse ring 1 */}
-                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.magicMoments.color }, pulse1Style]} />
                             {/* Pulse ring 2 */}
-                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.magicMoments.color }, pulse2Style]} />
                             {/* Main icon with bounce */}
                             <Animated.View style={bounceStyle}>
-                                <LinearGradient
-                                    colors={[ACCENT, '#F292A8']}
-                                    style={styles.iconGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    <Sparkles size={28} color="#fff" strokeWidth={2} />
-                                </LinearGradient>
+                                <View style={[{
+                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                    backgroundColor: theme.actionColors.magicMoments.color,
+                                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.magicMoments.color,
+                                    shadowOpacity: 0.35,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 5 },
+                                    borderWidth: 2.5,
+                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                }]}>
+                                    <Sparkles size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                </View>
                             </Animated.View>
                             {/* Sparkle star 1 — top-left */}
                             <Animated.View style={[styles.floatingStar, { top: 2, left: 4 }, star1Style]}>
-                                <Sparkles size={12} color={ACCENT} strokeWidth={2.5} />
+                                <Sparkles size={12} color={theme.actionColors.magicMoments.color} strokeWidth={2.5} />
                             </Animated.View>
                             {/* Sparkle star 2 — top-right */}
                             <Animated.View style={[styles.floatingStar, { top: 6, right: 2 }, star2Style]}>
-                                <Sparkles size={10} color={ACCENT} strokeWidth={2.5} />
+                                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: theme.actionColors.magicMoments.color, opacity: 0.8 }} />
                             </Animated.View>
                         </View>
 
@@ -416,7 +420,7 @@ export default function MagicMomentsModal({
                             {baby?.album && (
                                 <View style={styles.statsContainer}>
                                     <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
-                                        <Text style={[styles.statNumber, { color: ACCENT }]}>
+                                        <Text style={[styles.statNumber, { color: theme.actionColors.magicMoments.color }]}>
                                             {Object.keys(baby.album).length}
                                         </Text>
                                         <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
@@ -424,7 +428,7 @@ export default function MagicMomentsModal({
                                         </Text>
                                     </View>
                                     <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
-                                        <Text style={[styles.statNumber, { color: ACCENT }]}>
+                                        <Text style={[styles.statNumber, { color: theme.actionColors.magicMoments.color }]}>
                                             {Object.keys(baby.album).filter(m => parseInt(m) <= 12).length}/13
                                         </Text>
                                         <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
@@ -437,7 +441,7 @@ export default function MagicMomentsModal({
                             {/* Grid Layout for Months */}
                             <View style={styles.gridSection}>
                                 <View style={styles.sectionTitleRow}>
-                                    <Sparkles size={16} color={ACCENT} strokeWidth={2} />
+                                    <Sparkles size={16} color={theme.actionColors.magicMoments.color} strokeWidth={2} />
                                     <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
                                         {baby?.name ? t('magicMoments.momentsOf', { name: baby.name }) : t('magicMoments.firstYear')}
                                     </Text>
@@ -466,9 +470,9 @@ export default function MagicMomentsModal({
                                                                     ? 'rgba(255,255,255,0.03)'
                                                                     : 'rgba(0,0,0,0.02)',
                                                         borderColor: photoUrl
-                                                            ? ACCENT + '40'
+                                                            ? theme.actionColors.magicMoments.color + '40'
                                                             : isBirthTile
-                                                                ? ACCENT + '30'
+                                                                ? theme.actionColors.magicMoments.color + '30'
                                                                 : isDarkMode
                                                                     ? 'rgba(255,255,255,0.08)'
                                                                     : 'rgba(0,0,0,0.08)',
@@ -524,14 +528,14 @@ export default function MagicMomentsModal({
                                                     <View style={styles.emptyGridContent}>
                                                         {/* Milestone icon watermark */}
                                                         <View style={styles.emptyIconWrap}>
-                                                            <MilestoneIcon size={26} color={ACCENT} strokeWidth={1.5} />
+                                                            <MilestoneIcon size={26} color={theme.actionColors.magicMoments.color} strokeWidth={1.5} />
                                                         </View>
                                                         {/* Month label */}
                                                         <Text style={[styles.emptyMonthLabel, { color: theme.textTertiary }]}>
                                                             {isBirthTile ? 'Hello World' : t('magicMoments.month', { num: month.toString() })}
                                                         </Text>
-                                                        <View style={[styles.plusIcon, { backgroundColor: ACCENT + '15' }]}>
-                                                            <Plus size={14} color={ACCENT} strokeWidth={2} />
+                                                        <View style={[styles.plusIcon, { backgroundColor: theme.actionColors.magicMoments.color + '15' }]}>
+                                                            <Plus size={14} color={theme.actionColors.magicMoments.color} strokeWidth={2} />
                                                         </View>
                                                     </View>
                                                 )}
@@ -545,7 +549,7 @@ export default function MagicMomentsModal({
                             {baby?.album && Object.keys(baby.album).some(m => parseInt(m) > 12) && (
                                 <View style={styles.gridSection}>
                                     <View style={styles.sectionTitleRow}>
-                                        <Sparkles size={16} color={ACCENT} strokeWidth={2} />
+                                        <Sparkles size={16} color={theme.actionColors.magicMoments.color} strokeWidth={2} />
                                         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
                                             {t('magicMoments.moreMonths')}
                                         </Text>
@@ -566,7 +570,7 @@ export default function MagicMomentsModal({
                                                             styles.monthGridItem,
                                                             {
                                                                 backgroundColor: 'transparent',
-                                                                borderColor: ACCENT + '40',
+                                                                borderColor: theme.actionColors.magicMoments.color + '40',
                                                             },
                                                         ]}
                                                         onPress={() => handleMonthPress(month)}
@@ -611,7 +615,7 @@ export default function MagicMomentsModal({
                                                                 }}
                                                                 activeOpacity={0.8}
                                                             >
-                                                                <Calendar size={10} color={ACCENT} strokeWidth={2} />
+                                                                <Calendar size={10} color={theme.actionColors.magicMoments.color} strokeWidth={2} />
                                                                 <Text style={styles.addDateText}>{t('magicMoments.dateLabel')}</Text>
                                                             </TouchableOpacity>
                                                         )}
@@ -656,7 +660,7 @@ export default function MagicMomentsModal({
                                                     backgroundColor: isDarkMode
                                                         ? 'rgba(255,255,255,0.03)'
                                                         : 'rgba(0,0,0,0.02)',
-                                                    borderColor: ACCENT + '40',
+                                                    borderColor: theme.actionColors.magicMoments.color + '40',
                                                     borderStyle: 'dashed',
                                                 },
                                             ]}
@@ -666,8 +670,8 @@ export default function MagicMomentsModal({
                                             }}
                                             activeOpacity={0.7}
                                         >
-                                            <Plus size={20} color={ACCENT} strokeWidth={2} />
-                                            <Text style={[styles.addMonthText, { color: ACCENT }]}>{t('common.add')}</Text>
+                                            <Plus size={20} color={theme.actionColors.magicMoments.color} strokeWidth={2} />
+                                            <Text style={[styles.addMonthText, { color: theme.actionColors.magicMoments.color }]}>{t('common.add')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -682,7 +686,7 @@ export default function MagicMomentsModal({
                                             backgroundColor: isDarkMode
                                                 ? 'rgba(139, 92, 246, 0.1)'
                                                 : 'rgba(139, 92, 246, 0.05)',
-                                            borderColor: ACCENT + '30',
+                                            borderColor: theme.actionColors.magicMoments.color + '30',
                                         },
                                     ]}
                                     onPress={() => {
@@ -691,7 +695,7 @@ export default function MagicMomentsModal({
                                     }}
                                     activeOpacity={0.7}
                                 >
-                                    <View style={[styles.addCustomIcon, { backgroundColor: ACCENT }]}>
+                                    <View style={[styles.addCustomIcon, { backgroundColor: theme.actionColors.magicMoments.color }]}>
                                         <Plus size={18} color="#fff" strokeWidth={2.5} />
                                     </View>
                                     <View style={styles.addCustomTextContainer}>
@@ -708,8 +712,8 @@ export default function MagicMomentsModal({
                             {/* Baby name footer */}
                             {baby?.name && (
                                 <View style={[styles.babyNameRow, { borderTopColor: theme.border }]}>
-                                    <View style={[styles.cameraIconWrapper, { backgroundColor: ACCENT + '15' }]}>
-                                        <Camera size={14} color={ACCENT} strokeWidth={1.5} />
+                                    <View style={[styles.cameraIconWrapper, { backgroundColor: theme.actionColors.magicMoments.color + '15' }]}>
+                                        <Camera size={14} color={theme.actionColors.magicMoments.color} strokeWidth={1.5} />
                                     </View>
                                     <Text style={[styles.babyName, { color: theme.textPrimary }]}>
                                         {t('magicMoments.albumOf', { name: baby.name })}
@@ -821,7 +825,7 @@ export default function MagicMomentsModal({
                                         styles.monthPickerCircle,
                                         { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }
                                     ]}>
-                                        <Text style={[styles.monthPickerNumber, { color: ACCENT }]}>{month}</Text>
+                                        <Text style={[styles.monthPickerNumber, { color: theme.actionColors.magicMoments.color }]}>{month}</Text>
                                     </View>
                                 </TouchableOpacity>
                             ))}

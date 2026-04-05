@@ -224,7 +224,7 @@ export default function DynamicIsland() {
             icon: Clock,
             title: clockTime,
             subtitle: clockDate,
-            color: '#6366F1',
+            color: '#C8806A',
         };
     };
 

@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         borderRadius: 12,
         paddingVertical: 10,
         paddingHorizontal: 14,

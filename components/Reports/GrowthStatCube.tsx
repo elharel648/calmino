@@ -112,8 +112,8 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                 style={[styles.statCard, { backgroundColor: theme.card }, animatedStyle]}
             >
                 {/* Icon */}
-                <View style={[styles.statIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
-                    <TrendingUp size={20} color="#10B981" strokeWidth={1.5} />
+                <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.growth.color }]}>
+                    <TrendingUp size={20} color="#FFFFFF" strokeWidth={1.5} />
                 </View>
 
                 <View style={{ flex: 1, alignItems: 'flex-end', width: '100%', justifyContent: 'flex-end' }}>
@@ -122,11 +122,11 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                             <>
                                 {weightData.length >= 2 ? (
                                     <View style={styles.sparklineWrap}>
-                                        <Sparkline data={weightData} color="#10B981" />
+                                        <Sparkline data={weightData} color={theme.actionColors.growth.color} />
                                     </View>
                                 ) : (
                                     <Text style={[styles.statValue, { color: theme.textPrimary }]}>
-                                        {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>{t('reports.units.kg')}</Text>
+                                        {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: theme.actionColors.growth.color }}>{t('reports.units.kg')}</Text>
                                     </Text>
                                 )}
 
@@ -154,8 +154,8 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                         ) : (
                             // Empty state - invite to add first measurement
                             <View style={styles.emptyState}>
-                                <View style={[styles.addBadge, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
-                                    <Plus size={14} color="#10B981" strokeWidth={2.5} />
+                                <View style={[styles.addBadge, { backgroundColor: theme.actionColors.growth.color }]}>
+                                    <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
                                 </View>
                             </View>
                         )}

@@ -27,6 +27,7 @@ import { FamilyMembersCard } from '../components/Family/FamilyMembersCard';
 import { InviteFamilyModal } from '../components/Family/InviteFamilyModal';
 import { JoinFamilyModal } from '../components/Family/JoinFamilyModal';
 import GradientBackground from '../components/GradientBackground';
+import { ProfileSkeleton } from '../components/Common/SkeletonLoader';
 
 // Types
 import { EditMetricState, Milestone } from '../types/profile';
@@ -116,9 +117,9 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.textPrimary} />
-      </View>
+      <GradientBackground>
+        <ProfileSkeleton />
+      </GradientBackground>
     );
   }
 
@@ -181,7 +182,7 @@ export default function ProfileScreen() {
           {/* Growth Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <TrendingUp size={18} color="#10B981" />
+              <TrendingUp size={18} color="#C8806A" />
               <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('profile.growthTitle')}</Text>
             </View>
             <GrowthSection
@@ -359,7 +360,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#C8806A',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
