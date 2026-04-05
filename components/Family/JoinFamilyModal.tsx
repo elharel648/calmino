@@ -1,17 +1,16 @@
 import React, { useState, useRef } from 'react';
-import {
-    View,
+import InlineLoader from '../../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Modal,
     TextInput,
-    ActivityIndicator,
+    
     Platform,
     KeyboardAvoidingView,
     Animated,
-    Alert,
-} from 'react-native';
+    Alert } from 'react-native';
 import { X, Users, LogIn, CheckCircle, QrCode } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -273,7 +272,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 disabled={loading || code.length !== 6}
                             >
                                 {loading ? (
-                                    <ActivityIndicator color="#fff" />
+                                    <InlineLoader color="#fff"  />
                                 ) : (
                                     <>
                                         <LogIn size={20} color="#fff" />

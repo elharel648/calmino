@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import {
-    View,
+import InlineLoader from '../../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Modal,
     Share,
     Platform,
-    ActivityIndicator,
+    
     Alert,
-    Linking,
-} from 'react-native';
+    Linking } from 'react-native';
 import { X, Copy, Share2, RefreshCw, Users, Check, Info, MessageCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
@@ -134,7 +133,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
 
                     {(isLoading || creatingFamily) ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={theme.textPrimary} />
+                            <InlineLoader size="large" color={theme.textPrimary}  />
                             <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
                                 {creatingFamily ? t('familyInvite.creatingFamily') : t('familyInvite.loading')}
                             </Text>

@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, Platform, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, Platform,  Dimensions } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { Plus, X, Check, Edit3, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -93,7 +94,7 @@ const MonthCard = memo(({
                         <>
                             {isLoading && (
                                 <View style={styles.loadingOverlay}>
-                                    <ActivityIndicator size="small" color={ACCENT} />
+                                    <InlineLoader size="small" color={ACCENT}  />
                                 </View>
                             )}
                             <Image

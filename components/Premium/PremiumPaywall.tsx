@@ -1,16 +1,15 @@
 // components/Premium/PremiumPaywall.tsx - Premium Subscription Paywall
 import React, { useState, useEffect } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     Modal,
     TouchableOpacity,
-    ActivityIndicator,
+    
     Alert,
     ScrollView,
-    Platform,
-} from 'react-native';
+    Platform } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { X, Crown, Check, Sparkles, Shield, Download, Users, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
@@ -236,7 +235,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
                                 style={styles.subscribeButtonGradient}
                             >
                                 {purchasing ? (
-                                    <ActivityIndicator color="#fff" />
+                                    <InlineLoader color="#fff"  />
                                 ) : (
                                     <Text style={styles.subscribeButtonText}>
                                         {selectedPlan === 'annual' ? rc.annualCta : rc.monthlyCta}

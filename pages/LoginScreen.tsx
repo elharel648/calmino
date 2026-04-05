@@ -1,8 +1,8 @@
 // LoginScreen.tsx - Enhanced Security & Premium Design
 
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  StyleSheet,
+import InlineLoader from '../components/Common/InlineLoader';
+import { StyleSheet,
   View,
   Text,
   TextInput,
@@ -12,11 +12,10 @@ import {
   Platform,
   ScrollView,
   Alert,
-  ActivityIndicator,
+  
   Animated,
   Keyboard,
-  Modal,
-} from 'react-native';
+  Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User, QrCode, Compass } from 'lucide-react-native';
@@ -999,7 +998,7 @@ export default function LoginScreen({
                 style={styles.gradientBtn}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <InlineLoader color="#fff"  />
                 ) : (
                   <>
                     <Text style={styles.mainButtonText}>

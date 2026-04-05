@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
+import InlineLoader from '../components/Common/InlineLoader';
+import { View, StyleSheet, ScrollView, Share, Alert,  StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
 import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';

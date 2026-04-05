@@ -1,5 +1,6 @@
 // pages/SitterDashboardScreen.tsx - Real Sitter Dashboard with Firebase Data
 import React, { useState, useEffect, useCallback } from 'react';
+import InlineLoader from '../components/Common/InlineLoader';
 import Svg, { Path } from 'react-native-svg';
 
 const WhatsAppIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string; strokeWidth?: number }) => (
@@ -11,8 +12,7 @@ const WhatsAppIcon = ({ size = 24, color = '#000' }: { size?: number; color?: st
     </Svg>
 );
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     ScrollView,
@@ -20,7 +20,7 @@ import {
     Image,
     Dimensions,
     RefreshControl,
-    ActivityIndicator,
+    
     Platform,
     Modal,
     TextInput,
@@ -28,8 +28,7 @@ import {
     Alert,
     KeyboardAvoidingView,
     Linking,
-    Share,
-} from 'react-native';
+    Share } from 'react-native';
 import {
     Calendar, Clock, Users, CheckCircle,
     XCircle, ChevronRight, ChevronLeft, Star, MessageSquare, Settings,
@@ -892,7 +891,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.textPrimary} />
+                <InlineLoader size="large" color={theme.textPrimary}  />
             </View>
         );
     }
@@ -1370,7 +1369,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         shadowColor: isDarkMode ? '#fff' : '#000',
                                     }]}>
                                         {uploadingPhoto ? (
-                                            <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                                            <InlineLoader size="small" color={isDarkMode ? '#000' : '#fff'}  />
                                         ) : (
                                             <Camera size={18} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                                         )}
@@ -1425,7 +1424,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             gap: 6,
                                         }}>
                                             {uploadingCoverPhoto ? (
-                                                <ActivityIndicator size="small" color="#fff" />
+                                                <InlineLoader size="small" color="#fff"  />
                                             ) : (
                                                 <>
                                                     <Camera size={13} color="rgba(255,255,255,0.9)" strokeWidth={2} />
@@ -1443,7 +1442,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         gap: 8,
                                     }}>
                                         {uploadingCoverPhoto ? (
-                                            <ActivityIndicator size="small" color={theme.textSecondary} />
+                                            <InlineLoader size="small" color={theme.textSecondary}  />
                                         ) : (
                                             <>
                                                 <LucideImage size={22} color={theme.textSecondary} strokeWidth={1.5} />
@@ -1485,7 +1484,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         activeOpacity={0.7}
                                     >
                                         {isLoadingLocation ? (
-                                            <ActivityIndicator size="small" color={theme.textSecondary} />
+                                            <InlineLoader size="small" color={theme.textSecondary}  />
                                         ) : (
                                             <View>
                                                 <MapPin size={16} color={gpsLocation ? '#C8806A' : theme.textSecondary} strokeWidth={2.5} />
@@ -1982,7 +1981,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 activeOpacity={0.8}
                             >
                                 {savingSettings ? (
-                                    <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                                    <InlineLoader size="small" color={isDarkMode ? '#000' : '#fff'}  />
                                 ) : (
                                     <>
                                         <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
@@ -3175,7 +3174,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 activeOpacity={0.8}
                             >
                                 {savingSettings ? (
-                                    <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                                    <InlineLoader size="small" color={isDarkMode ? '#000' : '#fff'}  />
                                 ) : (
                                     <>
                                         <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />

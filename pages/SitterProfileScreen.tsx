@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert, ActivityIndicator, Platform, Share } from 'react-native';
+import InlineLoader from '../components/Common/InlineLoader';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Linking, Modal, Alert,  Platform, Share } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -513,7 +514,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                         <>
                             {imageLoading && !imageError && (
                                 <View style={[styles.heroVideo, { backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }]}>
-                                    <ActivityIndicator size="large" color={theme.textPrimary} />
+                                    <InlineLoader size="large" color={theme.textPrimary}  />
                                 </View>
                             )}
                             {!imageError ? (
@@ -1094,7 +1095,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
                     {loadingReviews ? (
                         <View style={styles.emptyReviews}>
-                            <ActivityIndicator size="small" color={theme.textPrimary} />
+                            <InlineLoader size="small" color={theme.textPrimary}  />
                         </View>
                     ) : filteredAndSortedReviews.length > 0 ? (
                         filteredAndSortedReviews.map((review) => (
@@ -1433,7 +1434,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 disabled={submittingReport || !reportReason.trim()}
                             >
                                 {submittingReport ? (
-                                    <ActivityIndicator color="#fff" size="small" />
+                                    <InlineLoader color="#fff" size="small"  />
                                 ) : (
                                     <Text style={[styles.reportActionText, { color: '#fff' }]}>שליחה</Text>
                                 )}

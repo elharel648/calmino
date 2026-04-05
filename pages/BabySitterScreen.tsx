@@ -1,22 +1,21 @@
 // pages/BabySitterScreen.tsx - Minimalist Parent Sitter Search
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import InlineLoader from '../components/Common/InlineLoader';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Image,
     RefreshControl,
     Platform,
-    ActivityIndicator,
+    
     TextInput,
     FlatList,
     ListRenderItem,
     ScrollView,
-    Modal,
-} from 'react-native';
+    Modal } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronLeft,
     User, Award, UserPlus, MapPin, Calendar, UserX, Ban, Heart

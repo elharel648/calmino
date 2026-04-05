@@ -3,7 +3,8 @@
  */
 
 import React, { useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
+import { TouchableOpacity, Text, StyleSheet,  Alert } from 'react-native';
 import { FileDown } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -64,7 +65,7 @@ export default function ExportTimelineButton() {
             activeOpacity={0.8}
         >
             {exporting ? (
-                <ActivityIndicator size="small" color="#FFF" />
+                <InlineLoader size="small" color="#FFF"  />
             ) : (
                 <>
                     <FileDown size={18} color="#FFF" strokeWidth={2} />

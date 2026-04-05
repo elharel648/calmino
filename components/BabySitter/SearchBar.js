@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { Ionicons } from '@expo/vector-icons';
 import PropTypes from 'prop-types';
 import { formatShortDate } from '../../utils/babySitterHelpers';
@@ -31,7 +32,7 @@ const SearchBar = memo(({
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     <Text style={styles.label}>איפה?</Text>
                     {isLoadingLocation ? (
-                        <ActivityIndicator size="small" color="#999" />
+                        <InlineLoader size="small" color="#C8806A" />
                     ) : (
                         <Text style={styles.valueText} numberOfLines={1}>
                             {address}

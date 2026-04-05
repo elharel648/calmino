@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Text, TouchableOpacity, Platform, Image, Alert } from 'react-native';
+import InlineLoader from '../components/Common/InlineLoader';
+import { View, StyleSheet, ScrollView,  Text, TouchableOpacity, Platform, Image, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';

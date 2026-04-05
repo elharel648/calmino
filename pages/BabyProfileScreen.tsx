@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  StyleSheet,
+import InlineLoader from '../components/Common/InlineLoader';
+import { StyleSheet,
   View,
   Text,
   TextInput,
   TouchableOpacity,
   Alert,
   Modal,
-  ActivityIndicator,
+  
   Platform,
   KeyboardAvoidingView,
-  ScrollView,
-} from 'react-native';
+  ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { Calendar, User, Users, ChevronRight, Heart, Baby, X, Check } from 'lucide-react-native';
@@ -292,7 +291,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
               activeOpacity={0.9}
             >
               {loading ? (
-                <ActivityIndicator color={!isFormValid ? theme.textTertiary : "#fff"} size="small" />
+                <InlineLoader color={!isFormValid ? theme.textTertiary : "#fff"} size="small"  />
               ) : (
                 <Text style={[styles.primaryBtnText, !isFormValid && styles.primaryBtnTextDisabled]}>{t('babyProfile.saveAndContinue')}</Text>
               )}
