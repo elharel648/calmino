@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     Modal,
@@ -12,9 +11,8 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Dimensions,
-    PanResponder,
-    ActivityIndicator,
-} from 'react-native';
+    PanResponder } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { TrendingUp, FileText, ChevronDown, ChevronUp, Calendar, Trash2, Info } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -663,7 +661,7 @@ export default function GrowthModal({
                                         style={[styles.saveButtonGradient, { backgroundColor: theme.actionColors.growth.color }]}
                                     >
                                         {isSaving ? (
-                                            <ActivityIndicator color="#fff" size="small" />
+                                            <InlineLoader color="#fff" size="small"  />
                                         ) : (
                                             <>
                                                 <TrendingUp size={18} color="#fff" strokeWidth={2} />

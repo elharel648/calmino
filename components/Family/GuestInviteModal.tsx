@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-    Modal,
+import InlineLoader from '../../components/Common/InlineLoader';
+import { Modal,
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator,
+    
     Share,
     Alert,
     ScrollView,
     Image,
     Animated,
     Linking,
-    Platform,
-} from 'react-native';
+    Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X, UserPlus, Copy, Share2, Clock, CheckCircle, Check, Users, Baby, Trash2, Info, MessageCircle } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -534,7 +533,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                         disabled={cancelingCode === invite.code}
                                                     >
                                                         {cancelingCode === invite.code ? (
-                                                            <ActivityIndicator size="small" color="#EF4444" />
+                                                            <InlineLoader size="small" color="#EF4444"  />
                                                         ) : (
                                                             <Trash2 size={18} color="#EF4444" />
                                                         )}
@@ -547,7 +546,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
 
                                 {loadingInvites && (
                                     <View style={styles.loadingInvites}>
-                                        <ActivityIndicator size="small" color={theme.textSecondary} />
+                                        <InlineLoader size="small" color={theme.textSecondary}  />
                                         <Text style={[styles.loadingInvitesText, { color: theme.textSecondary }]}>
                                             {t('guestInvite.loadingInvites')}
                                         </Text>
@@ -569,7 +568,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                     style={styles.createBtnGradient}
                                 >
                                     {isLoading ? (
-                                        <ActivityIndicator color="#fff" />
+                                        <InlineLoader color="#fff"  />
                                     ) : (
                                         <Text style={styles.createBtnText}>
                                             {t('guestInvite.createCode')}{selectedChildren.length > 1 ? ` (${selectedChildren.length})` : ''}

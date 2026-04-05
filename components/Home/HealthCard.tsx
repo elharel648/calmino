@@ -1,5 +1,6 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, ActivityIndicator, PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image,  PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell, CalendarPlus } from 'lucide-react-native';
 import * as ExpoCalendar from 'expo-calendar';
@@ -986,7 +987,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     disabled={uploadingPhoto}
                 >
                     {uploadingPhoto ? (
-                        <ActivityIndicator color="#6B7280" />
+                        <InlineLoader color="#6B7280"  />
                     ) : doctorPhoto ? (
                         <>
                             <Image source={{ uri: doctorPhoto }} style={styles.uploadPreview} />
@@ -1007,7 +1008,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     disabled={uploadingDoc}
                 >
                     {uploadingDoc ? (
-                        <ActivityIndicator color="#6B7280" />
+                        <InlineLoader color="#6B7280"  />
                     ) : doctorDocument ? (
                         <>
                             <FileText size={24} color="#10B981" />
@@ -1340,7 +1341,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
             {loadingMeds ? (
                 <View style={{ alignItems: 'center', marginTop: 40 }}>
-                    <ActivityIndicator size="large" color="#8B5CF6" />
+                    <InlineLoader size="large" color="#8B5CF6"  />
                 </View>
             ) : savedMedications.length === 0 ? (
                 <View style={{ alignItems: 'center', marginTop: 40 }}>
@@ -1531,7 +1532,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
                     {loadingHistory ? (
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
-                            <ActivityIndicator size="large" color={theme.textPrimary} />
+                            <InlineLoader size="large" color={theme.textPrimary}  />
                             <Text style={{ color: theme.textSecondary, marginTop: 12 }}>טוען...</Text>
                         </View>
                     ) : filteredLogs.length === 0 ? (

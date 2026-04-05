@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  StyleSheet,
+import InlineLoader from '../components/Common/InlineLoader';
+import { StyleSheet,
   View,
   Text,
   TouchableOpacity,
   Dimensions,
-  ActivityIndicator,
+  
   Platform,
   RefreshControl,
   ScrollView,
   Share,
   Alert,
   Modal,
-  Animated as RNAnimated,
-} from 'react-native';
+  Animated as RNAnimated } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Asset } from 'expo-asset';
@@ -2078,7 +2077,7 @@ export default function ReportsScreen() {
       {/* Content */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.textPrimary} />
+          <InlineLoader size="large" color={theme.textPrimary}  />
         </View>
       ) : !activeChild?.childId ? (
         <View style={styles.emptyState}>

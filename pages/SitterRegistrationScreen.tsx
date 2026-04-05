@@ -1,7 +1,7 @@
 // pages/SitterRegistrationScreen.tsx - Super Premium Sitter Registration
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     ScrollView,
@@ -12,9 +12,7 @@ import {
     Animated,
     Dimensions,
     KeyboardAvoidingView,
-    Platform,
-    ActivityIndicator,
-} from 'react-native';
+    Platform } from 'react-native';
 import {
     User, Camera, Clock, MapPin,
     ChevronLeft, ChevronRight, Check, Plus, Minus, Search,
@@ -565,7 +563,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         style={StyleSheet.absoluteFill}
                     />
                     {isLoadingLocation ? (
-                        <ActivityIndicator size="small" color={theme.textPrimary} />
+                        <InlineLoader size="small" color={theme.textPrimary}  />
                     ) : (
                         <>
                             <View style={[styles.locationIconBadge, {
@@ -823,7 +821,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                 style={styles.primaryBtnGradient}
                             >
                                 {isSubmitting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
+                                    <InlineLoader size="small" color="#fff"  />
                                 ) : (
                                     <>
                                         <Sparkles size={16} color="#fff" strokeWidth={2} />

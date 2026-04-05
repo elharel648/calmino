@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  StyleSheet,
+import InlineLoader from '../components/Common/InlineLoader';
+import { StyleSheet,
   View,
   Text,
   Image,
   TouchableOpacity,
   Alert,
   ScrollView,
-  ActivityIndicator,
+  
   Modal,
   TextInput,
   Linking,
@@ -16,8 +16,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Share,
-  Switch,
-} from 'react-native';
+  Switch } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -1118,7 +1117,7 @@ if (data.settings.language !== undefined) {
                         disabled={loading}
                       >
                         {loading ? (
-                          <ActivityIndicator color="#fff" />
+                          <InlineLoader color="#fff"  />
                         ) : (
                           <View style={styles.sendButtonContent}>
                             <Send size={18} color="#fff" strokeWidth={2.5} />

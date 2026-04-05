@@ -1,17 +1,16 @@
 // pages/ParentBookingsScreen.tsx - History Screen (Parent side)
 
 import React, { useState, useEffect } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
     RefreshControl,
-    ActivityIndicator,
+    
     Alert,
-    Platform,
-} from 'react-native';
+    Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { auth } from '../services/firebaseConfig';
@@ -285,7 +284,7 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                     <View style={{ width: 40 }} />
                 </View>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.textSecondary} />
+                    <InlineLoader size="large" color={theme.textSecondary}  />
                 </View>
             </View>
         );

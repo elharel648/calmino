@@ -1,7 +1,6 @@
 // components/Reports/DetailedGrowthScreen.tsx - Production-Ready Growth Detail Screen
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
@@ -9,11 +8,11 @@ import {
     ScrollView,
     Platform,
     SafeAreaView,
-    ActivityIndicator,
+    
     RefreshControl,
     Share,
-    Alert,
-} from 'react-native';
+    Alert } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import {
     ChevronLeft, TrendingUp, Scale, Ruler, Activity,
     Plus, Info, Calendar, Edit3, Share2, ChevronDown
@@ -467,7 +466,7 @@ export default function DetailedGrowthScreen({
 
                 {loading ? (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#83C5BE" />
+                        <InlineLoader size="large" color="#83C5BE" />
                     </View>
                 ) : (
                     <>

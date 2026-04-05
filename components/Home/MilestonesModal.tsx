@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     Modal,
@@ -8,14 +7,14 @@ import {
     TextInput,
     ScrollView,
     Platform,
-    ActivityIndicator,
+    
     Alert,
     Animated as RNAnimated,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Dimensions,
-    PanResponder,
-} from 'react-native';
+    PanResponder } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { Award, Calendar, FileText, Plus, Trash2, Clock, Sparkles } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -512,7 +511,7 @@ export default function MilestonesModal({
                                         activeOpacity={0.7}
                                     >
                                         {loading ? (
-                                            <ActivityIndicator color={ACCENT} />
+                                            <InlineLoader color={ACCENT}  />
                                         ) : (
                                             <>
                                                 <Award size={20} color={theme.actionColors.milestones.color} strokeWidth={2.5} />

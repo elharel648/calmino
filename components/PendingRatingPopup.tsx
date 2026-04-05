@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Modal,
     Platform,
-    Image,
-    ActivityIndicator,
-} from 'react-native';
+    Image } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Star, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert, ActivityIndicator, Platform } from 'react-native';
+import InlineLoader from '../components/Common/InlineLoader';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert,  Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { auth } from '../services/firebaseConfig';
 import { getBlockedUsers, unblockUser, BlockedUser } from '../services/blockService';
@@ -57,7 +58,7 @@ const BlockedUsersScreen = ({ navigation }: any) => {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.primary} />
+                    <InlineLoader size="large" color={theme.primary}  />
                 </View>
             ) : blockedUsers.length === 0 ? (
                 <View style={styles.center}>

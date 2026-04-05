@@ -1,16 +1,14 @@
 // components/Reports/DetailedStatsScreen.tsx - Apple Health Style Stats Detail Screen (Light Theme)
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Dimensions,
     ScrollView,
     Platform,
-    SafeAreaView,
-    ActivityIndicator,
-} from 'react-native';
+    SafeAreaView } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import {
     ChevronLeft, Moon, Utensils, Pill,
     TrendingUp, TrendingDown, Clock, Award, Star, Zap
@@ -670,7 +668,7 @@ export default function DetailedStatsScreen({
                 {/* Premium Animated Chart */}
                 {loading ? (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={config.color} />
+                        <InlineLoader size="large" color={config.color}  />
                     </View>
                 ) : data.length > 0 ? (
                     <GlassBarChartPerfect

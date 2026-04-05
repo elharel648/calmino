@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { WeatherData } from '../../types/home';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
