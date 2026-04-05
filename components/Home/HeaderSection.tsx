@@ -297,7 +297,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         key={child.childId}
                                         style={[
                                             styles.childAvatar,
-                                            isActive && styles.childAvatarActive
+                                            isActive && [styles.childAvatarActive, { borderColor: theme.primary }]
                                         ]}
                                         onPress={() => handleSelectChild(child)}
                                         onLongPress={() => handleEditChild(child)}
@@ -315,18 +315,15 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         ) : (
                                             <View style={[
                                                 styles.childAvatarPlaceholder,
-                                                { backgroundColor: isActive ? theme.textPrimary : theme.border }
+                                                { backgroundColor: isActive ? theme.primary : (isDarkMode ? '#1C1C1E' : '#F3F4F6') }
                                             ]}>
                                                 <Text style={[
                                                     styles.childInitial,
-                                                    { color: isActive ? theme.card : theme.textSecondary }
+                                                    { color: isActive ? '#FFFFFF' : (isDarkMode ? '#6B7280' : '#9CA3AF') }
                                                 ]}>
                                                     {getInitials(child.childName)}
                                                 </Text>
                                             </View>
-                                        )}
-                                        {isActive && (
-                                            <View style={styles.activeIndicator} />
                                         )}
                                     </TouchableOpacity>
                                 );
@@ -336,11 +333,11 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
                     {/* Plus Button */}
                     <TouchableOpacity
-                        style={[styles.addChildBtn, { borderColor: theme.border }]}
+                        style={[styles.addChildBtn, { borderColor: isDarkMode ? '#374151' : '#D1D5DB' }]}
                         onPress={handlePlusPress}
                         activeOpacity={0.7}
                     >
-                        <Plus size={18} color={theme.textTertiary} />
+                        <Plus size={20} color={isDarkMode ? '#4B5563' : '#9CA3AF'} strokeWidth={1.5} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -509,23 +506,22 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     childAvatar: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
     },
     childAvatarActive: {
         borderWidth: 2,
-        borderColor: '#1C1C1E',
     },
     childAvatarImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 21,
+        borderRadius: 24,
     },
     childAvatarPlaceholder: {
         width: '100%',
         height: '100%',
-        borderRadius: 21,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -533,23 +529,10 @@ const styles = StyleSheet.create({
         ...TYPOGRAPHY.body,
         fontWeight: '600',
     },
-    activeIndicator: {
-        position: 'absolute',
-        bottom: -4,
-        alignSelf: 'center',
-        left: '50%',
-        marginLeft: -5,
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: '#34C759',
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-    },
     addChildBtn: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         borderWidth: 1.5,
         borderStyle: 'dashed',
         alignItems: 'center',

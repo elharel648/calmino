@@ -86,7 +86,7 @@ struct BreastfeedingLiveActivity: Widget {
                             Spacer()
 
                             // Stop
-                            Button(intent: StopTimerIntent(activityId: context.activityID)) {
+                            Link(destination: URL(string: "calmparentapp://save-timer?type=breast")!) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 12, weight: .bold))
@@ -98,7 +98,6 @@ struct BreastfeedingLiveActivity: Widget {
                                 .padding(.vertical, 9)
                                 .background(breastfeedingColor, in: Capsule())
                             }
-                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 8)
                         .padding(.bottom, 6)
@@ -224,7 +223,7 @@ struct BreastfeedingLockScreenView: View {
                         .buttonStyle(.plain)
 
                         // Stop
-                        Button(intent: StopTimerIntent(activityId: context.activityID)) {
+                        Link(destination: URL(string: "calmparentapp://save-timer?type=breast")!) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundStyle(.white)
@@ -232,7 +231,6 @@ struct BreastfeedingLockScreenView: View {
                                 .background(breastfeedingColor, in: Circle())
                                 .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
                         }
-                        .buttonStyle(.plain)
                     }
                     .environment(\.layoutDirection, .rightToLeft)
                 } else {

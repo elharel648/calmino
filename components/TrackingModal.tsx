@@ -1262,18 +1262,21 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   style={[
                     styles.breastTimeCard,
                     { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
-                    isBottleActive && !foodTimerContext.bottleIsPaused && styles.breastTimeCardActive,
-                    isBottleActive && foodTimerContext.bottleIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                    isBottleActive && { backgroundColor: isDarkMode ? `${theme.primary}25` : `${theme.primary}15`, borderColor: theme.primary, borderWidth: 1.5 },
+                    isBottleActive && foodTimerContext.bottleIsPaused && { opacity: 0.8 }
                   ]}
                   onPress={() => { toggleBottleTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                  activeOpacity={0.8}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.breastTimeLabel, isBottleActive && { color: '#fff', opacity: 0.9 }]}>{t('tracking.timer')}</Text>
-                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isBottleActive && styles.breastTimeValueActive]}>
+                  <Text style={[styles.breastTimeLabel, isBottleActive && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.timer')}</Text>
+                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isBottleActive && { color: theme.primary }]}>
                     {formatTime(bottleTimer)}
                   </Text>
-                  <View style={[styles.breastPlayBtn, isBottleActive && styles.breastPlayBtnActive]}>
-                    {isBottleActive && !foodTimerContext.bottleIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isBottleActive ? '#fff' : theme.primary} style={{ marginLeft: 2 }} />}
+                  {isBottleActive && foodTimerContext.bottleIsPaused && (
+                    <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2 }}>{'מושהה'}</Text>
+                  )}
+                  <View style={[styles.breastPlayBtn, isBottleActive && { backgroundColor: theme.primary }]}>
+                    {isBottleActive && !foodTimerContext.bottleIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isBottleActive ? '#fff' : theme.textTertiary} />}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -1294,18 +1297,19 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 style={[
                   styles.breastTimeCard,
                   { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
-                  activeSide === 'left' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
-                  activeSide === 'left' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                  activeSide === 'left' && { backgroundColor: isDarkMode ? `${theme.primary}25` : `${theme.primary}15`, borderColor: theme.primary, borderWidth: 1.5 },
+                  activeSide === 'left' && foodTimerContext.breastIsPaused && { opacity: 0.8 }
                 ]}
                 onPress={() => { toggleBreastTimer('left'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.breastTimeLabel, activeSide === 'left' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.left')}</Text>
-                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'left' && styles.breastTimeValueActive]}>{formatTime(leftTimer)}</Text>
+                <Text style={[styles.breastTimeLabel, activeSide === 'left' && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.left')}</Text>
+                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'left' && { color: theme.primary }]}>{formatTime(leftTimer)}</Text>
                 {activeSide === 'left' && foodTimerContext.breastIsPaused && (
-                  <Text style={{ fontSize: 10, color: '#fff', opacity: 0.75, marginBottom: 2 }}>מושהה</Text>
+                  <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2 }}>{'מושהה'}</Text>
                 )}
-                <View style={[styles.breastPlayBtn, activeSide === 'left' && styles.breastPlayBtnActive]}>
-                  {activeSide === 'left' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'left' ? '#fff' : theme.primary} />}
+                <View style={[styles.breastPlayBtn, activeSide === 'left' && { backgroundColor: theme.primary }]}>
+                  {activeSide === 'left' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'left' ? '#fff' : theme.textTertiary} />}
                 </View>
               </TouchableOpacity>
 
@@ -1317,18 +1321,19 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 style={[
                   styles.breastTimeCard,
                   { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
-                  activeSide === 'right' && !foodTimerContext.breastIsPaused && styles.breastTimeCardActive,
-                  activeSide === 'right' && foodTimerContext.breastIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                  activeSide === 'right' && { backgroundColor: isDarkMode ? `${theme.primary}25` : `${theme.primary}15`, borderColor: theme.primary, borderWidth: 1.5 },
+                  activeSide === 'right' && foodTimerContext.breastIsPaused && { opacity: 0.8 }
                 ]}
                 onPress={() => { toggleBreastTimer('right'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.breastTimeLabel, activeSide === 'right' && { color: '#fff', opacity: 0.9 }]}>{t('tracking.right')}</Text>
-                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'right' && styles.breastTimeValueActive]}>{formatTime(rightTimer)}</Text>
+                <Text style={[styles.breastTimeLabel, activeSide === 'right' && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.right')}</Text>
+                <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'right' && { color: theme.primary }]}>{formatTime(rightTimer)}</Text>
                 {activeSide === 'right' && foodTimerContext.breastIsPaused && (
-                  <Text style={{ fontSize: 10, color: '#fff', opacity: 0.75, marginBottom: 2 }}>מושהה</Text>
+                  <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2 }}>{'מושהה'}</Text>
                 )}
-                <View style={[styles.breastPlayBtn, activeSide === 'right' && styles.breastPlayBtnActive]}>
-                  {activeSide === 'right' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'right' ? '#fff' : theme.primary} />}
+                <View style={[styles.breastPlayBtn, activeSide === 'right' && { backgroundColor: theme.primary }]}>
+                  {activeSide === 'right' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'right' ? '#fff' : theme.textTertiary} />}
                 </View>
               </TouchableOpacity>
             </View>
@@ -1409,18 +1414,21 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   style={[
                     styles.breastTimeCard,
                     { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
-                    isPumpingActive && !foodTimerContext.pumpingIsPaused && styles.breastTimeCardActive,
-                    isPumpingActive && foodTimerContext.pumpingIsPaused && [styles.breastTimeCardActive, { opacity: 0.8 }]
+                    isPumpingActive && { backgroundColor: isDarkMode ? `${theme.primary}25` : `${theme.primary}15`, borderColor: theme.primary, borderWidth: 1.5 },
+                    isPumpingActive && foodTimerContext.pumpingIsPaused && { opacity: 0.8 }
                   ]}
                   onPress={() => { togglePumpingTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                  activeOpacity={0.8}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.breastTimeLabel, isPumpingActive && { color: '#fff', opacity: 0.9 }]}>{t('tracking.timer')}</Text>
-                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isPumpingActive && styles.breastTimeValueActive]}>
+                  <Text style={[styles.breastTimeLabel, isPumpingActive && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.pumping')}</Text>
+                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isPumpingActive && { color: theme.primary }]}>
                     {formatTime(pumpingTimer)}
                   </Text>
-                  <View style={[styles.breastPlayBtn, isPumpingActive && styles.breastPlayBtnActive]}>
-                    {isPumpingActive && !foodTimerContext.pumpingIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isPumpingActive ? '#fff' : theme.primary} style={{ marginLeft: 2 }} />}
+                  {isPumpingActive && foodTimerContext.pumpingIsPaused && (
+                    <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2 }}>{'מושהה'}</Text>
+                  )}
+                  <View style={[styles.breastPlayBtn, isPumpingActive && { backgroundColor: theme.primary }]}>
+                    {isPumpingActive && !foodTimerContext.pumpingIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isPumpingActive ? '#fff' : theme.textTertiary} />}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -1583,8 +1591,15 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           <TouchableOpacity
             style={[
               styles.sleepTimerCard,
-              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' },
-              sleepContext.isRunning && styles.sleepTimerCardActive,
+              { 
+                backgroundColor: sleepContext.isRunning 
+                  ? (isDarkMode ? `${theme.primary}25` : `${theme.primary}15`)
+                  : (isDarkMode ? 'rgba(255,255,255,0.07)' : '#F9FAFB'),
+                borderColor: sleepContext.isRunning
+                  ? theme.primary
+                  : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'),
+                borderWidth: sleepContext.isRunning ? 1.5 : 1,
+              }
             ]}
             onPress={() => {
               if (sleepContext.isRunning && !sleepContext.isPaused) {
@@ -1604,21 +1619,24 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             }}
             activeOpacity={0.8}
           >
-            <Text style={[
-              styles.sleepTimerValue,
-              { color: isDarkMode ? theme.textPrimary : '#1C1C1E' },
-              sleepContext.isRunning && styles.sleepTimerValueActive,
-            ]}>
-              {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
-            </Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={[
+                styles.sleepTimerValue,
+                { color: sleepContext.isRunning ? theme.primary : (isDarkMode ? theme.textPrimary : '#1C1C1E') },
+              ]}>
+                {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
+              </Text>
+              {sleepContext.isRunning && sleepContext.isPaused && (
+                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2 }}>{'מושהה'}</Text>
+              )}
+            </View>
             <View style={[
               styles.sleepTimerPlayBtn,
-              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' },
-              sleepContext.isRunning && !sleepContext.isPaused && styles.sleepTimerPlayBtnActive,
+              { backgroundColor: sleepContext.isRunning && !sleepContext.isPaused ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)') },
             ]}>
               {sleepContext.isRunning && !sleepContext.isPaused
                 ? <Pause size={16} color="#fff" strokeWidth={2} />
-                : <Play size={16} color={isDarkMode ? 'rgba(255,255,255,0.7)' : '#1C1C1E'} strokeWidth={2} />
+                : <Play size={16} color={sleepContext.isRunning ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.7)' : '#1C1C1E')} strokeWidth={2} />
               }
             </View>
           </TouchableOpacity>
@@ -1827,9 +1845,9 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       <Text style={[styles.subtitle, { textAlign: 'center' }]}>{t('tracking.whatHappened')}</Text>
       <View style={styles.diaperOptions}>
         {[
-          { key: 'pee', label: t('tracking.wet'), icon: Droplets, color: '#C8806A' },
-          { key: 'poop', label: t('tracking.dirty'), icon: Sparkles, color: '#F59E0B' },
-          { key: 'both', label: t('tracking.both'), icon: Layers, color: '#8B5CF6' },
+          { key: 'pee', label: t('tracking.wet'), icon: Droplets, activeColor: '#8ECAE6' },
+          { key: 'poop', label: t('tracking.dirty'), icon: Sparkles, activeColor: '#ECA264' },
+          { key: 'both', label: t('tracking.both'), icon: Layers, activeColor: '#8BA888' },
         ].map(opt => {
           const IconComponent = opt.icon;
           const isSelected = subType === opt.key;
@@ -1840,17 +1858,19 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 styles.diaperBtn,
                 {
                   backgroundColor: isSelected
-                    ? opt.color
-                    : (isDarkMode ? 'rgba(255,255,255,0.07)' : '#FFFFFF'),
+                    ? opt.activeColor
+                    : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB'),
                   borderColor: isSelected
-                    ? 'transparent'
-                    : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'),
+                    ? opt.activeColor
+                    : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
+                  borderWidth: isSelected ? 1.5 : 1,
                 }
               ]}
               onPress={() => {
                 setSubType(opt.key);
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
+              activeOpacity={0.7}
             >
               <IconComponent
                 size={22}
@@ -1863,6 +1883,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   color: isSelected
                     ? '#FFFFFF'
                     : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.55)'),
+                  fontWeight: isSelected ? '700' : '500'
                 }
               ]}>{opt.label}</Text>
             </TouchableOpacity>
@@ -1942,6 +1963,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               mode="date"
               maximumDate={new Date()}
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              locale="he-IL"
               onChange={(event, selectedDate) => {
                 if (Platform.OS === 'android') {
                   setShowDiaperDatePicker(false);

@@ -133,8 +133,8 @@ interface AITipCardProps {
 export const AITipCard: React.FC<AITipCardProps> = ({ tip, category, delay = 0 }) => {
     const { t } = useLanguage();
     const categoryConfig = {
-        sleep: { color: '#8B5CF6', icon: Moon, label: t('reports.tips.sleep') },
-        feeding: { color: '#F59E0B', icon: Utensils, label: t('reports.tips.feeding') },
+        sleep: { color: '#4A6572', icon: Moon, label: t('reports.tips.sleep') },
+        feeding: { color: '#D4A373', icon: Utensils, label: t('reports.tips.feeding') },
         general: { color: '#C8806A', icon: Lightbulb, label: t('reports.tips.general') },
     };
 
@@ -371,7 +371,7 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
             label: t('reports.sleep.bestSleepDay'),
             value: weeklyData.labels[maxSleepDay] || t('reports.empty.unknown'),
             icon: Moon,
-            color: '#8B5CF6',
+            color: '#4A6572',
         });
     }
 
@@ -388,7 +388,7 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
             label: t('reports.insights.mostActiveDay'),
             value: weeklyData.labels[mostActiveDay] || t('reports.empty.unknown'),
             icon: Zap,
-            color: '#F59E0B',
+            color: '#D4A373',
         });
     }
 
@@ -417,7 +417,7 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
                 label: t('reports.feeding.preferredType'),
                 value: `${preferred} (${percent}%)`,
                 icon: Heart,
-                color: '#EC4899',
+                color: '#8D4A60',
             });
         }
     }

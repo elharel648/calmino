@@ -29,6 +29,44 @@ class QuickActionsService {
      * @param foodItems - Array of food items
      * @returns Activity ID if successful
      */
+    private async stopAllLiveActivities() {
+        if (!ActivityKitManager) return;
+        await Promise.allSettled([
+            ActivityKitManager.stopMeal?.(),
+            ActivityKitManager.stopSleep?.(),
+            ActivityKitManager.stopBreastfeeding?.(),
+            ActivityKitManager.stopWhiteNoise?.(),
+        ]);
+        this.mealActivityId = null;
+        this.sleepActivityId = null;
+        this.breastfeedingActivityId = null;
+    }
+
+    private async safeStartActivity(startFn: () => Promise<string>, activityName: string, idSetter: (id: string) => void): Promise<string | null> {
+        if (!ActivityKitManager) return null;
+        try {
+            const id = await startFn();
+            idSetter(id);
+            logger.info(`✅ ${activityName} Live Activity started:`, id);
+            return id;
+        } catch (error: any) {
+            logger.warn(`Live Activity limit triggered for ${activityName}. Force stopping existing activities and retrying...`);
+            try {
+                await this.stopAllLiveActivities();
+                // Brief pause to allow OS cleanup
+                await new Promise(resolve => setTimeout(resolve, 350));
+                
+                const retryId = await startFn();
+                idSetter(retryId);
+                logger.info(`✅ ${activityName} Live Activity started on retry:`, retryId);
+                return retryId;
+            } catch (retryError) {
+                logger.warn(`Could not start ${activityName} Live Activity even after retry. Proceeding without it.`);
+                return null;
+            }
+        }
+    }
+
     /**
      * Start a meal Live Activity
      * @param babyName - Name of the baby
@@ -66,21 +104,11 @@ class QuickActionsService {
             }
         }
 
-        try {
-            const activityId = await ActivityKitManager.startMeal(
-                babyName,
-                babyEmoji,
-                mealType,
-                foodItems,
-                progress
-            );
-            this.mealActivityId = activityId;
-            logger.info('🍽️ Meal Live Activity started:', activityId);
-            return activityId;
-        } catch (error: any) {
-            logger.error('Failed to start Meal Live Activity:', error);
-            return null;
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startMeal(babyName, babyEmoji, mealType, foodItems, progress),
+            'Meal',
+            (id) => { this.mealActivityId = id; }
+        );
     }
 
     /**
@@ -145,20 +173,11 @@ class QuickActionsService {
             return null;
         }
 
-        try {
-            const activityId = await ActivityKitManager.startSleep(
-                babyName,
-                babyEmoji,
-                sleepType,
-                false  // isAwake - false when starting sleep
-            );
-            this.sleepActivityId = activityId;
-            logger.info('😴 Sleep Live Activity started:', activityId);
-            return activityId;
-        } catch (error: any) {
-            logger.error('Failed to start Sleep Live Activity:', error);
-            return null;
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startSleep(babyName, babyEmoji, sleepType, false),
+            'Sleep',
+            (id) => { this.sleepActivityId = id; }
+        );
     }
 
     /**
@@ -237,15 +256,11 @@ class QuickActionsService {
 
     async startBreastfeeding(babyName: string, side: 'left' | 'right' = 'left'): Promise<string | null> {
         if (Platform.OS !== 'ios') return null;
-        try {
-            const activityId = await ActivityKitManager.startBreastfeeding(babyName, side);
-            this.breastfeedingActivityId = activityId;
-            logger.info('🤱 Breastfeeding Live Activity started:', activityId, side);
-            return activityId;
-        } catch (error: any) {
-            logger.error('Failed to start Breastfeeding Live Activity:', error);
-            return null;
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startBreastfeeding(babyName, side),
+            `Breastfeeding (${side})`,
+            (id) => { this.breastfeedingActivityId = id; }
+        );
     }
 
     async pauseBreastfeeding(): Promise<boolean> {

@@ -425,12 +425,12 @@ export default function TeethTrackerModal({
                     <View style={[styles.header, { borderBottomColor: theme.border }]} {...panResponder.panHandlers}>
                         <View style={styles.headerContent}>
                             <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
-                                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: '#8B5CF6' }, teethIconPulseStyle]} />
+                                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.teeth.color }, teethIconPulseStyle]} />
                                 <Animated.View style={teethIconBounceStyle}>
                                     <View style={[{
                                         width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
-                                        backgroundColor: '#8B5CF6',
-                                        shadowColor: isDarkMode ? 'transparent' : '#8B5CF6',
+                                        backgroundColor: theme.actionColors.teeth.color,
+                                        shadowColor: isDarkMode ? 'transparent' : theme.actionColors.teeth.color,
                                         shadowOpacity: 0.35,
                                         shadowRadius: 10,
                                         shadowOffset: { width: 0, height: 5 },
@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         zIndex: 20,
         borderWidth: 1,
-        shadowColor: '#8B5CF6',
+        shadowColor: 'transparent',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,

@@ -129,21 +129,14 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                 >
                     {/* Visibility Toggle (right side, RTL) */}
                     <TouchableOpacity
-                        style={[
-                            styles.visibilityBtn,
-                            {
-                                backgroundColor: isHidden
-                                    ? (isDarkMode ? '#3A1515' : '#FEE2E2')
-                                    : (isDarkMode ? '#0A2A1A' : '#D1FAE5'),
-                            }
-                        ]}
+                        style={styles.visibilityBtn}
                         onPress={() => handleToggleVisibility(key)}
-                        onLongPress={() => {}}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                         {isHidden ? (
-                            <EyeOff size={18} color="#EF4444" />
+                            <EyeOff size={20} color={theme.textTertiary} strokeWidth={1.5} />
                         ) : (
-                            <Eye size={18} color="#10B981" />
+                            <Eye size={20} color={theme.textSecondary} strokeWidth={1.5} />
                         )}
                     </TouchableOpacity>
 

@@ -63,6 +63,32 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
     }
 
+    private async safeStartActivity(startFn: () => Promise<string>, activityName: string): Promise<string> {
+        try {
+            const id = await startFn();
+            this.activityId = id;
+            logger.log(`✅ ${activityName} Live Activity started:`, id);
+            return id;
+        } catch (error: any) {
+            // Check if it might be the ActivityKit limit error
+            logger.warn(`Live Activity limit triggered for ${activityName}. Force stopping existing activities and retrying...`);
+            try {
+                await this.stopAllLiveActivities();
+                // Brief pause to allow the OS to clean up terminated activities
+                await new Promise(resolve => setTimeout(resolve, 350));
+                
+                const retryId = await startFn();
+                this.activityId = retryId;
+                logger.log(`✅ ${activityName} Live Activity started on retry:`, retryId);
+                return retryId;
+            } catch (retryError) {
+                // If it still fails, use warn instead of error to avoid red screen in dev-client
+                logger.warn(`Could not start ${activityName} Live Activity even after retry. Proceeding without it.`);
+                return ''; // Swallow error so it doesn't break app flow
+            }
+        }
+    }
+
     private async checkSupport() {
         try {
             if (ActivityKitManager) {
@@ -84,15 +110,10 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
-        try {
-            const id = await ActivityKitManager.startMeal(childName, '', 'שאיבה', [], 0);
-            this.activityId = id;
-            logger.log('✅ Pumping Live Activity started:', id);
-            return id;
-        } catch (error: any) {
-            logger.error('Failed to start Pumping Live Activity:', error);
-            throw error;
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startMeal(childName, '', 'שאיבה', [], 0),
+            'Pumping'
+        );
     }
 
     async updatePumpingTimer(elapsedSeconds: number): Promise<boolean> {
@@ -127,15 +148,10 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
-        try {
-            const id = await ActivityKitManager.startMeal(childName, '', 'בקבוק', [], 0);
-            this.activityId = id;
-            logger.log('✅ Bottle Live Activity started:', id);
-            return id;
-        } catch (error: any) {
-            logger.error('Failed to start Bottle Live Activity:', error);
-            throw error;
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startMeal(childName, '', 'בקבוק', [], 0),
+            'Bottle'
+        );
     }
 
     async updateBottleTimer(elapsedSeconds: number): Promise<boolean> {
@@ -170,16 +186,10 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
-        try {
-            // Updated to match ActivityKitModule.swift signature: (babyName, babyEmoji, sleepType, isAwake)
-            const id = await ActivityKitManager.startSleep(childName, '', 'שינה', false);
-            this.activityId = id;
-            logger.log('✅ Sleep Live Activity started:', id);
-            return id;
-        } catch (error: any) {
-            logger.error('Failed to start Sleep Live Activity:', error);
-            throw error;
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startSleep(childName, '', 'שינה', false),
+            'Sleep'
+        );
     }
 
     async updateSleepTimer(elapsedSeconds: number): Promise<boolean> {
@@ -213,16 +223,11 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
-        try {
-            const mealType = side === 'left' ? 'breastfeeding-left' : 'breastfeeding-right';
-            const id = await ActivityKitManager.startMeal(childName, '', mealType, [], 0);
-            this.activityId = id;
-            logger.log('✅ Breastfeeding Live Activity started:', id, side);
-            return id;
-        } catch (error: any) {
-            logger.error('Failed to start Breastfeeding Live Activity:', error);
-            throw error;
-        }
+        const mealType = side === 'left' ? 'breastfeeding-left' : 'breastfeeding-right';
+        return this.safeStartActivity(
+            () => ActivityKitManager.startMeal(childName, '', mealType, [], 0),
+            `Breastfeeding (${side})`
+        );
     }
 
     async updateBreastfeedingTimer(elapsedSeconds: number, side?: 'left' | 'right'): Promise<boolean> {
@@ -298,14 +303,10 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
         await this.ensureInitialized();
         if (!this.isSupported || !ActivityKitManager) return '';
-        try {
-            const id = await ActivityKitManager.startWhiteNoise(soundId, soundName);
-            logger.log('✅ WhiteNoise Live Activity started:', id);
-            return id;
-        } catch (error: any) {
-            logger.warn('Failed to start WhiteNoise Live Activity:', error);
-            return '';
-        }
+        return this.safeStartActivity(
+            () => ActivityKitManager.startWhiteNoise(soundId, soundName),
+            'White Noise'
+        );
     }
 
     async stopWhiteNoise(): Promise<boolean> {

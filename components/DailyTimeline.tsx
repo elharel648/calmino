@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useRef } from 'react';
+import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Animated as RNAnimated } from 'react-native';
 import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
@@ -47,13 +47,13 @@ const PremiumTimelineEvent = ({ children, isRecent }: { children: React.ReactNod
       // Solidify over 3 seconds (Glass -> Solid morph)
       opacity.value = withTiming(1, { duration: 3000, easing: Easing.out(Easing.cubic) });
       
-      // Micro-float +/- 1.5px
+      // Micro-float +/- 1.5px — 3 repetitions only, avoids infinite battery drain
       translateY.value = withRepeat(
         withSequence(
           withTiming(-1.5, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
           withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.sin) })
         ),
-        -1,
+        3,
         true
       );
     }
@@ -246,11 +246,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   }, [childId, refreshTrigger, family, preloadedEvents]);
 
   // Check if event happened in last hour for pulsing effect
-  const isRecentEvent = (timestamp: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
-    return diff < 3600000; // 1 hour in milliseconds
-  };
+  const isRecentEvent = useCallback((timestamp: Date) => {
+    return Date.now() - timestamp.getTime() < 3600000; // 1 hour in ms
+  }, []);
 
   const loadTimeline = async () => {
     if (!childId) return;
@@ -290,7 +288,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       setEvents(mapped);
       setError(null);
     } catch (error: any) {
-      logger.log('Timeline load error:', error);
+      logger.error('Timeline load error:', error);
       const errorMessage = error?.message || t('timeline.loading');
       setError(errorMessage);
     } finally {
@@ -589,10 +587,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     return event.note || '';
   };
 
-  const stats = events.reduce((acc, event) => {
+  const stats = useMemo(() => events.reduce((acc, event) => {
     acc[event.type] = (acc[event.type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [events]);
 
   const visibleEvents = isExpanded ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
   const hasMore = events.length > INITIAL_VISIBLE_COUNT;
@@ -854,7 +852,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             return (
               <Animated.View
                 key={event.id}
-                entering={FadeInUp.delay(index * 45).springify().damping(22).stiffness(240).mass(1)}
+                entering={ANIMATIONS.springUp(ANIMATIONS.stagger(index, 40))}
               >
                 <PremiumTimelineEvent isRecent={isRecent}>
                   <SwipeableRow onDelete={() => handleDelete(event.id)}>

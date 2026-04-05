@@ -993,7 +993,7 @@ export default function LoginScreen({
               accessibilityState={{ disabled: loading || !isFormValid }}
             >
               <LinearGradient
-                colors={isFormValid ? ['#7C3AED', '#6D28D9', '#5B21B6'] : [isDarkMode ? '#333' : '#D1D5DB', isDarkMode ? '#2a2a2a' : '#C4C4C4']}
+                colors={isFormValid ? ['#D89A86', '#C8806A', '#B8725A'] : [isDarkMode ? '#333' : '#D1D5DB', isDarkMode ? '#2a2a2a' : '#C4C4C4']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.gradientBtn}

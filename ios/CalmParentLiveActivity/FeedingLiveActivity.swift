@@ -62,7 +62,7 @@ struct FeedingLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 10) {
                             Spacer()
-                            Button(intent: StopTimerIntent(activityId: context.activityID)) {
+                            Link(destination: URL(string: "calmparentapp://save-timer?type=\(context.state.mealType.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "bottle")")!) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 14, weight: .bold))
@@ -74,7 +74,6 @@ struct FeedingLiveActivity: Widget {
                                 .padding(.vertical, 10)
                                 .background(feedingAccent, in: Capsule())
                             }
-                            .buttonStyle(.plain)
                             Spacer()
                         }
                         .padding(.horizontal, 8)
@@ -155,7 +154,7 @@ struct FeedingLockScreenView: View {
                 // Right — controls
                 if #available(iOS 17, *) {
                     VStack(spacing: 10) {
-                        Button(intent: StopTimerIntent(activityId: context.activityID)) {
+                        Link(destination: URL(string: "calmparentapp://save-timer?type=\(context.state.mealType.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "bottle")")!) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundStyle(.white)
@@ -163,7 +162,6 @@ struct FeedingLockScreenView: View {
                                 .background(feedingAccent, in: Circle())
                                 .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
                         }
-                        .buttonStyle(.plain)
                         
                         Text("שמירה")
                             .font(.system(size: 12, weight: .semibold))

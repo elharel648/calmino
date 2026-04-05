@@ -63,9 +63,9 @@ export default function DetailedStatsScreen({
         sleep: {
             title: t('reports.metrics.sleep'),
             icon: Moon,
-            color: '#8B5CF6',
-            lightBg: '#F5F3FF',
-            barColors: ['#8B5CF6', '#A78BFA', '#C4B5FD'],
+            color: theme.actionColors.sleep.color,
+            lightBg: theme.actionColors.sleep.lightColor,
+            barColors: [theme.actionColors.sleep.color, theme.actionColors.sleep.color, theme.actionColors.sleep.accentColor],
             unit: t('reports.units.hours'),
             avgLabel: t('reports.insights.avgSleepDuration'),
             insights: [
@@ -77,9 +77,9 @@ export default function DetailedStatsScreen({
         food: {
             title: t('reports.metrics.feeding'),
             icon: Utensils,
-            color: '#F59E0B',
-            lightBg: '#FFFBEB',
-            barColors: ['#F59E0B', '#FBBF24', '#FCD34D'],
+            color: theme.actionColors.food.color,
+            lightBg: theme.actionColors.food.lightColor,
+            barColors: [theme.actionColors.food.color, theme.actionColors.food.color, theme.actionColors.food.accentColor],
             unit: t('detailedStats.ml'),
             avgLabel: t('reports.insights.avgDailyFeeding'),
             insights: [
@@ -91,9 +91,9 @@ export default function DetailedStatsScreen({
         diapers: {
             title: t('reports.metrics.diapers'),
             icon: Droplets,
-            color: '#14B8A6',
-            lightBg: '#F0FDFA',
-            barColors: ['#14B8A6', '#2DD4BF', '#5EEAD4'],
+            color: theme.actionColors.diaper.color,
+            lightBg: theme.actionColors.diaper.lightColor,
+            barColors: [theme.actionColors.diaper.color, theme.actionColors.diaper.color, theme.actionColors.diaper.accentColor],
             unit: t('reports.units.times'),
             avgLabel: t('reports.insights.dailyAverage'),
             insights: [
@@ -105,9 +105,9 @@ export default function DetailedStatsScreen({
         supplements: {
             title: t('reports.metrics.supplements'),
             icon: Pill,
-            color: '#EC4899',
-            lightBg: '#FDF2F8',
-            barColors: ['#EC4899', '#F472B6', '#F9A8D4'],
+            color: theme.actionColors.supplements.color,
+            lightBg: theme.actionColors.supplements.lightColor,
+            barColors: [theme.actionColors.supplements.color, theme.actionColors.supplements.color, theme.actionColors.supplements.accentColor],
             unit: t('reports.units.times'),
             avgLabel: t('reports.insights.dailyAverage'),
             insights: [
@@ -125,13 +125,13 @@ export default function DetailedStatsScreen({
     }), [t]);
 
     const FEEDING_SUBTYPES = useMemo<{ id: FeedingSubType; label: string; color: string }[]>(() => [
-        { id: 'all', label: t('common.all'), color: '#F59E0B' },
-        { id: 'breast_right', label: t('reports.feeding.breastRight'), color: '#EC4899' },
-        { id: 'breast_left', label: t('reports.feeding.breastLeft'), color: '#F472B6' },
-        { id: 'bottle', label: t('reports.feeding.bottle'), color: '#818CF8' },
-        { id: 'solids', label: t('reports.feeding.solids'), color: '#34D399' },
-        { id: 'pumping', label: t('reports.feeding.pumping'), color: '#A78BFA' },
-    ], [t]);
+        { id: 'all', label: t('common.all'), color: theme.actionColors.food.color },
+        { id: 'breast_right', label: t('reports.feeding.breastRight'), color: theme.actionColors.magicMoments.color },
+        { id: 'breast_left', label: t('reports.feeding.breastLeft'), color: theme.actionColors.health.color },
+        { id: 'bottle', label: t('reports.feeding.bottle'), color: theme.actionColors.tools.color },
+        { id: 'solids', label: t('reports.feeding.solids'), color: theme.actionColors.growth.color },
+        { id: 'pumping', label: t('reports.feeding.pumping'), color: theme.actionColors.custom.color },
+    ], [t, theme]);
 
     const METRIC_GOALS = useMemo(() => ({
         sleep: [

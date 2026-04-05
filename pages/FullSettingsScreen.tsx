@@ -865,7 +865,7 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: theme.danger }]}>
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.sos.color }]}>
                   <Trash2 size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>
@@ -888,7 +888,7 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: isGuest ? theme.actionColors.sleep.color : theme.danger }]}>
+                <View style={[styles.listItemIcon, { backgroundColor: isGuest ? theme.actionColors.sleep.color : theme.actionColors.sos.color }]}>
                   <LogOut size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <Text style={[styles.listItemText, { color: isGuest
@@ -910,7 +910,7 @@ if (data.settings.language !== undefined) {
               activeOpacity={0.6}
             >
               <View style={styles.listItemContent}>
-                <View style={[styles.listItemIcon, { backgroundColor: theme.danger }]}>
+                <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.sos.color }]}>
                   <Trash2 size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.listItemTextContainer}>

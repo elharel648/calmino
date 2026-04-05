@@ -32,7 +32,7 @@ export default function SwipeableRow({
                 actions.push({
                     label: '',
                     icon: Trash2,
-                    color: 'rgba(239, 68, 68, 0.95)',
+                    color: theme?.actionColors?.sos?.color || '#CD8B87',
                     onPress: () => {
                         if (Platform.OS !== 'web') {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

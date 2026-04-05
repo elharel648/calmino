@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Loader2 } from 'lucide-react-native';
+import PremiumLoader from './Common/PremiumLoader';
 
 interface LoadingStateProps {
   message?: string;
@@ -24,10 +25,16 @@ export default function LoadingState({
 
   return (
     <View style={containerStyle}>
-      <ActivityIndicator 
-        size={size} 
-        color={theme.textPrimary}
-      />
+      {(size === 'large' || fullScreen) ? (
+        <View style={{ marginBottom: message ? 16 : 0 }}>
+            <PremiumLoader size={48} />
+        </View>
+      ) : (
+        <ActivityIndicator 
+          size={size} 
+          color={theme.textPrimary}
+        />
+      )}
       {message && (
         <Text style={[styles.message, { color: theme.textSecondary }]}>
           {message}

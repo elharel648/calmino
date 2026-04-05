@@ -25,10 +25,10 @@ const ICONS: Record<StatKey, any> = {
 };
 
 const STAT_LABELS: Record<StatKey, { label: string; color: string }> = {
-    food: { label: 'האכלה', color: '#F59E0B' },
-    sleep: { label: 'שינה', color: '#C8806A' },
-    diapers: { label: 'חיתולים', color: '#10B981' },
-    supplements: { label: 'תוספים', color: '#EC4899' },
+    food: { label: 'האכלה', color: '#D4A373' },
+    sleep: { label: 'שינה', color: '#4A6572' },
+    diapers: { label: 'חיתולים', color: '#6A9C89' },
+    supplements: { label: 'תוספים', color: '#B5838D' },
 };
 
 interface StatsEditModalProps {

@@ -52,10 +52,14 @@ service cloud.firestore {
     // USERS COLLECTION
     // ===================
     match /users/{userId} {
-      // Read: owner can always read their data
+      // get: owner can always read their data
       // OR any authenticated user can read if user is an active sitter
-      allow read: if isOwner(userId) ||
+      allow get: if isOwner(userId) ||
                      (isAuthenticated() && resource.data.get('isSitter', false) == true && resource.data.get('sitterActive', false) == true);
+
+      // list: limit queries to max 100 to prevent enumeration scraping attacks
+      allow list: if isOwner(userId) ||
+                     (isAuthenticated() && resource.data.get('isSitter', false) == true && resource.data.get('sitterActive', false) == true && request.query.limit <= 100);
 
       // Write: only owner
       allow write: if isOwner(userId);
@@ -192,7 +196,8 @@ service cloud.firestore {
     // SITTERS COLLECTION
     // ===================
     match /sitters/{sitterId} {
-      allow read: if isAuthenticated();
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && request.query.limit <= 100;
       allow create: if isAuthenticated() && request.auth.uid == sitterId;
       allow update, delete: if isAuthenticated() && request.auth.uid == sitterId;
     }

@@ -263,7 +263,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                     )}
                     {measurement.headCircumference && (
                         <View style={histStyles.valueItem}>
-                            <Activity size={12} color="#8B5CF6" />
+                            <Activity size={12} color={theme.actionColors.growth.color} />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
                                 {measurement.headCircumference} {t('reports.units.cm')}
                             </Text>
@@ -479,7 +479,7 @@ export default function DetailedGrowthScreen({
                             <PercentileCard icon={Ruler} label={t('reports.metrics.height')} value={currentValues.height} unit={t('reports.units.cm')}
                                 percentile={currentValues.heightPercentile} change={change?.height} color="#10B981" bgColor="#ECFDF5" />
                             <PercentileCard icon={Activity} label={t('reports.metrics.headCircumference')} value={currentValues.head} unit={t('reports.units.cm')}
-                                percentile={currentValues.headPercentile} change={change?.headCircumference} color="#8B5CF6" bgColor="#F5F3FF" />
+                                percentile={currentValues.headPercentile} change={change?.headCircumference} color={theme.actionColors.growth.color} bgColor={theme.actionColors.growth.lightColor} />
                         </View>
 
                         {/* Charts */}
@@ -487,7 +487,7 @@ export default function DetailedGrowthScreen({
                             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.trend')}</Text>
                             <GrowthChart data={chartData.weightData} color="#C8806A" title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
                             <GrowthChart data={chartData.heightData} color="#10B981" title={t('reports.metrics.height')} unit={t('reports.units.cm')} />
-                            <GrowthChart data={chartData.headData} color="#8B5CF6" title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
+                            <GrowthChart data={chartData.headData} color={theme.actionColors.growth.color} title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
                         </View>
 
                         {/* History */}

@@ -29,7 +29,8 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal } from 'react-native';
+import PremiumLoader from './components/Common/PremiumLoader';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -386,7 +387,6 @@ function LiveActivityURLHandler() {
           }
 
           try {
-            // Critical fix: ALWAYS prioritize Native elapsedSeconds because JS keeps running unpaused in background
             const urlElapsed = parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
             let elapsedSeconds = urlElapsed;
             if (elapsedSeconds <= 0) {
@@ -399,6 +399,13 @@ function LiveActivityURLHandler() {
               } else if (type.includes('שינה') || type.includes('sleep')) {
                 elapsedSeconds = sleepTimer.elapsedSeconds;
               }
+            }
+
+            // --- LIVE ACTIVITY MAX DURATION CAP (12 HOURS) ---
+            const MAX_DURATION_SECS = 43200; // 12 hours
+            if (elapsedSeconds > MAX_DURATION_SECS) {
+              logger.warn(`⚠️ Timer exceeded 12-hour limit (${elapsedSeconds}s). Capping to 12 hours to prevent histogram corruption.`);
+              elapsedSeconds = MAX_DURATION_SECS;
             }
 
             const mins = Math.floor(elapsedSeconds / 60);
@@ -622,8 +629,8 @@ export default function App() {
         // Try to save to Firebase (but don't block notification if it fails)
         const userId = auth.currentUser?.uid;
         if (userId) {
-          // Use setTimeout to not block the notification handler
-          setTimeout(async () => {
+          // Fire-and-forget save to Firebase without risking background suspension via setTimeout
+          (async () => {
             try {
               const notificationData = notification.request.content.data as any;
               const notificationType = notificationData?.type || 'reminder';
@@ -656,7 +663,7 @@ export default function App() {
               logger.error('Failed to save notification:', error);
               // Don't throw - notification should still show
             }
-          }, 0);
+          })();
         }
 
         return shouldShow;
@@ -980,7 +987,7 @@ export default function App() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
         <LiquidGlassBackground />
-        <ActivityIndicator size="large" color="#7C3AED" />
+        <PremiumLoader size={48} />
       </View>
     ); // Keep splash visible natively, but show Liquid Glass if splash was already hidden (e.g. after login)
   }
@@ -1022,38 +1029,45 @@ export default function App() {
                           <PremiumProvider>
                             <LiveActivityURLHandler />
                             <SafeAreaProvider>
-                              <NavigationContainer
-                                ref={navigationRef}
-                                linking={{
-                                  prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
-                                  config: {
-                                    screens: {
-                                      Home: {
-                                        screens: {
-                                          Home: 'home',
-                                          CreateBaby: 'create-baby',
-                                          Notifications: 'notifications',
+                              {(!user || isGuestMode || childrenReady) ? (
+                                <NavigationContainer
+                                  ref={navigationRef}
+                                  linking={{
+                                    prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
+                                    config: {
+                                      screens: {
+                                        Home: {
+                                          screens: {
+                                            Home: 'home',
+                                            CreateBaby: 'create-baby',
+                                            Notifications: 'notifications',
+                                          },
                                         },
-                                      },
-                                      Account: {
-                                        screens: {
-                                          Account: 'account',
-                                          FullSettings: 'settings',
+                                        Account: {
+                                          screens: {
+                                            Account: 'account',
+                                            FullSettings: 'settings',
+                                          },
                                         },
-                                      },
-                                      Babysitter: {
-                                        screens: {
-                                          SitterList: 'babysitter',
-                                          SitterProfile: 'babysitter/:sitterId',
-                                          SitterDashboard: 'babysitter/dashboard',
+                                        Babysitter: {
+                                          screens: {
+                                            SitterList: 'babysitter',
+                                            SitterProfile: 'babysitter/:sitterId',
+                                            SitterDashboard: 'babysitter/dashboard',
+                                          },
                                         },
                                       },
                                     },
-                                  },
-                                }}
-                              >
-                                <MainAppNavigator isAppSitter={isAppSitter} />
-                              </NavigationContainer>
+                                  }}
+                                >
+                                  <MainAppNavigator isAppSitter={isAppSitter} />
+                                </NavigationContainer>
+                              ) : (
+                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
+                                  <LiquidGlassBackground />
+                                  <PremiumLoader size={48} />
+                                </View>
+                              )}
                             </SafeAreaProvider>
                           </PremiumProvider>
                         </AudioProvider>

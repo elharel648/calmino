@@ -405,8 +405,8 @@ export default function SettingsScreen() {
             activeOpacity={1}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Animated.View style={animatedSettingsStyle}>
-              <Settings size={22} color={isSettingsPressed ? '#C8806A' : theme.textSecondary} strokeWidth={1.5} />
+            <Animated.View style={[animatedSettingsStyle, { padding: 6, borderRadius: 20, backgroundColor: isSettingsPressed ? '#C8806A' : 'transparent' }]}>
+              <Settings size={22} color={isSettingsPressed ? '#FFFFFF' : theme.textSecondary} strokeWidth={isSettingsPressed ? 2 : 1.5} />
             </Animated.View>
           </TouchableOpacity>
         </View>

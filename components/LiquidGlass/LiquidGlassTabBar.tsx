@@ -18,6 +18,7 @@ import {
   StyleSheet,
   Platform,
   Dimensions,
+  Animated,
 } from 'react-native';
 let LiquidGlassView: any = View;
 let LiquidGlassContainerView: any = View;
@@ -50,11 +51,38 @@ const BOTTOM_OFFSET = 28;
 // Screens where the tab bar should be completely hidden
 const FULLSCREEN_SCREENS: string[] = [];
 
+import { useScrollTracking } from '../../context/ScrollTrackingContext';
+
 // ─── Component ───────────────────────────────────────────────────────────────
 const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
   ({ state, descriptors, navigation }) => {
     const { isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
+    
+    // Responsive scroll tracking
+    const { scrollY } = useScrollTracking();
+    
+    // Use diffClamp to hide on scroll down, show on scroll up
+    const clampedScroll = React.useMemo(() => {
+      const positiveScroll = scrollY.interpolate({
+        inputRange: [0, Number.MAX_SAFE_INTEGER],
+        outputRange: [0, Number.MAX_SAFE_INTEGER],
+        extrapolateLeft: 'clamp', // Ignore negative elastic bounces at the top of the scroll
+      });
+      return Animated.diffClamp(positiveScroll, 0, 120);
+    }, [scrollY]);
+
+    const translateY = clampedScroll.interpolate({
+      inputRange: [0, 120],
+      outputRange: [0, 120],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = clampedScroll.interpolate({
+      inputRange: [0, 60, 120],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
 
     // ── Fullscreen hide logic ────────────────────────────────────────
     const activeRoute = state.routes[state.index];
@@ -99,7 +127,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
     const safeBottom = Math.max(insets.bottom, BOTTOM_OFFSET);
 
     return (
-      <View style={[styles.outer, { paddingBottom: safeBottom }]}>
+      <Animated.View style={[styles.outer, { paddingBottom: safeBottom, transform: [{ translateY }], opacity }]}>
         {/* Safe area bottom tint fill */}
         <View
           style={[
@@ -191,7 +219,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
             })}
           </View>
         </View>
-      </View>
+      </Animated.View>
     );
   },
 );

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Dimensions, View } from 'react-native';
+import { StyleSheet, Dimensions, View, useColorScheme } from 'react-native';
 import { Canvas, Circle, Group, BlurMask, LinearGradient, vec } from '@shopify/react-native-skia';
 import Animated, {
     useSharedValue,
@@ -15,12 +15,19 @@ import Animated, {
 
 const { width, height } = Dimensions.get('window');
 
-// Lavender/Purple colors - matching app theme
-const BLOB_COLORS = {
-    blob1: ['#DDD6FE', '#C4B5FD'], // Soft lavender
-    blob2: ['#E9D5FF', '#D8B4FE'], // Light purple
-    blob3: ['#EDE9FE', '#DDD6FE'], // Pale lavender
-    blob4: ['#F3E8FF', '#E9D5FF'], // Very light purple
+// Warm Terracotta / Sand colors - matching app theme
+const BLOB_COLORS_LIGHT = {
+    blob1: ['#F5E6E0', '#ECD5CB'], // Soft terracotta
+    blob2: ['#F9EFEA', '#F0DFD7'], // Lighter sand
+    blob3: ['#FAF2EB', '#F2E6DF'], // Pale sand
+    blob4: ['#FDF9F5', '#F5EFEC'], // Very light warm white
+};
+
+const BLOB_COLORS_DARK = {
+    blob1: ['#2A1D18', '#1F1411'], // Dark terracotta tint
+    blob2: ['#221714', '#1A110F'], 
+    blob3: ['#1C1311', '#150E0C'], 
+    blob4: ['#251A16', '#1C1311'], 
 };
 
 interface LiquidGlassBackgroundProps {
@@ -66,10 +73,13 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
         return scrollY ? scrollY.value * 0.1 : 0;
     });
 
+    const isDarkMode = useColorScheme() === 'dark';
+    const activeColors = isDarkMode ? BLOB_COLORS_DARK : BLOB_COLORS_LIGHT;
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: isDarkMode ? '#0F0F0F' : '#F8F6F4' }]}>
             {/* Base gradient */}
-            <View style={styles.baseGradient} />
+            <View style={[styles.baseGradient, { backgroundColor: isDarkMode ? '#151515' : '#F3EFEA' }]} />
 
             {/* Skia Canvas with animated blobs */}
             <Canvas style={styles.canvas}>
@@ -84,7 +94,7 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <LinearGradient
                             start={vec(0, 0)}
                             end={vec(width * 0.7, height * 0.4)}
-                            colors={BLOB_COLORS.blob1}
+                            colors={activeColors.blob1}
                         />
                         <BlurMask blur={60} style="normal" />
                     </Circle>
@@ -99,7 +109,7 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <LinearGradient
                             start={vec(0, 0)}
                             end={vec(width * 0.6, height * 0.5)}
-                            colors={BLOB_COLORS.blob2}
+                            colors={activeColors.blob2}
                         />
                         <BlurMask blur={50} style="normal" />
                     </Circle>
@@ -114,7 +124,7 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <LinearGradient
                             start={vec(0, 0)}
                             end={vec(width * 0.8, height * 0.7)}
-                            colors={BLOB_COLORS.blob3}
+                            colors={activeColors.blob3}
                         />
                         <BlurMask blur={70} style="normal" />
                     </Circle>
@@ -129,7 +139,7 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
                         <LinearGradient
                             start={vec(0, 0)}
                             end={vec(width * 0.4, height * 0.3)}
-                            colors={BLOB_COLORS.blob4}
+                            colors={activeColors.blob4}
                         />
                         <BlurMask blur={40} style="normal" />
                     </Circle>
@@ -142,11 +152,9 @@ const LiquidGlassBackground: React.FC<LiquidGlassBackgroundProps> = ({
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#FAF5FF',
     },
     baseGradient: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#F5F3FF',
     },
     canvas: {
         flex: 1,

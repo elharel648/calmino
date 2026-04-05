@@ -221,22 +221,35 @@ export const ICON_SIZES = {
   xxxl: 40,
 } as const;
 
+import { FadeInUp, FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
+
 // ============================================
-// ANIMATION SYSTEM
+// ANIMATION SYSTEM (Elite Motion UX)
 // ============================================
-// Entry animations - DISABLED per user request
+
+export const SPRING_CONFIG = {
+  mass: 1.0,
+  stiffness: 250,
+  damping: 20,
+};
+
 export const ANIMATIONS = {
-  // Return undefined to disable animations globally
-  fadeInDown: (delay: number = 0, duration: number = 400) => undefined,
+  // Spring-based fade in up (Timeline, Cards)
+  springUp: (delay: number = 0) => 
+    FadeInUp.delay(delay).springify().mass(SPRING_CONFIG.mass).stiffness(SPRING_CONFIG.stiffness).damping(SPRING_CONFIG.damping),
+    
+  // Spring-based fade in down (Modals)
+  springDown: (delay: number = 0) => 
+    FadeInDown.delay(delay).springify().mass(SPRING_CONFIG.mass).stiffness(SPRING_CONFIG.stiffness).damping(SPRING_CONFIG.damping),
 
-  fadeInUp: (delay: number = 0, duration: number = 400) => undefined,
+  // Fallbacks
+  fadeInDown: (delay: number = 0, duration: number = 400) => FadeInDown.delay(delay).duration(duration),
+  fadeInUp: (delay: number = 0, duration: number = 400) => FadeInUp.delay(delay).duration(duration),
+  fadeIn: (delay: number = 0, duration: number = 300) => FadeIn.delay(delay).duration(duration),
+  fadeOut: (duration: number = 200) => FadeOut.duration(duration),
 
-  fadeIn: (delay: number = 0, duration: number = 300) => undefined,
-
-  fadeOut: (duration: number = 200) => undefined,
-
-  // Stagger delays for lists - keep logic but it won't be used for animation
-  stagger: (index: number, baseDelay: number = 100) => index * baseDelay,
+  // Stagger delays for lists
+  stagger: (index: number, baseDelay: number = 40) => index * baseDelay,
 } as const;
 
 // ============================================

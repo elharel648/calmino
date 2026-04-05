@@ -42,6 +42,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
 import { auth, db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -109,6 +110,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
     const { activeChild } = useActiveChild();
     const { t } = useLanguage();
+    const { showSuccess, showError } = useToast();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -439,10 +441,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     setSitterProfile(prev => prev ? { ...prev, photoUrl: downloadUrl } : prev);
 
                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('✅', t('sitterDash.photoUpdated'));
+                    showSuccess(t('sitterDash.photoUpdated'));
                 } catch (uploadError) {
                     logger.error('Failed to upload photo:', uploadError);
-                    Alert.alert(t('common.error'), t('sitterDash.photoError'));
+                    showError(t('sitterDash.photoError'));
                 }
             }
         } catch (error) {
@@ -477,10 +479,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     }
                     setCoverPhoto(downloadUrl);
                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('✅', t('sitterDash.photoUpdated'));
+                    showSuccess(t('sitterDash.photoUpdated'));
                 } catch (uploadError) {
                     logger.error('Failed to upload cover photo:', uploadError);
-                    Alert.alert(t('common.error'), t('sitterDash.photoError'));
+                    showError(t('sitterDash.photoError'));
                 }
             }
         } catch (error) {
@@ -568,7 +570,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             loadData();
         } catch (error) {
             logger.error('Failed to accept booking:', error);
-            Alert.alert(t('common.error'), t('sitterDash.bookingApproveError'));
+            showError(t('sitterDash.bookingApproveError'));
         }
     };
 
@@ -582,7 +584,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             loadData();
         } catch (error) {
             logger.error('Failed to decline booking:', error);
-            Alert.alert(t('common.error'), t('sitterDash.bookingCancelError'));
+            showError(t('sitterDash.bookingCancelError'));
         }
     };
 
@@ -605,11 +607,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 },
                 sitterProfile?.name || t('babysitter.sitter')
             );
-            Alert.alert('✅', t('sitterDash.shiftStarted'));
+            showSuccess(t('sitterDash.shiftStarted'));
             loadData();
         } catch (error) {
             logger.error('Start shift error:', error);
-            Alert.alert(t('common.error'), t('sitterDash.shiftStartError'));
+            showError(t('sitterDash.shiftStartError'));
         }
     };
 
@@ -701,7 +703,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             }
 
             if (!phone) {
-                Alert.alert(t('common.error'), t('sitterDash.phoneNotAvailable'));
+                showError(t('sitterDash.phoneNotAvailable'));
                 return;
             }
 
@@ -717,7 +719,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             Linking.canOpenURL(url)
                 .then((supported) => {
                     if (!supported) {
-                        Alert.alert(t('common.error'), t('sitterDash.whatsappNotInstalled'));
+                        showError(t('sitterDash.whatsappNotInstalled'));
                     } else {
                         return Linking.openURL(url);
                     }
@@ -1101,7 +1103,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             const sitterId = auth.currentUser?.uid;
                             const msg = `Hi! I would really appreciate if you could rate me on Calmino 😊\n\nTap here:\ncalmparentapp://babysitter/${sitterId}`;
                             Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
-                                Alert.alert(t('common.error'), t('sitterDash.whatsappNotInstalled'));
+                                showError(t('sitterDash.whatsappNotInstalled'));
                             });
                         } catch (error) {
                             logger.error('WhatsApp rating error:', error);
@@ -1470,13 +1472,13 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             setIsLoadingLocation(true);
                                             try {
                                                 const { status } = await Location.requestForegroundPermissionsAsync();
-                                                if (status !== 'granted') { Alert.alert(t('sitterDash.locationPermRequired'), t('sitterDash.locationPermMessage')); setIsLoadingLocation(false); return; }
+                                                if (status !== 'granted') { showError(t('sitterDash.locationPermMessage')); setIsLoadingLocation(false); return; }
                                                 const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                                                 setGpsLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
                                                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                             } catch (error) {
                                                 logger.error('Location error:', error);
-                                                Alert.alert(t('common.error'), t('sitterDash.locationError'));
+                                                showError(t('sitterDash.locationError'));
                                             } finally { setIsLoadingLocation(false); }
                                         }}
                                         disabled={isLoadingLocation}
@@ -1928,7 +1930,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                                     const userId = auth.currentUser?.uid;
                                     if (!userId) {
-                                        Alert.alert(t('common.error'), t('sitterDash.loginRequired'));
+                                        showError(t('sitterDash.loginRequired'));
                                         return;
                                     }
 
@@ -1968,10 +1970,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                         setSettingsVisible(false);
-                                        Alert.alert(t('sitterDash.saved'), t('sitterDash.settingsSaved'));
+                                        showSuccess(t('sitterDash.settingsSaved'));
                                     } catch (error) {
                                         logger.error('Failed to save settings:', error);
-                                        Alert.alert(t('common.error'), t('sitterDash.settingsSaveError'));
+                                        showError(t('sitterDash.settingsSaveError'));
                                     } finally {
                                         setSavingSettings(false);
                                     }
@@ -2027,11 +2029,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                             });
                                                             setSettingsVisible(false);
                                                             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                                                            Alert.alert(t('sitterDash.saved'), t('sitterDash.accountDeleted'));
+                                                            showSuccess(t('sitterDash.accountDeleted'));
                                                             navigation.replace('SitterList');
                                                         } catch (error) {
                                                             logger.error('Failed to delete sitter account:', error);
-                                                            Alert.alert(t('common.error'), t('sitterDash.deleteError'));
+                                                            showError(t('sitterDash.deleteError'));
                                                         }
                                                     }
                                                 }
@@ -2264,7 +2266,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     }
                                                     if (!validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value)) {
                                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                                                        Alert.alert(t('common.error'), activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput'));
+                                                        showError(activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput'));
                                                         return;
                                                     }
                                                     setSocialModalVisible(false);
@@ -3110,7 +3112,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     newHours[key] = hours;
                                                 });
                                                 setAvailableHours(newHours);
-                                                Alert.alert('✅', t('sitterDash.hoursCopied'));
+                                                showSuccess(t('sitterDash.hoursCopied'));
                                             }
                                         }}
                                         activeOpacity={0.7}
@@ -3157,14 +3159,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                             // Update local profile state
                                             setAvailabilityModalVisible(false);
-                                            Alert.alert(t('sitterDash.saved'), t('sitterDash.availabilityUpdated', { count: availableDays.length.toString() }));
+                                            showSuccess(t('sitterDash.availabilityUpdated', { count: availableDays.length.toString() }));
 
                                             // Refresh data to reflect changes
                                             loadData();
                                         }
                                     } catch (error) {
                                         logger.error('Failed to save availability:', error);
-                                        Alert.alert(t('common.error'), t('sitterDash.saveError'));
+                                        showError(t('sitterDash.saveError'));
                                     } finally {
                                         setSavingSettings(false);
                                     }

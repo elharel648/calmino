@@ -21,7 +21,7 @@ import * as FileSystem from 'expo-file-system';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
-import Animated from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
 import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Droplets, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame, SlidersHorizontal } from 'lucide-react-native';
 import DiaperIcon from '../components/Common/DiaperIcon';
@@ -171,6 +171,52 @@ export default function ReportsScreen() {
   // Screen-level breathe-in animation
   const screenFade = useRef(new RNAnimated.Value(0)).current;
   const screenSlide = useRef(new RNAnimated.Value(24)).current;
+
+  // Premium Download Button Animation
+  const [isDownloadPressed, setIsDownloadPressed] = useState(false);
+  const downloadScale = useSharedValue(1);
+  const downloadRotation = useSharedValue(0);
+
+  const handleDownloadPress = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    
+    setIsDownloadPressed(true);
+    
+    // Fun bouncy organic squish and tilt
+    downloadScale.value = withSequence(
+      withSpring(0.85, { damping: 14, stiffness: 280 }),
+      withSpring(1.12, { damping: 10, stiffness: 240 }),
+      withSpring(1, { damping: 14, stiffness: 240 })
+    );
+    
+    downloadRotation.value = withSequence(
+      withSpring(15, { damping: 14, stiffness: 280 }),
+      withSpring(-8, { damping: 10, stiffness: 240 }),
+      withSpring(0, { damping: 14, stiffness: 240 })
+    );
+
+    // Give a split second for the animation to feel impactful
+    setTimeout(() => {
+      handleExport();
+      setTimeout(() => {
+        setIsDownloadPressed(false);
+        // Safety net to ensure rotation resets if JS thread blocked Reanimated sequence
+        downloadRotation.value = withSpring(0, { damping: 14, stiffness: 240 });
+        downloadScale.value = withSpring(1, { damping: 14, stiffness: 240 });
+      }, 800);
+    }, 250);
+  };
+
+  const animatedDownloadStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: downloadScale.value },
+        { rotate: `${downloadRotation.value}deg` }
+      ] as any
+    };
+  });
 
   useFocusEffect(
     React.useCallback(() => {
@@ -644,21 +690,19 @@ export default function ReportsScreen() {
         }
 
         .icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            background: #F8FAFC;
-            border: 1px solid #F1F5F9;
         }
-        .icon-food        { background: #FFF7ED; border-color: #FED7AA; }
-        .icon-sleep       { background: #F5F3FF; border-color: #DDD6FE; }
-        .icon-diaper      { background: #ECFEFF; border-color: #A5F3FC; }
-        .icon-supplements { background: #F0FDF4; border-color: #BBF7D0; }
-        .icon-trends      { background: #F0FDF4; border-color: #BBF7D0; }
+        .icon-food        { background: rgba(234, 88, 12, 0.12); }
+        .icon-sleep       { background: rgba(124, 58, 237, 0.12); }
+        .icon-diaper      { background: rgba(8, 145, 178, 0.12); }
+        .icon-supplements { background: rgba(5, 150, 105, 0.12); }
+        .icon-trends      { background: rgba(200, 128, 106, 0.12); }
 
         h3 {
             margin: 0;
@@ -816,16 +860,15 @@ export default function ReportsScreen() {
         .goal-circle {
             width: 60px;
             height: 60px;
-            border-radius: 50%;
-            background: #EEF2FF;
+            border-radius: 18px;
+            background: rgba(79, 70, 229, 0.12);
             color: #4F46E5;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 24px;
             font-weight: 800;
-            margin: 0 auto 10px auto;
-            border: 3px solid #DFE7FF;
+            margin: 0 auto 12px auto;
         }
     </style>
 </head>
@@ -848,14 +891,14 @@ export default function ReportsScreen() {
             <span style="color:#64748B; font-size:14px;">${t('reports.sections.consecutiveDays')}</span>
         </div>
         <div class="goal-item">
-            <div class="goal-circle" style="background:#F0FDF4; color:#16A34A; border-color:#DCFCE7;">
+            <div class="goal-circle" style="background: rgba(22, 163, 74, 0.12); color: #16A34A;">
                 ${weeklyGoals.sleepDaysMet}/${weeklyGoals.sleepDaysGoal}
             </div>
             <h3 style="margin-bottom: 4px;">${t('reports.goals.sleepGoals')}</h3>
             <span style="color:#64748B; font-size:14px;">${t('reports.goals.daysOver8Hours')}</span>
         </div>
         <div class="goal-item">
-            <div class="goal-circle" style="background:#FFF7ED; color:#EA580C; border-color:#FFEDD5;">
+            <div class="goal-circle" style="background: rgba(234, 88, 12, 0.12); color: #EA580C;">
                 ${weeklyGoals.docDaysMet}/${weeklyGoals.docDaysGoal}
             </div>
             <h3 style="margin-bottom: 4px;">${t('reports.goals.trackingGoals')}</h3>
@@ -868,7 +911,7 @@ export default function ReportsScreen() {
         <!-- Feeding Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon icon-food"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+                <div class="icon icon-food"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
                 <h3>${t('reports.sections.nutritionFeeding')}</h3>
             </div>
             <div class="stat-main">${dailyStats.foodCount} <span class="stat-unit">${t('reports.sections.totalMeals')}</span></div>
@@ -918,7 +961,7 @@ export default function ReportsScreen() {
         <!-- Diapers Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon icon-diaper"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+                <div class="icon icon-diaper"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 4 C4.4 4 4 4.4 4 5 L4 8.5 L20 8.5 L20 5 C20 4.4 19.6 4 19 4 Z" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8.5 L4 17.5 C4 20 6 22 8.5 22 L15.5 22 C18 22 20 20 20 17.5 L20 8.5 Z" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 7 L1.5 7 C1 7 1 7.5 1 8 L1 10.5 C1 11 1.5 11.5 2 11.5 L4 11.5" stroke="#0891B2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 7 L22.5 7 C23 7 23 7.5 23 8 L23 10.5 C23 11 22.5 11.5 22 11.5 L20 11.5" stroke="#0891B2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="2.2" cy="9.25" r="0.7" fill="#0891B2" /><circle cx="21.8" cy="9.25" r="0.7" fill="#0891B2" /><path d="M12 18 C12 18 9 15.8 9 13.8 C9 12.6 9.9 12 10.8 12.5 C11.2 12.7 11.6 13.1 12 13.6 C12.4 13.1 12.8 12.7 13.2 12.5 C14.1 12 15 12.6 15 13.8 C15 15.8 12 18 12 18 Z" fill="#0891B2" stroke="none"/></svg></div>
                 <h3>${t('reports.sections.diaperingHygiene')}</h3>
             </div>
             <div class="stat-main">${dailyStats.diapers} <span class="stat-unit">${t('reports.sections.diaperChanges')}</span></div>
@@ -928,7 +971,7 @@ export default function ReportsScreen() {
         <!-- Supplements Card -->
         <div class="card">
             <div class="card-header">
-                <div class="icon icon-supplements"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+                <div class="icon icon-supplements"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div>
                 <h3>${t('reports.sections.supplementsMeds')}</h3>
             </div>
             <div class="stat-main">${dailyStats.supplements} <span class="stat-unit">${t('reports.sections.dosesGiven')}</span></div>
@@ -1531,14 +1574,17 @@ export default function ReportsScreen() {
 
         <TouchableOpacity
           style={[styles.editStatsBtn, {
-            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
+            opacity: 0.5,
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.05)',
             borderWidth: 0.5,
             borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
           }]}
+          activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel={t('stats.editOrder')}
           onPress={() => setShowStatsEdit(true)}
         >
-          <SlidersHorizontal size={13} color={isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'} strokeWidth={2} />
-          <Text style={[styles.editStatsText, { color: isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>{t('stats.editOrder')}</Text>
+          <SlidersHorizontal size={14} color={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)'} strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
@@ -1863,7 +1909,7 @@ export default function ReportsScreen() {
                 value={`${comparison.sleepChange >= 0 ? '+' : ''}${comparison.sleepChange}%`}
                 subtitle={comparison.sleepChange >= 0 ? t('reports.comparison.moreSleep') : t('reports.comparison.lessSleep')}
                 trend={comparison.sleepChange >= 0 ? 'up' : 'down'}
-                color="#8B5CF6"
+                color={theme.actionColors.sleep.color}
                 delay={0}
               />
               <PremiumInsightCard
@@ -1871,7 +1917,7 @@ export default function ReportsScreen() {
                 title={t('reports.metrics.feeding')}
                 value={`${comparison.feedingChange >= 0 ? '+' : ''}${comparison.feedingChange}%`}
                 trend={comparison.feedingChange >= 0 ? 'up' : 'down'}
-                color="#F59E0B"
+                color={theme.actionColors.food.color}
                 delay={50}
               />
             </View>
@@ -1896,7 +1942,7 @@ export default function ReportsScreen() {
           labels={weeklyData.labels}
           title={t('reports.charts.sleepInHours')}
           unit={t('detailedStats.hourShort')}
-          gradientColors={['#8B5CF6', '#8B5CF620']}
+          gradientColors={[theme.actionColors.sleep.color, theme.actionColors.sleep.lightColor]}
           height={260}
           yAxisSteps={[0, 4, 8, 12, 16]}
         />
@@ -1908,7 +1954,7 @@ export default function ReportsScreen() {
           labels={weeklyData.labels}
           title={t('reports.charts.feedingAmountMeals')}
           unit={t('detailedStats.ml')}
-          gradientColors={['#C8806A', '#C8806A20']}
+          gradientColors={[theme.actionColors.food.color, theme.actionColors.food.lightColor]}
           height={260}
         />
       )}
@@ -1918,7 +1964,7 @@ export default function ReportsScreen() {
           data={weeklyData.diapers}
           labels={weeklyData.labels}
           title={t('reports.metrics.diapers')}
-          gradientColors={['#10B981', '#10B98120']}
+          gradientColors={[theme.actionColors.diaper.color, theme.actionColors.diaper.lightColor]}
           height={220}
           yAxisSteps={[0, 3, 6, 9, 12]}
         />
@@ -1971,20 +2017,22 @@ export default function ReportsScreen() {
         <View style={styles.headerTop}>
           <ChildPicker compact />
           <TouchableOpacity
-            style={[styles.exportBtn, {
-              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF',
-              borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.04)',
-              borderWidth: 1,
-              shadowColor: isDarkMode ? '#000' : '#C8806A',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDarkMode ? 0.4 : 0.12,
-              shadowRadius: 10,
-              elevation: 0,
-            }]}
-            onPress={handleExport}
-            activeOpacity={0.7}
+            onPress={handleDownloadPress}
+            activeOpacity={1}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Download size={20} color={isDarkMode ? '#FFF' : theme.textPrimary} strokeWidth={2.5} />
+            <Animated.View style={[
+              styles.exportBtn, 
+              animatedDownloadStyle,
+              {
+                backgroundColor: isDownloadPressed ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.03)'),
+                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.02)',
+                borderWidth: 1,
+                borderRadius: 14, // Matches the squircle aesthetic
+              }
+            ]}>
+              <Download size={22} color={isDownloadPressed ? '#FFFFFF' : (isDarkMode ? '#FFF' : theme.textPrimary)} strokeWidth={isDownloadPressed ? 2.5 : 2} />
+            </Animated.View>
           </TouchableOpacity>
         </View>
 
