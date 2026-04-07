@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import quickActionsService from '../services/quickActionsService';
@@ -227,18 +227,18 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }, []);
 
+    const contextValue = useMemo(() => ({
+        ...currentState,
+        start,
+        stop,
+        pause,
+        resume,
+        reset,
+        formatTime,
+    }), [currentState, start, stop, pause, resume, reset, formatTime]);
+
     return (
-        <SleepTimerContext.Provider
-            value={{
-                ...currentState,
-                start,
-                stop,
-                pause,
-                resume,
-                reset,
-                formatTime,
-            }}
-        >
+        <SleepTimerContext.Provider value={contextValue}>
             {children}
         </SleepTimerContext.Provider>
     );

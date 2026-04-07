@@ -460,7 +460,7 @@ export default function GrowthModal({
                         </Text>
                     </Animated.View>
 
-                    <ScrollFadeWrapper fadeHeight={80} topFade={false}>
+                    <ScrollFadeWrapper fadeHeight={80} topFade={false} fadeColor={theme.card}>
                         <ScrollView
                             ref={scrollViewRef}
                             style={styles.scrollView}

@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { liveActivityService } from '../services/liveActivityService';
@@ -415,43 +415,51 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }, []);
 
+    const contextValue = useMemo(() => ({
+        // Pumping
+        pumpingIsRunning: currentState.pumping.isRunning,
+        pumpingIsPaused: currentState.pumping.isPaused,
+        pumpingElapsedSeconds: currentState.pumping.elapsedSeconds,
+        startPumping,
+        stopPumping,
+        pausePumping,
+        resumePumping,
+        resetPumping,
+        // Bottle
+        bottleIsRunning: currentState.bottle.isRunning,
+        bottleIsPaused: currentState.bottle.isPaused,
+        bottleElapsedSeconds: currentState.bottle.elapsedSeconds,
+        startBottle,
+        stopBottle,
+        pauseBottle,
+        resumeBottle,
+        resetBottle,
+        // Breastfeeding
+        breastIsRunning: currentState.breast.isRunning,
+        breastIsPaused: currentState.breast.isPaused,
+        breastActiveSide: currentState.breast.activeSide,
+        breastElapsedSeconds: currentState.breast.elapsedSeconds,
+        leftBreastTime: currentState.breast.leftBreastTime,
+        rightBreastTime: currentState.breast.rightBreastTime,
+        startBreast,
+        stopBreast,
+        pauseBreast,
+        resumeBreast,
+        resetBreast,
+        // Utility
+        formatTime,
+    }), [
+        currentState.pumping,
+        currentState.bottle,
+        currentState.breast,
+        startPumping, stopPumping, pausePumping, resumePumping, resetPumping,
+        startBottle, stopBottle, pauseBottle, resumeBottle, resetBottle,
+        startBreast, stopBreast, pauseBreast, resumeBreast, resetBreast,
+        formatTime
+    ]);
+
     return (
-        <FoodTimerContext.Provider
-            value={{
-                // Pumping
-                pumpingIsRunning: currentState.pumping.isRunning,
-                pumpingIsPaused: currentState.pumping.isPaused,
-                pumpingElapsedSeconds: currentState.pumping.elapsedSeconds,
-                startPumping,
-                stopPumping,
-                pausePumping,
-                resumePumping,
-                resetPumping,
-                // Bottle
-                bottleIsRunning: currentState.bottle.isRunning,
-                bottleIsPaused: currentState.bottle.isPaused,
-                bottleElapsedSeconds: currentState.bottle.elapsedSeconds,
-                startBottle,
-                stopBottle,
-                pauseBottle,
-                resumeBottle,
-                resetBottle,
-                // Breastfeeding
-                breastIsRunning: currentState.breast.isRunning,
-                breastIsPaused: currentState.breast.isPaused,
-                breastActiveSide: currentState.breast.activeSide,
-                breastElapsedSeconds: currentState.breast.elapsedSeconds,
-                leftBreastTime: currentState.breast.leftBreastTime,
-                rightBreastTime: currentState.breast.rightBreastTime,
-                startBreast,
-                stopBreast,
-                pauseBreast,
-                resumeBreast,
-                resetBreast,
-                // Utility
-                formatTime,
-            }}
-        >
+        <FoodTimerContext.Provider value={contextValue}>
             {children}
         </FoodTimerContext.Provider>
     );

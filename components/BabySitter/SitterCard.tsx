@@ -138,7 +138,7 @@ const SitterCard = ({ sitter, theme, isDarkMode, onPress, isFavorite, onToggleFa
 
                 {/* Price - right side, clean */}
                 <View style={styles.priceSection}>
-                    <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>₪{price}</Text>
+                    <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>{price} ₪</Text>
                     <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>לשעה</Text>
                 </View>
             </View>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
         opacity: 0.4,
     },
     ratingBadge: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 3,
     },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     sitterLocationRow: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 4,
     },

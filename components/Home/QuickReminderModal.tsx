@@ -281,10 +281,12 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
 
     // Pan Responder for Dismiss
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gestureState) => {
             const { dy, dx } = gestureState;
-            return dy > 10 && Math.abs(dy) > Math.abs(dx);
+            // Only capture vertical gestures that are clearly downward
+            // Higher threshold prevents stealing from Swipeable horizontal gestures
+            return dy > 20 && Math.abs(dy) > Math.abs(dx) * 2;
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
@@ -567,10 +569,10 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 </Reanimated.View>
                             ) : (
                                 reminders.map((item, index) => {
-                                    const renderLeftActions = (_progress: any, dragX: any) => {
+                                    const renderSwipeActions = (_progress: any, dragX: any) => {
                                         const scale = dragX.interpolate({
-                                            inputRange: [0, 100],
-                                            outputRange: [0, 1],
+                                            inputRange: [-100, 0, 100],
+                                            outputRange: [1, 0, 1],
                                             extrapolate: 'clamp',
                                         });
 
@@ -595,10 +597,18 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                             entering={FadeInDown.delay(index * 100).springify()}
                                         >
                                             <Swipeable
-                                                renderLeftActions={renderLeftActions}
+                                                renderLeftActions={renderSwipeActions}
+                                                renderRightActions={renderSwipeActions}
                                                 overshootLeft={false}
+                                                overshootRight={false}
                                                 leftThreshold={40}
+                                                rightThreshold={40}
                                             >
+                                                <TouchableOpacity
+                                                    onLongPress={() => handleDelete(item.id)}
+                                                    delayLongPress={600}
+                                                    activeOpacity={1}
+                                                >
                                                 <View style={[styles.reminderCard, {
                                                     backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
                                                     borderColor: borderColor,
@@ -618,6 +628,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                                         </View>
                                                     </View>
                                                 </View>
+                                                </TouchableOpacity>
                                             </Swipeable>
                                         </Reanimated.View>
                                     );

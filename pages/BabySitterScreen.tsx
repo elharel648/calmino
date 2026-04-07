@@ -825,10 +825,10 @@ const BabySitterScreen = ({ navigation }: any) => {
                     </View>
 
                     {/* Sitters Count + GPS indicator */}
-                    <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+                    <View style={[styles.sittersHeader, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' }]}>
                         {!isLoading && sortedSitters.length > 0 && (
                             <Text style={[styles.sittersHeaderTitle, { color: theme.textSecondary }]}>
-                                28 סיטרים באזורך
+                                {sortedSitters.length} סיטרים באזורך
                             </Text>
                         )}
                         {userLocation && !activeCity && (

@@ -647,6 +647,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       if (event.subType === 'multivitamin') return 'Multivitamin';
       return event.note || t('timeline.supplement');
     } else if (event.type === 'custom') {
+      // Vaccine events: clean display
+      if (event.subType === 'vaccine') {
+        const note = event.note || '';
+        return note.replace(/^חיסון:\s*/, '') || 'חיסון';
+      }
       return event.note || 'פעולה מותאמת';
     } else if (event.type === 'teeth') {
       return event.toothLabel || event.note || 'בקעה שן';
@@ -727,6 +732,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     } else if (event.type === 'diaper') {
       return event.note || '';
     } else if (event.type === 'custom') {
+      if (event.subType === 'vaccine') {
+        return '💉 חיסון';
+      }
       return '';
     } else if (event.type === 'teeth') {
       return event.note || '';

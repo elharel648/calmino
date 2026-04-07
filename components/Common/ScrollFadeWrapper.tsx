@@ -8,6 +8,7 @@ interface ScrollFadeWrapperProps {
     fadeHeight?: number;
     topFade?: boolean;
     bottomFade?: boolean;
+    fadeColor?: string;
 }
 
 /**
@@ -25,12 +26,13 @@ export default function ScrollFadeWrapper({
     children,
     fadeHeight = 60,
     topFade = true,
-    bottomFade = true
+    bottomFade = true,
+    fadeColor
 }: ScrollFadeWrapperProps) {
     const { theme, isDarkMode } = useTheme();
 
-    // Get the base color from theme
-    const baseColor = theme.background;
+    // Get the base color from theme if not provided
+    const baseColor = fadeColor || theme.background;
 
     return (
         <View style={styles.container}>

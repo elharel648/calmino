@@ -1391,7 +1391,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             </Text>
                         </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContentGlass}>
+                        <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsContentGlass} contentContainerStyle={{ paddingBottom: 120 }}>
                             {/* ✨ Premium Profile Photo Section */}
                             <TouchableOpacity
                                 style={styles.profilePhotoSection}

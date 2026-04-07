@@ -461,7 +461,7 @@ export default function SettingsScreen() {
             <Text style={[styles.userName, { color: theme.textPrimary }]}>
               {userName || t('account.myUser')}
             </Text>
-            <ChevronRight size={16} color='rgba(0,0,0,0.22)' strokeWidth={1.8} />
+            <ChevronLeft size={16} color={theme.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
 
           {user?.email && (
@@ -527,7 +527,7 @@ export default function SettingsScreen() {
                     activeOpacity={0.6}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                  <ChevronRight size={15} color='rgba(0,0,0,0.22)' strokeWidth={1.8} />
+                  <ChevronLeft size={15} color={theme.textTertiary} strokeWidth={2} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -745,7 +745,7 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               </View>
-              <ChevronRight size={16} color='rgba(0,0,0,0.22)' strokeWidth={1.8} />
+              <ChevronLeft size={18} color={theme.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -1500,11 +1500,12 @@ const styles = StyleSheet.create({
   },
   familyActionText: {
     flex: 1,
-    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   familyActionTitleRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: 8,
     marginBottom: 2,
   },
@@ -1512,12 +1513,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     letterSpacing: -0.2,
+    textAlign: 'right',
   },
   familyActionSubtitle: {
     fontSize: 13,
     fontWeight: '400',
     letterSpacing: -0.1,
     lineHeight: 18,
+    textAlign: 'right',
   },
   badgeMinimal: {
     paddingHorizontal: 8,

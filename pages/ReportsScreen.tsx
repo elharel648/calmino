@@ -257,15 +257,15 @@ export default function ReportsScreen() {
         start = startOfDay(selectedDate);
         return { start, end: endOfDay(selectedDate) };
       case 'week':
-        start = startOfDay(subWeeks(new Date(), 1));
+        start = startOfDay(subDays(new Date(), 6));
         break;
       case 'month':
-        start = startOfDay(subMonths(new Date(), 1));
+        start = startOfDay(subDays(new Date(), 29));
         break;
       case 'custom':
         return { start: startOfDay(customStartDate), end: endOfDay(customEndDate) };
       default:
-        start = startOfDay(subWeeks(new Date(), 1));
+        start = startOfDay(subDays(new Date(), 6));
     }
     return { start, end };
   }, [timeRange, selectedDate, customStartDate, customEndDate]);
@@ -1062,7 +1062,7 @@ export default function ReportsScreen() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
-          dialogTitle: `דוח מערכת - ${activeChild?.childName || t('reports.misc.baby')}`,
+          dialogTitle: `${t('reports.export.systemReport') || 'דוח מערכת'} - ${activeChild?.childName || t('reports.misc.baby')}`,
           UTI: 'com.adobe.pdf'
         });
       } else {
@@ -1349,10 +1349,10 @@ export default function ReportsScreen() {
     if (total === 0) return null;
 
     const items = [
-      { name: 'בקבוק 🍼', value: dailyStats.feedingTypes.bottle, color: '#818CF8' },
-      { name: 'הנקה 🤱', value: dailyStats.feedingTypes.breast, color: '#A78BFA' },
-      { name: 'שאיבה 🥛', value: dailyStats.feedingTypes.pumping, color: '#F472B6' },
-      { name: 'מוצקים 🥣', value: dailyStats.feedingTypes.solids, color: '#C4B5FD' }
+      { name: `${t('reports.feeding.bottle') || 'בקבוק'} 🍼`, value: dailyStats.feedingTypes.bottle, color: '#818CF8' },
+      { name: `${t('reports.feeding.breast') || 'הנקה'} 🤱`, value: dailyStats.feedingTypes.breast, color: '#A78BFA' },
+      { name: `${t('reports.feeding.pumping') || 'שאיבה'} 🥛`, value: dailyStats.feedingTypes.pumping, color: '#F472B6' },
+      { name: `${t('reports.feeding.solids') || 'מוצקים'} 🥣`, value: dailyStats.feedingTypes.solids, color: '#C4B5FD' }
     ].filter(item => item.value > 0);
 
     // Calculate percentages for the progress bars
@@ -1434,6 +1434,7 @@ export default function ReportsScreen() {
     cardSlides.forEach(a => a.setValue(32));
     cardScales.forEach(a => a.setValue(0.94));
 
+    // Stagger each card: smooth timing physics on Android to ensure 60fps, rich spring physics on iOS
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
     const animations = cardAnims.map((anim, i) =>
@@ -1445,22 +1446,34 @@ export default function ReportsScreen() {
           easing: easeOutCubic,
           useNativeDriver: true,
         }),
-        RNAnimated.spring(cardSlides[i], {
-          toValue: 0,
-          delay: i * 70,
-          useNativeDriver: true,
-          stiffness: 120,
-          damping: 14,
-          mass: 0.6,
-        } as any),
-        RNAnimated.spring(cardScales[i], {
-          toValue: 1,
-          delay: i * 70,
-          useNativeDriver: true,
-          stiffness: 120,
-          damping: 14,
-          mass: 0.6,
-        } as any),
+        Platform.OS === 'ios'
+          ? RNAnimated.spring(cardSlides[i], {
+              toValue: 0,
+              useNativeDriver: true,
+              stiffness: 120,
+              damping: 14,
+              mass: 0.6,
+            } as any)
+          : RNAnimated.timing(cardSlides[i], {
+              toValue: 0,
+              duration: 450,
+              easing: (t: number) => 1 - Math.pow(1 - t, 3), 
+              useNativeDriver: true,
+            }),
+        Platform.OS === 'ios'
+          ? RNAnimated.spring(cardScales[i], {
+              toValue: 1,
+              useNativeDriver: true,
+              stiffness: 120,
+              damping: 14,
+              mass: 0.6,
+            } as any)
+          : RNAnimated.timing(cardScales[i], {
+              toValue: 1,
+              duration: 450,
+              easing: (t: number) => 1 - Math.pow(1 - t, 3),
+              useNativeDriver: true,
+            }),
       ])
     );
     RNAnimated.stagger(70, animations).start();

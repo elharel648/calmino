@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=540, height=1170">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    width: 540px;
+    height: 1170px;
+    overflow: hidden;
+    background: linear-gradient(165deg, #F2E8F5 0%, #E8D5E8 30%, #DDD0E8 60%, #D5C8E0 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    position: relative;
+  }
+
+  /* Subtle floating orbs background */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+    animation: float 8s ease-in-out infinite;
+  }
+  .orb-1 { width: 200px; height: 200px; background: #C8A2C8; top: -50px; right: -30px; animation-delay: 0s; }
+  .orb-2 { width: 280px; height: 280px; background: #F0C8D8; bottom: 100px; left: -80px; animation-delay: -3s; }
+  .orb-3 { width: 160px; height: 160px; background: #B8A8D8; top: 400px; right: -40px; animation-delay: -5s; }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(15px, -20px) scale(1.05); }
+    66% { transform: translate(-10px, 15px) scale(0.95); }
+  }
+
+  /* ═══ INTRO SCENE ═══ */
+  .intro {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    animation: introAnim 5s ease forwards;
+  }
+
+  @keyframes introAnim {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    75% { opacity: 1; }
+    100% { opacity: 0; pointer-events: none; }
+  }
+
+  .intro-logo {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #E8D0E0 0%, #D0B8D0 100%);
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 15px 50px rgba(160, 120, 160, 0.4);
+    opacity: 0;
+    transform: scale(0.5);
+    animation: logoPopIn 1s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes logoPopIn {
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .intro-logo img {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+  }
+
+  .intro-title {
+    font-size: 52px;
+    font-weight: 800;
+    color: #4A3050;
+    margin-top: 28px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideUp 0.8s 0.8s ease forwards;
+    letter-spacing: -1px;
+  }
+
+  .intro-subtitle {
+    font-size: 22px;
+    color: #7A6080;
+    margin-top: 14px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUp 0.8s 1.2s ease forwards;
+    text-align: center;
+    line-height: 1.5;
+    max-width: 400px;
+  }
+
+  @keyframes slideUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ═══ SLIDE SCENES ═══ */
+  .slide {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 60px;
+    opacity: 0;
+    z-index: 5;
+  }
+
+  .slide-title {
+    font-size: 36px;
+    font-weight: 800;
+    color: #3A2040;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-30px);
+    line-height: 1.3;
+    max-width: 460px;
+    text-shadow: 0 2px 15px rgba(0,0,0,0.05);
+  }
+
+  .slide-subtitle {
+    font-size: 18px;
+    color: #6A5070;
+    margin-top: 8px;
+    opacity: 0;
+    text-align: center;
+  }
+
+  /* Phone mockup */
+  .phone {
+    margin-top: 24px;
+    width: 290px;
+    height: 620px;
+    background: #1A1A1A;
+    border-radius: 38px;
+    padding: 10px;
+    box-shadow: 
+      0 30px 80px rgba(40, 20, 60, 0.35),
+      0 10px 30px rgba(40, 20, 60, 0.2),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+    opacity: 0;
+    transform: translateY(120px) scale(0.85);
+  }
+
+  .phone-notch {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 28px;
+    background: #1A1A1A;
+    border-radius: 0 0 16px 16px;
+    z-index: 3;
+  }
+
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  /* ═══ SLIDE 1: Home ═══ */
+  .slide-1 {
+    animation: slideScene 5.5s 4.5s ease forwards;
+  }
+  .slide-1 .slide-title {
+    animation: titleIn 0.6s 5s ease forwards;
+  }
+  .slide-1 .slide-subtitle {
+    animation: subtitleIn 0.6s 5.3s ease forwards;
+  }
+  .slide-1 .phone {
+    animation: phoneSlideUp 0.9s 5.5s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+  }
+
+  /* ═══ SLIDE 2: Stats ═══ */
+  .slide-2 {
+    animation: slideScene 5.5s 10s ease forwards;
+  }
+  .slide-2 .slide-title {
+    animation: titleIn 0.6s 10.5s ease forwards;
+  }
+  .slide-2 .slide-subtitle {
+    animation: subtitleIn 0.6s 10.8s ease forwards;
+  }
+  .slide-2 .phone {
+    animation: phoneSlideUp 0.9s 11s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+  }
+
+  /* ═══ SLIDE 3: Growth ═══ */
+  .slide-3 {
+    animation: slideScene 5.5s 15.5s ease forwards;
+  }
+  .slide-3 .slide-title {
+    animation: titleIn 0.6s 16s ease forwards;
+  }
+  .slide-3 .slide-subtitle {
+    animation: subtitleIn 0.6s 16.3s ease forwards;
+  }
+  .slide-3 .phone {
+    animation: phoneSlideUp 0.9s 16.5s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+  }
+
+  /* ═══ SLIDE 4: Account ═══ */
+  .slide-4 {
+    animation: slideScene 5.5s 21s ease forwards;
+  }
+  .slide-4 .slide-title {
+    animation: titleIn 0.6s 21.5s ease forwards;
+  }
+  .slide-4 .slide-subtitle {
+    animation: subtitleIn 0.6s 21.8s ease forwards;
+  }
+  .slide-4 .phone {
+    animation: phoneSlideUp 0.9s 22s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+  }
+
+  /* ═══ SLIDE 5: Sitter ═══ */
+  .slide-5 {
+    animation: slideSceneLast 6s 26.5s ease forwards;
+  }
+  .slide-5 .slide-title {
+    animation: titleIn 0.6s 27s ease forwards;
+  }
+  .slide-5 .slide-subtitle {
+    animation: subtitleIn 0.6s 27.3s ease forwards;
+  }
+  .slide-5 .phone {
+    animation: phoneSlideUp 0.9s 27.5s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+  }
+  
+  /* ═══ SCENE KEYFRAMES ═══ */
+  @keyframes slideScene {
+    0% { opacity: 0; }
+    8% { opacity: 1; }
+    82% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes slideSceneLast {
+    0% { opacity: 0; }
+    8% { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes titleIn {
+    0% { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes subtitleIn {
+    0% { opacity: 0; transform: translateY(15px); }
+    100% { opacity: 0.8; transform: translateY(0); }
+  }
+
+  @keyframes phoneSlideUp {
+    0% { opacity: 0; transform: translateY(120px) scale(0.85); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ═══ FEATURE BADGES ═══ */
+  .badge-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    opacity: 0;
+  }
+
+  .slide-1 .badge-row { animation: subtitleIn 0.5s 5.6s ease forwards; }
+  .slide-2 .badge-row { animation: subtitleIn 0.5s 11.3s ease forwards; }
+  .slide-5 .badge-row { animation: subtitleIn 0.5s 27.6s ease forwards; }
+
+  .badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    font-size: 13px;
+    font-weight: 600;
+    color: #5A3868;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+
+  /* Subtle shine on phone */
+  .phone::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    animation: phoneShine 4s 6s ease-in-out infinite;
+    border-radius: 38px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  @keyframes phoneShine {
+    0% { left: -100%; }
+    30% { left: 150%; }
+    100% { left: 150%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ═══ INTRO ═══ -->
+<div class="intro">
+  <div class="intro-logo">
+    <img src="file:///Users/harel/APP/assets/icon.png" alt="Calmino" onerror="this.style.display='none'">
+  </div>
+  <div class="intro-title">Calmino</div>
+  <div class="intro-subtitle">האפליקציה שתזכור הכל,<br>כדי שלכם יישאר זמן פשוט לאהוב</div>
+</div>
+
+<!-- ═══ SLIDE 1: HOME ═══ -->
+<div class="slide slide-1">
+  <div class="slide-title">הכל במבט אחד</div>
+  <div class="slide-subtitle">יומן חכם, טיימרים ופעולות מהירות</div>
+  <div class="badge-row">
+    <div class="badge">🍼 הנקה</div>
+    <div class="badge">😴 שינה</div>
+    <div class="badge">🧷 חיתול</div>
+  </div>
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <img src="file:///Users/harel/APP/app_store_video/hero_home.png" alt="Home">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2: STATS ═══ -->
+<div class="slide slide-2">
+  <div class="slide-title">סטטיסטיקות ותובנות</div>
+  <div class="slide-subtitle">נתונים שהופכים לידע מעשי</div>
+  <div class="badge-row">
+    <div class="badge">📊 גרפים</div>
+    <div class="badge">📋 דוחות</div>
+  </div>
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <img src="file:///Users/harel/APP/app_store_video/hero_stats.png" alt="Stats">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3: GROWTH ═══ -->
+<div class="slide slide-3">
+  <div class="slide-title">מעקב גדילה לפי WHO</div>
+  <div class="slide-subtitle">אחוזונים, משקל, גובה והיקף ראש</div>
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <img src="file:///Users/harel/APP/app_store_video/Simulator Screenshot - iPhone 17 Pro Max - 2026-04-05 at 22.47.41.png" alt="Growth">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 4: FAMILY ═══ -->
+<div class="slide slide-4">
+  <div class="slide-title">כל המשפחה מסונכרנת</div>
+  <div class="slide-subtitle">מכל מכשיר, בכל זמן – בזמן אמת</div>
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <img src="file:///Users/harel/APP/app_store_video/hero_account.png" alt="Account">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 5: SITTER ═══ -->
+<div class="slide slide-5">
+  <div class="slide-title">מוצאים בייביסיטר בקליק</div>
+  <div class="slide-subtitle">דירוגים, זמינות ופניות – הכל במקום אחד</div>
+  <div class="badge-row">
+    <div class="badge">⭐ דירוגים</div>
+    <div class="badge">📍 קרוב אליכם</div>
+  </div>
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <img src="file:///Users/harel/APP/app_store_video/sitter_list.png" alt="Sitters">
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

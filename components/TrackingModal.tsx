@@ -250,7 +250,8 @@ const IsolatedDurationPicker = ({
     <>
       <DateTimePicker
         value={date}
-        mode="countdown"
+        mode={Platform.OS === 'ios' ? "countdown" : "time"}
+        is24Hour={true}
         minuteInterval={1}
         display="spinner"
         style={{ width: '100%', height: 180 }}
@@ -538,13 +539,19 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
 
   useEffect(() => {
     if (visible) {
-      // Phase 1: Start slide-in animation immediately (runs on native thread)
-      translateY.value = SCREEN_HEIGHT;
-      backdropOpacity.value = 0;
-      glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
-      sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
-      backdropOpacity.value = withTiming(1, { duration: 300 });
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
+      const startAnimation = () => {
+        translateY.value = SCREEN_HEIGHT;
+        backdropOpacity.value = 0;
+        glowAnim.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
+        sparkleAnim.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
+        backdropOpacity.value = withTiming(1, { duration: 300 });
+        translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
+      };
+
+      if (Platform.OS !== 'android') {
+        // Phase 1: Start slide-in animation immediately on iOS
+        startAnimation();
+      }
 
       // Phase 2: Reset state after a minimal delay (NOT waiting for all animations)
       // Using setTimeout instead of InteractionManager to avoid being blocked by spring/glow animations
@@ -656,6 +663,11 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         }
         // Enable content rendering AFTER state is ready
         setContentReady(true);
+        
+        if (Platform.OS === 'android') {
+          // On Android, wait a tiny bit after React batches state to let layout calculate, THEN start native animation
+          setTimeout(startAnimation, 30);
+        }
       }, 50);
       return () => clearTimeout(timer);
     } else {
@@ -1756,7 +1768,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           { mode: 'timerange', icon: Clock, label: t('tracking.hours') },
           { mode: 'duration', icon: Hourglass, label: t('tracking.duration') },
           { mode: 'timer', icon: Timer, label: t('tracking.timer') },
-        ] as const).map(({ mode, icon: Icon, label }) => {
+        ] as any[]).map(({ mode, icon: Icon, label }) => {
           const isActive = sleepMode === mode;
           return (
             <TouchableOpacity

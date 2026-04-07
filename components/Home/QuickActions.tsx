@@ -182,12 +182,8 @@ const QuickActions = memo<QuickActionsProps>(({
 
     const scrollViewRef = useRef<ScrollView>(null);
 
-    useEffect(() => {
-        const scrollTimer = setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: false });
-        }, 50);
-        return () => clearTimeout(scrollTimer);
-    }, []);
+    // Removed forced scrollToEnd on mount. Native RTL scroll view should 
+    // naturally start at the correct visual start point based on flex layout.
 
     const actionHandlers: Record<QuickActionKey, { onPress: () => void; isActive?: boolean; activeTime?: string; lastTime?: string; badge?: string }> = useMemo(() => ({
         food: { onPress: handleFoodPress, isActive: foodIsRunning, activeTime: foodIsRunning ? foodFormatTime(foodElapsed) : undefined, lastTime: !foodIsRunning ? lastFeedTime : undefined },

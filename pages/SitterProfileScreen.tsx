@@ -10,7 +10,7 @@ import { Review, REVIEW_TAG_LABELS, SitterBadge, BADGE_INFO } from '../types/bab
 import { auth, db } from '../services/firebaseConfig';
 import { blockUser } from '../services/blockService';
 import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, addDoc, serverTimestamp, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
-import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2, CalendarDays, Clock } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, CheckCircle, Filter, ArrowUpDown, Star, MapPin, Briefcase, Globe, Share2, Heart, MoreVertical, ShieldAlert, Flag, Ban, Trophy, Gem, Sparkles, Trash2, CalendarDays, Clock, ChevronLeft } from 'lucide-react-native';
 import { TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -448,7 +448,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                 alignItems: 'center',
             }]}>
                 <TouchableOpacity style={styles.navBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
+                    <ChevronLeft size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
 
                 {/* Right side actions - Share and Favorite */}

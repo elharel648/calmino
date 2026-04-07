@@ -29,6 +29,8 @@ const VaccineTracker = memo(({
     const [datePickerVisible, setDatePickerVisible] = React.useState(false);
     const [pendingVaccine, setPendingVaccine] = React.useState<{ key: string, isCustom: boolean, customObj?: CustomVaccine } | null>(null);
     const [selectedDate, setSelectedDate] = React.useState(new Date());
+    // Guard to prevent Android double-fire
+    const androidPickerHandled = React.useRef(false);
 
     const handleToggle = (key: string) => {
         if (Platform.OS !== 'web') {
@@ -43,6 +45,7 @@ const VaccineTracker = memo(({
             // If not done, show date picker
             setPendingVaccine({ key, isCustom: false });
             setSelectedDate(new Date());
+            androidPickerHandled.current = false;
             setDatePickerVisible(true);
         }
     };
@@ -57,22 +60,40 @@ const VaccineTracker = memo(({
         } else {
             setPendingVaccine({ key: vaccine.id, isCustom: true, customObj: vaccine });
             setSelectedDate(new Date());
+            androidPickerHandled.current = false;
             setDatePickerVisible(true);
         }
     };
 
     const onDateConfirm = (event: any, date?: Date) => {
         if (Platform.OS === 'android') {
+            // Android fires onChange twice (once for 'set', once for 'dismissed').
+            // Use a ref guard to ensure we only handle the first event.
+            if (androidPickerHandled.current) return;
+            androidPickerHandled.current = true;
             setDatePickerVisible(false);
+
             if (event?.type !== 'set') {
                 setPendingVaccine(null);
                 return;
             }
-        } else {
-            if (event?.type === 'dismissed') {
-                setPendingVaccine(null);
-                return;
+
+            const selected = date || selectedDate;
+            if (selected && pendingVaccine) {
+                if (pendingVaccine.isCustom && pendingVaccine.customObj) {
+                    onToggleCustom(pendingVaccine.customObj);
+                } else {
+                    onToggle(pendingVaccine.key, selected);
+                }
             }
+            setPendingVaccine(null);
+            return;
+        }
+
+        // iOS path
+        if (event?.type === 'dismissed') {
+            setPendingVaccine(null);
+            return;
         }
 
         const selected = date || selectedDate;
@@ -80,8 +101,7 @@ const VaccineTracker = memo(({
             if (pendingVaccine.isCustom && pendingVaccine.customObj) {
                 onToggleCustom(pendingVaccine.customObj);
             } else {
-                // @ts-ignore
-                onToggle(pendingVaccine.key, date);
+                onToggle(pendingVaccine.key, selected);
             }
         }
         setPendingVaccine(null);
@@ -139,7 +159,7 @@ const VaccineTracker = memo(({
                     <DateTimePicker
                         value={selectedDate}
                         mode="date"
-                        display="calendar"
+                        display="default"
                         onChange={onDateConfirm}
                         maximumDate={new Date()}
                     />

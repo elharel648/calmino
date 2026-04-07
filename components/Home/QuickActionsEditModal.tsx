@@ -26,12 +26,21 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
     useEffect(() => {
         if (visible) {
             setLocalOrder([...actionOrder]);
-            RNAnimated.spring(slideAnim, {
-                toValue: 0,
-                useNativeDriver: true,
-                tension: 65,
-                friction: 11,
-            }).start();
+            const startAnimation = () => {
+                RNAnimated.spring(slideAnim, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 65,
+                    friction: 11,
+                }).start();
+            };
+            
+            // Defer animation on Android to allow for component mount batching
+            if (Platform.OS === 'android') {
+                setTimeout(startAnimation, 30);
+            } else {
+                startAnimation();
+            }
         } else {
             slideAnim.setValue(SCREEN_HEIGHT);
         }
@@ -199,13 +208,13 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                         <TouchableOpacity style={[styles.resetBtn, { backgroundColor: isDarkMode ? '#1E1040' : '#EEF2FF' }]} onPress={handleReset}>
                             <RotateCcw size={18} color={theme.primary} />
                         </TouchableOpacity>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>עריכת פעולות מהירות</Text>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>{t('stats.editOrder') || 'עריכת פעולות מהירות'}</Text>
                         <View style={styles.resetBtn} />
                     </View>
 
                     {/* Instructions */}
                     <View style={styles.instructionsRow}>
-                        <Text style={[styles.instructionsText, { color: theme.textTertiary }]}>לחיצה ארוכה על שורה כדי לגרור ולשנות סדר • לחץ על העין להסתיר</Text>
+                        <Text style={[styles.instructionsText, { color: theme.textTertiary }]}>{t('stats.editOrderHint') || 'לחיצה ארוכה על שורה כדי לגרור ולשנות סדר • לחץ על העין להסתיר'}</Text>
                     </View>
 
                     {/* Draggable List */}
@@ -221,7 +230,7 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
 
                     {/* Save Button */}
                     <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary }]} onPress={handleClose}>
-                        <Text style={styles.saveBtnText}>{t('tracking.endTime')}</Text>
+                        <Text style={styles.saveBtnText}>{t('common.save') || 'שמור'}</Text>
                     </TouchableOpacity>
                 </RNAnimated.View>
             </View>
