@@ -1534,7 +1534,11 @@
     "notes": "Notizen",
     "addNotes": "Notizen hinzufügen...",
     "save": "Speichern",
-    "symptomPlaceholder": "Symptome, Behandlung..."
+    "symptomPlaceholder": "Symptome, Behandlung...",
+    "vaccinesCompleted": "Impfungen abgeschlossen",
+    "nextVaccine": "Nächste Impfung",
+    "removeVaccineTitle": "Impfmarkierung entfernen",
+    "removeVaccineMessage": "Sind Sie sicher, dass Sie die Impfmarkierung entfernen möchten?"
   },
   "misc": {
     "uploadPhoto": "Foto Hochladen",

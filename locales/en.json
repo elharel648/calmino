@@ -1368,7 +1368,11 @@
     "notes": "Notes",
     "addNotes": "Add notes...",
     "save": "Save",
-    "symptomPlaceholder": "Symptoms, treatment..."
+    "symptomPlaceholder": "Symptoms, treatment...",
+    "vaccinesCompleted": "vaccines completed",
+    "nextVaccine": "Next Vaccine",
+    "removeVaccineTitle": "Remove Vaccine Mark",
+    "removeVaccineMessage": "Are you sure you want to unmark this vaccine?"
   },
   "nightLight": {
     "title": "Night Light",

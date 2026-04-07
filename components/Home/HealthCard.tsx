@@ -2,7 +2,7 @@ import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from '
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image,  PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 import InlineLoader from '../../components/Common/InlineLoader';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell, CalendarPlus } from 'lucide-react-native';
+import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell, CalendarPlus, Info } from 'lucide-react-native';
 import * as ExpoCalendar from 'expo-calendar';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -197,8 +197,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     // History state
     const [healthLog, setHealthLog] = useState<any[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
-    const [historyFilter, setHistoryFilter] = useState<'all' | 'temperature' | 'doctor' | 'illness' | 'medication'>('all');
-
+    const [historyFilter, setHistoryFilter] = useState<'all' | 'temperature' | 'doctor' | 'illness' | 'medication' | 'vaccine'>('all');
+    const [selectedVaccineInfo, setSelectedVaccineInfo] = useState<{ name: string; description: string } | null>(null);
+    const [unmarkVaccineKey, setUnmarkVaccineKey] = useState<string | null>(null);
     // Save success state
     const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -286,10 +287,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             if (newVal) {
                 // 1. Add to Health History (healthLog)
                 const vaccineName = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === key)?.name || key;
+                const vaccineDate = timestamp.toDate();
+                const dateStr = vaccineDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
                 const historyEntry = {
                     type: 'vaccine',
                     name: vaccineName,
-                    note: 'בוצע',
+                    note: `בוצע: ${dateStr}`,
                     timestamp: timestamp.toDate().toISOString()
                 };
                 await updateDoc(doc(db, 'babies', childId), { healthLog: arrayUnion(historyEntry) });
@@ -374,7 +377,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     };
 
     // Add vaccine appointment to device calendar
-    const addVaccineToCalendar = async (vaccineName: string) => {
+    const addVaccineToCalendar = async (vaccineName: string, dateObj?: Date) => {
+        const childId = babyId || activeChild?.childId;
+        const user = auth.currentUser;
         try {
             const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
             if (status !== 'granted') {
@@ -389,7 +394,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 return;
             }
 
-            const startDate = new Date(calendarAppointmentDate);
+            const startDate = new Date(dateObj || calendarAppointmentDate);
             startDate.setHours(9, 0, 0, 0);
             const endDate = new Date(startDate);
             endDate.setMinutes(endDate.getMinutes() + 30);
@@ -401,6 +406,29 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 notes: `תזכורת חיסון לתינוק - ${vaccineName}`,
                 alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }], // 1hr and 1day before
             });
+
+            // Save appointment to health history
+            if (childId) {
+                const appointmentEntry = {
+                    type: 'vaccine',
+                    name: vaccineName,
+                    note: `תור חיסון: ${vaccineName} - ${startDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+                    timestamp: new Date().toISOString(),
+                    appointmentDate: startDate.toISOString(),
+                };
+                await updateDoc(doc(db, 'babies', childId), { healthLog: arrayUnion(appointmentEntry) });
+                if (currentScreen === 'history') loadHealthLog();
+            }
+
+            // Also add to daily timeline
+            if (user && childId) {
+                await saveEventToFirebase(user.uid, childId, {
+                    type: 'custom',
+                    subType: 'vaccine',
+                    note: `תור חיסון: ${vaccineName} (${startDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })})`,
+                    timestamp: new Date(),
+                });
+            }
 
             Alert.alert(t('health.addedToCalendar'), t('health.vaccineAddedToCalendar', { name: vaccineName }));
         } catch (error) {
@@ -693,8 +721,122 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     );
 
     // Vaccines with strikethrough
-    const renderVaccines = () => (
+    const renderVaccines = () => {
+        // Calculate progress
+        const totalVaccines = VACCINE_SCHEDULE.reduce((acc, g) => acc + g.vaccines.length, 0);
+        const doneVaccines = VACCINE_SCHEDULE.reduce((acc, g) => {
+            return acc + g.vaccines.filter(v => {
+                const status = vaccines[v.key];
+                return status && (typeof status === 'object' ? (status as any).isDone : !!status);
+            }).length;
+        }, 0);
+        const progress = totalVaccines > 0 ? doneVaccines / totalVaccines : 0;
+
+        // Find next undone vaccine
+        let nextVaccine: { name: string; ageTitle: string; key: string; description?: string } | null = null;
+        for (const group of VACCINE_SCHEDULE) {
+            for (const v of group.vaccines) {
+                const status = vaccines[v.key];
+                const isDone = status && (typeof status === 'object' ? (status as any).isDone : !!status);
+                if (!isDone) {
+                    nextVaccine = { name: v.name, ageTitle: group.ageTitle, key: v.key, description: v.description };
+                    break;
+                }
+            }
+            if (nextVaccine) break;
+        }
+
+        // Confirmation for unmark/delete vaccine
+        // Confirmation for unmark/delete vaccine
+        const confirmUnmarkVaccine = (key: string) => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setUnmarkVaccineKey(key);
+        };
+
+        // Info tooltip for vaccine
+        const showVaccineInfo = (vaccine: { name: string; description?: string }) => {
+            if (vaccine.description) {
+                setSelectedVaccineInfo({ name: vaccine.name, description: vaccine.description });
+            }
+        };
+
+        return (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
+            {/* Custom Vaccine Info Modal */}
+            {selectedVaccineInfo && (
+                <Modal transparent animationType="fade" visible={!!selectedVaccineInfo} onRequestClose={() => setSelectedVaccineInfo(null)}>
+                    <TouchableWithoutFeedback onPress={() => setSelectedVaccineInfo(null)}>
+                        <View style={styles.modalOverlayCenter}>
+                            <TouchableWithoutFeedback>
+                                <View style={[styles.datePickerCard, { width: '85%', padding: 24, alignItems: 'flex-end' }]}>
+                            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 12, gap: 12 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.actionColors.health.lightColor, alignItems: 'center', justifyContent: 'center' }}>
+                                    <Info size={20} color={theme.actionColors.health.color} />
+                                </View>
+                                <Text style={[styles.datePickerTitle, { flex: 1, textAlign: 'right', marginBottom: 0 }]}>{selectedVaccineInfo.name}</Text>
+                            </View>
+                            
+                            <Text style={{ fontSize: 16, color: theme.textSecondary, textAlign: 'right', writingDirection: 'rtl', lineHeight: 24, marginBottom: 24 }}>
+                                {selectedVaccineInfo.description}
+                            </Text>
+
+                            <TouchableOpacity 
+                                style={[styles.datePickerConfirm, { width: '100%', alignItems: 'center', paddingVertical: 14 }]} 
+                                onPress={() => setSelectedVaccineInfo(null)}
+                            >
+                                <Text style={[styles.datePickerConfirmText, { fontSize: 16 }]}>הבנתי</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+                </Modal>
+            )}
+
+            {/* Custom Unmark Confirmation Modal */}
+            {unmarkVaccineKey && (
+                <Modal transparent animationType="fade" visible={!!unmarkVaccineKey} onRequestClose={() => setUnmarkVaccineKey(null)}>
+                    <TouchableWithoutFeedback onPress={() => setUnmarkVaccineKey(null)}>
+                        <View style={styles.modalOverlayCenter}>
+                            <TouchableWithoutFeedback>
+                                <View style={[styles.datePickerCard, { width: '85%', padding: 24, alignItems: 'center' }]}>
+                                    <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                                        <Trash2 size={28} color="#EF4444" />
+                                    </View>
+                                    
+                                    <Text style={[styles.datePickerTitle, { textAlign: 'center', marginBottom: 8 }]}>
+                                        {t('health.removeVaccineTitle') || 'ביטול סימון חיסון'}
+                                    </Text>
+                                    
+                                    <Text style={{ fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+                                        {t('health.removeVaccineMessage') || 'האם אתה בטוח שברצונך לבטל את סימון החיסון?'}
+                                    </Text>
+
+                                    <View style={{ flexDirection: 'row-reverse', gap: 12, width: '100%' }}>
+                                        <TouchableOpacity 
+                                            style={[styles.datePickerConfirm, { flex: 1, backgroundColor: '#EF4444', alignItems: 'center' }]} 
+                                            onPress={() => {
+                                                toggleVaccine(unmarkVaccineKey);
+                                                setUnmarkVaccineKey(null);
+                                            }}
+                                        >
+                                            <Text style={styles.datePickerConfirmText}>{t('common.confirm') || 'אישור'}</Text>
+                                        </TouchableOpacity>
+                                        
+                                        <TouchableOpacity 
+                                            style={[styles.datePickerCancel, { flex: 1, alignItems: 'center' }]} 
+                                            onPress={() => setUnmarkVaccineKey(null)}
+                                        >
+                                            <Text style={styles.datePickerCancelText}>{t('common.cancel') || 'ביטול'}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </Modal>
+            )}
+
             <View style={styles.screenHeader}>
                 <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.tools.color, borderColor: 'transparent' }]}>
                     <Syringe size={24} color="#FFFFFF" strokeWidth={1.8} />
@@ -702,64 +844,169 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <Text style={styles.screenSubtitle}>{t('health.perHealthMinistry')}</Text>
             </View>
 
+            {/* Progress Bar */}
+            <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>
+                <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}>
+                        {doneVaccines}/{totalVaccines} {t('health.vaccinesCompleted') || 'חיסונים הושלמו'}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: progress >= 1 ? theme.success : theme.actionColors.health.color }}>
+                        {Math.round(progress * 100)}%
+                    </Text>
+                </View>
+                <View style={{ height: 8, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB', borderRadius: 4, overflow: 'hidden' }}>
+                    <View style={{
+                        height: 8,
+                        width: `${Math.round(progress * 100)}%`,
+                        backgroundColor: progress >= 1 ? theme.success : theme.actionColors.health.color,
+                        borderRadius: 4,
+                    }} />
+                </View>
+            </View>
+
+            {/* Next Vaccine Highlight OR Celebration Card */}
+            {progress >= 1 ? (
+                <View style={{
+                    backgroundColor: theme.successLight || 'rgba(16, 185, 129, 0.1)',
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 20,
+                    borderWidth: 1,
+                    borderColor: theme.success,
+                    flexDirection: 'row-reverse',
+                    alignItems: 'center',
+                    gap: 12,
+                }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.success, alignItems: 'center', justifyContent: 'center' }}>
+                        <Check size={24} color="#FFFFFF" strokeWidth={2.5} />
+                    </View>
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.success, textAlign: 'right', marginBottom: 2 }}>
+                            כל הכבוד! 🎉
+                        </Text>
+                        <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: 'right' }}>
+                            השלמתם את כל חיסוני השגרה המומלצים בהצלחה.
+                        </Text>
+                    </View>
+                </View>
+            ) : nextVaccine && (
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: theme.actionColors.health.lightColor,
+                        borderRadius: 16,
+                        padding: 16,
+                        marginBottom: 20,
+                        borderWidth: 1.5,
+                        borderColor: 'transparent',
+                        flexDirection: 'row-reverse',
+                        alignItems: 'center',
+                        gap: 12,
+                    }}
+                    onPress={() => handleVaccinePress(nextVaccine!.key)}
+                    activeOpacity={0.7}
+                >
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.actionColors.health.color, alignItems: 'center', justifyContent: 'center' }}>
+                        <Syringe size={20} color="#FFFFFF" strokeWidth={2} />
+                    </View>
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                        <Text style={{ fontSize: 11, color: theme.actionColors.health.color, fontWeight: '600', marginBottom: 2 }}>
+                            {t('health.nextVaccine') || 'החיסון הבא'}
+                        </Text>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
+                            {nextVaccine.name}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: theme.actionColors.health.color, fontWeight: '500', marginTop: 2 }}>
+                            {nextVaccine.ageTitle}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            )}
+
             {/* Date picker — mark vaccine done */}
             {pendingVaccineKey && (
-                <Modal transparent animationType="fade" visible={!!pendingVaccineKey}>
-                    <View style={styles.modalOverlayCenter}>
-                        <View style={styles.datePickerCard}>
-                            <Text style={styles.datePickerTitle}>{t('health.whenWasVaccine')}</Text>
-                            <DateTimePicker
-                                value={vaccineMarkDate}
-                                mode="date"
-                                display="spinner"
-                                onChange={(_, d) => d && setVaccineMarkDate(d)}
-                                maximumDate={new Date()}
-                                locale="he-IL"
-                            />
-                            <View style={styles.datePickerButtons}>
-                                <TouchableOpacity style={styles.datePickerCancel} onPress={() => setPendingVaccineKey(null)}>
-                                    <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.datePickerConfirm} onPress={confirmVaccineMark}>
-                                    <Text style={styles.datePickerConfirmText}>{t('common.confirm')}</Text>
-                                </TouchableOpacity>
-                            </View>
+                <Modal transparent animationType="fade" visible={!!pendingVaccineKey} onRequestClose={() => setPendingVaccineKey(null)}>
+                    <TouchableWithoutFeedback onPress={() => setPendingVaccineKey(null)}>
+                        <View style={styles.modalOverlayCenter}>
+                            <TouchableWithoutFeedback>
+                                <View style={styles.datePickerCard}>
+                                    <Text style={styles.datePickerTitle}>{t('health.whenWasVaccine')}</Text>
+                                    <DateTimePicker
+                                        value={vaccineMarkDate}
+                                        mode="date"
+                                        display="spinner"
+                                        onChange={(_, d) => d && setVaccineMarkDate(d)}
+                                        maximumDate={new Date()}
+                                        locale="he-IL"
+                                    />
+                                    <View style={styles.datePickerButtons}>
+                                        <TouchableOpacity style={[styles.datePickerConfirm, { flex: 1, alignItems: 'center' }]} onPress={confirmVaccineMark}>
+                                            <Text style={styles.datePickerConfirmText}>{t('common.confirm')}</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={[styles.datePickerCancel, { flex: 1, alignItems: 'center' }]} onPress={() => setPendingVaccineKey(null)}>
+                                            <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </TouchableWithoutFeedback>
                         </View>
-                    </View>
+                    </TouchableWithoutFeedback>
                 </Modal>
             )}
 
             {/* Calendar appointment picker */}
             {calendarVaccineKey && (
-                <Modal transparent animationType="fade" visible={!!calendarVaccineKey}>
-                    <View style={styles.modalOverlayCenter}>
-                        <View style={styles.datePickerCard}>
-                            <Text style={styles.datePickerTitle}>{t('health.whenIsAppointment')}</Text>
-                            <Text style={styles.datePickerSubtitle}>
-                                {VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name}
-                            </Text>
-                            <DateTimePicker
-                                value={calendarAppointmentDate}
-                                mode="date"
-                                display="spinner"
-                                onChange={(_, d) => d && setCalendarAppointmentDate(d)}
-                                minimumDate={new Date()}
-                                locale="he-IL"
-                            />
-                            <View style={styles.datePickerButtons}>
-                                <TouchableOpacity style={styles.datePickerCancel} onPress={() => setCalendarVaccineKey(null)}>
-                                    <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.datePickerConfirm} onPress={() => {
-                                    const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
-                                    addVaccineToCalendar(name);
-                                }}>
-                                    <Text style={styles.datePickerConfirmText}>{t('health.addToCalendar')}</Text>
-                                </TouchableOpacity>
+                Platform.OS === 'ios' ? (
+                    <Modal transparent animationType="fade" visible={!!calendarVaccineKey} onRequestClose={() => setCalendarVaccineKey(null)}>
+                        <TouchableWithoutFeedback onPress={() => setCalendarVaccineKey(null)}>
+                            <View style={styles.modalOverlayCenter}>
+                                <TouchableWithoutFeedback>
+                                    <View style={styles.datePickerCard}>
+                                        <Text style={styles.datePickerTitle}>{t('health.whenIsAppointment')}</Text>
+                                        <Text style={styles.datePickerSubtitle}>
+                                            {VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name}
+                                        </Text>
+                                        <DateTimePicker
+                                            value={calendarAppointmentDate}
+                                            mode="date"
+                                            display="spinner"
+                                            onChange={(_, d) => d && setCalendarAppointmentDate(d)}
+                                            minimumDate={new Date()}
+                                            locale="he-IL"
+                                        />
+                                        <View style={styles.datePickerButtons}>
+                                            <TouchableOpacity style={[styles.datePickerConfirm, { flex: 1, alignItems: 'center' }]} onPress={() => {
+                                                const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
+                                                addVaccineToCalendar(name);
+                                            }}>
+                                                <Text style={styles.datePickerConfirmText}>{t('health.addToCalendar')}</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={[styles.datePickerCancel, { flex: 1, alignItems: 'center' }]} onPress={() => setCalendarVaccineKey(null)}>
+                                                <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </TouchableWithoutFeedback>
                             </View>
-                        </View>
-                    </View>
-                </Modal>
+                        </TouchableWithoutFeedback>
+                    </Modal>
+                ) : (
+                    <DateTimePicker
+                        value={calendarAppointmentDate}
+                        mode="date"
+                        display="default"
+                        onChange={(event, d) => {
+                            if (event.type === 'set' && d) {
+                                setCalendarAppointmentDate(d);
+                                const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
+                                setCalendarVaccineKey(null);
+                                addVaccineToCalendar(name, d);
+                            } else {
+                                setCalendarVaccineKey(null);
+                            }
+                        }}
+                        minimumDate={new Date()}
+                    />
+                )
             )}
 
             {/* Add Custom Vaccine Button */}
@@ -767,7 +1014,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 style={styles.addVaccineBtn}
                 onPress={() => setShowAddVaccine(!showAddVaccine)}
             >
-                <Plus size={20} color="#6366F1" />
+                <Plus size={20} color={theme.actionColors.health.color} />
                 <Text style={styles.addVaccineBtnText}>{t('health.addVaccine')}</Text>
             </TouchableOpacity>
 
@@ -805,7 +1052,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <View style={[styles.checkbox, styles.checkboxChecked]}>
                                 <Check size={14} color="#fff" />
                             </View>
-                            <Text style={[styles.vaccineName, { flex: 1, textAlign: 'right' }]}>{vaccine.name}</Text>
+                            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                <Text style={[styles.vaccineName, { textAlign: 'right' }]}>{vaccine.name}</Text>
+                                {vaccine.date && (
+                                    <Text style={{ fontSize: 11, color: theme.success, marginTop: 2, fontWeight: '500' }}>
+                                        נוסף: {new Date(vaccine.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </Text>
+                                )}
+                            </View>
                         </View>
                     ))}
                 </View>
@@ -824,7 +1078,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <View key={vIdx} style={[styles.vaccineRow, isDone && styles.vaccineRowDone]}>
                                 {isDone ? (
                                     <TouchableOpacity
-                                        onPress={() => toggleVaccine(vaccine.key)}
+                                        onPress={() => confirmUnmarkVaccine(vaccine.key)}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                     >
                                         <Trash2 size={16} color="#EF4444" />
@@ -837,20 +1091,44 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                         }}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                     >
-                                        <CalendarPlus size={16} color="#6366F1" />
+                                        <CalendarPlus size={16} color={theme.actionColors.health.color} />
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity
                                     style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1, gap: 10 }}
                                     onPress={() => handleVaccinePress(vaccine.key)}
+                                    onLongPress={() => showVaccineInfo(vaccine)}
+                                    delayLongPress={400}
                                     activeOpacity={0.7}
                                 >
                                     <View style={[styles.checkbox, isDone && styles.checkboxChecked]}>
                                         {isDone && <Check size={14} color="#fff" />}
                                     </View>
-                                    <Text style={[styles.vaccineName, isDone && styles.vaccineNameDone]}>
-                                        {vaccine.name}
-                                    </Text>
+                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+                                            <Text style={[styles.vaccineName, isDone && styles.vaccineNameDone]}>
+                                                {vaccine.name}
+                                            </Text>
+                                            {vaccine.description && !isDone && (
+                                                <TouchableOpacity onPress={() => showVaccineInfo(vaccine)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                                                    <Info size={14} color={theme.textTertiary} />
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                        {isDone && (() => {
+                                            const vaccineData = vaccines[vaccine.key];
+                                            const dateVal = typeof vaccineData === 'object' ? (vaccineData as any)?.date : null;
+                                            if (!dateVal) return null;
+                                            const dateStr = dateVal?.seconds
+                                                ? new Date(dateVal.seconds * 1000).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })
+                                                : new Date(dateVal).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
+                                            return (
+                                                <Text style={{ fontSize: 11, color: theme.success, marginTop: 2, fontWeight: '500' }}>
+                                                    בוצע: {dateStr}
+                                                </Text>
+                                            );
+                                        })()}
+                                    </View>
                                 </TouchableOpacity>
                             </View>
                         );
@@ -858,7 +1136,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 </View>
             ))}
         </ScrollView>
-    );
+        );
+    };
 
     // Temperature with Slider
     const renderTemperature = () => (
@@ -1480,12 +1759,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 case 'doctor': return { label: 'רופא', icon: Stethoscope, color: '#10B981', bg: '#F3F4F6' };
                 case 'illness': return { label: 'מחלה', icon: Heart, color: '#EF4444', bg: '#F3F4F6' };
                 case 'medication': return { label: 'תרופה', icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor };
+                case 'vaccine': return { label: 'חיסון', icon: Syringe, color: '#6366F1', bg: '#EEF2FF' };
                 default: return { label: 'שונות', icon: ClipboardList, color: '#0EA5E9', bg: '#F3F4F6' };
             }
         };
 
         const filterTabs = [
             { key: 'all', label: t('common.all') },
+            { key: 'vaccine', label: t('health.vaccines') },
             { key: 'temperature', label: t('health.fever') },
             { key: 'doctor', label: t('health.doctorVisit') },
             { key: 'illness', label: t('health.illnesses') },
@@ -1597,9 +1878,26 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                             {item.reason && (
                                                 <Text style={{ fontSize: 14, color: theme.textPrimary, marginTop: 2, textAlign: 'right' }}>{item.reason}</Text>
                                             )}
-                                            {item.note && (
+
+                                            {/* Vaccine-specific: show date badges */}
+                                            {item.type === 'vaccine' && item.appointmentDate ? (
+                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                                                    <Bell size={13} color="#6366F1" />
+                                                    <Text style={{ fontSize: 13, color: '#6366F1', fontWeight: '600' }}>
+                                                        תור: {new Date(item.appointmentDate).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                    </Text>
+                                                </View>
+                                            ) : item.type === 'vaccine' && item.note?.startsWith('בוצע') ? (
+                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                                                    <Check size={13} color="#10B981" />
+                                                    <Text style={{ fontSize: 13, color: '#10B981', fontWeight: '600' }}>
+                                                        {item.note}
+                                                    </Text>
+                                                </View>
+                                            ) : item.note ? (
                                                 <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'right' }}>{item.note}</Text>
-                                            )}
+                                            ) : null}
+
                                             {/* Show photo/document attachments */}
                                             {(item.photoUri || item.documentName) && (
                                                 <View style={{ flexDirection: 'row-reverse', gap: 8, marginTop: 8 }}>
@@ -1852,11 +2150,11 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     datePickerCard: { backgroundColor: theme.card, borderRadius: 20, padding: 20, width: '85%', alignItems: 'center' },
     datePickerTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 4 },
-    datePickerSubtitle: { fontSize: 13, color: '#6366F1', marginBottom: 8 },
-    datePickerButtons: { flexDirection: 'row', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' },
-    datePickerConfirm: { backgroundColor: '#6366F1', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+    datePickerSubtitle: { fontSize: 13, color: theme.actionColors.health.color, marginBottom: 8 },
+    datePickerButtons: { flexDirection: 'row-reverse', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' },
+    datePickerConfirm: { backgroundColor: theme.actionColors.health.color, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
     datePickerConfirmText: { color: theme.card, fontWeight: '700' },
-    datePickerCancel: { backgroundColor: '#F1F5F9', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+    datePickerCancel: { backgroundColor: theme.cardSecondary, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
     datePickerCancelText: { color: theme.textSecondary, fontWeight: '600' },
 
     // Temperature slider

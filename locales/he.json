@@ -1368,7 +1368,11 @@
     "notes": "הערות",
     "addNotes": "הוסף הערות...",
     "save": "שמור",
-    "symptomPlaceholder": "תסמינים, טיפול..."
+    "symptomPlaceholder": "תסמינים, טיפול...",
+    "vaccinesCompleted": "חיסונים הושלמו",
+    "nextVaccine": "החיסון הבא",
+    "removeVaccineTitle": "ביטול סימון חיסון",
+    "removeVaccineMessage": "האם אתה בטוח שברצונך לבטל את סימון החיסון?"
   },
   "nightLight": {
     "title": "פנס לילה",

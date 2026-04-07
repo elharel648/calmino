@@ -1534,7 +1534,11 @@
     "notes": "Notas",
     "addNotes": "Agregar notas...",
     "save": "Guardar",
-    "symptomPlaceholder": "Síntomas, tratamiento..."
+    "symptomPlaceholder": "Síntomas, tratamiento...",
+    "vaccinesCompleted": "vacunas completadas",
+    "nextVaccine": "Próxima vacuna",
+    "removeVaccineTitle": "Desmarcar vacuna",
+    "removeVaccineMessage": "¿Estás seguro de que quieres desmarcar esta vacuna?"
   },
   "misc": {
     "uploadPhoto": "Subir Foto",
