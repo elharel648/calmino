@@ -7,3 +7,9 @@ node_modules/
 .env.production
 dist/
 node_modules
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties

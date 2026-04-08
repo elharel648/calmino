@@ -12,6 +12,8 @@ dist/
 # Do NOT include local android/ or ios/ builds (causes variant mismatches)
 android/.gradle/
 android/app/build/
+android/build/
+android/local.properties
 ios/Pods/
 ios/build/
 ios/DerivedData/
