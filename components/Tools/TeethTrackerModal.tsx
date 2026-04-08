@@ -11,6 +11,7 @@ import { logger } from '../../utils/logger';
 import { doc, getDoc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
 import { saveEventToFirebase } from '../../services/firebaseService';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate } from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
 import { useLanguage } from '../../context/LanguageContext';
@@ -603,23 +604,21 @@ export default function TeethTrackerModal({
                             })()}
                         </ScrollView>
 
-                    {/* Date Picker - Android: native dialog, iOS: custom modal */}
-                    {showDatePicker && Platform.OS === 'android' && (
-                        <DateTimePicker
+                    {/* Date Picker - Android: Hebrew Calendar, iOS: custom modal */}
+                    {Platform.OS === 'android' && (
+                        <AndroidHebrewCalendar
+                            visible={showDatePicker}
                             value={currentDate}
-                            mode="date"
-                            display="default"
-                            onChange={(event, date) => {
-                                if (event.type === 'dismissed') {
-                                    setShowDatePicker(false);
-                                    setSelectedTooth(null);
-                                    return;
-                                }
-                                if (date && selectedTooth && activeChild?.childId) {
-                                    setCurrentDate(date);
-                                    handleDateChange({} as any, date);
-                                }
+                            onSelect={(date) => {
+                                setCurrentDate(date);
+                                handleDateChange({} as any, date);
                             }}
+                            onDismiss={() => {
+                                setShowDatePicker(false);
+                                setSelectedTooth(null);
+                            }}
+                            theme={theme}
+                            t={t}
                             maximumDate={new Date()}
                         />
                     )}

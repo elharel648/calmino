@@ -23,6 +23,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, wit
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { addMilestone, removeMilestone } from '../../services/babyService';
 import { SwipeableRow } from '../Common/SwipeableRow';
@@ -610,7 +611,7 @@ export default function MilestonesModal({
                     </ScrollFadeWrapper>
 
                     {/* Date Picker */}
-                    {showDatePicker && (
+                    {showDatePicker && Platform.OS !== 'android' && (
                         <View style={styles.datePickerContainer}>
                             <DateTimePicker
                                 value={date}
@@ -624,6 +625,19 @@ export default function MilestonesModal({
                                 }}
                             />
                         </View>
+                    )}
+                    {Platform.OS === 'android' && (
+                        <AndroidHebrewCalendar
+                            visible={showDatePicker}
+                            value={date}
+                            onSelect={(selectedDate) => {
+                                setDate(selectedDate);
+                                setShowDatePicker(false);
+                            }}
+                            onDismiss={() => setShowDatePicker(false)}
+                            theme={theme}
+                            t={t}
+                        />
                     )}
                 </RNAnimatedView>
             </KeyboardAvoidingView>

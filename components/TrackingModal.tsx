@@ -16,6 +16,7 @@ import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, withDelay, FadeIn, FadeOut, Easing, runOnJS, withRepeat, interpolate, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView, NativeViewGestureHandler } from 'react-native-gesture-handler';
+import AndroidHebrewCalendar from './Common/AndroidHebrewCalendar';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TIME_PICKER_STYLE = { width: 300, height: 216, alignSelf: 'center' as const };
@@ -504,6 +505,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
 
   // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
   // Always enabled so the drag handle can dismiss the modal at any time
+  const isPickerOpen = showDiaperDatePicker || showDiaperTimePicker || showSleepStartPicker || showSleepEndPicker || showFoodStartTimePicker || showFoodEndTimePicker || sleepMode === 'duration';
   const panGesture = Gesture.Pan()
     .enabled(Platform.OS === 'android' ? (!isPickerOpen && !isKeyboardVisible) : !isPickerOpen)
     .activeOffsetY(Platform.OS === 'android' ? [-12, 12] : [-2, 2])
@@ -2172,7 +2174,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       </View>
 
       {/* Diaper Date Picker Modal */}
-      {showDiaperDatePicker && (
+      {showDiaperDatePicker && Platform.OS !== 'android' && (
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
             {/* Done button — small, top-right */}
@@ -2193,12 +2195,9 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               value={diaperTime}
               mode="date"
               maximumDate={new Date()}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display="spinner"
               locale="he-IL"
               onChange={(event, selectedDate) => {
-                if (Platform.OS === 'android') {
-                  setShowDiaperDatePicker(false);
-                }
                 if (selectedDate) {
                   const updated = new Date(diaperTime);
                   updated.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
@@ -2208,6 +2207,22 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             />
           </View>
         </View>
+      )}
+      {Platform.OS === 'android' && (
+        <AndroidHebrewCalendar
+          visible={showDiaperDatePicker}
+          value={diaperTime}
+          onSelect={(date) => {
+            const updated = new Date(diaperTime);
+            updated.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+            setDiaperTime(updated);
+            setShowDiaperDatePicker(false);
+          }}
+          onDismiss={() => setShowDiaperDatePicker(false)}
+          theme={theme}
+          t={t}
+          maximumDate={new Date()}
+        />
       )}
 
       {/* Diaper Time Picker Modal */}

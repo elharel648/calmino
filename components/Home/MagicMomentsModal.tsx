@@ -18,6 +18,7 @@ import {
     Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import { Sparkles, Camera, X, RefreshCw, Plus, Calendar, Baby, Moon, Heart, Smile, Hand, Shapes, Utensils, Flower2, Eye, Bug, ArrowUp, Music, Footprints } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -886,22 +887,34 @@ export default function MagicMomentsModal({
                 </View>
             </Modal>
 
-            {/* Date Picker */}
-            {datePickerVisible && editingDateMonth && (
+            {/* Date Picker — Android: Hebrew Calendar, iOS: native (handled in separate modal below) */}
+            {Platform.OS === 'android' && editingDateMonth && (
+                <AndroidHebrewCalendar
+                    visible={datePickerVisible}
+                    value={selectedDate}
+                    onSelect={(date) => {
+                        setSelectedDate(date);
+                        handleDateUpdate(editingDateMonth!, date);
+                        setEditingDateMonth(null);
+                        setDatePickerVisible(false);
+                    }}
+                    onDismiss={() => {
+                        setDatePickerVisible(false);
+                        setEditingDateMonth(null);
+                    }}
+                    theme={theme}
+                    t={t}
+                    maximumDate={new Date()}
+                />
+            )}
+            {Platform.OS !== 'android' && datePickerVisible && editingDateMonth && (
                 <DateTimePicker
                     value={selectedDate}
                     mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    display="spinner"
                     onChange={(event, date) => {
-                        if (Platform.OS === 'android') {
-                            setDatePickerVisible(false);
-                        }
                         if (date && editingDateMonth) {
                             setSelectedDate(date);
-                            if (Platform.OS === 'android') {
-                                handleDateUpdate(editingDateMonth, date);
-                                setEditingDateMonth(null);
-                            }
                         }
                     }}
                     maximumDate={new Date()}

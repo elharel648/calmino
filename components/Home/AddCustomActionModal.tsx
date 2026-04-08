@@ -27,6 +27,8 @@ export const CUSTOM_ICON_MAP: Record<string, React.ComponentType<any>> = {
 
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
+import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 
 interface AddCustomActionModalProps {
@@ -82,6 +84,7 @@ const QUICK_PRESETS = [
 
 const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose, onAdd }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [name, setName] = useState('');
     const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
     const [notes, setNotes] = useState('');
@@ -482,7 +485,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     </TouchableOpacity>
 
                     {/* Date Picker Modal */}
-                    {showDatePicker && (
+                    {showDatePicker && Platform.OS !== 'android' && (
                         <View style={styles.pickerOverlay}>
                             <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
                                 {Platform.OS === 'ios' && (
@@ -500,7 +503,6 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                     mode="date"
                                     display="spinner"
                                     onChange={(event, date) => {
-                                        if (Platform.OS === 'android') setShowDatePicker(false);
                                         if (date) setSelectedDate(date);
                                     }}
                                     locale="he-IL"
@@ -508,6 +510,20 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                 />
                             </View>
                         </View>
+                    )}
+                    {Platform.OS === 'android' && (
+                        <AndroidHebrewCalendar
+                            visible={showDatePicker}
+                            value={selectedDate}
+                            onSelect={(date) => {
+                                setSelectedDate(date);
+                                setShowDatePicker(false);
+                            }}
+                            onDismiss={() => setShowDatePicker(false)}
+                            theme={theme}
+                            t={t}
+                            maximumDate={new Date()}
+                        />
                     )}
 
                     {/* Time Picker Modal */}

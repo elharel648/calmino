@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import { BlurView } from 'expo-blur';
 import { auth, db } from '../../services/firebaseConfig';
 import { addMedication, getMedications, deleteMedication, logMedicationTaken } from '../../services/medicationService';
@@ -705,21 +706,17 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             {/* Date picker — mark vaccine done */}
             {pendingVaccineKey && (
                 Platform.OS === 'android' ? (
-                    <DateTimePicker
+                    <AndroidHebrewCalendar
+                        visible={!!pendingVaccineKey}
                         value={vaccineMarkDate}
-                        mode="date"
-                        display="default"
-                        onChange={(e, d) => {
-                            if (e.type === 'dismissed') {
-                                setPendingVaccineKey(null);
-                                return;
-                            }
-                            if (d && pendingVaccineKey) {
-                                setVaccineMarkDate(d);
-                                toggleVaccine(pendingVaccineKey, d);
-                                setPendingVaccineKey(null);
-                            }
+                        onSelect={(d) => {
+                            setVaccineMarkDate(d);
+                            toggleVaccine(pendingVaccineKey!, d);
+                            setPendingVaccineKey(null);
                         }}
+                        onDismiss={() => setPendingVaccineKey(null)}
+                        theme={theme}
+                        t={t}
                         maximumDate={new Date()}
                     />
                 ) : (
@@ -752,23 +749,19 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             {/* Calendar appointment picker */}
             {calendarVaccineKey && (
                 Platform.OS === 'android' ? (
-                    <DateTimePicker
+                    <AndroidHebrewCalendar
+                        visible={!!calendarVaccineKey}
                         value={calendarAppointmentDate}
-                        mode="date"
-                        display="default"
-                        onChange={(e, d) => {
-                            if (e.type === 'dismissed') {
-                                setCalendarVaccineKey(null);
-                                return;
-                            }
-                            if (d) {
-                                setCalendarAppointmentDate(d);
-                                // Use setTimeout to allow state to update before addVaccineToCalendar reads it
-                                const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
-                                setTimeout(() => addVaccineToCalendar(name), 100);
-                            }
+                        onSelect={(d) => {
+                            setCalendarAppointmentDate(d);
+                            const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
+                            setTimeout(() => addVaccineToCalendar(name), 100);
                         }}
+                        onDismiss={() => setCalendarVaccineKey(null)}
+                        theme={theme}
+                        t={t}
                         minimumDate={new Date()}
+                        allowFuture={true}
                     />
                 ) : (
                     <Modal transparent animationType="fade" visible={!!calendarVaccineKey}>
@@ -1156,26 +1149,37 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     </View>
                 </TouchableOpacity>
 
-                {showIllnessStartPicker && (
+                {showIllnessStartPicker && Platform.OS !== 'android' && (
                     <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                         <DateTimePicker
                             value={illnessStartDate}
                             mode="date"
-                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            display="spinner"
                             onChange={(e: any, d?: Date) => {
-                                if (Platform.OS === 'android') setShowIllnessStartPicker(false);
                                 if (d) setIllnessStartDate(d);
                             }}
                             maximumDate={new Date()}
                             locale="he-IL"
                             style={{ height: 160 }}
                         />
-                        {Platform.OS === 'ios' && (
-                            <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessStartPicker(false)}>
-                                <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>אישור</Text>
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessStartPicker(false)}>
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>אישור</Text>
+                        </TouchableOpacity>
                     </View>
+                )}
+                {Platform.OS === 'android' && (
+                    <AndroidHebrewCalendar
+                        visible={showIllnessStartPicker}
+                        value={illnessStartDate}
+                        onSelect={(d) => {
+                            setIllnessStartDate(d);
+                            setShowIllnessStartPicker(false);
+                        }}
+                        onDismiss={() => setShowIllnessStartPicker(false)}
+                        theme={theme}
+                        t={t}
+                        maximumDate={new Date()}
+                    />
                 )}
 
                 {/* Ongoing toggle */}
@@ -1229,14 +1233,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             </View>
                         </TouchableOpacity>
 
-                        {showIllnessEndPicker && illnessEndDate && (
+                        {showIllnessEndPicker && illnessEndDate && Platform.OS !== 'android' && (
                             <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                                 <DateTimePicker
                                     value={illnessEndDate}
                                     mode="date"
-                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    display="spinner"
                                     onChange={(e: any, d?: Date) => {
-                                        if (Platform.OS === 'android') setShowIllnessEndPicker(false);
                                         if (d) setIllnessEndDate(d);
                                     }}
                                     minimumDate={illnessStartDate}
@@ -1244,12 +1247,25 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                     locale="he-IL"
                                     style={{ height: 160 }}
                                 />
-                                {Platform.OS === 'ios' && (
-                                    <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessEndPicker(false)}>
-                                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#10B981' }}>אישור</Text>
-                                    </TouchableOpacity>
-                                )}
+                                <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessEndPicker(false)}>
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#10B981' }}>אישור</Text>
+                                </TouchableOpacity>
                             </View>
+                        )}
+                        {Platform.OS === 'android' && illnessEndDate && (
+                            <AndroidHebrewCalendar
+                                visible={showIllnessEndPicker}
+                                value={illnessEndDate}
+                                onSelect={(d) => {
+                                    setIllnessEndDate(d);
+                                    setShowIllnessEndPicker(false);
+                                }}
+                                onDismiss={() => setShowIllnessEndPicker(false)}
+                                theme={theme}
+                                t={t}
+                                minimumDate={illnessStartDate}
+                                maximumDate={new Date()}
+                            />
                         )}
                     </>
                 )}

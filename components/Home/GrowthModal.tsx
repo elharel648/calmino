@@ -29,6 +29,7 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
@@ -488,7 +489,7 @@ export default function GrowthModal({
                                     )}
                                 </TouchableOpacity>
 
-                                {showDatePicker && (
+                                {showDatePicker && Platform.OS !== 'android' && (
                                     <View style={[styles.datePickerWrapper, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E5EA' }]}>
                                         {Platform.OS === 'ios' && (
                                             <View style={styles.datePickerHeader}>
@@ -516,7 +517,7 @@ export default function GrowthModal({
                                         <DateTimePicker
                                             value={pendingDate ?? measurementDate}
                                             mode="date"
-                                            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                                            display="inline"
                                             onChange={handleDateChange}
                                             maximumDate={new Date()}
                                             locale="he-IL"
@@ -524,6 +525,20 @@ export default function GrowthModal({
                                             themeVariant={isDarkMode ? 'dark' : 'light'}
                                         />
                                     </View>
+                                )}
+                                {Platform.OS === 'android' && (
+                                    <AndroidHebrewCalendar
+                                        visible={showDatePicker}
+                                        value={pendingDate ?? measurementDate}
+                                        onSelect={(date) => {
+                                            setMeasurementDate(date);
+                                            setShowDatePicker(false);
+                                        }}
+                                        onDismiss={() => setShowDatePicker(false)}
+                                        theme={theme}
+                                        t={t}
+                                        maximumDate={new Date()}
+                                    />
                                 )}
 
                                 {/* Simple Input Fields */}

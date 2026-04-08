@@ -23,6 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -761,15 +762,14 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 </View>
 
                                 {/* Inline Pickers Expansion */}
-                                {showDatePicker && (
+                                {showDatePicker && Platform.OS !== 'android' && (
                                     <View style={styles.inlinePickerContainer}>
                                         <DateTimePicker
                                             value={selectedDate}
                                             mode="date"
-                                            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                                            display="inline"
                                             locale="he-IL"
                                             onChange={(e, d) => {
-                                                if (Platform.OS === 'android') setShowDatePicker(false);
                                                 if (d) {
                                                     const newDate = new Date(selectedDate);
                                                     newDate.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
@@ -781,6 +781,22 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                             accentColor={theme.primary}
                                         />
                                     </View>
+                                )}
+                                {Platform.OS === 'android' && (
+                                    <AndroidHebrewCalendar
+                                        visible={showDatePicker}
+                                        value={selectedDate}
+                                        onSelect={(d) => {
+                                            const newDate = new Date(selectedDate);
+                                            newDate.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
+                                            setSelectedDate(newDate);
+                                            setShowDatePicker(false);
+                                        }}
+                                        onDismiss={() => setShowDatePicker(false)}
+                                        theme={theme}
+                                        t={t}
+                                        allowFuture={true}
+                                    />
                                 )}
 
                                 {showTimePicker && (
