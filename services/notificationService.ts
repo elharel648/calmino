@@ -235,7 +235,7 @@ class NotificationService {
 
     // Request permissions
     async requestPermissions(): Promise<boolean> {
-        if (!Device.isDevice) {
+        if (!Device.isDevice && Platform.OS !== 'android') {
             logger.warn('Notifications only work on physical devices');
             return false;
         }
