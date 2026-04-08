@@ -1,5 +1,6 @@
 {
   "common": {
+    "tapToSelect": "Appuyez pour sélectionner",
     "save": "Enregistrer",
     "all": "Tout",
     "cancel": "Annuler",
@@ -532,6 +533,21 @@
     "km": "km"
   },
   "sitter": {
+    "registration": {
+      "photoPrivacy": "Votre photo n'est montrée qu'aux parents de votre région",
+      "title": "S'inscrire comme Baby-sitter",
+      "uploadPhotoHint": "Téléchargez une photo qui sera montrée aux parents",
+      "complete": "Terminer l'Inscription",
+      "requiredFields": "Champs Obligatoires",
+      "fillRequiredFields": "Veuillez remplir le nom, l'âge et le téléphone",
+      "photoRequired": "Photo Obligatoire",
+      "uploadPhoto": "Veuillez télécharger une photo de profil",
+      "locationError": "Impossible d'obtenir la localisation",
+      "loginRequired": "Veuillez d'abord vous connecter",
+      "cityRequired": "Champ Obligatoire",
+      "selectCity": "Veuillez sélectionner une ville",
+      "saveError": "Impossible de sauvegarder, réessayez"
+    },
     "settings": "Paramètres Baby-sitter",
     "saveSettings": "Enregistrer les Paramètres",
     "editProfile": "Modifier le Profil Baby-sitter",
@@ -547,20 +563,6 @@
     "uploading": "Téléchargement...",
     "locationPermissionRequired": "Permission Requise",
     "locationPermissionMessage": "L'accès à la localisation doit être accordé pour que les parents puissent vous trouver",
-    "registration": {
-      "title": "S'inscrire comme Baby-sitter",
-      "uploadPhotoHint": "Téléchargez une photo qui sera montrée aux parents",
-      "complete": "Terminer l'Inscription",
-      "requiredFields": "Champs Obligatoires",
-      "fillRequiredFields": "Veuillez remplir le nom, l'âge et le téléphone",
-      "photoRequired": "Photo Obligatoire",
-      "uploadPhoto": "Veuillez télécharger une photo de profil",
-      "locationError": "Impossible d'obtenir la localisation",
-      "loginRequired": "Veuillez d'abord vous connecter",
-      "cityRequired": "Champ Obligatoire",
-      "selectCity": "Veuillez sélectionner une ville",
-      "saveError": "Impossible de sauvegarder, réessayez"
-    },
     "back": "Retour",
     "year": "an",
     "hourUnit": "heure",
@@ -705,7 +707,7 @@
     "enterInviteCode": "Entrer le Code d'Invitation",
     "receivedCode": "Votre partenaire vous a envoyé un code à 6 chiffres ?",
     "codePlaceholder": "Entrez un code à 6 chiffres",
-    "codeSaved": "Le code sera activé après l'inscription ✓",
+    "codeSaved": "Le code sera activé après l'inscription",
     "partnerSentCode": "Mon partenaire m'a envoyé un code",
     "codeSavedSuccess": "Super ! 🎉",
     "codeSavedMessage": "Code sauvegardé ! Continuez l'inscription et le code sera activé automatiquement.",
@@ -746,7 +748,7 @@
       "continue": "Continuer",
       "notVerified": "Pas encore vérifié",
       "checkLink": "Cliquez sur le lien dans l'email envoyé et réessayez",
-      "checkButton": "J'ai vérifié ! Vérifier maintenant ✓",
+      "checkButton": "J'ai vérifié ! Vérifier maintenant",
       "resend": "Renvoyer l'Email de Vérification",
       "resendSent": "Envoyé !",
       "resendMessage": "Nouvel email de vérification envoyé",
@@ -928,7 +930,9 @@
     "whoDisclaimer": "Données calculées selon les normes de l'OMS. Consultez un médecin pour des conseils médicaux.",
     "measurementHistory": "Historique des mesures",
     "currentMeasurements": "Mesures actuelles",
-    "growthTrend": "Tendance de croissance"
+    "growthTrend": "Tendance de croissance",
+    "percentileLegend": "Percentile selon la norme OMS · Âge {age} mois",
+    "growthDisclaimer": "À titre indicatif uniquement. Consultez un médecin pour toute préoccupation de croissance."
   },
   "sitterReg": {
     "personalDetails": "Informations personnelles",
@@ -944,12 +948,25 @@
     "aboutYou": "À propos de vous",
     "tellAboutExperience": "Parlez de votre expérience, ce que vous aimez faire avec les enfants...",
     "shareGps": "Partager la localisation GPS (recommandé)",
-    "locationSaved": "Localisation enregistrée ✓",
+    "locationSaved": "Localisation enregistrée",
     "phoneMinDigits": "Le numéro de téléphone doit contenir au moins 9 chiffres",
     "yearsOfExperience": "ans d'expérience",
     "stepOf": "Étape {current} sur {total}"
   },
   "sitterDash": {
+    "weeklyTab": "Hebdomadaire",
+    "monthlyTab": "Mensuel",
+    "monthlyPlanning": "Planification mensuelle",
+    "monthlyPlanningSubtitle": "Ajuster des jours spécifiques au-delà du modèle hebdomadaire",
+    "availableToggle": "Disponible",
+    "notAvailableToggle": "Indisponible",
+    "customHoursLabel": "Heures personnalisées",
+    "resetToWeekly": "Réinitialiser à hebdomadaire",
+    "alwaysAvailable": "Toujours disponible",
+    "overrideAdded": "Changement enregistré pour le jour sélectionné",
+    "overrideRemoved": "Jour revenu au modèle hebdomadaire",
+    "startTime": "Heure de début",
+    "endTime": "Heure de fin",
     "sitterStatus": "Statut du baby-sitter",
     "viewProfileAsParent": "Voir le profil en tant que parent",
     "shareProfile": "Partager le profil",
@@ -1092,6 +1109,32 @@
     "editSupplements": "Modifier les suppléments"
   },
   "reports": {
+    "comparison": {
+      "vsYesterday": "vs Hier",
+      "vsLastWeek": "vs Semaine dernière",
+      "vsLastMonth": "vs Mois dernier",
+      "previousPeriod": "Comparaison avec la période précédente",
+      "more": "plus",
+      "less": "moins",
+      "patternDetection": "Détection de schémas par rapport aux données de la période précédente.",
+      "moreSleep": "Plus de sommeil",
+      "lessSleep": "Moins de sommeil"
+    },
+    "misc": {
+      "meals": "Repas",
+      "naps": "Siestes",
+      "totalAmount": "Montant total",
+      "avgPerNap": "Moyenne par sieste",
+      "period": "Période",
+      "periodDay": "Jour",
+      "periodWeek": "Semaine",
+      "periodMonth": "Mois",
+      "generatedBy": "Généré par",
+      "reportTitle": "Rapport de suivi",
+      "baby": "Bébé",
+      "total": "Total",
+      "trackingStreak": "Série de Suivi"
+    },
     "empty": {
       "noData": "Aucune donnée à afficher",
       "notEnoughData": "Pas assez de données",
@@ -1232,19 +1275,6 @@
     "time": {
       "morning": "Matin"
     },
-    "comparison": {
-      "previousPeriod": "Comparaison avec la période précédente",
-      "more": "plus",
-      "less": "moins",
-      "patternDetection": "Détection de schémas par rapport aux données de la période précédente.",
-      "moreSleep": "Plus de sommeil",
-      "lessSleep": "Moins de sommeil"
-    },
-    "misc": {
-      "baby": "Bébé",
-      "total": "Total",
-      "trackingStreak": "Série de Suivi"
-    },
     "dates": {
       "date": "Date",
       "selectDates": "Sélectionner les Dates",
@@ -1329,7 +1359,10 @@
     "editSubtitle": "Mettez à jour la mesure",
     "hideNotes": "Masquer les notes",
     "kg": "kg",
-    "cm": "cm"
+    "cm": "cm",
+    "deleteMeasurement": "Supprimer la mesure",
+    "additionalNotes": "Notes supplémentaires...",
+    "autoUpdateTooltip": "Une mesure enregistrée pour aujourd'hui mettra automatiquement à jour les statistiques du profil du bébé"
   },
   "auth": {
     "login": "Connexion",
@@ -1402,6 +1435,8 @@
     "ageYears": "{years} an"
   },
   "babyProfile": {
+    "lastName": "Aperçus (facultatif)",
+    "lastNamePlaceholder": "Saisissez les aperçus...",
     "title": "Enregistrer un Nouvel Enfant",
     "subtitle": "Veuillez remplir les informations suivantes",
     "namePlaceholder": "Entrez le prénom...",
@@ -1474,7 +1509,7 @@
     "permissionRequired": "Permission requise",
     "calendarAccessNeeded": "L'accès au calendrier est nécessaire pour ajouter des rendez-vous.",
     "noCalendarFound": "Aucun calendrier trouvé.",
-    "addedToCalendar": "Ajouté au calendrier ✓",
+    "addedToCalendar": "Ajouté au calendrier",
     "vaccineAddedToCalendar": "Rendez-vous vaccin \"{name}\" ajouté au calendrier.",
     "galleryPermissionNeeded": "Permission galerie requise",
     "cannotSave": "Impossible de sauvegarder",
@@ -1536,6 +1571,7 @@
     "serviceAgreement": "Contrat de Service"
   },
   "rating": {
+    "verified": "Vérifiés",
     "labels": [
       "",
       "Médiocre",
@@ -1656,5 +1692,15 @@
     "whenDidToothErupt": "Quand la dent est-elle apparue ?",
     "removeTooth": "Retirer la dent",
     "updateDate": "Mettre à jour la date"
+  },
+  "sitterOnboarding": {
+    "profileTitle": "Bienvenue!",
+    "profileSubtitle": "Les parents de votre région peuvent déjà voir votre profil et vous rechercher",
+    "availabilityTitle": "Configurer la disponibilité",
+    "availabilitySubtitle": "Sélectionnez quels jours vous êtes disponible",
+    "reputationTitle": "Construisez votre réputation",
+    "reputationSubtitle": "Obtenez des avis, suivez les lectures de profil et partagez sur WhatsApp",
+    "next": "Suivant",
+    "letsStart": "Commençons!"
   }
 }

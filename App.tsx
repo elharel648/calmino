@@ -29,7 +29,8 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal, useColorScheme } from 'react-native';
+import PremiumLoader from './components/Common/PremiumLoader';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -95,6 +96,12 @@ import { GuestProvider } from './context/GuestContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import GuestLoginPrompt from './components/GuestLoginPrompt';
+import { 
+  AnimatedHomeIcon, 
+  AnimatedTimelineIcon, 
+  AnimatedSitterIcon, 
+  AnimatedAccountIcon 
+} from './components/AnimatedTabIcons';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -111,34 +118,12 @@ import { notificationService } from './services/notificationService';
 import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
 
-// --- Android Foreground Service Registration (must be at top level, outside components) ---
-if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
-  import('@notifee/react-native').then(({ default: notifee }) => {
-    // Register the foreground service task — keeps the timer alive when app is backgrounded
-    notifee.registerForegroundService(() => {
-      return new Promise(() => {
-        // This promise intentionally never resolves — it keeps the service alive
-        // The service is stopped explicitly by androidTimerNotificationService.stopTimer()
-      });
-    });
-
-    // Handle notification action button presses when app is in background/killed
-    notifee.onBackgroundEvent(async ({ type, detail }) => {
-      const { EventType: ET } = await import('@notifee/react-native');
-      if (type === ET.ACTION_PRESS) {
-        const actionId = detail.pressAction?.id;
-        const { androidTimerNotificationService } = await import('./services/androidTimerNotificationService');
-        if (actionId === 'stop') {
-          await androidTimerNotificationService.stopTimer();
-        } else if (actionId === 'pause') {
-          await androidTimerNotificationService.pauseTimer();
-        } else if (actionId === 'resume') {
-          await androidTimerNotificationService.resumeTimer();
-        }
-      }
-    });
-  }).catch(() => { /* notifee not available */ });
-}
+// --- Android Foreground Service Registration (Disabled) ---
+// if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
+//   import('@notifee/react-native').then(({ default: notifee }) => {
+//     // ... logic removed
+//   }).catch(() => { /* notifee not available */ });
+// }
 
 
 
@@ -171,47 +156,23 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
   );
 };
 
-const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
+const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => {
   const { isDarkMode } = useTheme();
-  const activeColor = '#007AFF';
-  // Increased opacity for better accessibility and readability (Apple standard)
-  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)';
-  const iconColor = focused ? activeColor : inactiveColor;
+  
+  // Active = brand terracotta filled, Inactive = solid black (crisp, high-contrast)
+  const activeColor = '#C8806A'; 
+  const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000'; 
+  const currentColor = focused ? activeColor : inactiveColor;
+  const iconSize = 26;
 
-  // Track previous focused state to only animate on change
-  const prevFocused = React.useRef(focused);
-  const iconScale = useSharedValue(1);
-  const iconRotate = useSharedValue(0);
-  const iconY = useSharedValue(0);
+  const scale = useSharedValue(focused ? 1.05 : 1);
 
   React.useEffect(() => {
-    if (focused && !prevFocused.current) {
-      // Juicy bounce: squish down → elastic overshoot → settle
-      iconScale.value = withSequence(
-        withTiming(0.55, { duration: 100, easing: Easing.out(Easing.quad) }),
-        withSpring(1, { damping: 6, stiffness: 280, mass: 0.5 }),
-      );
-      // Tiny playful wiggle
-      iconRotate.value = withSequence(
-        withTiming(-8, { duration: 60 }),
-        withTiming(6, { duration: 80 }),
-        withSpring(0, { damping: 8, stiffness: 300 }),
-      );
-      // Subtle lift-up bounce
-      iconY.value = withSequence(
-        withTiming(-4, { duration: 100, easing: Easing.out(Easing.quad) }),
-        withSpring(0, { damping: 10, stiffness: 250 }),
-      );
-    }
-    prevFocused.current = focused;
-  }, [focused]);
+    scale.value = withSpring(focused ? 1.05 : 1, { damping: 10, stiffness: 250, mass: 0.8 });
+  }, [focused, scale]);
 
-  const animatedIconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: iconScale.value },
-      { rotate: `${iconRotate.value}deg` },
-      { translateY: iconY.value },
-    ] as any,
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
   }));
 
   return (
@@ -221,17 +182,22 @@ const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
       width: 72,
       overflow: 'visible',
     }}>
-      <Reanimated.View style={animatedIconStyle}>
-        <Icon color={iconColor} size={25} strokeWidth={focused ? 2.0 : 1.5} />
-      </Reanimated.View>
-      <Text numberOfLines={2} style={{
-        color: iconColor, fontSize: 9, marginTop: 2,
-        fontWeight: focused ? '600' : '400', textAlign: 'center',
-        letterSpacing: -0.1,
-        lineHeight: 12,
-      }}>
+      {/* 
+        We pass the dynamic color directly to our custom SVGs.
+        Each SVG handles its own completely unique interaction choreography! 
+      */}
+      <AnimatedIconComponent focused={focused} color={currentColor} size={iconSize} />
+
+      <Reanimated.Text numberOfLines={1} style={[{
+        color: currentColor, 
+        fontSize: 11, 
+        marginTop: 6,
+        fontWeight: focused ? '800' : '700',
+        textAlign: 'center',
+        letterSpacing: -0.2,
+      }, animatedTextStyle]}>
         {label}
-      </Text>
+      </Reanimated.Text>
     </View>
   );
 };
@@ -255,38 +221,36 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: theme.textPrimary,
+        tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
       }}
     >
-      {/* Account - always visible (renamed from Settings) */}
+      {/* Account - always visible */}
       < Tab.Screen name={accountTabName} component={AccountStackScreen} options={{
-        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={User} label={t('navigation.account')} />
+        tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedAccountIcon} label={t('navigation.account')} />
       }} />
-
-
 
       {/* Reports - only for users with children */}
       {
         canAccessReports && (
           <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
-            tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={BarChart2} label={t('navigation.reports')} />
+            tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedTimelineIcon} label={t('navigation.reports')} />
           }} />
         )
       }
 
-      {/* Babysitter - for parents AND sitters */}
+      {/* Babysitter */}
       {
-        (canAccessBabysitter || isAppSitter) && (
+        canAccessBabysitter && (
           <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
-            tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={UserCheck} label={t('navigation.babysitter')} />
+            tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedSitterIcon} label={t('navigation.babysitter')} />
           }} />
         )
       }
 
-      {/* Home - always visible for everyone (parents, sitters crossing over, etc.) */}
+      {/* Home - always visible */}
       <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
-        tabBarIcon: ({ color, focused }) => <CustomTabIcon focused={focused} color={color} icon={Home} label={t('navigation.home')} />
+        tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedHomeIcon} label={t('navigation.home')} />
       }} />
 
     </Tab.Navigator >
@@ -301,7 +265,7 @@ function HomeStackScreen() {
       id="HomeStack"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' }
+        contentStyle: { backgroundColor: '#F8F6F4' }
       }}
     >
       <HomeStack.Screen name="Home" component={HomeScreen} />
@@ -333,7 +297,7 @@ function CreateBabyScreen({ navigation }: any) {
 
   const handleProfileSaved = async () => {
     await refreshChildren(); // Refresh to show all tabs
-    navigation.navigate('Home');
+    navigation.goBack();
   };
 
   return (
@@ -424,21 +388,25 @@ function LiveActivityURLHandler() {
           }
 
           try {
-            // Use in-app timer state if available, fallback to Swift-provided elapsed from URL
             const urlElapsed = parseInt(url.searchParams.get('elapsedSeconds') || '0', 10);
-            let elapsedSeconds = 0;
-            if (type.includes('הנקה') || type.includes('breast') || type.includes('breastfeeding')) {
-              elapsedSeconds = foodTimer.breastElapsedSeconds || urlElapsed;
-            } else if (type.includes('שאיבה') || type.includes('pump')) {
-              elapsedSeconds = foodTimer.pumpingElapsedSeconds || urlElapsed;
-            } else if (type.includes('בקבוק') || type.includes('bottle')) {
-              elapsedSeconds = foodTimer.bottleElapsedSeconds || urlElapsed;
-            } else if (type.includes('שינה') || type.includes('sleep')) {
-              elapsedSeconds = sleepTimer.elapsedSeconds || urlElapsed;
-            } else if (type.includes('solids') || type.includes('מוצקים')) {
-              elapsedSeconds = urlElapsed; // Solids timer may not have in-app state
-            } else {
-              elapsedSeconds = urlElapsed; // Generic fallback
+            let elapsedSeconds = urlElapsed;
+            if (elapsedSeconds <= 0) {
+              if (type.includes('הנקה') || type.includes('breast') || type.includes('breastfeeding')) {
+                elapsedSeconds = foodTimer.breastElapsedSeconds;
+              } else if (type.includes('שאיבה') || type.includes('pump')) {
+                elapsedSeconds = foodTimer.pumpingElapsedSeconds;
+              } else if (type.includes('בקבוק') || type.includes('bottle')) {
+                elapsedSeconds = foodTimer.bottleElapsedSeconds;
+              } else if (type.includes('שינה') || type.includes('sleep')) {
+                elapsedSeconds = sleepTimer.elapsedSeconds;
+              }
+            }
+
+            // --- LIVE ACTIVITY MAX DURATION CAP (12 HOURS) ---
+            const MAX_DURATION_SECS = 43200; // 12 hours
+            if (elapsedSeconds > MAX_DURATION_SECS) {
+              logger.warn(`⚠️ Timer exceeded 12-hour limit (${elapsedSeconds}s). Capping to 12 hours to prevent histogram corruption.`);
+              elapsedSeconds = MAX_DURATION_SECS;
             }
 
             const mins = Math.floor(elapsedSeconds / 60);
@@ -608,6 +576,8 @@ export default function App() {
   const [childrenReady, setChildrenReady] = useState(false);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
+  const colorScheme = useColorScheme();
+  const themeBgColor = colorScheme === 'dark' ? '#0F0F0F' : '#F8F6F4';
 
   // Clean up any stuck Live Activities / Android notifications from previous session on cold launch
   useEffect(() => {
@@ -662,8 +632,8 @@ export default function App() {
         // Try to save to Firebase (but don't block notification if it fails)
         const userId = auth.currentUser?.uid;
         if (userId) {
-          // Use setTimeout to not block the notification handler
-          setTimeout(async () => {
+          // Fire-and-forget save to Firebase without risking background suspension via setTimeout
+          (async () => {
             try {
               const notificationData = notification.request.content.data as any;
               const notificationType = notificationData?.type || 'reminder';
@@ -696,7 +666,7 @@ export default function App() {
               logger.error('Failed to save notification:', error);
               // Don't throw - notification should still show
             }
-          }, 0);
+          })();
         }
 
         return shouldShow;
@@ -1018,9 +988,9 @@ export default function App() {
   // Show premium loading state while checking baby profile to prevent white screen flash
   if (!isGuestMode && hasBabyProfile === null) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>
         <LiquidGlassBackground />
-        <ActivityIndicator size="large" color="#7C3AED" />
+        <PremiumLoader size={48} />
       </View>
     ); // Keep splash visible natively, but show Liquid Glass if splash was already hidden (e.g. after login)
   }
@@ -1062,38 +1032,45 @@ export default function App() {
                           <PremiumProvider>
                             <LiveActivityURLHandler />
                             <SafeAreaProvider>
-                              <NavigationContainer
-                                ref={navigationRef}
-                                linking={{
-                                  prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
-                                  config: {
-                                    screens: {
-                                      Home: {
-                                        screens: {
-                                          Home: 'home',
-                                          CreateBaby: 'create-baby',
-                                          Notifications: 'notifications',
+                              {(!user || isGuestMode || childrenReady) ? (
+                                <NavigationContainer
+                                  ref={navigationRef}
+                                  linking={{
+                                    prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
+                                    config: {
+                                      screens: {
+                                        Home: {
+                                          screens: {
+                                            Home: 'home',
+                                            CreateBaby: 'create-baby',
+                                            Notifications: 'notifications',
+                                          },
                                         },
-                                      },
-                                      Account: {
-                                        screens: {
-                                          Account: 'account',
-                                          FullSettings: 'settings',
+                                        Account: {
+                                          screens: {
+                                            Account: 'account',
+                                            FullSettings: 'settings',
+                                          },
                                         },
-                                      },
-                                      Babysitter: {
-                                        screens: {
-                                          SitterList: 'babysitter',
-                                          SitterProfile: 'babysitter/:sitterId',
-                                          SitterDashboard: 'babysitter/dashboard',
+                                        Babysitter: {
+                                          screens: {
+                                            SitterList: 'babysitter',
+                                            SitterProfile: 'babysitter/:sitterId',
+                                            SitterDashboard: 'babysitter/dashboard',
+                                          },
                                         },
                                       },
                                     },
-                                  },
-                                }}
-                              >
-                                <MainAppNavigator isAppSitter={isAppSitter} />
-                              </NavigationContainer>
+                                  }}
+                                >
+                                  <MainAppNavigator isAppSitter={isAppSitter} />
+                                </NavigationContainer>
+                              ) : (
+                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>
+                                  <LiquidGlassBackground />
+                                  <PremiumLoader size={48} />
+                                </View>
+                              )}
                             </SafeAreaProvider>
                           </PremiumProvider>
                         </AudioProvider>

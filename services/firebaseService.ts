@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storeReviewService } from './storeReviewService';
 
 // --- הגדרות קולקציה קבועות ---
 const EVENTS_COLLECTION = 'events';
@@ -175,6 +176,10 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       const newDocRef = doc(eventsRef);
       setDoc(newDocRef, insertData).catch(e => logger.warn('Deferred setDoc failed:', e));
       logger.log('✅ Event queued for save with ID:', newDocRef.id);
+      
+      // Trigger store review logic since a new event was tracked successfully
+      storeReviewService.trackPositiveActionAndRequestReview();
+      
       return newDocRef.id; // Return event ID for undo functionality
     }
   } catch (error: any) {
@@ -320,8 +325,13 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
       logger.error('Failed to parse offline_history fallback:', e);
       return events;
     }
-  } catch (e) {
-    logger.error('Error getting recent history:', e);
+  } catch (e: any) {
+    // Demote "insufficient permissions" error to a warning when logging out/deleting account
+    if (e?.code === 'permission-denied' || e?.message?.includes('insufficient permissions')) {
+      logger.warn('Warning: insufficient permissions when fetching recent history (expected during profile deletion).');
+    } else {
+      logger.error('Error getting recent history:', e);
+    }
     return [];
   }
 };

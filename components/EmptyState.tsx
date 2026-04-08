@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Inbox, Plus } from 'lucide-react-native';
@@ -24,15 +25,56 @@ export default function EmptyState({
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
 
+  // Animation values
+  const floatAnim = useSharedValue(0);
+  const pulseAnim = useSharedValue(1);
+
+  React.useEffect(() => {
+    // Elegant slow floating effect
+    floatAnim.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+
+    // Subtle background glow pulse
+    pulseAnim.value = withRepeat(
+      withSequence(
+        withTiming(1.08, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatAnim.value }]
+  }));
+
+  const animatedPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+    opacity: pulseAnim.value === 1 ? 1 : 0.8
+  }));
+
   const containerStyle = fullScreen 
     ? [styles.container, styles.fullScreen, { backgroundColor: theme.background }]
     : [styles.container, { backgroundColor: 'transparent' }];
 
   return (
     <View style={containerStyle}>
-      <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-        <Icon size={48} color={theme.primary} strokeWidth={2} />
-      </View>
+      <Animated.View style={animatedIconStyle}>
+        <Animated.View style={[
+          styles.iconCircle, 
+          animatedPulseStyle,
+          { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }
+        ]}>
+          <Icon size={48} color={theme.primary} strokeWidth={2} />
+        </Animated.View>
+      </Animated.View>
       
       {title && (
         <Text style={[styles.title, { color: theme.textPrimary }]}>

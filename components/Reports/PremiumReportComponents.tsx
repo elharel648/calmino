@@ -147,13 +147,13 @@ export const PremiumStatCard: React.FC<PremiumStatCardProps> = ({
                                 { backgroundColor: change > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)' }
                             ]}>
                                 {change > 0 ? (
-                                    <TrendingUp size={10} color="#10B981" />
+                                    <TrendingUp size={10} color="#6BAF8A" />
                                 ) : (
-                                    <TrendingDown size={10} color="#EF4444" />
+                                    <TrendingDown size={10} color="#D4837A" />
                                 )}
                                 <Text style={[
                                     styles.trendText,
-                                    { color: change > 0 ? '#10B981' : '#EF4444' }
+                                    { color: change > 0 ? '#6BAF8A' : '#D4837A' }
                                 ]}>
                                     {Math.abs(change)}%
                                 </Text>
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     },
     aiGlow: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         borderRadius: 24,
         transform: [{ scale: 1.05 }],
     },
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     aiPremiumText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
     },
     aiInsight: {
         fontSize: 17,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     aiMetric: {
         fontSize: 28,
         fontWeight: '700',
-        color: '#6366F1',
+        color: '#C8806A',
     },
 
     // Stat Card
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     milestoneTitle: {
         fontSize: 12,
         fontWeight: '500',
-        color: '#6366F1',
+        color: '#C8806A',
         textAlign: 'center',
     },
     milestoneTitleLocked: {

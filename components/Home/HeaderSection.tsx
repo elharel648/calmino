@@ -79,6 +79,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
             birth = new Date((profile.birthDate as any).seconds * 1000);
         } else if (profile.birthDate instanceof Date) {
             birth = profile.birthDate;
+        } else if (typeof profile.birthDate === 'string' || typeof profile.birthDate === 'number') {
+            birth = new Date(profile.birthDate);
         } else {
             return '';
         }
@@ -118,6 +120,22 @@ const HeaderSection = memo<HeaderSectionProps>(({
         const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')}`;
         return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
     }, [profile.birthDate, profile.gender]);
+
+    // Birth date string — shown next to age
+    const birthDateStr = useMemo(() => {
+        if (!profile.birthDate) return '';
+        let birth: Date;
+        if ((profile.birthDate as any)?.seconds) {
+            birth = new Date((profile.birthDate as any).seconds * 1000);
+        } else if (profile.birthDate instanceof Date) {
+            birth = profile.birthDate;
+        } else if (typeof profile.birthDate === 'string' || typeof profile.birthDate === 'number') {
+            birth = new Date(profile.birthDate);
+        } else {
+            return '';
+        }
+        return birth.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    }, [profile.birthDate]);
 
     // Photo upload handler
     const handlePhotoPress = async () => {
@@ -231,12 +249,18 @@ const HeaderSection = memo<HeaderSectionProps>(({
             {/* Top Row: Greeting + Weather */}
             <View style={styles.topRow}>
                 <View style={styles.greetingSection}>
-                    <Text style={[styles.greetingLarge, { color: theme.textPrimary }]}>
-                        {greeting}, {profile.name}
+                    {/* Line 1: small muted greeting */}
+                    <Text style={[styles.greetingSmall, { color: theme.textSecondary }]}>
+                        {greeting},
                     </Text>
+                    {/* Line 2: large bold name */}
+                    <Text style={[styles.greetingName, { color: theme.textPrimary }]}>
+                        {profile.name}
+                    </Text>
+                    {/* Line 3: age + today's date */}
                     {ageText ? (
                         <Text style={[styles.ageText, { color: theme.textSecondary }]}>
-                            {ageText}
+                            {ageText}{birthDateStr ? ` · ${birthDateStr}` : ''}
                         </Text>
                     ) : null}
                 </View>
@@ -256,7 +280,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     >
                         <Bell size={22} color={theme.textSecondary} strokeWidth={1.5} />
                         {unreadCount > 0 && (
-                            <View style={[styles.notificationDot, { backgroundColor: '#007AFF' }]} />
+                            <View style={[styles.notificationDot, { backgroundColor: '#C8806A' }]} />
                         )}
                     </TouchableOpacity>
 
@@ -285,7 +309,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         key={child.childId}
                                         style={[
                                             styles.childAvatar,
-                                            isActive && styles.childAvatarActive
+                                            isActive && [styles.childAvatarActive, { borderColor: theme.primary }]
                                         ]}
                                         onPress={() => handleSelectChild(child)}
                                         onLongPress={() => handleEditChild(child)}
@@ -303,18 +327,15 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                         ) : (
                                             <View style={[
                                                 styles.childAvatarPlaceholder,
-                                                { backgroundColor: isActive ? theme.textPrimary : theme.border }
+                                                { backgroundColor: isActive ? theme.primary : (isDarkMode ? '#1C1C1E' : '#F3F4F6') }
                                             ]}>
                                                 <Text style={[
                                                     styles.childInitial,
-                                                    { color: isActive ? theme.card : theme.textSecondary }
+                                                    { color: isActive ? '#FFFFFF' : (isDarkMode ? '#6B7280' : '#9CA3AF') }
                                                 ]}>
                                                     {getInitials(child.childName)}
                                                 </Text>
                                             </View>
-                                        )}
-                                        {isActive && (
-                                            <View style={styles.activeIndicator} />
                                         )}
                                     </TouchableOpacity>
                                 );
@@ -324,11 +345,11 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
                     {/* Plus Button */}
                     <TouchableOpacity
-                        style={[styles.addChildBtn, { borderColor: theme.border }]}
+                        style={[styles.addChildBtn, { borderColor: isDarkMode ? '#374151' : '#D1D5DB' }]}
                         onPress={handlePlusPress}
                         activeOpacity={0.7}
                     >
-                        <Plus size={18} color={theme.textTertiary} />
+                        <Plus size={20} color={isDarkMode ? '#4B5563' : '#9CA3AF'} strokeWidth={1.5} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -421,15 +442,26 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         flex: 1,
     },
-    greetingLarge: {
-        fontSize: 22,
-        fontWeight: '600',
-        letterSpacing: -0.4,
-    },
-    ageText: {
+    greetingSmall: {
         fontSize: 15,
         fontWeight: '400',
-        marginTop: 2,
+        letterSpacing: -0.2,
+        textAlign: 'right',
+    },
+    greetingName: {
+        fontSize: 30,
+        fontWeight: '700',
+        letterSpacing: -0.7,
+        marginTop: -2,
+        lineHeight: 36,
+        textAlign: 'right',
+    },
+    ageText: {
+        fontSize: 13,
+        fontWeight: '400',
+        marginTop: 4,
+        opacity: 0.55,
+        textAlign: 'right',
     },
     weatherText: {
         fontSize: 13,
@@ -486,23 +518,22 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     childAvatar: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
     },
     childAvatarActive: {
         borderWidth: 2,
-        borderColor: '#1C1C1E',
     },
     childAvatarImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 21,
+        borderRadius: 24,
     },
     childAvatarPlaceholder: {
         width: '100%',
         height: '100%',
-        borderRadius: 21,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -510,23 +541,10 @@ const styles = StyleSheet.create({
         ...TYPOGRAPHY.body,
         fontWeight: '600',
     },
-    activeIndicator: {
-        position: 'absolute',
-        bottom: -4,
-        alignSelf: 'center',
-        left: '50%',
-        marginLeft: -5,
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: '#34C759',
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-    },
     addChildBtn: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         borderWidth: 1.5,
         borderStyle: 'dashed',
         alignItems: 'center',

@@ -24,7 +24,7 @@ interface FamilyMembersCardProps {
 
 const ROLE_CONFIG: Record<FamilyRole, { label: string; color: string; icon: any; bgLight: string; bgDark: string }> = {
     admin: { label: 'מנהל', color: '#F59E0B', icon: Crown, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
-    member: { label: 'חבר', color: '#6366F1', icon: UserCheck, bgLight: '#EEF2FF', bgDark: 'rgba(99,102,241,0.15)' },
+    member: { label: 'חבר', color: '#C8806A', icon: UserCheck, bgLight: '#EEF2FF', bgDark: 'rgba(99,102,241,0.15)' },
     viewer: { label: 'צופה', color: '#10B981', icon: Eye, bgLight: '#ECFDF5', bgDark: 'rgba(16,185,129,0.15)' },
     guest: { label: 'אורח', color: '#F59E0B', icon: Clock, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
 };
@@ -97,7 +97,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                     <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>צור משפחה</Text>
                     <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                        <UserPlus size={16} color="#6366F1" />
+                        <UserPlus size={16} color="#C8806A" />
                     </View>
                 </TouchableOpacity>
 
@@ -124,7 +124,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                 <View style={styles.headerRight}>
                     <View style={styles.headerTitleRow}>
                         <View style={[styles.familyIconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                            <Users size={16} color="#6366F1" />
+                            <Users size={16} color="#C8806A" />
                         </View>
                         <Text style={[styles.familyName, { color: theme.textPrimary }]}>משפחת {family.babyName}</Text>
                     </View>
@@ -216,7 +216,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                         <Text style={[styles.actionText, { color: theme.textPrimary }]}>הזמנה למשפחה</Text>
                         <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                            <UserPlus size={14} color="#6366F1" />
+                            <UserPlus size={14} color="#C8806A" />
                         </View>
                     </TouchableOpacity>
                 )}

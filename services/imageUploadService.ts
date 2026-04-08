@@ -35,8 +35,19 @@ async function compressImage(uri: string): Promise<string> {
  * Convert local file URI to Blob for JS SDK upload
  */
 async function uriToBlob(uri: string): Promise<Blob> {
-    const response = await fetch(uri);
-    return await response.blob();
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            resolve(xhr.response);
+        };
+        xhr.onerror = function (e) {
+            logger.error('XMLHttpRequest Blob conversion failed:', e);
+            reject(new TypeError('Network request failed'));
+        };
+        xhr.responseType = 'blob'; // 'blob' works correctly in RN
+        xhr.open('GET', uri, true);
+        xhr.send(null);
+    });
 }
 
 /**

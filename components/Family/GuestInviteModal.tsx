@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-    Modal,
+import InlineLoader from '../../components/Common/InlineLoader';
+import { Modal,
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator,
+    
     Share,
     Alert,
     ScrollView,
     Image,
     Animated,
     Linking,
-    Platform,
-} from 'react-native';
+    Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X, UserPlus, Copy, Share2, Clock, CheckCircle, Check, Users, Baby, Trash2, Info, MessageCircle } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -334,7 +333,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                         backgroundColor: isSelected
                             ? (isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF')
                             : theme.background,
-                        borderColor: isSelected ? '#6366F1' : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'),
+                        borderColor: isSelected ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'),
                     }
                 ]}
                 onPress={() => toggleChild(child.childId)}
@@ -343,8 +342,8 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                 <View style={[
                     styles.checkbox,
                     {
-                        backgroundColor: isSelected ? '#6366F1' : 'transparent',
-                        borderColor: isSelected ? '#6366F1' : '#D1D5DB',
+                        backgroundColor: isSelected ? '#C8806A' : 'transparent',
+                        borderColor: isSelected ? '#C8806A' : '#D1D5DB',
                     }
                 ]}>
                     {isSelected && <Check size={14} color="#fff" strokeWidth={3} />}
@@ -360,7 +359,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                     <Image source={{ uri: child.photoUrl }} style={styles.childAvatar} />
                 ) : (
                     <View style={[styles.childAvatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                        <Baby size={18} color="#6366F1" />
+                        <Baby size={18} color="#C8806A" />
                     </View>
                 )}
             </TouchableOpacity>
@@ -397,12 +396,9 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                 contentContainerStyle={styles.selectScrollContent}
                             >
                                 {/* Icon */}
-                                <LinearGradient
-                                    colors={['#10B981', '#059669']}
-                                    style={styles.iconContainer}
-                                >
-                                    <UserPlus size={32} color="#fff" />
-                                </LinearGradient>
+                                <View style={[styles.iconContainer, { backgroundColor: 'rgba(200, 128, 106, 0.12)' }]}>
+                                    <UserPlus size={32} color="#C8806A" />
+                                </View>
 
                                 {/* Description */}
                                 <Text style={[styles.description, { color: theme.textSecondary }]}>
@@ -418,7 +414,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                 backgroundColor: selectAll
                                                     ? (isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF')
                                                     : theme.background,
-                                                borderColor: selectAll ? '#6366F1' : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'),
+                                                borderColor: selectAll ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'),
                                             }
                                         ]}
                                         onPress={toggleSelectAll}
@@ -427,8 +423,8 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                         <View style={[
                                             styles.checkbox,
                                             {
-                                                backgroundColor: selectAll ? '#6366F1' : 'transparent',
-                                                borderColor: selectAll ? '#6366F1' : '#D1D5DB',
+                                                backgroundColor: selectAll ? '#C8806A' : 'transparent',
+                                                borderColor: selectAll ? '#C8806A' : '#D1D5DB',
                                             }
                                         ]}>
                                             {selectAll && <Check size={14} color="#fff" strokeWidth={3} />}
@@ -441,7 +437,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                 {t('guestInvite.allChildrenSub')}
                                             </Text>
                                         </View>
-                                        <Users size={20} color="#6366F1" />
+                                        <Users size={20} color="#C8806A" />
                                     </TouchableOpacity>
                                 )}
 
@@ -465,10 +461,10 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                         styles.expiryPill,
                                                         {
                                                             backgroundColor: isActive
-                                                                ? '#6366F1'
+                                                                ? '#C8806A'
                                                                 : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#F3F4F6'),
                                                             borderColor: isActive
-                                                                ? '#6366F1'
+                                                                ? '#C8806A'
                                                                 : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB'),
                                                         }
                                                     ]}
@@ -520,7 +516,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                         </View>
                                                         <View style={styles.inviteInfoRow}>
                                                             <View style={[styles.inviteChildBadge, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                                                                <Baby size={12} color="#6366F1" />
+                                                                <Baby size={12} color="#C8806A" />
                                                                 <Text style={styles.inviteChildName}>{childName}</Text>
                                                             </View>
                                                             <View style={[styles.inviteExpiryBadge, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FFF7ED' }]}>
@@ -537,7 +533,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                         disabled={cancelingCode === invite.code}
                                                     >
                                                         {cancelingCode === invite.code ? (
-                                                            <ActivityIndicator size="small" color="#EF4444" />
+                                                            <InlineLoader size="small" color="#EF4444"  />
                                                         ) : (
                                                             <Trash2 size={18} color="#EF4444" />
                                                         )}
@@ -550,7 +546,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
 
                                 {loadingInvites && (
                                     <View style={styles.loadingInvites}>
-                                        <ActivityIndicator size="small" color={theme.textSecondary} />
+                                        <InlineLoader size="small" color={theme.textSecondary}  />
                                         <Text style={[styles.loadingInvitesText, { color: theme.textSecondary }]}>
                                             {t('guestInvite.loadingInvites')}
                                         </Text>
@@ -568,11 +564,11 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                 disabled={isLoading || selectedChildren.length === 0}
                             >
                                 <LinearGradient
-                                    colors={['#6366F1', '#4F46E5']}
+                                    colors={['#C8806A', '#CD8B87']}
                                     style={styles.createBtnGradient}
                                 >
                                     {isLoading ? (
-                                        <ActivityIndicator color="#fff" />
+                                        <InlineLoader color="#fff"  />
                                     ) : (
                                         <Text style={styles.createBtnText}>
                                             {t('guestInvite.createCode')}{selectedChildren.length > 1 ? ` (${selectedChildren.length})` : ''}
@@ -585,12 +581,9 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                         <>
                             {/* Code Display Step - With Success Animation */}
                             <Animated.View style={{ alignItems: 'center', transform: [{ scale: successScale }], opacity: successOpacity }}>
-                                <LinearGradient
-                                    colors={['#10B981', '#059669']}
-                                    style={styles.iconContainer}
-                                >
-                                    <CheckCircle size={32} color="#fff" />
-                                </LinearGradient>
+                                <View style={[styles.iconContainer, { backgroundColor: 'rgba(125, 175, 143, 0.15)' }]}>
+                                    <CheckCircle size={32} color="#7DAF8F" />
+                                </View>
 
                                 <Text style={[styles.successText, { color: theme.textPrimary }]}>
                                     {inviteResults.length > 1
@@ -619,22 +612,27 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                             </View>
                                         </View>
                                         <View style={styles.codeRow}>
-                                            <Text style={[styles.codeText, { color: '#6366F1' }]}>
+                                            <Text style={[styles.codeText, { color: '#C8806A' }]}>
                                                 {result.code}
                                             </Text>
-                                            <TouchableOpacity
-                                                style={[styles.codeCopyBtn, {
-                                                    backgroundColor: copied === result.code ? '#10B981' : (isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF'),
-                                                }]}
-                                                onPress={() => handleCopy(result.code)}
-                                            >
-                                                {copied === result.code ? (
-                                                    <Check size={14} color="#fff" strokeWidth={3} />
-                                                ) : (
-                                                    <Copy size={14} color="#6366F1" />
-                                                )}
-                                            </TouchableOpacity>
                                         </View>
+                                        {/* Copy — outlined pill button below code */}
+                                        <TouchableOpacity
+                                            style={[styles.copyPillBtn, {
+                                                borderColor: copied === result.code ? '#7DAF8F' : 'rgba(0,0,0,0.12)',
+                                                backgroundColor: copied === result.code ? 'rgba(125,175,143,0.10)' : 'transparent',
+                                            }]}
+                                            onPress={() => handleCopy(result.code)}
+                                        >
+                                            {copied === result.code ? (
+                                                <Check size={15} color="#7DAF8F" strokeWidth={2.5} />
+                                            ) : (
+                                                <Copy size={15} color="#C8806A" />
+                                            )}
+                                            <Text style={{ fontSize: 13, fontWeight: '600', color: copied === result.code ? '#7DAF8F' : '#C8806A', marginRight: 4 }}>
+                                                {copied === result.code ? '✓ הועתק' : 'העתק'}
+                                            </Text>
+                                        </TouchableOpacity>
                                     </View>
                                 ))}
 
@@ -658,20 +656,24 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                             {copied === 'all' ? (
                                                 <CheckCircle size={20} color="#fff" />
                                             ) : (
-                                                <Copy size={20} color="#6366F1" />
+                                                <Copy size={20} color="#C8806A" />
                                             )}
-                                            <Text style={[styles.actionText, { color: copied === 'all' ? '#fff' : '#6366F1' }]}>
+                                            <Text style={[styles.actionText, { color: copied === 'all' ? '#fff' : '#C8806A' }]}>
                                                 {copied === 'all' ? t('guestInvite.copied') : t('guestInvite.copyAll')}
                                             </Text>
                                         </TouchableOpacity>
                                     )}
 
                                     <TouchableOpacity
-                                        style={[styles.actionBtn, { backgroundColor: '#25D366' }]}
+                                        style={[styles.actionBtn, {
+                                            backgroundColor: 'rgba(37, 211, 102, 0.10)',
+                                            borderWidth: 1,
+                                            borderColor: 'rgba(37, 211, 102, 0.30)',
+                                        }]}
                                         onPress={handleShare}
                                     >
-                                        <MessageCircle size={20} color="#fff" />
-                                        <Text style={[styles.actionText, { color: '#fff' }]}>
+                                        <MessageCircle size={20} color="#25D366" />
+                                        <Text style={[styles.actionText, { color: '#1DA851' }]}>
                                             {t('guestInvite.shareWhatsapp')}
                                         </Text>
                                     </TouchableOpacity>
@@ -903,10 +905,23 @@ const styles = StyleSheet.create({
     actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 12,
+        flex: 1,
+    },
+    copyPillBtn: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        alignSelf: 'stretch',
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        marginTop: 10,
     },
     actionText: {
         fontSize: 14,
@@ -964,7 +979,7 @@ const styles = StyleSheet.create({
     inviteChildName: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
     },
     inviteExpiryBadge: {
         flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform, LayoutAnimation, UIManager, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform, LayoutAnimation, UIManager, Modal, Alert, Linking } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Bell, Utensils, Pill, ChevronDown, ChevronUp, Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,7 +10,7 @@ import { useLanguage } from '../../context/LanguageContext';
 
 import { notificationService } from '../../services/notificationService';
 
-const ACCENT_COLOR = '#6366F1';
+const ACCENT_COLOR = '#C8806A';
 
 // Compact time chip used inside supplement rows
 function CompactTimePicker({ value, onChange, disabled }: { value: string; onChange: (t: string) => void; disabled?: boolean }) {
@@ -108,23 +108,34 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
 
   return (
     <View style={[styles.card, isLast && styles.cardLast]}>
-      <View style={styles.cardHeader}>
+      <TouchableOpacity 
+        style={styles.cardHeader} 
+        activeOpacity={0.7}
+        disabled={disabled}
+        onPress={() => {
+          if (!enabled) {
+            handleToggle(true);
+            if (children && !expanded) toggleExpand();
+          } else if (children) {
+            toggleExpand();
+          } else {
+            handleToggle(!enabled);
+          }
+        }}
+      >
         {/* Right side: Icon + Title (RTL) */}
         <View style={styles.cardMainContent}>
           <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
             <Icon size={18} color={iconColor} strokeWidth={1.5} />
           </View>
-          <TouchableOpacity
+          <View
             style={styles.cardTextContent}
-            onPress={children && enabled ? toggleExpand : undefined}
-            activeOpacity={children && enabled ? 0.7 : 1}
-            disabled={disabled || !enabled || !children}
           >
             <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{title}</Text>
             <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
               {getSubtitle()}
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Left side: Actions (RTL) */}
@@ -144,7 +155,7 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
             </TouchableOpacity>
           )}
           <Switch
-            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
             onValueChange={handleToggle}
@@ -153,7 +164,7 @@ const PremiumNotificationCard: React.FC<PremiumNotificationCardProps> = ({ confi
             style={disabled ? { opacity: 0.4 } : undefined}
           />
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Expanded Content */}
       {expanded && enabled && children && (
@@ -177,8 +188,8 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
   const notificationCards: NotificationCardConfig[] = [
     {
       icon: Utensils,
-      iconColor: isDarkMode ? '#FF9F1C' : '#E68A00',
-      iconBg: isDarkMode ? 'rgba(255, 159, 28, 0.15)' : 'rgba(255, 159, 28, 0.1)',
+      iconColor: '#FFFFFF',
+      iconBg: theme.actionColors.food.color,
       title: t('settings.feedingReminder'),
       getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
       enabled: settings.feedingReminder,
@@ -207,8 +218,8 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
     },
     {
       icon: Pill,
-      iconColor: isDarkMode ? '#34D399' : '#059669',
-      iconBg: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+      iconColor: '#FFFFFF',
+      iconBg: theme.actionColors.supplements.color,
       title: t('settings.supplementsReminder'),
       getSubtitle: () => supplements.length > 0
         ? `${supplements.length} תוספים מוגדרים`
@@ -253,10 +264,24 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
     <View style={styles.container}>
       {/* Master Toggle */}
       <View style={[styles.masterCard, { backgroundColor: theme.card }]}>
-        <View style={styles.masterCardRow}>
+        <TouchableOpacity 
+          style={styles.masterCardRow}
+          activeOpacity={0.7}
+          onPress={async () => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            const newVal = !settings.enabled;
+            if (newVal) {
+              const granted = await notificationService.requestPermissions();
+              if (!granted) return;
+            }
+            updateSettings({ enabled: newVal });
+          }}
+        >
           <View style={styles.masterContent}>
-            <View style={[styles.masterIcon, { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)' }]}>
-              <Bell size={18} color={isDarkMode ? '#818CF8' : '#6366F1'} strokeWidth={2.5} />
+            <View style={[styles.masterIcon, { backgroundColor: theme.actionColors.milestones.color }]}>
+              <Bell size={18} color="#FFFFFF" strokeWidth={2.5} />
             </View>
             <View style={styles.masterTextContainer}>
               <Text style={[styles.masterTitle, { color: theme.textPrimary }]}>{t('settings.notificationsAndReminders')}</Text>
@@ -267,26 +292,35 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
           </View>
 
           <Switch
-            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+            trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
             thumbColor='#fff'
             ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
-            onValueChange={async (val) => {
+            value={settings.enabled}
+            onValueChange={async (newVal) => {
               if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }
-              if (val) {
-                // Request OS permission when user explicitly enables notifications
+              if (newVal) {
                 const granted = await notificationService.requestPermissions();
                 if (!granted) {
-                  // User denied — keep toggle OFF
+                  Alert.alert(
+                    'לא ניתן להפעיל התראות',
+                    'יש לאשר קבלת התראות בהגדרות המכשיר כדי להפעיל תזכורות.',
+                    [
+                      { text: t('common.cancel') || 'ביטול', style: 'cancel' },
+                      { 
+                        text: 'פתח הגדרות', 
+                        onPress: () => Linking.openSettings() 
+                      }
+                    ]
+                  );
                   return;
                 }
               }
-              updateSettings({ enabled: val });
+              updateSettings({ enabled: newVal });
             }}
-            value={settings.enabled}
           />
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Notification Cards */}

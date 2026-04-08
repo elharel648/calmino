@@ -1,15 +1,14 @@
 import React, { useRef, useState } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     Modal,
     TouchableOpacity,
     Image,
     Dimensions,
-    ActivityIndicator,
-    Platform,
-} from 'react-native';
+    
+    Platform } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { BlurView } from 'expo-blur';
@@ -167,7 +166,7 @@ export default function BrandedShareModal({
                         end={{ x: 1, y: 0 }}
                     >
                         {isSharing ? (
-                            <ActivityIndicator color="#fff" size="small" />
+                            <InlineLoader color="#fff" size="small"  />
                         ) : (
                             <>
                                 <Share2 size={18} color="#fff" strokeWidth={2.5} />

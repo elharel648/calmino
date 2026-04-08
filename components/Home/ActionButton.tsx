@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { Timer, Pause } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, Easing } from 'react-native-reanimated';
 
 interface ActionButtonProps {
     config: {
@@ -36,6 +37,11 @@ const ActionButton = memo(({
     const { theme, isDarkMode } = useTheme();
     const Icon = config.icon;
 
+    const scale = useSharedValue(1);
+    const rippleOpacity = useSharedValue(0);
+    const rippleScale = useSharedValue(0.1);
+    const iconScale = useSharedValue(1);
+
     const handlePress = useCallback(() => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -43,37 +49,78 @@ const ActionButton = memo(({
         onPress();
     }, [onPress]);
 
+    const handlePressIn = useCallback(() => {
+        // High tension spring down to simulate premium physical button depth
+        scale.value = withSpring(0.97, { stiffness: 400, damping: 25 });
+        
+        // Ripple effect start
+        rippleScale.value = 0.1;
+        rippleOpacity.value = 0.12; // Subtle translucent white
+        rippleScale.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.ease) });
+        rippleOpacity.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.ease) });
+    }, [scale, rippleScale, rippleOpacity]);
+
+    const handlePressOut = useCallback(() => {
+        // Return to scale 1 immediately
+        scale.value = withSpring(1, { stiffness: 250, damping: 25 });
+        // Micro-bounce for the checkmark / central icon
+        iconScale.value = withSequence(
+            withSpring(1.2, { stiffness: 400, damping: 12 }),
+            withSpring(1, { stiffness: 400, damping: 15 })
+        );
+    }, [scale, iconScale]);
+
+    const animatedContainerStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: iconScale.value }],
+    }));
+
+    const animatedRippleStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: rippleScale.value }],
+        opacity: rippleOpacity.value,
+    }));
+
     return (
         <TouchableOpacity
-            activeOpacity={0.6}
+            activeOpacity={0.8}
             onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
             style={styles.actionItem}
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityState={{ selected: isActive }}
         >
             {/* Icon Container — Premium rounded square with per-category color tint */}
-            <View style={styles.iconWrapper}>
+            <Animated.View style={[styles.iconWrapper, animatedContainerStyle]}>
                 <View style={[
                     styles.iconContainer,
                     {
-                        backgroundColor: config.lightColor,
-                        shadowColor: isDarkMode ? 'transparent' : '#000',
+                        backgroundColor: config.color, // Solid earthy color exactly like Structured
+                        // Colored shadow matches the icon
+                        shadowColor: isDarkMode ? 'transparent' : config.color,
+                        shadowOpacity: isActive ? 0.35 : 0.12,
+                        shadowRadius: isActive ? 12 : 8,
+                        shadowOffset: isActive ? { width: 0, height: 6 } : { width: 0, height: 3 },
                     },
                     isActive && {
-                        backgroundColor: config.accentColor,
-                        shadowColor: config.accentColor,
-                        shadowOpacity: 0.3,
-                        shadowRadius: 10,
-                        shadowOffset: { width: 0, height: 4 },
+                        // Apple selection indicator rings can be achieved cleanly with thick border
+                        borderWidth: 2,
+                        borderColor: isDarkMode ? '#FFFFFF' : '#FFFFFF',
                     },
                     config.hasBorder && styles.iconContainerDashed,
                 ]}>
-                    {isActive ? (
-                        <Pause size={19} color="#FFFFFF" strokeWidth={1.5} />
-                    ) : (
-                        <Icon size={19} color={config.color} strokeWidth={1.5} />
-                    )}
+                    <Animated.View style={[styles.ripple, animatedRippleStyle]} />
+                    <Animated.View style={animatedIconStyle}>
+                        {isActive ? (
+                            <Pause size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
+                        ) : (
+                            <Icon size={24} color={isDarkMode ? '#000000' : '#FFFFFF'} strokeWidth={2.0} />
+                        )}
+                    </Animated.View>
                 </View>
                 {/* Badge dot — shown for X/Y format or plain number */}
                 {badge && (() => {
@@ -101,7 +148,7 @@ const ActionButton = memo(({
                     }
                     return null;
                 })()}
-            </View>
+            </Animated.View>
 
             {/* Label */}
             <Text style={[styles.label, { color: theme.textPrimary }]} numberOfLines={2}>
@@ -137,11 +184,18 @@ export const getHasAnimated = () => true;
 const styles = StyleSheet.create({
     actionItem: {
         alignItems: 'center',
-        width: 72,
+        width: 80,
     },
     iconWrapper: {
         position: 'relative',
-        marginBottom: 8,
+        marginBottom: 9,
+    },
+    ripple: {
+        position: 'absolute',
+        width: 62,
+        height: 62,
+        borderRadius: 31,
+        backgroundColor: '#FFFFFF',
     },
     badgeDot: {
         position: 'absolute',
@@ -163,16 +217,19 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     iconContainer: {
-        width: 54,
-        height: 54,
-        borderRadius: 17,
+        width: 62,
+        height: 62,
+        borderRadius: 31,
         alignItems: 'center',
         justifyContent: 'center',
-        // Diffused premium floating shadow
+        // Premium floating shadow — colored glow
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 16,
+        shadowOpacity: 0.14,
+        shadowRadius: 10,
         elevation: 0,
+        // Glass highlight edge
+        borderWidth: 0.8,
+        borderColor: 'rgba(255,255,255,0.80)',
     },
     iconContainerDashed: {
         borderWidth: 1.5,
@@ -180,13 +237,13 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 11,
-        fontWeight: '500',
+        fontWeight: '600',
         textAlign: 'center',
         marginBottom: 3,
-        letterSpacing: -0.1,
+        letterSpacing: -0.2,
     },
     subText: {
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '400',
     },
     subPlaceholder: {

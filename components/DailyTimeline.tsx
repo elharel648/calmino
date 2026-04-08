@@ -1,6 +1,6 @@
-import React, { memo, useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
-import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText } from 'lucide-react-native';
+import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Animated as RNAnimated } from 'react-native';
+import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText, HelpCircle, MousePointer2, PlusCircle } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
 import Svg, { Path } from 'react-native-svg';
@@ -8,7 +8,7 @@ import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withTiming, withRepeat, Easing, runOnJS, withSpring, Layout, ZoomOut } from 'react-native-reanimated';
 import { ANIMATIONS, TYPOGRAPHY, SPACING } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
@@ -17,6 +17,256 @@ import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
+
+// ─── Pulsing 'now' dot ───────────────────────────────────────────────────────
+const PulseDot = () => {
+  const scale = useRef(new RNAnimated.Value(1)).current;
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(scale, { toValue: 1.7, duration: 950, useNativeDriver: true }),
+        RNAnimated.timing(scale, { toValue: 1,   duration: 950, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>
+      <RNAnimated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34D399', transform: [{ scale }], opacity: 0.9 }} />
+    </View>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Premium Motion Float Wrapper ──────────────────────────────────────────
+const PremiumTimelineEvent = ({ children, isRecent }: { children: React.ReactNode, isRecent: boolean }) => {
+  const opacity = useSharedValue(isRecent ? 0.7 : 1);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    if (isRecent) {
+      // Solidify over 3 seconds (Glass -> Solid morph)
+      opacity.value = withTiming(1, { duration: 3000, easing: Easing.out(Easing.cubic) });
+      
+      // Micro-float +/- 1.5px — 3 repetitions only, avoids infinite battery drain
+      translateY.value = withRepeat(
+        withSequence(
+          withTiming(-1.5, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.sin) })
+        ),
+        3,
+        true
+      );
+    }
+  }, [isRecent, opacity, translateY]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }]
+  }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Premium Delete Animation Wrapper ────────────────────────────────────────
+const AnimatedTimelineItem = ({
+  children,
+  onDelete,
+}: {
+  children: ((triggerDelete: () => void) => React.ReactNode) | React.ReactNode;
+  onDelete: () => void;
+}) => {
+  const opacity    = useSharedValue(1);
+  const scaleX     = useSharedValue(1);
+  const height     = useSharedValue(-1);   // -1 = not yet measured
+  const measured   = useSharedValue(false);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity:   opacity.value,
+    transform: [{ scaleX: scaleX.value }],
+    height:    measured.value && height.value >= 0 ? height.value : undefined,
+    overflow:  'hidden' as const,
+  }));
+
+  const triggerDelete = () => {
+    // Phase 1 – fade + horizontal compress (80ms)
+    opacity.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
+    scaleX.value  = withTiming(0.88, { duration: 200, easing: Easing.in(Easing.quad) });
+
+    // Phase 2 – collapse height (starts at 160ms, 180ms duration)
+    height.value = withTiming(
+      0,
+      { duration: 200, easing: Easing.inOut(Easing.quad) },
+      (finished) => {
+        if (finished) runOnJS(onDelete)();
+      }
+    );
+  };
+
+  return (
+    <Animated.View
+      onLayout={(e) => {
+        if (!measured.value) {
+          height.value = e.nativeEvent.layout.height;
+          measured.value = true;
+        }
+      }}
+      style={containerStyle}
+    >
+      {typeof children === 'function'
+        ? (children as (trigger: () => void) => React.ReactNode)(triggerDelete)
+        : children}
+    </Animated.View>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Premium Animated Clock State (Native CalendarClock) ──────────────────────
+const PremiumEmptyIcon = ({ theme, isDarkMode }: { theme: any, isDarkMode: boolean }) => {
+  const minuteRotation = useSharedValue(0);
+  const hourRotation = useSharedValue(0);
+  const pulseScale = useSharedValue(1);
+  const floatY = useSharedValue(0);
+
+  useEffect(() => {
+    // Breathing background
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) })
+      ),
+      -1,
+      true
+    );
+
+    // Gentle float up and down for the whole calendar
+    floatY.value = withRepeat(
+      withSequence(
+        withTiming(-4, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.sin) })
+      ),
+      -1,
+      true
+    );
+
+    // Minute hand: sweeps smoothly, much slower now
+    minuteRotation.value = withRepeat(
+      withTiming(360, { duration: 12000, easing: Easing.linear }),
+      -1,
+      false
+    );
+    
+    // Hour hand: sweeps smoothly, 12x slower
+    hourRotation.value = withRepeat(
+      withTiming(360, { duration: 144000, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, []);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
+  const minuteStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${minuteRotation.value}deg` }],
+  }));
+
+  const hourStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${hourRotation.value}deg` }],
+  }));
+
+  const floatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 28, marginTop: 12 }}>
+      
+      {/* Soft Breathing Glass Background */}
+      <Animated.View style={[
+        {
+          position: 'absolute',
+          width: 100, height: 100, borderRadius: 50,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+        },
+        pulseStyle
+      ]} />
+      
+      <Animated.View style={[
+        {
+          position: 'absolute',
+          width: 76, height: 76, borderRadius: 38,
+          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+        },
+        pulseStyle
+      ]} />
+
+      {/* Center Icon Container w/ Float */}
+      <Animated.View style={[{ width: 68, height: 68, alignItems: 'center', justifyContent: 'center' }, floatStyle]}>
+        
+        {/* Main Calendar Body */}
+        <View style={{ position: 'absolute', top: 4, left: 6 }}>
+          <View style={{
+            width: 44, height: 44, 
+            borderRadius: 8, 
+            borderWidth: 2.5, 
+            borderColor: theme.textSecondary,
+            opacity: 0.5,
+          }}>
+            {/* Calendar Rings */}
+            <View style={{ position: 'absolute', top: -4, left: 8, width: 4, height: 8, borderRadius: 2, backgroundColor: theme.textSecondary }} />
+            <View style={{ position: 'absolute', top: -4, right: 8, width: 4, height: 8, borderRadius: 2, backgroundColor: theme.textSecondary }} />
+            {/* Calendar Header Line */}
+            <View style={{ position: 'absolute', top: 8, left: 0, right: 0, height: 2.5, backgroundColor: theme.textSecondary }} />
+            
+            {/* Calendar Dots (Lines) */}
+            <View style={{ position: 'absolute', top: 18, left: 6, width: 8, height: 2.5, borderRadius: 1.5, backgroundColor: theme.textSecondary, opacity: 0.8 }} />
+            <View style={{ position: 'absolute', top: 18, left: 18, width: 14, height: 2.5, borderRadius: 1.5, backgroundColor: theme.textSecondary, opacity: 0.8 }} />
+            <View style={{ position: 'absolute', top: 26, left: 6, width: 14, height: 2.5, borderRadius: 1.5, backgroundColor: theme.textSecondary, opacity: 0.8 }} />
+          </View>
+        </View>
+
+        {/* Dynamic Clock Overlaid on Bottom Right */}
+        <View style={{
+          position: 'absolute',
+          bottom: 2,
+          right: 2,
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: theme.card, // Important: masks the calendar underneath
+          borderWidth: 2.5,
+          borderColor: theme.textSecondary,
+          opacity: 0.65,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2,
+        }}>
+          
+          {/* Hour Hand Container */}
+          <Animated.View style={[{ position: 'absolute', width: 32, height: 32, alignItems: 'center' }, hourStyle]}>
+            <View style={{ width: 2.5, height: 7, backgroundColor: theme.textSecondary, borderRadius: 2, marginTop: 8 }} />
+          </Animated.View>
+          
+          {/* Minute Hand Container */}
+          <Animated.View style={[{ position: 'absolute', width: 32, height: 32, alignItems: 'center' }, minuteStyle]}>
+            <View style={{ width: 2, height: 10, backgroundColor: theme.textSecondary, borderRadius: 2, marginTop: 6 }} />
+          </Animated.View>
+
+          {/* Center Pin */}
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: theme.textSecondary, position: 'absolute' }} />
+        </View>
+
+      </Animated.View>
+    </View>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Custom Tooth Icon from QuickActions
 const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; color: string; strokeWidth?: number }) => (
@@ -72,31 +322,37 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     food: {
       icon: Utensils,
       color: theme.actionColors.food.accentColor,
+      lightColor: theme.actionColors.food.lightColor,
       label: t('actions.food'),
     },
     sleep: {
       icon: Moon,
       color: theme.actionColors.sleep.accentColor,
+      lightColor: theme.actionColors.sleep.lightColor,
       label: t('actions.sleep'),
     },
     diaper: {
       icon: DiaperIcon,
       color: theme.actionColors.diaper.accentColor,
+      lightColor: theme.actionColors.diaper.lightColor,
       label: t('actions.diaper'),
     },
     supplements: {
       icon: Pill,
       color: theme.actionColors.supplements.accentColor,
+      lightColor: theme.actionColors.supplements.lightColor,
       label: t('actions.supplements'),
     },
     custom: {
       icon: Plus,
       color: theme.actionColors.custom.accentColor,
+      lightColor: theme.actionColors.custom.lightColor,
       label: t('actions.custom'),
     },
     teeth: {
       icon: TeethIcon,
       color: theme.actionColors.teeth.accentColor,
+      lightColor: theme.actionColors.teeth.lightColor,
       label: t('profile.teeth'),
     },
   };
@@ -109,6 +365,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       // Map preloaded events to ensure correct timestamp type
       const mapped = preloadedEvents.map(e => ({
         ...e,
+        type: e.type === 'supplement' ? 'supplements' : e.type,
         timestamp: e.dateObj || (e.timestamp instanceof Date ? e.timestamp : new Date(e.timestamp))
       }));
       setEvents(mapped);
@@ -135,11 +392,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   }, [childId, refreshTrigger, family, preloadedEvents]);
 
   // Check if event happened in last hour for pulsing effect
-  const isRecentEvent = (timestamp: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
-    return diff < 3600000; // 1 hour in milliseconds
-  };
+  const isRecentEvent = useCallback((timestamp: Date) => {
+    return Date.now() - timestamp.getTime() < 3600000; // 1 hour in ms
+  }, []);
 
   const loadTimeline = async () => {
     if (!childId) return;
@@ -151,9 +406,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       const historyAccessDays = userId && family?.members[userId]?.historyAccessDays;
 
       const history = await getRecentHistory(childId, undefined, historyAccessDays);
+      
       // Map Firebase data directly
       const mapped: TimelineEvent[] = history.map((item: any) => ({
         ...item,
+        type: item.type === 'supplement' ? 'supplements' : item.type,
         timestamp: item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp),
       }))
         // Filter for today if requested
@@ -178,7 +435,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       setEvents(mapped);
       setError(null);
     } catch (error: any) {
-      logger.log('Timeline load error:', error);
+      logger.error('Timeline load error:', error);
       const errorMessage = error?.message || t('timeline.loading');
       setError(errorMessage);
     } finally {
@@ -477,10 +734,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     return event.note || '';
   };
 
-  const stats = events.reduce((acc, event) => {
+  const stats = useMemo(() => events.reduce((acc, event) => {
     acc[event.type] = (acc[event.type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [events]);
 
   const visibleEvents = isExpanded ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
   const hasMore = events.length > INITIAL_VISIBLE_COUNT;
@@ -530,9 +787,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         </View>
 
         <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={[styles.emptyIcon, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
-            <FileText size={32} color={theme.textSecondary} strokeWidth={1.5} />
-          </View>
+          <PremiumEmptyIcon theme={theme} isDarkMode={isDarkMode} />
           <Text style={[styles.emptyText, { color: theme.textPrimary }]}>{t('timeline.noRecordsToday')}</Text>
           <Text style={[styles.emptyHint, { color: theme.textSecondary }]}>
             {t('timeline.emptyHint')}
@@ -548,21 +803,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {!useGrouping && (
         <View style={styles.header}>
           <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-
-          {/* Stats Pills — inline right of title */}
-          <View style={styles.statsContainer}>
-            {Object.entries(stats).map(([type, count]) => {
-              const config = TYPE_CONFIG[type as keyof typeof TYPE_CONFIG];
-              if (!config) return null;
-              const Icon = config.icon;
-              return (
-                <View key={type} style={[styles.statPill, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.08) }]}>
-                  <Icon size={10} color={config.color} strokeWidth={2.5} />
-                  <Text style={[styles.statCount, { color: config.color }]}>{count}</Text>
-                </View>
-              );
-            })}
-          </View>
         </View>
       )}
 
@@ -650,43 +890,52 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
                   return (
-                    <Animated.View
+                    <AnimatedTimelineItem
                       key={event.id}
-                      entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 50), 300)}
+                      onDelete={() => handleDelete(event.id)}
                     >
-                      <SwipeableRow
-                        onDelete={() => handleDelete(event.id)}
-                      >
-                        {/* Simple 3-part RTL row: [time] [content] [icon] */}
-                        <TouchableOpacity 
-                          activeOpacity={0.7} 
-                          onPress={() => onEditEvent?.(event)} 
-                          style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+                      {(triggerDelete) => (
+                        <Animated.View
+                          layout={Layout.springify().damping(18).stiffness(200)}
+                          entering={FadeInUp.delay(index * 45).springify().damping(22).stiffness(240).mass(1)}
                         >
+                          <PremiumTimelineEvent isRecent={isRecentEvent(event.timestamp)}>
+                            <SwipeableRow
+                              onDelete={triggerDelete}
+                            >
+                            {/* Simple 3-part RTL row: [time] [content] [icon] */}
+                            <TouchableOpacity 
+                              activeOpacity={0.7} 
+                              onPress={() => onEditEvent?.(event)} 
+                              style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            >
 
-                          {/* LEFT (RTL: last in JSX): time */}
-                          <Text style={[styles.historyTime, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
+                              {/* LEFT (RTL: last in JSX): time */}
+                              <Text style={[styles.historyTime, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
 
-                          {/* CENTER: title + subtitle */}
-                          <View style={styles.historyContent}>
-                            <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
-                              {details}
-                            </Text>
-                            {subtitle ? (
-                              <Text style={[styles.historySubtext, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontSize: 13, fontWeight: '400', marginTop: 2 }]} numberOfLines={1}>
-                                {subtitle}
-                              </Text>
-                            ) : null}
-                          </View>
+                              {/* CENTER: title + subtitle */}
+                              <View style={styles.historyContent}>
+                                <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
+                                  {details}
+                                </Text>
+                                {subtitle ? (
+                                  <Text style={[styles.historySubtext, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontSize: 13, fontWeight: '400', marginTop: 2 }]} numberOfLines={1}>
+                                    {subtitle}
+                                  </Text>
+                                ) : null}
+                              </View>
 
-                          {/* RIGHT (RTL: first in JSX): icon badge */}
-                          <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.1) }]}>
-                            <Icon size={17} color={config.color} strokeWidth={2.5} />
-                          </View>
+                              {/* RIGHT (RTL: first in JSX): icon badge */}
+                              <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.1) }]}>
+                                <Icon size={17} color={config.color} strokeWidth={2.5} />
+                              </View>
 
-                        </TouchableOpacity>
-                      </SwipeableRow>
-                    </Animated.View>
+                            </TouchableOpacity>
+                          </SwipeableRow>
+                          </PremiumTimelineEvent>
+                        </Animated.View>
+                      )}
+                    </AnimatedTimelineItem>
                   );
                 })}
 
@@ -750,33 +999,49 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             // Optional: reporter badge
             const showBadge = showReporterBadge && event.reporterName;
             const reporterInitial = event.reporterName ? event.reporterName.charAt(0) : '';
+            const memberId = event.creatorId || event.userId;
+            const member = family?.members[memberId];
+            const photoUrl = member?.photoURL || event.reporterPhotoUrl;
 
             return (
-              <Animated.View
+              <AnimatedTimelineItem
                 key={event.id}
-                entering={ANIMATIONS.fadeInDown(ANIMATIONS.stagger(index, 80), 300)}
+                onDelete={() => handleDelete(event.id)}
               >
-                <SwipeableRow onDelete={() => handleDelete(event.id)}>
+                {(triggerDelete) => (
+                  <Animated.View
+                    layout={Layout.springify().damping(18).stiffness(200)}
+                    entering={ANIMATIONS.springUp(ANIMATIONS.stagger(index, 40))}
+                  >
+                    <PremiumTimelineEvent isRecent={isRecent}>
+                      <SwipeableRow onDelete={triggerDelete}>
                   <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.elegantEventRow}>
                     
                     {/* FAR RIGHT: TIME BLOCK */}
                     <View style={styles.elegantTimeBlock}>
-                      <Text style={[styles.elegantTimeMain, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
-                      <Text style={[styles.elegantTimeAgo, { color: theme.textSecondary }]} numberOfLines={1}>{getTimeAgoShort(event.timestamp)}</Text>
+                      <Text style={[styles.elegantTimeMain, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
                     </View>
 
                     {/* MIDDLE RIGHT: TIMELINE TRACK */}
                     <View style={styles.elegantTrack}>
-                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }]} />
-                      <View style={[styles.elegantIconWrapper, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.2 : 0.12) }]}>
-                        <Icon size={15} color={config.color} strokeWidth={2.5} />
+                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : config.color }]} />
+                      <View style={[styles.elegantIconWrapper, { 
+                        backgroundColor: config.color,
+                        shadowColor: isDarkMode ? 'transparent' : config.color,
+                        shadowOpacity: 0.2,
+                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 2 },
+                        borderWidth: 1.5,
+                        borderColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                      }]}>
+                        <Icon size={14} color="#FFFFFF" strokeWidth={2.5} />
                       </View>
-                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)') }]} />
+                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : config.color }]} />
                     </View>
 
                     {/* LEFT: CARD CONTENT */}
                     <View style={styles.elegantCardContainer}>
-                      <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                      <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }]}>
                         {/* Color accent strip - right side for RTL */}
                         <View style={[styles.accentStrip, { backgroundColor: config.color }]} />
                         
@@ -784,11 +1049,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         <View style={styles.elegantCardTextContainer}>
                           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 5 }}>
                             {details !== config.label ? (
-                              <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                              <Text style={[styles.elegantCategoryLabel, { color: isDarkMode ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)' }]}>{config.label}</Text>
                             ) : null}
-                            {isRecent && isFirst && (
-                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34D399' }} />
-                            )}
                           </View>
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
                           {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}
@@ -797,9 +1059,23 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         {/* Left side: Reporter Badge only */}
                         {showBadge ? (
                           <View style={styles.elegantCardLeft}>
-                            <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.8)' }]}>
-                              <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
-                            </View>
+                            {photoUrl ? (
+                              <Image 
+                                source={{ uri: photoUrl }} 
+                                style={[
+                                  styles.cardReporterBadge, 
+                                  { 
+                                    borderWidth: 0, 
+                                    padding: 0, 
+                                    backgroundColor: 'transparent' 
+                                  }
+                                ]} 
+                              />
+                            ) : (
+                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.8)' }]}>
+                                <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
+                              </View>
+                            )}
                           </View>
                         ) : null}
 
@@ -807,8 +1083,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     </View>
 
                   </TouchableOpacity>
-                </SwipeableRow>
-              </Animated.View>
+                    </SwipeableRow>
+                    </PremiumTimelineEvent>
+                  </Animated.View>
+                )}
+              </AnimatedTimelineItem>
             );
           })
         )}
@@ -818,7 +1097,14 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       {hasMore && (
         <Animated.View entering={ANIMATIONS.fadeIn(ANIMATIONS.stagger(visibleEvents.length, 80), 300)}>
           <TouchableOpacity
-            style={styles.expandButton}
+            style={[
+              styles.expandButton,
+              {
+                borderWidth: 0.75,
+                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.025)',
+              }
+            ]}
             onPress={() => {
               setIsExpanded(!isExpanded);
               if (Platform.OS !== 'web') {
@@ -829,13 +1115,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           >
             {isExpanded ? (
               <>
-                <ChevronUp size={14} color={theme.textSecondary} strokeWidth={2} />
-                <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showLess')}</Text>
+                <ChevronUp size={13} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
+                <Text style={[styles.expandText, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('timeline.showLess')}</Text>
               </>
             ) : (
               <>
-                <Text style={[styles.expandText, { color: theme.textSecondary }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
-                <ChevronDown size={14} color={theme.textSecondary} strokeWidth={2} />
+                <Text style={[styles.expandText, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
+                <ChevronDown size={13} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
               </>
             )}
           </TouchableOpacity>
@@ -861,9 +1147,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   statsContainer: {
     flexDirection: 'row-reverse',
@@ -1252,24 +1538,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   elegantLineTop: {
-    width: 1.5,
+    width: 1,
     flex: 1,
   },
   elegantLineBottom: {
-    width: 1.5,
+    width: 1,
     flex: 1,
   },
   elegantIconWrapper: {
     width: 32,
     height: 32,
-    borderRadius: 11,
+    borderRadius: 16, // Perfectly circular at 32px
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4, // connects the lines tightly
+    marginVertical: 4,
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 5, // Gap between rows
+    paddingVertical: 8,
     paddingRight: 6,
   },
   elegantCard: {
@@ -1282,22 +1568,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     minHeight: 62,
     overflow: 'hidden',
-    // Premium shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
+    // Warm premium shadow
+    shadowColor: '#8B6B4A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
     elevation: 0,
   },
   accentStrip: {
-    width: 3.5,
+    width: 3,
     borderTopRightRadius: 18,
     borderBottomRightRadius: 18,
     position: 'absolute',
     top: 0,
     bottom: 0,
     right: 0,
-    opacity: 0.7,
+    opacity: 0.85,
   },
   elegantCardTextContainer: {
     flex: 1,
@@ -1306,13 +1592,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   elegantCategoryLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 3,
+    letterSpacing: 0.4,
+    opacity: 0.75,
   },
   elegantCardTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     textAlign: 'right',
     letterSpacing: -0.3,
   },

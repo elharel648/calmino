@@ -41,7 +41,7 @@ export default function ClockWidget({
                 title: isCountdown ? 'ספירה לאחור' : 'שעון עצר',
                 time: timeStr,
                 isRunning: true,
-                color: '#6366F1',
+                color: '#C8806A',
             });
         } else {
             stopWatch();
@@ -75,8 +75,8 @@ export default function ClockWidget({
             >
                 <View style={styles.content}>
                     {/* Icon */}
-                    <View style={[styles.iconContainer, { backgroundColor: '#6366F1' + '20' }]}>
-                        <Clock size={20} color="#6366F1" strokeWidth={2.5} />
+                    <View style={[styles.iconContainer, { backgroundColor: '#C8806A' + '20' }]}>
+                        <Clock size={20} color="#C8806A" strokeWidth={2.5} />
                     </View>
 
                     {/* Time Display */}

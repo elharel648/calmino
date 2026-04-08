@@ -178,9 +178,9 @@ export default function CalmModeModal({
   };
 
   const emergencyContacts = [
-    { name: 'מד"א', subtitle: 'חירום רפואי', number: '101', Icon: Siren, color: '#EF4444', bgColor: '#FEE2E2' },
-    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield, color: '#3B82F6', bgColor: '#DBEAFE' },
-    { name: 'הרעלות', subtitle: 'בליעת חומר', number: '048541900', Icon: Skull, color: '#8B5CF6', bgColor: '#EDE9FE' },
+    { name: 'מד"א', subtitle: 'חירום רפואי', number: '101', Icon: Siren, color: '#FFFFFF', bgColor: '#CD8B87' }, // Dusty Rose
+    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield, color: '#FFFFFF', bgColor: '#557A9D' }, // Slate Blue
+    { name: 'הרעלות', subtitle: 'בליעת חומר', number: '048541900', Icon: Skull, color: '#FFFFFF', bgColor: '#B5838D' }, // Lilac Mauve
   ];
 
   const hmoContacts = [
@@ -216,21 +216,25 @@ export default function CalmModeModal({
           <View style={styles.header} {...panResponder.panHandlers}>
             <View style={styles.headerContent}>
               {/* Animated icon with pulse rings */}
-              <View style={styles.iconWrapper}>
+              <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 16, zIndex: 2 }}>
                 {/* Pulse ring 2 (outer) */}
-                <Animated.View style={[styles.pulseRing, ring2Style, { backgroundColor: '#EF4444' }]} />
+                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.sos.color }, ring2Style]} />
                 {/* Pulse ring 1 (inner) */}
-                <Animated.View style={[styles.pulseRing, ring1Style, { backgroundColor: '#EF4444' }]} />
-                {/* Icon circle */}
+                <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.sos.color }, ring1Style]} />
+                {/* Icon circle (Solid, no gradient, structured) */}
                 <Animated.View style={iconBounceStyle}>
-                  <LinearGradient
-                    colors={['#EF4444', '#FCA5A5']}
-                    style={styles.iconGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <SOSIcon size={32} color="#fff" strokeWidth={2.2} />
-                  </LinearGradient>
+                  <View style={[{
+                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: theme.actionColors.sos.color,
+                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.sos.color,
+                    shadowOpacity: 0.35,
+                    shadowRadius: 10,
+                    shadowOffset: { width: 0, height: 5 },
+                    borderWidth: 2.5,
+                    borderColor: isDarkMode ? '#121212' : '#FFFFFF',
+                  }]}>
+                    <SOSIcon size={28} color="#FFFFFF" strokeWidth={2.2} />
+                  </View>
                 </Animated.View>
               </View>
               <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>SOS</Text>
@@ -267,13 +271,13 @@ export default function CalmModeModal({
                       activeOpacity={0.7}
                     >
                       <View style={[styles.emergencyIcon, { backgroundColor: contact.bgColor }]}>
-                        <Icon size={22} color={contact.color} strokeWidth={2} />
+                        <Icon size={24} color={contact.color} strokeWidth={2} />
                       </View>
                       <Text style={[styles.emergencyName, { color: theme.textPrimary }]}>
                         {contact.name}
                       </Text>
                       <Text
-                        style={[styles.emergencyNumber, { color: contact.color }]}
+                        style={[styles.emergencyNumber, { color: contact.bgColor }]}
                         numberOfLines={1}
                         adjustsFontSizeToFit={true}
                         minimumFontScale={0.8}
@@ -307,7 +311,7 @@ export default function CalmModeModal({
                     </View>
                     <View style={styles.hmoCall}>
                       <View style={[styles.phoneIcon, { backgroundColor: '#DBEAFE' }]}>
-                        <Phone size={14} color="#3B82F6" strokeWidth={2} />
+                        <Phone size={14} color="#C8806A" strokeWidth={2} />
                       </View>
                       <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
                     </View>
@@ -401,7 +405,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#EF4444',
+    shadowColor: theme.actionColors.sos.color || '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

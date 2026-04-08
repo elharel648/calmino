@@ -42,7 +42,7 @@ const GrowthSection = memo(({ stats, onEditWeight, onEditHeight, onEditHead }: G
                 label="משקל"
                 value={stats?.weight}
                 unit="ק״ג"
-                color="#3B82F6"
+                color="#C8806A"
                 bgColor="#EFF6FF"
                 onEdit={onEditWeight}
             />

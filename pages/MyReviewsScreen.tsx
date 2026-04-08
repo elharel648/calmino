@@ -1,14 +1,13 @@
 // pages/MyReviewsScreen.tsx - Minimalist Reviews Screen for Sitters
 import React, { useState, useEffect } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    ActivityIndicator,
-    Platform,
-} from 'react-native';
+    
+    Platform } from 'react-native';
 import { Star, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -86,7 +85,7 @@ export default function MyReviewsScreen({ navigation }: any) {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.textSecondary} />
+                <InlineLoader size="large" color={theme.textSecondary}  />
             </View>
         );
     }

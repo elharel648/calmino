@@ -98,8 +98,8 @@ const GrowthCharts = ({
         if (!current || !previous) return null;
         const diff = current - previous;
 
-        if (diff > 0) return { icon: TrendingUp, color: '#10B981', text: `+${diff.toFixed(1)}` };
-        if (diff < 0) return { icon: TrendingDown, color: '#EF4444', text: diff.toFixed(1) };
+        if (diff > 0) return { icon: TrendingUp, color: '#6BAF8A', text: `+${diff.toFixed(1)}` };
+        if (diff < 0) return { icon: TrendingDown, color: '#D4837A', text: diff.toFixed(1) };
         return { icon: Minus, color: '#6B7280', text: '0' };
     };
 
@@ -196,7 +196,7 @@ const GrowthCharts = ({
                             propsForDots: {
                                 r: '4',
                                 strokeWidth: '2',
-                                stroke: '#6366F1',
+                                stroke: '#C8806A',
                             },
                         }}
                         bezier={!isLinear}
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     statCardActive: {
-        borderColor: '#6366F1',
+        borderColor: '#C8806A',
         backgroundColor: '#EEF2FF',
     },
     statHeader: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     statLabelActive: {
-        color: '#6366F1',
+        color: '#C8806A',
     },
     statValue: {
         fontSize: 20,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     },
     percentileText: {
         fontSize: 13,
-        color: '#6366F1',
+        color: '#C8806A',
         fontWeight: '600',
     },
 
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
         textAlign: 'right',
     },
     saveButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         borderRadius: 14,
         padding: 16,
         alignItems: 'center',

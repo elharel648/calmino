@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  StyleSheet,
+import InlineLoader from '../components/Common/InlineLoader';
+import { StyleSheet,
   View,
   Text,
   TextInput,
   TouchableOpacity,
   Alert,
   Modal,
-  ActivityIndicator,
+  
   Platform,
   KeyboardAvoidingView,
-  ScrollView,
-} from 'react-native';
+  ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { Calendar, User, Users, ChevronRight, Heart, Baby, X, Check } from 'lucide-react-native';
@@ -43,8 +42,6 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
   const [pendingDate, setPendingDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [welcomeVisible, setWelcomeVisible] = useState(false);
-  const [savedName, setSavedName] = useState('');
 
   const styles = useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
@@ -83,8 +80,9 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
     try {
       await saveBabyProfile(name, lastName, birthDate, gender);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setSavedName(name);
-      setWelcomeVisible(true);
+      if (onProfileSaved) {
+        onProfileSaved();
+      }
     } catch (error) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(t('common.error'), t('errors.saveError'));
@@ -253,8 +251,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             <DateTimePicker
               value={birthDate ?? new Date()}
               mode="date"
-              display="spinner"
-              locale="he"
+              display="calendar"
               maximumDate={new Date()}
               onChange={onDateChange}
             />
@@ -292,7 +289,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
               activeOpacity={0.9}
             >
               {loading ? (
-                <ActivityIndicator color={!isFormValid ? theme.textTertiary : "#fff"} size="small" />
+                <InlineLoader color={!isFormValid ? theme.textTertiary : "#fff"} size="small"  />
               ) : (
                 <Text style={[styles.primaryBtnText, !isFormValid && styles.primaryBtnTextDisabled]}>{t('babyProfile.saveAndContinue')}</Text>
               )}
@@ -329,22 +326,6 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
         }}
       />
 
-      <Modal visible={welcomeVisible} transparent animationType="fade">
-        <View style={styles.welcomeOverlay}>
-          <Animated.View entering={FadeInUp.springify()} style={styles.welcomeCard}>
-            <View style={styles.welcomeIconWrap}>
-              <Check size={28} color={theme.primary} strokeWidth={2.5} />
-            </View>
-            <Text style={styles.welcomeTitle}>{t('babyProfile.welcomeTitle')}</Text>
-            <Text style={styles.welcomeMessage}>
-              {t('babyProfile.welcomeMessage', { name: savedName })}
-            </Text>
-            <TouchableOpacity style={styles.welcomeBtn} onPress={() => { setWelcomeVisible(false); onProfileSaved(); }} activeOpacity={0.85}>
-              <Text style={styles.welcomeBtnText}>{t('babyProfile.letsStart')}</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -611,7 +592,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     gap: 24,
   },
   tipContainer: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
@@ -637,62 +618,4 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
-  // Welcome Modal
-  welcomeOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  welcomeCard: {
-    backgroundColor: theme.card,
-    borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 28,
-    alignItems: 'center',
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  welcomeIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: theme.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  welcomeTitle: {
-    ...TYPOGRAPHY.h2,
-    color: theme.textPrimary,
-    textAlign: 'center',
-    marginBottom: 8,
-    writingDirection: 'rtl',
-  },
-  welcomeMessage: {
-    ...TYPOGRAPHY.body,
-    color: theme.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-    writingDirection: 'rtl',
-  },
-  welcomeBtn: {
-    backgroundColor: theme.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    width: '100%',
-    alignItems: 'center',
-  },
-  welcomeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
 });

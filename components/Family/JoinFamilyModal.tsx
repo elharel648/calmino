@@ -1,17 +1,16 @@
 import React, { useState, useRef } from 'react';
-import {
-    View,
+import InlineLoader from '../../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Modal,
     TextInput,
-    ActivityIndicator,
+    
     Platform,
     KeyboardAvoidingView,
     Animated,
-    Alert,
-} from 'react-native';
+    Alert } from 'react-native';
 import { X, Users, LogIn, CheckCircle, QrCode } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -182,7 +181,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                         /* Success Animation Screen */
                         <Animated.View style={[styles.successContainer, { transform: [{ scale: successScale }], opacity: successOpacity }]}>
                             <View style={styles.successIconCircle}>
-                                <CheckCircle size={48} color="#10B981" />
+                                <CheckCircle size={48} color="#7DAF8F" />
                             </View>
                             <Text style={[styles.successText, { color: theme.textPrimary }]}>
                                 {successMessage}
@@ -217,7 +216,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                     <X size={22} color={theme.textSecondary} />
                                 </TouchableOpacity>
                                 <Text style={[styles.title, { color: theme.textPrimary }]}>{t('joinFamily.title')}</Text>
-                                <Users size={22} color="#10B981" />
+                                <Users size={22} color="#C8806A" />
                             </View>
 
                             {/* Description */}
@@ -273,7 +272,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 disabled={loading || code.length !== 6}
                             >
                                 {loading ? (
-                                    <ActivityIndicator color="#fff" />
+                                    <InlineLoader color="#fff"  />
                                 ) : (
                                     <>
                                         <LogIn size={20} color="#fff" />
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        backgroundColor: '#10B981',
+        backgroundColor: '#C8806A',
         paddingVertical: 16,
         borderRadius: 14,
         marginBottom: 16,
@@ -409,7 +408,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(16,185,129,0.1)',
+        backgroundColor: 'rgba(125,175,143,0.12)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,
@@ -445,7 +444,7 @@ const styles = StyleSheet.create({
         marginLeft: -80,
         borderRadius: 12,
         borderWidth: 2.5,
-        borderColor: '#10B981',
+        borderColor: '#7DAF8F',
     },
 });
 

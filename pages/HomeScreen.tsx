@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Share, Alert, ActivityIndicator, StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
+import InlineLoader from '../components/Common/InlineLoader';
+import { View, StyleSheet, ScrollView, Share, Alert,  StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
 import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -81,47 +82,48 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [birthDate, setBirthDate] = useState<Date | null>(null);
     const [gender, setGender] = useState<'boy' | 'girl' | 'other' | undefined>(undefined);
 
+    const fetchBabyData = useCallback(async () => {
+        if (!activeChild?.childId) {
+            setBirthDate(null);
+            setGender(undefined);
+            return;
+        }
+        try {
+            const babyData = await getBabyDataById(activeChild.childId);
+            if (babyData?.birthDate) {
+                // Handle Firebase Timestamp or Date
+                let date: Date;
+                if (babyData.birthDate instanceof Timestamp) {
+                    date = babyData.birthDate.toDate();
+                } else if (babyData.birthDate?.seconds) {
+                    date = new Date(babyData.birthDate.seconds * 1000);
+                } else if (babyData.birthDate instanceof Date) {
+                    date = babyData.birthDate;
+                } else {
+                    date = new Date(babyData.birthDate);
+                }
+                setBirthDate(date);
+            } else {
+                setBirthDate(null);
+            }
+
+            // Set gender
+            if (babyData?.gender) {
+                setGender(babyData.gender);
+            } else {
+                setGender(undefined);
+            }
+        } catch (error) {
+            logger.error('Error fetching baby data:', error);
+            setBirthDate(null);
+            setGender(undefined);
+        }
+    }, [activeChild?.childId]);
+
     // Fetch birth date and gender when active child changes
     useEffect(() => {
-        const fetchBabyData = async () => {
-            if (!activeChild?.childId) {
-                setBirthDate(null);
-                setGender(undefined);
-                return;
-            }
-            try {
-                const babyData = await getBabyDataById(activeChild.childId);
-                if (babyData?.birthDate) {
-                    // Handle Firebase Timestamp or Date
-                    let date: Date;
-                    if (babyData.birthDate instanceof Timestamp) {
-                        date = babyData.birthDate.toDate();
-                    } else if (babyData.birthDate?.seconds) {
-                        date = new Date(babyData.birthDate.seconds * 1000);
-                    } else if (babyData.birthDate instanceof Date) {
-                        date = babyData.birthDate;
-                    } else {
-                        date = new Date(babyData.birthDate);
-                    }
-                    setBirthDate(date);
-                } else {
-                    setBirthDate(null);
-                }
-
-                // Set gender
-                if (babyData?.gender) {
-                    setGender(babyData.gender);
-                } else {
-                    setGender(undefined);
-                }
-            } catch (error) {
-                logger.error('Error fetching baby data:', error);
-                setBirthDate(null);
-                setGender(undefined);
-            }
-        };
         fetchBabyData();
-    }, [activeChild?.childId]);
+    }, [fetchBabyData]);
 
     // Derive profile from active child
     const profile = useMemo(() => {
@@ -129,13 +131,20 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             return { id: '', name: t('home.defaultBabyName'), birthDate: new Date(), ageMonths: 0, photoUrl: undefined, parentId: '' };
         }
 
+        let activeBirth: Date | null = null;
+        if (birthDate) {
+            activeBirth = birthDate;
+        } else if ((activeChild as any)?.birthDate) {
+            activeBirth = new Date((activeChild as any).birthDate);
+        }
+
         // Calculate age in months if we have birth date
         let ageMonths = 0;
-        if (birthDate) {
+        if (activeBirth) {
             const now = new Date();
-            ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
-                (now.getMonth() - birthDate.getMonth());
-            if (now.getDate() < birthDate.getDate()) {
+            ageMonths = (now.getFullYear() - activeBirth.getFullYear()) * 12 +
+                (now.getMonth() - activeBirth.getMonth());
+            if (now.getDate() < activeBirth.getDate()) {
                 ageMonths--;
             }
             ageMonths = Math.max(0, ageMonths);
@@ -144,11 +153,11 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         return {
             id: activeChild.childId,
             name: activeChild.childName,
-            birthDate: birthDate || new Date(),
+            birthDate: (activeChild as any)?.birthDate ? new Date((activeChild as any).birthDate) : (birthDate || new Date()),
             ageMonths,
             photoUrl: activeChild.photoUrl,
             parentId: auth.currentUser?.uid || '',
-            gender,
+            gender: (activeChild as any)?.gender || gender,
         };
     }, [activeChild, birthDate]);
 
@@ -239,20 +248,22 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         await Promise.all([
+            fetchBabyData(),
             refreshHomeData(),
             refreshMeds(),
         ]);
         setRefreshing(false);
-    }, [refreshHomeData, refreshMeds]);
+    }, [fetchBabyData, refreshHomeData, refreshMeds]);
 
     // --- Focus Effect ---
     useFocusEffect(
         useCallback(() => {
             if (profile.id) {
+                fetchBabyData();
                 refreshHomeData();
                 refreshMeds();
             }
-        }, [profile.id, refreshHomeData, refreshMeds])
+        }, [profile.id, fetchBabyData, refreshHomeData, refreshMeds])
     );
 
 
@@ -420,7 +431,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             </View>
 
                             {/* Network error banner */}
-                            {homeDataError && (
+                            {false && homeDataError && (
                                 <View style={styles.errorBanner}>
                                     <WifiOff size={14} color="#fff" strokeWidth={2} />
                                     <Text style={styles.errorBannerText}>{t('home.connectionError')}</Text>
@@ -573,7 +584,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                         }}
                         onSave={async (data) => {
                             try {
-                                await updateDoc(doc(db, 'children', editingChild.childId), {
+                                await updateDoc(doc(db, 'babies', editingChild.childId), {
                                     name: data.name,
                                     gender: data.gender,
                                     birthDate: data.birthDate,
@@ -657,7 +668,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         borderRadius: 12,
         paddingVertical: 10,
         paddingHorizontal: 14,

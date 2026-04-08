@@ -76,8 +76,8 @@ const SitterCard = ({ sitter, theme, isDarkMode, onPress, isFavorite, onToggleFa
                             </TouchableOpacity>
                         )}
                         {sitter.isAvailableTonight && (
-                            <View style={[styles.tonightBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                                <Text style={[styles.tonightText, { color: '#10B981' }]}>פנוי/ה להערב</Text>
+                            <View style={[styles.tonightBadge, { backgroundColor: 'rgba(200,128,106,0.15)' }]}>
+                                <Text style={[styles.tonightText, { color: '#C8806A' }]}>פנוי/ה להערב</Text>
                             </View>
                         )}
                         {sitter.isVerified && (
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
         width: 13,
         height: 13,
         borderRadius: 7,
-        backgroundColor: '#10B981',
+        backgroundColor: '#C8806A',
         borderWidth: 2,
     },
     sitterInfo: {

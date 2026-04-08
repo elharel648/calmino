@@ -73,6 +73,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
 
     useEffect(() => {
         if (childId) {
+            
             getMeasurementsForChart(childId, 6).then((measurements) => {
                 const weights = measurements
                     .filter(m => m.weight !== undefined)
@@ -112,8 +113,8 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                 style={[styles.statCard, { backgroundColor: theme.card }, animatedStyle]}
             >
                 {/* Icon */}
-                <View style={[styles.statIconWrap, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
-                    <TrendingUp size={20} color="#10B981" strokeWidth={1.5} />
+                <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.growth.color }]}>
+                    <TrendingUp size={20} color="#FFFFFF" strokeWidth={1.5} />
                 </View>
 
                 <View style={{ flex: 1, alignItems: 'flex-end', width: '100%', justifyContent: 'flex-end' }}>
@@ -122,28 +123,28 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                             <>
                                 {weightData.length >= 2 ? (
                                     <View style={styles.sparklineWrap}>
-                                        <Sparkline data={weightData} color="#10B981" />
+                                        <Sparkline data={weightData} color={theme.actionColors.growth.color} />
                                     </View>
                                 ) : (
                                     <Text style={[styles.statValue, { color: theme.textPrimary }]}>
-                                        {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: '#10B981' }}>{t('reports.units.kg')}</Text>
+                                        {latestWeight} <Text style={{ fontSize: 14, fontWeight: '500', color: theme.actionColors.growth.color }}>{t('reports.units.kg')}</Text>
                                     </Text>
                                 )}
 
                                 {hasChange && (
                                     <View style={[styles.trendBadge, {
                                         backgroundColor: isPositive
-                                            ? (isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
-                                            : (isDarkMode ? 'rgba(220, 38, 38, 0.22)' : '#FEE2E2')
+                                            ? (isDarkMode ? 'rgba(107, 175, 138, 0.22)' : '#E8F5EE')
+                                            : (isDarkMode ? 'rgba(212, 131, 122, 0.22)' : '#FAEAE8')
                                     }]}>
                                         <ArrowUpRight
                                             size={10}
-                                            color={isPositive ? '#059669' : '#DC2626'}
+                                            color={isPositive ? '#6BAF8A' : '#D4837A'}
                                             style={!isPositive ? { transform: [{ rotate: '90deg' }] } : undefined}
                                         />
                                         <Text style={{
                                             fontSize: 10,
-                                            color: isPositive ? '#059669' : '#DC2626',
+                                            color: isPositive ? '#6BAF8A' : '#D4837A',
                                             fontWeight: '600'
                                         }}>
                                             {isPositive ? '+' : ''}{change?.weight}
@@ -154,8 +155,8 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                         ) : (
                             // Empty state - invite to add first measurement
                             <View style={styles.emptyState}>
-                                <View style={[styles.addBadge, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.22)' : '#ECFDF5' }]}>
-                                    <Plus size={14} color="#10B981" strokeWidth={2.5} />
+                                <View style={[styles.addBadge, { backgroundColor: theme.actionColors.growth.color }]}>
+                                    <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
                                 </View>
                             </View>
                         )}
@@ -167,12 +168,12 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
                     {/* Sub value - only shown when sparkline is visible (multiple measurements) */}
                     {hasData && latestWeight && weightData.length >= 2 && (
                         <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>
-                            {latestWeight} ק"ג
+                            {latestWeight} {t('reports.units.kg')}
                         </Text>
                     )}
                     {!hasData && (
                         <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>
-                            הוסף מדידה
+                            {t('growth.addMeasurement')}
                         </Text>
                     )}
                 </View>

@@ -1,8 +1,9 @@
-import React, { memo, useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions } from 'react-native';
+import React, { memo, useCallback, useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions, Animated as RNAnimated, PanResponder } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, GripVertical, RotateCcw, Utensils, Moon, Droplets, Pill } from 'lucide-react-native';
+import { X, GripVertical, RotateCcw, Utensils, Moon, Pill } from 'lucide-react-native';
+import DiaperIcon from '../Common/DiaperIcon';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
@@ -20,15 +21,8 @@ export const STATS_ORDER_KEY = '@stats_order';
 const ICONS: Record<StatKey, any> = {
     food: Utensils,
     sleep: Moon,
-    diapers: Droplets,
+    diapers: DiaperIcon,
     supplements: Pill,
-};
-
-const STAT_LABELS: Record<StatKey, { label: string; color: string }> = {
-    food: { label: 'האכלה', color: '#F59E0B' },
-    sleep: { label: 'שינה', color: '#6366F1' },
-    diapers: { label: 'חיתולים', color: '#10B981' },
-    supplements: { label: 'תוספים', color: '#EC4899' },
 };
 
 interface StatsEditModalProps {
@@ -43,13 +37,73 @@ interface DraggableItem {
 }
 
 const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, currentOrder, onOrderChange }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const [localOrder, setLocalOrder] = useState<DraggableItem[]>([]);
+
+    // Premium spring animation
+    const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
+    const backdropAnim = useRef(new RNAnimated.Value(0)).current;
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponderCapture: () => false,
+            onMoveShouldSetPanResponder: (_, gs) =>
+                gs.dy > 10 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+            onPanResponderMove: (_, gs) => {
+                if (gs.dy > 0) slideAnim.setValue(gs.dy);
+            },
+            onPanResponderRelease: (_, gs) => {
+                if (gs.dy > 100 || gs.vy > 0.5) {
+                    RNAnimated.timing(slideAnim, {
+                        toValue: SCREEN_HEIGHT,
+                        duration: 220,
+                        useNativeDriver: true,
+                    }).start(onClose);
+                } else {
+                    RNAnimated.spring(slideAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 65,
+                        friction: 11,
+                    }).start();
+                }
+            },
+        })
+    ).current;
 
     useEffect(() => {
         if (visible) {
             setLocalOrder(currentOrder.map(key => ({ key })));
+            // Animate in with spring
+            RNAnimated.parallel([
+                RNAnimated.spring(slideAnim, {
+                    toValue: 0,
+                    tension: 65,
+                    friction: 11,
+                    useNativeDriver: true,
+                }),
+                RNAnimated.timing(backdropAnim, {
+                    toValue: 1,
+                    duration: 280,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        } else {
+            // Animate out
+            RNAnimated.parallel([
+                RNAnimated.timing(slideAnim, {
+                    toValue: SCREEN_HEIGHT,
+                    duration: 260,
+                    useNativeDriver: true,
+                }),
+                RNAnimated.timing(backdropAnim, {
+                    toValue: 0,
+                    duration: 220,
+                    useNativeDriver: true,
+                }),
+            ]).start();
         }
     }, [visible, currentOrder]);
 
@@ -87,77 +141,139 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
 
     const renderItem = useCallback(({ item, drag, isActive }: RenderItemParams<DraggableItem>) => {
         const Icon = ICONS[item.key];
-        const data = STAT_LABELS[item.key];
-        const LABEL_KEYS: Record<StatKey, string> = {
-            food: 'reports.metrics.feeding',
-            sleep: 'reports.metrics.sleep',
-            diapers: 'reports.metrics.diapers',
-            supplements: 'reports.metrics.supplements',
+
+        // Theme-matched colors — same as the actual stats cards
+        const colorMap: Record<StatKey, { color: string; lightColor: string; label: string }> = {
+            food:        { color: theme.actionColors.food.accentColor,        lightColor: theme.actionColors.food.lightColor,        label: t('reports.metrics.feeding') },
+            sleep:       { color: theme.actionColors.sleep.accentColor,       lightColor: theme.actionColors.sleep.lightColor,       label: t('reports.metrics.sleep') },
+            diapers:     { color: theme.actionColors.diaper.accentColor,      lightColor: theme.actionColors.diaper.lightColor,      label: t('reports.metrics.diapers') },
+            supplements: { color: theme.actionColors.supplements.accentColor, lightColor: theme.actionColors.supplements.lightColor, label: t('reports.metrics.supplements') },
         };
-        const translatedLabel = t(LABEL_KEYS[item.key]) || data.label;
+        const data = colorMap[item.key];
 
         return (
-            <ScaleDecorator>
+            <ScaleDecorator activeScale={1.03}>
                 <TouchableOpacity
                     style={[
                         styles.itemContainer,
-                        { borderColor: theme.border, backgroundColor: theme.cardSecondary },
-                        isActive && styles.itemActive,
+                        {
+                            borderColor: isActive
+                                ? data.color + '60'
+                                : isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)',
+                            backgroundColor: isActive
+                                ? (isDarkMode ? 'rgba(255,255,255,0.06)' : data.lightColor)
+                                : theme.card,
+                            shadowColor: isActive ? data.color : 'transparent',
+                            shadowOffset: { width: 0, height: 6 },
+                            shadowOpacity: isActive ? 0.25 : 0,
+                            shadowRadius: 12,
+                            elevation: isActive ? 6 : 0,
+                        },
                     ]}
                     onLongPress={drag}
-                    delayLongPress={100}
-                    activeOpacity={0.7}
+                    delayLongPress={80}
+                    activeOpacity={0.75}
                 >
+                    {/* Drag Handle */}
                     <View style={styles.dragHandle}>
-                        <GripVertical size={20} color={isActive ? '#6366F1' : '#9CA3AF'} />
+                        <GripVertical
+                            size={18}
+                            color={isActive ? data.color : (isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)')}
+                            strokeWidth={2}
+                        />
                     </View>
 
-                    <View style={[styles.iconCircle, { backgroundColor: data.color + '20' }]}>
-                        <Icon size={20} color={data.color} />
+                    {/* Icon Circle — same styling as stats screen */}
+                    <View style={[styles.iconCircle, { backgroundColor: data.color }]}>
+                        <Icon size={19} color="#FFFFFF" strokeWidth={2} />
                     </View>
 
+                    {/* Label */}
                     <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>
-                        {translatedLabel}
+                        {data.label}
                     </Text>
+
+                    {/* Active indicator dot */}
+                    {isActive && (
+                        <View style={[styles.activeDot, { backgroundColor: data.color }]} />
+                    )}
                 </TouchableOpacity>
             </ScaleDecorator>
         );
-    }, [theme, t]);
+    }, [theme, isDarkMode, t]);
 
     return (
         <Modal
             visible={visible}
-            animationType="slide"
+            animationType="none"
             transparent={true}
             onRequestClose={onClose}
         >
-            <View style={styles.overlay}>
-                <View style={[styles.modalContainer, { backgroundColor: theme.card }]}>
-                    <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                        <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={onClose}>
-                            <X size={22} color={theme.textPrimary} />
+            {/* Backdrop */}
+            <RNAnimated.View
+                style={[styles.overlay, { opacity: backdropAnim }]}
+                pointerEvents="box-none"
+            >
+                <TouchableOpacity style={{ flex: 1 }} onPress={onClose} activeOpacity={1} />
+            </RNAnimated.View>
+
+            {/* Sheet — slides up with spring */}
+            <RNAnimated.View
+                style={[
+                    styles.modalContainer,
+                    {
+                        backgroundColor: theme.card,
+                        transform: [{ translateY: slideAnim }],
+                    },
+                ]}
+            >
+                {/* Header Container with PanResponder */}
+                <View {...panResponder.panHandlers} style={{ paddingBottom: 8, backgroundColor: 'transparent' }}>
+                    {/* Drag Pill */}
+                    <View style={[styles.pill, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
+
+                    {/* Header */}
+                    <View style={[styles.header, { borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }]}>
+                        <TouchableOpacity
+                            style={[styles.iconBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                            onPress={onClose}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <X size={18} color={theme.textPrimary} strokeWidth={2.5} />
                         </TouchableOpacity>
+
                         <Text style={[styles.title, { color: theme.textPrimary }]}>{t('reports.tabs.orderTabs')}</Text>
-                        <TouchableOpacity style={[styles.resetBtn, { backgroundColor: theme.cardSecondary }]} onPress={handleReset}>
-                            <RotateCcw size={18} color="#6366F1" />
+
+                        <TouchableOpacity
+                            style={[styles.iconBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                            onPress={handleReset}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <RotateCcw size={16} color="#C8806A" strokeWidth={2.5} />
                         </TouchableOpacity>
                     </View>
-
-                    <GestureHandlerRootView style={styles.listContainer}>
-                        <DraggableFlatList
-                            data={localOrder}
-                            keyExtractor={(item) => item.key}
-                            renderItem={renderItem}
-                            onDragEnd={handleDragEnd}
-                            containerStyle={styles.flatList}
-                        />
-                    </GestureHandlerRootView>
-
-                    <TouchableOpacity style={styles.saveBtn} onPress={onClose}>
-                        <Text style={styles.saveBtnText}>{t('common.done')}</Text>
-                    </TouchableOpacity>
                 </View>
-            </View>
+
+                {/* Draggable List */}
+                <GestureHandlerRootView style={styles.listContainer}>
+                    <DraggableFlatList
+                        data={localOrder}
+                        keyExtractor={(item) => item.key}
+                        renderItem={renderItem}
+                        onDragEnd={handleDragEnd}
+                        containerStyle={styles.flatList}
+                    />
+                </GestureHandlerRootView>
+
+                {/* Save Button */}
+                <TouchableOpacity
+                    style={[styles.saveBtn, { backgroundColor: '#C8806A' }]}
+                    onPress={onClose}
+                    activeOpacity={0.85}
+                >
+                    <Text style={styles.saveBtnText}>{t('common.done')}</Text>
+                </TouchableOpacity>
+            </RNAnimated.View>
         </Modal>
     );
 });
@@ -166,40 +282,50 @@ StatsEditModal.displayName = 'StatsEditModal';
 
 const styles = StyleSheet.create({
     overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.48)',
     },
     modalContainer: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        minHeight: SCREEN_HEIGHT * 0.5,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        minHeight: SCREEN_HEIGHT * 0.48,
         maxHeight: SCREEN_HEIGHT * 0.7,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+        paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.14,
+        shadowRadius: 24,
+        elevation: 20,
+    },
+    pill: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginTop: 10,
+        marginBottom: 4,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
+        paddingVertical: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     title: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '700',
+        letterSpacing: -0.3,
     },
-    closeBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    resetBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+    iconBtn: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -208,56 +334,59 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     flatList: {
-        paddingVertical: 8,
+        paddingVertical: 10,
     },
     itemContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 12,
+        paddingVertical: 13,
+        paddingHorizontal: 14,
         marginVertical: 4,
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 1,
-    },
-    itemActive: {
-        backgroundColor: '#EEF2FF',
-        borderColor: '#6366F1',
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 0,
     },
     dragHandle: {
         padding: 4,
-        marginRight: 8,
+        marginRight: 10,
     },
     iconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: 14,
     },
     itemLabel: {
         flex: 1,
         fontSize: 16,
         fontWeight: '500',
         textAlign: 'right',
+        letterSpacing: -0.2,
+    },
+    activeDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
+        marginLeft: 8,
     },
     saveBtn: {
         marginHorizontal: 20,
-        marginTop: 16,
-        backgroundColor: '#6366F1',
-        paddingVertical: 14,
-        borderRadius: 14,
+        marginTop: 14,
+        paddingVertical: 15,
+        borderRadius: 16,
         alignItems: 'center',
+        shadowColor: '#C8806A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 0,
     },
     saveBtnText: {
         color: '#fff',
         fontSize: 17,
         fontWeight: '600',
+        letterSpacing: -0.2,
     },
 });
 

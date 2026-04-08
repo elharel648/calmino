@@ -18,6 +18,7 @@ import {
   StyleSheet,
   Platform,
   Dimensions,
+  Animated,
 } from 'react-native';
 let LiquidGlassView: any = View;
 let LiquidGlassContainerView: any = View;
@@ -29,7 +30,7 @@ try {
   LiquidGlassContainerView = LiquidGlass.LiquidGlassContainerView;
   isLiquidGlassSupported = LiquidGlass.isLiquidGlassSupported;
 } catch (e) {
-  console.log('LiquidGlass native module not found, falling back to BlurView');
+  if (__DEV__) console.log('LiquidGlass native module not found, falling back to BlurView');
 }
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -38,7 +39,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const ACTIVE_COLOR = '#007AFF';
+const ACTIVE_COLOR = '#C8806A'; // Warm terracotta — matches app pastel palette
 const SCREEN_W = Dimensions.get('window').width;
 const BAR_MARGIN_H = 16;
 const BAR_W = SCREEN_W - BAR_MARGIN_H * 2;
@@ -50,11 +51,38 @@ const BOTTOM_OFFSET = 28;
 // Screens where the tab bar should be completely hidden
 const FULLSCREEN_SCREENS: string[] = [];
 
+import { useScrollTracking } from '../../context/ScrollTrackingContext';
+
 // ─── Component ───────────────────────────────────────────────────────────────
 const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
   ({ state, descriptors, navigation }) => {
     const { isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
+    
+    // Responsive scroll tracking
+    const { scrollY } = useScrollTracking();
+    
+    // Use diffClamp to hide on scroll down, show on scroll up
+    const clampedScroll = React.useMemo(() => {
+      const positiveScroll = scrollY.interpolate({
+        inputRange: [0, Number.MAX_SAFE_INTEGER],
+        outputRange: [0, Number.MAX_SAFE_INTEGER],
+        extrapolateLeft: 'clamp', // Ignore negative elastic bounces at the top of the scroll
+      });
+      return Animated.diffClamp(positiveScroll, 0, 120);
+    }, [scrollY]);
+
+    const translateY = clampedScroll.interpolate({
+      inputRange: [0, 120],
+      outputRange: [0, 120],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = clampedScroll.interpolate({
+      inputRange: [0, 60, 120],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
 
     // ── Fullscreen hide logic ────────────────────────────────────────
     const activeRoute = state.routes[state.index];
@@ -99,7 +127,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
     const safeBottom = Math.max(insets.bottom, BOTTOM_OFFSET);
 
     return (
-      <View style={[styles.outer, { paddingBottom: safeBottom }]}>
+      <Animated.View style={[styles.outer, { paddingBottom: safeBottom, transform: [{ translateY }], opacity }]}>
         {/* Safe area bottom tint fill */}
         <View
           style={[
@@ -181,8 +209,8 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
                         color: isFocused
                           ? ACTIVE_COLOR
                           : isDarkMode
-                            ? 'rgba(255,255,255,0.4)'
-                            : 'rgba(0,0,0,0.3)',
+                            ? 'rgba(255,255,255,0.5)'
+                            : 'rgba(0,0,0,0.4)',
                         size: 24,
                       })}
                   </View>
@@ -191,7 +219,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
             })}
           </View>
         </View>
-      </View>
+      </Animated.View>
     );
   },
 );

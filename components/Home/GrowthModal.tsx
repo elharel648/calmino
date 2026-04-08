@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     Modal,
@@ -12,9 +11,8 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Dimensions,
-    PanResponder,
-    ActivityIndicator,
-} from 'react-native';
+    PanResponder } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { TrendingUp, FileText, ChevronDown, ChevronUp, Calendar, Trash2, Info } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -370,7 +368,7 @@ export default function GrowthModal({
 
     return (
         <Modal visible={visible} transparent animationType="none">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
                 <RNAnimatedView style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
                     <BlurView
                         intensity={isDarkMode ? 40 : 20}
@@ -412,40 +410,44 @@ export default function GrowthModal({
                             }}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Info size={18} color={ACCENT} strokeWidth={2} />
+                            <Info size={18} color={theme.actionColors.growth.color} strokeWidth={2} />
                         </TouchableOpacity>
 
                         {/* Tooltip bubble */}
                         {showInfoTip && (
                             <View style={[styles.tooltip, { backgroundColor: isDarkMode ? '#1C2E26' : '#ECFDF5', borderColor: isDarkMode ? '#2D4A3A' : '#A7F3D0' }]}>
                                 <Text style={[styles.tooltipText, { color: isDarkMode ? '#6EE7B7' : '#065F46' }]}>
-                                    מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק
+                                    {t('growth.autoUpdateTooltip')}
                                 </Text>
                             </View>
                         )}
 
-                        <View style={styles.iconContainer}>
+                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
                             {/* Pulse rings */}
-                            <Animated.View style={[styles.iconPulse, pulse1Style, { backgroundColor: ACCENT }]} />
-                            <Animated.View style={[styles.iconPulse, pulse2Style, { backgroundColor: ACCENT }]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.growth.color }, pulse1Style]} />
+                            <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.growth.color }, pulse2Style]} />
                             {/* Main icon with bounce */}
                             <Animated.View style={bounceStyle}>
-                                <LinearGradient
-                                    colors={[ACCENT, '#34D399']}
-                                    style={styles.iconGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    <TrendingUp size={28} color="#fff" strokeWidth={2} />
-                                </LinearGradient>
+                                <View style={[{
+                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                    backgroundColor: theme.actionColors.growth.color,
+                                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.growth.color,
+                                    shadowOpacity: 0.35,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 5 },
+                                    borderWidth: 2.5,
+                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                }]}>
+                                    <TrendingUp size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                </View>
                             </Animated.View>
                             {/* Sparkle star 1 */}
                             <Animated.View style={[styles.floatingStar, { top: 2, left: 4 }, star1Style]}>
-                                <TrendingUp size={12} color={ACCENT} strokeWidth={2.5} />
+                                <TrendingUp size={12} color={theme.actionColors.growth.color} strokeWidth={2.5} />
                             </Animated.View>
                             {/* Sparkle star 2 */}
                             <Animated.View style={[styles.floatingStar, { top: 6, right: 2 }, star2Style]}>
-                                <TrendingUp size={10} color={ACCENT} strokeWidth={2.5} />
+                                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: theme.actionColors.growth.color, opacity: 0.8 }} />
                             </Animated.View>
                         </View>
 
@@ -507,7 +509,7 @@ export default function GrowthModal({
                                                     }}
                                                     style={styles.datePickerBtn}
                                                 >
-                                                    <Text style={{ color: '#007AFF', fontWeight: '700', fontSize: 15 }}>{t('common.done')}</Text>
+                                                    <Text style={{ color: '#C8806A', fontWeight: '700', fontSize: 15 }}>{t('common.done')}</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         )}
@@ -518,7 +520,7 @@ export default function GrowthModal({
                                             onChange={handleDateChange}
                                             maximumDate={new Date()}
                                             locale="he-IL"
-                                            accentColor={ACCENT}
+                                            accentColor={theme.actionColors.growth.color}
                                             themeVariant={isDarkMode ? 'dark' : 'light'}
                                         />
                                     </View>
@@ -640,7 +642,7 @@ export default function GrowthModal({
                                         ]}
                                         value={notes}
                                         onChangeText={setNotes}
-                                        placeholder="הערות נוספות..."
+                                        placeholder={t('growth.additionalNotes')}
                                         placeholderTextColor={theme.textTertiary}
                                         textAlign="right"
                                         multiline
@@ -655,14 +657,11 @@ export default function GrowthModal({
                                     disabled={!hasValues || isSaving}
                                     activeOpacity={0.8}
                                 >
-                                    <LinearGradient
-                                        colors={[ACCENT, '#059669']}
-                                        style={styles.saveButtonGradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
+                                    <View
+                                        style={[styles.saveButtonGradient, { backgroundColor: theme.actionColors.growth.color }]}
                                     >
                                         {isSaving ? (
-                                            <ActivityIndicator color="#fff" size="small" />
+                                            <InlineLoader color="#fff" size="small"  />
                                         ) : (
                                             <>
                                                 <TrendingUp size={18} color="#fff" strokeWidth={2} />
@@ -671,7 +670,7 @@ export default function GrowthModal({
                                                 </Text>
                                             </>
                                         )}
-                                    </LinearGradient>
+                                    </View>
                                 </TouchableOpacity>
 
                                 {/* Delete Button (Edit Mode) */}
@@ -682,7 +681,7 @@ export default function GrowthModal({
                                         activeOpacity={0.7}
                                     >
                                         <Trash2 size={16} color="#EF4444" strokeWidth={1.5} />
-                                        <Text style={styles.deleteButtonText}>מחק מדידה</Text>
+                                        <Text style={styles.deleteButtonText}>{t('growth.deleteMeasurement')}</Text>
                                     </TouchableOpacity>
                                 )}
                             </Animated.View>
@@ -809,7 +808,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 4,
-        paddingBottom: 24,
+        paddingBottom: 120,
         flexGrow: 1,
         width: '100%',
     },

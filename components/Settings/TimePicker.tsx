@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../../context/LanguageContext';
 
 // Unified accent color
-const ACCENT_COLOR = '#6366F1';
+const ACCENT_COLOR = '#C8806A';
 
 interface TimePickerProps {
     value: string; // HH:MM format

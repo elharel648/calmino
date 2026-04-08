@@ -11,7 +11,7 @@ interface SwipeableRowProps {
 }
 
 export const SwipeableRow: React.FC<SwipeableRowProps> = ({ children, onDelete }) => {
-    const { isDarkMode } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const swipeableRef = useRef<Swipeable>(null);
 
     const renderLeftActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
@@ -64,7 +64,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({ children, onDelete }
                     style={[
                         styles.actionButton,
                         {
-                            backgroundColor: 'rgba(239, 68, 68, 0.95)',
+                            backgroundColor: theme?.actionColors?.sos?.color || '#CD8B87',
                             transform: [
                                 { translateX: transX },
                                 { scale },

@@ -1,7 +1,6 @@
 // components/Reports/DetailedGrowthScreen.tsx - Production-Ready Growth Detail Screen
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
@@ -9,11 +8,11 @@ import {
     ScrollView,
     Platform,
     SafeAreaView,
-    ActivityIndicator,
+    
     RefreshControl,
     Share,
-    Alert,
-} from 'react-native';
+    Alert } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import {
     ChevronLeft, TrendingUp, Scale, Ruler, Activity,
     Plus, Info, Calendar, Edit3, Share2, ChevronDown
@@ -184,8 +183,8 @@ const PercentileCard = ({ icon: Icon, label, value, unit, percentile, change, co
                     </Text>
                     <Text style={[percStyles.unit, { color: theme.textTertiary }]}>{unit}</Text>
                     {hasChange && (
-                        <View style={[percStyles.changeBadge, { backgroundColor: change > 0 ? '#D1FAE5' : '#FEE2E2' }]}>
-                            <Text style={[percStyles.changeText, { color: change > 0 ? '#059669' : '#DC2626' }]}>
+                        <View style={[percStyles.changeBadge, { backgroundColor: change > 0 ? '#E8F5EE' : '#FAEAE8' }]}>
+                            <Text style={[percStyles.changeText, { color: change > 0 ? '#6BAF8A' : '#D4837A' }]}>
                                 {change > 0 ? '+' : ''}{change}
                             </Text>
                         </View>
@@ -199,7 +198,7 @@ const PercentileCard = ({ icon: Icon, label, value, unit, percentile, change, co
                             {Math.round(percentile)}%
                         </Text>
                     </View>
-                    <Text style={[percStyles.percentileLabel, { color: theme.textTertiary }]}>{status.status}</Text>
+                    <Text style={[percStyles.percentileLabel, { color: theme.textTertiary }]}>{status.statusHe}</Text>
                 </View>
             )}
         </View>
@@ -247,7 +246,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                 <View style={histStyles.values}>
                     {measurement.weight && (
                         <View style={histStyles.valueItem}>
-                            <Scale size={12} color="#3B82F6" />
+                            <Scale size={12} color="#C8806A" />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
                                 {measurement.weight} {t('reports.units.kg')}
                             </Text>
@@ -255,7 +254,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                     )}
                     {measurement.height && (
                         <View style={histStyles.valueItem}>
-                            <Ruler size={12} color="#10B981" />
+                            <Ruler size={12} color="#83C5BE" />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
                                 {measurement.height} {t('reports.units.cm')}
                             </Text>
@@ -263,7 +262,7 @@ const MeasurementRow = ({ measurement, onEdit }: {
                     )}
                     {measurement.headCircumference && (
                         <View style={histStyles.valueItem}>
-                            <Activity size={12} color="#8B5CF6" />
+                            <Activity size={12} color={theme.actionColors.quickReminder.color} />
                             <Text style={[histStyles.valueText, { color: theme.textPrimary }]}>
                                 {measurement.headCircumference} {t('reports.units.cm')}
                             </Text>
@@ -306,13 +305,12 @@ export default function DetailedGrowthScreen({
     const genderKey = gender === 'girl' ? 'girl' : 'boy';
 
     const fetchData = useCallback(async () => {
+        if (!childId) return;
         try {
-            const [measurementsData, changeData] = await Promise.all([
-                getMeasurementsForChart(childId, 30),
-                getGrowthChange(childId),
-            ]);
-            setMeasurements(measurementsData);
-            setChange(changeData);
+            const data = await getMeasurementsForChart(childId, 50);
+            setMeasurements(data);
+            const growthChange = await getGrowthChange(childId);
+            setChange(growthChange);
         } catch (error) {
             logger.error('Error fetching growth data:', error);
         }
@@ -434,7 +432,7 @@ export default function DetailedGrowthScreen({
                     <ChevronDown size={28} color={theme.textPrimary} />
                 </TouchableOpacity>
                 <View style={styles.headerTitle}>
-                    <TrendingUp size={20} color="#10B981" strokeWidth={2} />
+                    <TrendingUp size={20} color="#83C5BE" strokeWidth={2} />
                     <Text style={[styles.headerText, { color: theme.textPrimary }]}>{t('reports.growth.title')}</Text>
                 </View>
                 <View style={styles.headerActions}>
@@ -442,7 +440,7 @@ export default function DetailedGrowthScreen({
                         <Share2 size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerBtn} onPress={handleAddNew}>
-                        <Plus size={24} color="#10B981" strokeWidth={2} />
+                        <Plus size={24} color="#83C5BE" strokeWidth={2} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -451,23 +449,23 @@ export default function DetailedGrowthScreen({
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#83C5BE" />}
             >
                 {/* Summary */}
-                <View style={[styles.summaryCard, { backgroundColor: '#ECFDF5' }]}>
-                    <Text style={[styles.summaryLabel, { color: '#047857' }]}>{t('reports.growth.childAge')}</Text>
+                <View style={[styles.summaryCard, { backgroundColor: theme.actionColors.growth.lightColor }]}>
+                    <Text style={[styles.summaryLabel, { color: '#83C5BE' }]}>{t('reports.growth.childAge')}</Text>
                     <View style={styles.summaryValue}>
-                        <Text style={[styles.summaryNumber, { color: '#10B981' }]}>{ageInMonths}</Text>
-                        <Text style={[styles.summaryUnit, { color: '#10B981' }]}>{t('reports.units.months')}</Text>
+                        <Text style={[styles.summaryNumber, { color: '#83C5BE' }]}>{ageInMonths}</Text>
+                        <Text style={[styles.summaryUnit, { color: '#83C5BE' }]}>{t('reports.units.months')}</Text>
                     </View>
                     {lastMeasurementDate && (
-                        <Text style={[styles.lastUpdate, { color: '#047857' }]}>{lastMeasurementDate}</Text>
+                        <Text style={[styles.lastUpdate, { color: '#83C5BE' }]}>{lastMeasurementDate}</Text>
                     )}
                 </View>
 
                 {loading ? (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#10B981" />
+                        <InlineLoader size="large" color="#83C5BE" />
                     </View>
                 ) : (
                     <>
@@ -475,19 +473,19 @@ export default function DetailedGrowthScreen({
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.currentMeasurements')}</Text>
                             <PercentileCard icon={Scale} label={t('reports.metrics.weight')} value={currentValues.weight} unit={t('reports.units.kg')}
-                                percentile={currentValues.weightPercentile} change={change?.weight} color="#3B82F6" bgColor="#EFF6FF" />
+                                percentile={currentValues.weightPercentile} change={change?.weight} color={theme.primary} bgColor={theme.primaryLight} />
                             <PercentileCard icon={Ruler} label={t('reports.metrics.height')} value={currentValues.height} unit={t('reports.units.cm')}
-                                percentile={currentValues.heightPercentile} change={change?.height} color="#10B981" bgColor="#ECFDF5" />
+                                percentile={currentValues.heightPercentile} change={change?.height} color={theme.actionColors.growth.color} bgColor={theme.actionColors.growth.lightColor} />
                             <PercentileCard icon={Activity} label={t('reports.metrics.headCircumference')} value={currentValues.head} unit={t('reports.units.cm')}
-                                percentile={currentValues.headPercentile} change={change?.headCircumference} color="#8B5CF6" bgColor="#F5F3FF" />
+                                percentile={currentValues.headPercentile} change={change?.headCircumference} color={theme.actionColors.quickReminder.color} bgColor={theme.actionColors.quickReminder.lightColor} />
                         </View>
 
                         {/* Charts */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.trend')}</Text>
-                            <GrowthChart data={chartData.weightData} color="#3B82F6" title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
-                            <GrowthChart data={chartData.heightData} color="#10B981" title={t('reports.metrics.height')} unit={t('reports.units.cm')} />
-                            <GrowthChart data={chartData.headData} color="#8B5CF6" title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
+                            <GrowthChart data={chartData.weightData} color={theme.primary} title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
+                            <GrowthChart data={chartData.heightData} color={theme.actionColors.growth.color} title={t('reports.metrics.height')} unit={t('reports.units.cm')} />
+                            <GrowthChart data={chartData.headData} color={theme.actionColors.quickReminder.color} title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
                         </View>
 
                         {/* History */}
@@ -507,7 +505,7 @@ export default function DetailedGrowthScreen({
                             style={[styles.exportBtn, { backgroundColor: theme.cardSecondary }]}
                             onPress={handleExport}
                         >
-                            <Share2 size={18} color="#10B981" />
+                            <Share2 size={18} color="#83C5BE" />
                             <Text style={[styles.exportBtnText, { color: theme.textPrimary }]}>
                                 {t('detailedGrowth.shareReportToDoctor')}
                             </Text>

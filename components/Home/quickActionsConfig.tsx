@@ -1,5 +1,5 @@
 import React from 'react';
-import { Utensils, Moon, Music, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell } from 'lucide-react-native';
+import { Utensils, Moon, Music, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
 import DiaperIcon from '../Common/DiaperIcon';

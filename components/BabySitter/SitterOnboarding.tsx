@@ -33,35 +33,13 @@ interface SitterOnboardingProps {
   onComplete: () => void;
 }
 
-const SLIDES = [
-  {
-    key: 'profile',
-    icon: PartyPopper,
-    iconColor: '#8B5CF6',
-    iconBg: '#EDE9FE',
-    titleKey: 'sitterOnboarding.profileTitle',
-    subtitleKey: 'sitterOnboarding.profileSubtitle',
-  },
-  {
-    key: 'availability',
-    icon: Calendar,
-    iconColor: '#3B82F6',
-    iconBg: '#DBEAFE',
-    titleKey: 'sitterOnboarding.availabilityTitle',
-    subtitleKey: 'sitterOnboarding.availabilitySubtitle',
-  },
-  {
-    key: 'reputation',
-    icon: Star,
-    iconColor: '#F59E0B',
-    iconBg: '#FEF3C7',
-    titleKey: 'sitterOnboarding.reputationTitle',
-    subtitleKey: 'sitterOnboarding.reputationSubtitle',
-  },
-];
-
 // ---- Confetti Burst — spreads across the entire popup, then fades ----
-const CONFETTI_COLORS = ['#8B5CF6', '#F59E0B', '#3B82F6', '#EF4444', '#10B981', '#EC4899', '#F97316', '#06B6D4', '#A855F7', '#14B8A6'];
+// Using the new premium actionColors pastel palette
+const CONFETTI_COLORS = [
+  '#D4A373', '#4A6572', '#6A9C89', '#B5838D', '#557A9D',
+  '#CD8B87', '#A5A58D', '#8EB168', '#83C5BE', '#8D4A60',
+  '#8ECAE6', '#E9C46A', '#A29BFE'
+];
 const BURST_COUNT = 30;
 
 function ConfettiPiece({ index, fire }: { index: number; fire: boolean }) {
@@ -112,6 +90,30 @@ export default function SitterOnboarding({ visible, onComplete }: SitterOnboardi
   const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [fireConfetti, setFireConfetti] = useState(false);
+
+  const SLIDES = React.useMemo(() => [
+    {
+      key: 'profile',
+      icon: PartyPopper,
+      iconBg: theme.actionColors.quickReminder.color, // Pastel Purple
+      titleKey: 'sitterOnboarding.profileTitle',
+      subtitleKey: 'sitterOnboarding.profileSubtitle',
+    },
+    {
+      key: 'availability',
+      icon: Calendar,
+      iconBg: theme.actionColors.tools.color, // Slate Blue
+      titleKey: 'sitterOnboarding.availabilityTitle',
+      subtitleKey: 'sitterOnboarding.availabilitySubtitle',
+    },
+    {
+      key: 'reputation',
+      icon: Star,
+      iconBg: theme.actionColors.nightLight.color, // Soft Sand
+      titleKey: 'sitterOnboarding.reputationTitle',
+      subtitleKey: 'sitterOnboarding.reputationSubtitle',
+    },
+  ], [theme]);
 
   const currentSlide = SLIDES[step];
   const isLast = step === SLIDES.length - 1;
@@ -183,8 +185,8 @@ export default function SitterOnboarding({ visible, onComplete }: SitterOnboardi
             style={styles.slideContent}
           >
             {/* Icon */}
-            <View style={[styles.iconCircle, { backgroundColor: currentSlide.iconBg }]}>
-              <Icon size={32} color={currentSlide.iconColor} strokeWidth={1.5} />
+            <View style={[styles.iconCircle, { backgroundColor: currentSlide.iconBg, borderColor: 'transparent' }]}>
+              <Icon size={32} color="#FFFFFF" strokeWidth={1.8} />
             </View>
 
             {/* Title */}

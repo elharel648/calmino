@@ -157,13 +157,13 @@ export default function ChecklistModal({
                                         onPress={() => toggleCheckItem(index)}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[
+                                        <Animated.View style={[
                                             styles.checkCircle, 
                                             { borderColor: theme.border },
-                                            isChecked && [styles.checkCircleChecked, { backgroundColor: theme.primary, borderColor: theme.primary }]
+                                            isChecked && [styles.checkCircleChecked, { backgroundColor: '#C8806A', borderColor: '#C8806A' }]
                                         ]}>
                                             {isChecked && <CheckCircle size={16} color={theme.card} />}
-                                        </View>
+                                        </Animated.View>
                                         <View style={styles.checkIconWrapper}>
                                             <Icon size={18} color={isChecked ? theme.textTertiary : theme.textSecondary} strokeWidth={1.5} />
                                         </View>
@@ -185,8 +185,8 @@ export default function ChecklistModal({
                                 entering={ANIMATIONS.fadeInDown(400)}
                                 style={[styles.allCheckedCard, { backgroundColor: theme.cardSecondary }]}
                             >
-                                <View style={[styles.sparklesIcon, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
-                                    <Sparkles size={24} color={theme.primary} strokeWidth={1.5} />
+                                <View style={[styles.sparklesIcon, { backgroundColor: 'rgba(200, 128, 106, 0.15)' }]}>
+                                    <Sparkles size={24} color={'#C8806A'} strokeWidth={1.5} />
                                 </View>
                                 <Text style={[styles.allCheckedTitle, { color: theme.textPrimary }]}>בדקת הכל</Text>
                                 <Text style={[styles.allCheckedText, { color: theme.textSecondary }]}>

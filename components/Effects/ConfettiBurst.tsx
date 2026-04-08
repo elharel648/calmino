@@ -1,6 +1,6 @@
 // components/Effects/ConfettiBurst.tsx — Full-screen confetti celebration overlay
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,12 +15,14 @@ import Animated, {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CONFETTI_COLORS = [
-  '#8B5CF6', '#F59E0B', '#3B82F6', '#EF4444',
-  '#10B981', '#EC4899', '#F97316', '#06B6D4',
-  '#A855F7', '#14B8A6', '#F43F5E', '#6366F1',
+  '#C8806A', '#34D399', '#34C759', '#7C3AED', 
+  '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899',
+  '#10B981', '#06B6D4', '#F43F5E', '#D4A373'
 ];
 
-const PARTICLE_COUNT = 40;
+const EMOJIS = ['✨', '💖', '🎉', '🎈', '🍼', '🧸'];
+
+const PARTICLE_COUNT = 60;
 
 interface ParticleConfig {
   startX: number;
@@ -32,6 +34,8 @@ interface ParticleConfig {
   delay: number;
   isRect: boolean;
   rotation: number;
+  emoji?: string;
+  isEmoji: boolean;
 }
 
 function generateParticles(): ParticleConfig[] {
@@ -41,16 +45,20 @@ function generateParticles(): ParticleConfig[] {
     const angle = (Math.random() * Math.PI * 2);
     const distance = 80 + Math.random() * (SCREEN_WIDTH * 0.5);
 
+    const isEmoji = Math.random() > 0.85; // 15% emojis
+
     return {
       startX: centerX + (Math.random() - 0.5) * 40,
       startY: startY + (Math.random() - 0.5) * 40,
       endX: centerX + Math.cos(angle) * distance,
-      endY: startY + Math.sin(angle) * distance + Math.random() * 200, // gravity bias
+      endY: startY + Math.sin(angle) * distance + Math.random() * 250, // gravity bias
       color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      size: 4 + Math.random() * 6,
+      size: isEmoji ? 28 + Math.random() * 8 : 6 + Math.random() * 10,
       delay: Math.random() * 300,
       isRect: Math.random() > 0.5,
       rotation: Math.random() * 720 - 360,
+      isEmoji,
+      emoji: isEmoji ? EMOJIS[Math.floor(Math.random() * EMOJIS.length)] : undefined,
     };
   });
 }
@@ -77,16 +85,23 @@ function ConfettiPiece({ config }: { config: ParticleConfig }) {
       top: y,
       width: config.isRect ? config.size * 1.8 : config.size,
       height: config.size,
-      borderRadius: config.isRect ? 2 : config.size / 2,
-      backgroundColor: config.color,
+      borderRadius: config.isRect ? 4 : config.size / 2,
+      backgroundColor: config.isEmoji ? 'transparent' : config.color,
       opacity: progress.value,
+      justifyContent: 'center',
+      alignItems: 'center',
       transform: [
         { rotate: `${progress.value * config.rotation}deg` },
-      ],
+        { scale: progress.value < 0.5 ? progress.value * 2 : 1 }
+      ] as any,
     };
   });
 
-  return <Animated.View style={style} />;
+  return (
+    <Animated.View style={style}>
+      {config.isEmoji && <Text style={{ fontSize: config.size }}>{config.emoji}</Text>}
+    </Animated.View>
+  );
 }
 
 interface ConfettiBurstProps {

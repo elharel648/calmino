@@ -1,7 +1,7 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as Reanimated } from 'react-native-reanimated';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView, PanResponder, Dimensions } from 'react-native';
-import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug } from 'lucide-react-native';
+import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug, Plus } from 'lucide-react-native';
 
 // Exported icon map for use in DailyTimeline and other components
 export const CUSTOM_ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -46,38 +46,38 @@ export interface CustomAction {
     notes?: string;
 }
 
-// Extended preset icons with more variety
+// Extended preset icons with more variety - Using official action colors
 const PRESET_ICONS = [
     // Row 1 - Activities
-    { key: 'sparkles', icon: Sparkles, color: '#F59E0B', label: 'כוכב' },
-    { key: 'baby', icon: Baby, color: '#EC4899', label: 'תינוק' },
-    { key: 'bath', icon: Bath, color: '#06B6D4', label: 'אמבטיה' },
-    { key: 'stethoscope', icon: Stethoscope, color: '#10B981', label: 'בדיקה' },
-    { key: 'pill', icon: Pill, color: '#8B5CF6', label: 'תרופה' },
-    { key: 'thermometer', icon: Thermometer, color: '#EF4444', label: 'חום' },
+    { key: 'sparkles', icon: Sparkles, color: '#E9C46A', label: 'כוכב' }, // Soft Sand
+    { key: 'baby', icon: Baby, color: '#CD8B87', label: 'תינוק' }, // Dusty Rose
+    { key: 'bath', icon: Bath, color: '#8ECAE6', label: 'אמבטיה' }, // Soft Sky Blue
+    { key: 'stethoscope', icon: Stethoscope, color: '#8EB168', label: 'בדיקה' }, // Soft Olive
+    { key: 'pill', icon: Pill, color: '#B5838D', label: 'תרופה' }, // Lilac Mauve
+    { key: 'thermometer', icon: Thermometer, color: '#D4A373', label: 'חום' }, // Muted Mustard
     // Row 2 - Fun & Care
-    { key: 'camera', icon: Camera, color: '#6366F1', label: 'צילום' },
-    { key: 'book', icon: Book, color: '#14B8A6', label: 'ספר' },
-    { key: 'music', icon: Music, color: '#A855F7', label: 'מוזיקה' },
-    { key: 'star', icon: Star, color: '#FBBF24', label: 'הישג' },
-    { key: 'heart', icon: Heart, color: '#F43F5E', label: 'אהבה' },
-    { key: 'smile', icon: Smile, color: '#22C55E', label: 'חיוך' },
+    { key: 'camera', icon: Camera, color: '#4A6572', label: 'צילום' }, // Muted Navy
+    { key: 'book', icon: Book, color: '#557A9D', label: 'ספר' }, // Slate Blue
+    { key: 'music', icon: Music, color: '#A5A58D', label: 'מוזיקה' }, // Soft Stone
+    { key: 'star', icon: Star, color: '#8D4A60', label: 'הישג' }, // Wine/Maroon
+    { key: 'heart', icon: Heart, color: '#CD8B87', label: 'אהבה' }, // Dusty Rose
+    { key: 'smile', icon: Smile, color: '#83C5BE', label: 'חיוך' }, // Muted Teal
     // Row 3 - More activities
-    { key: 'gamepad', icon: Gamepad2, color: '#3B82F6', label: 'משחק' },
-    { key: 'sun', icon: Sun, color: '#F97316', label: 'שמש' },
-    { key: 'droplets', icon: Droplets, color: '#0EA5E9', label: 'שתייה' },
-    { key: 'footprints', icon: Footprints, color: '#84CC16', label: 'הליכה' },
-    { key: 'gift', icon: Gift, color: '#D946EF', label: 'מתנה' },
-    { key: 'zap', icon: Zap, color: '#EAB308', label: 'אנרגיה' },
+    { key: 'gamepad', icon: Gamepad2, color: '#6A9C89', label: 'משחק' }, // Sage Teal
+    { key: 'sun', icon: Sun, color: '#E9C46A', label: 'שמש' }, // Soft Sand
+    { key: 'droplets', icon: Droplets, color: '#8ECAE6', label: 'שתייה' }, // Soft Sky Blue
+    { key: 'footprints', icon: Footprints, color: '#8EB168', label: 'הליכה' }, // Soft Olive
+    { key: 'gift', icon: Gift, color: '#B5838D', label: 'מתנה' }, // Lilac Mauve
+    { key: 'zap', icon: Zap, color: '#D4A373', label: 'אנרגיה' }, // Muted Mustard
 ];
 
 // Quick action presets for common activities
 const QUICK_PRESETS = [
-    { name: 'אמבטיה', icon: 'bath', color: '#06B6D4' },
-    { name: 'משחק', icon: 'gamepad', color: '#3B82F6' },
-    { name: 'סיפור', icon: 'book', color: '#14B8A6' },
-    { name: 'שתייה', icon: 'droplets', color: '#0EA5E9' },
-    { name: 'טיול', icon: 'footprints', color: '#84CC16' },
+    { name: 'אמבטיה', icon: 'bath', color: '#8ECAE6' }, // Soft Sky Blue
+    { name: 'משחק', icon: 'gamepad', color: '#6A9C89' }, // Sage Teal
+    { name: 'סיפור', icon: 'book', color: '#557A9D' }, // Slate Blue
+    { name: 'שתייה', icon: 'droplets', color: '#8ECAE6' }, // Soft Sky Blue
+    { name: 'טיול', icon: 'footprints', color: '#8EB168' }, // Soft Olive
 ];
 
 const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose, onAdd }) => {
@@ -291,13 +291,22 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <View style={{ width: 60, height: 60, alignItems: 'center', justifyContent: 'center' }}>
-                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 30, backgroundColor: '#F97316' }, customIconPulseStyle]} />
-                            <View style={[styles.emojiCircle, { backgroundColor: isDarkMode ? 'rgba(249,115,22,0.2)' : '#F9731615' }]}>
-                                <Reanimated.View style={customIconBounceStyle}>
-                                    <Zap size={28} color="#F97316" strokeWidth={2.5} />
-                                </Reanimated.View>
-                            </View>
+                        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
+                            <Reanimated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.custom.color }, customIconPulseStyle]} />
+                            <Reanimated.View style={customIconBounceStyle}>
+                                <View style={[{
+                                    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                    backgroundColor: theme.actionColors.custom.color,
+                                    shadowColor: isDarkMode ? 'transparent' : theme.actionColors.custom.color,
+                                    shadowOpacity: 0.35,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 5 },
+                                    borderWidth: 2.5,
+                                    borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                }]}>
+                                    <Plus size={28} color="#FFFFFF" strokeWidth={2.2} />
+                                </View>
+                            </Reanimated.View>
                         </View>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
                     </View>
@@ -323,13 +332,22 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                                 key={preset.name}
                                                 style={[
                                                     styles.quickPresetBtn,
-                                                    { backgroundColor: preset.color + '15', borderColor: preset.color + '30' },
-                                                    isSelected && { borderColor: preset.color, backgroundColor: preset.color + '25' }
+                                                    {
+                                                        backgroundColor: isSelected ? preset.color : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB'),
+                                                        borderColor: isSelected ? preset.color : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
+                                                        borderWidth: isSelected ? 1.5 : 1
+                                                    }
                                                 ]}
                                                 onPress={() => selectQuickPreset(preset)}
                                             >
-                                                <IconComponent size={18} color={preset.color} strokeWidth={2} />
-                                                <Text style={[styles.quickPresetText, { color: preset.color }]}>{preset.name}</Text>
+                                                <IconComponent size={18} color={isSelected ? '#FFFFFF' : (isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)')} strokeWidth={2} />
+                                                <Text style={[
+                                                    styles.quickPresetText,
+                                                    {
+                                                        color: isSelected ? '#FFFFFF' : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.55)'),
+                                                        fontWeight: isSelected ? '700' : '500'
+                                                    }
+                                                ]}>{preset.name}</Text>
                                             </TouchableOpacity>
                                         );
                                     })}
@@ -365,13 +383,12 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                             key={key}
                                             style={[
                                                 styles.iconOption,
-                                                { backgroundColor: color + '15' },
-                                                isSelected && {
-                                                    borderColor: color,
-                                                    borderWidth: 2.5,
-                                                    backgroundColor: color + '25',
-                                                    transform: [{ scale: 1.05 }]
-                                                }
+                                                {
+                                                    backgroundColor: isSelected ? color : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB'),
+                                                    borderColor: isSelected ? color : 'transparent',
+                                                    borderWidth: isSelected ? 1.5 : 1,
+                                                },
+                                                isSelected && { transform: [{ scale: 1.05 }] }
                                             ]}
                                             onPress={() => {
                                                 setSelectedIcon(key);
@@ -380,7 +397,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                                 }
                                             }}
                                         >
-                                            <Icon size={22} color={color} strokeWidth={isSelected ? 2.5 : 2} />
+                                            <Icon size={22} color={isSelected ? '#FFFFFF' : (isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)')} strokeWidth={isSelected ? 2.5 : 2} />
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -401,7 +418,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     }}
                                 >
-                                    <Clock size={18} color="#6366F1" strokeWidth={2} />
+                                    <Clock size={18} color={theme.actionColors.custom.color} strokeWidth={2} />
                                     <Text style={[styles.dateTimeText, { color: theme.textPrimary }]}>
                                         {formatTime(selectedDate)}
                                     </Text>
@@ -416,7 +433,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     }}
                                 >
-                                    <Calendar size={18} color="#6366F1" strokeWidth={2} />
+                                    <Calendar size={18} color={theme.actionColors.custom.color} strokeWidth={2} />
                                     <Text style={[styles.dateTimeText, { color: theme.textPrimary }]}>
                                         {formatDate(selectedDate)}
                                     </Text>
@@ -451,6 +468,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     <TouchableOpacity
                         style={[
                             styles.saveBtn,
+                            { backgroundColor: theme.actionColors.custom.color, shadowColor: theme.actionColors.custom.color },
                             !isFormValid && styles.saveBtnDisabled,
                             saveSuccess && styles.saveBtnSuccess
                         ]}
@@ -467,6 +485,16 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     {showDatePicker && (
                         <View style={styles.pickerOverlay}>
                             <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                                {Platform.OS === 'ios' && (
+                                    <View style={{ width: '100%', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
+                                        <TouchableOpacity
+                                            onPress={() => setShowDatePicker(false)}
+                                            hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
+                                        >
+                                            <Text style={{ color: theme.actionColors.custom.color, fontSize: 16, fontWeight: '600' }}>סיום</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                                 <DateTimePicker
                                     value={selectedDate}
                                     mode="date"
@@ -476,15 +504,8 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                         if (date) setSelectedDate(date);
                                     }}
                                     locale="he-IL"
+                                    textColor={theme.textPrimary}
                                 />
-                                {Platform.OS === 'ios' && (
-                                    <TouchableOpacity
-                                        style={styles.pickerDoneBtn}
-                                        onPress={() => setShowDatePicker(false)}
-                                    >
-                                        <Text style={styles.pickerDoneBtnText}>סיום</Text>
-                                    </TouchableOpacity>
-                                )}
                             </View>
                         </View>
                     )}
@@ -493,6 +514,16 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     {showTimePicker && (
                         <View style={styles.pickerOverlay}>
                             <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                                {Platform.OS === 'ios' && (
+                                    <View style={{ width: '100%', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
+                                        <TouchableOpacity
+                                            onPress={() => setShowTimePicker(false)}
+                                            hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
+                                        >
+                                            <Text style={{ color: theme.actionColors.custom.color, fontSize: 16, fontWeight: '600' }}>סיום</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                                 <DateTimePicker
                                     value={selectedDate}
                                     mode="time"
@@ -502,15 +533,8 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                         if (date) setSelectedDate(date);
                                     }}
                                     locale="he-IL"
+                                    textColor={theme.textPrimary}
                                 />
-                                {Platform.OS === 'ios' && (
-                                    <TouchableOpacity
-                                        style={styles.pickerDoneBtn}
-                                        onPress={() => setShowTimePicker(false)}
-                                    >
-                                        <Text style={styles.pickerDoneBtnText}>סיום</Text>
-                                    </TouchableOpacity>
-                                )}
                             </View>
                         </View>
                     )}
@@ -723,20 +747,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         paddingBottom: 34,
-        paddingTop: 16,
-    },
-    pickerDoneBtn: {
-        alignSelf: 'center',
-        paddingHorizontal: 32,
-        paddingVertical: 14,
-        backgroundColor: '#6366F1',
-        borderRadius: 14,
-        marginTop: 12,
-    },
-    pickerDoneBtnText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
 

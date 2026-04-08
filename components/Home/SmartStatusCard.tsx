@@ -82,7 +82,7 @@ const getSmartAlert = (lastFeedTime: string, lastSleepTime: string, isSleeping: 
     }
 
     if (hoursSinceSleep >= 2) {
-        return { text: '😴 אולי הגיע זמן לנמנם?', icon: Moon, color: '#6366F1' };
+        return { text: '😴 אולי הגיע זמן לנמנם?', icon: Moon, color: '#C8806A' };
     }
 
     return null;

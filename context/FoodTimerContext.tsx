@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { liveActivityService } from '../services/liveActivityService';
 import quickActionsService from '../services/quickActionsService';
 import { useActiveChild } from '../context/ActiveChildContext';
-import { useLanguage } from './/LanguageContext';
+
 
 interface FoodTimerContextType {
     // Pumping Timer
@@ -48,7 +48,6 @@ interface FoodTimerContextType {
 const FoodTimerContext = createContext<FoodTimerContextType | undefined>(undefined);
 
 export const useFoodTimer = () => {
-    const { t } = useLanguage();
     const context = useContext(FoodTimerContext);
     if (!context) {
         throw new Error('useFoodTimer must be used within FoodTimerProvider');

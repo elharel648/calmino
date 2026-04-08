@@ -54,7 +54,7 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
             >
                 <View style={styles.leftSide}>
                     <View style={styles.iconCircle}>
-                        <Users size={16} color="#6366F1" />
+                        <Users size={16} color="#C8806A" />
                     </View>
                     <Text style={styles.label}>
                         <Text style={styles.inviteText}>הזמן בן/בת זוג לצפות יחד</Text>
@@ -62,7 +62,7 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
                 </View>
                 <View style={styles.addBtn}>
                     <Text style={styles.addBtnText}>הזמן</Text>
-                    <ChevronDown size={14} color="#6366F1" />
+                    <ChevronDown size={14} color="#C8806A" />
                 </View>
             </TouchableOpacity>
         );
@@ -190,7 +190,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     addBtnText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
     },
 
     // Avatars

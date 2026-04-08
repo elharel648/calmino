@@ -1,20 +1,19 @@
 // components/Reports/DetailedStatsScreen.tsx - Apple Health Style Stats Detail Screen (Light Theme)
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Dimensions,
     ScrollView,
     Platform,
-    SafeAreaView,
-    ActivityIndicator,
-} from 'react-native';
+    SafeAreaView } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import {
-    ChevronLeft, Moon, Utensils, Droplets, Pill,
+    ChevronLeft, Moon, Utensils, Pill,
     TrendingUp, TrendingDown, Clock, Award, Star, Zap
 } from 'lucide-react-native';
+import DiaperIcon from '../Common/DiaperIcon';
 import * as Haptics from 'expo-haptics';
 import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, eachWeekOfInterval, differenceInHours } from 'date-fns';
 import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
@@ -63,9 +62,9 @@ export default function DetailedStatsScreen({
         sleep: {
             title: t('reports.metrics.sleep'),
             icon: Moon,
-            color: '#8B5CF6',
-            lightBg: '#F5F3FF',
-            barColors: ['#8B5CF6', '#A78BFA', '#C4B5FD'],
+            color: theme.actionColors.sleep.color,
+            lightBg: theme.actionColors.sleep.lightColor,
+            barColors: [theme.actionColors.sleep.color, theme.actionColors.sleep.color, theme.actionColors.sleep.accentColor],
             unit: t('reports.units.hours'),
             avgLabel: t('reports.insights.avgSleepDuration'),
             insights: [
@@ -77,9 +76,9 @@ export default function DetailedStatsScreen({
         food: {
             title: t('reports.metrics.feeding'),
             icon: Utensils,
-            color: '#F59E0B',
-            lightBg: '#FFFBEB',
-            barColors: ['#F59E0B', '#FBBF24', '#FCD34D'],
+            color: theme.actionColors.food.color,
+            lightBg: theme.actionColors.food.lightColor,
+            barColors: [theme.actionColors.food.color, theme.actionColors.food.color, theme.actionColors.food.accentColor],
             unit: t('detailedStats.ml'),
             avgLabel: t('reports.insights.avgDailyFeeding'),
             insights: [
@@ -90,10 +89,10 @@ export default function DetailedStatsScreen({
         },
         diapers: {
             title: t('reports.metrics.diapers'),
-            icon: Droplets,
-            color: '#14B8A6',
-            lightBg: '#F0FDFA',
-            barColors: ['#14B8A6', '#2DD4BF', '#5EEAD4'],
+            icon: DiaperIcon,
+            color: theme.actionColors.diaper.color,
+            lightBg: theme.actionColors.diaper.lightColor,
+            barColors: [theme.actionColors.diaper.color, theme.actionColors.diaper.color, theme.actionColors.diaper.accentColor],
             unit: t('reports.units.times'),
             avgLabel: t('reports.insights.dailyAverage'),
             insights: [
@@ -105,9 +104,9 @@ export default function DetailedStatsScreen({
         supplements: {
             title: t('reports.metrics.supplements'),
             icon: Pill,
-            color: '#EC4899',
-            lightBg: '#FDF2F8',
-            barColors: ['#EC4899', '#F472B6', '#F9A8D4'],
+            color: theme.actionColors.supplements.color,
+            lightBg: theme.actionColors.supplements.lightColor,
+            barColors: [theme.actionColors.supplements.color, theme.actionColors.supplements.color, theme.actionColors.supplements.accentColor],
             unit: t('reports.units.times'),
             avgLabel: t('reports.insights.dailyAverage'),
             insights: [
@@ -125,13 +124,13 @@ export default function DetailedStatsScreen({
     }), [t]);
 
     const FEEDING_SUBTYPES = useMemo<{ id: FeedingSubType; label: string; color: string }[]>(() => [
-        { id: 'all', label: t('common.all'), color: '#F59E0B' },
-        { id: 'breast_right', label: t('reports.feeding.breastRight'), color: '#EC4899' },
-        { id: 'breast_left', label: t('reports.feeding.breastLeft'), color: '#F472B6' },
-        { id: 'bottle', label: t('reports.feeding.bottle'), color: '#818CF8' },
-        { id: 'solids', label: t('reports.feeding.solids'), color: '#34D399' },
-        { id: 'pumping', label: t('reports.feeding.pumping'), color: '#A78BFA' },
-    ], [t]);
+        { id: 'all', label: t('common.all'), color: theme.actionColors.food.color },
+        { id: 'breast_right', label: t('reports.feeding.breastRight'), color: theme.actionColors.magicMoments.color },
+        { id: 'breast_left', label: t('reports.feeding.breastLeft'), color: theme.actionColors.health.color },
+        { id: 'bottle', label: t('reports.feeding.bottle'), color: theme.actionColors.tools.color },
+        { id: 'solids', label: t('reports.feeding.solids'), color: theme.actionColors.growth.color },
+        { id: 'pumping', label: t('reports.feeding.pumping'), color: theme.actionColors.custom.color },
+    ], [t, theme]);
 
     const METRIC_GOALS = useMemo(() => ({
         sleep: [
@@ -205,10 +204,11 @@ export default function DetailedStatsScreen({
                 );
 
                 const snapshot = await getDocs(q);
-                const events = snapshot.docs.map(doc => ({
+                let events = snapshot.docs.map(doc => ({
                     ...doc.data(),
                     timestamp: doc.data().timestamp?.toDate() || new Date(),
                 }));
+
 
                 // Store all food events for interval calculation
                 if (metricType === 'food') {
@@ -265,6 +265,8 @@ export default function DetailedStatsScreen({
                         ...doc.data(),
                         timestamp: doc.data().timestamp?.toDate() || new Date(),
                     }));
+                    
+
                 } catch (error) {
                     logger.error('Error fetching previous period data:', error);
                 }
@@ -669,7 +671,7 @@ export default function DetailedStatsScreen({
                 {/* Premium Animated Chart */}
                 {loading ? (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={config.color} />
+                        <InlineLoader size="large" color={config.color}  />
                     </View>
                 ) : data.length > 0 ? (
                     <GlassBarChartPerfect
@@ -743,13 +745,13 @@ export default function DetailedStatsScreen({
                         <View style={styles.comparisonContent}>
                             <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{config.title}</Text>
                             <View style={styles.comparisonValueRow}>
-                                <Text style={[styles.comparisonValue, { color: comparison.isPositive ? '#10B981' : '#EF4444' }]}>
+                                <Text style={[styles.comparisonValue, { color: comparison.isPositive ? '#6BAF8A' : '#D4837A' }]}>
                                     {comparison.isPositive ? '+' : '-'}{comparison.change}%
                                 </Text>
                                 {comparison.isPositive ? (
-                                    <TrendingUp size={16} color="#10B981" />
+                                    <TrendingUp size={16} color="#6BAF8A" />
                                 ) : (
-                                    <TrendingDown size={16} color="#EF4444" />
+                                    <TrendingDown size={16} color="#D4837A" />
                                 )}
                             </View>
                             <Text style={[styles.comparisonNote, { color: theme.textSecondary }]}>

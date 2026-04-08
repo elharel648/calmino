@@ -3,7 +3,7 @@
     "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.1.1",
+    "version": "1.1.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -38,22 +38,21 @@
       ],
       "./plugins/withFirebaseWarningFix",
       "./plugins/withLiveActivity",
-      "./plugins/withAndroidForegroundService",
       "@react-native-google-signin/google-signin"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F8F6F4"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harel.calmparentapp",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.harel.calmparentapp"
+          "group.com.calmparent.shared"
         ]
       },
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -111,8 +110,6 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.RECORD_AUDIO",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
         "android.permission.POST_NOTIFICATIONS"
       ]
     },
@@ -128,7 +125,12 @@
               "appExtensions": [
                 {
                   "targetName": "CalmParentLiveActivity",
-                  "bundleIdentifier": "com.harel.calmparentapp.LiveActivity"
+                  "bundleIdentifier": "com.harel.calmparentapp.LiveActivity",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.calmparent.shared"
+                    ]
+                  }
                 }
               ]
             }
@@ -140,6 +142,6 @@
       "enabled": true,
       "url": "https://u.expo.dev/0af00389-5a5c-48ad-aa91-1b083f8e494e"
     },
-    "runtimeVersion": "1.0.0"
+    "runtimeVersion": "1.1.4"
   }
 }

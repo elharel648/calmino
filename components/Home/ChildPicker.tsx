@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Modal, Pressable } from 'react-native';
-import { Plus, ChevronDown, Check, X } from 'lucide-react-native';
+import { Plus, ChevronDown, Check, X, UserPlus, Link } from 'lucide-react-native';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
@@ -9,11 +9,11 @@ import { useLanguage } from '../../context/LanguageContext';
 
 // Unique avatar colors per child index
 const AVATAR_COLORS = [
-    { bg: '#8B5CF6', light: '#EDE9FE' },  // Purple
-    { bg: '#3B82F6', light: '#DBEAFE' },  // Blue
+    { bg: '#C8806A', light: '#F7EDE8' },  // Terracotta (primary)
+    { bg: '#7DAF8F', light: '#E8F2EC' },  // Sage Green
     { bg: '#EC4899', light: '#FCE7F3' },  // Pink
-    { bg: '#10B981', light: '#D1FAE5' },  // Green
     { bg: '#F59E0B', light: '#FEF3C7' },  // Amber
+    { bg: '#8B5CF6', light: '#EDE9FE' },  // Purple
     { bg: '#6366F1', light: '#E0E7FF' },  // Indigo
     { bg: '#EF4444', light: '#FEE2E2' },  // Red
     { bg: '#14B8A6', light: '#CCFBF1' },  // Teal
@@ -221,8 +221,8 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                         onPress={handleAddChild}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#E0E7FF' }]}>
-                                            <Plus size={18} color="#6366F1" />
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : '#F7EDE8' }]}>
+                                            <UserPlus size={18} color="#C8806A" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
                                             <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>רישום ילד חדש</Text>
@@ -250,8 +250,8 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FEF3C7' }]}>
-                                            <Text style={{ fontSize: 16 }}>🔗</Text>
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : '#E8F2EC' }]}>
+                                            <Link size={18} color="#7DAF8F" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
                                             <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>הצטרפות עם קוד</Text>
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#10B981',
+        backgroundColor: '#C8806A',
         borderWidth: 2,
         borderColor: '#fff',
     },
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
         maxWidth: 80,
     },
     countBadge: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         width: 20,
         height: 20,
         borderRadius: 10,
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#10B981',
+        backgroundColor: '#C8806A',
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -62,7 +62,7 @@ class AndroidTimerNotificationService {
      * Start a persistent timer notification
      */
     async startTimer(timerType: string, childName: string = 'תינוק'): Promise<string> {
-        if (Platform.OS !== 'android') return '';
+        return '';
 
         try {
             await this.ensureChannel();
@@ -86,7 +86,7 @@ class AndroidTimerNotificationService {
                     showChronometer: true,
                     chronometerDirection: 'up',
                     timestamp: this.timerStartTime,
-                    smallIcon: 'ic_notification', // Falls back to app icon if missing
+                    // smallIcon removed to fallback to app icon automatically
                     color: '#6366F1',
                     pressAction: {
                         id: 'default',
@@ -117,7 +117,7 @@ class AndroidTimerNotificationService {
      * Pause the active timer notification
      */
     async pauseTimer(): Promise<boolean> {
-        if (Platform.OS !== 'android' || !this.currentTimerType) return false;
+        return false;
 
         try {
             await loadNotifee();
@@ -136,7 +136,7 @@ class AndroidTimerNotificationService {
                     foregroundServiceTypes: ['dataSync'],
                     ongoing: true,
                     showChronometer: false, // Stop the chronometer display
-                    smallIcon: 'ic_notification',
+                    // smallIcon removed to fallback to app icon automatically
                     color: '#F59E0B',
                     pressAction: {
                         id: 'default',
@@ -167,7 +167,7 @@ class AndroidTimerNotificationService {
      * Resume the paused timer notification
      */
     async resumeTimer(): Promise<boolean> {
-        if (Platform.OS !== 'android' || !this.currentTimerType) return false;
+        return false;
 
         try {
             await loadNotifee();
@@ -190,7 +190,7 @@ class AndroidTimerNotificationService {
                     showChronometer: true,
                     chronometerDirection: 'up',
                     timestamp: this.timerStartTime,
-                    smallIcon: 'ic_notification',
+                    // smallIcon removed to fallback to app icon
                     color: '#6366F1',
                     pressAction: {
                         id: 'default',
@@ -221,7 +221,7 @@ class AndroidTimerNotificationService {
      * Stop and dismiss the timer notification
      */
     async stopTimer(): Promise<boolean> {
-        if (Platform.OS !== 'android') return false;
+        return false;
 
         try {
             await loadNotifee();

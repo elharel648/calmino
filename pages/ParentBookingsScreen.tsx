@@ -1,17 +1,16 @@
 // pages/ParentBookingsScreen.tsx - History Screen (Parent side)
 
 import React, { useState, useEffect } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
     RefreshControl,
-    ActivityIndicator,
+    
     Alert,
-    Platform,
-} from 'react-native';
+    Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { auth } from '../services/firebaseConfig';
@@ -285,7 +284,7 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                     <View style={{ width: 40 }} />
                 </View>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.textSecondary} />
+                    <InlineLoader size="large" color={theme.textSecondary}  />
                 </View>
             </View>
         );
@@ -356,8 +355,8 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                                 onPress={() => handleRateBooking(booking)}
                                 activeOpacity={0.7}
                             >
-                                <Star size={13} color={isDarkMode ? 'rgba(100, 160, 255, 0.8)' : '#3B82F6'} fill="none" strokeWidth={2} />
-                                <Text style={[styles.itemActionText, { color: isDarkMode ? 'rgba(100, 160, 255, 0.8)' : '#3B82F6' }]}>דרג</Text>
+                                <Star size={13} color={isDarkMode ? 'rgba(100, 160, 255, 0.8)' : '#C8806A'} fill="none" strokeWidth={2} />
+                                <Text style={[styles.itemActionText, { color: isDarkMode ? 'rgba(100, 160, 255, 0.8)' : '#C8806A' }]}>דרג</Text>
                             </TouchableOpacity>
                         )}
                         {canCancel && (

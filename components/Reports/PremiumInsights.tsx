@@ -78,7 +78,7 @@ export const PremiumInsightCard: React.FC<PremiumInsightCardProps> = ({
     title,
     value,
     subtitle,
-    color = '#6366F1',
+    color = '#C8806A',
     trend,
     delay = 0,
 }) => {
@@ -107,9 +107,9 @@ export const PremiumInsightCard: React.FC<PremiumInsightCardProps> = ({
                             { backgroundColor: trend === 'up' ? '#D1FAE5' : '#FEE2E2' }
                         ]}>
                             {trend === 'up' ? (
-                                <TrendingUp size={12} color="#059669" strokeWidth={2.5} />
+                                <TrendingUp size={12} color="#6BAF8A" strokeWidth={2.5} />
                             ) : (
-                                <TrendingDown size={12} color="#DC2626" strokeWidth={2.5} />
+                                <TrendingDown size={12} color="#D4837A" strokeWidth={2.5} />
                             )}
                         </View>
                     )}
@@ -133,9 +133,9 @@ interface AITipCardProps {
 export const AITipCard: React.FC<AITipCardProps> = ({ tip, category, delay = 0 }) => {
     const { t } = useLanguage();
     const categoryConfig = {
-        sleep: { color: '#8B5CF6', icon: Moon, label: t('reports.tips.sleep') },
-        feeding: { color: '#F59E0B', icon: Utensils, label: t('reports.tips.feeding') },
-        general: { color: '#6366F1', icon: Lightbulb, label: t('reports.tips.general') },
+        sleep: { color: '#4A6572', icon: Moon, label: t('reports.tips.sleep') },
+        feeding: { color: '#D4A373', icon: Utensils, label: t('reports.tips.feeding') },
+        general: { color: '#C8806A', icon: Lightbulb, label: t('reports.tips.general') },
     };
 
     const config = categoryConfig[category];
@@ -275,7 +275,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
         <TouchableOpacity style={styles.shareButton} onPress={handleShare} activeOpacity={0.7}>
             <BlurView intensity={80} tint="systemUltraThinMaterialLight" style={StyleSheet.absoluteFill} />
             <View style={styles.shareButtonOverlay} />
-            <Share2 size={18} color="#6366F1" strokeWidth={2} />
+            <Share2 size={18} color="#C8806A" strokeWidth={2} />
             <Text style={styles.shareButtonText}>{t('reports.share.summary')}</Text>
         </TouchableOpacity>
     );
@@ -371,7 +371,7 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
             label: t('reports.sleep.bestSleepDay'),
             value: weeklyData.labels[maxSleepDay] || t('reports.empty.unknown'),
             icon: Moon,
-            color: '#8B5CF6',
+            color: '#4A6572',
         });
     }
 
@@ -388,7 +388,7 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
             label: t('reports.insights.mostActiveDay'),
             value: weeklyData.labels[mostActiveDay] || t('reports.empty.unknown'),
             icon: Zap,
-            color: '#F59E0B',
+            color: '#D4A373',
         });
     }
 
@@ -417,7 +417,7 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
                 label: t('reports.feeding.preferredType'),
                 value: `${preferred} (${percent}%)`,
                 icon: Heart,
-                color: '#EC4899',
+                color: '#8D4A60',
             });
         }
     }
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     shareButtonText: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#6366F1',
+        color: '#C8806A',
         zIndex: 10,
     },
 });

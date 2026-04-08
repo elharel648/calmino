@@ -163,6 +163,20 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                     const familyData = familyDoc.data();
                     const memberData = familyData.members?.[userId];
 
+                    if (!memberData) {
+                        // SELF-EJECTION: The user was removed from the family members list by an admin.
+                        // We must purge the invalid familyId from the user's document to complete the removal.
+                        try {
+                            const { updateDoc, deleteField } = await import('firebase/firestore');
+                            await updateDoc(doc(db, 'users', userId), { familyId: deleteField() });
+                            logger.log('Self-ejected from family:', userData.familyId);
+                        } catch (e) {
+                            logger.error('Failed to self-eject:', e);
+                        }
+                        // Skip loading any babies from this family
+                        return;
+                    }
+
                     // Get ALL babies belonging to the family admin — not just the single babyId field.
                     // This supports families with multiple children.
                     const adminUid: string = familyData.createdBy || '';
@@ -245,6 +259,24 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                         if (!familyDoc.exists()) continue;
 
                         const familyData = familyDoc.data();
+                        
+                        // Self-Ejection check for guests
+                        if (!familyData?.members?.[userId] || familyData.members[userId].role !== 'guest') {
+                            logger.log('Guest self-ejecting from removed family access:', familyId);
+                            try {
+                                const { updateDoc, deleteField, arrayRemove } = await import('firebase/firestore');
+                                const remainingAccess = { ...userData.guestAccess };
+                                delete remainingAccess[familyId];
+                                const hasOtherGuestAccess = Object.keys(remainingAccess).length > 0;
+
+                                await updateDoc(doc(db, 'users', userId), {
+                                    [`guestAccess.${familyId}`]: deleteField(),
+                                    ...(hasOtherGuestAccess ? {} : { guestFamilyId: deleteField() }),
+                                    ...(guestInfo?.childId ? { guestChildIds: arrayRemove(guestInfo.childId) } : {}),
+                                });
+                            } catch (e) {}
+                            continue;
+                        }
 
                         // Use childId from guestInfo if available, otherwise fall back to family's babyId
                         const childId = guestInfo?.childId || familyData?.babyId;
@@ -307,10 +339,8 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
                 AsyncStorage.setItem('offline_childrenList', JSON.stringify(childrenList)).catch(() => {});
             }
 
-            // Update activeChild using ref to avoid infinite loop (ref doesn't cause callback recreation)
             const currentId = activeChildRef.current?.childId;
             if (!currentId) {
-                // No active child yet — set to first available
                 if (childrenList.length > 0) {
                     setActiveChildState(childrenList[0]);
                     activeChildRef.current = childrenList[0];
@@ -318,12 +348,10 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
             } else {
                 const stillExists = childrenList.find(c => c.childId === currentId);
                 if (!stillExists) {
-                    // Active child was removed (e.g. left guest access) — switch to first available or null
                     const next = childrenList.length > 0 ? childrenList[0] : null;
                     setActiveChildState(next);
                     activeChildRef.current = next;
                 } else {
-                    // Refresh with latest data (name/photo may have changed)
                     setActiveChildState(stillExists);
                     activeChildRef.current = stillExists;
                 }

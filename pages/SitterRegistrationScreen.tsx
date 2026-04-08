@@ -1,7 +1,7 @@
 // pages/SitterRegistrationScreen.tsx - Super Premium Sitter Registration
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     ScrollView,
@@ -12,9 +12,7 @@ import {
     Animated,
     Dimensions,
     KeyboardAvoidingView,
-    Platform,
-    ActivityIndicator,
-} from 'react-native';
+    Platform } from 'react-native';
 import {
     User, Camera, Clock, MapPin,
     ChevronLeft, ChevronRight, Check, Plus, Minus, Search,
@@ -557,7 +555,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 >
                     <LinearGradient
                         colors={gpsLocation
-                            ? (isDarkMode ? ['rgba(16,185,129,0.2)', 'rgba(16,185,129,0.1)'] : ['#ECFDF5', '#D1FAE5'])
+                            ? (isDarkMode ? ['rgba(200,128,106,0.2)', 'rgba(200,128,106,0.1)'] : ['#FDF7F5', '#FAEAE5'])
                             : (isDarkMode ? ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)'] : ['#F2F2F7', '#E5E5EA'])
                         }
                         start={{ x: 0, y: 0 }}
@@ -565,22 +563,22 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                         style={StyleSheet.absoluteFill}
                     />
                     {isLoadingLocation ? (
-                        <ActivityIndicator size="small" color={theme.textPrimary} />
+                        <InlineLoader size="small" color={theme.textPrimary}  />
                     ) : (
                         <>
                             <View style={[styles.locationIconBadge, {
                                 backgroundColor: gpsLocation
-                                    ? (isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.15)')
+                                    ? (isDarkMode ? 'rgba(200,128,106,0.25)' : 'rgba(200,128,106,0.15)')
                                     : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)')
                             }]}>
                                 {gpsLocation ? (
-                                    <Check size={14} color="#10B981" strokeWidth={2.5} />
+                                    <Check size={14} color="#C8806A" strokeWidth={2.5} />
                                 ) : (
                                     <MapPin size={14} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
                                 )}
                             </View>
                             <Text style={[styles.locationBtnText, {
-                                color: gpsLocation ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.7)' : '#374151'),
+                                color: gpsLocation ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.7)' : '#374151'),
                                 fontWeight: gpsLocation ? '600' : '500',
                             }]}>
                                 {gpsLocation ? t('sitterReg.locationSaved') : t('sitterReg.shareGps')}
@@ -823,7 +821,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                                 style={styles.primaryBtnGradient}
                             >
                                 {isSubmitting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
+                                    <InlineLoader size="small" color="#fff"  />
                                 ) : (
                                     <>
                                         <Sparkles size={16} color="#fff" strokeWidth={2} />
@@ -1041,7 +1039,7 @@ const styles = StyleSheet.create({
 
     // ── Location Button ──
     locationBtn: {
-        flexDirection: 'row-reverse',
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 14,

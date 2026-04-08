@@ -737,7 +737,7 @@
     "enterInviteCode": "הזן קוד הזמנה",
     "receivedCode": "קיבלת קוד 6 ספרות מבן/בת הזוג?",
     "codePlaceholder": "הזן קוד 6 ספרות",
-    "codeSaved": "הקוד יופעל בסיום ההרשמה ✓",
+    "codeSaved": "הקוד יופעל בסיום ההרשמה",
     "partnerSentCode": "בן/בת זוג שלחו לי קוד",
     "codeSavedSuccess": "מעולה! 🎉",
     "codeSavedMessage": "הקוד נשמר! המשך להרשמה והקוד יופעל אוטומטית.",
@@ -778,7 +778,7 @@
       "continue": "המשך",
       "notVerified": "עוד לא אימתת",
       "checkLink": "לחץ על הלינק במייל שנשלח אליך ונסה שוב",
-      "checkButton": "אימתתי! בדוק עכשיו ✓",
+      "checkButton": "אימתתי! בדוק עכשיו",
       "resend": "שלח מייל אימות מחדש",
       "resendSent": "נשלח!",
       "resendMessage": "מייל אימות חדש נשלח אליך",
@@ -1193,7 +1193,10 @@
     "editSubtitle": "עדכנו את המדידה",
     "hideNotes": "הסתר הערות",
     "kg": "ק\"ג",
-    "cm": "ס\"מ"
+    "cm": "ס\"מ",
+    "deleteMeasurement": "מחק מדידה",
+    "additionalNotes": "הערות נוספות...",
+    "autoUpdateTooltip": "מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק"
   },
   "auth": {
     "login": "התחברות",
@@ -1340,7 +1343,7 @@
     "permissionRequired": "הרשאה נדרשת",
     "calendarAccessNeeded": "נדרשת גישה ליומן כדי להוסיף תורים.",
     "noCalendarFound": "לא נמצא יומן זמין.",
-    "addedToCalendar": "נוסף ביומן ✓",
+    "addedToCalendar": "נוסף ביומן",
     "vaccineAddedToCalendar": "תור לחיסון \"{name}\" נוסף ליומן שלך.",
     "galleryPermissionNeeded": "נדרשת הרשאה לגלריה",
     "cannotSave": "לא ניתן לשמור",
@@ -1494,7 +1497,9 @@
     "whoDisclaimer": "הנתונים מחושבים לפי תקן WHO. לייעוץ רפואי יש לפנות לרופא.",
     "measurementHistory": "היסטוריית מדידות",
     "currentMeasurements": "מדידות נוכחיות",
-    "growthTrend": "מגמת גדילה"
+    "growthTrend": "מגמת גדילה",
+    "percentileLegend": "פרצנטיל לפי תקן WHO · גיל {age} חודשים",
+    "growthDisclaimer": "לייעוץ בלבד. לחששות בנושא גדילה יש להתייעץ עם רופא."
   },
   "sitterReg": {
     "personalDetails": "פרטים אישיים",
@@ -1510,7 +1515,7 @@
     "aboutYou": "קצת עליך",
     "tellAboutExperience": "ספר על הניסיון שלך, מה אתה אוהב לעשות עם ילדים...",
     "shareGps": "שתף מיקום GPS (מומלץ)",
-    "locationSaved": "מיקום נשמר ✓",
+    "locationSaved": "מיקום נשמר",
     "phoneMinDigits": "מספר טלפון חייב להיות לפחות 9 ספרות",
     "yearsOfExperience": "שנות ניסיון",
     "stepOf": "שלב {current} מתוך {total}"

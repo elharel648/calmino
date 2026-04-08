@@ -55,6 +55,8 @@ const MilestoneRow = memo(({ title, date, ageAtEvent, onDelete }: MilestoneRowPr
 MilestoneRow.displayName = 'MilestoneRow';
 
 const MilestoneTimeline = memo(({ milestones, birthDate, onAdd, onDelete }: MilestoneTimelineProps) => {
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [isExpanded, setIsExpanded] = useState(false);
 
     const calculateAgeAtEvent = (eventDate: Date, birth: any): string => {
@@ -160,7 +162,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     },
     rowAge: {
         fontSize: 12,
-        color: '#6366F1',
+        color: '#C8806A',
         fontWeight: '500',
     },
     deleteBtn: {

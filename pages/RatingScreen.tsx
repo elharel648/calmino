@@ -1,17 +1,16 @@
 import React, { useState, useRef } from 'react';
-import {
-    View,
+import InlineLoader from '../components/Common/InlineLoader';
+import { View,
     Text,
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    ActivityIndicator,
+    
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     Alert,
-    Animated,
-} from 'react-native';
+    Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -344,7 +343,7 @@ export default function RatingScreen({
                             style={styles.submitGradient}
                         >
                             {isSubmitting ? (
-                                <ActivityIndicator color="#fff" size="small" />
+                                <InlineLoader color="#fff" size="small"  />
                             ) : (
                                 <>
                                     <Text style={[styles.submitBtnText, { color: rating > 0 ? '#fff' : theme.textTertiary }]}>

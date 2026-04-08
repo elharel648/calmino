@@ -3,7 +3,7 @@ import {
     View, Text, StyleSheet, Modal, TouchableOpacity,
     Platform, Animated as RNAnimated, PanResponder, Dimensions, useWindowDimensions
 } from 'react-native';
-import { Volume2, Volume1, VolumeX, Clock, Music, Music2, Star, Sparkles, CloudRain, X } from 'lucide-react-native';
+import { Volume2, Volume1, VolumeX, Clock, Music, Music2, Star, Bird, CloudRain, X } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
@@ -32,10 +32,10 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
     const { activeSound, volume, isLoading, toggleSound, setVolume, sleepTimer, timeRemaining, startTimer, stopTimer } = useAudio();
 
     const SOUNDS = useMemo(() => [
-        { id: 'lullaby1', label: t('whiteNoise.lullaby'),   Icon: Music2,    color: '#818CF8', bgLight: '#EEF2FF', bgDark: 'rgba(129,140,248,0.14)' },
-        { id: 'lullaby2', label: t('whiteNoise.softMusic'), Icon: Star,      color: '#F472B6', bgLight: '#FDF2F8', bgDark: 'rgba(244,114,182,0.14)' },
-        { id: 'lullaby3', label: t('whiteNoise.birds'),     Icon: Sparkles,  color: '#FB923C', bgLight: '#FFF7ED', bgDark: 'rgba(251,146,60,0.14)'  },
-        { id: 'lullaby4', label: t('whiteNoise.rain'),      Icon: CloudRain, color: '#38BDF8', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.14)'  },
+        { id: 'lullaby1', label: t('whiteNoise.lullaby'),   Icon: Music2,    color: '#8ECAE6', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.14)' }, // Soft Sky Blue
+        { id: 'lullaby2', label: t('whiteNoise.softMusic'), Icon: Star,      color: '#B5838D', bgLight: '#FDF2F8', bgDark: 'rgba(244,114,182,0.14)' }, // Lilac Mauve
+        { id: 'lullaby3', label: t('whiteNoise.birds'),     Icon: Bird,  color: '#E9C46A', bgLight: '#FFF7ED', bgDark: 'rgba(251,146,60,0.14)'  }, // Soft Sand
+        { id: 'lullaby4', label: t('whiteNoise.rain'),      Icon: CloudRain, color: '#557A9D', bgLight: '#F0F9FF', bgDark: 'rgba(56,189,248,0.14)'  }, // Slate Blue
     ], [t]);
     const { width: screenW } = useWindowDimensions();
     const isSmall = screenW < 390;
@@ -96,14 +96,14 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
         transform: [
             { translateY: -musicNote1.value * 22 },
             { translateX: musicNote1.value * 14 },
-        ],
+        ] as any,
         opacity: musicNote1.value < 0.6 ? musicNote1.value * 1.6 : (1 - musicNote1.value) * 2.5,
     }));
     const musicNote2Style = useAnimatedStyle(() => ({
         transform: [
             { translateY: -musicNote2.value * 18 },
             { translateX: -musicNote2.value * 12 },
-        ],
+        ] as any,
         opacity: musicNote2.value < 0.6 ? musicNote2.value * 1.6 : (1 - musicNote2.value) * 2.5,
     }));
 
@@ -210,20 +210,31 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                 {/* Animated header — centered icon on top, text below */}
                 <View style={styles.iconHeader} {...panResponder.panHandlers}>
                     {/* Animated music icon */}
-                    <View style={styles.iconContainer}>
-                        {/* Pulse rings */}
-                        <Animated.View style={[styles.iconPulse, musicPulseStyle, { borderColor: accentColor }]} />
-                        <Animated.View style={[styles.iconPulse, musicPulse2Style, { borderColor: accentColor }]} />
+                    <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 8, zIndex: 2 }}>
+                        <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 32, backgroundColor: theme.actionColors.whiteNoise.color }, musicPulseStyle]} />
+                        
                         {/* Main icon with bounce */}
-                        <Animated.View style={[styles.iconCircle, { backgroundColor: accentColor + '22' }, musicBounceStyle]}>
-                            <Music size={30} color={accentColor} strokeWidth={1.75} />
+                        <Animated.View style={musicBounceStyle}>
+                            <View style={[{ 
+                                width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: theme.actionColors.whiteNoise.color,
+                                shadowColor: isDarkMode ? 'transparent' : theme.actionColors.whiteNoise.color,
+                                shadowOpacity: 0.35,
+                                shadowRadius: 10,
+                                shadowOffset: { width: 0, height: 5 },
+                                borderWidth: 2.5,
+                                borderColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                            }]}>
+                                <Music size={28} color="#FFFFFF" strokeWidth={2.2} />
+                            </View>
                         </Animated.View>
+
                         {/* Floating music notes */}
-                        <Animated.View style={[styles.floatingNote, { top: 10, right: 4 }, musicNote1Style]}>
-                            <Music2 size={13} color={accentColor} strokeWidth={2} />
+                        <Animated.View style={[styles.floatingNote, { top: 0, right: -4, zIndex: 10 }, musicNote1Style]}>
+                            <Music2 size={14} color={isDarkMode ? '#FFFFFF' : theme.actionColors.whiteNoise.color} strokeWidth={2.5} />
                         </Animated.View>
-                        <Animated.View style={[styles.floatingNote, { top: 16, left: 6 }, musicNote2Style]}>
-                            <Music2 size={10} color={accentColor} strokeWidth={2} />
+                        <Animated.View style={[styles.floatingNote, { top: -2, left: -6, zIndex: 10 }, musicNote2Style]}>
+                            <Music2 size={11} color={isDarkMode ? '#FFFFFF' : theme.actionColors.whiteNoise.color} strokeWidth={2.5} />
                         </Animated.View>
                     </View>
 
@@ -259,9 +270,9 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                         width: cardWidth,
                                         backgroundColor: isActive
                                             ? sound.color
-                                            : isDarkMode ? 'rgba(255,255,255,0.06)' : sound.bgLight,
+                                            : isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
                                         borderColor: isActive
-                                            ? 'transparent'
+                                            ? sound.color
                                             : isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
                                     }
                                 ]}
@@ -276,15 +287,22 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                     styles.cardIcon,
                                     {
                                         backgroundColor: isActive
-                                            ? 'rgba(255,255,255,0.25)'
-                                            : isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)'
+                                            ? 'transparent'
+                                            : 'transparent'
                                     }
                                 ]}>
-                                    <Icon size={18} color={isActive ? '#fff' : sound.color} strokeWidth={1.8} />
+                                    <Icon size={24} color={isActive ? '#ffffff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)')} strokeWidth={1.8} />
                                 </View>
-                                <Text style={[styles.cardLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>
-                                    {sound.label}
-                                </Text>
+                                <View style={{ alignItems: 'center', gap: 2 }}>
+                                    <Text style={[styles.cardLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>
+                                        {sound.label}
+                                    </Text>
+                                    {isActive && (
+                                        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>
+                                            לחיצה לעצירה
+                                        </Text>
+                                    )}
+                                </View>
                             </TouchableOpacity>
                         );
                     })}

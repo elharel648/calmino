@@ -60,6 +60,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [sleepTimer, setSleepTimer] = useState<number | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
     const isMountedRef = useRef(true);
 
@@ -115,6 +116,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (timerRef.current) {
                 clearInterval(timerRef.current);
             }
+            if (fadeIntervalRef.current) {
+                clearInterval(fadeIntervalRef.current);
+            }
         };
     }, []);
 
@@ -124,19 +128,41 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
+            if (fadeIntervalRef.current) {
+                clearInterval(fadeIntervalRef.current);
+                fadeIntervalRef.current = null;
+            }
             setSleepTimer(null);
             setTimeRemaining(null);
 
             if (soundRef.current) {
-                try {
-                    await soundRef.current.stopAsync();
-                    await soundRef.current.unloadAsync();
-                } catch (e) {
-                    logger.log('Error unloading sound:', e);
-                }
+                const soundToStop = soundRef.current;
                 soundRef.current = null;
+                setActiveSound(null);
+
+                // Fade out over 3 seconds
+                let currentFade = volume || 0.7;
+                fadeIntervalRef.current = setInterval(async () => {
+                    currentFade -= (volume || 0.7) / 30; // 3 seconds (30 * 100ms)
+                    if (currentFade <= 0.05) {
+                        if (fadeIntervalRef.current) {
+                            clearInterval(fadeIntervalRef.current);
+                            fadeIntervalRef.current = null;
+                        }
+                        try {
+                            await soundToStop.stopAsync();
+                            await soundToStop.unloadAsync();
+                        } catch (e) {
+                            logger.log('Error unloading sound:', e);
+                        }
+                    } else {
+                        soundToStop.setVolumeAsync(currentFade).catch(() => {});
+                    }
+                }, 100);
+            } else {
+                setActiveSound(null);
             }
-            setActiveSound(null);
+
             if (Platform.OS !== 'web') {
                 liveActivityService.stopWhiteNoise().catch(() => {});
             }
@@ -159,11 +185,16 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 soundRef.current = null;
             }
 
+            if (fadeIntervalRef.current) {
+                clearInterval(fadeIntervalRef.current);
+                fadeIntervalRef.current = null;
+            }
+
             const { sound } = await Audio.Sound.createAsync(
                 soundFiles[id],
                 {
                     isLooping: true,
-                    volume: volume,
+                    volume: 0.01,
                     shouldPlay: true,
                 }
             );
@@ -176,6 +207,23 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             soundRef.current = sound;
             setActiveSound(id);
+
+            // Fade In over 3 seconds
+            let currentFade = 0.01;
+            const targetVolume = volume || 0.7;
+            fadeIntervalRef.current = setInterval(() => {
+                currentFade += targetVolume / 30; // 3 seconds (30 * 100ms)
+                if (currentFade >= targetVolume) {
+                    currentFade = targetVolume;
+                    if (fadeIntervalRef.current) {
+                        clearInterval(fadeIntervalRef.current);
+                        fadeIntervalRef.current = null;
+                    }
+                }
+                if (soundRef.current) {
+                    soundRef.current.setVolumeAsync(currentFade).catch(() => {});
+                }
+            }, 100);
 
             if (Platform.OS !== 'web') {
                 const laInfo = SOUND_LIVE_ACTIVITY[id];

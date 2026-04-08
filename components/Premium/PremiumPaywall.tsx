@@ -1,16 +1,15 @@
 // components/Premium/PremiumPaywall.tsx - Premium Subscription Paywall
 import React, { useState, useEffect } from 'react';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     Modal,
     TouchableOpacity,
-    ActivityIndicator,
+    
     Alert,
     ScrollView,
-    Platform,
-} from 'react-native';
+    Platform } from 'react-native';
+import InlineLoader from '../../components/Common/InlineLoader';
 import { X, Crown, Check, Sparkles, Shield, Download, Users, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
@@ -30,8 +29,8 @@ interface PremiumPaywallProps {
 
 // האייקונים נשארים hardcoded — רק הטקסטים מגיעים מ-Remote Config
 const FEATURE_ICONS = [
-    { icon: Sparkles, color: '#6366F1' },
-    { icon: Download, color: '#10B981' },
+    { icon: Sparkles, color: '#C8806A' },
+    { icon: Download, color: '#7DAF8F' },
     { icon: Users, color: '#F59E0B' },
     { icon: Shield, color: '#8B5CF6' },
     { icon: Star, color: '#EC4899' },
@@ -230,13 +229,13 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
                             activeOpacity={0.9}
                         >
                             <LinearGradient
-                                colors={['#6366F1', '#8B5CF6']}
+                                colors={['#C8806A', '#CD8B87']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.subscribeButtonGradient}
                             >
                                 {purchasing ? (
-                                    <ActivityIndicator color="#fff" />
+                                    <InlineLoader color="#fff"  />
                                 ) : (
                                     <Text style={styles.subscribeButtonText}>
                                         {selectedPlan === 'annual' ? rc.annualCta : rc.monthlyCta}
@@ -329,7 +328,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     planBadge: {
-        backgroundColor: '#10B981',
+        backgroundColor: '#C8806A',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
@@ -392,7 +391,7 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         overflow: 'hidden',
         marginBottom: 12,
-        shadowColor: '#6366F1',
+        shadowColor: '#C8806A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,

@@ -287,7 +287,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     },
     genderBtnActive: {
         backgroundColor: '#EEF2FF',
-        borderColor: '#6366F1',
+        borderColor: '#C8806A',
     },
     genderText: {
         fontSize: 15,
@@ -295,7 +295,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         color: theme.textSecondary,
     },
     genderTextActive: {
-        color: '#6366F1',
+        color: '#C8806A',
     },
     dateBtn: {
         flexDirection: 'row-reverse',
@@ -316,7 +316,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         marginHorizontal: 20,
         paddingVertical: 16,
         borderRadius: 16,
@@ -362,7 +362,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#6366F1',
+        backgroundColor: '#C8806A',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,

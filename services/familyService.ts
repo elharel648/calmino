@@ -397,27 +397,8 @@ export const removeMember = async (memberUserId: string): Promise<boolean> => {
             [`members.${memberUserId}`]: deleteField(),
         });
 
-        // Clean up user doc based on role
-        if (memberRole === 'guest') {
-            // Guest cleanup: remove guestAccess, guestFamilyId, guestChildIds
-            const memberUserDoc = await getDoc(doc(db, 'users', memberUserId));
-            const memberUserData = memberUserDoc.data();
-            const childId = memberUserData?.guestAccess?.[family.id]?.childId || family.babyId;
-            const remainingAccess = { ...memberUserData?.guestAccess };
-            delete remainingAccess[family.id];
-            const hasOtherGuestAccess = Object.keys(remainingAccess).length > 0;
-
-            await updateDoc(doc(db, 'users', memberUserId), {
-                [`guestAccess.${family.id}`]: deleteField(),
-                ...(hasOtherGuestAccess ? {} : { guestFamilyId: deleteField() }),
-                ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
-            });
-        } else {
-            // Regular member cleanup: remove familyId
-            await updateDoc(doc(db, 'users', memberUserId), {
-                familyId: deleteField(),
-            });
-        }
+        // Due to strict Firestore security rules, an admin cannot modify another user's document.
+        // The removed user's device will self-eject when it detects its absence from the family members list.
 
         return true;
     } catch (error) {
@@ -748,19 +729,8 @@ export const revokeGuestAccess = async (guestUserId: string, familyId: string): 
             [`members.${guestUserId}`]: deleteField()
         });
 
-        // Remove from user's guestAccess, guestChildIds; only clear guestFamilyId if no other guest accesses remain
-        const childId = family.babyId;
-        const guestUserDoc = await getDoc(doc(db, 'users', guestUserId));
-        const guestUserData = guestUserDoc.data();
-        const remainingAccess = { ...guestUserData?.guestAccess };
-        delete remainingAccess[familyId];
-        const hasOtherGuestAccess = Object.keys(remainingAccess).length > 0;
-
-        await updateDoc(doc(db, 'users', guestUserId), {
-            [`guestAccess.${familyId}`]: deleteField(),
-            ...(hasOtherGuestAccess ? {} : { guestFamilyId: deleteField() }),
-            ...(childId ? { guestChildIds: arrayRemove(childId) } : {}),
-        });
+        // Note: The guest's own device will prune their `users` document via self-ejection.
+        // Admins cannot update `users/{guestUserId}` directly due to security rules.
 
         return true;
     } catch (error) {

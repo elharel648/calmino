@@ -75,6 +75,7 @@ const SupplementCard = memo(({
     onRemove: (id: string) => void;
 }) => {
     const scale = useSharedValue(1);
+    const primaryColor = theme.actionColors.supplements.color;
     const animStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
     }));
@@ -105,10 +106,10 @@ const SupplementCard = memo(({
                     styles.rowItem,
                     {
                         backgroundColor: taken
-                            ? (isDarkMode ? 'rgba(52,199,89,0.12)' : 'rgba(52,199,89,0.07)')
+                            ? (isDarkMode ? `${primaryColor}25` : `${primaryColor}15`)
                             : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
                         borderColor: taken
-                            ? (isDarkMode ? 'rgba(52,199,89,0.3)' : 'rgba(52,199,89,0.2)')
+                            ? primaryColor
                             : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
                     },
                 ]}
@@ -131,7 +132,7 @@ const SupplementCard = memo(({
                 <View style={[
                     styles.checkCircle,
                     taken && {
-                        backgroundColor: isDarkMode ? 'rgba(52,199,89,0.3)' : '#34C759',
+                        backgroundColor: primaryColor,
                         borderColor: 'transparent',
                     },
                     !taken && {
@@ -154,7 +155,7 @@ const SupplementCard = memo(({
                 ]}>
                     <IconComponent
                         size={18}
-                        color={taken ? '#34C759' : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
+                        color={taken ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
                         strokeWidth={1.75}
                     />
                 </View>
@@ -180,6 +181,7 @@ const AddSupplementForm = memo(({
     const [name, setName] = useState('');
     const [selectedIcon, setSelectedIcon] = useState('pill');
     const { t } = useLanguage();
+    const primaryColor = theme.actionColors.supplements.color;
 
     const handleAdd = () => {
         const trimmed = name.trim();
@@ -235,16 +237,16 @@ const AddSupplementForm = memo(({
                                 styles.iconOption,
                                 {
                                     backgroundColor: isSelected
-                                        ? (isDarkMode ? 'rgba(0,122,255,0.25)' : 'rgba(0,122,255,0.1)')
+                                        ? (isDarkMode ? `${primaryColor}25` : `${primaryColor}15`)
                                         : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'),
                                     borderColor: isSelected
-                                        ? '#007AFF'
+                                        ? primaryColor
                                         : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
                                 }
                             ]}
                             onPress={() => setSelectedIcon(iconKey)}
                         >
-                            <Icon size={20} color={isSelected ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)')} strokeWidth={1.5} />
+                            <Icon size={20} color={isSelected ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)')} strokeWidth={1.5} />
                         </TouchableOpacity>
                     );
                 })}
@@ -255,7 +257,7 @@ const AddSupplementForm = memo(({
                     <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.confirmBtn, { opacity: name.trim() ? 1 : 0.5 }]}
+                    style={[styles.confirmBtn, { backgroundColor: primaryColor, opacity: name.trim() ? 1 : 0.5 }]}
                     onPress={handleAdd}
                     disabled={!name.trim()}
                 >
@@ -271,6 +273,7 @@ AddSupplementForm.displayName = 'AddSupplementForm';
 const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, customSupplements, onAddCustom, onRemoveCustom, takenCount, totalCount }: SupplementsModalProps) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
+    const primaryColor = theme.actionColors.supplements.color;
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
@@ -424,10 +427,10 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                 styles.iconCircle,
                                 {
                                     backgroundColor: isEditMode
-                                        ? (isDarkMode ? 'rgba(0,122,255,0.2)' : 'rgba(0,122,255,0.1)')
+                                        ? (isDarkMode ? `${primaryColor}25` : `${primaryColor}15`)
                                         : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
                                     borderColor: isEditMode
-                                        ? 'rgba(0,122,255,0.4)'
+                                        ? primaryColor
                                         : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'),
                                 }
                             ]}
@@ -440,7 +443,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                             }}
                             activeOpacity={0.7}
                         >
-                            <Pill size={20} color={isEditMode ? '#007AFF' : (isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)')} strokeWidth={2} />
+                            <Pill size={20} color={isEditMode ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)')} strokeWidth={2} />
                         </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>
                             {isEditMode ? t('supplements.editTitle') : t('supplements.dailyTitle')}
@@ -485,16 +488,16 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                             styles.rowItem,
                                             styles.addRowBtn,
                                             {
-                                                backgroundColor: isDarkMode ? 'rgba(0,122,255,0.06)' : 'rgba(0,122,255,0.04)',
-                                                borderColor: isDarkMode ? 'rgba(0,122,255,0.25)' : 'rgba(0,122,255,0.18)',
+                                                backgroundColor: isDarkMode ? `${primaryColor}10` : `${primaryColor}05`,
+                                                borderColor: isDarkMode ? `${primaryColor}40` : `${primaryColor}30`,
                                                 borderStyle: 'dashed',
                                             },
                                         ]}
                                         onPress={() => setShowAddForm(true)}
                                         activeOpacity={0.7}
                                     >
-                                        <Plus size={18} color="#007AFF" strokeWidth={2.5} />
-                                        <Text style={[styles.addRowText, { color: '#007AFF' }]}>
+                                        <Plus size={18} color={primaryColor} strokeWidth={2.5} />
+                                        <Text style={[styles.addRowText, { color: primaryColor }]}>
                                             {t('supplements.addSupplement')}
                                         </Text>
                                     </TouchableOpacity>
@@ -528,7 +531,7 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                                         styles.progressFill,
                                         {
                                             width: totalCount > 0 ? `${(takenCount / totalCount) * 100}%` : '0%',
-                                            backgroundColor: '#007AFF',
+                                            backgroundColor: primaryColor,
                                         }
                                     ]}
                                 />
@@ -549,8 +552,8 @@ const SupplementsModal = memo(({ visible, onClose, meds, onToggle, onRefresh, cu
                             activeOpacity={0.7}
                         >
                             <View style={styles.editHintRow}>
-                                <Pencil size={14} color="#007AFF" strokeWidth={2} />
-                                <Text style={[styles.editHintText, { color: '#007AFF' }]}>
+                                <Pencil size={14} color={primaryColor} strokeWidth={2} />
+                                <Text style={[styles.editHintText, { color: primaryColor }]}>
                                     {t('supplements.editSupplements')}
                                 </Text>
                             </View>
@@ -633,6 +636,7 @@ const styles = StyleSheet.create({
         height: 60,
         borderRadius: 16,
         borderWidth: 1.5,
+        gap: 12,
     },
     rowIconCircle: {
         width: 36,
@@ -640,7 +644,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: 12,
     },
     rowName: {
         flex: 1,
@@ -656,7 +659,6 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 4,
     },
     addRowBtn: {
         justifyContent: 'center',
@@ -767,7 +769,7 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     confirmBtn: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#C8806A',
         paddingHorizontal: 24,
         paddingVertical: 10,
         borderRadius: 12,

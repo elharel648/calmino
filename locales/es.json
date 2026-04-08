@@ -1,5 +1,6 @@
 {
   "common": {
+    "tapToSelect": "Tocar para seleccionar",
     "save": "Guardar",
     "all": "Todo",
     "cancel": "Cancelar",
@@ -532,6 +533,21 @@
     "km": "km"
   },
   "sitter": {
+    "registration": {
+      "photoPrivacy": "Tu foto solo se muestra a padres en tu área",
+      "title": "Registrarse como Niñera",
+      "uploadPhotoHint": "Sube una foto que se mostrará a los padres",
+      "complete": "Completar Registro",
+      "requiredFields": "Campos Requeridos",
+      "fillRequiredFields": "Por favor completa nombre, edad y teléfono",
+      "photoRequired": "Foto Requerida",
+      "uploadPhoto": "Por favor sube una foto de perfil",
+      "locationError": "No se pudo obtener la ubicación",
+      "loginRequired": "Por favor inicia sesión primero",
+      "cityRequired": "Campo Requerido",
+      "selectCity": "Por favor selecciona una ciudad",
+      "saveError": "No se pudo guardar, inténtalo de nuevo"
+    },
     "settings": "Configuración de Niñera",
     "saveSettings": "Guardar Configuración",
     "editProfile": "Editar Perfil de Niñera",
@@ -547,20 +563,6 @@
     "uploading": "Subiendo...",
     "locationPermissionRequired": "Permiso Requerido",
     "locationPermissionMessage": "Se debe otorgar acceso a la ubicación para que los padres puedan encontrarte",
-    "registration": {
-      "title": "Registrarse como Niñera",
-      "uploadPhotoHint": "Sube una foto que se mostrará a los padres",
-      "complete": "Completar Registro",
-      "requiredFields": "Campos Requeridos",
-      "fillRequiredFields": "Por favor completa nombre, edad y teléfono",
-      "photoRequired": "Foto Requerida",
-      "uploadPhoto": "Por favor sube una foto de perfil",
-      "locationError": "No se pudo obtener la ubicación",
-      "loginRequired": "Por favor inicia sesión primero",
-      "cityRequired": "Campo Requerido",
-      "selectCity": "Por favor selecciona una ciudad",
-      "saveError": "No se pudo guardar, inténtalo de nuevo"
-    },
     "back": "Atrás",
     "year": "año",
     "hourUnit": "hora",
@@ -705,7 +707,7 @@
     "enterInviteCode": "Ingresar Código de Invitación",
     "receivedCode": "¿Tu pareja te envió un código de 6 dígitos?",
     "codePlaceholder": "Ingresa código de 6 dígitos",
-    "codeSaved": "El código se activará después del registro ✓",
+    "codeSaved": "El código se activará después del registro",
     "partnerSentCode": "Mi pareja me envió un código",
     "codeSavedSuccess": "¡Genial! 🎉",
     "codeSavedMessage": "¡Código guardado! Continúa con el registro y el código se activará automáticamente.",
@@ -746,7 +748,7 @@
       "continue": "Continuar",
       "notVerified": "Aún no verificado",
       "checkLink": "Haz clic en el enlace del correo enviado y vuelve a intentarlo",
-      "checkButton": "¡Verifiqué! Revisar ahora ✓",
+      "checkButton": "¡Verifiqué! Revisar ahora",
       "resend": "Reenviar Correo de Verificación",
       "resendSent": "¡Enviado!",
       "resendMessage": "Nuevo correo de verificación enviado",
@@ -928,7 +930,9 @@
     "whoDisclaimer": "Datos calculados según estándares de la OMS. Consulte a un médico para asesoramiento médico.",
     "measurementHistory": "Historial de mediciones",
     "currentMeasurements": "Mediciones actuales",
-    "growthTrend": "Tendencia de crecimiento"
+    "growthTrend": "Tendencia de crecimiento",
+    "percentileLegend": "Percentil según estándar OMS · Edad {age} meses",
+    "growthDisclaimer": "Solo orientativo. Para dudas sobre el crecimiento, consulte a un médico."
   },
   "sitterReg": {
     "personalDetails": "Datos personales",
@@ -944,12 +948,25 @@
     "aboutYou": "Sobre ti",
     "tellAboutExperience": "Cuéntanos tu experiencia, qué te gusta hacer con los niños...",
     "shareGps": "Compartir ubicación GPS (recomendado)",
-    "locationSaved": "Ubicación guardada ✓",
+    "locationSaved": "Ubicación guardada",
     "phoneMinDigits": "El teléfono debe tener al menos 9 dígitos",
     "yearsOfExperience": "años de experiencia",
     "stepOf": "Paso {current} de {total}"
   },
   "sitterDash": {
+    "weeklyTab": "Semanal",
+    "monthlyTab": "Mensual",
+    "monthlyPlanning": "Planificación mensual",
+    "monthlyPlanningSubtitle": "Ajustar días específicos más allá del patrón semanal",
+    "availableToggle": "Disponible",
+    "notAvailableToggle": "No disponible",
+    "customHoursLabel": "Horas personalizadas",
+    "resetToWeekly": "Restablecer a semanal",
+    "alwaysAvailable": "Siempre disponible",
+    "overrideAdded": "Cambio guardado para el día seleccionado",
+    "overrideRemoved": "Día vuelto al patrón semanal",
+    "startTime": "Hora de inicio",
+    "endTime": "Hora de fin",
     "sitterStatus": "Estado del cuidador",
     "viewProfileAsParent": "Ver perfil como padre",
     "shareProfile": "Compartir perfil",
@@ -1092,6 +1109,32 @@
     "editSupplements": "Editar suplementos"
   },
   "reports": {
+    "comparison": {
+      "vsYesterday": "vs Ayer",
+      "vsLastWeek": "vs Semana pasada",
+      "vsLastMonth": "vs Mes pasado",
+      "previousPeriod": "Comparación con el período anterior",
+      "more": "más",
+      "less": "menos",
+      "patternDetection": "Detección de patrones comparada con datos del período anterior.",
+      "moreSleep": "Más sueño",
+      "lessSleep": "Menos sueño"
+    },
+    "misc": {
+      "meals": "Comidas",
+      "naps": "Siestas",
+      "totalAmount": "Cantidad total",
+      "avgPerNap": "Promedio por siesta",
+      "period": "Período",
+      "periodDay": "Día",
+      "periodWeek": "Semana",
+      "periodMonth": "Mes",
+      "generatedBy": "Generado por",
+      "reportTitle": "Informe de seguimiento",
+      "baby": "Bebé",
+      "total": "Total",
+      "trackingStreak": "Racha de Registro"
+    },
     "empty": {
       "noData": "No hay datos para mostrar",
       "notEnoughData": "Datos insuficientes",
@@ -1232,19 +1275,6 @@
     "time": {
       "morning": "Mañana"
     },
-    "comparison": {
-      "previousPeriod": "Comparación con el período anterior",
-      "more": "más",
-      "less": "menos",
-      "patternDetection": "Detección de patrones comparada con datos del período anterior.",
-      "moreSleep": "Más sueño",
-      "lessSleep": "Menos sueño"
-    },
-    "misc": {
-      "baby": "Bebé",
-      "total": "Total",
-      "trackingStreak": "Racha de Registro"
-    },
     "dates": {
       "date": "Fecha",
       "selectDates": "Seleccionar Fechas",
@@ -1329,7 +1359,10 @@
     "editSubtitle": "Actualiza la medición",
     "hideNotes": "Ocultar notas",
     "kg": "kg",
-    "cm": "cm"
+    "cm": "cm",
+    "deleteMeasurement": "Eliminar medición",
+    "additionalNotes": "Notas adicionales...",
+    "autoUpdateTooltip": "Una medición guardada para hoy actualizará automáticamente las estadísticas del perfil del bebé"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -1402,6 +1435,8 @@
     "ageYears": "{years} año"
   },
   "babyProfile": {
+    "lastName": "Apellidos (opcional)",
+    "lastNamePlaceholder": "Escribe apellidos...",
     "title": "Registrar Nuevo Niño",
     "subtitle": "Por favor completa los siguientes datos",
     "namePlaceholder": "Ingresa el nombre...",
@@ -1474,7 +1509,7 @@
     "permissionRequired": "Permiso requerido",
     "calendarAccessNeeded": "Se necesita acceso al calendario para agregar citas.",
     "noCalendarFound": "No se encontró calendario.",
-    "addedToCalendar": "Agregado al calendario ✓",
+    "addedToCalendar": "Agregado al calendario",
     "vaccineAddedToCalendar": "Cita de vacuna \"{name}\" agregada al calendario.",
     "galleryPermissionNeeded": "Se requiere permiso de galería",
     "cannotSave": "No se puede guardar",
@@ -1536,6 +1571,7 @@
     "serviceAgreement": "Acuerdo de Servicio"
   },
   "rating": {
+    "verified": "Verificados",
     "labels": [
       "",
       "Malo",
@@ -1656,5 +1692,15 @@
     "whenDidToothErupt": "¿Cuándo salió el diente?",
     "removeTooth": "Eliminar diente",
     "updateDate": "Actualizar fecha"
+  },
+  "sitterOnboarding": {
+    "profileTitle": "¡Bienvenido!",
+    "profileSubtitle": "Padres en tu área ya pueden ver tu perfil y buscarte",
+    "availabilityTitle": "Configura disponibilidad",
+    "availabilitySubtitle": "Marca qué días estás disponible para que te encuentren",
+    "reputationTitle": "Construye tu reputación",
+    "reputationSubtitle": "Consigue reseñas, sigue reproducciones de perfil y comparte en WhatsApp",
+    "next": "Siguiente",
+    "letsStart": "¡Empecemos!"
   }
 }

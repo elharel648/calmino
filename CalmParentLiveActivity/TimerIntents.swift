@@ -12,7 +12,7 @@ import Foundation
 
 // MARK: - Shared Constants
 
-let appGroupID = "group.com.harel.calmparentapp"
+let appGroupID = "group.com.calmparent.shared"
 
 enum TimerAction: String {
     case pause
@@ -27,13 +27,14 @@ struct SharedTimerState {
     static let defaults = UserDefaults(suiteName: appGroupID)
     
     static func writePendingAction(_ action: TimerAction, timerType: String, elapsedSeconds: Int? = nil, side: String? = nil) {
-        defaults?.set(action.rawValue, forKey: "pendingAction")
+        defaults?.set(action.rawValue, forKey: "pendingTimerAction")
         defaults?.set(timerType, forKey: "pendingTimerType")
+        defaults?.set(Date().timeIntervalSince1970, forKey: "pendingTimerTimestamp")
         if let s = elapsedSeconds {
-            defaults?.set(s, forKey: "pendingElapsedSeconds")
+            defaults?.set(s, forKey: "pendingTimerElapsed")
         }
         if let s = side {
-            defaults?.set(s, forKey: "pendingSide")
+            defaults?.set(s, forKey: "pendingTimerSide")
         }
     }
 }
@@ -94,32 +95,17 @@ struct PauseTimerIntent: LiveActivityIntent {
                 let r = currentState.rightSideSeconds + (currentState.activeSide == "right" ? elapsed : 0)
                 
                 let newState = BreastfeedingActivityAttributes.ContentState(
-                    activeSide: currentState.activeSide,
-                    isPaused: true,
-                    sideStartTime: nil,
                     leftSideSeconds: l,
-                    rightSideSeconds: r
+                    rightSideSeconds: r,
+                    activeSide: currentState.activeSide,
+                    sideStartTime: nil,
+                    isPaused: true
                 )
                 await activity.update(ActivityContent(state: newState, staleDate: nil))
                 SharedTimerState.writePendingAction(.pause, timerType: "breastfeeding")
             }
         }
 
-        // Babysitter
-        for activity in Activity<BabysitterShiftAttributes>.activities {
-            let currentState = activity.content.state
-            if !currentState.isPaused {
-                let newState = BabysitterShiftAttributes.ContentState(
-                    startTime: currentState.startTime,
-                    isPaused: true,
-                    totalPausedSeconds: currentState.totalPausedSeconds,
-                    hourlyRate: currentState.hourlyRate
-                )
-                await activity.update(ActivityContent(state: newState, staleDate: nil))
-                SharedTimerState.writePendingAction(.pause, timerType: "babysitter")
-            }
-        }
-        
         // WhiteNoise (Only Stop supported usually, but just in case)
         
         return .result()
@@ -174,29 +160,14 @@ struct ResumeTimerIntent: LiveActivityIntent {
             let currentState = activity.content.state
             if currentState.isPaused {
                 let newState = BreastfeedingActivityAttributes.ContentState(
-                    activeSide: currentState.activeSide,
-                    isPaused: false,
-                    sideStartTime: Date(),
                     leftSideSeconds: currentState.leftSideSeconds,
-                    rightSideSeconds: currentState.rightSideSeconds
+                    rightSideSeconds: currentState.rightSideSeconds,
+                    activeSide: currentState.activeSide,
+                    sideStartTime: Date(),
+                    isPaused: false
                 )
                 await activity.update(ActivityContent(state: newState, staleDate: nil))
                 SharedTimerState.writePendingAction(.resume, timerType: "breastfeeding")
-            }
-        }
-
-        // Babysitter
-        for activity in Activity<BabysitterShiftAttributes>.activities {
-            let currentState = activity.content.state
-            if currentState.isPaused {
-                let newState = BabysitterShiftAttributes.ContentState(
-                    startTime: currentState.startTime,
-                    isPaused: false,
-                    totalPausedSeconds: currentState.totalPausedSeconds,
-                    hourlyRate: currentState.hourlyRate
-                )
-                await activity.update(ActivityContent(state: newState, staleDate: nil))
-                SharedTimerState.writePendingAction(.resume, timerType: "babysitter")
             }
         }
 
@@ -207,11 +178,43 @@ struct ResumeTimerIntent: LiveActivityIntent {
 @available(iOS 16.2, *)
 struct StopTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "סיים טיימר"
-    
+
     init() {}
-    
+
     func perform() async throws -> some IntentResult {
-        SharedTimerState.writePendingAction(.stop, timerType: "stop")
+        // Sleep
+        for activity in Activity<SleepActivityAttributes>.activities {
+            let s = activity.content.state
+            let elapsed = s.activeSeconds + (s.isPaused ? 0 : Int(Date().timeIntervalSince(s.startTime)))
+            SharedTimerState.writePendingAction(.stop, timerType: "sleep", elapsedSeconds: elapsed)
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+        }
+        // Feeding
+        for activity in Activity<MealActivityAttributes>.activities {
+            let s = activity.content.state
+            let elapsed = s.isPaused ? Int(s.progress) : Int(Date().timeIntervalSince(s.startTime))
+            SharedTimerState.writePendingAction(.stop, timerType: s.mealType, elapsedSeconds: elapsed)
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+        }
+        // Breastfeeding
+        for activity in Activity<BreastfeedingActivityAttributes>.activities {
+            let s = activity.content.state
+            var l = s.leftSideSeconds
+            var r = s.rightSideSeconds
+            if !s.isPaused, let start = s.sideStartTime {
+                let e = Int(Date().timeIntervalSince(start))
+                if s.activeSide == "left" { l += e } else { r += e }
+            }
+            SharedTimerState.writePendingAction(.stop, timerType: "הנקה", elapsedSeconds: l + r)
+            SharedTimerState.defaults?.set("L\(l)R\(r)", forKey: "pendingSide")
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+        }
+        // White Noise
+        for activity in Activity<WhiteNoiseActivityAttributes>.activities {
+            let s = activity.content.state
+            SharedTimerState.writePendingAction(.stop, timerType: "white_noise", elapsedSeconds: 0)
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+        }
         return .result()
     }
 }
@@ -235,11 +238,11 @@ struct SwitchSideIntent: LiveActivityIntent {
             }
             
             let newState = BreastfeedingActivityAttributes.ContentState(
-                activeSide: newSide,
-                isPaused: false,
-                sideStartTime: Date(),
                 leftSideSeconds: l,
-                rightSideSeconds: r
+                rightSideSeconds: r,
+                activeSide: newSide,
+                sideStartTime: Date(),
+                isPaused: false
             )
             await activity.update(ActivityContent(state: newState, staleDate: nil))
             SharedTimerState.writePendingAction(.switchSide, timerType: "breastfeeding", side: newSide)

@@ -1,5 +1,6 @@
 // pages/SitterDashboardScreen.tsx - Real Sitter Dashboard with Firebase Data
 import React, { useState, useEffect, useCallback } from 'react';
+import InlineLoader from '../components/Common/InlineLoader';
 import Svg, { Path } from 'react-native-svg';
 
 const WhatsAppIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string; strokeWidth?: number }) => (
@@ -11,8 +12,7 @@ const WhatsAppIcon = ({ size = 24, color = '#000' }: { size?: number; color?: st
     </Svg>
 );
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-    View,
+import { View,
     Text,
     StyleSheet,
     ScrollView,
@@ -20,7 +20,7 @@ import {
     Image,
     Dimensions,
     RefreshControl,
-    ActivityIndicator,
+    
     Platform,
     Modal,
     TextInput,
@@ -28,13 +28,12 @@ import {
     Alert,
     KeyboardAvoidingView,
     Linking,
-    Share,
-} from 'react-native';
+    Share } from 'react-native';
 import {
     Calendar, Clock, Users, CheckCircle,
     XCircle, ChevronRight, ChevronLeft, Star, MessageSquare, Settings,
     User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send, DollarSign,
-    Plus, Minus, Eye, Zap, Share2, ExternalLink, Check,
+    Plus, Minus, Eye, Zap, Share2, ExternalLink, Check, Moon,
     Instagram, Facebook, Linkedin, MessageCircle, Twitter, Globe, Link as LinkIcon
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -42,6 +41,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
 import { auth, db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -58,6 +58,7 @@ import SitterOnboarding from '../components/BabySitter/SitterOnboarding';
 import * as Location from 'expo-location';
 import { validateUsername, openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -109,12 +110,46 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
     const { activeChild } = useActiveChild();
     const { t } = useLanguage();
+    const { showSuccess, showError } = useToast();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    // Removed tabs - only showing completed history now
+    // Settings state
     const [settingsVisible, setSettingsVisible] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
+
+    // Animated Settings Icon State
+    const [isSettingsPressed, setIsSettingsPressed] = useState(false);
+    const settingsScale = useSharedValue(1);
+    const settingsRotation = useSharedValue(0);
+
+    const handleSettingsPress = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        
+        setIsSettingsPressed(true);
+        settingsScale.value = withSequence(
+            withSpring(0.85, { damping: 15, stiffness: 240 }),
+            withSpring(1.1, { damping: 12, stiffness: 240 }),
+            withSpring(1, { damping: 15, stiffness: 240 })
+        );
+        settingsRotation.value = withSpring(settingsRotation.value + 45, { damping: 15, stiffness: 180 });
+
+        setTimeout(() => {
+            setSettingsVisible(true);
+            setTimeout(() => setIsSettingsPressed(false), 200);
+        }, 250);
+    };
+
+    const animatedSettingsStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { scale: settingsScale.value },
+                { rotate: `${settingsRotation.value}deg` }
+            ] as any
+        };
+    });
 
     // Settings state
     const [preferredLocation, setPreferredLocation] = useState('');
@@ -439,10 +474,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     setSitterProfile(prev => prev ? { ...prev, photoUrl: downloadUrl } : prev);
 
                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('✅', t('sitterDash.photoUpdated'));
+                    showSuccess(t('sitterDash.photoUpdated'));
                 } catch (uploadError) {
                     logger.error('Failed to upload photo:', uploadError);
-                    Alert.alert(t('common.error'), t('sitterDash.photoError'));
+                    showError(t('sitterDash.photoError'));
                 }
             }
         } catch (error) {
@@ -477,10 +512,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     }
                     setCoverPhoto(downloadUrl);
                     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('✅', t('sitterDash.photoUpdated'));
+                    showSuccess(t('sitterDash.photoUpdated'));
                 } catch (uploadError) {
                     logger.error('Failed to upload cover photo:', uploadError);
-                    Alert.alert(t('common.error'), t('sitterDash.photoError'));
+                    showError(t('sitterDash.photoError'));
                 }
             }
         } catch (error) {
@@ -544,6 +579,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             setResponseRateStats(respStats);
         }
 
+
+
         setLoading(false);
         setRefreshing(false);
     };
@@ -568,7 +605,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             loadData();
         } catch (error) {
             logger.error('Failed to accept booking:', error);
-            Alert.alert(t('common.error'), t('sitterDash.bookingApproveError'));
+            showError(t('sitterDash.bookingApproveError'));
         }
     };
 
@@ -582,7 +619,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             loadData();
         } catch (error) {
             logger.error('Failed to decline booking:', error);
-            Alert.alert(t('common.error'), t('sitterDash.bookingCancelError'));
+            showError(t('sitterDash.bookingCancelError'));
         }
     };
 
@@ -605,11 +642,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 },
                 sitterProfile?.name || t('babysitter.sitter')
             );
-            Alert.alert('✅', t('sitterDash.shiftStarted'));
+            showSuccess(t('sitterDash.shiftStarted'));
             loadData();
         } catch (error) {
             logger.error('Start shift error:', error);
-            Alert.alert(t('common.error'), t('sitterDash.shiftStartError'));
+            showError(t('sitterDash.shiftStartError'));
         }
     };
 
@@ -701,7 +738,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             }
 
             if (!phone) {
-                Alert.alert(t('common.error'), t('sitterDash.phoneNotAvailable'));
+                showError(t('sitterDash.phoneNotAvailable'));
                 return;
             }
 
@@ -717,7 +754,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
             Linking.canOpenURL(url)
                 .then((supported) => {
                     if (!supported) {
-                        Alert.alert(t('common.error'), t('sitterDash.whatsappNotInstalled'));
+                        showError(t('sitterDash.whatsappNotInstalled'));
                     } else {
                         return Linking.openURL(url);
                     }
@@ -890,7 +927,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.textPrimary} />
+                <InlineLoader size="large" color={theme.textPrimary}  />
             </View>
         );
     }
@@ -938,182 +975,204 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             {t('sitterDash.sitterStatus')}
                         </Text>
                         <TouchableOpacity
+                            onPress={handleSettingsPress}
                             style={styles.headerButton}
-                            onPress={() => {
-                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setSettingsVisible(true);
-                            }}
+                            activeOpacity={1}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                            <Settings size={22} color={theme.textSecondary} strokeWidth={2} />
+                            <Animated.View style={[animatedSettingsStyle, { padding: 6, borderRadius: 20, backgroundColor: isSettingsPressed ? '#C8806A' : 'transparent' }]}>
+                                <Settings size={22} color={isSettingsPressed ? '#FFFFFF' : theme.textSecondary} strokeWidth={isSettingsPressed ? 2 : 1.5} />
+                            </Animated.View>
                         </TouchableOpacity>
                     </View>
 
-                    {/* ✨ Premium Profile Section */}
-                    <View style={styles.profileSectionGlass}>
-                        <View style={styles.profilePhotoContainer}>
+                    {/* ✨ Premium Profile Section (Mockup Match) */}
+                    <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', marginTop: 24, marginBottom: 8, paddingHorizontal: 20 }}>
+                        {/* Avatar (Right side) */}
+                        <View style={{ ...styles.profilePhotoContainer, marginBottom: 0 }}>
                             {sitterProfile?.photoUrl ? (
                                 <>
-                                    <Image source={{ uri: sitterProfile.photoUrl }} style={styles.profilePhotoGlass} />
+                                    <Image source={{ uri: sitterProfile.photoUrl }} style={[styles.profilePhotoGlass, { width: 72, height: 72, borderRadius: 36 }]} />
                                     <View style={[styles.profilePhotoBorder, {
-                                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
-                                        shadowColor: isDarkMode ? '#fff' : '#000',
+                                        width: 72, height: 72, borderRadius: 36,
+                                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                                        borderWidth: 1,
                                     }]} />
                                 </>
                             ) : (
                                 <View style={[styles.profilePhotoPlaceholderGlass, {
-                                    backgroundColor: isDarkMode ? '#334155' : '#E2E8F0', // Slate-700 / Slate-200
+                                    width: 72, height: 72, borderRadius: 36,
+                                    backgroundColor: isDarkMode ? '#334155' : '#E2E8F0',
                                     borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
                                 }]}>
-                                    <User size={40} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={2} />
+                                    <User size={32} color={isDarkMode ? '#94A3B8' : '#64748B'} strokeWidth={2} />
                                 </View>
                             )}
                             {sitterProfile?.isVerified && (
                                 <View style={[styles.verifiedBadgeGlass, {
-                                    backgroundColor: '#0D9488', // Teal 600
+                                    backgroundColor: '#0D9488',
                                     shadowColor: '#0D9488',
                                     shadowOpacity: 0.3,
+                                    bottom: 0, right: 0,
+                                    width: 20, height: 20, borderRadius: 10,
                                 }]}>
-                                    <CheckCircle size={14} color="#fff" strokeWidth={3} />
+                                    <CheckCircle size={12} color="#fff" strokeWidth={3} />
                                 </View>
                             )}
                         </View>
 
-                        <View style={styles.profileInfoGlass}>
-                            <Text style={[styles.profileNameGlass, { color: theme.textPrimary }]}>
+                        {/* Info & Name (Left side) */}
+                        <View style={{ marginRight: 20, alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: 26, fontWeight: '800', color: theme.textPrimary, textAlign: 'right', marginBottom: 6 }}>
                                 {sitterProfile?.name || t('babysitter.sitter')}
                             </Text>
-                            {sitterProfile?.rating ? (
-                                <View style={styles.ratingRowGlass}>
-                                    <Star size={16} color="#F59E0B" fill="#F59E0B" strokeWidth={2} />
-                                    <Text style={[styles.ratingTextGlass, { color: theme.textPrimary }]}>
-                                        <Text style={{ fontWeight: '800' }}>{sitterProfile.rating.toFixed(1)}</Text>
-                                        <Text style={[{ color: theme.textSecondary, fontWeight: '600' }]}>
-                                            {' '}({sitterProfile.reviewCount} {t('sitterDash.reviews')})
-                                        </Text>
-                                    </Text>
-                                </View>
-                            ) : null}
+                            
+                            {/* Hourly Rate Pill */}
+                            <View style={{
+                                flexDirection: 'row-reverse',
+                                alignItems: 'center',
+                                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                paddingHorizontal: 10,
+                                paddingVertical: 4,
+                                borderRadius: 12,
+                                marginTop: 4,
+                            }}>
+                                <Text style={{ fontSize: 13, fontWeight: '800', color: theme.textPrimary }}>
+                                    ₪{hourlyRate}
+                                </Text>
+                                <Text style={{ fontSize: 13, fontWeight: '500', color: theme.textSecondary, marginRight: 4 }}>
+                                    {t('sitter.perHour')}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
-
-                    {/* Hourly Rate Pill */}
-                    <View style={[styles.hourlyRateBadge, {
-                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                    }]}>
-                        <Text style={[styles.hourlyRateValue, { color: theme.textPrimary }]}>
-                            ₪{hourlyRate}
-                        </Text>
-                        <Text style={[styles.hourlyRateLabel, { color: theme.textSecondary }]}>
-                            {t('sitter.perHour')}
-                        </Text>
                     </View>
                 </View>
 
                 {/* Quick Profile Actions - Preview & Share */}
-                <View style={styles.profileActionsRow}>
+                    <View style={{ flexDirection: 'row-reverse', paddingHorizontal: 20, gap: 12, marginBottom: 12, marginTop: 16 }}>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                flexDirection: 'row-reverse',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                borderWidth: 1,
+                                borderColor: isDarkMode ? '#333' : '#E5E7EB',
+                                borderRadius: 12,
+                                paddingVertical: 14,
+                                gap: 8,
+                                shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1
+                            }}
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                navigation.navigate('SitterProfile', {
+                                    sitterData: {
+                                        id: sitterProfile?.id || '',
+                                        name: sitterProfile?.name || t('babysitter.sitter'),
+                                        age: parseInt(age) || 0,
+                                        image: sitterProfile?.photoUrl || '',
+                                        rating: sitterProfile?.rating || 0,
+                                        reviews: sitterProfile?.reviewCount || 0,
+                                        price: hourlyRate,
+                                        distance: 0,
+                                        phone: phoneNumber,
+                                        bio: bio,
+                                        socialLinks: {
+                                            instagram: socialInstagram.trim() || undefined,
+                                            facebook: socialFacebook.trim() || undefined,
+                                            linkedin: socialLinkedin.trim() || undefined,
+                                            whatsapp: socialWhatsapp.trim() || undefined,
+                                            tiktok: socialTiktok.trim() || undefined,
+                                            telegram: socialTelegram.trim() || undefined,
+                                        },
+                                        experience: experience.trim() || undefined,
+                                        languages: languages.length > 0 ? languages : undefined,
+                                        certifications: certifications.length > 0 ? certifications : undefined,
+                                        city: sitterCity.trim() || undefined,
+                                        isVerified: sitterProfile?.isVerified || false,
+                                    },
+                                });
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <ExternalLink size={16} color={theme.textPrimary} strokeWidth={2} />
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
+                                {t('sitterDash.viewProfileAsParent')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                flexDirection: 'row-reverse',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                                borderWidth: 1,
+                                borderColor: isDarkMode ? '#333' : '#E5E7EB',
+                                borderRadius: 12,
+                                paddingVertical: 14,
+                                gap: 8,
+                                shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1
+                            }}
+                            onPress={async () => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                try {
+                                    const name = sitterProfile?.name || t('babysitter.sitter');
+                                    const ratingLine = sitterProfile?.rating
+                                        ? `${sitterProfile.rating.toFixed(1)} ⭐ | ${sitterProfile.reviewCount} reviews\n`
+                                        : '';
+                                    const cityLine = sitterCity ? `📍 ${sitterCity}\n` : '';
+                                    const appLink = 'https://apps.apple.com/app/calmino';
+                                    await Share.share({
+                                        message: `Hi 👋\nI'm ${name}, a babysitter on Calmino.\n\n${ratingLine}${cityLine}\nWant to see my profile? Download Calmino:\n${appLink}`,
+                                    });
+                                } catch (error) {
+                                    logger.error('Share error:', error);
+                                }
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Share2 size={16} color={theme.textPrimary} strokeWidth={2} />
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
+                                {t('sitterDash.shareProfile')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* WhatsApp Rating Button */}
                     <TouchableOpacity
-                        style={[styles.profileActionBtn, {
-                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                        }]}
+                        style={{
+                            flexDirection: 'row-reverse',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: isDarkMode ? 'rgba(37, 211, 102, 0.15)' : '#E8F5E9',
+                            borderRadius: 12,
+                            paddingVertical: 14,
+                            marginHorizontal: 20,
+                            marginBottom: 24,
+                            gap: 10
+                        }}
                         onPress={() => {
                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            navigation.navigate('SitterProfile', {
-                                sitterData: {
-                                    id: sitterProfile?.id || '',
-                                    name: sitterProfile?.name || t('babysitter.sitter'),
-                                    age: parseInt(age) || 0,
-                                    image: sitterProfile?.photoUrl || '',
-                                    rating: sitterProfile?.rating || 0,
-                                    reviews: sitterProfile?.reviewCount || 0,
-                                    price: hourlyRate,
-                                    distance: 0,
-                                    phone: phoneNumber,
-                                    bio: bio,
-                                    socialLinks: {
-                                        instagram: socialInstagram.trim() || undefined,
-                                        facebook: socialFacebook.trim() || undefined,
-                                        linkedin: socialLinkedin.trim() || undefined,
-                                        whatsapp: socialWhatsapp.trim() || undefined,
-                                        tiktok: socialTiktok.trim() || undefined,
-                                        telegram: socialTelegram.trim() || undefined,
-                                    },
-                                    experience: experience.trim() || undefined,
-                                    languages: languages.length > 0 ? languages : undefined,
-                                    certifications: certifications.length > 0 ? certifications : undefined,
-                                    city: sitterCity.trim() || undefined,
-                                    isVerified: sitterProfile?.isVerified || false,
-                                },
-                            });
-                        }}
-                        activeOpacity={0.7}
-                    >
-                        <ExternalLink size={16} color={theme.textPrimary} strokeWidth={2} />
-                        <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
-                            {t('sitterDash.viewProfileAsParent')}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.profileActionBtn, {
-                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                        }]}
-                        onPress={async () => {
-                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             try {
-                                const name = sitterProfile?.name || t('babysitter.sitter');
-                                const ratingLine = sitterProfile?.rating
-                                    ? `${sitterProfile.rating.toFixed(1)} ⭐ | ${sitterProfile.reviewCount} reviews\n`
-                                    : '';
-                                const cityLine = sitterCity ? `📍 ${sitterCity}\n` : '';
-                                // TODO: Replace with actual App Store / Play Store link
-                                const appLink = 'https://apps.apple.com/app/calmino';
-                                await Share.share({
-                                    message: `Hi 👋\nI'm ${name}, a babysitter on Calmino.\n\n${ratingLine}${cityLine}\nWant to see my profile? Download Calmino:\n${appLink}`,
+                                const sitterId = auth.currentUser?.uid;
+                                const msg = `Hi! I would really appreciate if you could rate me on Calmino 😊\n\nTap here:\ncalmparentapp://babysitter/${sitterId}`;
+                                Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
+                                    showError(t('sitterDash.whatsappNotInstalled'));
                                 });
                             } catch (error) {
-                                logger.error('Share error:', error);
+                                logger.error('WhatsApp rating error:', error);
                             }
                         }}
                         activeOpacity={0.7}
                     >
-                        <Share2 size={16} color={theme.textPrimary} strokeWidth={2} />
-                        <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
-                            {t('sitterDash.shareProfile')}
+                        <WhatsAppIcon size={20} color={isDarkMode ? '#25D366' : '#2E7D32'} />
+                        <Text style={{ fontSize: 15, fontWeight: '600', color: isDarkMode ? '#25D366' : '#2E7D32' }}>
+                            {t('sitterDash.requestWhatsappRating') || 'בקש דירוג בוואטסאפ'}
                         </Text>
                     </TouchableOpacity>
-                </View>
-
-                {/* Rating Button */}
-                <TouchableOpacity
-                    style={[styles.profileActionBtn, {
-                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                        marginTop: 12,
-                        marginBottom: 20,
-                        marginHorizontal: 20,
-                        justifyContent: 'center'
-                    }]}
-                    onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        try {
-                            const sitterId = auth.currentUser?.uid;
-                            const msg = `Hi! I would really appreciate if you could rate me on Calmino 😊\n\nTap here:\ncalmparentapp://babysitter/${sitterId}`;
-                            Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
-                                Alert.alert(t('common.error'), t('sitterDash.whatsappNotInstalled'));
-                            });
-                        } catch (error) {
-                            logger.error('WhatsApp rating error:', error);
-                        }
-                    }}
-                    activeOpacity={0.7}
-                >
-                    <MessageSquare size={16} color={theme.textPrimary} strokeWidth={2} />
-                    <Text style={[styles.profileActionText, { color: theme.textPrimary }]}>
-                        {t('sitterDash.requestWhatsappRating')}
-                    </Text>
-                </TouchableOpacity>
 
                 {/* ✨ MINIMALIST Reviews Card - Monochrome */}
                 <View style={styles.reviewsSection}>
@@ -1174,7 +1233,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     }}>
                         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
                             <View style={[styles.quickActionIcon, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' }]}>
-                                <Zap size={20} color="#10B981" strokeWidth={2} />
+                                <Moon size={20} color={theme.textSecondary} strokeWidth={1.8} />
                             </View>
                             <View>
                                 <Text style={[styles.quickActionTitleGlass, { color: theme.textPrimary, textAlign: 'right' }]}>{t('sitterDash.availableTonight')}</Text>
@@ -1198,7 +1257,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     logger.error('Toggle available tonight failed:', error);
                                 }
                             }}
-                            trackColor={{ false: isDarkMode ? '#333' : '#E5E7EB', true: '#10B981' }}
+                            trackColor={{ false: isDarkMode ? '#333' : '#E5E7EB', true: '#C8806A' }}
                             thumbColor={isDarkMode ? '#fff' : '#fff'}
                         />
                     </View>
@@ -1368,7 +1427,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         shadowColor: isDarkMode ? '#fff' : '#000',
                                     }]}>
                                         {uploadingPhoto ? (
-                                            <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                                            <InlineLoader size="small" color={isDarkMode ? '#000' : '#fff'}  />
                                         ) : (
                                             <Camera size={18} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
                                         )}
@@ -1423,7 +1482,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             gap: 6,
                                         }}>
                                             {uploadingCoverPhoto ? (
-                                                <ActivityIndicator size="small" color="#fff" />
+                                                <InlineLoader size="small" color="#fff"  />
                                             ) : (
                                                 <>
                                                     <Camera size={13} color="rgba(255,255,255,0.9)" strokeWidth={2} />
@@ -1441,7 +1500,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         gap: 8,
                                     }}>
                                         {uploadingCoverPhoto ? (
-                                            <ActivityIndicator size="small" color={theme.textSecondary} />
+                                            <InlineLoader size="small" color={theme.textSecondary}  />
                                         ) : (
                                             <>
                                                 <LucideImage size={22} color={theme.textSecondary} strokeWidth={1.5} />
@@ -1462,7 +1521,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <TouchableOpacity
                                         style={[styles.gpsCompactBtn, {
                                             backgroundColor: gpsLocation ? (isDarkMode ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.1)') : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
-                                            borderColor: gpsLocation ? '#3B82F6' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
+                                            borderColor: gpsLocation ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'),
                                         }]}
                                         onPress={async () => {
                                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1470,23 +1529,23 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             setIsLoadingLocation(true);
                                             try {
                                                 const { status } = await Location.requestForegroundPermissionsAsync();
-                                                if (status !== 'granted') { Alert.alert(t('sitterDash.locationPermRequired'), t('sitterDash.locationPermMessage')); setIsLoadingLocation(false); return; }
+                                                if (status !== 'granted') { showError(t('sitterDash.locationPermMessage')); setIsLoadingLocation(false); return; }
                                                 const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                                                 setGpsLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
                                                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                             } catch (error) {
                                                 logger.error('Location error:', error);
-                                                Alert.alert(t('common.error'), t('sitterDash.locationError'));
+                                                showError(t('sitterDash.locationError'));
                                             } finally { setIsLoadingLocation(false); }
                                         }}
                                         disabled={isLoadingLocation}
                                         activeOpacity={0.7}
                                     >
                                         {isLoadingLocation ? (
-                                            <ActivityIndicator size="small" color={theme.textSecondary} />
+                                            <InlineLoader size="small" color={theme.textSecondary}  />
                                         ) : (
                                             <View>
-                                                <MapPin size={16} color={gpsLocation ? '#3B82F6' : theme.textSecondary} strokeWidth={2.5} />
+                                                <MapPin size={16} color={gpsLocation ? '#C8806A' : theme.textSecondary} strokeWidth={2.5} />
                                                 {gpsLocation && (<View style={styles.gpsCheckBadge}><Check size={10} color="#fff" strokeWidth={4} /></View>)}
                                             </View>
                                         )}
@@ -1564,7 +1623,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Switch
                                         value={notificationsEnabled}
                                         onValueChange={(v) => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setNotificationsEnabled(v); }}
-                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
                                         thumbColor={isDarkMode ? (notificationsEnabled ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
@@ -1575,7 +1634,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     <Switch
                                         value={availableForBookings}
                                         onValueChange={(v) => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAvailableForBookings(v); }}
-                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#3B82F6' }}
+                                        trackColor={{ false: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', true: '#C8806A' }}
                                         thumbColor={isDarkMode ? (availableForBookings ? '#000' : '#999') : '#fff'}
                                         ios_backgroundColor={isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}
                                     />
@@ -1928,7 +1987,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                                     const userId = auth.currentUser?.uid;
                                     if (!userId) {
-                                        Alert.alert(t('common.error'), t('sitterDash.loginRequired'));
+                                        showError(t('sitterDash.loginRequired'));
                                         return;
                                     }
 
@@ -1968,10 +2027,10 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                                         setSettingsVisible(false);
-                                        Alert.alert(t('sitterDash.saved'), t('sitterDash.settingsSaved'));
+                                        showSuccess(t('sitterDash.settingsSaved'));
                                     } catch (error) {
                                         logger.error('Failed to save settings:', error);
-                                        Alert.alert(t('common.error'), t('sitterDash.settingsSaveError'));
+                                        showError(t('sitterDash.settingsSaveError'));
                                     } finally {
                                         setSavingSettings(false);
                                     }
@@ -1980,7 +2039,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 activeOpacity={0.8}
                             >
                                 {savingSettings ? (
-                                    <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                                    <InlineLoader size="small" color={isDarkMode ? '#000' : '#fff'}  />
                                 ) : (
                                     <>
                                         <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
@@ -2027,11 +2086,11 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                             });
                                                             setSettingsVisible(false);
                                                             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                                                            Alert.alert(t('sitterDash.saved'), t('sitterDash.accountDeleted'));
+                                                            showSuccess(t('sitterDash.accountDeleted'));
                                                             navigation.replace('SitterList');
                                                         } catch (error) {
                                                             logger.error('Failed to delete sitter account:', error);
-                                                            Alert.alert(t('common.error'), t('sitterDash.deleteError'));
+                                                            showError(t('sitterDash.deleteError'));
                                                         }
                                                     }
                                                 }
@@ -2264,7 +2323,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     }
                                                     if (!validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value)) {
                                                         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                                                        Alert.alert(t('common.error'), activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput'));
+                                                        showError(activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput'));
                                                         return;
                                                     }
                                                     setSocialModalVisible(false);
@@ -3110,7 +3169,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     newHours[key] = hours;
                                                 });
                                                 setAvailableHours(newHours);
-                                                Alert.alert('✅', t('sitterDash.hoursCopied'));
+                                                showSuccess(t('sitterDash.hoursCopied'));
                                             }
                                         }}
                                         activeOpacity={0.7}
@@ -3157,14 +3216,14 @@ const SitterDashboardScreen = ({ navigation }: any) => {
 
                                             // Update local profile state
                                             setAvailabilityModalVisible(false);
-                                            Alert.alert(t('sitterDash.saved'), t('sitterDash.availabilityUpdated', { count: availableDays.length.toString() }));
+                                            showSuccess(t('sitterDash.availabilityUpdated', { count: availableDays.length.toString() }));
 
                                             // Refresh data to reflect changes
                                             loadData();
                                         }
                                     } catch (error) {
                                         logger.error('Failed to save availability:', error);
-                                        Alert.alert(t('common.error'), t('sitterDash.saveError'));
+                                        showError(t('sitterDash.saveError'));
                                     } finally {
                                         setSavingSettings(false);
                                     }
@@ -3173,7 +3232,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 activeOpacity={0.8}
                             >
                                 {savingSettings ? (
-                                    <ActivityIndicator size="small" color={isDarkMode ? '#000' : '#fff'} />
+                                    <InlineLoader size="small" color={isDarkMode ? '#000' : '#fff'}  />
                                 ) : (
                                     <>
                                         <CheckCircle size={20} color={isDarkMode ? '#000' : '#fff'} strokeWidth={2.5} />
@@ -4860,7 +4919,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -6,
         right: -6,
-        backgroundColor: '#3B82F6',
+        backgroundColor: '#C8806A',
         borderRadius: 6,
         width: 12,
         height: 12,

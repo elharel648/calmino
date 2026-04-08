@@ -6,7 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 // EVENT TYPES
 // ===================
 
-export type EventType = 'food' | 'sleep' | 'diaper' | 'supplement' | 'medication' | 'note';
+export type EventType = 'food' | 'sleep' | 'diaper' | 'supplements' | 'medication' | 'note';
 
 export type FoodSubType = 'bottle' | 'breast' | 'pumping' | 'solids';
 export type DiaperSubType = 'wet' | 'dirty' | 'mixed' | 'dry';
@@ -49,7 +49,7 @@ export interface DiaperEvent extends BaseEvent {
 }
 
 export interface SupplementEvent extends BaseEvent {
-    type: 'supplement';
+    type: 'supplements';
     subType: SupplementSubType;
 }
 

@@ -1,5 +1,6 @@
 {
   "common": {
+    "tapToSelect": "اضغط للتحديد",
     "save": "حفظ",
     "all": "الكل",
     "cancel": "إلغاء",
@@ -532,6 +533,21 @@
     "km": "كم"
   },
   "sitter": {
+    "registration": {
+      "photoPrivacy": "تظهر صورتك للآباء في منطقتك فقط",
+      "title": "التسجيل كحاضنة",
+      "uploadPhotoHint": "ارفع صورة ستُعرض للآباء",
+      "complete": "إكمال التسجيل",
+      "requiredFields": "الحقول المطلوبة",
+      "fillRequiredFields": "يرجى ملء الاسم والعمر والهاتف",
+      "photoRequired": "الصورة مطلوبة",
+      "uploadPhoto": "يرجى رفع صورة الملف الشخصي",
+      "locationError": "تعذّر الحصول على الموقع",
+      "loginRequired": "يرجى تسجيل الدخول أولاً",
+      "cityRequired": "الحقل مطلوب",
+      "selectCity": "يرجى اختيار مدينة",
+      "saveError": "تعذّر الحفظ، حاول مجدداً"
+    },
     "settings": "إعدادات الحاضنة",
     "saveSettings": "حفظ الإعدادات",
     "editProfile": "تعديل ملف الحاضنة",
@@ -547,20 +563,6 @@
     "uploading": "جارٍ الرفع...",
     "locationPermissionRequired": "الإذن مطلوب",
     "locationPermissionMessage": "يجب منح الوصول إلى الموقع حتى يتمكن الآباء من إيجادك",
-    "registration": {
-      "title": "التسجيل كحاضنة",
-      "uploadPhotoHint": "ارفع صورة ستُعرض للآباء",
-      "complete": "إكمال التسجيل",
-      "requiredFields": "الحقول المطلوبة",
-      "fillRequiredFields": "يرجى ملء الاسم والعمر والهاتف",
-      "photoRequired": "الصورة مطلوبة",
-      "uploadPhoto": "يرجى رفع صورة الملف الشخصي",
-      "locationError": "تعذّر الحصول على الموقع",
-      "loginRequired": "يرجى تسجيل الدخول أولاً",
-      "cityRequired": "الحقل مطلوب",
-      "selectCity": "يرجى اختيار مدينة",
-      "saveError": "تعذّر الحفظ، حاول مجدداً"
-    },
     "back": "رجوع",
     "year": "سنة",
     "hourUnit": "ساعة",
@@ -705,7 +707,7 @@
     "enterInviteCode": "أدخل رمز الدعوة",
     "receivedCode": "هل أرسل لك شريكك رمزاً من 6 أرقام؟",
     "codePlaceholder": "أدخل رمزاً من 6 أرقام",
-    "codeSaved": "سيتم تفعيل الرمز بعد التسجيل ✓",
+    "codeSaved": "سيتم تفعيل الرمز بعد التسجيل",
     "partnerSentCode": "أرسل لي شريكي رمزاً",
     "codeSavedSuccess": "رائع! 🎉",
     "codeSavedMessage": "تم حفظ الرمز! أكمل التسجيل وسيتم تفعيل الرمز تلقائياً.",
@@ -746,7 +748,7 @@
       "continue": "متابعة",
       "notVerified": "لم يتم التحقق بعد",
       "checkLink": "انقر على الرابط في البريد المُرسل إليك وحاول مجدداً",
-      "checkButton": "تحققت! تحقق الآن ✓",
+      "checkButton": "تحققت! تحقق الآن",
       "resend": "إعادة إرسال بريد التحقق",
       "resendSent": "تم الإرسال!",
       "resendMessage": "تم إرسال بريد تحقق جديد إليك",
@@ -928,7 +930,9 @@
     "whoDisclaimer": "البيانات محسوبة وفق معايير منظمة الصحة العالمية. استشر طبيبًا للنصيحة الطبية.",
     "measurementHistory": "سجل القياسات",
     "currentMeasurements": "القياسات الحالية",
-    "growthTrend": "اتجاه النمو"
+    "growthTrend": "اتجاه النمو",
+    "percentileLegend": "النسبة المئوية وفقاً لمعيار WHO · العمر {age} أشهر",
+    "growthDisclaimer": "للاستشارة فقط. لمخاوف النمو يرجى استشارة الطبيب."
   },
   "sitterReg": {
     "personalDetails": "البيانات الشخصية",
@@ -944,12 +948,25 @@
     "aboutYou": "عنك",
     "tellAboutExperience": "أخبرنا عن خبرتك، ماذا تحب أن تفعل مع الأطفال...",
     "shareGps": "مشاركة موقع GPS (مُستحسن)",
-    "locationSaved": "تم حفظ الموقع ✓",
+    "locationSaved": "تم حفظ الموقع",
     "phoneMinDigits": "يجب أن يحتوي رقم الهاتف على 9 أرقام على الأقل",
     "yearsOfExperience": "سنوات خبرة",
     "stepOf": "خطوة {current} من {total}"
   },
   "sitterDash": {
+    "weeklyTab": "أسبوعي",
+    "monthlyTab": "شهري",
+    "monthlyPlanning": "تخطيط شهري",
+    "monthlyPlanningSubtitle": "تخصيص أيام خارج النمط الأسبوعي",
+    "availableToggle": "متاح/ة",
+    "notAvailableToggle": "غير متاح/ة",
+    "customHoursLabel": "ساعات مخصصة",
+    "resetToWeekly": "إعادة للنمط الأسبوعي",
+    "alwaysAvailable": "متاح دائماً",
+    "overrideAdded": "تم حفظ التغيير لليوم المحدد",
+    "overrideRemoved": "عاد اليوم للنمط الأسبوعي",
+    "startTime": "ساعة البدء",
+    "endTime": "ساعة الانتهاء",
     "sitterStatus": "حالة الجليس",
     "viewProfileAsParent": "عرض الملف الشخصي كوالد",
     "shareProfile": "مشاركة الملف الشخصي",
@@ -1092,6 +1109,32 @@
     "editSupplements": "تعديل المكملات"
   },
   "reports": {
+    "comparison": {
+      "vsYesterday": "مقابل أمس",
+      "vsLastWeek": "مقابل الأسبوع الماضي",
+      "vsLastMonth": "مقابل الشهر الماضي",
+      "previousPeriod": "مقارنة بالفترة السابقة",
+      "more": "أكثر",
+      "less": "أقل",
+      "patternDetection": "اكتشاف الأنماط مقارنة ببيانات الفترة السابقة.",
+      "moreSleep": "نوم أكثر",
+      "lessSleep": "نوم أقل"
+    },
+    "misc": {
+      "meals": "وجبات",
+      "naps": "غفوات",
+      "totalAmount": "الكمية الإجمالية",
+      "avgPerNap": "المعدل للغفوة",
+      "period": "فترة",
+      "periodDay": "يوم",
+      "periodWeek": "أسبوع",
+      "periodMonth": "شهر",
+      "generatedBy": "منشأ بواسطة",
+      "reportTitle": "تقرير التتبع",
+      "baby": "الطفل",
+      "total": "المجموع",
+      "trackingStreak": "سلسلة التتبع"
+    },
     "empty": {
       "noData": "لا توجد بيانات للعرض",
       "notEnoughData": "بيانات غير كافية للعرض",
@@ -1232,19 +1275,6 @@
     "time": {
       "morning": "الصباح"
     },
-    "comparison": {
-      "previousPeriod": "مقارنة بالفترة السابقة",
-      "more": "أكثر",
-      "less": "أقل",
-      "patternDetection": "اكتشاف الأنماط مقارنة ببيانات الفترة السابقة.",
-      "moreSleep": "نوم أكثر",
-      "lessSleep": "نوم أقل"
-    },
-    "misc": {
-      "baby": "الطفل",
-      "total": "المجموع",
-      "trackingStreak": "سلسلة التتبع"
-    },
     "dates": {
       "date": "التاريخ",
       "selectDates": "اختيار التواريخ",
@@ -1329,7 +1359,10 @@
     "editSubtitle": "حدّث القياس",
     "hideNotes": "إخفاء الملاحظات",
     "kg": "كغ",
-    "cm": "سم"
+    "cm": "سم",
+    "deleteMeasurement": "حذف القياس",
+    "additionalNotes": "ملاحظات إضافية...",
+    "autoUpdateTooltip": "القياس المحفوظ لهذا اليوم سيُحدّث إحصائيات الملف الشخصي للطفل تلقائياً"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -1402,6 +1435,8 @@
     "ageYears": "{years} سنة"
   },
   "babyProfile": {
+    "lastName": "اسم العائلة (اختياري)",
+    "lastNamePlaceholder": "اكتب اسم العائلة...",
     "title": "تسجيل طفل جديد",
     "subtitle": "يرجى ملء البيانات التالية",
     "namePlaceholder": "أدخل الاسم...",
@@ -1474,7 +1509,7 @@
     "permissionRequired": "إذن مطلوب",
     "calendarAccessNeeded": "مطلوب إذن الوصول للتقويم لإضافة مواعيد.",
     "noCalendarFound": "لم يتم العثور على تقويم.",
-    "addedToCalendar": "تمت الإضافة للتقويم ✓",
+    "addedToCalendar": "تمت الإضافة للتقويم",
     "vaccineAddedToCalendar": "موعد تطعيم \"{name}\" أضيف للتقويم.",
     "galleryPermissionNeeded": "مطلوب إذن المعرض",
     "cannotSave": "لا يمكن الحفظ",
@@ -1536,6 +1571,7 @@
     "serviceAgreement": "اتفاقية الخدمة"
   },
   "rating": {
+    "verified": "موثقة",
     "labels": [
       "",
       "سيء",
@@ -1656,5 +1692,15 @@
     "whenDidToothErupt": "متى ظهرت السن؟",
     "removeTooth": "إزالة سن",
     "updateDate": "تحديث التاريخ"
+  },
+  "sitterOnboarding": {
+    "profileTitle": "مرحباً!",
+    "profileSubtitle": "يمكن للآباء في المنطقة رؤية ملفك وإرسال دعوات",
+    "availabilityTitle": "تحديد التوافر",
+    "availabilitySubtitle": "حدد الأيام والأوقات التي تكون فيها متاحاً",
+    "reputationTitle": "بناء سمعة موثوقة",
+    "reputationSubtitle": "احصل على تقييمات من الآباء وشارك على الواتساب",
+    "next": "التالي",
+    "letsStart": "لنبدأ!"
   }
 }

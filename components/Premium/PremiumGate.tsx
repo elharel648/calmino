@@ -56,7 +56,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({ feature, children, onUpgrade,
                 <View style={styles.lockContent}>
                     {/* Lock icon */}
                     <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)' }]}>
-                        <Lock size={28} color="#6366F1" strokeWidth={1.8} />
+                        <Lock size={28} color="#C8806A" strokeWidth={1.8} />
                     </View>
 
                     {/* Title */}
@@ -80,7 +80,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({ feature, children, onUpgrade,
                             activeOpacity={0.9}
                         >
                             <LinearGradient
-                                colors={['#6366F1', '#8B5CF6']}
+                                colors={['#C8806A', '#CD8B87']}
                                 style={styles.upgradeGradient}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     upgradeButton: {
         borderRadius: 14,
         overflow: 'hidden',
-        shadowColor: '#6366F1',
+        shadowColor: '#C8806A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 10,

@@ -100,8 +100,8 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
         const labelKey = QUICK_ACTION_BASE_CONFIG[key].labelKey;
         const colors = theme.actionColors[key as keyof typeof theme.actionColors];
         const isHidden = hiddenActions.includes(key);
-        const iconBg = colors?.lightColor || (isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF');
-        const iconColor = colors?.color || theme.textPrimary;
+        const iconBg = colors?.color || (isDarkMode ? '#333333' : '#000000');
+        const iconColor = '#FFFFFF';
 
         return (
             <ScaleDecorator>
@@ -129,21 +129,14 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                 >
                     {/* Visibility Toggle (right side, RTL) */}
                     <TouchableOpacity
-                        style={[
-                            styles.visibilityBtn,
-                            {
-                                backgroundColor: isHidden
-                                    ? (isDarkMode ? '#3A1515' : '#FEE2E2')
-                                    : (isDarkMode ? '#0A2A1A' : '#D1FAE5'),
-                            }
-                        ]}
+                        style={styles.visibilityBtn}
                         onPress={() => handleToggleVisibility(key)}
-                        onLongPress={() => {}}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                         {isHidden ? (
-                            <EyeOff size={18} color="#EF4444" />
+                            <EyeOff size={20} color={theme.textTertiary} strokeWidth={1.5} />
                         ) : (
-                            <Eye size={18} color="#10B981" />
+                            <Eye size={20} color={theme.textSecondary} strokeWidth={1.5} />
                         )}
                     </TouchableOpacity>
 
@@ -152,10 +145,10 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                         styles.iconContainer,
                         {
                             backgroundColor: iconBg,
-                            shadowColor: isDarkMode ? 'transparent' : '#000',
+                            shadowColor: isDarkMode ? 'transparent' : iconColor,
                         }
                     ]}>
-                        <Icon size={19} color={iconColor} strokeWidth={1.5} />
+                        <Icon size={20} color={iconColor} strokeWidth={1.8} />
                     </View>
 
                     {/* Label */}
@@ -313,13 +306,13 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 12,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
         elevation: 0,
     },
     itemLabel: {
