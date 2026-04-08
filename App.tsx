@@ -219,6 +219,7 @@ const CustomTabIcon = ({ focused, color, icon: Icon, label }: any) => {
       alignItems: 'center',
       justifyContent: 'center',
       width: 72,
+      overflow: 'visible',
     }}>
       <Reanimated.View style={animatedIconStyle}>
         <Icon color={iconColor} size={25} strokeWidth={focused ? 2.0 : 1.5} />

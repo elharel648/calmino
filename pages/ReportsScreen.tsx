@@ -463,6 +463,7 @@ export default function ReportsScreen() {
   useEffect(() => {
     if (!activeChild?.childId) return;
     let isFirst = true;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const q = query(
       collection(db, 'events'),
       where('childId', '==', activeChild.childId),
@@ -470,9 +471,11 @@ export default function ReportsScreen() {
     );
     const unsub = onSnapshot(q, () => {
       if (isFirst) { isFirst = false; return; } // skip initial snapshot
-      fetchDataRef.current();
+      // Debounce on Android to prevent rapid re-fetches causing animation loops
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchDataRef.current(), Platform.OS === 'android' ? 2000 : 500);
     }, () => {}); // ignore errors silently
-    return () => unsub();
+    return () => { unsub(); if (debounceTimer) clearTimeout(debounceTimer); };
   }, [activeChild?.childId]);
 
   const onRefresh = useCallback(() => {
@@ -1336,15 +1339,54 @@ export default function ReportsScreen() {
     Array.from({ length: 6 }, () => new RNAnimated.Value(18))
   ).current;
 
+  const prevLoadingRef = useRef(loading);
   useEffect(() => {
-    // Reset
+    const wasLoading = prevLoadingRef.current;
+    prevLoadingRef.current = loading;
+
+    // Android: skip card animations entirely — show cards immediately to avoid jitter
+    if (Platform.OS === 'android') {
+      cardAnims.forEach(a => a.setValue(1));
+      cardSlides.forEach(a => a.setValue(0));
+      cardScales.forEach(a => a.setValue(1));
+      return;
+    }
+
+    // iOS: animate only when loading transitions from true to false
+    if (loading) return;
+
+    // Reset all
     cardAnims.forEach(a => a.setValue(0));
-    cardSlides.forEach(a => a.setValue(18));
-    // Stagger
+    cardSlides.forEach(a => a.setValue(32));
+    cardScales.forEach(a => a.setValue(0.94));
+
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
     const animations = cardAnims.map((anim, i) =>
       RNAnimated.parallel([
-        RNAnimated.timing(anim, { toValue: 1, duration: 350, delay: i * 60, useNativeDriver: true }),
-        RNAnimated.timing(cardSlides[i], { toValue: 0, duration: 350, delay: i * 60, useNativeDriver: true }),
+        RNAnimated.timing(anim, {
+          toValue: 1,
+          duration: 420,
+          delay: i * 70,
+          easing: easeOutCubic,
+          useNativeDriver: true,
+        }),
+        RNAnimated.spring(cardSlides[i], {
+          toValue: 0,
+          delay: i * 70,
+          useNativeDriver: true,
+          stiffness: 120,
+          damping: 14,
+          mass: 0.6,
+        } as any),
+        RNAnimated.spring(cardScales[i], {
+          toValue: 1,
+          delay: i * 70,
+          useNativeDriver: true,
+          stiffness: 120,
+          damping: 14,
+          mass: 0.6,
+        } as any),
       ])
     );
     RNAnimated.parallel(animations).start();

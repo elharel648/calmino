@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, Keyboard } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -21,6 +21,146 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TIME_PICKER_STYLE = { width: 300, height: 216, alignSelf: 'center' as const };
 
 
+const ITEM_HEIGHT = 40;
+const VISIBLE_ITEMS = 5;
+const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
+
+const AndroidWheelPicker = ({
+  values,
+  selectedValue,
+  onValueChange,
+  label,
+  theme,
+}: {
+  values: number[];
+  selectedValue: number;
+  onValueChange: (v: number) => void;
+  label: string;
+  theme: any;
+}) => {
+  const scrollRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(values.indexOf(selectedValue));
+
+  useEffect(() => {
+    const idx = values.indexOf(selectedValue);
+    if (idx >= 0) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
+      }, 50);
+    }
+  }, []);
+
+  const handleMomentumEnd = (e: any) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const idx = Math.round(y / ITEM_HEIGHT);
+    const clampedIdx = Math.max(0, Math.min(idx, values.length - 1));
+    setCurrentIndex(clampedIdx);
+    onValueChange(values[clampedIdx]);
+    scrollRef.current?.scrollTo({ y: clampedIdx * ITEM_HEIGHT, animated: true });
+  };
+
+  return (
+    <View style={{ alignItems: 'center', width: 80 }}>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginBottom: 4 }}>{label}</Text>
+      <View style={{ height: PICKER_HEIGHT, overflow: 'hidden', width: 70 }}>
+        <View pointerEvents="none" style={{
+          position: 'absolute',
+          top: ITEM_HEIGHT * 2,
+          left: 0,
+          right: 0,
+          height: ITEM_HEIGHT,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.primary || '#C4956A',
+          zIndex: 10,
+        }} />
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={ITEM_HEIGHT}
+          decelerationRate="fast"
+          onMomentumScrollEnd={handleMomentumEnd}
+          contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
+        >
+          {values.map((v, i) => (
+            <View key={v} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{
+                fontSize: currentIndex === i ? 22 : 17,
+                fontWeight: currentIndex === i ? '700' : '400',
+                color: currentIndex === i ? theme.textPrimary : (theme.textSecondary + '80'),
+              }}>
+                {v}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    </View>
+  );
+};
+
+const AndroidTimePicker = ({
+  value,
+  onConfirm,
+  theme,
+  t,
+}: {
+  value: Date;
+  onConfirm: (date: Date) => void;
+  theme: any;
+  t: any;
+}) => {
+  const [hours, setHours] = useState(value.getHours());
+  const [minutes, setMinutes] = useState(value.getMinutes());
+  const hoursArr = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
+  const minutesArr = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
+
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.cardBackground || '#F5F5F5',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginBottom: 8,
+      }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
+          {`${t('tracking.minutes')}' ${minutes}   ${t('tracking.hours')} ${hours}`}
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
+        <AndroidWheelPicker
+          values={hoursArr}
+          selectedValue={hours}
+          onValueChange={setHours}
+          label={t('tracking.hours')}
+          theme={theme}
+        />
+        <AndroidWheelPicker
+          values={minutesArr}
+          selectedValue={minutes}
+          onValueChange={setMinutes}
+          label={t('tracking.minutes')}
+          theme={theme}
+        />
+      </View>
+      <TouchableOpacity
+        style={{ marginTop: 12, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 24, minWidth: 140, alignItems: 'center', backgroundColor: theme.primary }}
+        onPress={() => {
+          const d = new Date(value);
+          d.setHours(hours, minutes, 0, 0);
+          onConfirm(d);
+        }}
+      >
+        <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>{t('common.done')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const IsolatedDurationPicker = ({
   initialHours,
   initialMinutes,
@@ -38,16 +178,67 @@ const IsolatedDurationPicker = ({
   t: any;
   locale?: string;
 }) => {
+  if (Platform.OS === 'android') {
+    const [hours, setHours] = useState(initialHours);
+    const [minutes, setMinutes] = useState(initialMinutes);
+    const hoursArr = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
+    const minutesArr = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
+
+    useEffect(() => {
+      const timer = setTimeout(() => onChange(hours, minutes), 300);
+      return () => clearTimeout(timer);
+    }, [hours, minutes, onChange]);
+
+    return (
+      <View style={{ alignItems: 'center' }}>
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 8,
+          backgroundColor: theme.cardBackground || '#F5F5F5',
+          borderRadius: 16,
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          marginBottom: 8,
+        }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
+            {`${t('tracking.minutes')}' ${minutes}   ${t('tracking.hours')} ${hours}`}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
+          <AndroidWheelPicker
+            values={hoursArr}
+            selectedValue={initialHours}
+            onValueChange={setHours}
+            label={t('tracking.hours')}
+            theme={theme}
+          />
+          <AndroidWheelPicker
+            values={minutesArr}
+            selectedValue={initialMinutes}
+            onValueChange={setMinutes}
+            label={t('tracking.minutes')}
+            theme={theme}
+          />
+        </View>
+        <TouchableOpacity
+          style={{ marginTop: 12, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 24, minWidth: 140, alignItems: 'center', backgroundColor: theme.primary }}
+          onPress={onDone}
+        >
+          <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>{t('common.done')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const [date, setDate] = useState(() => {
-    // Countdown picker on iOS uses local time — use setHours (NOT UTC)
-    // to avoid timezone offset corrupting the displayed duration
     const d = new Date(0);
     d.setHours(initialHours, initialMinutes, 0, 0);
     return d;
   });
 
   useEffect(() => {
-    // Read local time values — countdown picker stores duration in local time
     const h = date.getHours();
     const m = date.getMinutes();
     const timer = setTimeout(() => onChange(h, m), 300);
@@ -266,13 +457,22 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
     }
   }, []);
 
+  // Track keyboard visibility — disable pan gesture when keyboard is open on Android
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setIsKeyboardVisible(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
   // RNGH Pan gesture — works natively with ScrollView, no JS bridge conflict
   // Disabled when any picker overlay is visible so spinner scrolls aren't intercepted
   // Also disabled during sleep duration mode (inline countdown spinner)
   const isPickerOpen = showDiaperDatePicker || showDiaperTimePicker || showSleepStartPicker || showSleepEndPicker || showFoodStartTimePicker || showFoodEndTimePicker || sleepMode === 'duration';
   const panGesture = Gesture.Pan()
-    .enabled(!isPickerOpen)
-    .activeOffsetY([-2, 2])
+    .enabled(Platform.OS === 'android' ? (!isPickerOpen && !isKeyboardVisible) : !isPickerOpen)
+    .activeOffsetY(Platform.OS === 'android' ? [-12, 12] : [-2, 2])
     .simultaneousWithExternalGesture(nativeScrollRef)
     .onStart(() => {
       runOnJS(triggerHaptic)();
@@ -1435,28 +1635,32 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       {showFoodStartTimePicker && (
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
-            <DateTimePicker
-              style={TIME_PICKER_STYLE}
-              value={foodStartTime}
-              mode="time"
-              is24Hour={true}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, selectedTime) => {
-                if (Platform.OS === 'android') {
-                  setShowFoodStartTimePicker(false);
-                }
-                if (selectedTime) {
-                  setFoodStartTime(selectedTime);
-                }
-              }}
-            />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
-                onPress={() => setShowFoodStartTimePicker(false)}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
-              </TouchableOpacity>
+            {Platform.OS === 'android' ? (
+              <AndroidTimePicker
+                value={foodStartTime}
+                onConfirm={(d) => { setFoodStartTime(d); setShowFoodStartTimePicker(false); }}
+                theme={theme}
+                t={t}
+              />
+            ) : (
+              <>
+                <DateTimePicker
+                  style={TIME_PICKER_STYLE}
+                  value={foodStartTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, selectedTime) => {
+                    if (selectedTime) setFoodStartTime(selectedTime);
+                  }}
+                />
+                <TouchableOpacity
+                  style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                  onPress={() => setShowFoodStartTimePicker(false)}
+                >
+                  <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </View>
@@ -1466,28 +1670,32 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       {showFoodEndTimePicker && (
         <View style={styles.timePickerOverlay}>
           <View style={styles.timePickerContainer}>
-            <DateTimePicker
-              style={TIME_PICKER_STYLE}
-              value={foodEndTime}
-              mode="time"
-              is24Hour={true}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, selectedTime) => {
-                if (Platform.OS === 'android') {
-                  setShowFoodEndTimePicker(false);
-                }
-                if (selectedTime) {
-                  setFoodEndTime(selectedTime);
-                }
-              }}
-            />
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
-                onPress={() => setShowFoodEndTimePicker(false)}
-              >
-                <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
-              </TouchableOpacity>
+            {Platform.OS === 'android' ? (
+              <AndroidTimePicker
+                value={foodEndTime}
+                onConfirm={(d) => { setFoodEndTime(d); setShowFoodEndTimePicker(false); }}
+                theme={theme}
+                t={t}
+              />
+            ) : (
+              <>
+                <DateTimePicker
+                  style={TIME_PICKER_STYLE}
+                  value={foodEndTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, selectedTime) => {
+                    if (selectedTime) setFoodEndTime(selectedTime);
+                  }}
+                />
+                <TouchableOpacity
+                  style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                  onPress={() => setShowFoodEndTimePicker(false)}
+                >
+                  <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </View>
@@ -1687,34 +1895,46 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           {showSleepStartPicker && (
             <View style={styles.timePickerOverlay}>
               <View style={styles.timePickerContainer}>
-                <DateTimePicker
-                  value={sleepStartTimeDate}
-                  mode="time"
-                  is24Hour={true}
-                  display="spinner"
-                  onChange={(event, date) => {
-                    if (Platform.OS === 'android') setShowSleepStartPicker(false);
-                    if (date) {
-                      setSleepStartTimeDate(date);
-                      const hours = date.getHours().toString().padStart(2, '0');
-                      const minutes = date.getMinutes().toString().padStart(2, '0');
-                      setSleepStartTime(`${hours}:${minutes}`);
-                    }
-                  }}
-                  locale="he-IL"
-                />
-                {Platform.OS === 'ios' && (
-                  <TouchableOpacity
-                    style={styles.timePickerDoneBtn}
-                    onPress={() => {
-                      const hours = sleepStartTimeDate.getHours().toString().padStart(2, '0');
-                      const minutes = sleepStartTimeDate.getMinutes().toString().padStart(2, '0');
-                      setSleepStartTime(`${hours}:${minutes}`);
+                {Platform.OS === 'android' ? (
+                  <AndroidTimePicker
+                    value={sleepStartTimeDate}
+                    onConfirm={(d) => {
+                      setSleepStartTimeDate(d);
+                      setSleepStartTime(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
                       setShowSleepStartPicker(false);
                     }}
-                  >
-                    <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
-                  </TouchableOpacity>
+                    theme={theme}
+                    t={t}
+                  />
+                ) : (
+                  <>
+                    <DateTimePicker
+                      value={sleepStartTimeDate}
+                      mode="time"
+                      is24Hour={true}
+                      display="spinner"
+                      onChange={(event, date) => {
+                        if (date) {
+                          setSleepStartTimeDate(date);
+                          const hours = date.getHours().toString().padStart(2, '0');
+                          const minutes = date.getMinutes().toString().padStart(2, '0');
+                          setSleepStartTime(`${hours}:${minutes}`);
+                        }
+                      }}
+                      locale="he-IL"
+                    />
+                    <TouchableOpacity
+                      style={styles.timePickerDoneBtn}
+                      onPress={() => {
+                        const hours = sleepStartTimeDate.getHours().toString().padStart(2, '0');
+                        const minutes = sleepStartTimeDate.getMinutes().toString().padStart(2, '0');
+                        setSleepStartTime(`${hours}:${minutes}`);
+                        setShowSleepStartPicker(false);
+                      }}
+                    >
+                      <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             </View>
@@ -1724,34 +1944,46 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           {showSleepEndPicker && (
             <View style={styles.timePickerOverlay}>
               <View style={styles.timePickerContainer}>
-                <DateTimePicker
-                  value={sleepEndTimeDate}
-                  mode="time"
-                  is24Hour={true}
-                  display="spinner"
-                  onChange={(event, date) => {
-                    if (Platform.OS === 'android') setShowSleepEndPicker(false);
-                    if (date) {
-                      setSleepEndTimeDate(date);
-                      const hours = date.getHours().toString().padStart(2, '0');
-                      const minutes = date.getMinutes().toString().padStart(2, '0');
-                      setSleepEndTime(`${hours}:${minutes}`);
-                    }
-                  }}
-                  locale="he-IL"
-                />
-                {Platform.OS === 'ios' && (
-                  <TouchableOpacity
-                    style={styles.timePickerDoneBtn}
-                    onPress={() => {
-                      const hours = sleepEndTimeDate.getHours().toString().padStart(2, '0');
-                      const minutes = sleepEndTimeDate.getMinutes().toString().padStart(2, '0');
-                      setSleepEndTime(`${hours}:${minutes}`);
+                {Platform.OS === 'android' ? (
+                  <AndroidTimePicker
+                    value={sleepEndTimeDate}
+                    onConfirm={(d) => {
+                      setSleepEndTimeDate(d);
+                      setSleepEndTime(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
                       setShowSleepEndPicker(false);
                     }}
-                  >
-                    <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
-                  </TouchableOpacity>
+                    theme={theme}
+                    t={t}
+                  />
+                ) : (
+                  <>
+                    <DateTimePicker
+                      value={sleepEndTimeDate}
+                      mode="time"
+                      is24Hour={true}
+                      display="spinner"
+                      onChange={(event, date) => {
+                        if (date) {
+                          setSleepEndTimeDate(date);
+                          const hours = date.getHours().toString().padStart(2, '0');
+                          const minutes = date.getMinutes().toString().padStart(2, '0');
+                          setSleepEndTime(`${hours}:${minutes}`);
+                        }
+                      }}
+                      locale="he-IL"
+                    />
+                    <TouchableOpacity
+                      style={styles.timePickerDoneBtn}
+                      onPress={() => {
+                        const hours = sleepEndTimeDate.getHours().toString().padStart(2, '0');
+                        const minutes = sleepEndTimeDate.getMinutes().toString().padStart(2, '0');
+                        setSleepEndTime(`${hours}:${minutes}`);
+                        setShowSleepEndPicker(false);
+                      }}
+                    >
+                      <Text style={styles.timePickerDoneBtnText}>{t('tracking.done')}</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             </View>
@@ -1778,6 +2010,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           placeholderTextColor={theme.textTertiary}
           value={sleepNote}
           onChangeText={setSleepNote}
+          textAlign="right"
           multiline
           numberOfLines={3}
         />
@@ -1939,22 +2172,33 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 </TouchableOpacity>
               </View>
             )}
-            <DateTimePicker
-              value={diaperTime}
-              mode="time"
-              is24Hour={true}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, selectedTime) => {
-                if (Platform.OS === 'android') {
-                  setShowDiaperTimePicker(false);
-                }
-                if (selectedTime) {
+            {Platform.OS === 'android' ? (
+              <AndroidTimePicker
+                value={diaperTime}
+                onConfirm={(d) => {
                   const updated = new Date(diaperTime);
-                  updated.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+                  updated.setHours(d.getHours(), d.getMinutes());
                   setDiaperTime(updated);
-                }
-              }}
-            />
+                  setShowDiaperTimePicker(false);
+                }}
+                theme={theme}
+                t={t}
+              />
+            ) : (
+              <DateTimePicker
+                value={diaperTime}
+                mode="time"
+                is24Hour={true}
+                display="spinner"
+                onChange={(event, selectedTime) => {
+                  if (selectedTime) {
+                    const updated = new Date(diaperTime);
+                    updated.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+                    setDiaperTime(updated);
+                  }
+                }}
+              />
+            )}
           </View>
         </View>
       )}
@@ -1990,7 +2234,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
     <>
       <Modal visible={visible && !!type} transparent animationType="none">
         <GestureHandlerRootView style={{ flex: 1 }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'height' : 'height'} style={styles.overlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'height' : 'padding'} style={styles.overlay}>
           <Animated.View style={[StyleSheet.absoluteFill, backdropAnimStyle]}>
             <View
               style={[
@@ -2096,7 +2340,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   style={{ width: '100%' }}
                   contentContainerStyle={styles.content}
                   showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
+                  keyboardShouldPersistTaps="always"
                   bounces={false}
                   scrollEventThrottle={16}
                   onScroll={scrollHandler}

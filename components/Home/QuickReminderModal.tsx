@@ -47,6 +47,147 @@ import Reanimated, {
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
 
+// Android wheel picker for time selection (matches TrackingModal style)
+const WHEEL_ITEM_HEIGHT = 40;
+const WHEEL_VISIBLE_ITEMS = 5;
+const WHEEL_PICKER_HEIGHT = WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS;
+
+const ReminderWheelPicker = ({
+  values,
+  selectedValue,
+  onValueChange,
+  label,
+  theme,
+}: {
+  values: number[];
+  selectedValue: number;
+  onValueChange: (v: number) => void;
+  label: string;
+  theme: any;
+}) => {
+  const scrollRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(values.indexOf(selectedValue));
+
+  useEffect(() => {
+    const idx = values.indexOf(selectedValue);
+    if (idx >= 0) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: idx * WHEEL_ITEM_HEIGHT, animated: false });
+      }, 50);
+    }
+  }, []);
+
+  const handleMomentumEnd = (e: any) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const idx = Math.round(y / WHEEL_ITEM_HEIGHT);
+    const clampedIdx = Math.max(0, Math.min(idx, values.length - 1));
+    setCurrentIndex(clampedIdx);
+    onValueChange(values[clampedIdx]);
+    scrollRef.current?.scrollTo({ y: clampedIdx * WHEEL_ITEM_HEIGHT, animated: true });
+  };
+
+  return (
+    <View style={{ alignItems: 'center', width: 80 }}>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginBottom: 4 }}>{label}</Text>
+      <View style={{ height: WHEEL_PICKER_HEIGHT, overflow: 'hidden', width: 70 }}>
+        <View pointerEvents="none" style={{
+          position: 'absolute',
+          top: WHEEL_ITEM_HEIGHT * 2,
+          left: 0,
+          right: 0,
+          height: WHEEL_ITEM_HEIGHT,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.primary || '#C4956A',
+          zIndex: 10,
+        }} />
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={WHEEL_ITEM_HEIGHT}
+          decelerationRate="fast"
+          onMomentumScrollEnd={handleMomentumEnd}
+          contentContainerStyle={{ paddingVertical: WHEEL_ITEM_HEIGHT * 2 }}
+        >
+          {values.map((v, i) => (
+            <View key={v} style={{ height: WHEEL_ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{
+                fontSize: currentIndex === i ? 22 : 17,
+                fontWeight: currentIndex === i ? '700' : '400',
+                color: currentIndex === i ? theme.textPrimary : (theme.textSecondary + '80'),
+              }}>
+                {v}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    </View>
+  );
+};
+
+const ReminderAndroidTimePicker = ({
+  value,
+  onConfirm,
+  theme,
+  t,
+}: {
+  value: Date;
+  onConfirm: (date: Date) => void;
+  theme: any;
+  t: any;
+}) => {
+  const [hours, setHours] = useState(value.getHours());
+  const [minutes, setMinutes] = useState(value.getMinutes());
+  const hoursArr = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
+  const minutesArr = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
+
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.cardBackground || '#F5F5F5',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginBottom: 8,
+      }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
+          {`${t('tracking.minutes')}' ${minutes}   ${t('tracking.hours')} ${hours}`}
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
+        <ReminderWheelPicker
+          values={hoursArr}
+          selectedValue={hours}
+          onValueChange={setHours}
+          label={t('tracking.hours')}
+          theme={theme}
+        />
+        <ReminderWheelPicker
+          values={minutesArr}
+          selectedValue={minutes}
+          onValueChange={setMinutes}
+          label={t('tracking.minutes')}
+          theme={theme}
+        />
+      </View>
+      <TouchableOpacity
+        style={{ marginTop: 12, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 24, minWidth: 140, alignItems: 'center', backgroundColor: theme.primary }}
+        onPress={() => {
+          const d = new Date(value);
+          d.setHours(hours, minutes, 0, 0);
+          onConfirm(d);
+        }}
+      >
+        <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>{t('common.done')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 interface QuickReminderModalProps {
     visible: boolean;
     onClose: () => void;
@@ -614,15 +755,15 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                         <DateTimePicker
                                             value={selectedDate}
                                             mode="date"
-                                            display="inline"
+                                            display={Platform.OS === 'ios' ? 'inline' : 'default'}
                                             locale="he-IL"
                                             onChange={(e, d) => {
+                                                if (Platform.OS === 'android') setShowDatePicker(false);
                                                 if (d) {
                                                     const newDate = new Date(selectedDate);
                                                     newDate.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
                                                     setSelectedDate(newDate);
                                                 }
-                                                // Don't auto-close inline pickers, let user toggle them
                                             }}
                                             style={styles.datePickerStyle}
                                             textColor={theme.textPrimary}
@@ -633,22 +774,36 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
 
                                 {showTimePicker && (
                                     <View style={styles.inlinePickerContainer}>
-                                        <DateTimePicker
-                                            value={selectedDate}
-                                            mode="time"
-                                            display="spinner"
-                                            is24Hour={true}
-                                            locale="he-IL"
-                                            onChange={(e, d) => {
-                                                if (d) {
+                                        {Platform.OS === 'android' ? (
+                                            <ReminderAndroidTimePicker
+                                                value={selectedDate}
+                                                onConfirm={(d) => {
                                                     const newDate = new Date(selectedDate);
                                                     newDate.setHours(d.getHours(), d.getMinutes());
                                                     setSelectedDate(newDate);
-                                                }
-                                            }}
-                                            style={styles.datePickerStyle}
-                                            textColor={theme.textPrimary}
-                                        />
+                                                    setShowTimePicker(false);
+                                                }}
+                                                theme={theme}
+                                                t={t}
+                                            />
+                                        ) : (
+                                            <DateTimePicker
+                                                value={selectedDate}
+                                                mode="time"
+                                                display="spinner"
+                                                is24Hour={true}
+                                                locale="he-IL"
+                                                onChange={(e, d) => {
+                                                    if (d) {
+                                                        const newDate = new Date(selectedDate);
+                                                        newDate.setHours(d.getHours(), d.getMinutes());
+                                                        setSelectedDate(newDate);
+                                                    }
+                                                }}
+                                                style={styles.datePickerStyle}
+                                                textColor={theme.textPrimary}
+                                            />
+                                        )}
                                     </View>
                                 )}
 

@@ -701,62 +701,103 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
             {/* Date picker — mark vaccine done */}
             {pendingVaccineKey && (
-                <Modal transparent animationType="fade" visible={!!pendingVaccineKey}>
-                    <View style={styles.modalOverlayCenter}>
-                        <View style={styles.datePickerCard}>
-                            <Text style={styles.datePickerTitle}>{t('health.whenWasVaccine')}</Text>
-                            <DateTimePicker
-                                value={vaccineMarkDate}
-                                mode="date"
-                                display="spinner"
-                                onChange={(_, d) => d && setVaccineMarkDate(d)}
-                                maximumDate={new Date()}
-                                locale="he-IL"
-                            />
-                            <View style={styles.datePickerButtons}>
-                                <TouchableOpacity style={styles.datePickerCancel} onPress={() => setPendingVaccineKey(null)}>
-                                    <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.datePickerConfirm} onPress={confirmVaccineMark}>
-                                    <Text style={styles.datePickerConfirmText}>{t('common.confirm')}</Text>
-                                </TouchableOpacity>
+                Platform.OS === 'android' ? (
+                    <DateTimePicker
+                        value={vaccineMarkDate}
+                        mode="date"
+                        display="default"
+                        onChange={(e, d) => {
+                            if (e.type === 'dismissed') {
+                                setPendingVaccineKey(null);
+                                return;
+                            }
+                            if (d && pendingVaccineKey) {
+                                setVaccineMarkDate(d);
+                                toggleVaccine(pendingVaccineKey, d);
+                                setPendingVaccineKey(null);
+                            }
+                        }}
+                        maximumDate={new Date()}
+                    />
+                ) : (
+                    <Modal transparent animationType="fade" visible={!!pendingVaccineKey}>
+                        <View style={styles.modalOverlayCenter}>
+                            <View style={styles.datePickerCard}>
+                                <Text style={styles.datePickerTitle}>{t('health.whenWasVaccine')}</Text>
+                                <DateTimePicker
+                                    value={vaccineMarkDate}
+                                    mode="date"
+                                    display="spinner"
+                                    onChange={(_, d) => d && setVaccineMarkDate(d)}
+                                    maximumDate={new Date()}
+                                    locale="he-IL"
+                                />
+                                <View style={styles.datePickerButtons}>
+                                    <TouchableOpacity style={styles.datePickerCancel} onPress={() => setPendingVaccineKey(null)}>
+                                        <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.datePickerConfirm} onPress={confirmVaccineMark}>
+                                        <Text style={styles.datePickerConfirmText}>{t('common.confirm')}</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
-                    </View>
-                </Modal>
+                    </Modal>
+                )
             )}
 
             {/* Calendar appointment picker */}
             {calendarVaccineKey && (
-                <Modal transparent animationType="fade" visible={!!calendarVaccineKey}>
-                    <View style={styles.modalOverlayCenter}>
-                        <View style={styles.datePickerCard}>
-                            <Text style={styles.datePickerTitle}>{t('health.whenIsAppointment')}</Text>
-                            <Text style={styles.datePickerSubtitle}>
-                                {VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name}
-                            </Text>
-                            <DateTimePicker
-                                value={calendarAppointmentDate}
-                                mode="date"
-                                display="spinner"
-                                onChange={(_, d) => d && setCalendarAppointmentDate(d)}
-                                minimumDate={new Date()}
-                                locale="he-IL"
-                            />
-                            <View style={styles.datePickerButtons}>
-                                <TouchableOpacity style={styles.datePickerCancel} onPress={() => setCalendarVaccineKey(null)}>
-                                    <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.datePickerConfirm} onPress={() => {
-                                    const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
-                                    addVaccineToCalendar(name);
-                                }}>
-                                    <Text style={styles.datePickerConfirmText}>{t('health.addToCalendar')}</Text>
-                                </TouchableOpacity>
+                Platform.OS === 'android' ? (
+                    <DateTimePicker
+                        value={calendarAppointmentDate}
+                        mode="date"
+                        display="default"
+                        onChange={(e, d) => {
+                            if (e.type === 'dismissed') {
+                                setCalendarVaccineKey(null);
+                                return;
+                            }
+                            if (d) {
+                                setCalendarAppointmentDate(d);
+                                // Use setTimeout to allow state to update before addVaccineToCalendar reads it
+                                const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
+                                setTimeout(() => addVaccineToCalendar(name), 100);
+                            }
+                        }}
+                        minimumDate={new Date()}
+                    />
+                ) : (
+                    <Modal transparent animationType="fade" visible={!!calendarVaccineKey}>
+                        <View style={styles.modalOverlayCenter}>
+                            <View style={styles.datePickerCard}>
+                                <Text style={styles.datePickerTitle}>{t('health.whenIsAppointment')}</Text>
+                                <Text style={styles.datePickerSubtitle}>
+                                    {VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name}
+                                </Text>
+                                <DateTimePicker
+                                    value={calendarAppointmentDate}
+                                    mode="date"
+                                    display="spinner"
+                                    onChange={(_, d) => d && setCalendarAppointmentDate(d)}
+                                    minimumDate={new Date()}
+                                    locale="he-IL"
+                                />
+                                <View style={styles.datePickerButtons}>
+                                    <TouchableOpacity style={styles.datePickerCancel} onPress={() => setCalendarVaccineKey(null)}>
+                                        <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.datePickerConfirm} onPress={() => {
+                                        const name = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === calendarVaccineKey)?.name || calendarVaccineKey;
+                                        addVaccineToCalendar(name);
+                                    }}>
+                                        <Text style={styles.datePickerConfirmText}>{t('health.addToCalendar')}</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
-                    </View>
-                </Modal>
+                    </Modal>
+                )
             )}
 
             {/* Add Custom Vaccine Button */}

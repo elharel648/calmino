@@ -241,10 +241,12 @@ const styles = StyleSheet.create({
     height: BAR_H - 8,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
 
   // ── Bottom safe area tint ─────────────────────────────────────
