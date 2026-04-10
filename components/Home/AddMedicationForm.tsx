@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
     disclaimerRow: {
         flexDirection: 'row-reverse' as const,
         alignItems: 'center' as const,
-        gap: 5,
+        gap: 8,
         marginTop: 8,
         paddingTop: 8,
         borderTopWidth: 1,

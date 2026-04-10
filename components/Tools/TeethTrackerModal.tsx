@@ -385,7 +385,7 @@ export default function TeethTrackerModal({
                     shapeStyle,
                     isErupted
                         ? { backgroundColor: tooth.color, borderColor: tooth.color, borderWidth: 2 }
-                        : { backgroundColor: 'transparent', borderColor: isDarkMode ? '#475569' : '#CBD5E1', borderWidth: 1.5 }
+                        : { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: isDarkMode ? '#475569' : '#E2E8F0', borderWidth: 1.5 }
                 ]}>
                     {isErupted && <Check size={14} color="#fff" strokeWidth={3} />}
                 </View>

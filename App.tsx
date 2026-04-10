@@ -32,6 +32,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal, useColorScheme } from 'react-native';
 import PremiumLoader from './components/Common/PremiumLoader';
 import * as SplashScreen from 'expo-splash-screen';
+import AnimatedSplashScreen from './components/Premium/AnimatedSplashScreen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -574,6 +575,7 @@ export default function App() {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
+  const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
   const colorScheme = useColorScheme();
@@ -787,20 +789,19 @@ export default function App() {
 
   // Hide splash when app is FULLY ready (auth + children loaded)
   const onLayoutRootView = useCallback(async () => {
-    if (shouldHideSplash) {
-      await SplashScreen.hideAsync();
-    }
+    // Native splash hiding is now explicitly handled by the handoff effect below
   }, [shouldHideSplash]);
 
   // Crucial fix: onLayout only fires once on mount. If offline queries timeout AFTER mount, 
   // onLayout is never re-triggered. This ensures the splash lifts the exact ms state is ready.
   useEffect(() => {
-    if (shouldHideSplash) {
+    // We only hide the system splash when our custom animated splash is already mounted
+    if (shouldHideSplash && showAnimatedSplash) {
       setTimeout(() => {
         SplashScreen.hideAsync().catch(() => {});
       }, 50);
     }
-  }, [shouldHideSplash]);
+  }, [shouldHideSplash, showAnimatedSplash]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -1023,7 +1024,6 @@ export default function App() {
                 <GuestProvider initialIsGuest={isGuestMode} onExitGuest={() => setIsGuestMode(false)}>
                 <ActiveChildProvider onReady={() => {
                   setChildrenReady(true);
-                  SplashScreen.hideAsync();
                 }}>
                   <QuickActionsProvider>
                     <SleepTimerProvider>
@@ -1079,6 +1079,12 @@ export default function App() {
                   </QuickActionsProvider>
                 </ActiveChildProvider>
                 <GuestLoginPrompt onLoginPress={() => setIsGuestMode(false)} />
+                {showAnimatedSplash && (
+                  <AnimatedSplashScreen 
+                    isReadyToStart={shouldHideSplash}
+                    onAnimationComplete={() => setShowAnimatedSplash(false)}
+                  />
+                )}
                 </GuestProvider>
               </ToastProvider>
             </ThemeProvider>

@@ -1534,7 +1534,11 @@
     "notes": "Notes",
     "addNotes": "Ajouter des notes...",
     "save": "Enregistrer",
-    "symptomPlaceholder": "Symptômes, traitement..."
+    "symptomPlaceholder": "Symptômes, traitement...",
+    "vaccinesCompleted": "vaccins complétés",
+    "nextVaccine": "Prochain vaccin",
+    "removeVaccineTitle": "Retirer la marque de vaccin",
+    "removeVaccineMessage": "Êtes-vous sûr de vouloir retirer la marque de ce vaccin ?"
   },
   "misc": {
     "uploadPhoto": "Télécharger une Photo",

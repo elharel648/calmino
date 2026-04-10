@@ -849,8 +849,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                 {/* Events for this date — limited to EVENTS_PER_DAY unless expanded */}
                 {visibleDayEvents.map((event, index) => {
-                  const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+                  let config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
                   const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
+                  // Override color for health-related custom events
+                  if (event.type === 'custom' && event.subType === 'vaccine') {
+                    config = { ...config, color: theme.actionColors.tools.accentColor, lightColor: theme.actionColors.tools.lightColor };
+                  }
                   const details = getEventDetails(event);
                   let subtext = getEventSubtext(event);
 
@@ -985,8 +989,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         ) : (
           /* Regular Flat Rendering (Fallback or Today View) */
           visibleEvents.map((event, index) => {
-            const config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+            let config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
             const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
+            // Override color for health-related custom events
+            if (event.type === 'custom' && event.subType === 'vaccine') {
+              config = { ...config, color: theme.actionColors.tools.accentColor, lightColor: theme.actionColors.tools.lightColor };
+            }
             const isLast = index === visibleEvents.length - 1;
             const isFirst = index === 0;
             const details = getEventDetails(event);

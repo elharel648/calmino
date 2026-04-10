@@ -95,7 +95,7 @@ export const AnimatedTimelineIcon = ({ focused, color, size }: any) => {
 
     return (
         <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
-            <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" overflow="visible">
+            <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ overflow: 'visible' }}>
                 {/* Top Dot */}
                 <AnimatedCircle cx="6" cy="6" r="4" fill={color} animatedProps={dotProps} />
                 {/* Bottom Pill Dot */}

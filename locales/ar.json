@@ -1534,7 +1534,11 @@
     "notes": "ملاحظات",
     "addNotes": "إضافة ملاحظات...",
     "save": "حفظ",
-    "symptomPlaceholder": "أعراض، علاج..."
+    "symptomPlaceholder": "أعراض، علاج...",
+    "vaccinesCompleted": "تطعيمات مكتملة",
+    "nextVaccine": "التطعيم التالي",
+    "removeVaccineTitle": "إلغاء علامة التطعيم",
+    "removeVaccineMessage": "هل أنت متأكد أنك تريد إلغاء علامة هذا التطعيم؟"
   },
   "misc": {
     "uploadPhoto": "رفع صورة",
