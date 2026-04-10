@@ -438,7 +438,7 @@ export default function MilestonesModal({
                                                 onChangeText={setTitle}
                                                 placeholder={t('milestones.titlePlaceholder')}
                                                 placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'}
-                                                textAlign="center"
+                                                textAlign="right"
                                             />
                                         </View>
                                         <Text style={[styles.labelMinimal, { color: isDarkMode ? theme.textPrimary : '#1F2937' }]}>{t('milestones.titleLabel')}</Text>
@@ -501,9 +501,14 @@ export default function MilestonesModal({
                                         style={[
                                             styles.saveBtnMinimal,
                                             {
-                                                borderColor: theme.actionColors.milestones.color,
-                                                backgroundColor: isDarkMode ? `${theme.actionColors.milestones.color}1A` : `${theme.actionColors.milestones.color}0D`,
-                                                opacity: !title.trim() || loading ? 0.5 : 1
+                                                borderColor: 'transparent',
+                                                backgroundColor: theme.actionColors.milestones.color,
+                                                opacity: !title.trim() || loading ? 0.5 : 1,
+                                                shadowColor: theme.actionColors.milestones.color,
+                                                shadowOffset: { width: 0, height: 4 },
+                                                shadowOpacity: 0.35,
+                                                shadowRadius: 8,
+                                                elevation: 4,
                                             }
                                         ]}
                                         onPress={handleSave}
@@ -511,11 +516,11 @@ export default function MilestonesModal({
                                         activeOpacity={0.7}
                                     >
                                         {loading ? (
-                                            <InlineLoader color={ACCENT}  />
+                                            <InlineLoader color="#FFFFFF"  />
                                         ) : (
                                             <>
-                                                <Award size={20} color={theme.actionColors.milestones.color} strokeWidth={2.5} />
-                                                <Text style={styles.saveBtnTextMinimal}>{t('milestones.saveMilestone')}</Text>
+                                                <Award size={20} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
+                                                <Text style={[styles.saveBtnTextMinimal, { color: '#FFFFFF' }]}>{t('milestones.saveMilestone')}</Text>
                                             </>
                                         )}
                                     </TouchableOpacity>
@@ -1009,7 +1014,7 @@ const styles = StyleSheet.create({
     dateInputContent: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         gap: 8,
         height: 52,
         paddingHorizontal: 18,

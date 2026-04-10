@@ -29,7 +29,7 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { format } from 'date-fns';
+import { format, differenceInMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
@@ -38,6 +38,7 @@ import { logger } from '../../utils/logger';
 import ScrollFadeWrapper from '../Common/ScrollFadeWrapper';
 import { Timestamp } from 'firebase/firestore';
 import { useLanguage } from '../../context/LanguageContext';
+import { calculatePercentile, getPercentileStatus } from '../../utils/whoGrowthStandards';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -71,6 +72,43 @@ export default function GrowthModal({
     const [pendingDate, setPendingDate] = useState<Date | null>(null);
 
     const isEditMode = !!editMeasurement;
+
+    // Helper for live percentiles
+    const ageMonths = useMemo(() => {
+        if (!baby?.birthDate) return -1;
+        const birthDate = baby.birthDate.toDate ? baby.birthDate.toDate() : new Date(baby.birthDate);
+        return differenceInMonths(measurementDate, birthDate);
+    }, [baby?.birthDate, measurementDate]);
+
+    const renderInputBadge = (type: 'weight' | 'length' | 'head', valueStr: string, prevValue?: string) => {
+        const val = parseFloat(valueStr);
+        if (valueStr.trim() !== '' && !isNaN(val) && baby?.gender && ageMonths >= 0 && ageMonths <= 24) {
+            const genderParam = baby.gender === 'girl' ? 'girl' : 'boy';
+            const pct = calculatePercentile(val, ageMonths, type, genderParam);
+            const status = getPercentileStatus(pct);
+            return (
+                <Animated.View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginTop: 8, paddingHorizontal: 4 }}>
+                     <View style={{ backgroundColor: status.bgColor, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+                         <TrendingUp size={12} color={status.color} strokeWidth={2.5} />
+                         <Text style={{ fontSize: 11, fontWeight: '700', color: status.color }}>
+                            אחוזון {Math.round(pct)} (לפי גיל {ageMonths} חודשים)
+                         </Text>
+                     </View>
+                </Animated.View>
+            );
+        }
+
+        if (!valueStr.trim() && prevValue) {
+             return (
+                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginTop: 8, paddingHorizontal: 4, opacity: 0.6 }}>
+                     <Text style={{ fontSize: 11, color: theme.textSecondary }}>
+                         מדידה קודמת: {prevValue}
+                     </Text>
+                 </View>
+             );
+        }
+        return null;
+    };
 
     // Animations
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
@@ -534,22 +572,27 @@ export default function GrowthModal({
                                         {
                                             backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
                                             borderWidth: 1.5,
-                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
+                                            borderColor: weight.trim() ? theme.actionColors.growth.color : (isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA'),
+                                            flexDirection: 'column',
+                                            alignItems: 'stretch',
                                         }
                                     ]}>
-                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('growth.weight')}</Text>
-                                        <View style={styles.inputValueRow}>
-                                            <TextInput
-                                                style={[styles.input, { color: theme.textPrimary }]}
-                                                value={weight}
-                                                onChangeText={setWeight}
-                                                placeholder={baby?.stats?.weight || "0.0"}
-                                                placeholderTextColor={theme.textTertiary}
-                                                keyboardType="decimal-pad"
-                                                textAlign="left"
-                                            />
-                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.kg')}</Text>
+                                        <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.inputLabel, { color: weight.trim() ? theme.actionColors.growth.color : theme.textSecondary }]}>{t('growth.weight')}</Text>
+                                            <View style={styles.inputValueRow}>
+                                                <TextInput
+                                                    style={[styles.input, { color: theme.textPrimary }]}
+                                                    value={weight}
+                                                    onChangeText={setWeight}
+                                                    placeholder={baby?.stats?.weight || "0.0"}
+                                                    placeholderTextColor={theme.textTertiary}
+                                                    keyboardType="decimal-pad"
+                                                    textAlign="left"
+                                                />
+                                                <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.kg')}</Text>
+                                            </View>
                                         </View>
+                                        {renderInputBadge('weight', weight, baby?.stats?.weight ? `${baby.stats.weight} ק״ג` : undefined)}
                                     </View>
 
                                     {/* Height */}
@@ -558,22 +601,27 @@ export default function GrowthModal({
                                         {
                                             backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
                                             borderWidth: 1.5,
-                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
+                                            borderColor: height.trim() ? theme.actionColors.growth.color : (isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA'),
+                                            flexDirection: 'column',
+                                            alignItems: 'stretch',
                                         }
                                     ]}>
-                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('growth.height')}</Text>
-                                        <View style={styles.inputValueRow}>
-                                            <TextInput
-                                                style={[styles.input, { color: theme.textPrimary }]}
-                                                value={height}
-                                                onChangeText={setHeight}
-                                                placeholder={baby?.stats?.height || "0"}
-                                                placeholderTextColor={theme.textTertiary}
-                                                keyboardType="decimal-pad"
-                                                textAlign="left"
-                                            />
-                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
+                                        <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.inputLabel, { color: height.trim() ? theme.actionColors.growth.color : theme.textSecondary }]}>{t('growth.height')}</Text>
+                                            <View style={styles.inputValueRow}>
+                                                <TextInput
+                                                    style={[styles.input, { color: theme.textPrimary }]}
+                                                    value={height}
+                                                    onChangeText={setHeight}
+                                                    placeholder={baby?.stats?.height || "0"}
+                                                    placeholderTextColor={theme.textTertiary}
+                                                    keyboardType="decimal-pad"
+                                                    textAlign="left"
+                                                />
+                                                <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
+                                            </View>
                                         </View>
+                                        {renderInputBadge('length', height, baby?.stats?.height ? `${baby.stats.height} ס״מ` : undefined)}
                                     </View>
 
                                     {/* Head Circumference */}
@@ -582,22 +630,27 @@ export default function GrowthModal({
                                         {
                                             backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
                                             borderWidth: 1.5,
-                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA',
+                                            borderColor: headCircumference.trim() ? theme.actionColors.growth.color : (isDarkMode ? 'rgba(255,255,255,0.15)' : '#E5E5EA'),
+                                            flexDirection: 'column',
+                                            alignItems: 'stretch',
                                         }
                                     ]}>
-                                        <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>{t('growth.headCircumference')}</Text>
-                                        <View style={styles.inputValueRow}>
-                                            <TextInput
-                                                style={[styles.input, { color: theme.textPrimary }]}
-                                                value={headCircumference}
-                                                onChangeText={setHeadCircumference}
-                                                placeholder={baby?.stats?.headCircumference || "0"}
-                                                placeholderTextColor={theme.textTertiary}
-                                                keyboardType="decimal-pad"
-                                                textAlign="left"
-                                            />
-                                            <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
+                                        <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.inputLabel, { color: headCircumference.trim() ? theme.actionColors.growth.color : theme.textSecondary }]}>{t('growth.headCircumference')}</Text>
+                                            <View style={styles.inputValueRow}>
+                                                <TextInput
+                                                    style={[styles.input, { color: theme.textPrimary }]}
+                                                    value={headCircumference}
+                                                    onChangeText={setHeadCircumference}
+                                                    placeholder={baby?.stats?.headCircumference || "0"}
+                                                    placeholderTextColor={theme.textTertiary}
+                                                    keyboardType="decimal-pad"
+                                                    textAlign="left"
+                                                />
+                                                <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
+                                            </View>
                                         </View>
+                                        {renderInputBadge('head', headCircumference, baby?.stats?.headCircumference ? `${baby.stats.headCircumference} ס״מ` : undefined)}
                                     </View>
                                 </View>
 

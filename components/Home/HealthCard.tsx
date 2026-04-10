@@ -1,8 +1,9 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image,  PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Alert, TextInput, Animated, Dimensions, Image, PanResponder, TouchableWithoutFeedback, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
 import InlineLoader from '../../components/Common/InlineLoader';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell, CalendarPlus, Info, Award, MapPin } from 'lucide-react-native';
+import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, ChevronRight, Plus, Check, Trash2, Camera, FileText, Image as ImageIcon, Minus, ClipboardList, HeartPulse, Clock, Bell, CalendarPlus, Info, Award, MapPin, ShieldAlert, Download, Milk, Egg, Bean, Nut, Wheat, Fish, CircleDot, Wind, AlertTriangle, type LucideIcon } from 'lucide-react-native';
+import { LineChart } from 'react-native-chart-kit';
 import * as ExpoCalendar from 'expo-calendar';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,14 +15,15 @@ import { auth, db } from '../../services/firebaseConfig';
 import { addMedication, getMedications, deleteMedication, logMedicationTaken } from '../../services/medicationService';
 import AddMedicationForm from './AddMedicationForm';
 import TipatHalavLocator from './TipatHalavLocator';
+import { exportHealthPDF } from '../../services/healthPdfService';
 import { Medication } from '../../types/home';
 import { saveEventToFirebase } from '../../services/firebaseService';
-import { doc, getDoc, updateDoc, arrayUnion, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, arrayUnion, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { VACCINE_SCHEDULE, CustomVaccine } from '../../types/profile';
 import { useActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 import { logger } from '../../utils/logger';
-import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as ReAnimated } from 'react-native-reanimated';
+import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, withSpring, interpolate, default as ReAnimated } from 'react-native-reanimated';
 import SwipeableRow from '../SwipeableRow';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLanguage } from '../../context/LanguageContext';
@@ -34,11 +36,33 @@ interface HealthCardProps {
     onClose?: () => void;
 }
 
-type HealthScreen = 'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav';
+type HealthScreen = 'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies';
+
+interface AllergyEntry {
+    id: string;
+    name: string;
+    severity: 'mild' | 'moderate' | 'severe';
+    diagnosisDate: string;
+    note?: string;
+}
+
+const PRESET_ALLERGENS: { key: string; name: string; icon: LucideIcon }[] = [
+    { key: 'milk', name: 'חלב', icon: Milk },
+    { key: 'eggs', name: 'ביצים', icon: Egg },
+    { key: 'peanuts', name: 'בוטנים', icon: Bean },
+    { key: 'treeNuts', name: 'אגוזים', icon: Nut },
+    { key: 'soy', name: 'סויה', icon: Bean },
+    { key: 'wheat', name: 'חיטה/גלוטן', icon: Wheat },
+    { key: 'fish', name: 'דגים', icon: Fish },
+    { key: 'sesame', name: 'שומשום', icon: CircleDot },
+    { key: 'medication', name: 'תרופות', icon: Pill },
+    { key: 'dust', name: 'אבק', icon: Wind },
+];
 
 interface HealthOption {
     key: HealthScreen;
     label: string;
+    description: string;
     icon: any;
     iconColor: string;
 }
@@ -57,6 +81,172 @@ const COMMON_MEDICATIONS = [
 
 // Health Options will be defined inside the component to use ThemeContext
 
+// Animated Vaccine Row with completion animation (dotted burst + strikethrough + check bounce)
+const AnimatedVaccineRow = ({ vaccine, isDone, justCompleted, theme, isDarkMode, vaccines, onPress, onLongPress, onUnmark, onCalendar, onInfo, styles: s }: {
+    vaccine: any; isDone: boolean; justCompleted: boolean; theme: any; isDarkMode: boolean; vaccines: any;
+    onPress: () => void; onLongPress: () => void; onUnmark: () => void; onCalendar: () => void; onInfo: () => void; styles: any;
+}) => {
+    // Animation values
+    const checkScale = useRef(new Animated.Value(justCompleted ? 0 : 1)).current;
+    const checkOpacity = useRef(new Animated.Value(justCompleted ? 0 : 1)).current;
+    const burstScale = useRef(new Animated.Value(0.5)).current;
+    const burstOpacity = useRef(new Animated.Value(0)).current;
+    const strikeWidth = useRef(new Animated.Value(justCompleted ? 0 : (isDone ? 1 : 0))).current;
+    const textOpacity = useRef(new Animated.Value(1)).current;
+    const rowBg = useRef(new Animated.Value(justCompleted ? 0 : (isDone ? 1 : 0))).current;
+    const hasAnimated = useRef(false);
+
+    useEffect(() => {
+        if (justCompleted && !hasAnimated.current) {
+            hasAnimated.current = true;
+
+            Animated.sequence([
+                // Phase 1: Row background gently transitions + checkbox fades in
+                Animated.parallel([
+                    Animated.timing(rowBg, { toValue: 1, duration: 400, useNativeDriver: false }),
+                    Animated.timing(checkOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+                ]),
+                // Phase 2: Premium reveal - burst ring expands, check bounces, text strikes
+                Animated.parallel([
+                    // Dotted burst ring - elegant scale up and fade out
+                    Animated.sequence([
+                        Animated.timing(burstOpacity, { toValue: 0.8, duration: 150, useNativeDriver: true }),
+                        Animated.parallel([
+                            Animated.spring(burstScale, { toValue: 2.0, friction: 8, tension: 80, useNativeDriver: true }),
+                            Animated.timing(burstOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+                        ]),
+                    ]),
+                    // Checkmark bounces in with satisfying overshoot
+                    Animated.sequence([
+                        Animated.delay(100),
+                        Animated.spring(checkScale, { toValue: 1.25, friction: 4, tension: 180, useNativeDriver: true }),
+                        Animated.spring(checkScale, { toValue: 1, friction: 6, tension: 250, useNativeDriver: true }),
+                    ]),
+                    // Strikethrough grows across text - slower for premium feel
+                    Animated.sequence([
+                        Animated.delay(200),
+                        Animated.timing(strikeWidth, { toValue: 1, duration: 700, useNativeDriver: false }),
+                    ]),
+                    // Text fades to muted - graceful
+                    Animated.sequence([
+                        Animated.delay(150),
+                        Animated.timing(textOpacity, { toValue: 0.5, duration: 600, useNativeDriver: true }),
+                    ]),
+                ]),
+            ]).start();
+        }
+    }, [justCompleted]);
+
+    const vaccineData = vaccines[vaccine.key];
+    const dateVal = isDone && typeof vaccineData === 'object' ? (vaccineData as any)?.date : null;
+    const dateStr = dateVal
+        ? (dateVal?.seconds
+            ? new Date(dateVal.seconds * 1000).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })
+            : new Date(dateVal).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }))
+        : '';
+
+    const animatedBg = rowBg.interpolate({
+        inputRange: [0, 1],
+        outputRange: [isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF', isDarkMode ? 'rgba(107, 154, 196, 0.1)' : 'rgba(107, 154, 196, 0.08)'],
+    });
+
+    const healthColor = '#6B9AC4'; // Steel blue matching reference design
+
+    return (
+        <Animated.View style={[
+            s.vaccineRow,
+            isDone && !justCompleted && s.vaccineRowDone,
+            justCompleted && {
+                backgroundColor: animatedBg,
+                borderWidth: 1,
+                borderColor: healthColor,
+            },
+            !isDone && !justCompleted && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF' },
+        ]}>
+            {isDone ? (
+                <TouchableOpacity onPress={onUnmark} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Trash2 size={16} color="#EF4444" />
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity onPress={onCalendar} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <CalendarPlus size={16} color={healthColor} />
+                </TouchableOpacity>
+            )}
+            <TouchableOpacity
+                style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1, gap: 10 }}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                delayLongPress={400}
+                activeOpacity={0.7}
+            >
+                {/* Checkbox with burst ring */}
+                <View style={{ width: 34, height: 34, alignItems: 'center', justifyContent: 'center' }}>
+                    {/* Dotted burst ring (behind checkbox) */}
+                    {justCompleted && (
+                        <Animated.View style={{
+                            position: 'absolute',
+                            width: 48, height: 48, borderRadius: 24,
+                            borderWidth: 2,
+                            borderColor: healthColor,
+                            borderStyle: 'dashed',
+                            opacity: burstOpacity,
+                            transform: [{ scale: burstScale }],
+                        }} />
+                    )}
+                    {/* Actual checkbox */}
+                    <Animated.View style={[
+                        s.checkbox,
+                        isDone && s.checkboxChecked,
+                        justCompleted && {
+                            transform: [{ scale: checkScale }],
+                            opacity: checkOpacity,
+                        },
+                    ]}>
+                        {isDone && <Check size={16} color="#fff" strokeWidth={3} />}
+                    </Animated.View>
+                </View>
+
+                {/* Text content */}
+                <Animated.View style={{ flex: 1, alignItems: 'flex-end', opacity: justCompleted ? textOpacity : 1 }}>
+                    <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+                        <View style={{ position: 'relative' }}>
+                            <Text style={[
+                                s.vaccineName,
+                                isDone && !justCompleted && s.vaccineNameDone,
+                                isDone && justCompleted && { color: theme.textSecondary, fontWeight: '500' },
+                            ]}>
+                                {vaccine.name}
+                            </Text>
+                            {/* Animated strikethrough line */}
+                            {(justCompleted || (isDone && !justCompleted)) && justCompleted && (
+                                <Animated.View style={{
+                                    position: 'absolute', top: '50%', right: 0,
+                                    height: 1.5,
+                                    backgroundColor: theme.textSecondary,
+                                    width: strikeWidth.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: ['0%', '100%'],
+                                    }),
+                                }} />
+                            )}
+                        </View>
+                        {vaccine.description && !isDone && (
+                            <TouchableOpacity onPress={onInfo} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                                <Info size={14} color={theme.textTertiary} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    {isDone && dateStr ? (
+                        <Text style={{ fontSize: 11, color: healthColor, marginTop: 2, fontWeight: '500' }}>
+                            בוצע: {dateStr}
+                        </Text>
+                    ) : null}
+                </Animated.View>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+};
+
 const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
     const { theme, isDarkMode } = useTheme();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
@@ -64,13 +254,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
     const HEALTH_OPTIONS: HealthOption[] = useMemo(() => [
-        { key: 'doctor', label: 'health.doctorVisit', icon: Stethoscope, iconColor: theme.actionColors.health.color },
-        { key: 'vaccines', label: 'health.vaccines', icon: Syringe, iconColor: theme.actionColors.tools.color },
-        { key: 'illness', label: 'health.illnesses', icon: Heart, iconColor: theme.actionColors.sos.color },
-        { key: 'temperature', label: 'health.temperature', icon: Thermometer, iconColor: theme.actionColors.food.color },
-        { key: 'medications', label: 'health.medications', icon: Pill, iconColor: theme.actionColors.supplements.color },
-        { key: 'tipat_halav', label: 'health.tipatHalav', icon: MapPin, iconColor: theme.actionColors.growth.color },
-        { key: 'history', label: 'health.history', icon: ClipboardList, iconColor: theme.actionColors.custom.color },
+        { key: 'doctor', label: 'health.doctorVisit', description: 'רישום ומעקב ביקורי רופא', icon: Stethoscope, iconColor: theme.actionColors.health.color },
+        { key: 'vaccines', label: 'health.vaccines', description: 'מעקב חיסוני שגרה', icon: Syringe, iconColor: theme.actionColors.tools.color },
+        { key: 'illness', label: 'health.illnesses', description: 'תיעוד מחלות ותסמינים', icon: Heart, iconColor: theme.actionColors.sos.color },
+        { key: 'temperature', label: 'health.temperature', description: 'מדידת חום ומעקב מגמות', icon: Thermometer, iconColor: theme.actionColors.food.color },
+        { key: 'medications', label: 'health.medications', description: 'ניהול תרופות ותזכורות', icon: Pill, iconColor: theme.actionColors.supplements.color },
+        { key: 'tipat_halav', label: 'health.tipatHalav', description: 'מציאת תחנה קרובה', icon: MapPin, iconColor: theme.actionColors.growth.color },
+        { key: 'allergies' as HealthScreen, label: 'health.allergies', description: 'רישום ומעקב אלרגיות', icon: ShieldAlert, iconColor: theme.actionColors.sos.color },
+        { key: 'history', label: 'health.history', description: 'צפייה בכל הרשומות', icon: ClipboardList, iconColor: theme.actionColors.custom.color },
     ], [theme]);
 
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
@@ -84,6 +275,56 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const healthIconPulse2 = useSharedValue(0);
     const healthIconBounce = useSharedValue(1);
     const healthIconRotate = useSharedValue(0);
+
+    // Download button animation (matching Reports screen)
+    const [isDownloadPressed, setIsDownloadPressed] = useState(false);
+    const downloadScale = useSharedValue(1);
+    const downloadRotation = useSharedValue(0);
+
+    const handleHealthDownload = async () => {
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setIsDownloadPressed(true);
+
+        downloadScale.value = withSequence(
+            withSpring(0.85, { damping: 14, stiffness: 280 }),
+            withSpring(1.12, { damping: 10, stiffness: 240 }),
+            withSpring(1, { damping: 14, stiffness: 240 })
+        );
+        downloadRotation.value = withSequence(
+            withSpring(15, { damping: 14, stiffness: 280 }),
+            withSpring(-8, { damping: 10, stiffness: 240 }),
+            withSpring(0, { damping: 14, stiffness: 240 })
+        );
+
+        setTimeout(async () => {
+            const childId = babyId || activeChild?.childId;
+            if (!childId) {
+                Alert.alert(t('misc.saveError'), t('health.noBabyProfile'));
+                setIsDownloadPressed(false);
+                return;
+            }
+            const success = await exportHealthPDF({
+                childId,
+                childName: activeChild?.childName || t('profile.childFallback'),
+                birthDate: undefined,
+            });
+            if (!success) {
+                Alert.alert(t('misc.saveError'), t('reports.share.error'));
+            }
+            setTimeout(() => {
+                setIsDownloadPressed(false);
+                downloadRotation.value = withSpring(0, { damping: 14, stiffness: 240 });
+                downloadScale.value = withSpring(1, { damping: 14, stiffness: 240 });
+            }, 800);
+        }, 250);
+    };
+
+    const animatedDownloadStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: downloadScale.value },
+            { rotate: `${downloadRotation.value}deg` }
+        ] as any
+    }));
 
     const healthIconPulseStyle = useAnimatedStyle(() => ({
         opacity: interpolate(healthIconPulse.value, [0, 0.5, 1], [0.5, 0.2, 0]),
@@ -167,6 +408,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     // Temperature state with slider
     const [temperature, setTemperature] = useState(37.0);
     const [tempNote, setTempNote] = useState('');
+    const [savingTemp, setSavingTemp] = useState(false);
 
     // Illness state
     const [selectedIllness, setSelectedIllness] = useState<string | null>(null);
@@ -177,6 +419,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [showIllnessStartPicker, setShowIllnessStartPicker] = useState(false);
     const [showIllnessEndPicker, setShowIllnessEndPicker] = useState(false);
     const [illnessOngoing, setIllnessOngoing] = useState(true);
+    const [savingIllness, setSavingIllness] = useState(false);
 
     // Medication state (new form-based system)
     const [savedMedications, setSavedMedications] = useState<Medication[]>([]);
@@ -192,10 +435,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     // Doctor visit state with real uploads
     const [doctorReason, setDoctorReason] = useState('');
     const [doctorNote, setDoctorNote] = useState('');
+    const [doctorName, setDoctorName] = useState('');
+    const [doctorVisitDate, setDoctorVisitDate] = useState(new Date());
+    const [showDoctorDatePicker, setShowDoctorDatePicker] = useState(false);
     const [doctorPhoto, setDoctorPhoto] = useState<string | null>(null);
     const [doctorDocument, setDoctorDocument] = useState<string | null>(null);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [savingDoctor, setSavingDoctor] = useState(false);
 
     // History state
     const [healthLog, setHealthLog] = useState<any[]>([]);
@@ -203,6 +450,20 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const [historyFilter, setHistoryFilter] = useState<'all' | 'temperature' | 'doctor' | 'illness' | 'medication' | 'vaccine'>('all');
     const [selectedVaccineInfo, setSelectedVaccineInfo] = useState<{ name: string; description: string } | null>(null);
     const [unmarkVaccineKey, setUnmarkVaccineKey] = useState<string | null>(null);
+
+    // Allergy state
+    const [allergies, setAllergies] = useState<AllergyEntry[]>([]);
+    const [loadingAllergies, setLoadingAllergies] = useState(false);
+    const [showAllergyForm, setShowAllergyForm] = useState(false);
+    const [selectedAllergen, setSelectedAllergen] = useState<string | null>(null);
+    const [customAllergenName, setCustomAllergenName] = useState('');
+    const [allergySeverity, setAllergySeverity] = useState<'mild' | 'moderate' | 'severe'>('mild');
+    const [allergyNote, setAllergyNote] = useState('');
+    const [savingAllergy, setSavingAllergy] = useState(false);
+
+    // Vaccine completion animation tracking
+    const [justCompletedKeys, setJustCompletedKeys] = useState<Set<string>>(new Set());
+
     // Save success state
     const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -210,7 +471,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         if (isModalOpen && currentScreen === 'vaccines') {
             loadVaccines();
         }
-        if (isModalOpen && currentScreen === 'history') {
+        if (isModalOpen && (currentScreen === 'history' || currentScreen === 'temperature')) {
             loadHealthLog();
         }
     }, [isModalOpen, currentScreen]);
@@ -375,6 +636,16 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     const confirmVaccineMark = () => {
         if (pendingVaccineKey) {
             toggleVaccine(pendingVaccineKey, vaccineMarkDate);
+            // Trigger completion animation
+            setJustCompletedKeys(prev => new Set(prev).add(pendingVaccineKey));
+            // Clear after animation finishes
+            setTimeout(() => {
+                setJustCompletedKeys(prev => {
+                    const next = new Set(prev);
+                    next.delete(pendingVaccineKey);
+                    return next;
+                });
+            }, 2000);
         }
         setPendingVaccineKey(null);
     };
@@ -519,6 +790,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         setMedNote('');
         setDoctorReason('');
         setDoctorNote('');
+        setDoctorName('');
+        setDoctorVisitDate(new Date());
+        setShowDoctorDatePicker(false);
         setDoctorPhoto(null);
         setDoctorDocument(null);
     }, []);
@@ -617,6 +891,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
     const goBack = () => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (currentScreen === 'allergies' && showAllergyForm) {
+            setShowAllergyForm(false);
+            return;
+        }
         setCurrentScreen('menu');
     };
 
@@ -701,6 +979,26 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             <View style={styles.optionsList}>
                 {HEALTH_OPTIONS.map((option, index) => {
                     const Icon = option.icon;
+
+                    // Compute badge for each item
+                    let badge: string | null = null;
+                    if (option.key === 'vaccines') {
+                        const total = VACCINE_SCHEDULE.reduce((acc, g) => acc + g.vaccines.length, 0);
+                        const done = VACCINE_SCHEDULE.reduce((acc, g) => {
+                            return acc + g.vaccines.filter(v => {
+                                const status = vaccines[v.key];
+                                return status && (typeof status === 'object' ? (status as any).isDone : !!status);
+                            }).length;
+                        }, 0);
+                        if (total > 0) badge = `${done}/${total}`;
+                    } else if (option.key === 'allergies') {
+                        if (allergies.length > 0) badge = `${allergies.length}`;
+                    } else if (option.key === 'medications') {
+                        if (savedMedications.length > 0) badge = `${savedMedications.length}`;
+                    } else if (option.key === 'history') {
+                        if (healthLog.length > 0) badge = `${healthLog.length}`;
+                    }
+
                     return (
                         <Animated.View key={option.key} style={[{ transform: [{ scale: scaleAnims[index] }] }]}>
                             <TouchableOpacity
@@ -713,7 +1011,25 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 <View style={[styles.optionIconCircle, { backgroundColor: option.iconColor, borderColor: 'transparent' }]}>
                                     <Icon size={22} color="#FFFFFF" strokeWidth={1.2} />
                                 </View>
-                                <Text style={styles.optionLabel}>{t(option.label)}</Text>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.optionLabel}>{t(option.label)}</Text>
+                                    <Text style={styles.optionDescription}>{option.description}</Text>
+                                </View>
+                                {badge && (
+                                    <View style={{
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                                        borderRadius: 10,
+                                        paddingHorizontal: 10,
+                                        paddingVertical: 4,
+                                        marginLeft: 8,
+                                    }}>
+                                        <Text style={{
+                                            fontSize: 12,
+                                            fontWeight: '700',
+                                            color: option.iconColor,
+                                        }}>{badge}</Text>
+                                    </View>
+                                )}
                                 <ChevronLeft size={18} color="#9CA3AF" />
                             </TouchableOpacity>
                         </Animated.View>
@@ -773,8 +1089,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <TouchableWithoutFeedback>
                                 <View style={[styles.datePickerCard, { width: '85%', padding: 24, alignItems: 'flex-end' }]}>
                             <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 12, gap: 12 }}>
-                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.actionColors.health.lightColor, alignItems: 'center', justifyContent: 'center' }}>
-                                    <Info size={20} color={theme.actionColors.health.color} />
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(107, 154, 196, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Info size={20} color="#6B9AC4" />
                                 </View>
                                 <Text style={[styles.datePickerTitle, { flex: 1, textAlign: 'right', marginBottom: 0 }]}>{selectedVaccineInfo.name}</Text>
                             </View>
@@ -853,7 +1169,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}>
                         {doneVaccines}/{totalVaccines} {t('health.vaccinesCompleted') || 'חיסונים הושלמו'}
                     </Text>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: theme.actionColors.health.color }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#6B9AC4' }}>
                         {Math.round(progress * 100)}%
                     </Text>
                 </View>
@@ -861,7 +1177,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     <View style={{
                         height: 8,
                         width: `${Math.round(progress * 100)}%`,
-                        backgroundColor: theme.actionColors.health.color,
+                        backgroundColor: '#6B9AC4',
                         borderRadius: 4,
                     }} />
                 </View>
@@ -870,21 +1186,21 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             {/* Next Vaccine Highlight OR Celebration Card */}
             {progress >= 1 ? (
                 <View style={{
-                    backgroundColor: theme.actionColors.health.lightColor,
+                    backgroundColor: 'rgba(107, 154, 196, 0.1)',
                     borderRadius: 16,
                     padding: 16,
                     marginBottom: 20,
                     borderWidth: 1,
-                    borderColor: theme.actionColors.health.color,
+                    borderColor: 'rgba(107, 154, 196, 0.25)',
                     flexDirection: 'row-reverse',
                     alignItems: 'center',
                     gap: 12,
                 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.actionColors.health.color, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#6B9AC4', alignItems: 'center', justifyContent: 'center' }}>
                         <Award size={24} color="#FFFFFF" strokeWidth={2.5} />
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.actionColors.health.color, textAlign: 'right', marginBottom: 2 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#6B9AC4', textAlign: 'right', marginBottom: 2 }}>
                             כל הכבוד!
                         </Text>
                         <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: 'right' }}>
@@ -895,7 +1211,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             ) : nextVaccine && (
                 <TouchableOpacity
                     style={{
-                        backgroundColor: theme.actionColors.health.lightColor,
+                        backgroundColor: 'rgba(107, 154, 196, 0.1)',
                         borderRadius: 16,
                         padding: 16,
                         marginBottom: 20,
@@ -908,17 +1224,17 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     onPress={() => handleVaccinePress(nextVaccine!.key)}
                     activeOpacity={0.7}
                 >
-                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.actionColors.health.color, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#6B9AC4', alignItems: 'center', justifyContent: 'center' }}>
                         <Syringe size={20} color="#FFFFFF" strokeWidth={2} />
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 11, color: theme.actionColors.health.color, fontWeight: '600', marginBottom: 2 }}>
+                        <Text style={{ fontSize: 11, color: '#6B9AC4', fontWeight: '600', marginBottom: 2 }}>
                             {t('health.nextVaccine') || 'החיסון הבא'}
                         </Text>
                         <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
                             {nextVaccine.name}
                         </Text>
-                        <Text style={{ fontSize: 12, color: theme.actionColors.health.color, fontWeight: '500', marginTop: 2 }}>
+                        <Text style={{ fontSize: 12, color: '#6B9AC4', fontWeight: '500', marginTop: 2 }}>
                             {nextVaccine.ageTitle}
                         </Text>
                     </View>
@@ -1018,7 +1334,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     style={styles.addVaccineBtn}
                     onPress={() => setShowAddVaccine(true)}
                 >
-                    <Plus size={20} color={theme.actionColors.health.color} />
+                    <Plus size={20} color="#6B9AC4" />
                     <Text style={styles.addVaccineBtnText}>{t('health.addVaccine')}</Text>
                 </TouchableOpacity>
             ) : (
@@ -1061,12 +1377,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                 <Trash2 size={16} color="#EF4444" />
                             </TouchableOpacity>
                             <View style={[styles.checkbox, styles.checkboxChecked]}>
-                                <Check size={14} color="#fff" />
+                                <Check size={16} color="#fff" strokeWidth={3} />
                             </View>
                             <View style={{ flex: 1, alignItems: 'flex-end' }}>
                                 <Text style={[styles.vaccineName, { textAlign: 'right' }]}>{vaccine.name}</Text>
                                 {vaccine.date && (
-                                    <Text style={{ fontSize: 11, color: theme.actionColors.health.color, marginTop: 2, fontWeight: '500' }}>
+                                    <Text style={{ fontSize: 11, color: '#6B9AC4', marginTop: 2, fontWeight: '500' }}>
                                         נוסף: {new Date(vaccine.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </Text>
                                 )}
@@ -1085,63 +1401,23 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     {group.vaccines.map((vaccine, vIdx) => {
                         const isChecked = vaccines[vaccine.key] || false;
                         const isDone = isChecked && typeof isChecked === 'object' ? (isChecked as any).isDone : !!isChecked;
+                        const justCompleted = justCompletedKeys.has(vaccine.key);
                         return (
-                            <View key={vIdx} style={[styles.vaccineRow, isDone && styles.vaccineRowDone]}>
-                                {isDone ? (
-                                    <TouchableOpacity
-                                        onPress={() => confirmUnmarkVaccine(vaccine.key)}
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                    >
-                                        <Trash2 size={16} color="#EF4444" />
-                                    </TouchableOpacity>
-                                ) : (
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setCalendarAppointmentDate(new Date());
-                                            setCalendarVaccineKey(vaccine.key);
-                                        }}
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                    >
-                                        <CalendarPlus size={16} color={theme.actionColors.health.color} />
-                                    </TouchableOpacity>
-                                )}
-                                <TouchableOpacity
-                                    style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1, gap: 10 }}
-                                    onPress={() => handleVaccinePress(vaccine.key)}
-                                    onLongPress={() => showVaccineInfo(vaccine)}
-                                    delayLongPress={400}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={[styles.checkbox, isDone && styles.checkboxChecked]}>
-                                        {isDone && <Check size={14} color="#fff" />}
-                                    </View>
-                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
-                                            <Text style={[styles.vaccineName, isDone && styles.vaccineNameDone]}>
-                                                {vaccine.name}
-                                            </Text>
-                                            {vaccine.description && !isDone && (
-                                                <TouchableOpacity onPress={() => showVaccineInfo(vaccine)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                                                    <Info size={14} color={theme.textTertiary} />
-                                                </TouchableOpacity>
-                                            )}
-                                        </View>
-                                        {isDone && (() => {
-                                            const vaccineData = vaccines[vaccine.key];
-                                            const dateVal = typeof vaccineData === 'object' ? (vaccineData as any)?.date : null;
-                                            if (!dateVal) return null;
-                                            const dateStr = dateVal?.seconds
-                                                ? new Date(dateVal.seconds * 1000).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })
-                                                : new Date(dateVal).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
-                                            return (
-                                                <Text style={{ fontSize: 11, color: theme.actionColors.health.color, marginTop: 2, fontWeight: '500' }}>
-                                                    בוצע: {dateStr}
-                                                </Text>
-                                            );
-                                        })()}
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
+                            <AnimatedVaccineRow
+                                key={vIdx}
+                                vaccine={vaccine}
+                                isDone={isDone}
+                                justCompleted={justCompleted}
+                                theme={theme}
+                                isDarkMode={isDarkMode}
+                                vaccines={vaccines}
+                                onPress={() => handleVaccinePress(vaccine.key)}
+                                onLongPress={() => showVaccineInfo(vaccine)}
+                                onUnmark={() => confirmUnmarkVaccine(vaccine.key)}
+                                onCalendar={() => { setCalendarAppointmentDate(new Date()); setCalendarVaccineKey(vaccine.key); }}
+                                onInfo={() => showVaccineInfo(vaccine)}
+                                styles={styles}
+                            />
                         );
                     })}
                 </View>
@@ -1151,6 +1427,13 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     };
 
     // Temperature with Slider
+    const tempReadings = useMemo(() => {
+        return healthLog
+            .filter((e: any) => e.type === 'temperature' && e.value)
+            .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+            .slice(-10);
+    }, [healthLog]);
+
     const renderTemperature = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
             <View style={styles.screenHeader}>
@@ -1158,6 +1441,73 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     <Thermometer size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
             </View>
+
+            {/* Fever Trend Chart */}
+            {tempReadings.length >= 2 ? (
+                <View style={{ marginBottom: 20, backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 16 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right', marginBottom: 12 }}>
+                        {t('health.feverTrend')}
+                    </Text>
+                    <LineChart
+                        data={{
+                            labels: tempReadings.map((r: any) => {
+                                const d = new Date(r.timestamp);
+                                return `${d.getDate()}/${d.getMonth() + 1}`;
+                            }),
+                            datasets: [{
+                                data: tempReadings.map((r: any) => parseFloat(r.value)),
+                                color: (opacity = 1) => `rgba(245, 158, 11, ${opacity})`,
+                                strokeWidth: 2.5,
+                            }, {
+                                // Fever reference line at 38°C
+                                data: tempReadings.map(() => 38),
+                                color: (opacity = 1) => `rgba(239, 68, 68, ${opacity * 0.4})`,
+                                strokeWidth: 1,
+                                withDots: false,
+                            }],
+                        }}
+                        width={SCREEN_WIDTH - 80}
+                        height={160}
+                        chartConfig={{
+                            backgroundColor: 'transparent',
+                            backgroundGradientFrom: theme.cardSecondary,
+                            backgroundGradientTo: theme.cardSecondary,
+                            decimalPlaces: 1,
+                            color: (opacity = 1) => `rgba(245, 158, 11, ${opacity})`,
+                            labelColor: () => theme.textSecondary,
+                            style: { borderRadius: 16 },
+                            propsForDots: {
+                                r: '4',
+                                strokeWidth: '2',
+                                stroke: theme.actionColors.food.color,
+                            },
+                        }}
+                        bezier
+                        style={{ borderRadius: 12 }}
+                        withHorizontalLabels={true}
+                        withVerticalLabels={true}
+                        withInnerLines={false}
+                        fromZero={false}
+                    />
+                    <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 }}>
+                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+                            <View style={{ width: 10, height: 3, backgroundColor: theme.actionColors.food.color, borderRadius: 2 }} />
+                            <Text style={{ fontSize: 11, color: theme.textSecondary }}>{t('health.temperature')}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+                            <View style={{ width: 10, height: 2, backgroundColor: 'rgba(239, 68, 68, 0.5)', borderRadius: 2 }} />
+                            <Text style={{ fontSize: 11, color: theme.textSecondary }}>38°C ({t('health.feverLine')})</Text>
+                        </View>
+                    </View>
+                </View>
+            ) : tempReadings.length > 0 ? (
+                <View style={{ marginBottom: 20, backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 20, alignItems: 'center' }}>
+                    <Thermometer size={28} color={theme.textTertiary} strokeWidth={1.5} />
+                    <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 8, textAlign: 'center' }}>
+                        {t('health.addTwoReadings')}
+                    </Text>
+                </View>
+            ) : null}
 
             <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>{t('health.temperatureC')}</Text>
@@ -1231,9 +1581,22 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 />
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={() => saveEntry('temperature', { value: temperature.toFixed(1), note: tempNote })} disabled={saveSuccess}>
+            <TouchableOpacity style={styles.saveButton} onPress={async () => {
+                setSavingTemp(true);
+                try {
+                    await saveEntry('temperature', { value: temperature.toFixed(1), note: tempNote });
+                } finally {
+                    setSavingTemp(false);
+                }
+            }} disabled={saveSuccess || savingTemp}>
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>{t('health.save')}</Text>}
+                    {savingTemp ? (
+                        <ActivityIndicator size="small" color={theme.textSecondary} />
+                    ) : saveSuccess ? (
+                        <Check size={18} color="#10B981" strokeWidth={2} />
+                    ) : (
+                        <Text style={styles.saveButtonText}>{t('health.save')}</Text>
+                    )}
                 </View>
             </TouchableOpacity>
         </ScrollView>
@@ -1246,6 +1609,68 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.health.color, borderColor: 'transparent' }]}>
                     <Stethoscope size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
+            </View>
+
+            {/* Doctor Name */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('health.doctorName') || 'שם הרופא'}</Text>
+                <TextInput
+                    style={styles.textInput}
+                    value={doctorName}
+                    onChangeText={setDoctorName}
+                    placeholder={t('health.doctorNamePlaceholder') || 'ד"ר...'}
+                    placeholderTextColor="#9CA3AF"
+                />
+            </View>
+
+            {/* Visit Date */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('health.visitDate') || 'תאריך הביקור'}</Text>
+                <TouchableOpacity
+                    style={{
+                        flexDirection: 'row-reverse',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: theme.cardSecondary,
+                        borderRadius: 14,
+                        padding: 14,
+                        borderWidth: 1.5,
+                        borderColor: theme.border,
+                    }}
+                    onPress={() => setShowDoctorDatePicker(!showDoctorDatePicker)}
+                >
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>
+                        {doctorVisitDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </Text>
+                    <CalendarPlus size={18} color={theme.textSecondary} />
+                </TouchableOpacity>
+                {showDoctorDatePicker && (
+                    <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 12, marginTop: 8, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
+                        <DateTimePicker
+                            value={doctorVisitDate}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={(e: any, d?: Date) => {
+                                if (Platform.OS === 'android') setShowDoctorDatePicker(false);
+                                if (d) setDoctorVisitDate(d);
+                            }}
+                            maximumDate={new Date()}
+                        />
+                        <TouchableOpacity
+                            style={{
+                                alignSelf: 'center',
+                                backgroundColor: '#6B9AC4',
+                                paddingVertical: 10,
+                                paddingHorizontal: 32,
+                                borderRadius: 10,
+                                marginBottom: 12,
+                            }}
+                            onPress={() => setShowDoctorDatePicker(false)}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>אישור</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -1283,7 +1708,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     ) : doctorPhoto ? (
                         <>
                             <Image source={{ uri: doctorPhoto }} style={styles.uploadPreview} />
-                            <Text style={styles.uploadButtonTextSuccess}>תמונה הועלתה ✓</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Check size={14} color="#10B981" strokeWidth={2.5} />
+                                <Text style={styles.uploadButtonTextSuccess}>תמונה הועלתה</Text>
+                            </View>
                         </>
                     ) : (
                         <>
@@ -1303,9 +1731,9 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <InlineLoader color="#6B7280"  />
                     ) : doctorDocument ? (
                         <>
-                            <FileText size={24} color="#10B981" />
+                            <Check size={14} color="#10B981" strokeWidth={2.5} />
                             <Text style={styles.uploadButtonTextSuccess} numberOfLines={1}>
-                                {doctorDocument} ✓
+                                {doctorDocument}
                             </Text>
                         </>
                     ) : (
@@ -1319,16 +1747,31 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
             <TouchableOpacity
                 style={styles.saveButton}
-                onPress={() => saveEntry('doctor', {
-                    reason: doctorReason,
-                    note: doctorNote,
-                    photoUri: doctorPhoto || null,
-                    documentName: doctorDocument || null
-                })}
-                disabled={saveSuccess}
+                onPress={async () => {
+                    setSavingDoctor(true);
+                    try {
+                        await saveEntry('doctor', {
+                            doctorName: doctorName || null,
+                            visitDate: doctorVisitDate.toISOString(),
+                            reason: doctorReason,
+                            note: doctorNote,
+                            photoUri: doctorPhoto || null,
+                            documentName: doctorDocument || null
+                        });
+                    } finally {
+                        setSavingDoctor(false);
+                    }
+                }}
+                disabled={saveSuccess || savingDoctor}
             >
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>{t('health.saveVisit')}</Text>}
+                    {savingDoctor ? (
+                        <ActivityIndicator size="small" color={theme.textSecondary} />
+                    ) : saveSuccess ? (
+                        <Check size={18} color="#10B981" strokeWidth={2} />
+                    ) : (
+                        <Text style={styles.saveButtonText}>{t('health.saveVisit')}</Text>
+                    )}
                 </View>
             </TouchableOpacity>
         </ScrollView>
@@ -1429,25 +1872,29 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
                 {/* Ongoing toggle */}
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#6B7280' }}>{t('health.illnessStillActive')}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '500', color: theme.textSecondary }}>{t('health.illnessStillActive')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <TouchableOpacity
                             onPress={() => { setIllnessOngoing(true); setIllnessEndDate(null); }}
                             style={{
-                                paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10,
-                                backgroundColor: illnessOngoing ? '#FEE2E2' : '#F3F4F6',
+                                paddingHorizontal: 18, paddingVertical: 8, borderRadius: 12,
+                                backgroundColor: illnessOngoing ? '#FEE2E2' : theme.cardSecondary,
+                                borderWidth: 1.5,
+                                borderColor: illnessOngoing ? '#FECACA' : theme.border,
                             }}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: illnessOngoing ? '#EF4444' : '#9CA3AF' }}>כן</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: illnessOngoing ? '#EF4444' : '#9CA3AF' }}>כן</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => { setIllnessOngoing(false); setIllnessEndDate(new Date()); }}
                             style={{
-                                paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10,
-                                backgroundColor: !illnessOngoing ? '#DCFCE7' : '#F3F4F6',
+                                paddingHorizontal: 18, paddingVertical: 8, borderRadius: 12,
+                                backgroundColor: !illnessOngoing ? '#DCFCE7' : theme.cardSecondary,
+                                borderWidth: 1.5,
+                                borderColor: !illnessOngoing ? '#BBF7D0' : theme.border,
                             }}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: !illnessOngoing ? '#10B981' : '#9CA3AF' }}>{t('health.recovered')}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: !illnessOngoing ? '#10B981' : '#9CA3AF' }}>{t('health.recovered')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -1518,21 +1965,32 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                 <TextInput style={styles.textArea} value={illnessNote} onChangeText={setIllnessNote} placeholder={t('health.symptomPlaceholder')} placeholderTextColor="#9CA3AF" multiline />
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={() => {
-                const saveData: any = {
-                    name: selectedIllness === 'custom' ? customIllness : selectedIllness,
-                    note: illnessNote,
-                    startDate: illnessStartDate.toISOString(),
-                    ongoing: illnessOngoing,
-                };
-                if (!illnessOngoing && illnessEndDate) {
-                    saveData.endDate = illnessEndDate.toISOString();
-                    saveData.durationDays = Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+            <TouchableOpacity style={styles.saveButton} onPress={async () => {
+                setSavingIllness(true);
+                try {
+                    const saveData: any = {
+                        name: selectedIllness === 'custom' ? customIllness : selectedIllness,
+                        note: illnessNote,
+                        startDate: illnessStartDate.toISOString(),
+                        ongoing: illnessOngoing,
+                    };
+                    if (!illnessOngoing && illnessEndDate) {
+                        saveData.endDate = illnessEndDate.toISOString();
+                        saveData.durationDays = Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    }
+                    await saveEntry('illness', saveData);
+                } finally {
+                    setSavingIllness(false);
                 }
-                saveEntry('illness', saveData);
-            }} disabled={saveSuccess}>
+            }} disabled={saveSuccess || savingIllness}>
                 <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {saveSuccess ? <Check size={18} color="#10B981" strokeWidth={2} /> : <Text style={styles.saveButtonText}>{t('health.save')}</Text>}
+                    {savingIllness ? (
+                        <ActivityIndicator size="small" color={theme.textSecondary} />
+                    ) : saveSuccess ? (
+                        <Check size={18} color="#10B981" strokeWidth={2} />
+                    ) : (
+                        <Text style={styles.saveButtonText}>{t('health.save')}</Text>
+                    )}
                 </View>
             </TouchableOpacity>
         </ScrollView>
@@ -1753,6 +2211,318 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
     );
 
     // History - beautiful tabbed view with premium cards
+    // ─── Allergies CRUD ──────────────────────────────────────────────────────────
+    const loadAllergies = async () => {
+        const childId = babyId || activeChild?.childId;
+        if (!childId) return;
+        setLoadingAllergies(true);
+        try {
+            const babyDoc = await getDoc(doc(db, 'babies', childId));
+            if (babyDoc.exists()) {
+                setAllergies(babyDoc.data()?.allergies || []);
+            }
+        } catch (error) {
+            logger.log('Error loading allergies:', error);
+        } finally {
+            setLoadingAllergies(false);
+        }
+    };
+
+    const saveAllergy = async () => {
+        const childId = babyId || activeChild?.childId;
+        if (!childId) return;
+
+        const allergenName = selectedAllergen
+            ? PRESET_ALLERGENS.find(a => a.key === selectedAllergen)?.name || selectedAllergen
+            : customAllergenName.trim();
+
+        if (!allergenName) return;
+
+        const newAllergy: AllergyEntry = {
+            id: Date.now().toString(),
+            name: allergenName,
+            severity: allergySeverity,
+            diagnosisDate: new Date().toISOString(),
+            ...(allergyNote.trim() ? { note: allergyNote.trim() } : {}),
+        };
+
+        try {
+            setSavingAllergy(true);
+            const updated = [...allergies, newAllergy];
+            await setDoc(doc(db, 'babies', childId), { allergies: updated }, { merge: true });
+            setAllergies(updated);
+            setShowAllergyForm(false);
+            setSelectedAllergen(null);
+            setCustomAllergenName('');
+            setAllergySeverity('mild');
+            setAllergyNote('');
+            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error) {
+            logger.log('Error saving allergy:', error);
+            Alert.alert(t('misc.saveError'), t('health.cannotSave'));
+        } finally {
+            setSavingAllergy(false);
+        }
+    };
+
+    const deleteAllergy = async (id: string) => {
+        const childId = babyId || activeChild?.childId;
+        if (!childId) return;
+        try {
+            const updated = allergies.filter(a => a.id !== id);
+            await setDoc(doc(db, 'babies', childId), { allergies: updated }, { merge: true });
+            setAllergies(updated);
+            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error) {
+            logger.log('Error deleting allergy:', error);
+        }
+    };
+
+    const getSeverityConfig = (severity: string) => {
+        switch (severity) {
+            case 'mild': return { label: t('health.severityMild'), color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' };
+            case 'moderate': return { label: t('health.severityModerate'), color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' };
+            case 'severe': return { label: t('health.severitySevere'), color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' };
+            default: return { label: severity, color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' };
+        }
+    };
+
+    // ─── Render Allergies ────────────────────────────────────────────────────────
+    // Load when entering screen
+    useEffect(() => {
+        if (currentScreen === 'allergies') loadAllergies();
+    }, [currentScreen]);
+
+    const renderAllergies = () => {
+        return (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
+                <View style={styles.screenHeader}>
+                    <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.sos.color, borderColor: 'transparent' }]}>
+                        <ShieldAlert size={24} color="#FFFFFF" strokeWidth={1.8} />
+                    </View>
+                </View>
+
+                {!showAllergyForm ? (
+                    <>
+                        {/* Add Button */}
+                        <TouchableOpacity
+                            style={{
+                                flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                backgroundColor: theme.actionColors.sos.color, borderRadius: 14, paddingVertical: 14, marginBottom: 20
+                            }}
+                            onPress={() => {
+                                setShowAllergyForm(true);
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            }}
+                        >
+                            <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
+                            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>{t('health.addAllergy')}</Text>
+                        </TouchableOpacity>
+
+                        {/* Allergy List */}
+                        {allergies.length === 0 ? (
+                            <View style={{ alignItems: 'center', paddingVertical: 40, backgroundColor: theme.cardSecondary, borderRadius: 16 }}>
+                                <ShieldAlert size={40} color={theme.textTertiary} strokeWidth={1.2} />
+                                <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textSecondary, marginTop: 12 }}>
+                                    {t('health.noAllergies')}
+                                </Text>
+                                <Text style={{ fontSize: 13, color: theme.textTertiary, marginTop: 4, textAlign: 'center', paddingHorizontal: 40 }}>
+                                    {t('health.noAllergiesHint')}
+                                </Text>
+                            </View>
+                        ) : (
+                            allergies.map((allergy, index) => {
+                                const severityConfig = getSeverityConfig(allergy.severity);
+                                const allergenPreset = PRESET_ALLERGENS.find(a => a.name === allergy.name);
+                                const AllergenIcon = allergenPreset?.icon || AlertTriangle;
+                                return (
+                                    <SwipeableRow
+                                        key={allergy.id}
+                                        onDelete={() => {
+                                            Alert.alert(
+                                                t('health.deleteAllergyTitle'),
+                                                t('health.deleteAllergyMessage'),
+                                                [
+                                                    { text: t('common.cancel'), style: 'cancel' },
+                                                    { text: t('common.delete'), style: 'destructive', onPress: () => deleteAllergy(allergy.id) },
+                                                ]
+                                            );
+                                        }}
+                                    >
+                                        <View style={{
+                                            backgroundColor: theme.card,
+                                            borderRadius: 14, padding: 16, marginBottom: 10,
+                                            borderWidth: 1, borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            flexDirection: 'row-reverse', alignItems: 'center', gap: 14,
+                                        }}>
+                                            {/* Allergen Icon */}
+                                            <View style={{
+                                                width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+                                                backgroundColor: severityConfig.bg, borderWidth: 1, borderColor: severityConfig.border,
+                                            }}>
+                                                <AllergenIcon size={22} color={severityConfig.color} strokeWidth={1.8} />
+                                            </View>
+
+                                            {/* Info */}
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>
+                                                    {allergy.name}
+                                                </Text>
+                                                {allergy.note ? (
+                                                    <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }} numberOfLines={1}>
+                                                        {allergy.note}
+                                                    </Text>
+                                                ) : null}
+                                                <Text style={{ fontSize: 11, color: theme.textTertiary, textAlign: 'right', marginTop: 4 }}>
+                                                    {new Date(allergy.diagnosisDate).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                </Text>
+                                            </View>
+
+                                            {/* Severity Badge */}
+                                            <View style={{
+                                                backgroundColor: severityConfig.bg, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5,
+                                                borderWidth: 1, borderColor: severityConfig.border,
+                                            }}>
+                                                <Text style={{ fontSize: 12, fontWeight: '700', color: severityConfig.color }}>
+                                                    {severityConfig.label}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </SwipeableRow>
+                                );
+                            })
+                        )}
+                    </>
+                ) : (
+                    /* Add Allergy Form */
+                    <>
+                        {/* Preset Allergens Grid */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>{t('health.allergen')}</Text>
+                            <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 }}>
+                                {PRESET_ALLERGENS.map(allergen => {
+                                    const isSelected = selectedAllergen === allergen.key;
+                                    const AllergenIcon = allergen.icon;
+                                    return (
+                                        <TouchableOpacity
+                                            key={allergen.key}
+                                            style={{
+                                                flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+                                                paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
+                                                backgroundColor: isSelected ? theme.actionColors.sos.color : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6'),
+                                                borderWidth: 1.5,
+                                                borderColor: isSelected ? theme.actionColors.sos.color : 'transparent',
+                                            }}
+                                            onPress={() => {
+                                                setSelectedAllergen(allergen.key);
+                                                setCustomAllergenName('');
+                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                        >
+                                            <AllergenIcon size={16} color={isSelected ? '#FFFFFF' : theme.textSecondary} strokeWidth={1.8} />
+                                            <Text style={{
+                                                fontSize: 14, fontWeight: isSelected ? '700' : '500',
+                                                color: isSelected ? '#FFFFFF' : theme.textPrimary,
+                                            }}>{allergen.name}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            {/* Custom Allergen */}
+                            <TextInput
+                                style={[styles.textArea, { marginTop: 12, minHeight: 44 }]}
+                                value={customAllergenName}
+                                onChangeText={(text) => {
+                                    setCustomAllergenName(text);
+                                    if (text.trim()) setSelectedAllergen(null);
+                                }}
+                                placeholder={t('health.enterAllergenName')}
+                                placeholderTextColor="#9CA3AF"
+                            />
+                        </View>
+
+                        {/* Severity Selection */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>{t('health.severity')}</Text>
+                            <View style={{ flexDirection: 'row-reverse', gap: 10 }}>
+                                {(['mild', 'moderate', 'severe'] as const).map(sev => {
+                                    const config = getSeverityConfig(sev);
+                                    const isActive = allergySeverity === sev;
+                                    return (
+                                        <TouchableOpacity
+                                            key={sev}
+                                            style={{
+                                                flex: 1, alignItems: 'center', paddingVertical: 14, borderRadius: 14,
+                                                backgroundColor: isActive ? config.color : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6'),
+                                                borderWidth: 1.5, borderColor: isActive ? config.color : 'transparent',
+                                            }}
+                                            onPress={() => {
+                                                setAllergySeverity(sev);
+                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                        >
+                                            <Text style={{
+                                                fontSize: 14, fontWeight: '700',
+                                                color: isActive ? '#FFFFFF' : theme.textPrimary,
+                                            }}>{config.label}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+
+                        {/* Note */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>{t('health.notes')}</Text>
+                            <TextInput
+                                style={styles.textArea}
+                                value={allergyNote}
+                                onChangeText={setAllergyNote}
+                                placeholder={t('health.addNotes')}
+                                placeholderTextColor="#9CA3AF"
+                                multiline
+                            />
+                        </View>
+
+                        {/* Actions */}
+                        <View style={{ flexDirection: 'row-reverse', gap: 12 }}>
+                            <TouchableOpacity
+                                style={{
+                                    flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 14,
+                                    backgroundColor: (selectedAllergen || customAllergenName.trim()) && !savingAllergy ? theme.actionColors.sos.color : '#D1D5DB',
+                                    opacity: savingAllergy ? 0.7 : 1,
+                                }}
+                                onPress={saveAllergy}
+                                disabled={(!selectedAllergen && !customAllergenName.trim()) || savingAllergy}
+                            >
+                                {savingAllergy ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                    <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>{t('health.save')}</Text>
+                                )}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{
+                                    flex: 0.5, alignItems: 'center', paddingVertical: 16, borderRadius: 14,
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6',
+                                }}
+                                onPress={() => {
+                                    setShowAllergyForm(false);
+                                    setSelectedAllergen(null);
+                                    setCustomAllergenName('');
+                                    setAllergyNote('');
+                                }}
+                            >
+                                <Text style={{ color: theme.textSecondary, fontSize: 16, fontWeight: '600' }}>{t('common.cancel')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                )}
+            </ScrollView>
+        );
+    };
+
     const renderHistory = () => {
         const formatDate = (timestamp: string) => {
             const d = new Date(timestamp);
@@ -1766,12 +2536,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
 
         const getTypeConfig = (type: string) => {
             switch (type) {
-                case 'temperature': return { label: 'חום', icon: Thermometer, color: '#F59E0B', bg: '#F3F4F6' };
-                case 'doctor': return { label: 'רופא', icon: Stethoscope, color: '#10B981', bg: '#F3F4F6' };
-                case 'illness': return { label: 'מחלה', icon: Heart, color: '#EF4444', bg: '#F3F4F6' };
+                case 'temperature': return { label: 'חום', icon: Thermometer, color: theme.actionColors.food.color, bg: theme.actionColors.food.lightColor };
+                case 'doctor': return { label: 'רופא', icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor };
+                case 'illness': return { label: 'מחלה', icon: Heart, color: theme.actionColors.sos.color, bg: theme.actionColors.sos.lightColor };
                 case 'medication': return { label: 'תרופה', icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor };
-                case 'vaccine': return { label: 'חיסון', icon: Syringe, color: '#6366F1', bg: '#EEF2FF' };
-                default: return { label: 'שונות', icon: ClipboardList, color: '#0EA5E9', bg: '#F3F4F6' };
+                case 'vaccine': return { label: 'חיסון', icon: Syringe, color: theme.actionColors.tools.color, bg: theme.actionColors.tools.lightColor };
+                default: return { label: 'שונות', icon: ClipboardList, color: theme.actionColors.custom.color, bg: theme.actionColors.custom.lightColor };
             }
         };
 
@@ -1860,14 +2630,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                         shadowRadius: 4,
                                         elevation: 0,
                                     }}>
-                                        {/* Icon Badge - circular like menu */}
+                                        {/* Icon Badge - solid like menu */}
                                         <View style={{
                                             width: 48, height: 48, borderRadius: 24,
-                                            backgroundColor: config.bg,
+                                            backgroundColor: config.color,
                                             alignItems: 'center', justifyContent: 'center',
                                             marginLeft: 16,
                                         }}>
-                                            <Icon size={22} color={config.color} strokeWidth={1.2} />
+                                            <Icon size={22} color="#FFFFFF" strokeWidth={1.2} />
                                         </View>
 
                                         {/* Content - on left in RTL */}
@@ -1955,6 +2725,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             case 'medications': return t('health.medications');
             case 'medications_add': return t('health.medications');
             case 'history': return t('health.history');
+            case 'allergies': return t('health.allergies');
             default: return t('health.title');
         }
     };
@@ -1968,6 +2739,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             case 'medications': return [theme.actionColors.supplements.color, theme.actionColors.supplements.color];
             case 'medications_add': return [theme.actionColors.supplements.color, theme.actionColors.supplements.color];
             case 'history': return ['#0EA5E9', '#0284C7'];
+            case 'allergies': return [theme.actionColors.sos.color, theme.actionColors.sos.color];
             default: return ['#10B981', '#059669'];
         }
     };
@@ -2040,7 +2812,27 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             )}
                             <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{getScreenTitle()}</Text>
                         </View>
-                        <View style={{ width: 40 }} />
+                        <View style={{ width: 44 }}>
+                            {currentScreen === 'menu' && (
+                                <TouchableOpacity
+                                    onPress={handleHealthDownload}
+                                    activeOpacity={1}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <ReAnimated.View style={[
+                                        animatedDownloadStyle,
+                                        {
+                                            width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+                                            backgroundColor: isDownloadPressed ? '#C8806A' : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.03)'),
+                                            borderWidth: 1,
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.02)',
+                                        }
+                                    ]}>
+                                        <Download size={22} color={isDownloadPressed ? '#FFFFFF' : (isDarkMode ? '#FFF' : theme.textPrimary)} strokeWidth={isDownloadPressed ? 2.5 : 2} />
+                                    </ReAnimated.View>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
 
                     <GestureHandlerRootView style={[styles.modalBody, { backgroundColor: 'transparent' }]}>
@@ -2052,6 +2844,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         {currentScreen === 'medications' && renderMedications()}
                         {currentScreen === ('medications_add' as any) && renderMedicationsAdd()}
                         {currentScreen === 'history' && renderHistory()}
+                        {currentScreen === 'allergies' && renderAllergies()}
                         {currentScreen === 'tipat_halav' && <TipatHalavLocator visible={true} onClose={goBack} />}
                     </GestureHandlerRootView>
                 </Animated.View>
@@ -2136,7 +2929,8 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         borderWidth: 1,
         borderColor: theme.cardSecondary,
     },
-    optionLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' },
+    optionLabel: { fontSize: 15, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' },
+    optionDescription: { fontSize: 12, color: theme.textSecondary, textAlign: 'right', marginTop: 2 },
 
     screenContent: { padding: 20, paddingBottom: 40 },
     screenHeader: { alignItems: 'center', marginBottom: 16 },
@@ -2145,28 +2939,28 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     screenSubtitle: { fontSize: 13, color: theme.textTertiary, marginTop: 10 },
 
     // Vaccine styles
-    addVaccineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: theme.actionColors.health.lightColor, padding: 14, borderRadius: 14, marginBottom: 20 },
-    addVaccineBtnText: { fontSize: 15, fontWeight: '600', color: theme.actionColors.health.color },
+    addVaccineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(107, 154, 196, 0.1)', padding: 14, borderRadius: 14, marginBottom: 20 },
+    addVaccineBtnText: { fontSize: 15, fontWeight: '600', color: '#6B9AC4' },
     addVaccineForm: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
     addVaccineInput: { flex: 1, backgroundColor: theme.card, borderRadius: 12, padding: 14, fontSize: 15, textAlign: 'right', textAlignVertical: 'center', borderWidth: 1, borderColor: theme.border, writingDirection: 'rtl' },
-    addVaccineSubmit: { width: 48, height: 48, borderRadius: 12, backgroundColor: theme.actionColors.health.color, alignItems: 'center', justifyContent: 'center' },
+    addVaccineSubmit: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#6B9AC4', alignItems: 'center', justifyContent: 'center' },
     vaccineGroup: { marginBottom: 20 },
     ageBadge: { alignSelf: 'flex-end', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 12 },
     ageBadgeText: { color: theme.card, fontWeight: '700', fontSize: 14 },
     ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border },
     ageBadgeTextMinimal: { color: theme.textSecondary, fontWeight: '600', fontSize: 13 },
     vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.card, padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 0 },
-    vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.actionColors.health.lightColor, padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: theme.actionColors.health.color },
+    vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDarkMode ? 'rgba(107, 154, 196, 0.1)' : 'rgba(107, 154, 196, 0.08)', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: isDarkMode ? 'rgba(107, 154, 196, 0.3)' : 'rgba(107, 154, 196, 0.25)' },
     vaccineName: { fontSize: 15, color: theme.textPrimary, fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
-    vaccineNameDone: { fontSize: 15, color: theme.actionColors.health.color, fontWeight: '600', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
-    checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
-    checkboxChecked: { backgroundColor: theme.actionColors.health.color, borderColor: theme.actionColors.health.color },
+    vaccineNameDone: { fontSize: 15, color: '#8BAFC8', fontWeight: '500', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
+    checkbox: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
+    checkboxChecked: { backgroundColor: '#6B9AC4', borderColor: '#6B9AC4' },
     modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     datePickerCard: { backgroundColor: theme.card, borderRadius: 20, padding: 20, width: '85%', alignItems: 'center' },
     datePickerTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 4 },
-    datePickerSubtitle: { fontSize: 13, color: theme.actionColors.health.color, marginBottom: 8 },
+    datePickerSubtitle: { fontSize: 13, color: '#6B9AC4', marginBottom: 8 },
     datePickerButtons: { flexDirection: 'row-reverse', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' },
-    datePickerConfirm: { backgroundColor: theme.actionColors.health.color, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+    datePickerConfirm: { backgroundColor: '#6B9AC4', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
     datePickerConfirmText: { color: theme.card, fontWeight: '700' },
     datePickerCancel: { backgroundColor: theme.cardSecondary, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
     datePickerCancelText: { color: theme.textSecondary, fontWeight: '600' },

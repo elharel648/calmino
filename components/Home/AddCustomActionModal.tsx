@@ -1,7 +1,7 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, interpolate, default as Reanimated } from 'react-native-reanimated';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform, Animated as RNAnimated, TouchableWithoutFeedback, KeyboardAvoidingView, PanResponder, Dimensions } from 'react-native';
-import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug, Plus } from 'lucide-react-native';
+import { X, Sparkles, Baby, Bath, Stethoscope, Pill, Thermometer, Camera, Book, Music, Star, Clock, Calendar, FileText, Check, Heart, Smile, MessageSquare, Zap, Gift, Gamepad2, Sun, Droplets, Coffee, Footprints, Bike, Leaf, Bug, Plus, Syringe } from 'lucide-react-native';
 
 // Exported icon map for use in DailyTimeline and other components
 export const CUSTOM_ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -23,6 +23,7 @@ export const CUSTOM_ICON_MAP: Record<string, React.ComponentType<any>> = {
     footprints: Footprints,
     gift: Gift,
     zap: Zap,
+    vaccine: Syringe,
 };
 
 import * as Haptics from 'expo-haptics';

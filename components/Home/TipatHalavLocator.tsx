@@ -137,91 +137,115 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
 
     return (
         <View style={styles.container}>
-            {/* Search Bar */}
-                    <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <Search size={20} color={theme.textSecondary} />
-                        <TextInput
-                            style={[styles.searchInput, { color: theme.textPrimary }]}
-                            placeholder="חפש עיר, ישוב או רחוב..."
-                            placeholderTextColor={theme.textSecondary}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            textAlign="right"
-                        />
-                    </View>
+            {/* Header */}
+            <View style={styles.header}>
+                <View style={[styles.headerIconCircle, { backgroundColor: healthColor }]}>
+                    <MapPin size={24} color="#FFFFFF" strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.headerDescription, { color: theme.textSecondary }]}>
+                    מצאו את תחנת טיפת חלב הקרובה אליכם מתוך מאגר של מעל 1,800 תחנות ברחבי הארץ
+                </Text>
+            </View>
 
-                    {/* Content */}
-                    <View style={styles.listContainer}>
-                        {loading ? (
-                            <View style={styles.centerContent}>
-                                <ActivityIndicator size="large" color={healthColor} />
-                                <Text style={[styles.loadingText, { color: theme.textSecondary }]}>מתחבר למאגר הלאומי...</Text>
-                            </View>
-                        ) : error ? (
-                            <View style={styles.centerContent}>
-                                <AlertCircle size={40} color={theme.danger} />
-                                <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
-                            </View>
-                        ) : results.length > 0 ? (
-                            <FlatList
-                                data={results}
-                                keyExtractor={(item, index) => item._id ? item._id.toString() : index.toString()}
-                                showsVerticalScrollIndicator={false}
-                                renderItem={({ item }) => (
-                                    <View style={[styles.stationCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                                        <View style={styles.stationInfo}>
-                                            <View style={styles.stationHeader}>
-                                                <Building2 size={16} color={healthColor} style={{ marginLeft: 6 }} />
-                                                <Text style={[styles.stationName, { color: theme.textPrimary }]}>
-                                                    {item.clinic_name || 'תחנת טיפת חלב'}
-                                                </Text>
-                                            </View>
-                                            <Text style={[styles.stationAddress, { color: theme.textSecondary }]}>
-                                                {item.street_name} {item.house_number}, {item.city_name}
-                                            </Text>
-                                            {item.phone ? (
-                                                <Text style={[styles.stationPhone, { color: theme.textTertiary }]}>
+            {/* Search Bar */}
+            <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Search size={20} color={theme.textSecondary} />
+                <TextInput
+                    style={[styles.searchInput, { color: theme.textPrimary }]}
+                    placeholder="חפש עיר, ישוב או רחוב..."
+                    placeholderTextColor={theme.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    textAlign="right"
+                />
+            </View>
+
+            {/* Results Count */}
+            {results.length > 0 && (
+                <View style={styles.resultsCountRow}>
+                    <Text style={[styles.resultsCountText, { color: theme.textSecondary }]}>
+                        נמצאו {results.length} תחנות
+                    </Text>
+                </View>
+            )}
+
+            {/* Content */}
+            <View style={styles.listContainer}>
+                {loading ? (
+                    <View style={styles.centerContent}>
+                        <ActivityIndicator size="large" color={healthColor} />
+                        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>מחפש תחנות...</Text>
+                    </View>
+                ) : error ? (
+                    <View style={styles.centerContent}>
+                        <AlertCircle size={40} color={theme.danger} />
+                        <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
+                    </View>
+                ) : results.length > 0 ? (
+                    <FlatList
+                        data={results}
+                        keyExtractor={(item, index) => item._id ? item._id.toString() : index.toString()}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => (
+                            <View style={[styles.stationCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                <View style={styles.stationInfo}>
+                                    <View style={styles.stationHeader}>
+                                        <Building2 size={16} color={healthColor} style={{ marginLeft: 6 }} />
+                                        <Text style={[styles.stationName, { color: theme.textPrimary }]}>
+                                            {item.clinic_name || 'תחנת טיפת חלב'}
+                                        </Text>
+                                    </View>
+                                    <Text style={[styles.stationAddress, { color: theme.textSecondary }]}>
+                                        {item.street_name} {item.house_number}, {item.city_name}
+                                    </Text>
+                                    {item.phone ? (
+                                        <TouchableOpacity onPress={() => handleCall(item.phone)} activeOpacity={0.6}>
+                                            <View style={styles.phoneRow}>
+                                                <Phone size={12} color={healthColor} />
+                                                <Text style={[styles.stationPhoneClickable, { color: healthColor }]}>
                                                     {item.phone}
                                                 </Text>
-                                            ) : null}
-                                        </View>
-                                        
-                                        <View style={styles.actionButtonsRow}>
-                                            <TouchableOpacity 
-                                                style={[styles.circularButton, { backgroundColor: healthLightColor }]}
-                                                onPress={() => handleNavigate(item)}
-                                            >
-                                                <Navigation size={18} color={healthColor} />
-                                            </TouchableOpacity>
-
-                                            {item.phone ? (
-                                                <TouchableOpacity 
-                                                    style={[styles.circularButton, { backgroundColor: healthLightColor, marginRight: 10 }]}
-                                                    onPress={() => handleCall(item.phone)}
-                                                >
-                                                    <Phone size={18} color={healthColor} />
-                                                </TouchableOpacity>
-                                            ) : null}
-                                        </View>
-                                    </View>
-                                )}
-                            />
-                        ) : searchQuery.length > 1 ? (
-                            <View style={styles.centerContent}>
-                                <MapPin size={40} color={theme.textTertiary} />
-                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>לא מצאנו תחנות ב"{searchQuery}"</Text>
-                            </View>
-                        ) : (
-                            <View style={styles.centerContent}>
-                                <View style={[styles.emptyIconBg, { backgroundColor: healthLightColor }]}>
-                                    <Search size={32} color={healthColor} />
+                                            </View>
+                                        </TouchableOpacity>
+                                    ) : null}
                                 </View>
-                                <Text style={[styles.emptyText, { color: theme.textSecondary, marginTop: 16 }]}>
-                                    הכנס שם עיר או יישוב כדי למצוא את תחנת טיפת חלב הקרובה אליך
-                                </Text>
+                                
+                                <View style={styles.actionButtonsRow}>
+                                    <TouchableOpacity 
+                                        style={[styles.circularButton, { backgroundColor: healthLightColor }]}
+                                        onPress={() => handleNavigate(item)}
+                                    >
+                                        <Navigation size={18} color={healthColor} />
+                                    </TouchableOpacity>
+
+                                    {item.phone ? (
+                                        <TouchableOpacity 
+                                            style={[styles.circularButton, { backgroundColor: healthLightColor, marginRight: 10 }]}
+                                            onPress={() => handleCall(item.phone)}
+                                        >
+                                            <Phone size={18} color={healthColor} />
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
                             </View>
                         )}
+                    />
+                ) : searchQuery.length > 1 ? (
+                    <View style={styles.centerContent}>
+                        <MapPin size={40} color={theme.textTertiary} />
+                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>לא מצאנו תחנות ב"{searchQuery}"</Text>
                     </View>
+                ) : (
+                    <View style={styles.centerContent}>
+                        <View style={[styles.emptyIconBg, { backgroundColor: healthLightColor }]}>
+                            <Search size={32} color={healthColor} />
+                        </View>
+                        <Text style={[styles.emptyText, { color: theme.textSecondary, marginTop: 16 }]}>
+                            הכנס שם עיר או יישוב כדי למצוא את תחנת טיפת חלב הקרובה אליך
+                        </Text>
+                    </View>
+                )}
+            </View>
         </View>
     );
 };
@@ -231,6 +255,44 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: 10,
+    },
+    header: {
+        alignItems: 'center' as const,
+        marginBottom: 16,
+    },
+    headerIconCircle: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
+        marginBottom: 12,
+    },
+    headerDescription: {
+        fontSize: 13,
+        textAlign: 'center' as const,
+        lineHeight: 20,
+        paddingHorizontal: 10,
+    },
+    resultsCountRow: {
+        alignItems: 'flex-end' as const,
+        marginBottom: 8,
+        paddingHorizontal: 4,
+    },
+    resultsCountText: {
+        fontSize: 13,
+        fontWeight: '500' as const,
+    },
+    phoneRow: {
+        flexDirection: 'row-reverse' as const,
+        alignItems: 'center' as const,
+        gap: 4,
+        marginTop: 4,
+    },
+    stationPhoneClickable: {
+        fontSize: 14,
+        fontWeight: '600' as const,
+        textDecorationLine: 'underline' as const,
     },
     searchContainer: {
         flexDirection: 'row-reverse',
