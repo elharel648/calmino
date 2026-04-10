@@ -74,91 +74,176 @@ const SupplementCard = memo(({
     onToggle: (id: string) => void;
     onRemove: (id: string) => void;
 }) => {
-    const scale = useSharedValue(1);
     const primaryColor = theme.actionColors.supplements.color;
-    const animStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
+    
+    // Animation refs
+    const checkScale = useRef(new RNAnimated.Value(taken ? 1 : 0)).current;
+    const checkOpacity = useRef(new RNAnimated.Value(taken ? 1 : 0)).current;
+    const burstScale = useRef(new RNAnimated.Value(0.5)).current;
+    const burstOpacity = useRef(new RNAnimated.Value(0)).current;
+    const strikeWidth = useRef(new RNAnimated.Value(taken ? 1 : 0)).current;
+    const textOpacity = useRef(new RNAnimated.Value(taken ? 0.5 : 1)).current;
+    const rowBg = useRef(new RNAnimated.Value(taken ? 1 : 0)).current;
+    
+    const [justCompleted, setJustCompleted] = useState(false);
+
+    useEffect(() => {
+        if (justCompleted) {
+            RNAnimated.sequence([
+                RNAnimated.parallel([
+                    RNAnimated.timing(rowBg, { toValue: 1, duration: 400, useNativeDriver: false }),
+                    RNAnimated.timing(checkOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+                ]),
+                RNAnimated.parallel([
+                    RNAnimated.sequence([
+                        RNAnimated.timing(burstOpacity, { toValue: 0.8, duration: 150, useNativeDriver: true }),
+                        RNAnimated.parallel([
+                            RNAnimated.spring(burstScale, { toValue: 2.0, friction: 8, tension: 80, useNativeDriver: true }),
+                            RNAnimated.timing(burstOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+                        ]),
+                    ]),
+                    RNAnimated.sequence([
+                        RNAnimated.delay(100),
+                        RNAnimated.spring(checkScale, { toValue: 1.25, friction: 4, tension: 180, useNativeDriver: true }),
+                        RNAnimated.spring(checkScale, { toValue: 1, friction: 6, tension: 250, useNativeDriver: true }),
+                    ]),
+                    RNAnimated.sequence([
+                        RNAnimated.delay(200),
+                        RNAnimated.timing(strikeWidth, { toValue: 1, duration: 700, useNativeDriver: false }),
+                    ]),
+                    RNAnimated.sequence([
+                        RNAnimated.delay(150),
+                        RNAnimated.timing(textOpacity, { toValue: 0.5, duration: 600, useNativeDriver: true }),
+                    ]),
+                ]),
+            ]).start(() => setJustCompleted(false));
+        } else if (!taken) {
+            rowBg.setValue(0);
+            checkOpacity.setValue(0);
+            checkScale.setValue(0);
+            strikeWidth.setValue(0);
+            textOpacity.setValue(1);
+        } else {
+            rowBg.setValue(1);
+            checkOpacity.setValue(1);
+            checkScale.setValue(1);
+            strikeWidth.setValue(1);
+            textOpacity.setValue(0.5);
+        }
+    }, [taken, justCompleted]);
 
     const handlePress = () => {
         if (isEditMode) return;
-
-        scale.value = withSequence(
-            withTiming(0.97, { duration: 80 }),
-            withTiming(1, { duration: 150 })
-        );
-
+        
+        if (!taken) {
+            setJustCompleted(true);
+        }
+        
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(
                 taken ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
             );
         }
 
-        onToggle(id);
+        setTimeout(() => onToggle(id), 50);
     };
 
     const IconComponent = ICON_MAP[icon] || Pill;
 
+    const animatedBg = rowBg.interpolate({
+        inputRange: [0, 1],
+        outputRange: [
+            isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+            isDarkMode ? `${primaryColor}25` : `${primaryColor}15`
+        ]
+    });
+
+    const animatedBorder = rowBg.interpolate({
+        inputRange: [0, 1],
+        outputRange: [
+            isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+            primaryColor
+        ]
+    });
+
     return (
-        <Animated.View style={animStyle} entering={FadeIn.duration(250)}>
+        <Animated.View entering={FadeIn.duration(250)}>
             <TouchableOpacity
-                style={[
-                    styles.rowItem,
-                    {
-                        backgroundColor: taken
-                            ? (isDarkMode ? `${primaryColor}25` : `${primaryColor}15`)
-                            : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
-                        borderColor: taken
-                            ? primaryColor
-                            : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
-                    },
-                ]}
                 onPress={handlePress}
                 activeOpacity={0.75}
                 disabled={isEditMode}
             >
-                {/* Delete badge in edit mode */}
-                {isEditMode && (
-                    <TouchableOpacity
-                        style={styles.deleteBadge}
-                        onPress={() => onRemove(id)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <Trash2 size={13} color="#fff" strokeWidth={2.5} />
-                    </TouchableOpacity>
-                )}
-
-                {/* Check/status indicator — left side (LTR left = RTL end) */}
-                <View style={[
-                    styles.checkCircle,
-                    taken && {
-                        backgroundColor: primaryColor,
-                        borderColor: 'transparent',
-                    },
-                    !taken && {
-                        borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
-                        backgroundColor: 'transparent',
-                    },
+                <RNAnimated.View style={[
+                    styles.rowItem,
+                    { backgroundColor: animatedBg, borderColor: animatedBorder }
                 ]}>
-                    {taken && <Check size={14} color="#fff" strokeWidth={3} />}
-                </View>
+                    {/* Delete badge in edit mode */}
+                    {isEditMode && (
+                        <TouchableOpacity
+                            style={styles.deleteBadge}
+                            onPress={() => onRemove(id)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Trash2 size={13} color="#fff" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
 
-                {/* Name — flex 1, right-aligned */}
-                <Text style={[styles.rowName, { color: theme.textPrimary }]} numberOfLines={1}>
-                    {name}
-                </Text>
+                    {/* Check/status indicator — left side (LTR left = RTL end) */}
+                    <View style={{ width: 26, height: 26, alignItems: 'center', justifyContent: 'center' }}>
+                        {(justCompleted || taken) && (
+                            <RNAnimated.View style={{
+                                position: 'absolute',
+                                width: 36, height: 36, borderRadius: 18,
+                                borderWidth: 2,
+                                borderColor: primaryColor,
+                                borderStyle: 'dashed',
+                                opacity: burstOpacity,
+                                transform: [{ scale: burstScale }],
+                            }} />
+                        )}
+                        <RNAnimated.View style={[
+                            styles.checkCircle,
+                            !(taken || justCompleted) && { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)', backgroundColor: 'transparent' },
+                            (taken || justCompleted) && { backgroundColor: primaryColor, borderColor: 'transparent' },
+                            justCompleted && {
+                                transform: [{ scale: checkScale }],
+                                opacity: checkOpacity,
+                            },
+                        ]}>
+                            {(taken || justCompleted) && <Check size={14} color="#fff" strokeWidth={3} />}
+                        </RNAnimated.View>
+                    </View>
 
-                {/* Icon circle — right side (RTL start) */}
-                <View style={[
-                    styles.rowIconCircle,
-                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
-                ]}>
-                    <IconComponent
-                        size={18}
-                        color={taken ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
-                        strokeWidth={1.75}
-                    />
-                </View>
+                    {/* Name — flex 1, right-aligned */}
+                    <RNAnimated.View style={{ flex: 1, alignItems: 'flex-end', opacity: textOpacity }}>
+                        <View style={{ position: 'relative' }}>
+                            <Text style={[styles.rowName, { color: theme.textPrimary }]} numberOfLines={1}>
+                                {name}
+                            </Text>
+                            <RNAnimated.View style={{
+                                position: 'absolute', top: '50%', right: 0,
+                                height: 1.5,
+                                backgroundColor: theme.textSecondary,
+                                width: strikeWidth.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: ['0%', '100%'],
+                                }),
+                            }} />
+                        </View>
+                    </RNAnimated.View>
+
+                    {/* Icon circle — right side (RTL start) */}
+                    <View style={[
+                        styles.rowIconCircle,
+                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
+                    ]}>
+                        <IconComponent
+                            size={18}
+                            color={taken ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
+                            strokeWidth={1.75}
+                        />
+                    </View>
+                </RNAnimated.View>
             </TouchableOpacity>
         </Animated.View>
     );
