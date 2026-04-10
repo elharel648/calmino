@@ -86,9 +86,11 @@ const SupplementCard = memo(({
     const rowBg = useRef(new RNAnimated.Value(taken ? 1 : 0)).current;
     
     const [justCompleted, setJustCompleted] = useState(false);
+    const isAnimating = useRef(false);
 
     useEffect(() => {
-        if (justCompleted) {
+        if (justCompleted && !isAnimating.current) {
+            isAnimating.current = true;
             RNAnimated.sequence([
                 RNAnimated.parallel([
                     RNAnimated.timing(rowBg, { toValue: 1, duration: 400, useNativeDriver: false }),
@@ -116,14 +118,17 @@ const SupplementCard = memo(({
                         RNAnimated.timing(textOpacity, { toValue: 0.5, duration: 600, useNativeDriver: true }),
                     ]),
                 ]),
-            ]).start(() => setJustCompleted(false));
-        } else if (!taken) {
+            ]).start(() => {
+                isAnimating.current = false;
+                setJustCompleted(false);
+            });
+        } else if (!taken && !isAnimating.current) {
             rowBg.setValue(0);
             checkOpacity.setValue(0);
             checkScale.setValue(0);
             strikeWidth.setValue(0);
             textOpacity.setValue(1);
-        } else {
+        } else if (taken && !justCompleted && !isAnimating.current) {
             rowBg.setValue(1);
             checkOpacity.setValue(1);
             checkScale.setValue(1);
@@ -135,8 +140,11 @@ const SupplementCard = memo(({
     const handlePress = () => {
         if (isEditMode) return;
         
-        if (!taken) {
+        if (!taken && !isAnimating.current) {
             setJustCompleted(true);
+        } else if (taken && !isAnimating.current) {
+            // Uncheck instantly
+            setJustCompleted(false);
         }
         
         if (Platform.OS !== 'web') {
@@ -145,7 +153,8 @@ const SupplementCard = memo(({
             );
         }
 
-        setTimeout(() => onToggle(id), 50);
+        // Delay to allow animation to start and avoid dropping frames
+        setTimeout(() => onToggle(id), 100);
     };
 
     const IconComponent = ICON_MAP[icon] || Pill;
@@ -153,8 +162,8 @@ const SupplementCard = memo(({
     const animatedBg = rowBg.interpolate({
         inputRange: [0, 1],
         outputRange: [
-            isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-            isDarkMode ? `${primaryColor}25` : `${primaryColor}15`
+            isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF',
+            isDarkMode ? `${primaryColor}15` : `${primaryColor}08`
         ]
     });
 
@@ -167,15 +176,29 @@ const SupplementCard = memo(({
     });
 
     return (
-        <Animated.View entering={FadeIn.duration(250)}>
+        <Animated.View 
+            entering={FadeIn.duration(250)}
+            style={[
+                { marginBottom: 8, borderRadius: 16, overflow: 'hidden' }
+            ]}
+        >
             <TouchableOpacity
                 onPress={handlePress}
-                activeOpacity={0.75}
+                activeOpacity={0.7}
                 disabled={isEditMode}
             >
                 <RNAnimated.View style={[
-                    styles.rowItem,
-                    { backgroundColor: animatedBg, borderColor: animatedBorder }
+                    {
+                        flexDirection: 'row-reverse',
+                        alignItems: 'center',
+                        paddingHorizontal: 16,
+                        height: 64,
+                        borderRadius: 16,
+                        borderWidth: 1.5,
+                        gap: 14,
+                        backgroundColor: animatedBg,
+                        borderColor: animatedBorder
+                    }
                 ]}>
                     {/* Delete badge in edit mode */}
                     {isEditMode && (
@@ -188,12 +211,12 @@ const SupplementCard = memo(({
                         </TouchableOpacity>
                     )}
 
-                    {/* Check/status indicator — left side (LTR left = RTL end) */}
-                    <View style={{ width: 26, height: 26, alignItems: 'center', justifyContent: 'center' }}>
-                        {(justCompleted || taken) && (
+                    {/* Checkbox with burst ring (Visually Right) */}
+                    <View style={{ width: 34, height: 34, alignItems: 'center', justifyContent: 'center' }}>
+                        {(justCompleted) && (
                             <RNAnimated.View style={{
                                 position: 'absolute',
-                                width: 36, height: 36, borderRadius: 18,
+                                width: 48, height: 48, borderRadius: 24,
                                 borderWidth: 2,
                                 borderColor: primaryColor,
                                 borderStyle: 'dashed',
@@ -202,22 +225,28 @@ const SupplementCard = memo(({
                             }} />
                         )}
                         <RNAnimated.View style={[
-                            styles.checkCircle,
-                            !(taken || justCompleted) && { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)', backgroundColor: 'transparent' },
-                            (taken || justCompleted) && { backgroundColor: primaryColor, borderColor: 'transparent' },
+                            {
+                                width: 28, height: 28, borderRadius: 14, borderWidth: 2, 
+                                alignItems: 'center', justifyContent: 'center'
+                            },
+                            !(taken || justCompleted) && { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB' },
+                            (taken || justCompleted) && { backgroundColor: primaryColor, borderColor: primaryColor },
                             justCompleted && {
                                 transform: [{ scale: checkScale }],
                                 opacity: checkOpacity,
                             },
                         ]}>
-                            {(taken || justCompleted) && <Check size={14} color="#fff" strokeWidth={3} />}
+                            {(taken || justCompleted) && <Check size={16} color="#fff" strokeWidth={3} />}
                         </RNAnimated.View>
                     </View>
 
-                    {/* Name — flex 1, right-aligned */}
+                    {/* Name — flex 1, right-aligned (Middle) */}
                     <RNAnimated.View style={{ flex: 1, alignItems: 'flex-end', opacity: textOpacity }}>
                         <View style={{ position: 'relative' }}>
-                            <Text style={[styles.rowName, { color: theme.textPrimary }]} numberOfLines={1}>
+                            <Text style={[
+                                { fontSize: 16, textAlign: 'right', writingDirection: 'rtl', flex: undefined, color: theme.textPrimary },
+                                (taken || justCompleted) && { color: theme.textSecondary, fontWeight: '500' }
+                            ]} numberOfLines={1}>
                                 {name}
                             </Text>
                             <RNAnimated.View style={{
@@ -232,15 +261,15 @@ const SupplementCard = memo(({
                         </View>
                     </RNAnimated.View>
 
-                    {/* Icon circle — right side (RTL start) */}
+                    {/* Icon circle — visually Left */}
                     <View style={[
                         styles.rowIconCircle,
-                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
+                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' },
                     ]}>
                         <IconComponent
                             size={18}
                             color={taken ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
-                            strokeWidth={1.75}
+                            strokeWidth={2}
                         />
                     </View>
                 </RNAnimated.View>
