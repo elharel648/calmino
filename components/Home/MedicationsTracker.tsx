@@ -112,7 +112,7 @@ const AnimatedSupplementRow = ({ type, name, isDone, onToggle, Icon, theme, isDa
                     {(justCompleted || isDone) && (
                         <Animated.View style={{
                             position: 'absolute',
-                            top: -7, left: -7,
+                            alignSelf: 'center',
                             width: 48, height: 48, borderRadius: 24,
                             borderWidth: 2,
                             borderColor: activeColor,

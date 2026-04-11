@@ -178,9 +178,7 @@ const SupplementCard = memo(({
     return (
         <Animated.View 
             entering={FadeIn.duration(250)}
-            style={[
-                { marginBottom: 8, borderRadius: 16, overflow: 'hidden' }
-            ]}
+            style={{ marginBottom: 8 }}
         >
             <TouchableOpacity
                 onPress={handlePress}
@@ -216,7 +214,7 @@ const SupplementCard = memo(({
                         {(justCompleted) && (
                             <RNAnimated.View style={{
                                 position: 'absolute',
-                                top: -7, left: -7,
+                                alignSelf: 'center',
                                 width: 48, height: 48, borderRadius: 24,
                                 borderWidth: 2,
                                 borderColor: primaryColor,
