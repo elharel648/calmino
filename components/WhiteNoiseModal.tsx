@@ -270,10 +270,17 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                         width: cardWidth,
                                         backgroundColor: isActive
                                             ? sound.color
-                                            : isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
+                                            : isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA',
                                         borderColor: isActive
                                             ? sound.color
-                                            : isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                                            : isDarkMode ? 'rgba(255,255,255,0.08)' : '#EBEBEB',
+                                        borderWidth: isActive ? 0 : 1,
+                                        shadowColor: isActive ? sound.color : '#000',
+                                        shadowOffset: { width: 0, height: isActive ? 6 : 2 },
+                                        shadowOpacity: isActive ? 0.30 : 0.05,
+                                        shadowRadius: isActive ? 14 : 6,
+                                        elevation: 0,
+                                        transform: [{ scale: isActive ? 1.04 : 1 }],
                                     }
                                 ]}
                                 onPress={() => {
@@ -283,15 +290,8 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                 activeOpacity={0.8}
                                 disabled={isLoading}
                             >
-                                <View style={[
-                                    styles.cardIcon,
-                                    {
-                                        backgroundColor: isActive
-                                            ? 'transparent'
-                                            : 'transparent'
-                                    }
-                                ]}>
-                                    <Icon size={24} color={isActive ? '#ffffff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)')} strokeWidth={1.8} />
+                                <View style={styles.cardIcon}>
+                                    <Icon size={26} color={isActive ? '#ffffff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.32)')} strokeWidth={isActive ? 2 : 1.6} />
                                 </View>
                                 <View style={{ alignItems: 'center', gap: 2 }}>
                                     <Text style={[styles.cardLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>
@@ -310,13 +310,23 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
 
                 {/* Volume */}
                 {activeSound && (
-                    <View style={[styles.section, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
+                    <View style={[
+                        styles.section,
+                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA',
+                          borderWidth: 1,
+                          borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#EBEBEB',
+                          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 }
+                    ]}>
                         <View style={styles.row}>
                             {volume === 0 ? <VolumeX size={16} color={theme.textSecondary} /> :
-                             volume < 0.5 ? <Volume1 size={16} color={theme.textSecondary} /> :
-                                            <Volume2 size={16} color={theme.textSecondary} />}
+                             volume < 0.5 ? <Volume1 size={16} color={activeConfig?.color ?? '#A78BFA'} /> :
+                                            <Volume2 size={16} color={activeConfig?.color ?? '#A78BFA'} />}
                             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
                                 {t('whiteNoise.volume', { percent: Math.round(volume * 100).toString() })}
+                            </Text>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: activeConfig?.color ?? '#A78BFA' }}>
+                                {Math.round(volume * 100)}%
                             </Text>
                         </View>
                         <Slider
@@ -334,7 +344,14 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
 
                 {/* Timer */}
                 {activeSound && (
-                    <View style={styles.timerSection}>
+                    <View style={[
+                        styles.timerSection,
+                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA',
+                          borderRadius: 18, padding: 14, borderWidth: 1,
+                          borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#EBEBEB',
+                          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 }
+                    ]}>
                         <View style={styles.row}>
                             <Clock size={16} color={theme.textSecondary} />
                             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('whiteNoise.sleepTimer')}</Text>
@@ -356,7 +373,14 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
                                         {
                                             backgroundColor: sleepTimer === mins
                                                 ? activeConfig?.color ?? '#A78BFA'
-                                                : isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6'
+                                                : isDarkMode ? 'rgba(255,255,255,0.10)' : '#FFFFFF',
+                                            borderWidth: sleepTimer === mins ? 0 : 1,
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E0E0E0',
+                                            shadowColor: sleepTimer === mins ? (activeConfig?.color ?? '#A78BFA') : '#000',
+                                            shadowOffset: { width: 0, height: sleepTimer === mins ? 4 : 1 },
+                                            shadowOpacity: sleepTimer === mins ? 0.25 : 0.04,
+                                            shadowRadius: sleepTimer === mins ? 8 : 4,
+                                            elevation: 0,
                                         }
                                     ]}
                                     onPress={() => startTimer(mins)}

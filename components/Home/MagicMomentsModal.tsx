@@ -420,7 +420,7 @@ export default function MagicMomentsModal({
                             {/* Stats Section */}
                             {baby?.album && (
                                 <View style={styles.statsContainer}>
-                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
+                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(232, 86, 127, 0.08)' : 'rgba(232, 86, 127, 0.05)' }]}>
                                         <Text style={[styles.statNumber, { color: theme.actionColors.magicMoments.color }]}>
                                             {Object.keys(baby.album).length}
                                         </Text>
@@ -428,7 +428,7 @@ export default function MagicMomentsModal({
                                             {t('magicMoments.photos')}
                                         </Text>
                                     </View>
-                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)' }]}>
+                                    <View style={[styles.statCard, { backgroundColor: isDarkMode ? 'rgba(232, 86, 127, 0.08)' : 'rgba(232, 86, 127, 0.05)' }]}>
                                         <Text style={[styles.statNumber, { color: theme.actionColors.magicMoments.color }]}>
                                             {Object.keys(baby.album).filter(m => parseInt(m) <= 12).length}/13
                                         </Text>
@@ -685,8 +685,8 @@ export default function MagicMomentsModal({
                                         styles.addCustomSection,
                                         {
                                             backgroundColor: isDarkMode
-                                                ? 'rgba(139, 92, 246, 0.1)'
-                                                : 'rgba(139, 92, 246, 0.05)',
+                                                ? 'rgba(232, 86, 127, 0.1)'
+                                                : 'rgba(232, 86, 127, 0.05)',
                                             borderColor: theme.actionColors.magicMoments.color + '30',
                                         },
                                     ]}
@@ -1075,55 +1075,61 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     statsContainer: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 28,
+        flexDirection: 'row-reverse',
+        gap: 14,
+        marginBottom: 32,
         paddingHorizontal: 4,
     },
     statCard: {
         flex: 1,
-        paddingVertical: 16,
+        paddingVertical: 18,
         paddingHorizontal: 16,
-        borderRadius: 16,
+        borderRadius: 22,
         alignItems: 'center',
         gap: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(232, 86, 127, 0.08)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 0,
     },
     statNumber: {
-        fontSize: 24,
-        fontWeight: '700',
+        fontSize: 26,
+        fontWeight: '800',
         letterSpacing: -0.5,
     },
     statLabel: {
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
+        fontWeight: '600',
     },
     gridSection: {
-        marginBottom: 32,
+        marginBottom: 36,
     },
     sectionTitleRow: {
         flexDirection: 'row',
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
         marginBottom: 16,
-        paddingHorizontal: 4,
+        paddingHorizontal: 6,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 16,
-        paddingHorizontal: 4,
-        textAlign: 'left',
+        fontSize: 18,
+        fontWeight: '700',
+        textAlign: 'right',
     },
     monthsGrid: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         flexWrap: 'wrap',
-        gap: 10,
+        gap: 12,
         paddingHorizontal: 4,
     },
     monthGridItem: {
-        width: (SCREEN_WIDTH - 48 - 30) / 3, // 3 columns with gaps
+        width: (SCREEN_WIDTH - 48 - 24) / 3, // 3 columns with 12px gaps
         aspectRatio: 1,
-        borderRadius: 16,
+        borderRadius: 20,
         overflow: 'hidden',
         borderWidth: 1.5,
         position: 'relative',
@@ -1168,28 +1174,27 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 4,
+        gap: 6,
     },
     emptyIconWrap: {
-        opacity: 0.3,
+        opacity: 0.5,
         marginBottom: 2,
     },
     emptyMonthLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '600',
-        marginTop: 2,
     },
     emptyMonthText: {
         fontSize: 18,
         fontWeight: '600',
     },
     plusIcon: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 2,
+        marginTop: 4,
     },
     addMonthButton: {
         alignItems: 'center',

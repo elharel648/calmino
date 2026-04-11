@@ -81,11 +81,8 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
                     // Stage 2: SNAP – haptic + switch to the single merged logo
                     runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Rigid);
 
-                    // Smooth crossfade: segments out → final logo in (100ms)
-                    showFinal.value = withTiming(1, {
-                        duration: 100,
-                        easing: Easing.linear
-                    });
+                    // SNAP: segments out → final logo in instantly to avoid opacity dip
+                    showFinal.value = 1;
 
                     // Stage 3: Fill the merged logo with solid color
                     fillProgress.value = withTiming(1, {
@@ -188,42 +185,47 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
     return (
         <Modal visible={true} transparent={true} animationType="none" statusBarTranslucent>
             <Animated.View style={[styles.container, { backgroundColor: theme.background }, overlayStyle]} pointerEvents="none">
-                {/* Scattered segments that fly inward */}
-                {LOGO_SEGMENTS.map((segPath, i) => (
-                    <Animated.View key={i} style={[styles.segmentWrapper, segStyles[i]]}>
+                <Animated.View style={styles.offsetWrapper}>
+                    {/* Scattered segments that fly inward */}
+                    {LOGO_SEGMENTS.map((segPath, i) => (
+                        <Animated.View key={i} style={[styles.segmentWrapper, segStyles[i]]}>
+                            <Svg width={svgSize} height={svgSize} viewBox={viewBox}>
+                                <Path
+                                    d={segPath}
+                                    stroke={logoColor}
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    fill="none"
+                                />
+                            </Svg>
+                        </Animated.View>
+                    ))}
+
+                    {/* Final merged logo – appears exactly when segments lock in */}
+                    <Animated.View style={[styles.segmentWrapper, finalLogoStyle]}>
                         <Svg width={svgSize} height={svgSize} viewBox={viewBox}>
+                            {/* Stroke outline (always visible once final shows) */}
                             <Path
-                                d={segPath}
+                                d={FULL_PATH}
                                 stroke={logoColor}
                                 strokeWidth={2}
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 fill="none"
                             />
+                            {/* Fill that fades in on top */}
+                            <AnimatedPath
+                                d={FULL_PATH}
+                                stroke={logoColor}
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill={logoColor}
+                                animatedProps={fillProps}
+                            />
                         </Svg>
                     </Animated.View>
-                ))}
-
-                {/* Final merged logo – appears exactly when segments lock in */}
-                <Animated.View style={[styles.segmentWrapper, finalLogoStyle]}>
-                    <Svg width={svgSize} height={svgSize} viewBox={viewBox}>
-                        {/* Stroke outline (always visible once final shows) */}
-                        <Path
-                            d={FULL_PATH}
-                            stroke={logoColor}
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            fill="none"
-                        />
-                        {/* Fill that fades in on top */}
-                        <AnimatedPath
-                            d={FULL_PATH}
-                            stroke="none"
-                            fill={logoColor}
-                            animatedProps={fillProps}
-                        />
-                    </Svg>
                 </Animated.View>
             </Animated.View>
         </Modal>
@@ -239,6 +241,10 @@ const styles = StyleSheet.create({
     },
     segmentWrapper: {
         position: 'absolute',
+    },
+    offsetWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
         transform: [{ translateY: -30 }],
     },
 });

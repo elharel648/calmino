@@ -1140,30 +1140,30 @@ export default function ReportsScreen() {
         }}
         activeOpacity={0.7}
       >
-        <ChevronRight size={16} color={theme.textSecondary} style={styles.cardChevron} />
-        
-        <View style={[styles.statIconWrap, { backgroundColor: iconBg || theme.cardSecondary, alignSelf: 'flex-end' }]}>
-          <Icon size={20} color={iconColor || theme.textSecondary} strokeWidth={1.5} />
+        <View style={styles.cardHeaderRow}>
+          <View style={[styles.statIconWrap, { backgroundColor: iconBg || theme.cardSecondary }]}>
+            <Icon size={20} color={iconColor || theme.textSecondary} strokeWidth={1.5} />
+          </View>
+          {trendColor && (
+            <View style={[styles.trendBadge, { backgroundColor: trendColor + '18' }]}>
+              {change > 0 ? (
+                <TrendingUp size={11} color={trendColor} strokeWidth={2.5} />
+              ) : (
+                <TrendingDown size={11} color={trendColor} strokeWidth={2.5} />
+              )}
+              <Text style={{ fontSize: 10, color: trendColor, fontWeight: '700' }}>
+                {Math.abs(change)}%
+              </Text>
+            </View>
+          )}
         </View>
 
-        <View style={{ flex: 1, alignItems: 'flex-end', width: '100%', justifyContent: 'flex-end' }}>
+        <View style={styles.cardBottomSection}>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
           <View style={styles.statValueRow}>
             <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
-            {trendColor && (
-              <View style={[styles.trendBadge, { backgroundColor: trendColor + '18' }]}>
-                {change > 0 ? (
-                  <TrendingUp size={11} color={trendColor} strokeWidth={2.5} />
-                ) : (
-                  <TrendingDown size={11} color={trendColor} strokeWidth={2.5} />
-                )}
-                <Text style={{ fontSize: 10, color: trendColor, fontWeight: '700' }}>
-                  {Math.abs(change)}%
-                </Text>
-              </View>
-            )}
+            {subValue && <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>{subValue}</Text>}
           </View>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
-          {subValue && <Text style={[styles.statSubValue, { color: theme.textSecondary }]}>{subValue}</Text>}
           {renderSparkline()}
         </View>
       </TouchableOpacity>
@@ -1588,18 +1588,19 @@ export default function ReportsScreen() {
               onPress={() => setShowHistoryModal(true)}
               activeOpacity={0.7}
             >
-              <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.tools.color }]}>
-                <Clock size={20} color="#FFFFFF" strokeWidth={1.5} />
+              <View style={styles.cardHeaderRow}>
+                <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.tools.color }]}>
+                  <Clock size={20} color="#FFFFFF" strokeWidth={1.5} />
+                </View>
               </View>
 
-              <View style={styles.statValueRow}>
-                <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>{t('reports.history.journal')}</Text>
+              <View style={styles.cardBottomSection}>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.history.title')}</Text>
+                <View style={styles.statValueRow}>
+                  <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>{t('reports.history.journal')}</Text>
+                </View>
+                <Text style={[styles.statSubValue, { color: theme.textTertiary, marginTop: 4 }]}>{t('reports.history.fullTimeline')}</Text>
               </View>
-
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.history.title')}</Text>
-              <Text style={[styles.statSubValue, { color: theme.textTertiary }]}>{t('reports.history.fullTimeline')}</Text>
-
-              <ChevronRight size={16} color={theme.textTertiary} style={styles.cardChevron} />
             </TouchableOpacity>,
             true
           )}
@@ -2262,14 +2263,15 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20, justifyContent: 'space-between' },
   editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16 },
   editStatsText: { fontSize: 13, fontWeight: '600' },
-  statCard: { width: '100%', minHeight: 165, padding: 16, borderRadius: 20, alignItems: 'flex-end', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
-  statIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statValue: { fontSize: 24, fontWeight: '700' },
-  statLabel: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-  statSubValue: { fontSize: 11, marginTop: 2 },
-  trendBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
-  cardChevron: { position: 'absolute', left: 10, top: '50%', marginTop: -8 },
+  statCard: { width: '100%', minHeight: 165, padding: 20, borderRadius: 24, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 18, elevation: 0, borderWidth: 1, borderColor: 'rgba(0,0,0,0.02)' },
+  cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' },
+  cardBottomSection: { width: '100%', alignItems: 'flex-end', marginTop: 'auto' },
+  statIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  statValueRow: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 6 },
+  statValue: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  statLabel: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  statSubValue: { fontSize: 12, fontWeight: '500' },
+  trendBadge: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8 },
 
   // Insights
   sectionTitle: { fontSize: 16, fontWeight: '600', textAlign: 'right', marginBottom: 12 },

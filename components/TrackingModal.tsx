@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/logger';
 
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, Keyboard } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -1411,24 +1411,26 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, width: '100%', marginBottom: 12 }}>
 
               {/* Amount Section - Right Side (First in Code for RTL) */}
-              <View style={{ alignItems: 'center' }}>
+              <View style={{ alignItems: 'center', width: 140 }}>
                 <Text style={[styles.label, { textAlign: 'center', marginBottom: 16 }]}>{t('tracking.howMuch')}</Text>
                 <View style={[styles.amountRow, { marginTop: 0, gap: 16 }]}>
                   {/* Minus */}
-                  <TouchableOpacity
-                    style={{
+                  <Pressable
+                    style={({ pressed }) => ({
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
+                      backgroundColor: pressed
+                        ? theme.primary
+                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2'),
                       alignItems: 'center', justifyContent: 'center',
-                    }}
+                    })}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
                       if (current >= 5) setBottleAmount((current - 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Minus size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                  </TouchableOpacity>
+                    {({ pressed }) => <Minus size={20} color={pressed ? '#fff' : theme.textSecondary} strokeWidth={2.5} />}
+                  </Pressable>
 
                   <TouchableOpacity
                     style={styles.amountDisplay}
@@ -1461,20 +1463,22 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   </TouchableOpacity>
 
                   {/* Plus */}
-                  <TouchableOpacity
-                    style={{
+                  <Pressable
+                    style={({ pressed }) => ({
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
+                      backgroundColor: pressed
+                        ? theme.primary
+                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2'),
                       alignItems: 'center', justifyContent: 'center',
-                    }}
+                    })}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
                       setBottleAmount((current + 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Plus size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                  </TouchableOpacity>
+                    {({ pressed }) => <Plus size={20} color={pressed ? '#fff' : theme.textSecondary} strokeWidth={2.5} />}
+                  </Pressable>
                 </View>
               </View>
 
@@ -1572,20 +1576,22 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 <Text style={[styles.label, { textAlign: 'center', marginBottom: 16 }]}>{t('tracking.pumpingAmount')}</Text>
                 <View style={[styles.amountRow, { marginTop: 0, gap: 16 }]}>
                   {/* Minus */}
-                  <TouchableOpacity
-                    style={{
+                  <Pressable
+                    style={({ pressed }) => ({
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
+                      backgroundColor: pressed
+                        ? theme.primary
+                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2'),
                       alignItems: 'center', justifyContent: 'center',
-                    }}
+                    })}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
                       if (current >= 5) setPumpingAmount((current - 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Minus size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                  </TouchableOpacity>
+                    {({ pressed }) => <Minus size={20} color={pressed ? '#fff' : theme.textSecondary} strokeWidth={2.5} />}
+                  </Pressable>
 
                   <TouchableOpacity
                     style={styles.amountDisplay}
@@ -1618,20 +1624,22 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   </TouchableOpacity>
 
                   {/* Plus */}
-                  <TouchableOpacity
-                    style={{
+                  <Pressable
+                    style={({ pressed }) => ({
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
+                      backgroundColor: pressed
+                        ? theme.primary
+                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2'),
                       alignItems: 'center', justifyContent: 'center',
-                    }}
+                    })}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
                       setPumpingAmount((current + 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Plus size={20} color={theme.textSecondary} strokeWidth={2.5} />
-                  </TouchableOpacity>
+                    {({ pressed }) => <Plus size={20} color={pressed ? '#fff' : theme.textSecondary} strokeWidth={2.5} />}
+                  </Pressable>
                 </View>
               </View>
 
@@ -1847,12 +1855,17 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               styles.sleepTimerCard,
               { 
                 backgroundColor: sleepContext.isRunning 
-                  ? (isDarkMode ? `${theme.primary}25` : `${theme.primary}15`)
-                  : (isDarkMode ? 'rgba(255,255,255,0.07)' : '#F9FAFB'),
+                  ? (isDarkMode ? `${theme.primary}25` : `${theme.primary}12`)
+                  : (isDarkMode ? 'rgba(255,255,255,0.07)' : '#FAFAFA'),
                 borderColor: sleepContext.isRunning
                   ? theme.primary
-                  : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'),
+                  : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#EBEBEB'),
                 borderWidth: sleepContext.isRunning ? 1.5 : 1,
+                shadowColor: sleepContext.isRunning ? theme.primary : '#000',
+                shadowOffset: { width: 0, height: sleepContext.isRunning ? 4 : 2 },
+                shadowOpacity: sleepContext.isRunning ? 0.18 : 0.06,
+                shadowRadius: sleepContext.isRunning ? 12 : 8,
+                elevation: 0,
               }
             ]}
             onPress={() => {
@@ -1873,6 +1886,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             }}
             activeOpacity={0.8}
           >
+            <Text style={[styles.breastTimeLabel, { marginBottom: 6 }, sleepContext.isRunning && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.timer')}</Text>
             <View style={{ alignItems: 'center' }}>
               <Text style={[
                 styles.sleepTimerValue,
@@ -1880,7 +1894,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               ]}>
                 {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
               </Text>
-              <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (sleepContext.isRunning && sleepContext.isPaused) ? 1 : 0 }}>{'מושהה'}</Text>
+              <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 2, letterSpacing: -0.2, opacity: (sleepContext.isRunning && sleepContext.isPaused) ? 1 : 0 }}>{'מושהה'}</Text>
             </View>
             <View style={[
               styles.sleepTimerPlayBtn,
@@ -1947,33 +1961,41 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         </View>
       )}
 
-      {/* Time Range Mode - DateTimePicker spinner like Food section */}
+      {/* Time Range Mode */}
       {sleepMode === 'timerange' && (
         <>
           <View style={styles.premiumTimeRow}>
-            <View style={styles.premiumTimeCard}>
-              <Text style={styles.premiumTimeLabel}>{t('tracking.start')}</Text>
-              <TouchableOpacity
-                style={styles.premiumTimeDisplay}
-                onPress={() => { setShowSleepStartPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-              >
-                <Text style={styles.premiumTimeDigit}>{sleepStartTime}</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Start Card */}
+            <TouchableOpacity
+              style={[
+                styles.premiumTimeCard,
+                { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#EBEBEB',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 0 }
+              ]}
+              onPress={() => { setShowSleepStartPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.premiumTimeLabel, { color: theme.textTertiary }]}>{t('tracking.start')}</Text>
+              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 32, fontWeight: '300', letterSpacing: -1.5 }]}>{sleepStartTime}</Text>
+            </TouchableOpacity>
 
             <View style={styles.premiumTimeArrowContainer}>
-              <Text style={styles.premiumTimeArrow}>→</Text>
+              <Text style={[styles.premiumTimeArrow, { color: theme.textTertiary }]}>→</Text>
             </View>
 
-            <View style={styles.premiumTimeCard}>
-              <Text style={styles.premiumTimeLabel}>{t('tracking.endTime')}</Text>
-              <TouchableOpacity
-                style={styles.premiumTimeDisplay}
-                onPress={() => { setShowSleepEndPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-              >
-                <Text style={styles.premiumTimeDigit}>{sleepEndTime}</Text>
-              </TouchableOpacity>
-            </View>
+            {/* End Card */}
+            <TouchableOpacity
+              style={[
+                styles.premiumTimeCard,
+                { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#EBEBEB',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 0 }
+              ]}
+              onPress={() => { setShowSleepEndPicker(true); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.premiumTimeLabel, { color: theme.textTertiary }]}>{t('tracking.endTime')}</Text>
+              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 32, fontWeight: '300', letterSpacing: -1.5 }]}>{sleepEndTime}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Duration Display */}
@@ -2090,11 +2112,30 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       )}
 
       {/* Free Text Note */}
-      <View style={styles.sleepNoteContainer}>
-        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
-          <Text style={[styles.sleepNoteLabel, { color: theme.textTertiary }]}>{t('tracking.note')}</Text>
-        </View>
+      <View style={[styles.sleepNoteContainer, { marginTop: 20 }]}>
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row-reverse', alignItems: 'center', gap: 8,
+            alignSelf: 'flex-start',
+            paddingVertical: 8, paddingHorizontal: 14,
+            borderRadius: 20,
+            backgroundColor: sleepNote.length > 0
+              ? (isDarkMode ? `${theme.primary}22` : `${theme.primary}12`)
+              : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+            borderWidth: 1,
+            borderColor: sleepNote.length > 0
+              ? theme.primary
+              : (isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)'),
+            marginBottom: sleepNote.length > 0 ? 10 : 0,
+          }}
+          onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          activeOpacity={0.7}
+        >
+          <MessageSquare size={14} color={sleepNote.length > 0 ? theme.primary : theme.textTertiary} strokeWidth={2} />
+          <Text style={{ fontSize: 13, fontWeight: '600', color: sleepNote.length > 0 ? theme.primary : theme.textTertiary }}>
+            {t('tracking.note')}
+          </Text>
+        </TouchableOpacity>
         <TextInput
           style={[
             styles.sleepNoteInput,
@@ -2119,7 +2160,9 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
   // --- Diaper Content ---
   const renderDiaperContent = () => (
     <View style={{ width: '100%' }}>
-      <Text style={[styles.subtitle, { textAlign: 'center' }]}>{t('tracking.whatHappened')}</Text>
+
+      {/* Type Selection */}
+      <Text style={[styles.subtitle, { textAlign: 'center', fontSize: 15, fontWeight: '500', color: theme.textSecondary, marginBottom: 16 }]}>{t('tracking.whatHappened')}</Text>
       <View style={styles.diaperOptions}>
         {[
           { key: 'pee', label: t('tracking.wet'), icon: Droplets, activeColor: '#8ECAE6' },
@@ -2136,30 +2179,36 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 {
                   backgroundColor: isSelected
                     ? opt.activeColor
-                    : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB'),
+                    : (isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA'),
                   borderColor: isSelected
                     ? opt.activeColor
-                    : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
-                  borderWidth: isSelected ? 1.5 : 1,
+                    : (isDarkMode ? 'rgba(255,255,255,0.08)' : '#EBEBEB'),
+                  borderWidth: isSelected ? 0 : 1,
+                  shadowColor: isSelected ? opt.activeColor : '#000',
+                  shadowOffset: { width: 0, height: isSelected ? 6 : 2 },
+                  shadowOpacity: isSelected ? 0.28 : 0.04,
+                  shadowRadius: isSelected ? 12 : 6,
+                  elevation: 0,
+                  transform: [{ scale: isSelected ? 1.03 : 1 }],
                 }
               ]}
               onPress={() => {
                 setSubType(opt.key);
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }}
               activeOpacity={0.7}
             >
               <IconComponent
-                size={22}
-                color={isSelected ? '#FFFFFF' : (isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)')}
-                strokeWidth={2}
+                size={24}
+                color={isSelected ? '#FFFFFF' : (isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)')}
+                strokeWidth={isSelected ? 2.5 : 1.8}
               />
               <Text style={[
                 styles.diaperBtnText,
                 {
                   color: isSelected
                     ? '#FFFFFF'
-                    : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.55)'),
+                    : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.45)'),
                   fontWeight: isSelected ? '700' : '500'
                 }
               ]}>{opt.label}</Text>
@@ -2170,49 +2219,59 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
 
       {/* Premium Date & Time Picker */}
       <View style={{ marginTop: 24 }}>
-        <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary, marginBottom: 10, textAlign: 'right' }]}>{t('tracking.whenHappened')}</Text>
+        <Text style={[styles.premiumTimeLabel, { color: theme.textSecondary, marginBottom: 12, textAlign: 'right' }]}>{t('tracking.whenHappened')}</Text>
         <View style={{ flexDirection: 'row-reverse', gap: 10 }}>
           {/* Date Card */}
           <TouchableOpacity
-            style={[styles.premiumTimeCard, { backgroundColor: theme.card, flex: 1, marginTop: 0 }]}
+            style={[
+              styles.premiumTimeCard,
+              { flex: 1, marginTop: 0,
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA',
+                borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#EBEBEB',
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05, shadowRadius: 8, elevation: 0 }
+            ]}
             onPress={() => {
               setShowDiaperDatePicker(true);
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
             activeOpacity={0.7}
           >
-            <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
-              <Calendar size={18} color={theme.primary} strokeWidth={2} />
-              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 15 }]}>
-                {(() => {
-                  const today = new Date();
-                  const isToday = diaperTime.getDate() === today.getDate() && diaperTime.getMonth() === today.getMonth() && diaperTime.getFullYear() === today.getFullYear();
-                  const yesterday = new Date(today);
-                  yesterday.setDate(today.getDate() - 1);
-                  const isYesterday = diaperTime.getDate() === yesterday.getDate() && diaperTime.getMonth() === yesterday.getMonth() && diaperTime.getFullYear() === yesterday.getFullYear();
-                  if (isToday) return t('common.today');
-                  if (isYesterday) return t('common.yesterday');
-                  return `${diaperTime.getDate().toString().padStart(2, '0')}/${(diaperTime.getMonth() + 1).toString().padStart(2, '0')}`;
-                })()}
-              </Text>
-            </View>
+            <Calendar size={16} color={theme.primary} strokeWidth={1.8} style={{ marginBottom: 4 }} />
+            <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 16, fontWeight: '500', letterSpacing: -0.3 }]}>
+              {(() => {
+                const today = new Date();
+                const isToday = diaperTime.getDate() === today.getDate() && diaperTime.getMonth() === today.getMonth() && diaperTime.getFullYear() === today.getFullYear();
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                const isYesterday = diaperTime.getDate() === yesterday.getDate() && diaperTime.getMonth() === yesterday.getMonth() && diaperTime.getFullYear() === yesterday.getFullYear();
+                if (isToday) return t('common.today');
+                if (isYesterday) return t('common.yesterday');
+                return `${diaperTime.getDate().toString().padStart(2, '0')}/${(diaperTime.getMonth() + 1).toString().padStart(2, '0')}`;
+              })()}
+            </Text>
           </TouchableOpacity>
 
           {/* Time Card */}
           <TouchableOpacity
-            style={[styles.premiumTimeCard, { backgroundColor: theme.card, flex: 1, marginTop: 0 }]}
+            style={[
+              styles.premiumTimeCard,
+              { flex: 1, marginTop: 0,
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA',
+                borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#EBEBEB',
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05, shadowRadius: 8, elevation: 0 }
+            ]}
             onPress={() => {
               setShowDiaperTimePicker(true);
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
             activeOpacity={0.7}
           >
-            <View style={[styles.premiumTimeDisplay, { gap: 8 }]}>
-              <Clock size={18} color={theme.primary} strokeWidth={2} />
-              <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 15 }]}>
-                {diaperTime.getHours().toString().padStart(2, '0')}:{diaperTime.getMinutes().toString().padStart(2, '0')}
-              </Text>
-            </View>
+            <Clock size={16} color={theme.primary} strokeWidth={1.8} style={{ marginBottom: 4 }} />
+            <Text style={[styles.premiumTimeDigit, { color: theme.textPrimary, fontSize: 22, fontWeight: '300', letterSpacing: -1 }]}>
+              {diaperTime.getHours().toString().padStart(2, '0')}:{diaperTime.getMinutes().toString().padStart(2, '0')}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2318,21 +2377,47 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         </View>
       )}
 
-      <TextInput
-        style={[
-          styles.diaperNoteInput,
-          {
-            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
-            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
-            color: theme.textPrimary,
-          }
-        ]}
-        placeholder={t('tracking.note')}
-        placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
-        value={diaperNote}
-        onChangeText={(text) => setDiaperNote(text)}
-        textAlign="right"
-      />
+      {/* Note - Pill Toggle */}
+      <View style={{ marginTop: 20 }}>
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row-reverse', alignItems: 'center', gap: 8,
+            alignSelf: 'flex-start',
+            paddingVertical: 8, paddingHorizontal: 14,
+            borderRadius: 20,
+            backgroundColor: diaperNote.length > 0
+              ? (isDarkMode ? `${theme.primary}22` : `${theme.primary}12`)
+              : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+            borderWidth: 1,
+            borderColor: diaperNote.length > 0
+              ? theme.primary
+              : (isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)'),
+            marginBottom: diaperNote.length > 0 ? 10 : 0,
+          }}
+          onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          activeOpacity={0.7}
+        >
+          <MessageSquare size={14} color={diaperNote.length > 0 ? theme.primary : theme.textTertiary} strokeWidth={2} />
+          <Text style={{ fontSize: 13, fontWeight: '600', color: diaperNote.length > 0 ? theme.primary : theme.textTertiary }}>
+            {t('tracking.note')}
+          </Text>
+        </TouchableOpacity>
+        <TextInput
+          style={[
+            styles.sleepNoteInput,
+            {
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+              color: theme.textPrimary,
+            }
+          ]}
+          placeholder={t('tracking.note')}
+          placeholderTextColor={isDarkMode ? 'rgba(255,255,255,0.3)' : '#9CA3AF'}
+          value={diaperNote}
+          onChangeText={(text) => setDiaperNote(text)}
+          textAlign="right"
+        />
+      </View>
     </View>
   );
 
@@ -2968,7 +3053,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   breastTimeLabel: { fontSize: 12, color: theme.textTertiary, fontWeight: '600', marginBottom: 8 },
   breastTimeValue: { fontSize: 32, fontWeight: '300', color: theme.textPrimary, letterSpacing: -1 },
   breastTimeValueActive: { color: theme.card },
-  breastPlayBtn: { marginTop: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' },
+  breastPlayBtn: { marginTop: 4, width: 28, height: 28, borderRadius: 14, backgroundColor: theme.cardSecondary, alignItems: 'center', justifyContent: 'center' },
   breastPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
   breastArrow: { fontSize: 20, color: theme.textTertiary, marginHorizontal: 4 },
   breastTotalLabel: { marginTop: 12, fontSize: 13, color: theme.textSecondary, fontWeight: '500' },
@@ -3022,11 +3107,11 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   sleepModeTextActive: { fontWeight: '600' },
 
   sleepTimerSection: { alignItems: 'center', marginVertical: 20 },
-  sleepTimerCard: { alignItems: 'center', backgroundColor: theme.cardSecondary, paddingVertical: 24, paddingHorizontal: 52, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' },
+  sleepTimerCard: { alignItems: 'center', backgroundColor: theme.cardSecondary, paddingVertical: 28, paddingHorizontal: 52, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
   sleepTimerCardActive: { backgroundColor: '#9B4A65', borderColor: '#9B4A65' },
-  sleepTimerValue: { fontSize: 48, fontWeight: '200', color: '#1C1C1E', letterSpacing: -2 },
+  sleepTimerValue: { fontSize: 52, fontWeight: '200', color: '#1C1C1E', letterSpacing: -3 },
   sleepTimerValueActive: { color: theme.card },
-  sleepTimerPlayBtn: { marginTop: 14, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
+  sleepTimerPlayBtn: { marginTop: 8, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
   sleepTimerPlayBtnActive: { backgroundColor: 'rgba(255,255,255,0.15)' },
 
   sleepDurationSection: { marginVertical: 16 },
@@ -3367,9 +3452,9 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   persistHint: { fontSize: 12, color: '#C8806A', textAlign: 'center', marginTop: 12, fontWeight: '600' },
 
   // Diaper
-  diaperOptions: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 16 },
-  diaperBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 20, borderRadius: 18, borderWidth: 1.5 },
-  diaperBtnText: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
+  diaperOptions: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 8 },
+  diaperBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 22, borderRadius: 20, borderWidth: 1.5 },
+  diaperBtnText: { fontSize: 14, fontWeight: '600', letterSpacing: -0.2 },
   diaperNoteInput: { width: '100%', borderRadius: 14, padding: 14, fontSize: 14, textAlign: 'right', marginTop: 20, borderWidth: 1 },
 
   // Save - Premium Full Width

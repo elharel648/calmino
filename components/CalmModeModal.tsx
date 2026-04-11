@@ -263,8 +263,8 @@ export default function CalmModeModal({
                       style={[
                         styles.emergencyCard,
                         {
-                          backgroundColor: theme.card,
-                          borderColor: 'rgba(0,0,0,0.08)',
+                          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                          borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                         }
                       ]}
                       onPress={() => makeCall(contact.number, contact.name)}
@@ -291,7 +291,7 @@ export default function CalmModeModal({
 
               {/* HMO - Clean List */}
               <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
-              <View style={[styles.hmoContainer, { backgroundColor: theme.card, borderColor: 'rgba(0,0,0,0.08)' }]}>
+              <View style={[styles.hmoContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
                 {hmoContacts.map((hmo, index) => (
                   <TouchableOpacity
                     key={index}
@@ -299,7 +299,7 @@ export default function CalmModeModal({
                       styles.hmoRow,
                       index < hmoContacts.length - 1 && {
                         borderBottomWidth: 1,
-                        borderBottomColor: '#E5E7EB',
+                        borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6',
                       }
                     ]}
                     onPress={() => makeCall(hmo.number, hmo.name)}
@@ -310,10 +310,9 @@ export default function CalmModeModal({
                       <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
                     </View>
                     <View style={styles.hmoCall}>
-                      <View style={[styles.phoneIcon, { backgroundColor: '#DBEAFE' }]}>
-                        <Phone size={14} color="#C8806A" strokeWidth={2} />
+                      <View style={[styles.phoneIcon, { backgroundColor: isDarkMode ? 'rgba(205, 139, 135, 0.15)' : '#FDF2F2' }]}>
+                        <Phone size={16} color="#CD8B87" strokeWidth={2.5} />
                       </View>
-                      <Text style={[styles.hmoNumber, { color: theme.textSecondary }]}>{hmo.number}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -443,12 +442,17 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   },
   emergencyCard: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 16,
     alignItems: 'center',
     minHeight: 140,
     justifyContent: 'flex-start',
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 0,
   },
   emergencyIcon: {
     width: 52,
@@ -472,9 +476,14 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
 
   // HMO List - Premium
   hmoContainer: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 0,
   },
   hmoRow: {
     flexDirection: 'row-reverse',
@@ -497,17 +506,13 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   hmoCall: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   phoneIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  hmoNumber: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
