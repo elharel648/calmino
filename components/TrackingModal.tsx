@@ -1412,17 +1412,24 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
 
               {/* Amount Section - Right Side (First in Code for RTL) */}
               <View style={{ alignItems: 'center' }}>
-                <Text style={[styles.label, { textAlign: 'center', marginBottom: 12 }]}>{t('tracking.howMuch')}</Text>
-                <View style={[styles.amountRow, { marginTop: 0, gap: 12 }]}>
+                <Text style={[styles.label, { textAlign: 'center', marginBottom: 16 }]}>{t('tracking.howMuch')}</Text>
+                <View style={[styles.amountRow, { marginTop: 0, gap: 16 }]}>
+                  {/* Minus */}
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    style={{
+                      width: 46, height: 46, borderRadius: 23,
+                      backgroundColor: isDarkMode ? 'rgba(155,74,101,0.18)' : 'rgba(155,74,101,0.10)',
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.15, shadowRadius: 6, elevation: 0,
+                    }}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
                       if (current >= 5) setBottleAmount((current - 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Minus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                    <Minus size={20} color={theme.primary} strokeWidth={2.5} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1451,19 +1458,26 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.amountValue, { fontSize: 32, color: theme.textPrimary }]}>{bottleAmount || '0'}</Text>
+                    <Text style={[styles.amountValue, { fontSize: 44, letterSpacing: -2, color: (parseInt(bottleAmount) || 0) > 0 ? theme.primary : theme.textPrimary }]}>{bottleAmount || '0'}</Text>
                     <Text style={[styles.amountUnit, { fontSize: 13 }]}>{t('tracking.ml')}</Text>
                   </TouchableOpacity>
 
+                  {/* Plus */}
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    style={{
+                      width: 46, height: 46, borderRadius: 23,
+                      backgroundColor: theme.primary,
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35, shadowRadius: 8, elevation: 0,
+                    }}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
                       setBottleAmount((current + 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Plus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                    <Plus size={20} color="#fff" strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1473,15 +1487,16 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 <TouchableOpacity
                   style={[
                     styles.breastTimeCard,
-                    { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' },
-                    isBottleActive && { backgroundColor: isDarkMode ? `${theme.primary}25` : `${theme.primary}15`, borderColor: theme.primary, borderWidth: 1.5 },
+                    { width: 130, aspectRatio: 1, flex: 0, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FAFAFA', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : '#EBEBEB',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 0 },
+                    isBottleActive && { backgroundColor: isDarkMode ? `${theme.primary}25` : `${theme.primary}12`, borderColor: theme.primary, borderWidth: 1.5, shadowColor: theme.primary, shadowOpacity: 0.2 },
                     isBottleActive && foodTimerContext.bottleIsPaused && { opacity: 0.8 }
                   ]}
                   onPress={() => { toggleBottleTimer(); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.breastTimeLabel, isBottleActive && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.timer')}</Text>
-                  <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isBottleActive && { color: theme.primary }]}>
+                  <Text style={[styles.breastTimeValue, { fontSize: 30, letterSpacing: -1, color: theme.textPrimary }, isBottleActive && { color: theme.primary }]}>
                     {formatTime(bottleTimer)}
                   </Text>
                   {isBottleActive && foodTimerContext.bottleIsPaused && (
@@ -1564,17 +1579,24 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
 
               {/* Amount Section - Right Side (First in Code for RTL) */}
               <View style={{ alignItems: 'center' }}>
-                <Text style={[styles.label, { textAlign: 'center', marginBottom: 12 }]}>{t('tracking.pumpingAmount')}</Text>
-                <View style={[styles.amountRow, { marginTop: 0, gap: 12 }]}>
+                <Text style={[styles.label, { textAlign: 'center', marginBottom: 16 }]}>{t('tracking.pumpingAmount')}</Text>
+                <View style={[styles.amountRow, { marginTop: 0, gap: 16 }]}>
+                  {/* Minus */}
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    style={{
+                      width: 46, height: 46, borderRadius: 23,
+                      backgroundColor: isDarkMode ? 'rgba(155,74,101,0.18)' : 'rgba(155,74,101,0.10)',
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.15, shadowRadius: 6, elevation: 0,
+                    }}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
                       if (current >= 5) setPumpingAmount((current - 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Minus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                    <Minus size={20} color={theme.primary} strokeWidth={2.5} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1603,19 +1625,26 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.amountValue, { fontSize: 32, color: theme.textPrimary }]}>{pumpingAmount || '0'}</Text>
+                    <Text style={[styles.amountValue, { fontSize: 44, letterSpacing: -2, color: (parseInt(pumpingAmount) || 0) > 0 ? theme.primary : theme.textPrimary }]}>{pumpingAmount || '0'}</Text>
                     <Text style={[styles.amountUnit, { fontSize: 13 }]}>{t('tracking.ml')}</Text>
                   </TouchableOpacity>
 
+                  {/* Plus */}
                   <TouchableOpacity
-                    style={[styles.amountBtn, { width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }]}
+                    style={{
+                      width: 46, height: 46, borderRadius: 23,
+                      backgroundColor: theme.primary,
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35, shadowRadius: 8, elevation: 0,
+                    }}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
                       setPumpingAmount((current + 5).toString());
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Plus size={18} color={theme.textPrimary} strokeWidth={1.5} />
+                    <Plus size={20} color="#fff" strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1668,11 +1697,32 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         )
       }
       {/* Free Text Note - Available for all food types */}
-      <View style={styles.sleepNoteContainer}>
-        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <MessageSquare size={14} color={theme.textTertiary} strokeWidth={2} />
-          <Text style={styles.sleepNoteLabel}>{t('tracking.note')}</Text>
-        </View>
+      <View style={[styles.sleepNoteContainer, { marginTop: 20 }]}>
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row-reverse', alignItems: 'center', gap: 8, 
+            alignSelf: 'flex-start',
+            paddingVertical: 8, paddingHorizontal: 14,
+            borderRadius: 20,
+            backgroundColor: foodNote.length > 0
+              ? (isDarkMode ? `${theme.primary}22` : `${theme.primary}12`)
+              : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+            borderWidth: 1,
+            borderColor: foodNote.length > 0
+              ? theme.primary
+              : (isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)'),
+            marginBottom: foodNote.length > 0 ? 10 : 0,
+          }}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          activeOpacity={0.7}
+        >
+          <MessageSquare size={14} color={foodNote.length > 0 ? theme.primary : theme.textTertiary} strokeWidth={2} />
+          <Text style={{ fontSize: 13, fontWeight: '600', color: foodNote.length > 0 ? theme.primary : theme.textTertiary }}>
+            {t('tracking.note')}
+          </Text>
+        </TouchableOpacity>
         <View pointerEvents="auto">
           <TextInput
             style={[styles.sleepNoteInput, { minHeight: 80, color: theme.textPrimary, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)' }]}
