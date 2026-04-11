@@ -176,42 +176,53 @@ const SupplementCard = memo(({
     });
 
     return (
-        <Animated.View 
-            entering={FadeIn.duration(250)}
-            style={{ marginBottom: 8 }}
-        >
-            <TouchableOpacity
-                onPress={handlePress}
-                activeOpacity={0.7}
-                disabled={isEditMode}
-            >
-                <RNAnimated.View style={[
-                    {
-                        flexDirection: 'row-reverse',
-                        alignItems: 'center',
-                        paddingHorizontal: 16,
-                        height: 64,
-                        borderRadius: 16,
-                        borderWidth: 1.5,
-                        gap: 14,
-                        backgroundColor: animatedBg,
-                        borderColor: animatedBorder
-                    }
-                ]}>
-                    {/* Delete badge in edit mode */}
-                    {isEditMode && (
-                        <TouchableOpacity
-                            style={styles.deleteBadge}
-                            onPress={() => onRemove(id)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Trash2 size={13} color="#fff" strokeWidth={2.5} />
-                        </TouchableOpacity>
-                    )}
+        <Animated.View style={{ marginBottom: 8 }} entering={FadeIn.duration(250)}>
+            <RNAnimated.View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: 16,
+                borderRadius: 16,
+                backgroundColor: animatedBg,
+                borderWidth: taken || justCompleted ? 1 : 0,
+                borderColor: animatedBorder,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.04,
+                shadowRadius: 4,
+                elevation: 0,
+            }}>
+                {/* Left side: icon in normal mode, trash in edit mode */}
+                {isEditMode ? (
+                    <TouchableOpacity
+                        onPress={() => onRemove(id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <Trash2 size={16} color="#EF4444" strokeWidth={2} />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={[
+                        styles.rowIconCircle,
+                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' },
+                    ]}>
+                        <IconComponent
+                            size={18}
+                            color={taken ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)')}
+                            strokeWidth={2}
+                        />
+                    </View>
+                )}
 
-                    {/* Checkbox with burst ring (Visually Right) */}
+                {/* Right: checkbox + text (row-reverse so checkbox on far right) */}
+                <TouchableOpacity
+                    style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1, gap: 10, marginLeft: 12 }}
+                    onPress={handlePress}
+                    activeOpacity={0.7}
+                    disabled={isEditMode}
+                >
+                    {/* Checkbox with burst ring */}
                     <View style={{ width: 34, height: 34, alignItems: 'center', justifyContent: 'center' }}>
-                        {(justCompleted) && (
+                        {justCompleted && (
                             <RNAnimated.View style={{
                                 position: 'absolute',
                                 alignSelf: 'center',
@@ -225,26 +236,30 @@ const SupplementCard = memo(({
                         )}
                         <RNAnimated.View style={[
                             {
-                                width: 28, height: 28, borderRadius: 14, borderWidth: 2, 
-                                alignItems: 'center', justifyContent: 'center'
+                                width: 30, height: 30, borderRadius: 15, borderWidth: 2,
+                                alignItems: 'center', justifyContent: 'center',
                             },
                             !(taken || justCompleted) && { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB' },
                             (taken || justCompleted) && { backgroundColor: primaryColor, borderColor: primaryColor },
-                            justCompleted && {
-                                transform: [{ scale: checkScale }],
-                                opacity: checkOpacity,
-                            },
+                            justCompleted && { transform: [{ scale: checkScale }], opacity: checkOpacity },
                         ]}>
                             {(taken || justCompleted) && <Check size={16} color="#fff" strokeWidth={3} />}
                         </RNAnimated.View>
                     </View>
 
-                    {/* Name — flex 1, right-aligned (Middle) */}
+                    {/* Text with animated strikethrough */}
                     <RNAnimated.View style={{ flex: 1, alignItems: 'flex-end', opacity: textOpacity }}>
                         <View style={{ position: 'relative' }}>
                             <Text style={[
-                                { fontSize: 16, textAlign: 'right', writingDirection: 'rtl', flex: undefined, color: theme.textPrimary },
-                                (taken || justCompleted) && { color: theme.textSecondary, fontWeight: '500' }
+                                {
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                    letterSpacing: -0.3,
+                                    textAlign: 'right',
+                                    color: theme.textPrimary,
+                                },
+                                (taken && !justCompleted) && { color: theme.textSecondary, fontWeight: '500' },
+                                justCompleted && { color: theme.textSecondary, fontWeight: '500' },
                             ]} numberOfLines={1}>
                                 {name}
                             </Text>
@@ -259,20 +274,8 @@ const SupplementCard = memo(({
                             }} />
                         </View>
                     </RNAnimated.View>
-
-                    {/* Icon circle — visually Left */}
-                    <View style={[
-                        styles.rowIconCircle,
-                        { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' },
-                    ]}>
-                        <IconComponent
-                            size={18}
-                            color={taken ? primaryColor : (isDarkMode ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)')}
-                            strokeWidth={2}
-                        />
-                    </View>
-                </RNAnimated.View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+            </RNAnimated.View>
         </Animated.View>
     );
 });
