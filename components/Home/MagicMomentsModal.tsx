@@ -888,24 +888,50 @@ export default function MagicMomentsModal({
             </Modal>
 
             {/* Date Picker — Android: Hebrew Calendar, iOS: native (handled in separate modal below) */}
-            {Platform.OS === 'android' && editingDateMonth && (
-                <AndroidHebrewCalendar
-                    visible={datePickerVisible}
-                    value={selectedDate}
-                    onSelect={(date) => {
-                        setSelectedDate(date);
-                        handleDateUpdate(editingDateMonth!, date);
-                        setEditingDateMonth(null);
-                        setDatePickerVisible(false);
-                    }}
-                    onDismiss={() => {
+            {Platform.OS === 'android' && editingDateMonth && datePickerVisible && (
+                <Modal
+                    visible={true}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => {
                         setDatePickerVisible(false);
                         setEditingDateMonth(null);
                     }}
-                    theme={theme}
-                    t={t}
-                    maximumDate={new Date()}
-                />
+                >
+                    <TouchableOpacity
+                        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}
+                        activeOpacity={1}
+                        onPress={() => {
+                            setDatePickerVisible(false);
+                            setEditingDateMonth(null);
+                        }}
+                    >
+                        <TouchableOpacity
+                            style={{ backgroundColor: theme.card, borderRadius: 20, padding: 20, width: '90%', maxWidth: 350 }}
+                            activeOpacity={1}
+                            onPress={() => {}}
+                        >
+                            <AndroidHebrewCalendar
+                                visible={true}
+                                value={selectedDate}
+                                onSelect={(date) => {
+                                    setSelectedDate(date);
+                                    handleDateUpdate(editingDateMonth!, date);
+                                    setEditingDateMonth(null);
+                                    setDatePickerVisible(false);
+                                }}
+                                onDismiss={() => {
+                                    setDatePickerVisible(false);
+                                    setEditingDateMonth(null);
+                                }}
+                                theme={theme}
+                                t={t}
+                                maximumDate={new Date()}
+                                inline
+                            />
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </Modal>
             )}
             {Platform.OS !== 'android' && datePickerVisible && editingDateMonth && (
                 <DateTimePicker

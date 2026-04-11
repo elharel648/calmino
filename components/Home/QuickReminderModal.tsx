@@ -108,7 +108,10 @@ const ReminderWheelPicker = ({
           snapToInterval={WHEEL_ITEM_HEIGHT}
           decelerationRate="fast"
           onMomentumScrollEnd={handleMomentumEnd}
+          onScrollEndDrag={Platform.OS === 'android' ? handleMomentumEnd : undefined}
           contentContainerStyle={{ paddingVertical: WHEEL_ITEM_HEIGHT * 2 }}
+          nestedScrollEnabled={true}
+          overScrollMode="always"
         >
           {values.map((v, i) => (
             <View key={v} style={{ height: WHEEL_ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
@@ -145,20 +148,6 @@ const ReminderAndroidTimePicker = ({
 
   return (
     <View style={{ alignItems: 'center' }}>
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: theme.cardBackground || '#F5F5F5',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        marginBottom: 8,
-      }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
-          {`${t('tracking.minutes')}' ${minutes}   ${t('tracking.hours')} ${hours}`}
-        </Text>
-      </View>
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
         <ReminderWheelPicker
           values={hoursArr}
@@ -484,10 +473,10 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                             backgroundColor: isDarkMode ? '#121212' : '#FFFFFF'
                         }
                     ]}
-                    {...panResponder.panHandlers}
+                    {...(Platform.OS !== 'android' ? panResponder.panHandlers : {})}
                 >
                     {/* Drag Handle */}
-                    <View style={styles.handleContainer}>
+                    <View style={styles.handleContainer} {...(Platform.OS === 'android' ? panResponder.panHandlers : {})}>
                         <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }]} />
                     </View>
 
@@ -513,7 +502,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 </Reanimated.View>
                             </View>
                             <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                                {viewMode === 'list' ? 'התזכורות שלי' : 'תזכורת חדשה'}
+                                {viewMode === 'list' ? 'התזכורות שלי' : t('actions.quickReminder')}
                             </Text>
                         </View>
 
@@ -548,6 +537,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                         style={styles.content}
                         contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
                         showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled={Platform.OS === 'android'}
                     >
                         {viewMode === 'list' ? (
                             reminders.length === 0 ? (
@@ -782,21 +772,24 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                         />
                                     </View>
                                 )}
-                                {Platform.OS === 'android' && (
-                                    <AndroidHebrewCalendar
-                                        visible={showDatePicker}
-                                        value={selectedDate}
-                                        onSelect={(d) => {
-                                            const newDate = new Date(selectedDate);
-                                            newDate.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
-                                            setSelectedDate(newDate);
-                                            setShowDatePicker(false);
-                                        }}
-                                        onDismiss={() => setShowDatePicker(false)}
-                                        theme={theme}
-                                        t={t}
-                                        allowFuture={true}
-                                    />
+                                {showDatePicker && Platform.OS === 'android' && (
+                                    <View style={styles.inlinePickerContainer}>
+                                        <AndroidHebrewCalendar
+                                            visible={true}
+                                            value={selectedDate}
+                                            onSelect={(d) => {
+                                                const newDate = new Date(selectedDate);
+                                                newDate.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
+                                                setSelectedDate(newDate);
+                                                setShowDatePicker(false);
+                                            }}
+                                            onDismiss={() => setShowDatePicker(false)}
+                                            theme={theme}
+                                            t={t}
+                                            allowFuture={true}
+                                            inline
+                                        />
+                                    </View>
                                 )}
 
                                 {showTimePicker && (

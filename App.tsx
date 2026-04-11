@@ -179,7 +179,7 @@ const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => 
     <View style={{
       alignItems: 'center',
       justifyContent: 'center',
-      width: 72,
+      width: Platform.OS === 'android' ? 80 : 72,
       overflow: 'visible',
     }}>
       {/* 
@@ -188,9 +188,9 @@ const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => 
       */}
       <AnimatedIconComponent focused={focused} color={currentColor} size={iconSize} />
 
-      <Reanimated.Text numberOfLines={1} style={[{
-        color: currentColor, 
-        fontSize: 11, 
+      <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit={Platform.OS === 'android'} minimumFontScale={0.8} style={[{
+        color: currentColor,
+        fontSize: 11,
         marginTop: 6,
         fontWeight: focused ? '800' : '700',
         textAlign: 'center',

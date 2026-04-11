@@ -81,7 +81,10 @@ const AndroidWheelPicker = ({
           snapToInterval={ITEM_HEIGHT}
           decelerationRate="fast"
           onMomentumScrollEnd={handleMomentumEnd}
+          onScrollEndDrag={Platform.OS === 'android' ? handleMomentumEnd : undefined}
           contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
+          nestedScrollEnabled={true}
+          overScrollMode="always"
         >
           {values.map((v, i) => (
             <View key={v} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
@@ -118,20 +121,6 @@ const AndroidTimePicker = ({
 
   return (
     <View style={{ alignItems: 'center' }}>
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: theme.cardBackground || '#F5F5F5',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        marginBottom: 8,
-      }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
-          {`${t('tracking.minutes')}' ${minutes}   ${t('tracking.hours')} ${hours}`}
-        </Text>
-      </View>
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
         <AndroidWheelPicker
           values={hoursArr}
@@ -192,21 +181,6 @@ const IsolatedDurationPicker = ({
 
     return (
       <View style={{ alignItems: 'center' }}>
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 8,
-          backgroundColor: theme.cardBackground || '#F5F5F5',
-          borderRadius: 16,
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          marginBottom: 8,
-        }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: theme.textPrimary }}>
-            {`${t('tracking.minutes')}' ${minutes}   ${t('tracking.hours')} ${hours}`}
-          </Text>
-        </View>
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
           <AndroidWheelPicker
             values={hoursArr}
@@ -2429,7 +2403,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               </Animated.View>
 
               {/* Calendar Overlay - Inline */}
-              {showCalendar && (
+              {showCalendar && Platform.OS !== 'android' && (
                 <View style={styles.calendarInlineOverlay}>
                   <TouchableOpacity style={styles.calendarInlineBackdrop} activeOpacity={1} onPress={() => { setShowCalendar(false); setCalendarView('days'); }} />
                   <View style={styles.calendarCard}>
@@ -2584,9 +2558,23 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       </Modal>
 
 
-      {/* Calendar Modal */}
+      {/* Calendar Modal — Android uses AndroidHebrewCalendar for consistency */}
+      {Platform.OS === 'android' && showCalendar && (
+        <AndroidHebrewCalendar
+          visible={true}
+          value={selectedDate}
+          onSelect={(d) => {
+            setSelectedDate(d);
+            setShowCalendar(false);
+          }}
+          onDismiss={() => setShowCalendar(false)}
+          theme={theme}
+          t={t}
+          maximumDate={new Date()}
+        />
+      )}
       <Modal
-        visible={showCalendar}
+        visible={showCalendar && Platform.OS !== 'android'}
         transparent
         animationType="fade"
         onRequestClose={() => setShowCalendar(false)
