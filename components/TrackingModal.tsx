@@ -1418,10 +1418,8 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   <TouchableOpacity
                     style={{
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: isDarkMode ? 'rgba(155,74,101,0.18)' : 'rgba(155,74,101,0.10)',
+                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
                       alignItems: 'center', justifyContent: 'center',
-                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.15, shadowRadius: 6, elevation: 0,
                     }}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
@@ -1429,7 +1427,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Minus size={20} color={theme.primary} strokeWidth={2.5} />
+                    <Minus size={20} color={theme.textSecondary} strokeWidth={2.5} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1466,10 +1464,8 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   <TouchableOpacity
                     style={{
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: theme.primary,
+                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
                       alignItems: 'center', justifyContent: 'center',
-                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35, shadowRadius: 8, elevation: 0,
                     }}
                     onPress={() => {
                       const current = parseInt(bottleAmount) || 0;
@@ -1477,7 +1473,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Plus size={20} color="#fff" strokeWidth={2.5} />
+                    <Plus size={20} color={theme.textSecondary} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1585,10 +1581,8 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   <TouchableOpacity
                     style={{
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: isDarkMode ? 'rgba(155,74,101,0.18)' : 'rgba(155,74,101,0.10)',
+                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
                       alignItems: 'center', justifyContent: 'center',
-                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.15, shadowRadius: 6, elevation: 0,
                     }}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
@@ -1596,7 +1590,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Minus size={20} color={theme.primary} strokeWidth={2.5} />
+                    <Minus size={20} color={theme.textSecondary} strokeWidth={2.5} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1633,10 +1627,8 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   <TouchableOpacity
                     style={{
                       width: 46, height: 46, borderRadius: 23,
-                      backgroundColor: theme.primary,
+                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F2',
                       alignItems: 'center', justifyContent: 'center',
-                      shadowColor: theme.primary, shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35, shadowRadius: 8, elevation: 0,
                     }}
                     onPress={() => {
                       const current = parseInt(pumpingAmount) || 0;
@@ -1644,7 +1636,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
-                    <Plus size={20} color="#fff" strokeWidth={2.5} />
+                    <Plus size={20} color={theme.textSecondary} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               </View>
