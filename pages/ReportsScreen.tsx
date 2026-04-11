@@ -60,6 +60,8 @@ import {
   ShareSummaryButton,
   generateAIInsights,
 } from '../components/Reports/PremiumInsights';
+import CinematicReviewScreen from './CinematicReviewScreen';
+import { getWrappedData, WrappedData } from '../services/wrappedService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -154,6 +156,30 @@ export default function ReportsScreen() {
   // Premium State
   const { isPremium } = usePremium();
   const [showPaywall, setShowPaywall] = useState(false);
+
+  // Cinematic Wrapped State
+  const [showWrapped, setShowWrapped] = useState(false);
+  const [wrappedData, setWrappedData] = useState<WrappedData | null>(null);
+  const [wrappedLoading, setWrappedLoading] = useState(false);
+
+  const handleOpenWrapped = async () => {
+    if (!activeChild?.childId) return;
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (wrappedData) { setShowWrapped(true); return; }
+    setWrappedLoading(true);
+    try {
+      const d = await getWrappedData(activeChild.childId);
+      if (d) {
+        // Attach album photos from baby profile
+        const photos = baby?.album ? Object.values(baby.album).filter(Boolean) as string[] : [];
+        d.albumPhotos = photos;
+        setWrappedData(d);
+        setShowWrapped(true);
+      }
+    } finally {
+      setWrappedLoading(false);
+    }
+  };
 
   // Load stats order
   useEffect(() => {
@@ -1500,6 +1526,35 @@ export default function ReportsScreen() {
       contentContainerStyle={styles.tabContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
+      {/* ✨ Cinematic Wrapped Banner */}
+      {activeChild?.childId && (
+        <TouchableOpacity
+          style={[styles.wrappedBanner, { opacity: wrappedLoading ? 0.7 : 1 }]}
+          onPress={handleOpenWrapped}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={['#6b004a', '#9b1b6e', '#c8456f', '#E8567F']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* Shimmer overlay */}
+          <LinearGradient
+            colors={['transparent', 'rgba(255,255,255,0.12)', 'transparent']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={[StyleSheet.absoluteFill, { transform: [{ skewX: '-20deg' }] }]}
+          />
+          <View style={styles.wrappedBannerLeft}>
+            <Text style={styles.wrappedEmoji}>🎬</Text>
+            <View>
+              <Text style={styles.wrappedTitle}>המסע הקולנועי</Text>
+              <Text style={styles.wrappedSubtitle}>{wrappedLoading ? 'טוען...' : 'הסיכום המרגש של כל הזמנים →'}</Text>
+            </View>
+          </View>
+          <Text style={styles.wrappedSparkles}>✨</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Stats Grid */}
       <View
         style={[styles.statsGrid, { position: 'relative' }]}
@@ -2162,6 +2217,24 @@ export default function ReportsScreen() {
         onNavigateToPaywall={() => setShowPaywall(true)}
       />
 
+      {/* 🎬 Cinematic Review (Wrapped) Modal */}
+      <Modal
+        visible={showWrapped}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowWrapped(false)}
+      >
+        {showWrapped && wrappedData && (
+          <CinematicReviewScreen
+            data={wrappedData}
+            childName={activeChild?.childName || 'התינוק שלך'}
+            babyAgeMonths={babyAgeMonths}
+            onClose={() => setShowWrapped(false)}
+          />
+        )}
+      </Modal>
+
+
       {/* History Log Modal */}
       <Modal visible={showHistoryModal} animationType="slide" presentationStyle="pageSheet">
         <View style={[styles.historyModalContainer, { backgroundColor: theme.background }]}>
@@ -2420,4 +2493,12 @@ const styles = StyleSheet.create({
   streakTextWrap: { alignItems: 'center' },
   streakNumber: { fontSize: 22, fontWeight: '800' },
   streakDaysLabel: { fontSize: 11, fontWeight: '500', marginTop: -2 },
+
+  // Cinematic Wrapped Banner
+  wrappedBanner: { marginBottom: 18, borderRadius: 22, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 18, shadowColor: '#E8567F', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 18, elevation: 0 },
+  wrappedBannerLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14 },
+  wrappedEmoji: { fontSize: 36 },
+  wrappedTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF', textAlign: 'right' },
+  wrappedSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2, textAlign: 'right' },
+  wrappedSparkles: { fontSize: 26 },
 });
