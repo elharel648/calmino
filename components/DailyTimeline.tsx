@@ -22,12 +22,14 @@ import { logger } from '../utils/logger';
 const PulseDot = () => {
   const scale = useRef(new RNAnimated.Value(1)).current;
   useEffect(() => {
-    RNAnimated.loop(
+    const anim = RNAnimated.loop(
       RNAnimated.sequence([
         RNAnimated.timing(scale, { toValue: 1.7, duration: 950, useNativeDriver: true }),
         RNAnimated.timing(scale, { toValue: 1,   duration: 950, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    anim.start();
+    return () => anim.stop();
   }, []);
   return (
     <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>

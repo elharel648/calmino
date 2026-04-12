@@ -412,8 +412,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                     try {
                         const parentDoc = await getDoc(doc(db, 'users', data.parentId));
                         if (parentDoc.exists()) {
-                            parentName = parentDoc.data().displayName || t('babysitter.parent');
-                            parentPhoto = parentDoc.data().photoUrl || null;
+                            parentName = parentDoc.data()?.displayName || t('babysitter.parent');
+                            parentPhoto = parentDoc.data()?.photoUrl || null;
                         }
                     } catch (error) {
                         logger.error('Failed to load parent info:', error);
@@ -730,7 +730,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                 try {
                     const parentDoc = await getDoc(doc(db, 'users', booking.parentId));
                     if (parentDoc.exists()) {
-                        phone = parentDoc.data().phone || parentDoc.data().phoneNumber;
+                        phone = parentDoc.data()?.phone || parentDoc.data()?.phoneNumber;
                     }
                 } catch (e) {
                     logger.error('Could not fetch parent phone', e);
