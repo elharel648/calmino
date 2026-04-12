@@ -631,18 +631,21 @@ export default function MilestonesModal({
                             />
                         </View>
                     )}
-                    {Platform.OS === 'android' && (
-                        <AndroidHebrewCalendar
-                            visible={showDatePicker}
-                            value={date}
-                            onSelect={(selectedDate) => {
-                                setDate(selectedDate);
-                                setShowDatePicker(false);
-                            }}
-                            onDismiss={() => setShowDatePicker(false)}
-                            theme={theme}
-                            t={t}
-                        />
+                    {showDatePicker && Platform.OS === 'android' && (
+                        <View style={styles.datePickerContainer}>
+                            <AndroidHebrewCalendar
+                                visible={true}
+                                value={date}
+                                onSelect={(selectedDate) => {
+                                    setDate(selectedDate);
+                                    setShowDatePicker(false);
+                                }}
+                                onDismiss={() => setShowDatePicker(false)}
+                                theme={theme}
+                                t={t}
+                                inline
+                            />
+                        </View>
                     )}
                 </RNAnimatedView>
             </KeyboardAvoidingView>

@@ -512,19 +512,24 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                             </View>
                         </View>
                     )}
-                    {Platform.OS === 'android' && (
-                        <AndroidHebrewCalendar
-                            visible={showDatePicker}
-                            value={selectedDate}
-                            onSelect={(date) => {
-                                setSelectedDate(date);
-                                setShowDatePicker(false);
-                            }}
-                            onDismiss={() => setShowDatePicker(false)}
-                            theme={theme}
-                            t={t}
-                            maximumDate={new Date()}
-                        />
+                    {showDatePicker && Platform.OS === 'android' && (
+                        <View style={styles.pickerOverlay}>
+                            <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                                <AndroidHebrewCalendar
+                                    visible={true}
+                                    value={selectedDate}
+                                    onSelect={(date) => {
+                                        setSelectedDate(date);
+                                        setShowDatePicker(false);
+                                    }}
+                                    onDismiss={() => setShowDatePicker(false)}
+                                    theme={theme}
+                                    t={t}
+                                    maximumDate={new Date()}
+                                    inline
+                                />
+                            </View>
+                        </View>
                     )}
 
                     {/* Time Picker Modal */}

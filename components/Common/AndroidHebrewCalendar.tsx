@@ -29,6 +29,8 @@ interface AndroidHebrewCalendarProps {
   maximumDate?: Date;
   /** If true, allows selecting future dates (default: false — blocks future) */
   allowFuture?: boolean;
+  /** If true, renders calendar content without Modal wrapper (for embedding in other modals) */
+  inline?: boolean;
 }
 
 const HEBREW_WEEKDAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
@@ -43,6 +45,7 @@ const AndroidHebrewCalendar: React.FC<AndroidHebrewCalendarProps> = ({
   minimumDate,
   maximumDate,
   allowFuture = false,
+  inline = false,
 }) => {
   const [displayDate, setDisplayDate] = useState(new Date(value));
   const [calendarView, setCalendarView] = useState<'days' | 'months'>('days');
@@ -133,24 +136,8 @@ const AndroidHebrewCalendar: React.FC<AndroidHebrewCalendarProps> = ({
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-      statusBarTranslucent
-    >
-      <TouchableOpacity
-        style={[styles.overlay, { backgroundColor: theme.modalOverlay || 'rgba(0,0,0,0.5)' }]}
-        activeOpacity={1}
-        onPress={onDismiss}
-      >
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: theme.card }]}
-          activeOpacity={1}
-          onPress={() => {}}
-        >
+  const calendarContent = (
+    <>
           {/* Month/Year Header */}
           <View style={styles.header}>
             <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]} onPress={() => navigateMonth(1)}>
@@ -204,18 +191,22 @@ const AndroidHebrewCalendar: React.FC<AndroidHebrewCalendarProps> = ({
                       key={d}
                       style={[
                         styles.dayCell,
-                        isToday && [styles.dayToday, { backgroundColor: theme.cardSecondary }],
-                        isSelected && [styles.daySelected, { backgroundColor: theme.primary }],
                         disabled && styles.dayDisabled,
                       ]}
                       onPress={() => selectDay(date)}
                       disabled={disabled}
                     >
-                      <Text style={[
-                        styles.dayText,
-                        { color: theme.textPrimary },
-                        isSelected && { color: theme.card },
-                      ]}>{d}</Text>
+                      <View style={[
+                        styles.dayCircle,
+                        isToday && { backgroundColor: theme.cardSecondary },
+                        isSelected && { backgroundColor: theme.primary },
+                      ]}>
+                        <Text style={[
+                          styles.dayText,
+                          { color: theme.textPrimary },
+                          isSelected && { color: theme.card },
+                        ]}>{d}</Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -266,6 +257,32 @@ const AndroidHebrewCalendar: React.FC<AndroidHebrewCalendarProps> = ({
           >
             <Text style={[styles.todayBtnText, { color: theme.primary }]}>{t('common.today')}</Text>
           </TouchableOpacity>
+    </>
+  );
+
+  if (inline) {
+    return calendarContent;
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+      statusBarTranslucent
+    >
+      <TouchableOpacity
+        style={[styles.overlay, { backgroundColor: theme.modalOverlay || 'rgba(0,0,0,0.5)' }]}
+        activeOpacity={1}
+        onPress={onDismiss}
+      >
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: theme.card }]}
+          activeOpacity={1}
+          onPress={() => {}}
+        >
+          {calendarContent}
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -327,15 +344,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dayText: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  dayToday: {
-    borderRadius: 20,
-  },
-  daySelected: {
-    borderRadius: 20,
   },
   dayDisabled: {
     opacity: 0.3,

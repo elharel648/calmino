@@ -167,34 +167,6 @@ export default function TeethTrackerModal({
 
         // If tooth is already erupted, allow editing date or removing
         if (teethData[id]) {
-            if (Platform.OS === 'android') {
-                // Android: native DatePicker has no custom UI, so show Alert first
-                Alert.alert(
-                    t('teethTracker.editToothDate'),
-                    '',
-                    [
-                        {
-                            text: t('teethTracker.removeTooth'),
-                            style: 'destructive',
-                            onPress: () => handleRemoveTooth(id),
-                        },
-                        {
-                            text: t('teethTracker.updateDate'),
-                            onPress: () => {
-                                setSelectedTooth(id);
-                                setCurrentDate(teethData[id] || new Date());
-                                setShowDatePicker(true);
-                            },
-                        },
-                        {
-                            text: t('common.cancel'),
-                            style: 'cancel',
-                        },
-                    ]
-                );
-                return;
-            }
-            // iOS: Show date picker with custom modal (has remove button built in)
             setSelectedTooth(id);
             setCurrentDate(teethData[id] || new Date());
             setShowDatePicker(true);
@@ -604,32 +576,19 @@ export default function TeethTrackerModal({
                             })()}
                         </ScrollView>
 
-                    {/* Date Picker - Android: Hebrew Calendar, iOS: custom modal */}
-                    {Platform.OS === 'android' && (
-                        <AndroidHebrewCalendar
-                            visible={showDatePicker}
-                            value={currentDate}
-                            onSelect={(date) => {
-                                setCurrentDate(date);
-                                handleDateChange({} as any, date);
-                            }}
-                            onDismiss={() => {
-                                setShowDatePicker(false);
-                                setSelectedTooth(null);
-                            }}
-                            theme={theme}
-                            t={t}
-                            maximumDate={new Date()}
-                        />
-                    )}
-                    {showDatePicker && Platform.OS === 'ios' && (
+                    {/* Date Picker - custom modal on both platforms */}
+                    {showDatePicker && (
                         <Modal transparent visible={showDatePicker} animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
                             <View style={styles.datePickerOverlay}>
-                                <BlurView
-                                    intensity={20}
-                                    tint={isDarkMode ? 'dark' : 'light'}
-                                    style={StyleSheet.absoluteFill}
-                                />
+                                {Platform.OS === 'ios' ? (
+                                    <BlurView
+                                        intensity={20}
+                                        tint={isDarkMode ? 'dark' : 'light'}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                ) : (
+                                    <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)' }]} />
+                                )}
                                 <TouchableOpacity
                                     style={StyleSheet.absoluteFill}
                                     activeOpacity={1}
@@ -657,19 +616,32 @@ export default function TeethTrackerModal({
                                         </TouchableOpacity>
                                     </View>
                                     <View style={styles.datePickerContent}>
-                                        <DateTimePicker
-                                            value={currentDate}
-                                            mode="date"
-                                            display="spinner"
-                                            onChange={(event, date) => {
-                                                if (date) {
-                                                    setCurrentDate(date);
-                                                }
-                                            }}
-                                            maximumDate={new Date()}
-                                            textColor={theme.textPrimary}
-                                            locale="he-IL"
-                                        />
+                                        {Platform.OS === 'android' ? (
+                                            <AndroidHebrewCalendar
+                                                visible={true}
+                                                value={currentDate}
+                                                onSelect={(date) => setCurrentDate(date)}
+                                                onDismiss={() => {}}
+                                                theme={theme}
+                                                t={t}
+                                                maximumDate={new Date()}
+                                                inline
+                                            />
+                                        ) : (
+                                            <DateTimePicker
+                                                value={currentDate}
+                                                mode="date"
+                                                display="spinner"
+                                                onChange={(event, date) => {
+                                                    if (date) {
+                                                        setCurrentDate(date);
+                                                    }
+                                                }}
+                                                maximumDate={new Date()}
+                                                textColor={theme.textPrimary}
+                                                locale="he-IL"
+                                            />
+                                        )}
                                     </View>
                                     <View style={[styles.datePickerActions, { borderTopColor: theme.border }]}>
                                         {selectedTooth && teethData[selectedTooth] && (

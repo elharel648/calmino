@@ -564,19 +564,22 @@ export default function GrowthModal({
                                         />
                                     </View>
                                 )}
-                                {Platform.OS === 'android' && (
-                                    <AndroidHebrewCalendar
-                                        visible={showDatePicker}
-                                        value={pendingDate ?? measurementDate}
-                                        onSelect={(date) => {
-                                            setMeasurementDate(date);
-                                            setShowDatePicker(false);
-                                        }}
-                                        onDismiss={() => setShowDatePicker(false)}
-                                        theme={theme}
-                                        t={t}
-                                        maximumDate={new Date()}
-                                    />
+                                {showDatePicker && Platform.OS === 'android' && (
+                                    <View style={[styles.datePickerWrapper, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9FAFB', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E5EA' }]}>
+                                        <AndroidHebrewCalendar
+                                            visible={true}
+                                            value={pendingDate ?? measurementDate}
+                                            onSelect={(date) => {
+                                                setMeasurementDate(date);
+                                                setShowDatePicker(false);
+                                            }}
+                                            onDismiss={() => setShowDatePicker(false)}
+                                            theme={theme}
+                                            t={t}
+                                            maximumDate={new Date()}
+                                            inline
+                                        />
+                                    </View>
                                 )}
 
                                 {/* Simple Input Fields */}
