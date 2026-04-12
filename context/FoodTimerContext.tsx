@@ -2,9 +2,20 @@ import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { liveActivityService } from '../services/liveActivityService';
 import quickActionsService from '../services/quickActionsService';
 import { useActiveChild } from '../context/ActiveChildContext';
+
+const getFoodKey = (childId: string, type: string) => `timer_${type}_${childId}`;
+
+const persistFood = (childId: string, type: string, state: { isRunning: boolean; isPaused: boolean; elapsedSeconds: number; [key: string]: any }) => {
+    AsyncStorage.setItem(getFoodKey(childId, type), JSON.stringify({ ...state, savedAt: Date.now() })).catch(() => {});
+};
+
+const clearFood = (childId: string, type: string) => {
+    AsyncStorage.removeItem(getFoodKey(childId, type)).catch(() => {});
+};
 
 
 interface FoodTimerContextType {
@@ -104,6 +115,27 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
     // Get active child state
     const currentState = activeChildId && timers[activeChildId] ? timers[activeChildId] : INITIAL_STATE;
+
+    // Restore timers from AsyncStorage when activeChild changes
+    useEffect(() => {
+        if (!activeChildId || timers[activeChildId]) return;
+        const restore = async () => {
+            const types = ['pumping', 'bottle', 'breast'] as const;
+            const updates: any = {};
+            for (const type of types) {
+                const raw = await AsyncStorage.getItem(getFoodKey(activeChildId, type)).catch(() => null);
+                if (!raw) continue;
+                const saved = JSON.parse(raw);
+                if (!saved.isRunning) continue;
+                const elapsed = saved.elapsedSeconds + (saved.isPaused ? 0 : Math.floor((Date.now() - saved.savedAt) / 1000));
+                updates[type] = { ...INITIAL_STATE[type], ...saved, elapsedSeconds: elapsed };
+            }
+            if (Object.keys(updates).length > 0) {
+                setTimers(prev => ({ ...prev, [activeChildId]: { ...(prev[activeChildId] || INITIAL_STATE), ...updates } }));
+            }
+        };
+        restore();
+    }, [activeChildId]);
 
     const updateChildState = useCallback((childId: string, updates: Partial<FoodTimerState>) => {
         setTimers(prev => ({
@@ -242,6 +274,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'pumping', { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined });
+        persistFood(activeChildId, 'pumping', { isRunning: true, isPaused: false, elapsedSeconds: 0 });
 
         // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS !== 'web') {
@@ -257,6 +290,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         const activityId = currentState.pumping.activityId;
         updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, activityId: undefined });
+        clearFood(activeChildId, 'pumping');
 
         if (Platform.OS !== 'web' && activityId) {
             try { await liveActivityService.stopPumpingTimer(); } catch (e) { logger.warn('liveActivityService.stopPumpingTimer error', e); }
@@ -266,18 +300,21 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const pausePumping = useCallback(async () => {
         if (!activeChildId || !currentState.pumping.isRunning || currentState.pumping.isPaused) return;
         updateNestedState(activeChildId, 'pumping', { isPaused: true });
+        persistFood(activeChildId, 'pumping', { isRunning: true, isPaused: true, elapsedSeconds: currentState.pumping.elapsedSeconds });
         if (Platform.OS !== 'web' && currentState.pumping.activityId) await liveActivityService.pauseTimer();
     }, [activeChildId, currentState.pumping, updateNestedState]);
 
     const resumePumping = useCallback(async () => {
         if (!activeChildId || !currentState.pumping.isRunning || !currentState.pumping.isPaused) return;
         updateNestedState(activeChildId, 'pumping', { isPaused: false });
+        persistFood(activeChildId, 'pumping', { isRunning: true, isPaused: false, elapsedSeconds: currentState.pumping.elapsedSeconds });
         if (Platform.OS !== 'web' && currentState.pumping.activityId) await liveActivityService.resumeTimer();
     }, [activeChildId, currentState.pumping, updateNestedState]);
 
     const resetPumping = useCallback(() => {
         if (!activeChildId) return;
         updateNestedState(activeChildId, 'pumping', { isRunning: false, isPaused: false, elapsedSeconds: 0 });
+        clearFood(activeChildId, 'pumping');
     }, [activeChildId, updateNestedState]);
 
 
@@ -289,6 +326,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'bottle', { isRunning: true, isPaused: false, elapsedSeconds: 0, activityId: undefined });
+        persistFood(activeChildId, 'bottle', { isRunning: true, isPaused: false, elapsedSeconds: 0 });
 
         // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS !== 'web') {
@@ -304,6 +342,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         const activityId = currentState.bottle.activityId;
         updateNestedState(activeChildId, 'bottle', { isRunning: false, isPaused: false, activityId: undefined });
+        clearFood(activeChildId, 'bottle');
 
         if (Platform.OS !== 'web' && activityId) {
             try { await liveActivityService.stopBottleTimer(); } catch (e) { logger.warn('liveActivityService.stopBottleTimer error', e); }
@@ -313,18 +352,21 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const pauseBottle = useCallback(async () => {
         if (!activeChildId || !currentState.bottle.isRunning || currentState.bottle.isPaused) return;
         updateNestedState(activeChildId, 'bottle', { isPaused: true });
+        persistFood(activeChildId, 'bottle', { isRunning: true, isPaused: true, elapsedSeconds: currentState.bottle.elapsedSeconds });
         if (Platform.OS !== 'web' && currentState.bottle.activityId) await liveActivityService.pauseTimer();
     }, [activeChildId, currentState.bottle, updateNestedState]);
 
     const resumeBottle = useCallback(async () => {
         if (!activeChildId || !currentState.bottle.isRunning || !currentState.bottle.isPaused) return;
         updateNestedState(activeChildId, 'bottle', { isPaused: false });
+        persistFood(activeChildId, 'bottle', { isRunning: true, isPaused: false, elapsedSeconds: currentState.bottle.elapsedSeconds });
         if (Platform.OS !== 'web' && currentState.bottle.activityId) await liveActivityService.resumeTimer();
     }, [activeChildId, currentState.bottle, updateNestedState]);
 
     const resetBottle = useCallback(() => {
         if (!activeChildId) return;
         updateNestedState(activeChildId, 'bottle', { isRunning: false, isPaused: false, elapsedSeconds: 0 });
+        clearFood(activeChildId, 'bottle');
     }, [activeChildId, updateNestedState]);
 
 
@@ -347,6 +389,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
 
         // Update state immediately so UI responds — don't await Live Activity
         updateNestedState(activeChildId, 'breast', updates);
+        persistFood(activeChildId, 'breast', { isRunning: true, isPaused: false, elapsedSeconds: 0, activeSide: side, leftBreastTime: updates.leftBreastTime ?? currentBreast.leftBreastTime, rightBreastTime: updates.rightBreastTime ?? currentBreast.rightBreastTime });
 
         // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS === 'ios') {
@@ -379,6 +422,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         }
 
         updateNestedState(activeChildId, 'breast', updates);
+        clearFood(activeChildId, 'breast');
 
         if (Platform.OS === 'ios' && currentBreast.activityId) {
             try { await quickActionsService.stopBreastfeeding(); } catch (e) { logger.warn('quickActionsService.stopBreastfeeding error', e); }
@@ -390,6 +434,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const pauseBreast = useCallback(async () => {
         if (!activeChildId || !currentState.breast.isRunning || currentState.breast.isPaused) return;
         updateNestedState(activeChildId, 'breast', { isPaused: true });
+        persistFood(activeChildId, 'breast', { isRunning: true, isPaused: true, elapsedSeconds: currentState.breast.elapsedSeconds, activeSide: currentState.breast.activeSide, leftBreastTime: currentState.breast.leftBreastTime, rightBreastTime: currentState.breast.rightBreastTime });
         if (Platform.OS === 'ios' && currentState.breast.activityId) await quickActionsService.pauseBreastfeeding();
         else if (Platform.OS === 'android') await liveActivityService.pauseTimer().catch(() => {});
     }, [activeChildId, currentState.breast, updateNestedState]);
@@ -397,6 +442,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     const resumeBreast = useCallback(async () => {
         if (!activeChildId || !currentState.breast.isRunning || !currentState.breast.isPaused) return;
         updateNestedState(activeChildId, 'breast', { isPaused: false });
+        persistFood(activeChildId, 'breast', { isRunning: true, isPaused: false, elapsedSeconds: currentState.breast.elapsedSeconds, activeSide: currentState.breast.activeSide, leftBreastTime: currentState.breast.leftBreastTime, rightBreastTime: currentState.breast.rightBreastTime });
         if (Platform.OS === 'ios' && currentState.breast.activityId) await quickActionsService.resumeBreastfeeding();
         else if (Platform.OS === 'android') await liveActivityService.resumeTimer().catch(() => {});
     }, [activeChildId, currentState.breast, updateNestedState]);
@@ -406,6 +452,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         updateNestedState(activeChildId, 'breast', {
             isRunning: false, isPaused: false, activeSide: null, elapsedSeconds: 0, leftBreastTime: 0, rightBreastTime: 0
         });
+        clearFood(activeChildId, 'breast');
     }, [activeChildId, updateNestedState]);
 
     // === UTILITY ===

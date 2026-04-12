@@ -2,9 +2,20 @@ import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import quickActionsService from '../services/quickActionsService';
 import { liveActivityService } from '../services/liveActivityService';
 import { useActiveChild } from '../context/ActiveChildContext';
+
+const getSleepKey = (childId: string) => `timer_sleep_${childId}`;
+
+const persistSleep = (childId: string, state: { isRunning: boolean; isPaused: boolean; elapsedSeconds: number }) => {
+    AsyncStorage.setItem(getSleepKey(childId), JSON.stringify({ ...state, savedAt: Date.now() })).catch(() => {});
+};
+
+const clearSleep = (childId: string) => {
+    AsyncStorage.removeItem(getSleepKey(childId)).catch(() => {});
+};
 
 interface SleepTimerState {
     isRunning: boolean;
@@ -56,6 +67,18 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
     const currentState = activeChildId && timers[activeChildId] ? timers[activeChildId] : INITIAL_STATE;
 
     const lastTickRef = useRef<number>(Date.now());
+
+    // Restore timer from AsyncStorage when activeChild changes
+    useEffect(() => {
+        if (!activeChildId || timers[activeChildId]) return;
+        AsyncStorage.getItem(getSleepKey(activeChildId)).then(raw => {
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            if (!saved.isRunning) return;
+            const elapsed = saved.elapsedSeconds + (saved.isPaused ? 0 : Math.floor((Date.now() - saved.savedAt) / 1000));
+            setTimers(prev => ({ ...prev, [activeChildId]: { isRunning: true, isPaused: saved.isPaused, elapsedSeconds: elapsed, startTime: new Date() } }));
+        }).catch(() => {});
+    }, [activeChildId]);
 
     // Global timer effect - iterates all running timers
     useEffect(() => {
@@ -116,6 +139,7 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             startTime: new Date(),
             elapsedSeconds: 0,
         });
+        persistSleep(activeChildId, { isRunning: true, isPaused: false, elapsedSeconds: 0 });
 
         // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS === 'ios' && activeChild) {
@@ -145,6 +169,7 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             isPaused: false,
             activityId: undefined
         });
+        clearSleep(activeChildId);
 
         // Stop Live Activity / Android Notification
         if (Platform.OS === 'ios') {
@@ -170,6 +195,8 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
         if (!timer?.isRunning || timer?.isPaused) return;
 
         updateChildState(activeChildId, { isPaused: true });
+        const timerAfterPause = timers[activeChildId];
+        if (timerAfterPause) persistSleep(activeChildId, { isRunning: true, isPaused: true, elapsedSeconds: timerAfterPause.elapsedSeconds });
 
         if (Platform.OS === 'ios') {
             try {
@@ -192,6 +219,8 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
         if (!timer?.isRunning || !timer?.isPaused) return;
 
         updateChildState(activeChildId, { isPaused: false });
+        const timerAfterResume = timers[activeChildId];
+        if (timerAfterResume) persistSleep(activeChildId, { isRunning: true, isPaused: false, elapsedSeconds: timerAfterResume.elapsedSeconds });
 
         if (Platform.OS === 'ios') {
             try {
@@ -214,6 +243,7 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
     const reset = useCallback(() => {
         if (!activeChildId) return;
         updateChildState(activeChildId, INITIAL_STATE);
+        clearSleep(activeChildId);
     }, [activeChildId, updateChildState]);
 
     const formatTime = useCallback((seconds: number) => {
