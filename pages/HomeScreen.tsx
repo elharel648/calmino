@@ -52,6 +52,10 @@ import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '../utils/logger';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Modal } from 'react-native';
+import { getWrappedData, WrappedData } from '../services/wrappedService';
+import CinematicReviewScreen from './CinematicReviewScreen';
+import MagicMomentsStoryScreen, { StoryPhoto } from './MagicMomentsStoryScreen';
 
 // Types
 import { TrackingType, DynamicStyles } from '../types/home';
@@ -210,6 +214,45 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isEditChildModalOpen, setIsEditChildModalOpen] = useState(false);
     const user = auth.currentUser;
     const { isGuest, promptLogin } = useGuest();
+
+    // Cinematic Wrapped state (to be converted to Periodic Journey later)
+    const [showWrapped, setShowWrapped] = useState(false);
+    const [wrappedData, setWrappedData] = useState<WrappedData | null>(null);
+    const [wrappedLoading, setWrappedLoading] = useState(false);
+
+    // Magic Moments Story State
+    const [showStory, setShowStory] = useState(false);
+    const [storyPhotos, setStoryPhotos] = useState<StoryPhoto[]>([]);
+
+    const handleOpenStory = useCallback((photos: StoryPhoto[]) => {
+        setStoryPhotos(photos);
+        setIsMagicMomentsOpen(false);
+        setTimeout(() => {
+            setShowStory(true);
+        }, 400);
+    }, []);
+
+    const handleOpenWrapped = useCallback(() => {
+        logger.log('🎬 handleOpenWrapped called');
+        const emptyData: WrappedData = {
+            totalDiapers: 0, totalSleepHours: 0, totalFeedings: 0,
+            longestSleepHours: 0, firstEventDate: null, totalBottleMl: 0, albumPhotos: [],
+        };
+        setWrappedData(prev => prev ?? emptyData);
+        // ← Close MagicMomentsModal FIRST (iOS can't stack 2 independent modals)
+        setIsMagicMomentsOpen(false);
+        // Wait for dismiss animation, then open Cinematic
+        setTimeout(() => {
+            setShowWrapped(true);
+            // Load real Firestore data in background
+            const childId = activeChild?.childId || profile.id;
+            if (childId) {
+                getWrappedData(childId)
+                    .then(d => { if (d) setWrappedData(d); })
+                    .catch(() => {});
+            }
+        }, 400);
+    }, [activeChild?.childId, profile.id]);
 
     // Fetch reminder count
     const fetchReminderCount = useCallback(async () => {
@@ -604,6 +647,8 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 <MagicMomentsModal
                     visible={isMagicMomentsOpen}
                     onClose={() => setIsMagicMomentsOpen(false)}
+                    onOpenStory={handleOpenStory}
+                    onOpenWrapped={handleOpenWrapped}
                 />
                 <AddCustomActionModal
                     visible={isAddCustomOpen}
@@ -638,6 +683,39 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                     onClose={() => setIsPaywallOpen(false)}
                     trigger="promo_modal_home"
                 />
+
+                {/* Cinematic Wrapped - top level modal */}
+                <Modal
+                    visible={showWrapped}
+                    animationType="slide"
+                    presentationStyle="fullScreen"
+                    onRequestClose={() => setShowWrapped(false)}
+                >
+                    {showWrapped && wrappedData && (
+                        <CinematicReviewScreen
+                            data={wrappedData}
+                            childName={activeChild?.childName || ''}
+                            babyAgeMonths={profile.ageMonths}
+                            onClose={() => setShowWrapped(false)}
+                        />
+                    )}
+                </Modal>
+
+                {/* Magic Moments Photo Story - top level modal */}
+                <Modal
+                    visible={showStory}
+                    animationType="slide"
+                    presentationStyle="fullScreen"
+                    onRequestClose={() => setShowStory(false)}
+                >
+                    {showStory && (
+                        <MagicMomentsStoryScreen
+                            photos={storyPhotos}
+                            childName={activeChild?.childName || ''}
+                            onClose={() => setShowStory(false)}
+                        />
+                    )}
+                </Modal>
             </SafeAreaView>
         </View>
     );

@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
-import { Sparkles, Camera, X, RefreshCw, Plus, Calendar, Baby, Moon, Heart, Smile, Hand, Shapes, Utensils, Flower2, Eye, Bug, ArrowUp, Music, Footprints } from 'lucide-react-native';
+import { Sparkles, Camera, X, RefreshCw, Plus, Calendar, Baby, Moon, Heart, Smile, Hand, Shapes, Utensils, Flower2, Eye, Bug, ArrowUp, Music, Footprints, Film, ChevronLeft, Images } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -71,14 +71,16 @@ const MONTH_ICONS_BASE: Record<number, { icon: any; labelKey: string }> = {
 interface MagicMomentsModalProps {
     visible: boolean;
     onClose: () => void;
+    onOpenStory?: (photos: any[]) => void;
+    onOpenWrapped?: () => void;
 }
 
 export default function MagicMomentsModal({
-    visible, onClose }: MagicMomentsModalProps) {
+    visible, onClose, onOpenStory, onOpenWrapped }: MagicMomentsModalProps) {
     const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
     const { activeChild } = useActiveChild();
-    const { baby, updatePhoto, updateAlbumNote, updateAlbumDate, refresh } = useBabyProfile(activeChild?.childId);
+    const { baby, babyAgeMonths, updatePhoto, updateAlbumNote, updateAlbumDate, refresh } = useBabyProfile(activeChild?.childId);
 
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
@@ -336,6 +338,7 @@ export default function MagicMomentsModal({
     if (!visible) return null;
 
     return (
+        <>
         <Modal visible={visible} transparent animationType="none">
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
                 <TouchableWithoutFeedback onPress={onClose}>
@@ -437,6 +440,78 @@ export default function MagicMomentsModal({
                                         </Text>
                                     </View>
                                 </View>
+                            )}
+
+                            {/* Cinematic Story CTA (Only visible after 12 months if they have photos) */}
+                            {babyAgeMonths !== undefined && babyAgeMonths >= 12 && Object.keys(baby?.album || {}).filter(m => parseInt(m) <= 12).length > 0 && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    
+                                    if (onOpenStory && baby?.album) {
+                                        const photos = Object.entries(baby.album)
+                                            .filter(([month]) => parseInt(month) <= 12)
+                                            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                                            .map(([month, url]) => {
+                                                const m = parseInt(month);
+                                                const dateObj = baby.albumDates?.[m];
+                                                let dateStr = undefined;
+                                                if (dateObj) {
+                                                    const d = typeof (dateObj as any).toDate === 'function' 
+                                                        ? (dateObj as any).toDate() 
+                                                        : new Date(dateObj as any);
+                                                    dateStr = d.toLocaleDateString('he-IL');
+                                                }
+                                                return { month: m, imageUrl: url, dateStr };
+                                            });
+                                        onOpenStory(photos);
+                                    }
+                                }}
+                                activeOpacity={0.80}
+                                style={[styles.cinematicCard, {
+                                    borderColor: isDarkMode ? 'rgba(232,86,127,0.20)' : 'rgba(232,86,127,0.16)',
+                                }]}
+                            >
+                                <LinearGradient
+                                    colors={isDarkMode
+                                        ? ['rgba(232,86,127,0.11)', 'rgba(232,86,127,0.03)']
+                                        : ['rgba(232,86,127,0.08)', 'rgba(232,86,127,0.01)']}
+                                    start={{ x: 1, y: 0 }}
+                                    end={{ x: 0, y: 1 }}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                                <View style={styles.cinematicCardInner}>
+                                    {/* Icon */}
+                                    <View style={[styles.cinematicIconBg, {
+                                        backgroundColor: theme.actionColors.magicMoments.color + '18',
+                                        shadowColor: theme.actionColors.magicMoments.color,
+                                        shadowOpacity: isDarkMode ? 0.22 : 0.14,
+                                        shadowRadius: 7,
+                                        shadowOffset: { width: 0, height: 3 },
+                                    }]}>
+                                        <Images size={21} color={theme.actionColors.magicMoments.color} strokeWidth={1.6} />
+                                    </View>
+
+                                    {/* Text */}
+                                    <View style={styles.cinematicTextCol}>
+                                        <Text style={[styles.cinematicTitle, { color: theme.textPrimary }]}>
+                                            {t('magicMomentsStory.card.title')}
+                                        </Text>
+                                        <Text style={[styles.cinematicSub, { color: theme.textSecondary }]}>
+                                            {activeChild?.childName
+                                                ? t('magicMomentsStory.card.subtitle', { name: activeChild.childName })
+                                                : t('magicMomentsStory.card.subtitleGeneric')}
+                                        </Text>
+                                    </View>
+
+                                    {/* Arrow */}
+                                    <ChevronLeft
+                                        size={15}
+                                        color={theme.actionColors.magicMoments.color}
+                                        strokeWidth={2.5}
+                                    />
+                                </View>
+                            </TouchableOpacity>
                             )}
 
                             {/* Grid Layout for Months */}
@@ -723,6 +798,7 @@ export default function MagicMomentsModal({
                             )}
                         </Animated.View>
                     </ScrollView>
+
                 </RNAnimatedView>
             </KeyboardAvoidingView>
 
@@ -975,6 +1051,7 @@ export default function MagicMomentsModal({
                 </Modal>
             )}
         </Modal>
+    </>
     );
 }
 
@@ -1435,5 +1512,140 @@ const styles = StyleSheet.create({
     cancelButton: {
         fontSize: 16,
         fontWeight: '500',
+    },
+
+    // Cinematic Journey — premium inline card
+    cinematicCard: {
+        marginHorizontal: 16,
+        marginTop: 14,
+        marginBottom: 6,
+        borderRadius: 18,
+        borderWidth: 1,
+        overflow: 'hidden',
+    },
+    cinematicCardInner: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 15,
+        gap: 14,
+    },
+    cinematicIconBg: {
+        width: 50,
+        height: 50,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cinematicIconStar: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+    },
+    cinematicTextCol: {
+        flex: 1,
+        alignItems: 'flex-end',
+        gap: 3,
+    },
+    cinematicBadge: {
+        borderRadius: 20,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        alignSelf: 'flex-end',
+    },
+    cinematicBadgeText: {
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 0.2,
+    },
+    cinematicTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        textAlign: 'right',
+        letterSpacing: -0.4,
+    },
+    cinematicSub: {
+        fontSize: 12,
+        textAlign: 'right',
+        letterSpacing: -0.1,
+    },
+
+    // Cinematic Journey - sticky footer
+    journeyFooter: {
+        overflow: 'hidden',
+        borderTopWidth: StyleSheet.hairlineWidth,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        paddingBottom: 28,
+    },
+    journeyFooterContent: {
+        flex: 1,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 14,
+    },
+    journeyFooterIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: 'rgba(201,168,76,0.12)',
+        borderWidth: 1,
+        borderColor: 'rgba(201,168,76,0.25)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    journeyFooterText: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
+    journeyFooterTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+        textAlign: 'right',
+    },
+    journeyFooterSub: {
+        fontSize: 12,
+        marginTop: 2,
+        textAlign: 'right',
+    },
+
+    // journeyStrip (kept for ProfileScreen compatibility)
+    journeyStrip: {
+        marginTop: 16,
+        borderRadius: 14,
+        borderWidth: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    journeyLeft: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 12,
+        flex: 1,
+    },
+    journeyIconWrap: {
+        width: 32,
+        height: 32,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    journeyTitle: {
+        fontSize: 13.5,
+        fontWeight: '600',
+        letterSpacing: -0.2,
+        textAlign: 'right',
+    },
+    journeySub: {
+        fontSize: 11,
+        marginTop: 1.5,
+        textAlign: 'right',
+        letterSpacing: -0.1,
     },
 });

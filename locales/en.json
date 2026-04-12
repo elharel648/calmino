@@ -1721,6 +1721,65 @@
     "firstSteps": "First Steps",
     "dateLabel": "Date"
   },
+  "magicMomentsStory": {
+    "title": "{name}'s First Year",
+    "titleGeneric": "The First Year",
+    "finaleSubtitle": "Magic Moments Summary",
+    "share": "Share the Magic",
+    "card": {
+      "title": "Magic Moments Story",
+      "subtitle": "A memory from {name}'s first year",
+      "subtitleGeneric": "A memory from the first year"
+    }
+  },
+  "cinematic": {
+    "card": {
+      "title": "Our Journey",
+      "subtitle": "{name}'s moments in a film",
+      "subtitleGeneric": "Your special moments in a film"
+    },
+    "intro": {
+      "title": "{name}'s\nJourney",
+      "subtitle": "All the moments, nights, the love\nsummarized for you"
+    },
+    "diapers": {
+      "unit": "diapers",
+      "emptyTitle": "The journey is just beginning",
+      "emptyFact": "Every diaper change\nis a moment of connection and love",
+      "funFact1": "{count} diapers per day on average",
+      "funFact2": "Each diaper — three minutes of unconditional love",
+      "funFact3": "Every time you got through it together"
+    },
+    "sleep": {
+      "unit": "hours of sleep",
+      "label": "You slept together",
+      "nights": "{count} full nights",
+      "longest": "Longest consecutive sleep: {hours} hours",
+      "emptyTitle": "The nights are still ahead",
+      "emptyFact": "When you add sleep records\nyou'll see how many nights you've shared"
+    },
+    "feedings": {
+      "unit": "feeding sessions",
+      "label": "You fed",
+      "bottleMl": "Including {ml} ml by bottle",
+      "bigBottle": "Volume of a small swimming pool",
+      "commitment": "Unwavering commitment",
+      "emptyTitle": "The feedings are still ahead",
+      "emptyFact": "When you start logging feedings\nyou'll see all your dedication"
+    },
+    "finale": {
+      "subtitle": "Journey Summary \u00b7 Calmino",
+      "diapers": "Diapers",
+      "sleepHours": "Sleep Hours",
+      "feedings": "Feedings",
+      "share": "Share the Journey"
+    },
+    "moments": {
+      "label": "The Most Beautiful Moments",
+      "tagline": "Because every photo is worth a thousand words",
+      "empty": "Add photos to Magic Moments\nto see them here"
+    }
+  },
   "sitterOnboarding": {
     "profileTitle": "Welcome!",
     "profileSubtitle": "Parents nearby can already see your profile and send babysitting requests",

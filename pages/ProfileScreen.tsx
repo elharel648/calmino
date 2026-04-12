@@ -1,10 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import InlineLoader from '../components/Common/InlineLoader';
-import { View, StyleSheet, ScrollView,  Text, TouchableOpacity, Platform, Image, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Platform, Image, Alert, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
-import { Edit2, TrendingUp, Award, Sparkles, ChevronRight, Camera, UserPlus, Users, User, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Edit2, TrendingUp, Award, Sparkles, ChevronRight, ChevronLeft, Camera, User, Plus, Film } from 'lucide-react-native';
+import { getWrappedData, WrappedData } from '../services/wrappedService';
+import CinematicReviewScreen from './CinematicReviewScreen';
 import * as Haptics from 'expo-haptics';
 
 // Custom Hooks
@@ -61,6 +64,28 @@ export default function ProfileScreen() {
   const [isGuestInviteOpen, setIsGuestInviteOpen] = useState(false);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [joinModalVisible, setJoinModalVisible] = useState(false);
+
+  // Cinematic Wrapped
+  const [showWrapped, setShowWrapped] = useState(false);
+  const [wrappedData, setWrappedData] = useState<WrappedData | null>(null);
+  const [wrappedLoading, setWrappedLoading] = useState(false);
+
+  const handleOpenWrapped = useCallback(async () => {
+    if (!activeChild?.childId) return;
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (wrappedData) { setShowWrapped(true); return; }
+    setWrappedLoading(true);
+    try {
+      const d = await getWrappedData(activeChild.childId);
+      if (d) {
+        d.albumPhotos = baby?.album ? Object.values(baby.album).filter(Boolean) as string[] : [];
+        setWrappedData(d);
+        setShowWrapped(true);
+      }
+    } finally {
+      setWrappedLoading(false);
+    }
+  }, [activeChild?.childId, wrappedData, baby?.album]);
 
   const { family } = useFamily();
 
@@ -228,9 +253,63 @@ export default function ProfileScreen() {
               album={baby?.album}
               onMonthPress={(month) => updatePhoto('album', month)}
             />
+
+            {/* Cinematic Journey entry — lives here as the emotional capstone */}
+            {activeChild?.childId && (
+              <TouchableOpacity
+                style={[
+                  styles.journeyStrip,
+                  {
+                    backgroundColor: isDarkMode ? 'rgba(201,168,76,0.06)' : 'rgba(201,168,76,0.07)',
+                    borderColor: isDarkMode ? 'rgba(201,168,76,0.18)' : 'rgba(201,168,76,0.25)',
+                    opacity: wrappedLoading ? 0.6 : 1,
+                  },
+                ]}
+                onPress={handleOpenWrapped}
+                activeOpacity={0.82}
+              >
+                <View style={styles.journeyLeft}>
+                  <View style={[styles.journeyIconWrap, {
+                    backgroundColor: isDarkMode ? 'rgba(201,168,76,0.1)' : 'rgba(201,168,76,0.12)',
+                  }]}>
+                    {wrappedLoading
+                      ? <InlineLoader color="#C9A84C" size="small" />
+                      : <Film size={16} color="#C9A84C" strokeWidth={1.8} />}
+                  </View>
+                  <View>
+                    <Text style={[styles.journeyTitle, { color: isDarkMode ? '#F5F0E8' : '#1C1410' }]}>
+                      המסע שלנו
+                    </Text>
+                    <Text style={[styles.journeySub, {
+                      color: isDarkMode ? 'rgba(201,168,76,0.55)' : 'rgba(140,100,30,0.75)',
+                    }]}>
+                      {activeChild?.childName ? `כל הרגעים של ${activeChild.childName}` : 'הסיכום הקולנועי'}
+                    </Text>
+                  </View>
+                </View>
+                <ChevronLeft size={15} color={isDarkMode ? 'rgba(201,168,76,0.5)' : '#C9A84C'} strokeWidth={2} />
+              </TouchableOpacity>
+            )}
           </View>
 
         </ScrollView>
+
+        {/* Cinematic Wrapped Modal */}
+        <Modal
+          visible={showWrapped}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={() => setShowWrapped(false)}
+        >
+          {showWrapped && wrappedData && (
+            <CinematicReviewScreen
+              data={wrappedData}
+              childName={activeChild?.childName || baby?.name || ''}
+              babyAgeMonths={babyAgeMonths}
+              onClose={() => setShowWrapped(false)}
+            />
+          )}
+        </Modal>
 
         {/* Modals */}
         <EditBasicInfoModal
@@ -409,5 +488,42 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: 'rgba(99, 102, 241, 0.1)',
     borderRadius: 10,
+  },
+
+  // Cinematic Journey strip
+  journeyStrip: {
+    marginTop: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  journeyLeft: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  journeyIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journeyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    textAlign: 'right',
+  },
+  journeySub: {
+    fontSize: 11.5,
+    marginTop: 1,
+    textAlign: 'right',
+    letterSpacing: -0.1,
   },
 });
