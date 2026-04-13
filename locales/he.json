@@ -162,6 +162,8 @@
     "deleteAccountConfirmMessage": "לאחר המחיקה לא ניתן יהיה לשחזר את החשבון והנתונים. להמשיך?",
     "deleteAccountButton": "מחק לצמיתות",
     "deleteAccountYes": "כן, מחק הכל",
+    "deleteAccountReauthTitle": "נדרש אימות מחדש",
+    "deleteAccountReauthMessage": "כדי למחוק את החשבון, עליך להתחבר מחדש ולאחר מכן לנסות שוב.",
     "hours": "שעות",
     "notificationsAndReminders": "התראות ותזכורות",
     "enabled": "מופעל",
@@ -1156,7 +1158,58 @@
   "onboarding": {
     "start": "התחל",
     "welcome": "ברוכים הבאים",
-    "skip": "דלג"
+    "skip": "דלג",
+    "next": "הבא",
+    "cta": "בואו נתחיל!",
+    "slide1": {
+      "greeting": "שלום, {{name}}! 👋",
+      "title": "ברוכים הבאים ל-Calmino",
+      "subtitle": "כל רגע עם הבייבי, במקום אחד.\nפשוט, חכם ורגוע."
+    },
+    "slide2": {
+      "title": "כל מה שצריך",
+      "subtitle": "פעולות מהירות לכל צורך — בלחיצה אחת",
+      "food": "אוכל",
+      "sleep": "שינה",
+      "diaper": "החתלה",
+      "supplements": "תוספים",
+      "whiteNoise": "רעש לבן",
+      "moments": "רגעים",
+      "milestones": "אבני דרך",
+      "health": "בריאות",
+      "growth": "גדילה",
+      "nightLight": "פנס לילה",
+      "reminder": "תזכורת",
+      "sos": "SOS"
+    },
+    "slide3": {
+      "title": "להבין את הבייבי לעומק",
+      "subtitle": "מזהים דפוסים, עוקבים אחרי התפתחות ומקבלים החלטות חכמות יותר. הכל מגובה בנתונים, בדיוק בשבילכם.",
+      "weekly": "שבועי",
+      "monthly": "חודשי",
+      "daily": "יומי",
+      "feedings": "האכלה",
+      "diapers": "חיתולים",
+      "sleepHours": "שעות שינה",
+      "supplementsLabel": "תוספים",
+      "naps": "תנומות"
+    },
+    "slide4": {
+      "title": "מצא סיטר",
+      "subtitle": "מוצאים, מדרגים ומזמינים – הכל ישירות מהאפליקציה",
+      "perHour": "לשעה",
+      "availableTonight": "פנוי/ה להערב"
+    },
+    "slide5": {
+      "title": "משפחה אחת, סנכרון מלא.",
+      "subtitle": "כולם מעודכנים בזמן אמת, מכל מכשיר.",
+      "membersCount": "{{count}} חברים",
+      "admin": "מנהל",
+      "member": "חבר",
+      "guest": "אורח",
+      "inviteFamily": "הזמן משפחה",
+      "inviteSubtitle": "קוד גישה לכל הילדים"
+    }
   },
   "family": {
     "family": "משפחה",

@@ -114,14 +114,25 @@ export const callFirebaseFunction = async (name: string, data?: object): Promise
     if (user && name !== 'sendVerificationEmail') {
         token = await user.getIdToken();
     }
-    
+
+    // App Check token — protects Cloud Functions from unauthorized callers
+    let appCheckToken = '';
+    if (!__DEV__) {
+      try {
+        const rnAppCheck = require('@react-native-firebase/app-check').default;
+        const { token: acToken } = await rnAppCheck().getToken(false);
+        appCheckToken = acToken;
+      } catch (_) {}
+    }
+
     const url = `https://us-central1-baby-app-42b3b.cloudfunctions.net/${name}`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(appCheckToken ? { 'X-Firebase-AppCheck': appCheckToken } : {}),
       },
       // Callable Protocol expects payload to be wrapped in "data"
       body: JSON.stringify({ data: data || {} })
@@ -131,14 +142,14 @@ export const callFirebaseFunction = async (name: string, data?: object): Promise
     const responseData = await response.json();
     
     if (!response.ok || responseData?.error) {
-      console.error(`Error calling ${name}:`, responseData);
+      logger.error(`Error calling ${name}:`, responseData?.error?.message || responseData);
       throw new Error(responseData?.error?.message || `Function ${name} failed`);
     }
-    
+
     // Callable functions always return data wrapped in {"data": ...}
     return responseData.data;
   } catch (err) {
-    console.error(`Firebase function fetch error (${name}):`, err);
+    logger.error(`Firebase function fetch error (${name}):`, err);
     throw err;
   }
 };

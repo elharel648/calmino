@@ -162,6 +162,8 @@
     "deleteAccountConfirmMessage": "Nach der Löschung können Konto und Daten nicht wiederhergestellt werden. Fortfahren?",
     "deleteAccountButton": "Dauerhaft löschen",
     "deleteAccountYes": "Ja, alles löschen",
+    "deleteAccountReauthTitle": "Erneute Anmeldung erforderlich",
+    "deleteAccountReauthMessage": "Um Ihr Konto zu löschen, melden Sie sich bitte erneut an und versuchen Sie es noch einmal.",
     "hours": "Stunden",
     "notificationsAndReminders": "Benachrichtigungen & Erinnerungen",
     "enabled": "Aktiviert",
@@ -1322,7 +1324,58 @@
   "onboarding": {
     "start": "Loslegen",
     "welcome": "Willkommen",
-    "skip": "Überspringen"
+    "skip": "Überspringen",
+    "next": "Weiter",
+    "cta": "Los geht's!",
+    "slide1": {
+      "greeting": "Hallo, {{name}}! 👋",
+      "title": "Willkommen bei Calmino",
+      "subtitle": "Jeder Moment mit deinem Baby, an einem Ort.\nEinfach, klug und ruhig."
+    },
+    "slide2": {
+      "title": "Alles was du brauchst",
+      "subtitle": "Schnellaktionen für jeden Bedarf — mit einem Tipp",
+      "food": "Essen",
+      "sleep": "Schlaf",
+      "diaper": "Windel",
+      "supplements": "Supplemente",
+      "whiteNoise": "Weißes Rauschen",
+      "moments": "Momente",
+      "milestones": "Meilensteine",
+      "health": "Gesundheit",
+      "growth": "Wachstum",
+      "nightLight": "Nachtlicht",
+      "reminder": "Erinnerung",
+      "sos": "SOS"
+    },
+    "slide3": {
+      "title": "Dein Baby tiefgründig verstehen",
+      "subtitle": "Muster erkennen, Entwicklung verfolgen und klügere Entscheidungen treffen. Alles datengestützt, genau für euch.",
+      "weekly": "Wöchentlich",
+      "monthly": "Monatlich",
+      "daily": "Täglich",
+      "feedings": "Mahlzeiten",
+      "diapers": "Windeln",
+      "sleepHours": "Schlafstunden",
+      "supplementsLabel": "Supplemente",
+      "naps": "Nickerchen"
+    },
+    "slide4": {
+      "title": "Babysitter finden",
+      "subtitle": "Finden, bewerten und buchen — alles in der App",
+      "perHour": "pro Stunde",
+      "availableTonight": "Heute Abend verfügbar"
+    },
+    "slide5": {
+      "title": "Eine Familie, volle Synchronisation.",
+      "subtitle": "Alle in Echtzeit informiert, von jedem Gerät.",
+      "membersCount": "{{count}} Mitglieder",
+      "admin": "Admin",
+      "member": "Mitglied",
+      "guest": "Gast",
+      "inviteFamily": "Familie einladen",
+      "inviteSubtitle": "Zugangscode für alle Kinder"
+    }
   },
   "family": {
     "family": "Familie",

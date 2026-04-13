@@ -66,6 +66,7 @@ import PremiumNotificationSettings from '../components/Settings/PremiumNotificat
 import { useMedications } from '../hooks/useMedications';
 import { useGuest } from '../context/GuestContext';
 import { logger } from '../utils/logger';
+import { analyticsDeleteAccount } from '../services/analyticsService';
 
 const LANGUAGES = [
   { key: 'he', labelKey: 'settings.hebrew' },
@@ -387,6 +388,11 @@ if (data.settings.language !== undefined) {
 
                       const userId = user.uid;
 
+                      // --- AUTH DEFERRAL ---
+                      // We can NOT delete the Auth user first. If it succeeds, the user loses Firestore permissions 
+                      // and all subsequent data deletion attempts fail with "permission denied".
+                      // We must delete Firestore data FIRST, and delete the Auth record LAST.
+
                       // --- STORAGE DELETION HELPER ---
                       const deleteStorageObjectByUrl = async (url?: string) => {
                         if (!url || typeof url !== 'string' || !url.startsWith('https://firebasestorage')) return;
@@ -605,19 +611,35 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting user document:', error);
                       }
 
-                      // 9. Delete user from Firebase Auth (this must be last)
+                      // 9. Delete Firebase Auth user LAST
                       try {
                         await deleteUser(user);
+                        analyticsDeleteAccount();
                         logger.log('✅ Firebase Auth user deleted');
                       } catch (authErr: any) {
+                        setLoading(false);
                         if (authErr?.code === 'auth/requires-recent-login') {
-                          logger.warn('requires-recent-login — Firestore data already cleaned, signing out');
+                          Alert.alert(
+                            t('settings.deleteAccountReauthTitle') || 'נדרש אימות מחדש',
+                            t('settings.deleteAccountReauthMessage') || 'כדי לסיים למחוק את החשבון סופית, עליך להתחבר מחדש ואז ללחוץ שוב על מחיקה.',
+                            [{
+                              text: t('common.confirm') || 'הבנתי',
+                              onPress: async () => {
+                                try {
+                                  await clearUserCache();
+                                  await signOut(auth);
+                                } catch (_) {}
+                              }
+                            }]
+                          );
+                          return;
                         } else {
-                          logger.error('Failed to delete Auth user:', authErr);
+                          // Ignore other errors, just sign out to clean state
+                          logger.error('Error deleting Auth:', authErr);
                         }
                       }
 
-                      // 10. Always sign out — whether deleteUser succeeded or not
+                      // 10. Always sign out
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       setLoading(false);
                       try {

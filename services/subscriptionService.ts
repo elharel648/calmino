@@ -15,10 +15,10 @@ export const setDevPlan = (plan: PlanId) => {
  */
 const getSubscriptionFromFirebase = async (userId: string): Promise<PlanId> => {
     // 💡 שימוש בתוכנית דמה אם המערכת מוגדרת ל-Dev
-    if (process.env.NODE_ENV !== 'production' && DEV_PLAN !== 'free') {
+    if (__DEV__ && DEV_PLAN !== 'free') {
         return DEV_PLAN;
     }
-    
+
     try {
         const docRef = doc(db, SUBSCRIPTIONS_COLLECTION, userId);
         const docSnap = await getDoc(docRef);
@@ -26,14 +26,14 @@ const getSubscriptionFromFirebase = async (userId: string): Promise<PlanId> => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             const expiryDate = data.expiryDate as Timestamp;
-            
+
             // בדיקה האם המנוי פעיל ולא פג תוקף
             if (data.isActive && expiryDate && expiryDate.toDate() > new Date()) {
-                return (data.level as PlanId) || 'free'; 
+                return (data.level as PlanId) || 'free';
             }
         }
     } catch (e) {
-        // שגיאה בשליפה - מחזירים חינם
+        console.warn('[subscriptionService] Failed to fetch subscription:', e);
     }
     
     return 'free';

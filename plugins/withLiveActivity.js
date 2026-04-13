@@ -196,6 +196,9 @@ const withLiveActivity = (config) => {
 
           settings.CODE_SIGN_ENTITLEMENTS = '"CalmParentLiveActivity/CalmParentLiveActivity.entitlements"';
           settings.DEVELOPMENT_TEAM = 'Q5555SW7GS';
+          // Sync version + build number with the main app so the extension CFBundleVersion matches
+          settings.CURRENT_PROJECT_VERSION = config.ios?.buildNumber || config.android?.versionCode?.toString() || '1';
+          settings.MARKETING_VERSION = config.version || '1.0.0';
 
           // Forcefully delete manual provisioning overrides if they exist in the raw Xcode project
           delete settings.PROVISIONING_PROFILE;

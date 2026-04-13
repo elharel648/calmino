@@ -5,6 +5,7 @@ import { db, auth } from '../services/firebaseConfig';
 import { getBlockedUsers } from '../services/blockService';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { IS_SCREENSHOT_MODE, MOCK_SITTERS } from '../constants/mockData';
 
 const CACHE_KEY = '@sitters_cache';
 const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
@@ -68,6 +69,15 @@ const useSitters = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const lastFetchRef = useRef<number>(0);
+
+    if (IS_SCREENSHOT_MODE) {
+        return {
+            sitters: MOCK_SITTERS as Sitter[],
+            isLoading: false,
+            error: null,
+            refetch: async () => {},
+        };
+    }
 
     // Load from cache
     const loadFromCache = useCallback(async (): Promise<Sitter[] | null> => {

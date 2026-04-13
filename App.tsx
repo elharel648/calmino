@@ -6,6 +6,13 @@ import * as Updates from 'expo-updates';
 const originalHandler = ErrorUtils.getGlobalHandler();
 ErrorUtils.setGlobalHandler((error, isFatal) => {
   console.error('[GLOBAL ERROR]', isFatal ? 'FATAL' : 'non-fatal', error?.message, error?.stack);
+  if (!__DEV__) {
+    try {
+      const crashlytics = require('@react-native-firebase/crashlytics').default;
+      crashlytics().setAttribute('isFatal', String(isFatal)).catch(() => {});
+      crashlytics().recordError(error).catch(() => {});
+    } catch (_) {}
+  }
   if (originalHandler) originalHandler(error, isFatal);
 });
 
@@ -70,6 +77,8 @@ import BlockedUsersScreen from './pages/BlockedUsersScreen';
 import LoginScreen from './pages/LoginScreen';
 import BabyProfileScreen from './pages/BabyProfileScreen';
 import NotificationsScreen from './pages/NotificationsScreen';
+import OnboardingCarousel, { ONBOARDING_KEY } from './components/Onboarding/OnboardingCarousel';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // מסכי הבייביסיטר
 import BabySitterScreen from './pages/BabySitterScreen';
@@ -118,6 +127,8 @@ import { notificationStorageService } from './services/notificationStorageServic
 import { notificationService } from './services/notificationService';
 import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
+import analytics from '@react-native-firebase/analytics';
+import { setAnalyticsUser, clearAnalyticsUser } from './services/analyticsService';
 
 // --- Android Foreground Service Registration (Disabled) ---
 // if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
@@ -571,6 +582,7 @@ export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [hasBabyProfile, setHasBabyProfile] = useState<boolean | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isAppSitter, setIsAppSitter] = useState<boolean>(false);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
@@ -825,6 +837,7 @@ export default function App() {
         if (currentUser.emailVerified || isOAuthUser) {
           setHasBabyProfile(null); // Ensure no flicker of BabyProfileScreen while fetching
           setUser(currentUser);
+          setAnalyticsUser(currentUser.uid, currentUser.displayName || undefined);
           await checkBiometricSettingsAndProfile(currentUser.uid);
 
           // Register for push notifications
@@ -851,6 +864,7 @@ export default function App() {
           setIsAppLoading(false);
         }
       } else {
+        clearAnalyticsUser();
         setChildrenReady(false);
         setUser(null);
         setHasBabyProfile(null);
@@ -1004,8 +1018,28 @@ export default function App() {
           <ThemeProvider>
             <SafeAreaProvider>
               <BabyProfileScreen
-                onProfileSaved={() => setHasBabyProfile(true)}
+                onProfileSaved={async () => {
+                  // __DEV__: always show onboarding for easy testing — REMOVE before release
+                  if (__DEV__) {
+                    await AsyncStorage.removeItem(ONBOARDING_KEY);
+                  }
+                  const done = await AsyncStorage.getItem(ONBOARDING_KEY);
+                  if (!done) {
+                    // Show onboarding first — stay in this branch until it completes
+                    setShowOnboarding(true);
+                  } else {
+                    // Already seen onboarding — go straight to main app
+                    setHasBabyProfile(true);
+                  }
+                }}
                 onSkip={() => setHasBabyProfile(true)}
+              />
+              <OnboardingCarousel
+                visible={showOnboarding}
+                onDone={() => {
+                  setShowOnboarding(false);
+                  setHasBabyProfile(true);
+                }}
               />
             </SafeAreaProvider>
           </ThemeProvider>
@@ -1035,6 +1069,15 @@ export default function App() {
                               {(!user || isGuestMode || childrenReady) ? (
                                 <NavigationContainer
                                   ref={navigationRef}
+                                  onStateChange={async () => {
+                                    const route = navigationRef.current?.getCurrentRoute();
+                                    if (route?.name) {
+                                      analytics().logScreenView({
+                                        screen_name: route.name,
+                                        screen_class: route.name,
+                                      }).catch(() => {});
+                                    }
+                                  }}
                                   linking={{
                                     prefixes: ['calmino://', 'calminoapp://', 'https://calmino.app'],
                                     config: {

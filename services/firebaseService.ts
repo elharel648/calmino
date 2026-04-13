@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { analyticsLogBabyEvent } from './analyticsService';
 // services/firebaseService.ts
 import {
   collection,
@@ -115,6 +116,7 @@ export const getChildProfile = async (userId: string): Promise<ChildProfile | nu
 export const saveEventToFirebase = async (userId: string, childId: string, data: any) => {
   try {
     logger.log('🔥 saveEventToFirebase called:', { userId, childId, dataType: data.type });
+    analyticsLogBabyEvent(data.type || 'unknown');
     const eventsRef = collection(db, EVENTS_COLLECTION);
 
     // Handle timestamp conversion carefully

@@ -27,6 +27,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { analyticsLogin, analyticsSignUp } from '../services/analyticsService';
 
 import {
   createUserWithEmailAndPassword,
@@ -230,6 +231,9 @@ export default function LoginScreen({
             logger.debug('\u2705', 'Joined family via Google Auth:', result.currentFamilyName);
           }
         }
+        analyticsSignUp('google');
+      } else {
+        analyticsLogin('google');
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -294,6 +298,9 @@ export default function LoginScreen({
                 logger.debug('\u2705', 'Joined family via Google Auth:', result.currentFamilyName);
               }
             }
+            analyticsSignUp('google');
+          } else {
+            analyticsLogin('google');
           }
 
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -449,6 +456,7 @@ export default function LoginScreen({
           return;
         }
 
+        analyticsLogin('email');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setAttempts(0);
         onLoginSuccess();
@@ -468,6 +476,7 @@ export default function LoginScreen({
         }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        analyticsSignUp('email');
         await updateProfile(userCredential.user, { displayName: displayName.trim() });
         await callFirebaseFunction('sendVerificationEmail', { email: email.trim() });
 
@@ -1120,6 +1129,9 @@ export default function LoginScreen({
                             logger.debug('✅', 'Joined family via Apple Auth:', result.currentFamilyName);
                           }
                         }
+                        analyticsSignUp('apple');
+                      } else {
+                        analyticsLogin('apple');
                       }
 
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

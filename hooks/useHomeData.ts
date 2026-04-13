@@ -6,6 +6,7 @@ import { db, auth } from '../services/firebaseConfig';
 import { getLastEvent, formatTimeFromTimestamp, getRecentHistory } from '../services/firebaseService';
 import { HomeDataState } from '../types/home';
 import { liveActivityService } from '../services/liveActivityService';
+import { IS_SCREENSHOT_MODE, MOCK_HOME_DATA } from '../constants/mockData';
 
 interface DailyStats {
     feedCount: number;
@@ -60,6 +61,21 @@ export const useHomeData = (
         lastHeightDiff?: string;
         lastMeasuredDate?: Date;
     }>({});
+
+    if (IS_SCREENSHOT_MODE) {
+        return {
+            ...MOCK_HOME_DATA,
+            babyStatus: 'awake' as 'awake',
+            aiTip: '',
+            loadingAI: false,
+            isLoading: false,
+            isError: false,
+            guestExpiresAt: null,
+            toggleBabyStatus: () => {},
+            generateInsight: async () => {},
+            refresh: async () => {},
+        };
+    }
 
 
     const user = auth.currentUser;

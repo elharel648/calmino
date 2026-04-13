@@ -46,7 +46,6 @@ struct SleepLiveActivity: Widget {
                             Text(context.state.startTime, style: .timer)
                                 .font(.system(size: 26, weight: .bold, design: .rounded))
                                 .monospacedDigit()
-                                .contentTransition(.numericText())
                                 .foregroundStyle(.white)
                         }
                     }
@@ -58,7 +57,7 @@ struct SleepLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 10) {
                             Spacer()
-                            Link(destination: URL(string: "calmparentapp://save-timer?type=sleep")!) {
+                            Button(intent: StopTimerIntent()) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 14, weight: .bold))
@@ -70,6 +69,7 @@ struct SleepLiveActivity: Widget {
                                 .padding(.vertical, 10)
                                 .background(sleepColor, in: Capsule())
                             }
+                            .buttonStyle(.plain)
                             Spacer()
                         }
                         .padding(.horizontal, 8)
@@ -89,7 +89,6 @@ struct SleepLiveActivity: Widget {
                 } else {
                     Text(context.state.startTime, style: .timer)
                         .monospacedDigit()
-                        .contentTransition(.numericText())
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                 }
@@ -142,7 +141,6 @@ struct SleepLockScreenView: View {
                         Text(context.state.startTime, style: .timer)
                             .font(.system(size: 38, weight: .bold, design: .rounded))
                             .monospacedDigit()
-                            .contentTransition(.numericText())
                             .foregroundStyle(.white)
                     }
                 }
@@ -152,7 +150,7 @@ struct SleepLockScreenView: View {
                 // Right — controls
                 if #available(iOS 17, *) {
                     VStack(spacing: 10) {
-                        Link(destination: URL(string: "calmparentapp://save-timer?type=sleep")!) {
+                        Button(intent: StopTimerIntent()) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundStyle(.white)
@@ -160,6 +158,7 @@ struct SleepLockScreenView: View {
                                 .background(sleepColor, in: Circle())
                                 .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
                         }
+                        .buttonStyle(.plain)
                         
                         Text("שמירה")
                             .font(.system(size: 12, weight: .semibold))

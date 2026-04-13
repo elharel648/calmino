@@ -62,6 +62,7 @@ import {
 } from '../components/Reports/PremiumInsights';
 import CinematicReviewScreen from './CinematicReviewScreen';
 import { getWrappedData, WrappedData } from '../services/wrappedService';
+import { IS_SCREENSHOT_MODE, MOCK_STATISTICS, MOCK_BABY_PROFILE } from '../constants/mockData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -285,6 +286,30 @@ export default function ReportsScreen() {
 
     setLoading(true);
     try {
+      if (IS_SCREENSHOT_MODE) {
+        setDailyStats({
+          food: MOCK_STATISTICS.food,
+          foodCount: MOCK_STATISTICS.foodCount,
+          sleep: MOCK_STATISTICS.sleep,
+          sleepCount: MOCK_STATISTICS.sleepCount,
+          diapers: MOCK_STATISTICS.diapers,
+          supplements: MOCK_STATISTICS.supplements,
+          feedingTypes: { bottle: 50, breast: 0, pumping: 0, solids: 70 }
+        });
+        
+        // Mock charting data
+        setWeeklyData({
+          labels: ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'],
+          food: [110, 115, 120, 120, 110, 125, 120],
+          sleep: [12, 11.5, 13, 12.5, 11, 14, 12],
+          diapers: [4, 5, 4, 3, 4, 5, 4]
+        });
+        
+        setLoading(false);
+        isFetching.current = false;
+        return;
+      }
+
       const { start, end } = getDateRange();
       const daysInRange = differenceInDays(end, start) + 1;
 

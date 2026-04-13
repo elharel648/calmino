@@ -162,6 +162,8 @@
     "deleteAccountConfirmMessage": "Après la suppression, le compte et les données ne pourront pas être récupérés. Continuer ?",
     "deleteAccountButton": "Supprimer Définitivement",
     "deleteAccountYes": "Oui, Tout Supprimer",
+    "deleteAccountReauthTitle": "Ré-authentification requise",
+    "deleteAccountReauthMessage": "Pour supprimer votre compte, veuillez vous reconnecter et réessayer.",
     "hours": "heures",
     "notificationsAndReminders": "Notifications et Rappels",
     "enabled": "Activé",
@@ -1322,7 +1324,58 @@
   "onboarding": {
     "start": "Commencer",
     "welcome": "Bienvenue",
-    "skip": "Passer"
+    "skip": "Passer",
+    "next": "Suivant",
+    "cta": "Commençons!",
+    "slide1": {
+      "greeting": "Bonjour, {{name}} ! 👋",
+      "title": "Bienvenue sur Calmino",
+      "subtitle": "Chaque moment avec bébé, en un seul endroit.\nSimple, intelligent et serein."
+    },
+    "slide2": {
+      "title": "Tout ce dont vous avez besoin",
+      "subtitle": "Actions rapides pour chaque besoin — en un tap",
+      "food": "Repas",
+      "sleep": "Sommeil",
+      "diaper": "Couche",
+      "supplements": "Suppléments",
+      "whiteNoise": "Bruit blanc",
+      "moments": "Moments",
+      "milestones": "Étapes",
+      "health": "Santé",
+      "growth": "Croissance",
+      "nightLight": "Veilleuse",
+      "reminder": "Rappel",
+      "sos": "SOS"
+    },
+    "slide3": {
+      "title": "Comprendre bébé en profondeur",
+      "subtitle": "Identifiez les schémas, suivez le développement et prenez de meilleures décisions. Tout basé sur des données, pour vous.",
+      "weekly": "Hebdo",
+      "monthly": "Mensuel",
+      "daily": "Quotidien",
+      "feedings": "Repas",
+      "diapers": "Couches",
+      "sleepHours": "H. sommeil",
+      "supplementsLabel": "Suppléments",
+      "naps": "siestes"
+    },
+    "slide4": {
+      "title": "Trouver une baby-sitter",
+      "subtitle": "Trouvez, notez et réservez — tout depuis l'app",
+      "perHour": "par heure",
+      "availableTonight": "Disponible ce soir"
+    },
+    "slide5": {
+      "title": "Une famille, une synchro parfaite.",
+      "subtitle": "Tout le monde informé en temps réel, depuis n'importe quel appareil.",
+      "membersCount": "{{count}} membres",
+      "admin": "Admin",
+      "member": "Membre",
+      "guest": "Invité",
+      "inviteFamily": "Inviter la famille",
+      "inviteSubtitle": "Code d'accès pour tous les enfants"
+    }
   },
   "family": {
     "family": "Famille",

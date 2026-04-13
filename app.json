@@ -38,7 +38,8 @@
       ],
       "./plugins/withFirebaseWarningFix",
       "./plugins/withLiveActivity",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "@react-native-firebase/perf"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
@@ -74,24 +75,6 @@
               "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
               "calmparentapp"
             ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
-              "calmparentapp"
-            ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
-              "calmparentapp"
-            ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
-              "calmparentapp"
-            ]
           }
         ]
       }
@@ -102,6 +85,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.harel.calmparentapp",
+      "versionCode": 6,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",

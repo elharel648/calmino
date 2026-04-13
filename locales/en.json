@@ -162,6 +162,8 @@
     "deleteAccountConfirmMessage": "After deletion, the account and data cannot be recovered. Continue?",
     "deleteAccountButton": "Delete Permanently",
     "deleteAccountYes": "Yes, Delete All",
+    "deleteAccountReauthTitle": "Re-authentication Required",
+    "deleteAccountReauthMessage": "To delete your account, please sign in again and try once more.",
     "hours": "hours",
     "notificationsAndReminders": "Notifications & Reminders",
     "enabled": "Enabled",
@@ -1156,7 +1158,58 @@
   "onboarding": {
     "start": "Get Started",
     "welcome": "Welcome",
-    "skip": "Skip"
+    "skip": "Skip",
+    "next": "Next",
+    "cta": "Let's Start!",
+    "slide1": {
+      "greeting": "Hello, {{name}}! 👋",
+      "title": "Welcome to Calmino",
+      "subtitle": "Every moment with your baby, in one place.\nSimple, smart and calm."
+    },
+    "slide2": {
+      "title": "Everything You Need",
+      "subtitle": "Quick actions for every need — in one tap",
+      "food": "Food",
+      "sleep": "Sleep",
+      "diaper": "Diaper",
+      "supplements": "Supplements",
+      "whiteNoise": "White Noise",
+      "moments": "Moments",
+      "milestones": "Milestones",
+      "health": "Health",
+      "growth": "Growth",
+      "nightLight": "Night Light",
+      "reminder": "Reminder",
+      "sos": "SOS"
+    },
+    "slide3": {
+      "title": "Understand Your Baby Deeply",
+      "subtitle": "Identify patterns, track development and make smarter decisions. All data-backed, just for you.",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "daily": "Daily",
+      "feedings": "Feedings",
+      "diapers": "Diapers",
+      "sleepHours": "Sleep Hours",
+      "supplementsLabel": "Supplements",
+      "naps": "naps"
+    },
+    "slide4": {
+      "title": "Find a Sitter",
+      "subtitle": "Find, rate and book — all from the app",
+      "perHour": "per hour",
+      "availableTonight": "Available Tonight"
+    },
+    "slide5": {
+      "title": "One Family, Full Sync.",
+      "subtitle": "Everyone updated in real time, from any device.",
+      "membersCount": "{{count}} members",
+      "admin": "Admin",
+      "member": "Member",
+      "guest": "Guest",
+      "inviteFamily": "Invite Family",
+      "inviteSubtitle": "Access code for all children"
+    }
   },
   "family": {
     "family": "Family",

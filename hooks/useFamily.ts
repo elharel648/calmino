@@ -14,6 +14,7 @@ import {
     renameFamily,
 } from '../services/familyService';
 import { auth, db } from '../services/firebaseConfig';
+import { IS_SCREENSHOT_MODE, MOCK_ACCOUNT_DATA } from '../constants/mockData';
 
 interface UseFamilyReturn {
     family: Family | null;
@@ -110,12 +111,17 @@ export const useFamily = (): UseFamilyReturn => {
     const canEdit = myRole === 'admin' || myRole === 'member';
     const inviteCode = family?.inviteCode || null;
 
-    const members: FamilyMember[] = family
+    const members: FamilyMember[] = IS_SCREENSHOT_MODE 
+        ? Object.entries(MOCK_ACCOUNT_DATA.family.members).map(([id, member]) => ({ ...member, id } as FamilyMember))
+        : family
         ? Object.entries(family.members).map(([id, member]) => ({
             ...member,
             id,
         } as FamilyMember))
         : [];
+
+    const displayFamily = IS_SCREENSHOT_MODE ? (MOCK_ACCOUNT_DATA.family as unknown as Family) : family;
+    const displayIsAdmin = IS_SCREENSHOT_MODE ? true : isAdmin;
 
     // Actions
     const create = useCallback(async (babyId: string, babyName: string): Promise<boolean> => {
@@ -163,11 +169,11 @@ export const useFamily = (): UseFamilyReturn => {
     }, []);
 
     return {
-        family,
+        family: displayFamily,
         members,
         isLoading,
-        isAdmin,
-        canEdit,
+        isAdmin: displayIsAdmin,
+        canEdit: displayIsAdmin || canEdit,
         myRole,
         inviteCode,
         create,

@@ -44,13 +44,14 @@ import DynamicPromoModal from '../components/Premium/DynamicPromoModal';
 import PremiumPaywall from '../components/Premium/PremiumPaywall';
 // Services
 import { auth, db } from '../services/firebaseConfig';
-import { doc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, getDocs, limit } from 'firebase/firestore';
 import { saveEventToFirebase, formatTimeFromTimestamp } from '../services/firebaseService';
 import { useToast } from '../context/ToastContext';
 import { undoService } from '../services/undoService';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '../utils/logger';
+import { IS_SCREENSHOT_MODE } from '../constants/mockData';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Modal } from 'react-native';
 import { getWrappedData, WrappedData } from '../services/wrappedService';
@@ -87,9 +88,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [gender, setGender] = useState<'boy' | 'girl' | 'other' | undefined>(undefined);
 
     const fetchBabyData = useCallback(async () => {
-        if (!activeChild?.childId) {
-            setBirthDate(null);
-            setGender(undefined);
+        if (!activeChild?.childId || IS_SCREENSHOT_MODE) {
+            setBirthDate(new Date('2025-08-01'));
+            setGender('boy');
             return;
         }
         try {
@@ -259,7 +260,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         const uid = auth.currentUser?.uid;
         if (!uid) return;
         try {
-            const snap = await getDocs(collection(db, `users/${uid}/reminders`));
+            const snap = await getDocs(query(collection(db, `users/${uid}/reminders`), limit(500)));
             setReminderCount(snap.size);
         } catch { /* silent */ }
     }, []);

@@ -24,6 +24,7 @@ import { leaveGuestAccess } from '../services/familyService';
 import { logger } from '../utils/logger';
 import { usePremium } from '../context/PremiumContext';
 import { getShowPremiumUpgrade } from '../services/remoteConfigService';
+import { IS_SCREENSHOT_MODE, MOCK_ACCOUNT_DATA } from '../constants/mockData';
 
 // Components
 import { FamilyMembersCard } from '../components/Family/FamilyMembersCard';
@@ -57,11 +58,13 @@ export default function SettingsScreen() {
   const [isGuestInviteOpen, setIsGuestInviteOpen] = useState(false);
   const [isEditBasicInfoOpen, setIsEditBasicInfoOpen] = useState(false);
   const [userPhotoURL, setUserPhotoURL] = useState<string | null>(
-    user?.photoURL || null
+    IS_SCREENSHOT_MODE ? MOCK_ACCOUNT_DATA.userPhotoUrl : (user?.photoURL || null)
   );
   const [userName, setUserName] = useState<string>(
-    user?.displayName || ''
+    IS_SCREENSHOT_MODE ? MOCK_ACCOUNT_DATA.userName : (user?.displayName || '')
   );
+  
+  const displayEmail = IS_SCREENSHOT_MODE ? MOCK_ACCOUNT_DATA.userEmail : user?.email;
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
@@ -464,8 +467,8 @@ export default function SettingsScreen() {
             <ChevronLeft size={16} color={theme.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
 
-          {user?.email && (
-            <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user?.email}</Text>
+          {displayEmail && (
+            <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{displayEmail}</Text>
           )}
         </Animated.View>
         {/* Premium Card - Highlighted Premium Design - Remote Config controlled */}

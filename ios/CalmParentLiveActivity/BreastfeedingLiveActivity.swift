@@ -69,7 +69,7 @@ struct BreastfeedingLiveActivity: Widget {
                     if #available(iOS 17, *) {
                         HStack(spacing: 8) {
                             // Switch Side
-                            Button(intent: SwitchSideIntent(activityId: context.activityID)) {
+                            Button(intent: SwitchSideIntent()) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.left.arrow.right")
                                         .font(.system(size: 11, weight: .bold))
@@ -86,7 +86,7 @@ struct BreastfeedingLiveActivity: Widget {
                             Spacer()
 
                             // Stop
-                            Link(destination: URL(string: "calmparentapp://save-timer?type=breast")!) {
+                            Button(intent: StopTimerIntent()) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 12, weight: .bold))
@@ -98,6 +98,7 @@ struct BreastfeedingLiveActivity: Widget {
                                 .padding(.vertical, 9)
                                 .background(breastfeedingColor, in: Capsule())
                             }
+                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 8)
                         .padding(.bottom, 6)
@@ -213,7 +214,7 @@ struct BreastfeedingLockScreenView: View {
                 if #available(iOS 17, *) {
                     VStack(spacing: 12) {
                         // Switch side
-                        Button(intent: SwitchSideIntent(activityId: context.activityID)) {
+                        Button(intent: SwitchSideIntent()) {
                             Image(systemName: "arrow.left.arrow.right")
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(.white)
@@ -223,7 +224,7 @@ struct BreastfeedingLockScreenView: View {
                         .buttonStyle(.plain)
 
                         // Stop
-                        Link(destination: URL(string: "calmparentapp://save-timer?type=breast")!) {
+                        Button(intent: StopTimerIntent()) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundStyle(.white)
@@ -231,6 +232,7 @@ struct BreastfeedingLockScreenView: View {
                                 .background(breastfeedingColor, in: Circle())
                                 .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
                         }
+                        .buttonStyle(.plain)
                     }
                     .environment(\.layoutDirection, .rightToLeft)
                 } else {

@@ -13,6 +13,7 @@ import { ANIMATIONS, TYPOGRAPHY, SPACING } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { auth } from '../services/firebaseConfig';
+import { IS_SCREENSHOT_MODE, MOCK_TIMELINE_EVENTS } from '../constants/mockData';
 import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
@@ -403,6 +404,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     setLoading(true);
     setError(null);
     try {
+      if (IS_SCREENSHOT_MODE && !preloadedEvents) {
+         setEvents(MOCK_TIMELINE_EVENTS as any[]);
+         setLoading(false);
+         return;
+      }
+      
       // Check if user is a guest and get historyAccessDays
       const userId = auth.currentUser?.uid;
       const historyAccessDays = userId && family?.members[userId]?.historyAccessDays;
@@ -1015,11 +1022,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const bottomColor = isLast ? 'transparent' : config.color;
 
             // Optional: reporter badge
-            const showBadge = showReporterBadge && event.reporterName;
-            const reporterInitial = event.reporterName ? event.reporterName.charAt(0) : '';
             const memberId = event.creatorId || event.userId;
             const member = family?.members[memberId];
             const photoUrl = member?.photoURL || event.reporterPhotoUrl;
+            const reporterInitial = event.reporterName ? event.reporterName.charAt(0) : '';
+            const showBadge = showReporterBadge && (event.reporterName || photoUrl);
 
             return (
               <AnimatedTimelineItem
