@@ -139,8 +139,13 @@ export const callFirebaseFunction = async (name: string, data?: object): Promise
     });
     
     // The response can sometimes be empty or HTML if it crashes hard, but valid Callable responses return JSON.
-    const responseData = await response.json();
-    
+    let responseData: any;
+    try {
+      responseData = await response.json();
+    } catch (_) {
+      throw new Error(`Function ${name} returned non-JSON response (status ${response.status})`);
+    }
+
     if (!response.ok || responseData?.error) {
       logger.error(`Error calling ${name}:`, responseData?.error?.message || responseData);
       throw new Error(responseData?.error?.message || `Function ${name} failed`);

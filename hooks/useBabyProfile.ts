@@ -8,7 +8,6 @@ import { Timestamp } from 'firebase/firestore';
 import { getBabyData, updateBabyData, saveAlbumImage, BabyData, getBabyDataById } from '../services/babyService';
 import { uploadAlbumPhoto } from '../services/imageUploadService';
 import { GrowthStats } from '../types/profile';
-import { IS_SCREENSHOT_MODE, MOCK_BABY_PROFILE } from '../constants/mockData';
 
 interface UseBabyProfileReturn {
     baby: BabyData | null;
@@ -31,24 +30,6 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
     const [loading, setLoading] = useState(true);
     const [savingImage, setSavingImage] = useState(false);
     const prevChildId = useRef<string | undefined>(childId);
-
-    if (IS_SCREENSHOT_MODE) {
-        return {
-            baby: { ...MOCK_BABY_PROFILE, stats: {} } as any,
-            loading: false,
-            savingImage: false,
-            babyAgeMonths: MOCK_BABY_PROFILE.ageMonths,
-            birthDateObj: MOCK_BABY_PROFILE.birthDate,
-            refresh: async () => {},
-            updatePhoto: async () => {},
-            updateBirthDate: async () => {},
-            updateStats: async () => {},
-            updateAllStats: async () => {},
-            updateBasicInfo: async () => {},
-            updateAlbumNote: async () => {},
-            updateAlbumDate: async () => {},
-        };
-    }
 
     const loadData = useCallback(async () => {
         try {

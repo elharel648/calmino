@@ -2,6 +2,7 @@
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { PlanId, PLAN_ENTITLEMENTS, Entitlements } from './plans'; // ייבוא מהקובץ החדש
+import { logger } from '../utils/logger';
 
 const SUBSCRIPTIONS_COLLECTION = 'subscriptions';
 let DEV_PLAN: PlanId = 'free'; // משתנה ל-Dev Test
@@ -33,7 +34,7 @@ const getSubscriptionFromFirebase = async (userId: string): Promise<PlanId> => {
             }
         }
     } catch (e) {
-        console.warn('[subscriptionService] Failed to fetch subscription:', e);
+        logger.warn('[subscriptionService] Failed to fetch subscription:', e);
     }
     
     return 'free';

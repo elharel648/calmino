@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Modal, View, Text, TouchableOpacity, StyleSheet,
-    Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Platform, Image,
+    Dimensions, NativeScrollEvent, NativeSyntheticEvent, Platform, Image,
 } from 'react-native';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     FadeIn, FadeInDown, FadeInUp,
-    useSharedValue, useAnimatedStyle,
+    useSharedValue, useAnimatedStyle, useAnimatedRef,
     withSpring, withTiming, withRepeat, withSequence, withDelay,
     Easing, interpolate, runOnJS,
 } from 'react-native-reanimated';
@@ -97,7 +97,7 @@ function GlassBabyHologram() {
         transform: [
             { translateY: floatY.value },
             { rotate: `${rotate.value}deg` },
-        ],
+        ] as any,
     }));
     const shimmerStyle = useAnimatedStyle(() => ({ opacity: shimmer.value }));
     const ring1Style = useAnimatedStyle(() => ({
@@ -632,7 +632,7 @@ export default function OnboardingCarousel({ visible, onDone }: Props) {
     const { t } = useLanguage();
     const [current, setCurrent] = useState(0);
     const [babyName, setBabyName] = useState('');
-    const scrollRef = useRef<ScrollView>(null);
+    const scrollRef = useAnimatedRef<Animated.ScrollView>();
     const btnScale = useSharedValue(1);
     const rippleScale = useSharedValue(0);
     const rippleOpacity = useSharedValue(0);

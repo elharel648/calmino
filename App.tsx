@@ -587,6 +587,7 @@ export default function App() {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
+  const handleChildrenReady = useCallback(() => setChildrenReady(true), []);
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
@@ -1056,9 +1057,7 @@ export default function App() {
             <ThemeProvider>
               <ToastProvider>
                 <GuestProvider initialIsGuest={isGuestMode} onExitGuest={() => setIsGuestMode(false)}>
-                <ActiveChildProvider onReady={() => {
-                  setChildrenReady(true);
-                }}>
+                <ActiveChildProvider onReady={handleChildrenReady}>
                   <QuickActionsProvider>
                     <SleepTimerProvider>
                       <FoodTimerProvider>

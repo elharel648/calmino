@@ -24,7 +24,6 @@ import { leaveGuestAccess } from '../services/familyService';
 import { logger } from '../utils/logger';
 import { usePremium } from '../context/PremiumContext';
 import { getShowPremiumUpgrade } from '../services/remoteConfigService';
-import { IS_SCREENSHOT_MODE, MOCK_ACCOUNT_DATA } from '../constants/mockData';
 
 // Components
 import { FamilyMembersCard } from '../components/Family/FamilyMembersCard';
@@ -57,14 +56,10 @@ export default function SettingsScreen() {
   const [joinModalVisible, setJoinModalVisible] = useState(false);
   const [isGuestInviteOpen, setIsGuestInviteOpen] = useState(false);
   const [isEditBasicInfoOpen, setIsEditBasicInfoOpen] = useState(false);
-  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(
-    IS_SCREENSHOT_MODE ? MOCK_ACCOUNT_DATA.userPhotoUrl : (user?.photoURL || null)
-  );
-  const [userName, setUserName] = useState<string>(
-    IS_SCREENSHOT_MODE ? MOCK_ACCOUNT_DATA.userName : (user?.displayName || '')
-  );
-  
-  const displayEmail = IS_SCREENSHOT_MODE ? MOCK_ACCOUNT_DATA.userEmail : user?.email;
+  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(user?.photoURL || null);
+  const [userName, setUserName] = useState<string>(user?.displayName || '');
+
+  const displayEmail = user?.email;
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);

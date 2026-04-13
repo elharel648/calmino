@@ -5,7 +5,6 @@ import { doc, onSnapshot, getDoc, collection, query, where, getDocs, getDocFromC
 import { AccessLevel, FamilyRole } from '../services/familyService';
 import { useLanguage } from './LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IS_SCREENSHOT_MODE } from '../constants/mockData';
 
 const safeGetDocs = async (q: any) => {
     try {
@@ -117,25 +116,6 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
     // Load all children (own + guest access)
     const refreshChildren = useCallback(async () => {
         const userId = auth.currentUser?.uid;
-        if (IS_SCREENSHOT_MODE) {
-            const mockChildren: ActiveChild[] = [
-                { childId: 'mock-baby', childName: 'הראל', role: 'parent', accessLevel: 'full', photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop' },
-                { childId: 'mock-aviv', childName: 'אביב', role: 'parent', accessLevel: 'full', photoUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=150&h=150&fit=crop' },
-                { childId: 'mock-ziv', childName: 'זיו', role: 'parent', accessLevel: 'full', photoUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=150&h=150&fit=crop' }
-            ];
-            setAllChildren(mockChildren);
-            if (!activeChildRef.current || !mockChildren.find(c => c.childId === activeChildRef.current?.childId)) {
-                setActiveChildState(mockChildren[0]);
-                activeChildRef.current = mockChildren[0];
-            }
-            setIsLoading(false);
-            if (!hasCalledOnReady.current && onReady) {
-                hasCalledOnReady.current = true;
-                onReady();
-            }
-            return;
-        }
-
         if (!userId) {
             if (isMountedRef.current) {
                 setAllChildren([]);

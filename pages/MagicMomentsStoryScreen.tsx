@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Dimensions, Platform, Image, Share } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withDelay, interpolate, Extrapolation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, withDelay, interpolate, Extrapolation, SharedValue } from 'react-native-reanimated';
 import { X, Award, Share2 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguage } from '../context/LanguageContext';
@@ -209,9 +209,9 @@ function ImageSlide({ photo }: { photo: StoryPhoto }) {
   const animStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: scale.value },
-      { translateY: translateY.value }
-    ],
-    opacity: opacity.value
+      { translateY: translateY.value },
+    ] as any,
+    opacity: opacity.value,
   }));
 
   return (
@@ -232,9 +232,9 @@ function ImageSlide({ photo }: { photo: StoryPhoto }) {
         Using 'contain' means we NEVER chop off edges, heads, or feet. 
         It scales beautifully inside the frame regardless of portrait or landscape.
       */}
-      <Animated.Image 
-        source={{ uri: photo.imageUrl }} 
-        style={[StyleSheet.absoluteFill, animStyle]} 
+      <Animated.Image
+        source={{ uri: photo.imageUrl }}
+        style={[StyleSheet.absoluteFill, animStyle as any]}
         resizeMode="contain"
       />
       
@@ -245,9 +245,9 @@ function ImageSlide({ photo }: { photo: StoryPhoto }) {
         pointerEvents="none"
       />
       {/* Bottom gradient just for elegance */}
-      <LinearGradient 
-        colors={['transparent', 'rgba(0,0,0,0.5)']} 
-        style={s.btmGradient} 
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.5)']}
+        style={s.btmGradient}
         pointerEvents="none"
       />
     </View>
@@ -322,7 +322,7 @@ function StoryFinale({ photos, childName, onShare, t }: { photos: StoryPhoto[], 
 // PROGRESS BAR COMPONENT
 // ------------------------------------------------------------------
 
-function AnimatedBar({ isActive, isPast, progress }: { isActive: boolean; isPast: boolean; progress: Animated.SharedValue<number> }) {
+function AnimatedBar({ isActive, isPast, progress }: { isActive: boolean; isPast: boolean; progress: SharedValue<number> }) {
   const animStyle = useAnimatedStyle(() => {
     let w = 0;
     if (isPast) w = 100;
@@ -425,6 +425,11 @@ const s = StyleSheet.create({
   topGradient: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
+    height: 180,
+  },
+  btmGradient: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
     height: 180,
   },
   sideVignette: {

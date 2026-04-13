@@ -51,7 +51,6 @@ import { undoService } from '../services/undoService';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '../utils/logger';
-import { IS_SCREENSHOT_MODE } from '../constants/mockData';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Modal } from 'react-native';
 import { getWrappedData, WrappedData } from '../services/wrappedService';
@@ -88,11 +87,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [gender, setGender] = useState<'boy' | 'girl' | 'other' | undefined>(undefined);
 
     const fetchBabyData = useCallback(async () => {
-        if (!activeChild?.childId || IS_SCREENSHOT_MODE) {
-            setBirthDate(new Date('2025-08-01'));
-            setGender('boy');
-            return;
-        }
+        if (!activeChild?.childId) return;
         try {
             const babyData = await getBabyDataById(activeChild.childId);
             if (babyData?.birthDate) {

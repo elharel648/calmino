@@ -78,9 +78,13 @@ service cloud.firestore {
     // FAMILIES COLLECTION
     // ===================
     match /families/{familyId} {
-      // Read: members can read full doc.
-      // Any authenticated user can also read (needed for join-by-invite-code query).
-      allow read: if isAuthenticated();
+      // get: members only (protect family data from non-members)
+      allow get: if isAuthenticated() && (
+        resource.data.members[request.auth.uid] != null ||
+        resource.data.createdBy == request.auth.uid
+      );
+      // list: any authenticated user (needed for join-by-invite-code query on inviteCode field)
+      allow list: if isAuthenticated();
       
       // Create: any authenticated
       allow create: if isAuthenticated();
