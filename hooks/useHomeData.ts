@@ -341,19 +341,9 @@ export const useHomeData = (
     }, [childId]);
 
     return {
-        lastFeedTime,
-        lastSleepTime,
-        babyStatus,
-        aiTip,
-        loadingAI,
-        dailyStats,
-        growthStats,
-        isLoading,
-        isError,
-        guestExpiresAt,
-        toggleBabyStatus,
-        generateInsight,
-        refresh,
+        lastFeedTime, lastSleepTime, babyStatus, aiTip, loadingAI,
+        dailyStats, growthStats, isLoading, isError, guestExpiresAt,
+        toggleBabyStatus, generateInsight, refresh,
     };
 };
 

@@ -375,11 +375,7 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
         const userId = auth.currentUser?.uid;
         if (!userId) {
             setIsLoading(false);
-            // Still call onReady even if no user
-            if (!hasCalledOnReady.current && onReady) {
-                hasCalledOnReady.current = true;
-                onReady();
-            }
+            if (!hasCalledOnReady.current && onReady) { hasCalledOnReady.current = true; onReady(); }
             return;
         }
 

@@ -253,12 +253,7 @@ const useSitters = () => {
         fetchSitters();
     }, [fetchSitters]);
 
-    return {
-        sitters,
-        isLoading,
-        error,
-        refetch: () => fetchSitters(true), // Force refresh
-    };
+    return { sitters, isLoading, error, refetch: () => fetchSitters(true) };
 };
 
 export default useSitters;

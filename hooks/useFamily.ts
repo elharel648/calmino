@@ -167,21 +167,9 @@ export const useFamily = (): UseFamilyReturn => {
     }, []);
 
     return {
-        family: displayFamily,
-        members,
-        isLoading,
-        isAdmin: displayIsAdmin,
-        canEdit: displayIsAdmin || canEdit,
-        myRole,
-        inviteCode,
-        create,
-        join,
-        leave,
-        remove,
-        refreshInviteCode,
-        changeRole,
-        rename,
-        refresh,
+        family: displayFamily, members, isLoading, isAdmin: displayIsAdmin,
+        canEdit: displayIsAdmin || canEdit, myRole, inviteCode,
+        create, join, leave, remove, refreshInviteCode, changeRole, rename, refresh,
     };
 };
 

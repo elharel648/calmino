@@ -52,7 +52,7 @@ const ActionButton = memo(({
     const handlePressIn = useCallback(() => {
         // High tension spring down to simulate premium physical button depth
         scale.value = withSpring(0.97, { stiffness: 400, damping: 25 });
-        
+
         // Ripple effect start
         rippleScale.value = 0.1;
         rippleOpacity.value = 0.12; // Subtle translucent white

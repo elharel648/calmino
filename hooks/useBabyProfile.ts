@@ -393,20 +393,11 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         }
     }, [baby?.id, baby?.albumDates]);
 
+
     return {
-        baby,
-        loading,
-        savingImage,
-        babyAgeMonths,
-        birthDateObj,
-        refresh: loadData,
-        updatePhoto,
-        updateBirthDate,
-        updateStats,
-        updateAllStats,
-        updateBasicInfo,
-        updateAlbumNote,
-        updateAlbumDate,
+        baby, loading, savingImage, babyAgeMonths, birthDateObj,
+        refresh: loadData, updatePhoto, updateBirthDate, updateStats,
+        updateAllStats, updateBasicInfo, updateAlbumNote, updateAlbumDate,
     };
 };
 

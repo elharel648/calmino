@@ -58,7 +58,6 @@ export default function SettingsScreen() {
   const [isEditBasicInfoOpen, setIsEditBasicInfoOpen] = useState(false);
   const [userPhotoURL, setUserPhotoURL] = useState<string | null>(user?.photoURL || null);
   const [userName, setUserName] = useState<string>(user?.displayName || '');
-
   const displayEmail = user?.email;
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
