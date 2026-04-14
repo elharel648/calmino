@@ -83,6 +83,135 @@ const QUICK_PRESETS = [
     { name: 'טיול', icon: 'footprints', color: '#8EB168' }, // Soft Olive
 ];
 
+const ITEM_HEIGHT = 40;
+const VISIBLE_ITEMS = 5;
+const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
+
+const AndroidWheelPicker = ({
+  values,
+  selectedValue,
+  onValueChange,
+  label,
+  theme,
+}: {
+  values: number[];
+  selectedValue: number;
+  onValueChange: (v: number) => void;
+  label: string;
+  theme: any;
+}) => {
+  const scrollRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(values.indexOf(selectedValue));
+
+  useEffect(() => {
+    const idx = values.indexOf(selectedValue);
+    if (idx >= 0) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false });
+      }, 50);
+    }
+  }, []);
+
+  const handleMomentumEnd = (e: any) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const idx = Math.round(y / ITEM_HEIGHT);
+    const clampedIdx = Math.max(0, Math.min(idx, values.length - 1));
+    setCurrentIndex(clampedIdx);
+    onValueChange(values[clampedIdx]);
+    scrollRef.current?.scrollTo({ y: clampedIdx * ITEM_HEIGHT, animated: true });
+  };
+
+  return (
+    <View style={{ alignItems: 'center', width: 80 }}>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginBottom: 4 }}>{label}</Text>
+      <View style={{ height: PICKER_HEIGHT, overflow: 'hidden', width: 70 }}>
+        <View pointerEvents="none" style={{
+          position: 'absolute',
+          top: ITEM_HEIGHT * 2,
+          left: 0,
+          right: 0,
+          height: ITEM_HEIGHT,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: theme.actionColors?.custom?.color || theme.primary || '#C4956A',
+          zIndex: 10,
+        }} />
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={ITEM_HEIGHT}
+          decelerationRate="fast"
+          onMomentumScrollEnd={handleMomentumEnd}
+          onScrollEndDrag={Platform.OS === 'android' ? handleMomentumEnd : undefined}
+          contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
+          nestedScrollEnabled={true}
+          overScrollMode="always"
+        >
+          {values.map((v, i) => (
+            <View key={v} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{
+                fontSize: currentIndex === i ? 22 : 17,
+                fontWeight: currentIndex === i ? '700' : '400',
+                color: currentIndex === i ? theme.textPrimary : (theme.textSecondary + '80'),
+              }}>
+                {v}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    </View>
+  );
+};
+
+const AndroidTimePicker = ({
+  value,
+  onConfirm,
+  theme,
+  t,
+}: {
+  value: Date;
+  onConfirm: (date: Date) => void;
+  theme: any;
+  t: any;
+}) => {
+  const [hours, setHours] = useState(value.getHours());
+  const [minutes, setMinutes] = useState(value.getMinutes());
+  const hoursArr = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
+  const minutesArr = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
+
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 20 }}>
+        <AndroidWheelPicker
+          values={hoursArr}
+          selectedValue={hours}
+          onValueChange={setHours}
+          label="שעות"
+          theme={theme}
+        />
+        <AndroidWheelPicker
+          values={minutesArr}
+          selectedValue={minutes}
+          onValueChange={setMinutes}
+          label="דקות"
+          theme={theme}
+        />
+      </View>
+      <TouchableOpacity
+        style={{ marginTop: 12, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 24, minWidth: 140, alignItems: 'center', backgroundColor: theme.actionColors?.custom?.color || theme.primary }}
+        onPress={() => {
+          const d = new Date(value);
+          d.setHours(hours, minutes, 0, 0);
+          onConfirm(d);
+        }}
+      >
+        <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>אישור</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose, onAdd }) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
@@ -535,7 +664,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     {/* Time Picker Modal */}
                     {showTimePicker && (
                         <View style={styles.pickerOverlay}>
-                            <View style={[styles.pickerContainer, { backgroundColor: theme.card }]}>
+                            <View style={[styles.pickerContainer, { backgroundColor: theme.card, paddingTop: Platform.OS === 'android' ? 16 : 0 }]}>
                                 {Platform.OS === 'ios' && (
                                     <View style={{ width: '100%', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
                                         <TouchableOpacity
@@ -546,17 +675,29 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                         </TouchableOpacity>
                                     </View>
                                 )}
-                                <DateTimePicker
-                                    value={selectedDate}
-                                    mode="time"
-                                    display="spinner"
-                                    onChange={(event, date) => {
-                                        if (Platform.OS === 'android') setShowTimePicker(false);
-                                        if (date) setSelectedDate(date);
-                                    }}
-                                    locale="he-IL"
-                                    textColor={theme.textPrimary}
-                                />
+                                {Platform.OS === 'android' ? (
+                                    <AndroidTimePicker
+                                        value={selectedDate}
+                                        onConfirm={(d) => {
+                                            setSelectedDate(d);
+                                            setShowTimePicker(false);
+                                        }}
+                                        theme={theme}
+                                        t={t}
+                                    />
+                                ) : (
+                                    <DateTimePicker
+                                        value={selectedDate}
+                                        mode="time"
+                                        display="spinner"
+                                        onChange={(event, date) => {
+                                            if (Platform.OS === 'android') setShowTimePicker(false);
+                                            if (date) setSelectedDate(date);
+                                        }}
+                                        locale="he-IL"
+                                        textColor={theme.textPrimary}
+                                    />
+                                )}
                             </View>
                         </View>
                     )}
