@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, PanRespond
 import { useTheme } from '../context/ThemeContext';
 import Slider from '@react-native-community/slider';
 import * as SystemBrightness from 'expo-brightness';
-import { Sun, Moon, Sparkles, Lightbulb } from 'lucide-react-native';
+import { Sun, Moon, Sparkles, Lightbulb, ChevronDown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -191,6 +191,29 @@ export default function NightLightModal({
         },
     }), [onClose, slideAnim, backdropAnim]);
 
+    const handleCloseModal = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        RNAnimated.parallel([
+            RNAnimated.spring(slideAnim, {
+                toValue: SCREEN_HEIGHT,
+                useNativeDriver: true,
+                tension: 65,
+                friction: 11,
+            }),
+            RNAnimated.timing(backdropAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            onClose();
+            slideAnim.setValue(SCREEN_HEIGHT);
+            backdropAnim.setValue(0);
+        });
+    };
+
     const animatedControlsStyle = useAnimatedStyle(() => ({
         opacity: controlsOpacity.value,
     }));
@@ -271,9 +294,9 @@ export default function NightLightModal({
                 {...panResponder.panHandlers}
             >
                 {/* Drag Handle - Visual indicator */}
-                <View style={styles.dragHandle}>
-                    <View style={[styles.dragHandleBar, { backgroundColor: getTextColor() + '40' }]} />
-                </View>
+                <TouchableOpacity style={styles.dragHandle} onPress={handleCloseModal} activeOpacity={0.7}>
+                    <Text style={{ color: brightness > 0.5 ? 'rgba(0,0,0,0.6)' : '#FFF5E1', fontSize: 11, fontWeight: '600' }}>לסגירה</Text>
+                </TouchableOpacity>
 
                 <TouchableWithoutFeedback onPress={() => setControlsVisible(!controlsVisible)}>
                     <View style={StyleSheet.absoluteFill}>

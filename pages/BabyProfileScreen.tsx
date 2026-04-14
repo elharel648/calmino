@@ -14,6 +14,7 @@ import { StyleSheet,
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { Calendar, User, Users, ChevronRight, Heart, Baby, X, Check } from 'lucide-react-native';
+import AndroidHebrewCalendar from '../components/Common/AndroidHebrewCalendar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
@@ -248,12 +249,17 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
           </Animated.View>
 
           {showDatePicker && Platform.OS === 'android' && (
-            <DateTimePicker
+            <AndroidHebrewCalendar
+              visible={true}
               value={birthDate ?? new Date()}
-              mode="date"
-              display="calendar"
+              onSelect={(d) => {
+                setBirthDate(d);
+                setShowDatePicker(false);
+              }}
+              onDismiss={() => setShowDatePicker(false)}
+              theme={theme}
+              t={t}
               maximumDate={new Date()}
-              onChange={onDateChange}
             />
           )}
 
@@ -495,11 +501,11 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   },
   segmentedPillBoy: {
     right: 3,
-    backgroundColor: isDarkMode ? 'rgba(59,130,246,0.25)' : 'rgba(59,130,246,0.12)',
+    backgroundColor: '#3B82F6',
   },
   segmentedPillGirl: {
     left: 3,
-    backgroundColor: isDarkMode ? 'rgba(236,72,153,0.25)' : 'rgba(236,72,153,0.12)',
+    backgroundColor: '#EC4899',
   },
   segmentedTab: {
     flex: 1,
@@ -514,11 +520,11 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   },
   segmentedTabTextActiveBoy: {
     fontWeight: '700',
-    color: isDarkMode ? '#93C5FD' : '#2563EB',
+    color: '#FFFFFF',
   },
   segmentedTabTextActiveGirl: {
     fontWeight: '700',
-    color: isDarkMode ? '#F9A8D4' : '#DB2777',
+    color: '#FFFFFF',
   },
 
   // iOS date picker wrapper
