@@ -31,7 +31,6 @@ import ChecklistModal from '../components/ChecklistModal';
 import NightLightModal from '../components/NightLightModal';
 import QuickReminderModal from '../components/Home/QuickReminderModal';
 import TeethTrackerModal from '../components/Tools/TeethTrackerModal';
-import SleepCalculatorModal from '../components/Tools/SleepCalculatorModal';
 import WhiteNoiseModal from '../components/WhiteNoiseModal';
 import SupplementsModal from '../components/Home/SupplementsModal';
 import GrowthModal from '../components/Home/GrowthModal';
@@ -188,7 +187,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isCalmModeOpen, setIsCalmModeOpen] = useState(false);
     const [isNightLightOpen, setIsNightLightOpen] = useState(false);
     const [isTeethOpen, setIsTeethOpen] = useState(false);
-    const [isNextNapOpen, setIsNextNapOpen] = useState(false);
     const [isChecklistOpen, setIsChecklistOpen] = useState(false);
     const [isQuickReminderOpen, setIsQuickReminderOpen] = useState(false);
     const [reminderCount, setReminderCount] = useState(0);
@@ -569,7 +567,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 />
                 <NightLightModal visible={isNightLightOpen} onClose={() => setIsNightLightOpen(false)} />
                 <TeethTrackerModal visible={isTeethOpen} onClose={() => setIsTeethOpen(false)} />
-                <SleepCalculatorModal visible={isNextNapOpen} onClose={() => setIsNextNapOpen(false)} />
                 <ChecklistModal visible={isChecklistOpen} onClose={() => setIsChecklistOpen(false)} />
                 <QuickReminderModal visible={isQuickReminderOpen} onClose={() => { setIsQuickReminderOpen(false); fetchReminderCount(); }} />
                 <WhiteNoiseModal visible={isWhiteNoiseOpen} onClose={() => setIsWhiteNoiseOpen(false)} />
