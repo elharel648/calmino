@@ -103,25 +103,35 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
         const wazeUrl = `waze://?q=${encodedAddress}`;
         const appleMapsUrl = `maps:0,0?q=${encodedAddress}`;
         const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        const geoUrl = `geo:0,0?q=${encodedAddress}`;
 
         try {
-            // First try to open Waze
-            const canOpenWaze = await Linking.canOpenURL(wazeUrl);
+            if (Platform.OS === 'android') {
+                // On Android, geo: opens the default maps app (Google Maps, Waze, etc.)
+                const canOpenGeo = await Linking.canOpenURL(geoUrl).catch(() => false);
+                if (canOpenGeo) {
+                    await Linking.openURL(geoUrl);
+                    return;
+                }
+                // Fallback to Google Maps web (always works)
+                await Linking.openURL(googleMapsUrl);
+                return;
+            }
+
+            // iOS: try Waze, then Apple Maps, then Google Maps web
+            const canOpenWaze = await Linking.canOpenURL(wazeUrl).catch(() => false);
             if (canOpenWaze) {
                 await Linking.openURL(wazeUrl);
                 return;
             }
-            
-            // Fallback to native maps
-            if (Platform.OS === 'ios') {
-                const canOpenApple = await Linking.canOpenURL(appleMapsUrl);
-                if (canOpenApple) {
-                    await Linking.openURL(appleMapsUrl);
-                    return;
-                }
+
+            const canOpenApple = await Linking.canOpenURL(appleMapsUrl).catch(() => false);
+            if (canOpenApple) {
+                await Linking.openURL(appleMapsUrl);
+                return;
             }
-            
-            // Ultimate fallback to Google Maps Web / App
+
+            // Ultimate fallback to Google Maps Web
             await Linking.openURL(googleMapsUrl);
         } catch (e) {
             Alert.alert('שגיאה', 'לא ניתן לפתוח אפליקציית ניווט במכשיר זה');
