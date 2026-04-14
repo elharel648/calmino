@@ -132,6 +132,7 @@ export default function TeethTrackerModal({
 
     const loadTeethData = async () => {
         if (!activeChild?.childId) return;
+
         try {
             const docRef = doc(db, 'babies', activeChild.childId);
             const snap = await getDoc(docRef);
