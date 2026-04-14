@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { X, Check, Calendar, Camera, User } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -198,7 +199,21 @@ export default function EditBasicInfoModal({
                             </TouchableOpacity>
                         </View>
 
-                        {showDatePicker && (
+                        {showDatePicker && Platform.OS === 'android' && (
+                            <AndroidHebrewCalendar
+                                visible={true}
+                                value={birthDate}
+                                onSelect={(d) => {
+                                    setBirthDate(d);
+                                    setShowDatePicker(false);
+                                }}
+                                onDismiss={() => setShowDatePicker(false)}
+                                theme={theme}
+                                t={t}
+                                maximumDate={new Date()}
+                            />
+                        )}
+                        {showDatePicker && Platform.OS === 'ios' && (
                             <DateTimePicker
                                 value={birthDate}
                                 mode="date"
