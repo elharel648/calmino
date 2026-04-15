@@ -600,10 +600,18 @@ if (data.settings.language !== undefined) {
                       }
 
                       // 8. Delete user document from Firestore + Storage
+                      // Save essential flags BEFORE deletion so we can restore if auth fails
+                      let savedIsSitter = false;
+                      let savedDisplayName = '';
                       try {
                         const userDoc = await getDoc(doc(db, 'users', userId));
-                        if (userDoc.exists() && userDoc.data().photoUrl) {
-                           await deleteStorageObjectByUrl(userDoc.data().photoUrl);
+                        if (userDoc.exists()) {
+                          const uData = userDoc.data();
+                          savedIsSitter = uData.isSitter === true;
+                          savedDisplayName = uData.displayName || '';
+                          if (uData.photoUrl) {
+                            await deleteStorageObjectByUrl(uData.photoUrl);
+                          }
                         }
                         await deleteDoc(doc(db, 'users', userId));
                         logger.log('✅ Deleted user document');
@@ -619,6 +627,16 @@ if (data.settings.language !== undefined) {
                       } catch (authErr: any) {
                         setLoading(false);
                         if (authErr?.code === 'auth/requires-recent-login') {
+                          // Auth user persists — restore minimal user doc so the
+                          // next login session retains the sitter flag and routing works.
+                          try {
+                            await setDoc(doc(db, 'users', userId), {
+                              displayName: savedDisplayName,
+                              ...(savedIsSitter ? { isSitter: true, sitterActive: false } : {}),
+                            });
+                            logger.log('🔄 Restored minimal user doc after auth/requires-recent-login');
+                          } catch (_) {}
+
                           Alert.alert(
                             t('settings.deleteAccountReauthTitle') || 'נדרש אימות מחדש',
                             t('settings.deleteAccountReauthMessage') || 'כדי לסיים למחוק את החשבון סופית, עליך להתחבר מחדש ואז ללחוץ שוב על מחיקה.',

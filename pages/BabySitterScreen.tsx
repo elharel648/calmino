@@ -18,7 +18,7 @@ import { View,
     Modal } from 'react-native';
 import {
     Search, Briefcase, Star, ChevronLeft,
-    User, Award, UserPlus, MapPin, Calendar, UserX, Ban, Heart
+    User, Award, UserPlus, MapPin, Calendar, UserX, Ban, Heart, Plus
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
@@ -56,6 +56,7 @@ const BabySitterScreen = ({ navigation }: any) => {
     const [refreshing, setRefreshing] = useState(false);
     const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance' | 'favorites'>('rating');
     const [isSitterRegistered, setIsSitterRegistered] = useState<boolean | null>(null);
+    const [sitterActive, setSitterActive] = useState<boolean>(false);
     const [checkingStatus, setCheckingStatus] = useState(false);
     const [filterCity, setFilterCity] = useState<string>(''); // Manual city filter
     const [showCitySuggestions, setShowCitySuggestions] = useState(false);
@@ -271,8 +272,10 @@ const BabySitterScreen = ({ navigation }: any) => {
             if (userDoc.exists()) {
                 const data = userDoc.data();
                 setIsSitterRegistered(data.isSitter === true);
+                setSitterActive(data.sitterActive === true);
             } else {
                 setIsSitterRegistered(false);
+                setSitterActive(false);
             }
         } catch (error) {
             logger.error('Failed to check sitter status:', error);
@@ -616,6 +619,37 @@ const BabySitterScreen = ({ navigation }: any) => {
         </ScrollView>
     );
 
+    // Empty State for sitters who haven't activated their profile yet.
+    // Mirrors the "Add Child" placeholder design from AddBabyPlaceholder.tsx.
+    const JoinSitterEmptyState = () => (
+        <View style={styles.joinSitterContainer}>
+            <TouchableOpacity
+                style={[styles.joinSitterCard, { backgroundColor: theme.card }]}
+                onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    navigation.navigate('SitterRegistration');
+                }}
+                activeOpacity={0.8}
+            >
+                <LinearGradient
+                    colors={['#C8806A', '#CD8B87']}
+                    style={styles.joinSitterIcon}
+                >
+                    <Briefcase size={32} color="#fff" />
+                    <View style={styles.joinSitterPlusBadge}>
+                        <Plus size={14} color="#fff" strokeWidth={3} />
+                    </View>
+                </LinearGradient>
+                <Text style={[styles.joinSitterTitle, { color: theme.textPrimary }]}>
+                    הצטרף כבייביסיטר
+                </Text>
+                <Text style={[styles.joinSitterSubtitle, { color: theme.textSecondary }]}>
+                    לחץ כאן כדי ליצור את פרופיל הבייביסיטר שלך
+                </Text>
+            </TouchableOpacity>
+        </View>
+    );
+
     // Sitter Registration CTA (for non-registered users)
     const SitterRegistrationCTA = () => (
         <View style={styles.registrationContainer}>
@@ -691,6 +725,9 @@ const BabySitterScreen = ({ navigation }: any) => {
 
                     <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('sitter.findSitter')}</Text>
 
+                    {isSitterRegistered === true && !sitterActive ? (
+                        <View style={{ width: 40 }} />
+                    ) : (
                     <View style={styles.headerRight}>
                         {/* Join / Open Sitter button */}
                         <TouchableOpacity
@@ -728,12 +765,16 @@ const BabySitterScreen = ({ navigation }: any) => {
                             )}
                         </TouchableOpacity>
                     </View>
+                    )}
                 </View>
 
                 {/* Mode toggle removed — sitter access via + button in header */}
             </View>
 
-            {/* Sitter Search Content (always shown) */}
+            {/* Sitter who hasn't activated their profile yet — show onboarding empty state */}
+            {isSitterRegistered === true && !sitterActive ? (
+                <JoinSitterEmptyState />
+            ) : (
                 <>
                     {/* Location Search Bar */}
                     <View style={styles.locationSection}>
@@ -901,6 +942,7 @@ const BabySitterScreen = ({ navigation }: any) => {
                         />
                     )}
                 </>
+            )}
             {/* Photo Preview Popup */}
             <Modal
                 visible={photoPreviewVisible}
@@ -1174,6 +1216,53 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingHorizontal: 32,
         lineHeight: 20,
+    },
+
+    // Join Sitter Empty State - mirrors AddBabyPlaceholder design
+    joinSitterContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 160,
+    },
+    joinSitterCard: {
+        width: '100%',
+        alignItems: 'center',
+        borderRadius: 20,
+        padding: 30,
+        ...SHADOWS.elevated,
+    },
+    joinSitterIcon: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    joinSitterPlusBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#10B981',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    joinSitterTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 8,
+    },
+    joinSitterSubtitle: {
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 22,
     },
 
     // Registration CTA - Enhanced with elevated shadow

@@ -47,7 +47,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Home, BarChart2, User, Settings, Lock, Baby, UserCheck } from 'lucide-react-native';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import * as LocalAuthentication from 'expo-local-authentication';
 // Utility to race network promises against a strict timeout for poor cellular connection resilience
 const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number, defaultVal: T): Promise<T> => {
@@ -225,10 +225,14 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
   const reportsTabName = t('navigation.reports');
   const babysitterTabName = t('navigation.babysitter');
 
+  // Sitters without a child profile should land on the Babysitter tab (SitterList),
+  // where they can register as a sitter — instead of the empty HomeScreen.
+  const initialTab = (isAppSitter && allChildren.length === 0) ? babysitterTabName : homeTabName;
+
   return (
     <Tab.Navigator
       id="MainTabs"
-      initialRouteName={homeTabName}
+      initialRouteName={initialTab}
       tabBar={(props) => <LiquidGlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -861,6 +865,7 @@ export default function App() {
           setChildrenReady(false);
           setUser(null);
           setHasBabyProfile(null);
+          setIsAppSitter(false);
           setIsLocked(false);
           setIsAppLoading(false);
         }
@@ -869,6 +874,7 @@ export default function App() {
         setChildrenReady(false);
         setUser(null);
         setHasBabyProfile(null);
+        setIsAppSitter(false);
         setIsLocked(false);
         setIsAppLoading(false);
       }
@@ -884,6 +890,23 @@ export default function App() {
         cleanupPresence();
       };
     }
+  }, [user]);
+
+  // Live-sync the isSitter flag so routing stays correct if it changes mid-session
+  // (covers the race where checkBiometricSettingsAndProfile timed out on first load)
+  useEffect(() => {
+    if (!user) return;
+    const userRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(
+      userRef,
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        setIsAppSitter(data.isSitter === true);
+      },
+      (err) => logger.log('User doc snapshot error:', err)
+    );
+    return unsubscribe;
   }, [user]);
 
   // Re-lock app with biometrics every time it comes to foreground
@@ -916,7 +939,6 @@ export default function App() {
       if (userSnap && userSnap.exists()) {
         const data = userSnap.data();
         sitterFlag = data.isSitter === true;
-        setIsAppSitter(sitterFlag);
 
         const settings = data.settings;
         if (settings && settings.biometricsEnabled) {
@@ -930,12 +952,16 @@ export default function App() {
 
       // 2000ms timeout for checking baby exists, defaults to true (assuming returning users mostly have babies)
       const babyExists = await fetchWithTimeout(checkIfBabyExists(), 2000, true);
+      // Batch both state updates so React renders them in a single pass —
+      // prevents a flash of BabyProfileScreen when isAppSitter hasn't been set yet.
+      setIsAppSitter(sitterFlag);
       setHasBabyProfile(babyExists);
       setIsAppLoading(false);
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);
 
     } catch (error) {
       logger.log('Error during startup checks:', error);
+      setIsAppSitter(false);
       setIsAppLoading(false);
     }
   };
@@ -1011,7 +1037,8 @@ export default function App() {
     ); // Keep splash visible natively, but show Liquid Glass if splash was already hidden (e.g. after login)
   }
 
-  // Only force BabyProfileScreen for parents (non-sitters, non-guests)
+  // Only force BabyProfileScreen for parents (non-sitters, non-guests).
+  // Sitters skip this entirely and land on the Babysitter tab instead — see MainAppNavigator below.
   if (user && hasBabyProfile === false && !isAppSitter) {
     return (
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
@@ -1057,7 +1084,7 @@ export default function App() {
             <ThemeProvider>
               <ToastProvider>
                 <GuestProvider initialIsGuest={isGuestMode} onExitGuest={() => setIsGuestMode(false)}>
-                <ActiveChildProvider onReady={handleChildrenReady}>
+                <ActiveChildProvider onReady={handleChildrenReady} isSitter={isAppSitter}>
                   <QuickActionsProvider>
                     <SleepTimerProvider>
                       <FoodTimerProvider>

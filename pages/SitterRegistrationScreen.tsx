@@ -172,7 +172,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
     };
 
     // Media handlers
-    const pickImage = async () => {
+    const pickImage = useCallback(async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -184,7 +184,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
             setProfilePhoto(result.assets[0].uri);
             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
-    };
+    }, []);
 
     // Toggle day availability
     const toggleDay = (dayIndex: number) => {
@@ -610,79 +610,86 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
         </View>
     ), [name, age, phone, bio, city, gpsLocation, isLoadingLocation, experienceYears, pricePerHour, theme, isDarkMode]);
 
-    // Step 2: Photo - memoized
-    const PhotoStep = useMemo(() => (
-        <View style={styles.stepContent}>
-            {/* Premium Step Header */}
-            <View style={styles.stepHeader}>
-                <View style={styles.stepIconOuter}>
-                    <LinearGradient
-                        colors={isDarkMode ? ['#2C2C2E', '#3A3A3C'] : ['#F2F2F7', '#E5E5EA']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.stepIconGradient}
-                    >
-                        <Camera size={26} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={1.8} />
-                    </LinearGradient>
-                </View>
-                <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>{t('sitter.registration.uploadPhotoHint')}</Text>
-                <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                    {t('sitter.registration.uploadPhotoHint')}
-                </Text>
-            </View>
+    // Step 2: Photo — plain render function (no useMemo), so `t` is always fresh
+    // and the layout never relies on a stale closure captured at mount time.
+    const renderPhotoStep = () => {
+        const subtitleText = t('sitter.registration.uploadPhotoHint') || 'הוסף/י תמונת פנים ברורה כדי להגדיל את האמון של ההורים';
+        const placeholderText = t('sitter.registration.uploadPhoto') || 'העלאת תמונה';
+        const placeholderHint = t('common.tapToSelect') || 'לחצ/י לבחירה';
+        const trustText = t('sitter.registration.photoPrivacy') || 'התמונה שלך מוצגת רק להורים בסביבתך';
 
-            <TouchableOpacity style={styles.photoUpload} onPress={pickImage} activeOpacity={0.85}>
-                {profilePhoto ? (
-                    <View style={styles.photoContainer}>
-                        {/* Gradient ring behind photo */}
+        return (
+            <View style={styles.stepContent}>
+                {/* Premium Step Header */}
+                <View style={styles.stepHeader}>
+                    <View style={styles.stepIconOuter}>
                         <LinearGradient
-                            colors={['#1C1C1E', '#3A3A3C', '#636366', '#1C1C1E']}
+                            colors={isDarkMode ? ['#2C2C2E', '#3A3A3C'] : ['#F2F2F7', '#E5E5EA']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
-                            style={styles.photoGradientRing}
-                        />
-                        <Image source={{ uri: profilePhoto }} style={styles.photoPreview} />
-                        <View style={[styles.photoEditBadge, { backgroundColor: '#1C1C1E' }]}>
-                            <Camera size={14} color="#fff" strokeWidth={2.5} />
-                        </View>
-                    </View>
-                ) : (
-                    <View style={styles.photoPlaceholderOuter}>
-                        {/* Dashed ring with gradient hint */}
-                        <LinearGradient
-                            colors={isDarkMode ? ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.03)'] : ['#F2F2F7', '#E5E5EA']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.photoPlaceholderInner}
+                            style={styles.stepIconGradient}
                         >
-                            <View style={styles.photoUploadIcon}>
-                                <LinearGradient
-                                    colors={['#1C1C1E', '#3A3A3C']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.photoUploadIconGradient}
-                                >
-                                    <Camera size={28} color="#fff" strokeWidth={1.8} />
-                                </LinearGradient>
-                            </View>
-                            <Text style={[styles.photoPlaceholderText, { color: theme.textPrimary }]}>{t('sitter.registration.uploadPhoto')}</Text>
-                            <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>
-                                {t('common.tapToSelect') || 'לחצ/י לבחירה'}
-                            </Text>
+                            <Camera size={26} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={1.8} />
                         </LinearGradient>
                     </View>
-                )}
-            </TouchableOpacity>
+                    <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
+                        {subtitleText}
+                    </Text>
+                </View>
 
-            {/* Trust badge */}
-            <View style={[styles.trustBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F2F2F7' }]}>
-                <Shield size={16} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
-                <Text style={[styles.trustBadgeText, { color: isDarkMode ? 'rgba(255,255,255,0.6)' : '#64748B' }]}>
-                    {t('sitter.registration.photoPrivacy') || 'התמונה שלך מוצגת רק להורים בסביבתך'}
-                </Text>
+                <TouchableOpacity style={styles.photoUpload} onPress={pickImage} activeOpacity={0.85}>
+                    {profilePhoto ? (
+                        <View style={styles.photoContainer}>
+                            {/* Gradient ring behind photo */}
+                            <LinearGradient
+                                colors={['#1C1C1E', '#3A3A3C', '#636366', '#1C1C1E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.photoGradientRing}
+                            />
+                            <Image source={{ uri: profilePhoto }} style={styles.photoPreview} />
+                            <View style={[styles.photoEditBadge, { backgroundColor: '#1C1C1E' }]}>
+                                <Camera size={14} color="#fff" strokeWidth={2.5} />
+                            </View>
+                        </View>
+                    ) : (
+                        <View style={styles.photoPlaceholderOuter}>
+                            {/* Dashed ring with gradient hint */}
+                            <LinearGradient
+                                colors={isDarkMode ? ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.03)'] : ['#F2F2F7', '#E5E5EA']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.photoPlaceholderInner}
+                            >
+                                <View style={styles.photoUploadIcon}>
+                                    <LinearGradient
+                                        colors={['#1C1C1E', '#3A3A3C']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={styles.photoUploadIconGradient}
+                                    >
+                                        <Camera size={28} color="#fff" strokeWidth={1.8} />
+                                    </LinearGradient>
+                                </View>
+                                <Text style={[styles.photoPlaceholderText, { color: theme.textPrimary }]}>{placeholderText}</Text>
+                                <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>
+                                    {placeholderHint}
+                                </Text>
+                            </LinearGradient>
+                        </View>
+                    )}
+                </TouchableOpacity>
+
+                {/* Trust badge */}
+                <View style={[styles.trustBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F2F2F7' }]}>
+                    <Shield size={16} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={2} />
+                    <Text style={[styles.trustBadgeText, { color: isDarkMode ? 'rgba(255,255,255,0.6)' : '#64748B' }]}>
+                        {trustText}
+                    </Text>
+                </View>
             </View>
-        </View>
-    ), [profilePhoto, pickImage, theme, isDarkMode]);
+        );
+    };
 
 
     return (
@@ -759,7 +766,7 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                     keyboardShouldPersistTaps="handled"
                 >
                     {currentStep === 1 && PersonalInfoStep}
-                    {currentStep === 2 && PhotoStep}
+                    {currentStep === 2 && renderPhotoStep()}
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -925,12 +932,13 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     stepIconOuter: {
+        width: 60,
+        height: 60,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
         elevation: 4,
-        overflow: 'visible',
     },
     stepIconGradient: {
         width: 60,
@@ -1062,8 +1070,12 @@ const styles = StyleSheet.create({
     // ── Photo Upload ──
     photoUpload: {
         alignSelf: 'center',
+        width: 180,
+        height: 180,
     },
     photoContainer: {
+        width: 180,
+        height: 180,
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -65,9 +65,12 @@ const ActiveChildContext = createContext<ActiveChildContextType | null>(null);
 interface ActiveChildProviderProps {
     children: ReactNode;
     onReady?: () => void; // Called when initial load is complete
+    // When true, the babysitter tab is accessible even for users without children —
+    // so freshly registered sitters can reach SitterList to complete their sitter profile.
+    isSitter?: boolean;
 }
 
-export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ children, onReady }) => {
+export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ children, onReady, isSitter = false }) => {
     const { t } = useLanguage();
     const [activeChild, setActiveChildState] = useState<ActiveChild | null>(null);
     const [allChildren, setAllChildren] = useState<ActiveChild[]>([]);
@@ -111,7 +114,8 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
     const isParent = !isGuest && hasAnyChild;
     const canAccessReports = !isGuest && hasAnyChild; // Need child + not guest
     const canAccessProfile = !isGuest && hasAnyChild; // Need child + not guest
-    const canAccessBabysitter = !isGuest && hasAnyChild; // Need child + not guest
+    // Sitters can access the babysitter tab even without a child — that's where they register
+    const canAccessBabysitter = !isGuest && (hasAnyChild || isSitter);
 
     // Load all children (own + guest access)
     const refreshChildren = useCallback(async () => {
