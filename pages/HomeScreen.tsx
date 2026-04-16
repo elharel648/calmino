@@ -293,6 +293,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     }, [fetchBabyData, refreshHomeData, refreshMeds]);
 
     // --- Focus Effect ---
+    const [quickActionsFocusKey, setQuickActionsFocusKey] = useState(0);
     useFocusEffect(
         useCallback(() => {
             if (profile.id) {
@@ -300,6 +301,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 refreshHomeData();
                 refreshMeds();
             }
+            setQuickActionsFocusKey(k => k + 1);
         }, [profile.id, fetchBabyData, refreshHomeData, refreshMeds])
     );
 
@@ -485,6 +487,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
                             <View style={{ marginBottom: 8 }}>
                                 <QuickActions
+                                    focusKey={quickActionsFocusKey}
                                     lastFeedTime={lastFeedTime}
                                     lastSleepTime={lastSleepTime}
                                     onFoodPress={() => setTrackingModalType('food')}

@@ -39,6 +39,7 @@ interface QuickActionsProps {
     supplementsTakenCount?: number;
     supplementsTotalCount?: number;
     dynamicStyles: { text: string };
+    focusKey?: number;
 }
 
 const QuickActions = memo<QuickActionsProps>(({
@@ -65,6 +66,7 @@ const QuickActions = memo<QuickActionsProps>(({
     supplementsTakenCount,
     supplementsTotalCount,
     dynamicStyles,
+    focusKey,
 }) => {
     const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
@@ -182,8 +184,14 @@ const QuickActions = memo<QuickActionsProps>(({
 
     const scrollViewRef = useRef<ScrollView>(null);
 
-    // Removed forced scrollToEnd on mount. Native RTL scroll view should 
-    // naturally start at the correct visual start point based on flex layout.
+    // Reset scroll to start (food/sleep/diaper end) every time the home screen focuses
+    useEffect(() => {
+        if (focusKey === undefined) return;
+        const t = setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: false });
+        }, 50);
+        return () => clearTimeout(t);
+    }, [focusKey]);
 
     const actionHandlers: Record<QuickActionKey, { onPress: () => void; isActive?: boolean; activeTime?: string; lastTime?: string; badge?: string }> = useMemo(() => ({
         food: { onPress: handleFoodPress, isActive: foodIsRunning, activeTime: foodIsRunning ? foodFormatTime(foodElapsed) : undefined, lastTime: !foodIsRunning ? lastFeedTime : undefined },
