@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 28,
-    elevation: 0,
+    elevation: 3,
   },
   confettiLayer: {
     ...StyleSheet.absoluteFillObject,

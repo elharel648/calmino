@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.25,
         shadowRadius: 24,
-        elevation: 0,
+        elevation: 4,
     },
     modalClose: {
         position: 'absolute',

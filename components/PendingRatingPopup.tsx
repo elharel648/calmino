@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.2,
         shadowRadius: 20,
-        elevation: 0,
+        elevation: 4,
     },
     closeBtn: {
         position: 'absolute',

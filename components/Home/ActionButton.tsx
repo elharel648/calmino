@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.14,
         shadowRadius: 10,
-        elevation: 0,
+        elevation: 3,
         // Glass highlight edge
         borderWidth: 0.8,
         borderColor: 'rgba(255,255,255,0.80)',

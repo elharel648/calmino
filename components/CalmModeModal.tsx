@@ -345,7 +345,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
-    elevation: 0,
+    elevation: 3,
   },
 
   // Drag Handle
@@ -408,7 +408,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 0,
+    elevation: 5,
   },
   mainTitle: {
     fontSize: 24,
@@ -452,7 +452,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
-    elevation: 0,
+    elevation: 2,
   },
   emergencyIcon: {
     width: 52,
@@ -483,7 +483,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
-    elevation: 0,
+    elevation: 1,
   },
   hmoRow: {
     flexDirection: 'row-reverse',

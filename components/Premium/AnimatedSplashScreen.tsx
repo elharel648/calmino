@@ -15,7 +15,6 @@ import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 interface AnimatedSplashScreenProps {
     onAnimationComplete: () => void;
@@ -56,7 +55,6 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
     
     // Master progress: 0 = scattered, 1 = assembled
     const assembleProgress = useSharedValue(0);
-    const fillProgress = useSharedValue(0);
     const opacity = useSharedValue(1);
     const containerScale = useSharedValue(1);
     const segmentOpacity = useSharedValue(0);
@@ -84,34 +82,26 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
                     // SNAP: segments out → final logo in instantly to avoid opacity dip
                     showFinal.value = 1;
 
-                    // Stage 3: Fill the merged logo with solid color
-                    fillProgress.value = withTiming(1, {
-                        duration: 500,
+                    // Stage 3: Tension pullback then burst
+                    containerScale.value = withTiming(0.95, {
+                        duration: 250,
                         easing: Easing.out(Easing.ease)
-                    }, (fillDone) => {
-                        if (fillDone) {
-                            // Stage 4: Only AFTER fill is done → tension pullback then burst
-                            containerScale.value = withTiming(0.95, {
-                                duration: 250,
-                                easing: Easing.out(Easing.ease)
-                            }, () => {
-                                containerScale.value = withSpring(1.4, {
-                                    mass: 1,
-                                    damping: 18,
-                                    stiffness: 120
-                                });
+                    }, () => {
+                        containerScale.value = withSpring(1.4, {
+                            mass: 1,
+                            damping: 18,
+                            stiffness: 120
+                        });
 
-                                // Stage 5: Fade away into the app
-                                opacity.value = withDelay(150, withTiming(0, {
-                                    duration: 500,
-                                    easing: Easing.out(Easing.ease)
-                                }, (fadeFinished) => {
-                                    if (fadeFinished) {
-                                        runOnJS(onAnimationComplete)();
-                                    }
-                                }));
-                            });
-                        }
+                        // Stage 4: Fade away into the app
+                        opacity.value = withDelay(150, withTiming(0, {
+                            duration: 500,
+                            easing: Easing.out(Easing.ease)
+                        }, (fadeFinished) => {
+                            if (fadeFinished) {
+                                runOnJS(onAnimationComplete)();
+                            }
+                        }));
                     });
                 }
             }));
@@ -174,10 +164,6 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
         opacity: showFinal.value,
     }));
 
-    // Animate the fill on the final merged logo
-    const fillProps = useAnimatedProps(() => ({
-        fillOpacity: fillProgress.value,
-    }));
 
     const svgSize = 150;
     const viewBox = "280 270 440 480";
@@ -213,16 +199,6 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 fill="none"
-                            />
-                            {/* Fill that fades in on top */}
-                            <AnimatedPath
-                                d={FULL_PATH}
-                                stroke={logoColor}
-                                strokeWidth={2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                fill={logoColor}
-                                animatedProps={fillProps}
                             />
                         </Svg>
                     </Animated.View>

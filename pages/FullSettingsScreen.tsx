@@ -1233,7 +1233,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 0,
+    elevation: 1,
   },
   listItem: {
     flexDirection: 'row-reverse',
@@ -1363,7 +1363,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
-    elevation: 0,
+    elevation: 4,
   },
   sendButtonContent: {
     flexDirection: 'row-reverse',
@@ -1452,7 +1452,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 0,
+    elevation: 4,
   },
   // ─── Success state ───────────────────────────────────────────────────
   successContainer: {

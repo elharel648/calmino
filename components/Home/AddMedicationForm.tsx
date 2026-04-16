@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     saveButtonText: {
         fontSize: 17,
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 2,
     },
     suggestionRow: {
         flexDirection: 'row-reverse' as const,

@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
         shadowRadius: 24,
-        elevation: 0,
+        elevation: 6,
     },
     iconShine: {
         position: 'absolute',

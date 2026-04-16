@@ -1320,7 +1320,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                     {profileViewStats?.totalWeek ?? 0}
                                 </Text>
                                 <Text style={[styles.analyticsSubStat, { color: theme.textSecondary }]}>
-                                    {t('reports.units.days')}
+                                    {t('sitterDash.thisWeek')}
                                 </Text>
                             </View>
                         </View>
@@ -1686,7 +1686,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     shadowOffset: { width: 0, height: 2 },
                                                     shadowOpacity: 0.1,
                                                     shadowRadius: 4,
-                                                    elevation: 0,
+                                                    elevation: 2,
                                                 }}
                                                 onPress={() => {
                                                     setActiveSocialPlatform(social as any);
@@ -1754,17 +1754,28 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                 </View>
                                 <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
                                 {/* Age */}
-                                <View style={styles.settingsCardRow}>
-                                    <TextInput
-                                        style={[styles.settingsCardInput, { color: theme.textSecondary, textAlign: 'left', width: 60 }]}
-                                        value={age}
-                                        onChangeText={setAge}
-                                        placeholder="25"
-                                        placeholderTextColor={theme.textSecondary}
-                                        keyboardType="numeric"
-                                        textAlign="left"
-                                    />
-                                    <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.ageLabel')}</Text>
+                                <View style={{ flexDirection: 'column' }}>
+                                    <View style={styles.settingsCardRow}>
+                                        <TextInput
+                                            style={[styles.settingsCardInput, {
+                                                color: age && parseInt(age) < 18 ? '#EF4444' : theme.textSecondary,
+                                                textAlign: 'left',
+                                                width: 60,
+                                            }]}
+                                            value={age}
+                                            onChangeText={setAge}
+                                            placeholder="25"
+                                            placeholderTextColor={theme.textSecondary}
+                                            keyboardType="numeric"
+                                            textAlign="left"
+                                        />
+                                        <Text style={[styles.settingsRowLabel, { color: theme.textPrimary }]}>{t('sitterDash.ageLabel')}</Text>
+                                    </View>
+                                    {age !== '' && parseInt(age) < 18 && (
+                                        <Text style={{ color: '#EF4444', fontSize: 12, textAlign: 'right', paddingHorizontal: 16, paddingBottom: 8 }}>
+                                            {t('sitterDash.ageTooYoung')}
+                                        </Text>
+                                    )}
                                 </View>
                                 <View style={[styles.cardRowDivider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]} />
                                 {/* Experience */}
@@ -1992,6 +2003,12 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         return;
                                     }
 
+                                    const parsedAge = age ? parseInt(age) : null;
+                                    if (parsedAge !== null && parsedAge < 18) {
+                                        showError(t('sitterDash.ageTooYoung'));
+                                        return;
+                                    }
+
                                     try {
                                         setSavingSettings(true);
                                         await updateDoc(doc(db, 'users', userId), {
@@ -2128,7 +2145,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                             shadowOffset: { width: 0, height: -4 },
                             shadowOpacity: 0.15,
                             shadowRadius: 12,
-                            elevation: 0,
+                            elevation: 3,
                             borderWidth: 1,
                             borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                         }}>
@@ -3389,7 +3406,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 2,
     },
     quickActionIconCircle: {
         width: 52,
@@ -3461,7 +3478,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
-        elevation: 0,
+        elevation: 2,
     },
     tabTextGlass: {
         fontSize: 15,
@@ -3678,7 +3695,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 2,
     },
     bookingCardContent: {
         padding: 18,
@@ -3708,7 +3725,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
-        elevation: 0,
+        elevation: 5,
     },
     parentPhotoPlaceholderGlass: {
         width: 52,
@@ -3810,7 +3827,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
-        elevation: 0,
+        elevation: 4,
     },
     acceptBtnTextGlass: {
         fontSize: 15,
@@ -3828,7 +3845,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 5,
     },
     startShiftTextGlass: {
         fontSize: 16,
@@ -4072,7 +4089,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 3,
     },
     availabilityHeader: {
         paddingHorizontal: 20,
@@ -4266,7 +4283,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
         shadowRadius: 14,
-        elevation: 0,
+        elevation: 5,
     },
     saveAvailabilityBtnText: {
         fontSize: 17,
@@ -4560,7 +4577,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     profilePhotoPlaceholderGlass: {
         width: 72,
@@ -4584,7 +4601,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.4,
         shadowRadius: 6,
-        elevation: 0,
+        elevation: 6,
     },
     profileInfoGlass: {
         flex: 1,
@@ -4666,7 +4683,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 2,
     },
     reviewsIconCircle: {
         width: 52,
@@ -4720,7 +4737,8 @@ const styles = StyleSheet.create({
     },
     profilePhotoSection: {
         alignItems: 'center',
-        paddingVertical: 24,
+        paddingTop: 4,
+        paddingBottom: 24,
         marginBottom: 8,
     },
     profilePhotoWrapperGlass: {
@@ -4743,7 +4761,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     profilePhotoPlaceholderLarge: {
         width: 100,
@@ -4767,7 +4785,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.4,
         shadowRadius: 6,
-        elevation: 0,
+        elevation: 6,
     },
     changePhotoText: {
         fontSize: 15,
@@ -4981,7 +4999,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 }, // Reduced shadow
         shadowOpacity: 0.2,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 4,
         minHeight: 48, // Slightly larger than inputs for emphasis
     },
     saveSettingsBtnTextGlass: {

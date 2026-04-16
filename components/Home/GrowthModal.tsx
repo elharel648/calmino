@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 4,
     },
     title: {
         fontSize: 26,
@@ -973,7 +973,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 4,
     },
     saveButtonGradient: {
         flexDirection: 'row-reverse',

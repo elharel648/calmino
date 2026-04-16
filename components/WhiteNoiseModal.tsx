@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.12,
         shadowRadius: 20,
-        elevation: 0,
+        elevation: 3,
     },
     handleArea: {
         alignItems: 'center',

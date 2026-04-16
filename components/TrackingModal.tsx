@@ -1898,7 +1898,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,
-          elevation: 0,
+          elevation: 3,
           alignItems: 'center',
         }}>
           {!durationConfirmed ? (
@@ -2825,7 +2825,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: -8 },
-    elevation: 0,
+    elevation: 3,
   },
   // Mid swipe zone - between header and scroll content
   midSwipeZone: {
@@ -2929,7 +2929,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 0,
+    elevation: 2,
   },
   foodTabIconContainer: {
     marginBottom: 4,
@@ -3145,7 +3145,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 0,
+    elevation: 1,
   },
   premiumTimeLabel: {
     fontSize: 11,
@@ -3200,7 +3200,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 0,
+    elevation: 2,
   },
   premiumAmountDisplay: {
     alignItems: 'center',
@@ -3244,7 +3244,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 0,
+    elevation: 1,
   },
   premiumBreastTimeLabel: {
     fontSize: 11,
@@ -3299,7 +3299,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 0,
+    elevation: 1,
   },
   premiumPumpingTimerLabel: {
     fontSize: 11,
@@ -3349,7 +3349,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 0,
+    elevation: 2,
   },
   premiumPumpingAmountDisplay: {
     alignItems: 'center',
@@ -3382,7 +3382,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 0,
+    elevation: 1,
   },
   premiumSolidsInput: {
     fontSize: 16,
@@ -3411,7 +3411,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 0,
+    elevation: 1,
   },
   premiumNoteInput: {
     fontSize: 14,
@@ -3460,7 +3460,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 0,
+    elevation: 5,
   },
   saveBtnText: { color: theme.card, fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
 

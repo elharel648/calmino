@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.2,
         shadowRadius: 32,
-        elevation: 0,
+        elevation: 4,
     },
 
     // Decorative corner accents
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 3,
     },
     photoInner: {
         width: FRAME_WIDTH - 40,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.4,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 6,
     },
     shareGradient: {
         flexDirection: 'row-reverse',

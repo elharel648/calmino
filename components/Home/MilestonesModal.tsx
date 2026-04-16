@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     tabInactive: {
         flexDirection: 'row-reverse',
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 5,
         position: 'relative',
     },
     emptyTitle: {
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 3,
     },
     milestoneCardInner: {
         borderRadius: 20,
@@ -945,7 +945,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     milestoneTexts: {
         flex: 1,
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 0,
+        elevation: 4,
     },
     deleteBtnGradient: {
         padding: 10,
@@ -1017,7 +1017,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 2,
     },
     inputMinimal: {
         flex: 1,
@@ -1060,7 +1060,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.4,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 6,
     },
     saveBtnGradient: {
         flexDirection: 'row-reverse',

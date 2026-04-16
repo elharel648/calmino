@@ -683,7 +683,7 @@ export default function LoginScreen({
                   placeholder="your@email.com"
                   placeholderTextColor={theme.textTertiary}
                   value={email}
-                  onChangeText={(text) => { setEmail(text); setEmailError(''); }}
+                  onChangeText={(text) => { setEmail(text.trim()); setEmailError(''); }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1404,7 +1404,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.1,
     shadowRadius: 32,
-    elevation: 0,
+    elevation: 2,
   },
   cardInnerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1630,12 +1630,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 0,
+    elevation: 5,
   },
   mainButtonDisabled: {
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    elevation: 0,
+    elevation: 1,
   },
   gradientBtn: {
     paddingVertical: 17,
@@ -1719,7 +1719,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 0,
+    elevation: 1,
   },
   exploreBtnContainer: {
     flexDirection: 'row-reverse',
@@ -1767,7 +1767,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.2,
     shadowRadius: 32,
-    elevation: 0,
+    elevation: 4,
     alignItems: 'center',
   },
   joinModalClose: {

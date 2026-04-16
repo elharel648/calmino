@@ -44,7 +44,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 10,
-        elevation: 0,
+        elevation: 2,
     },
     statItem: {
         alignItems: 'center',

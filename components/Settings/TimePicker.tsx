@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,
         shadowRadius: 3,
-        elevation: 0,
+        elevation: 1,
     },
     buttonDisabled: {
         opacity: 0.4,

@@ -23,6 +23,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
+import { SHADOWS } from '../utils/designSystem';
 import { useLanguage } from '../context/LanguageContext';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
@@ -631,21 +632,26 @@ const BabySitterScreen = ({ navigation }: any) => {
                 }}
                 activeOpacity={0.8}
             >
-                <LinearGradient
-                    colors={['#C8806A', '#CD8B87']}
-                    style={styles.joinSitterIcon}
-                >
-                    <Briefcase size={32} color="#fff" />
+                {/* Icon wrapper — badge outside gradient so it's never clipped */}
+                <View style={styles.joinSitterIconWrapper}>
+                    <LinearGradient
+                        colors={['#C8806A', '#CD8B87']}
+                        style={styles.joinSitterIcon}
+                    >
+                        <Briefcase size={32} color="#fff" />
+                    </LinearGradient>
                     <View style={styles.joinSitterPlusBadge}>
                         <Plus size={14} color="#fff" strokeWidth={3} />
                     </View>
-                </LinearGradient>
-                <Text style={[styles.joinSitterTitle, { color: theme.textPrimary }]}>
-                    הצטרף כבייביסיטר
-                </Text>
-                <Text style={[styles.joinSitterSubtitle, { color: theme.textSecondary }]}>
-                    לחץ כאן כדי ליצור את פרופיל הבייביסיטר שלך
-                </Text>
+                </View>
+                <View style={styles.joinSitterTextBlock}>
+                    <Text style={[styles.joinSitterTitle, { color: theme.textPrimary }]}>
+                        הצטרף כבייביסיטר
+                    </Text>
+                    <Text style={[styles.joinSitterSubtitle, { color: theme.textSecondary }]}>
+                        לחץ כאן כדי ליצור את פרופיל הבייביסיטר שלך
+                    </Text>
+                </View>
             </TouchableOpacity>
         </View>
     );
@@ -982,30 +988,6 @@ const BabySitterScreen = ({ navigation }: any) => {
     );
 };
 
-// Premium Shadow System - 3 Levels
-const SHADOWS = {
-    subtle: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        elevation: 0,
-    },
-    medium: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 0,
-    },
-    elevated: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 0,
-    },
-};
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
@@ -1228,41 +1210,52 @@ const styles = StyleSheet.create({
     },
     joinSitterCard: {
         width: '100%',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
+        gap: 16,
         borderRadius: 20,
-        padding: 30,
+        padding: 20,
         ...SHADOWS.elevated,
     },
+    joinSitterIconWrapper: {
+        width: 72,
+        height: 72,
+        position: 'relative',
+    },
     joinSitterIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
     },
     joinSitterPlusBadge: {
         position: 'absolute',
         bottom: 0,
         right: 0,
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
         backgroundColor: '#10B981',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 3,
+        borderWidth: 2.5,
         borderColor: '#fff',
     },
+    joinSitterTextBlock: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
     joinSitterTitle: {
-        fontSize: 20,
+        fontSize: 17,
         fontWeight: '700',
-        marginBottom: 8,
+        marginBottom: 5,
+        textAlign: 'right',
     },
     joinSitterSubtitle: {
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 22,
+        fontSize: 13,
+        textAlign: 'right',
+        lineHeight: 20,
     },
 
     // Registration CTA - Enhanced with elevated shadow

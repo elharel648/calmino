@@ -919,7 +919,7 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                             shadowOffset: { width: 0, height: 2 },
                                             shadowOpacity: 0.1,
                                             shadowRadius: 4,
-                                            elevation: 0,
+                                            elevation: 2,
                                         }}
                                         onPress={() => openSocialLink(s.key as SocialPlatform, sitterData.socialLinks![s.key as keyof SocialLinks]!)}
                                         activeOpacity={0.7}
@@ -1538,7 +1538,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 0,
+        elevation: 2,
     },
 
     // Hero
@@ -1569,7 +1569,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 5,
     },
     profileAvatar: {
         width: 110,
@@ -1588,7 +1588,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 6,
     },
     heroName: {
         fontSize: 28,
@@ -1613,7 +1613,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     ratingText: {
         color: theme.card,
@@ -1701,7 +1701,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 2,
     },
     reviewHeader: {
         flexDirection: 'row-reverse',
@@ -1761,7 +1761,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 2,
     },
     reviewStatsRow: {
         flexDirection: 'row-reverse',
@@ -1803,7 +1803,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 2,
     },
     ratingBarRow: {
         flexDirection: 'row-reverse',
@@ -1833,7 +1833,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.4,
         shadowRadius: 4,
-        elevation: 0,
+        elevation: 6,
     },
     ratingBarCount: {
         fontSize: 14,
@@ -1864,7 +1864,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.03,
         shadowRadius: 2,
-        elevation: 0,
+        elevation: 1,
     },
     filterChipContent: {
         flexDirection: 'row-reverse',
@@ -1894,7 +1894,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 4,
-        elevation: 0,
+        elevation: 2,
     },
     sortButtonText: {
         fontSize: 14,
@@ -1921,7 +1921,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 0,
+        elevation: 4,
     },
     verifiedText: {
         fontSize: 11,
@@ -1968,7 +1968,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
-        elevation: 0,
+        elevation: 2,
     },
     sitterResponseHeader: {
         marginBottom: 8,
@@ -2055,7 +2055,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 2,
         borderTopWidth: StyleSheet.hairlineWidth,
     },
     iconBtn: {
@@ -2130,7 +2130,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 4,
     },
     badge: {
         flexDirection: 'row',

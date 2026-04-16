@@ -537,7 +537,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.2,
         shadowRadius: 16,
-        elevation: 0,
+        elevation: 4,
     },
     colorBtn: {
         width: 72,
@@ -554,7 +554,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.8,
         shadowRadius: 20,
-        elevation: 0,
+        elevation: 6,
     },
     activeIndicator: {
         position: 'absolute',
@@ -570,7 +570,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        elevation: 0,
+        elevation: 5,
     },
     brightnessSection: {
         width: '100%',
@@ -594,7 +594,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 3,
     },
     sliderContainer: {
         flex: 1,

@@ -103,7 +103,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 1,
     },
     content: {
         flexDirection: 'row-reverse',

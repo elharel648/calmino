@@ -580,7 +580,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   primaryBtnDisabled: {
     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
     shadowOpacity: 0,
-    elevation: 0,
+    elevation: 1,
   },
   primaryBtnText: {
     color: '#FFFFFF',

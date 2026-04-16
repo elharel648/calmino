@@ -35,28 +35,31 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
 
     return (
         <>
-            <View style={[styles.container, { backgroundColor: theme.card }]}>
-                <TouchableOpacity
-                    style={styles.card}
-                    onPress={handlePress}
-                    activeOpacity={0.8}
-                >
+            <TouchableOpacity
+                style={[styles.card, { backgroundColor: theme.card }]}
+                onPress={handlePress}
+                activeOpacity={0.8}
+            >
+                {/* Icon + badge wrapper — badge lives OUTSIDE the gradient so it's never clipped */}
+                <View style={styles.iconWrapper}>
                     <LinearGradient
                         colors={['#C8806A', '#CD8B87']}
                         style={styles.iconContainer}
                     >
                         <Baby size={32} color="#fff" />
-                        <View style={styles.plusBadge}>
-                            <Plus size={14} color="#fff" strokeWidth={3} />
-                        </View>
                     </LinearGradient>
+                    <View style={styles.plusBadge}>
+                        <Plus size={14} color="#fff" strokeWidth={3} />
+                    </View>
+                </View>
 
+                <View style={styles.textBlock}>
                     <Text style={[styles.title, { color: theme.textPrimary }]}>{t('child.addChild')}</Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         לחץ כאן כדי ליצור פרופיל לילד שלך
                     </Text>
-                </TouchableOpacity>
-            </View>
+                </View>
+            </TouchableOpacity>
 
             {/* Options Modal */}
             <Modal visible={showModal} transparent animationType="fade" onRequestClose={() => setShowModal(false)}>
@@ -126,44 +129,53 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
 };
 
 const styles = StyleSheet.create({
-    container: {
+    card: {
         marginHorizontal: 20,
         borderRadius: 20,
-        padding: 30,
-    },
-    card: {
+        padding: 20,
+        flexDirection: 'row-reverse',
         alignItems: 'center',
+        gap: 16,
+    },
+    iconWrapper: {
+        width: 72,
+        height: 72,
+        position: 'relative',
     },
     iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
     },
     plusBadge: {
         position: 'absolute',
         bottom: 0,
         right: 0,
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
         backgroundColor: '#10B981',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 3,
+        borderWidth: 2.5,
         borderColor: '#fff',
     },
+    textBlock: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
     title: {
-        fontSize: 20,
+        fontSize: 17,
         fontWeight: '700',
-        marginBottom: 8,
+        marginBottom: 5,
+        textAlign: 'right',
     },
     subtitle: {
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 22,
+        fontSize: 13,
+        textAlign: 'right',
+        lineHeight: 20,
     },
     // Modal styles
     modalOverlay: {

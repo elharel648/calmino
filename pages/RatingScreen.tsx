@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 1,
     },
     cardLabel: {
         fontSize: 15,

@@ -34,6 +34,9 @@
         "credentialsSource": "remote",
         "image": "macos-sequoia-15.3-xcode-16.2"
       },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "channel": "production"
     }
   },

@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -10 },
         shadowOpacity: 0.1,
         shadowRadius: 20,
-        elevation: 0,
+        elevation: 2,
     },
     handleContainer: {
         alignItems: 'center',
@@ -997,7 +997,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
-        elevation: 0,
+        elevation: 4,
     },
     createFirstText: {
         color: '#FFF',
@@ -1091,12 +1091,12 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 1,
     },
     premiumSliderActive: {
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 3,
         transform: [{ scale: 1.02 }],
     },
 
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 1,
     },
     customInput: {
         flex: 1,
@@ -1288,7 +1288,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     minimalSaveText: {
         color: '#FFFFFF',
@@ -1347,7 +1347,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
-        elevation: 0,
+        elevation: 4,
         overflow: 'hidden',
     },
     saveContent: {

@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
         shadowRadius: 20,
-        elevation: 0,
+        elevation: 3,
     },
     swipeHandle: {
         width: '100%',
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
-        elevation: 0,
+        elevation: 4,
     },
     toothDateText: {
         fontSize: 11,
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 6,
     },
     toothDateTooltipText: {
         color: '#fff',
@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 1,
     },
     historyHeader: {
         flexDirection: 'row-reverse',
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
-        elevation: 0,
+        elevation: 2,
     },
     centerLabels: {
         position: 'absolute',
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
-        elevation: 0,
+        elevation: 4,
     },
     jawLabel: {
         fontSize: 16,
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 1,
     },
     legendRow: {
         flexDirection: 'row-reverse',
@@ -1040,7 +1040,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.25,
         shadowRadius: 24,
-        elevation: 0,
+        elevation: 4,
     },
     datePickerHeader: {
         flexDirection: 'row-reverse',
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 5,
     },
     datePickerBtnText: {
         fontSize: 16,

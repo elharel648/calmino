@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 0,
+    elevation: 1,
   },
   dot: {
     width: 8,
@@ -1298,7 +1298,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
-    elevation: 0,
+    elevation: 2,
   },
   eventCard: {
     flex: 1,
@@ -1360,7 +1360,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.03,
     shadowRadius: 24,
-    elevation: 0,
+    elevation: 1,
   },
   emptyIcon: {
     width: 64,
@@ -1413,7 +1413,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    elevation: 0,
+    elevation: 3,
   },
   reporterAvatar: {
     width: 24,
@@ -1449,7 +1449,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 0,
+    elevation: 1,
   },
   historyIconBadge: {
     width: 40,
@@ -1591,7 +1591,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.07,
     shadowRadius: 14,
-    elevation: 0,
+    elevation: 2,
   },
   accentStrip: {
     width: 3,

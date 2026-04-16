@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
-import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, Flame, SlidersHorizontal, Film } from 'lucide-react-native';
+import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, SlidersHorizontal, Film } from 'lucide-react-native';
 import DiaperIcon from '../components/Common/DiaperIcon';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
 import { BlurView } from 'expo-blur';
@@ -48,6 +48,7 @@ import { logger } from '../utils/logger';
 import DetailedStatsScreen from '../components/Reports/DetailedStatsScreen';
 import DetailedGrowthScreen from '../components/Reports/DetailedGrowthScreen';
 import GrowthStatCube from '../components/Reports/GrowthStatCube';
+import WeeklyGoalsCard from '../components/Reports/WeeklyGoalsCard';
 import GrowthModal from '../components/Home/GrowthModal';
 import DailyTimeline from '../components/DailyTimeline';
 import { usePremium } from '../context/PremiumContext';
@@ -1705,79 +1706,14 @@ export default function ReportsScreen() {
 
       {/* Weekly Goals & Streaks - Enhanced */}
       {renderLockedSection(
-        <View style={[styles.goalsSection, { backgroundColor: theme.card }]}>
-          <View style={styles.goalsSectionHeader}>
-            <View style={styles.goalsSectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                {timeRange === 'day' ? t('stats.goals.daily') : timeRange === 'month' ? t('stats.goals.monthly') : t('stats.goals.weekly')}
-              </Text>
-            </View>
-          </View>
-
-          {/* Sleep Goal - Blue */}
-          <View style={styles.goalItem}>
-            <View style={styles.goalItemHeader}>
-              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.goals.sleepOver8')}</Text>
-              <Text style={[styles.goalItemProgress, { color: '#C8806A' }]}>
-                {weeklyGoals.sleepDaysMet}/{weeklyGoals.sleepDaysGoal}
-              </Text>
-            </View>
-            <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(60, 130, 246, 0.2)' : 'rgba(60, 130, 246, 0.1)' }]}>
-              <View
-                style={[
-                  styles.goalProgressFill,
-                  {
-                    width: `${weeklyGoals.sleepDaysGoal > 0 ? (weeklyGoals.sleepDaysMet / weeklyGoals.sleepDaysGoal) * 100 : 0}%`,
-                    backgroundColor: '#C8806A'
-                  }
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Documentation Goal - Green */}
-          <View style={styles.goalItem}>
-            <View style={styles.goalItemHeader}>
-              <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.goals.daysWithTracking')}</Text>
-              <Text style={[styles.goalItemProgress, { color: '#10B981' }]}>
-                {weeklyGoals.docDaysMet}/{weeklyGoals.docDaysGoal}
-              </Text>
-            </View>
-            <View style={[styles.goalProgressBar, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)' }]}>
-              <View
-                style={[
-                  styles.goalProgressFill,
-                  {
-                    width: `${weeklyGoals.docDaysGoal > 0 ? (weeklyGoals.docDaysMet / weeklyGoals.docDaysGoal) * 100 : 0}%`,
-                    backgroundColor: '#10B981'
-                  }
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Streak — same visual language as the goal rows above */}
-          {weeklyGoals.streak > 0 && (
-            <View style={[styles.goalItem, {
-              marginTop: 6,
-              paddingTop: 14,
-              borderTopWidth: 1,
-              borderTopColor: theme.border,
-            }]}>
-              <View style={styles.goalItemHeader}>
-                {/* Right side: flame icon + label (flex:1 to fill available space) */}
-                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <Flame size={15} color="#F97316" strokeWidth={2.5} />
-                  <Text style={[styles.goalItemTitle, { color: theme.textPrimary }]}>{t('reports.misc.trackingStreak')}</Text>
-                </View>
-                {/* Left side: count */}
-                <Text style={[styles.goalItemProgress, { color: '#F97316', fontWeight: '600' }]}>
-                  {weeklyGoals.streak} {weeklyGoals.streak === 1 ? t('reports.units.day') : t('reports.units.days')}
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
+        <WeeklyGoalsCard
+          title={timeRange === 'day' ? t('stats.goals.daily') : timeRange === 'month' ? t('stats.goals.monthly') : t('stats.goals.weekly')}
+          sleepDaysMet={weeklyGoals.sleepDaysMet}
+          sleepDaysGoal={weeklyGoals.sleepDaysGoal}
+          docDaysMet={weeklyGoals.docDaysMet}
+          docDaysGoal={weeklyGoals.docDaysGoal}
+          streak={weeklyGoals.streak}
+        />
       )}
     </ScrollView>
   );
@@ -1825,7 +1761,7 @@ export default function ReportsScreen() {
             shadowOffset: { width: 0, height: compact ? 4 : 6 },
             shadowOpacity: 0.15,
             shadowRadius: compact ? 8 : 12,
-            elevation: 0,
+            elevation: 3,
             maxWidth: '100%',
           }}>
             <Lock size={compact ? 14 : 18} color={theme.card} strokeWidth={2} />

@@ -2155,7 +2155,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             shadowOffset: { width: 0, height: 1 },
                             shadowOpacity: 0.04,
                             shadowRadius: 4,
-                            elevation: 0,
+                            elevation: 1,
                         }}>
                             {/* Header row */}
                             <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 10 }}>
@@ -2668,7 +2668,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                                         shadowOffset: { width: 0, height: 1 },
                                         shadowOpacity: 0.05,
                                         shadowRadius: 4,
-                                        elevation: 0,
+                                        elevation: 1,
                                     }}>
                                         {/* Icon Badge - solid like menu */}
                                         <View style={{
@@ -2906,7 +2906,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
-        elevation: 0
+        elevation: 1
     },
     cardContent: { flexDirection: 'row-reverse', alignItems: 'center' },
     cardIconWrapper: {
@@ -2942,7 +2942,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
-        elevation: 0,
+        elevation: 2,
     },
     modalTitle: { fontSize: 17, fontWeight: '600', color: theme.textPrimary },
     modalBody: { flex: 1, backgroundColor: theme.card },
