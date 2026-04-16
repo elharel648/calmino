@@ -23,6 +23,7 @@ import { useGlobalPresence } from '../hooks/useGlobalPresence';
 import { openSocialLink, type SocialPlatform } from '../utils/socialMediaUtils';
 import { Instagram, Facebook, Linkedin, MessageCircle, Music, Send, Check } from 'lucide-react-native';
 import { useFavoriteSitters } from '../hooks/useFavoriteSitters';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SocialLinks {
     instagram?: string;
@@ -82,12 +83,30 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
 
     const hasPhone = Boolean(sitterData.phone && sitterData.phone.trim());
 
-    const handleCall = () => {
-        if (hasPhone) {
-            Linking.openURL(`tel:${sitterData.phone} `);
+    // Show one-time liability disclaimer before first contact, then proceed
+    const contactWithDisclaimer = async (action: () => void) => {
+        const accepted = await AsyncStorage.getItem('contact_disclaimer_accepted');
+        if (accepted === 'true') {
+            action();
         } else {
-            Alert.alert('שים לב', 'מספר טלפון לא זמין. נסה ליצור קשר בצ׳אט.');
+            setPendingContactAction(() => action);
+            setShowContactDisclaimer(true);
         }
+    };
+
+    const handleDisclaimerAccept = async () => {
+        await AsyncStorage.setItem('contact_disclaimer_accepted', 'true');
+        setShowContactDisclaimer(false);
+        pendingContactAction?.();
+        setPendingContactAction(null);
+    };
+
+    const handleCall = () => {
+        if (!hasPhone) {
+            Alert.alert('שים לב', 'מספר טלפון לא זמין. נסה ליצור קשר בצ׳אט.');
+            return;
+        }
+        contactWithDisclaimer(() => Linking.openURL(`tel:${sitterData.phone}`));
     };
 
     const handleWhatsApp = () => {
@@ -95,22 +114,26 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
             Alert.alert('שים לב', 'מספר טלפון לא זמין.');
             return;
         }
-        const cleanPhone = sitterData.phone!.replace(/\D/g, '');
-        const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
-        const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים:)`;
-        const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-        Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
+        contactWithDisclaimer(() => {
+            const cleanPhone = sitterData.phone!.replace(/\D/g, '');
+            const formattedPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
+            const message = `היי ${sitterData.name}, הגעתי דרך Calmino, אשמח לשמוע פרטים:)`;
+            const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+            Linking.openURL(url).catch(() => Alert.alert('שגיאה', 'לא ניתן לפתוח וואצאפ'));
 
-        // Track contact — used to verify reviews later
-        const currentUserId = auth.currentUser?.uid;
-        if (currentUserId && sitterData.id) {
-            updateDoc(doc(db, 'users', currentUserId), {
-                contactedSitters: arrayUnion(sitterData.id)
-            }).catch(() => {});
-        }
+            // Track contact — used to verify reviews later
+            const currentUserId = auth.currentUser?.uid;
+            if (currentUserId && sitterData.id) {
+                updateDoc(doc(db, 'users', currentUserId), {
+                    contactedSitters: arrayUnion(sitterData.id)
+                }).catch(() => {});
+            }
+        });
     };
 
     // Fetch reviews from Firebase
+    const [showContactDisclaimer, setShowContactDisclaimer] = useState(false);
+    const [pendingContactAction, setPendingContactAction] = useState<(() => void) | null>(null);
     const [reviewsList, setReviewsList] = useState<Review[]>(sitterData.reviewsList || []);
     const [loadingReviews, setLoadingReviews] = useState(true);
     const [reviewFilter, setReviewFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
@@ -1438,6 +1461,50 @@ const SitterProfileScreen = ({ route, navigation }: SitterProfileScreenProps) =>
                                 ) : (
                                     <Text style={[styles.reportActionText, { color: '#fff' }]}>שליחה</Text>
                                 )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* One-time Contact Disclaimer Modal */}
+            <Modal
+                visible={showContactDisclaimer}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowContactDisclaimer(false)}
+            >
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 24 }}>
+                    <View style={{
+                        backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+                        borderRadius: 20,
+                        padding: 24,
+                        width: '100%',
+                        gap: 16,
+                    }}>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: isDarkMode ? '#fff' : '#1C1C1E', textAlign: 'center' }}>
+                            לפני שאתה יוצר קשר
+                        </Text>
+
+                        <Text style={{ fontSize: 14, color: isDarkMode ? 'rgba(255,255,255,0.75)' : '#4B5563', textAlign: 'right', lineHeight: 22 }}>
+                            Calmino היא פלטפורמה לחיבור בין הורים לבייביסיטרים בלבד.{'\n\n'}
+                            האחריות על בדיקת הרקע של הבייביסיטר, ההתקשרות והפגישה היא על ההורה באופן מלא. Calmino אינה צד בהסכם בין הצדדים ואינה אחראית לתוצאות ההתקשרות.{'\n\n'}
+                            המשך מהווה הסכמה לתנאי השימוש.
+                        </Text>
+
+                        <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                            <TouchableOpacity
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F2F2F7', alignItems: 'center' }}
+                                onPress={() => { setShowContactDisclaimer(false); setPendingContactAction(null); }}
+                            >
+                                <Text style={{ fontSize: 15, fontWeight: '600', color: isDarkMode ? '#fff' : '#1C1C1E' }}>ביטול</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: '#1C1C1E', alignItems: 'center' }}
+                                onPress={handleDisclaimerAccept}
+                            >
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>הבנתי, המשך</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
