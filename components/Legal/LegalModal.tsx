@@ -28,8 +28,8 @@ interface LegalModalProps {
   onClose: () => void;
 }
 
-const LAST_UPDATED_HE = '15 במרץ 2026';
-const LAST_UPDATED_EN = 'March 15, 2026';
+const LAST_UPDATED_HE = '16 באפריל 2026';
+const LAST_UPDATED_EN = 'April 16, 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 // ─────────────────────────────────────────────
@@ -56,7 +56,6 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • פרופיל ילד: שם, תאריך לידה, מגדר, תמונת פרופיל{'\n'}
     • נתוני מעקב: האכלה (שעה, כמות, סוג), שינה (שעות כניסה ויציאה), החלפת חיתול, תוספי תזונה, חיסונים, תרופות, מדדי גדילה (משקל, גובה, היקף ראש){'\n'}
     • נתוני מיקום (GPS) — כדי לאפשר איתור בייביסיטרים קרובים, האפליקציה אוספת נתוני מיקום כלליים ומדויקים שלך אך ורק באישורך הברור ובזמן השימוש. נתונים אלו אינם נשמרים בהיסטוריה, אינם נסחרים וניתן לבטלם מתי שתרצה דרך ההגדרות.{'\n'}
-    • הודעות צ'אט שנשלחו בין הורים לבייביסיטרים דרך האפליקציה{'\n'}
     • הערות ותיעוד שתזין ידנית{'\n'}
     • תמונות ורגעים קסומים שתבחר לשמור{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>ב. מידע הנאסף אוטומטית:{'\n'}</Text>
@@ -157,7 +156,6 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Child profile: name, date of birth, gender, profile photo{'\n'}
     • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, medications, growth measurements (weight, height, head circumference){'\n'}
     • Location data (GPS) — to enable the discovery of nearby babysitters, the app collects exact and coarse location data only with your explicit permission and only while using the app. This data is not retained in history, is not sold, and can be revoked at any time.{'\n'}
-    • Chat messages sent between parents and babysitters through the app{'\n'}
     • Notes and records you enter manually{'\n'}
     • Photos and magic moments you choose to save{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Information collected automatically:{'\n'}</Text>
@@ -253,8 +251,9 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
     • יצירת סטטיסטיקות, דוחות ותובנות{'\n'}
     • תיעוד רגעים קסומים ואבני דרך{'\n'}
     • ניהול תזכורות והתראות מותאמות אישית{'\n'}
-    • שירותי איתור בייביסיטרים, תיאום הזמנות והודעות צ'אט{'\n\n'}
-    <Text style={styles.bold}>הגיל המינימלי לשימוש: 16.</Text> השירות אינו מיועד למשתמשים מתחת לגיל 16.{'\n\n'}
+    • שירותי איתור בייביסיטרים וחיבור בין הורים לבייביסיטרים עצמאיים{'\n\n'}
+    <Text style={styles.bold}>הגיל המינימלי לשימוש: 16.</Text> השירות אינו מיועד למשתמשים מתחת לגיל 16.{'\n'}
+    <Text style={styles.bold}>גיל מינימלי לרישום כבייביסיטר: 18.</Text> הרשמה כבייביסיטר מחייבת גיל 18 ומעלה.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. חשבון משתמש{'\n'}</Text>
     3.1 <Text style={styles.bold}>רישום:</Text> עליך לספק פרטים אמיתיים, מדויקים ועדכניים.{'\n'}
@@ -300,6 +299,7 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
     8.1 השירות מסופק <Text style={styles.bold}>"כפי שהוא" (AS IS)</Text> ו-"כפי שהוא זמין" (AS AVAILABLE) ללא אחריות מכל סוג.{'\n'}
     8.2 <Text style={styles.bold}>האפליקציה אינה מחליפה ייעוץ רפואי מקצועי.</Text> המידע המוצג הוא לצרכי תיעוד ומעקב בלבד. תמיד התייעץ עם רופא ילדים מוסמך בכל שאלה רפואית.{'\n'}
     8.3 <Text style={styles.bold}>שירות העסקת בייביסיטרים — פטור מוחלט ויסודי מאחריות:</Text> Calmino מספקת פלטפורמה דיגיטלית ("לוח מודעות") המקשרת בין הורים לבייביסיטרים עצמאיים. <Text style={styles.bold}>החברה אינה סוכנות כוח אדם, אינה מעסיקה את הבייביסיטרים, אינה מראיינת אותם, אינה מבצעת בדיקות רקע, יושר או רישום פלילי מכל סוג שהוא, ואינה ערבה להם.</Text> כל התקשרות, העסקה או מפגש שנוצרים דרך האפליקציה נעשים על אחריותם הבלעדית והמלאה של ההורים. חלה עליך (ההורה) החובה לבצע משנה זהירות, לבקש תעודות מזהות ולבדוק המלצות לפני הפקדת ילדיך.{'\n'}
+    <Text style={styles.bold}>יצירת קשר מחוץ לפלטפורמה:</Text> התקשורת בין הורים לבייביסיטרים מתבצעת דרך שירותי הודעות חיצוניים (כגון WhatsApp). Calmino אינה צד בתקשורת זו, אינה מנטרת אותה ואינה אחראית לתוכנה או לתוצאותיה.{'\n'}
     <Text style={styles.bold}>ויתור מוחלט על תביעות:</Text> בעצם השימוש באפליקציה לאיתור בייביסיטר, אתה מוותר בזאת ויתור מוחלט, סופי ובלתי חוזר על כל טענה, דרישה או תביעה כלפי Calmino, מנהליה, או עובדיה בגין כל נזק ישיר או עקיף, פגיעה גופנית, נזק לרכוש, גניבה, רשלנות או מעשה פלילי שייגרמו על ידי בייביסיטר שמצאת דרך הפלטפורמה.{'\n'}
     8.4 Calmino אינה נושאת באחריות לנזקים ישירים, עקיפים, נסיבתיים, מיוחדים, עונשיים, או תוצאתיים הנובעים מ: שימוש או אי-יכולת לשתמש בשירות; אובדן נתונים; הסתמכות על מידע מהאפליקציה; מפגש עם בייביסיטר; או כשל טכני.{'\n'}
     8.5 אחריותנו הכוללת לא תעלה על הסכום שאתה שילמת בשנת הרישום האחרונה, או 200 ₪ — הנמוך מביניהם.{'\n\n'}
@@ -350,8 +350,9 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     • Creating statistics, reports, and insights{'\n'}
     • Recording magic moments and milestones{'\n'}
     • Managing customized reminders and notifications{'\n'}
-    • Babysitter discovery, booking coordination, and chat messaging{'\n\n'}
-    <Text style={styles.bold}>Minimum age for use: 16.</Text> The service is not intended for users under the age of 16.{'\n\n'}
+    • Babysitter discovery and connection between parents and independent babysitters{'\n\n'}
+    <Text style={styles.bold}>Minimum age for use: 16.</Text> The service is not intended for users under the age of 16.{'\n'}
+    <Text style={styles.bold}>Minimum age to register as a babysitter: 18.</Text> Registration as a babysitter requires being 18 years of age or older.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. User Account{'\n'}</Text>
     3.1 <Text style={styles.bold}>Registration:</Text> You must provide truthful, accurate, and current information.{'\n'}
@@ -397,6 +398,7 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     8.1 The service is provided <Text style={styles.bold}>"AS IS"</Text> and "AS AVAILABLE" without warranty of any kind.{'\n'}
     8.2 <Text style={styles.bold}>The app does not replace professional medical advice.</Text> The information displayed is for documentation and tracking purposes only. Always consult a qualified pediatrician for any medical questions.{'\n'}
     8.3 <Text style={styles.bold}>Babysitter Marketplace — Absolute and Fundamental Waiver of Liability:</Text> Calmino provides a digital platform ("bulletin board") connecting parents with independent babysitters. <Text style={styles.bold}>The Company is not an employment agency, does not employ the babysitters, does not interview them, does not conduct any background, integrity, or criminal record checks whatsoever, and does not vouch for them in any way.</Text> Any engagement, employment, or meeting facilitated through the App is at the sole risk and responsibility of the parents. It is your strict obligation as a parent to exercise due diligence, request identification, and verify references before leaving your children in their care.{'\n'}
+    <Text style={styles.bold}>Contact Outside the Platform:</Text> Communication between parents and babysitters takes place via external messaging services (such as WhatsApp). Calmino is not a party to such communication, does not monitor it, and is not responsible for its content or outcomes.{'\n'}
     <Text style={styles.bold}>Complete Waiver of Claims:</Text> By using the App to find a babysitter, you hereby completely, conclusively, and irrevocably waive any claim, demand, or lawsuit against Calmino, its directors, or employees for any direct or indirect damage, bodily injury, property damage, theft, negligence, or criminal act caused by a babysitter found through the platform.{'\n'}
     8.4 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; meetings with babysitters; or technical failure.{'\n'}
     8.5 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
