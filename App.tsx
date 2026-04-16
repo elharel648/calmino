@@ -215,7 +215,7 @@ const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => 
 };
 
 // --- Main App Navigator (uses theme and role-based permissions) ---
-function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
+function MainAppNavigator({ isAppSitter, pendingSitterReg }: { isAppSitter?: boolean; pendingSitterReg?: boolean }) {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { canAccessProfile, canAccessReports, canAccessBabysitter, allChildren } = useActiveChild();
@@ -225,9 +225,10 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
   const reportsTabName = t('navigation.reports');
   const babysitterTabName = t('navigation.babysitter');
 
-  // Sitters without a child profile should land on the Babysitter tab (SitterList),
-  // where they can register as a sitter — instead of the empty HomeScreen.
-  const initialTab = (isAppSitter && allChildren.length === 0) ? babysitterTabName : homeTabName;
+  // pendingSitterReg: user deregistered as sitter — keep babysitter tab accessible so they can re-register
+  const effectiveCanAccessBabysitter = canAccessBabysitter || !!pendingSitterReg;
+  // Sitters (or pending re-registration) without a child profile land on the Babysitter tab
+  const initialTab = ((isAppSitter || pendingSitterReg) && allChildren.length === 0) ? babysitterTabName : homeTabName;
 
   return (
     <Tab.Navigator
@@ -257,7 +258,7 @@ function MainAppNavigator({ isAppSitter }: { isAppSitter?: boolean }) {
 
       {/* Babysitter */}
       {
-        canAccessBabysitter && (
+        effectiveCanAccessBabysitter && (
           <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
             tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedSitterIcon} label={t('navigation.babysitter')} />
           }} />
@@ -588,6 +589,7 @@ export default function App() {
   const [hasBabyProfile, setHasBabyProfile] = useState<boolean | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isAppSitter, setIsAppSitter] = useState<boolean>(false);
+  const [pendingSitterReg, setPendingSitterReg] = useState(false);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
@@ -892,6 +894,17 @@ export default function App() {
     }
   }, [user]);
 
+  // Check pending sitter registration flag (set when deregistering as sitter)
+  useEffect(() => {
+    if (!user) {
+      setPendingSitterReg(false);
+      return;
+    }
+    AsyncStorage.getItem('pending_sitter_registration').then(val => {
+      setPendingSitterReg(val === 'true');
+    });
+  }, [user]);
+
   // Live-sync the isSitter flag so routing stays correct if it changes mid-session
   // (covers the race where checkBiometricSettingsAndProfile timed out on first load)
   useEffect(() => {
@@ -1039,7 +1052,7 @@ export default function App() {
 
   // Only force BabyProfileScreen for parents (non-sitters, non-guests).
   // Sitters skip this entirely and land on the Babysitter tab instead — see MainAppNavigator below.
-  if (user && hasBabyProfile === false && !isAppSitter) {
+  if (user && hasBabyProfile === false && !isAppSitter && !pendingSitterReg) {
     return (
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <LanguageProvider>
@@ -1132,7 +1145,7 @@ export default function App() {
                                     },
                                   }}
                                 >
-                                  <MainAppNavigator isAppSitter={isAppSitter} />
+                                  <MainAppNavigator isAppSitter={isAppSitter} pendingSitterReg={pendingSitterReg} />
                                 </NavigationContainer>
                               ) : (
                                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>

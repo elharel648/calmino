@@ -34,10 +34,11 @@ import {
     XCircle, ChevronRight, ChevronLeft, Star, MessageSquare, Settings,
     User, Baby, MapPin, Phone, Mail, Bell, X, Trash2, Edit3, Send, DollarSign,
     Plus, Minus, Eye, Zap, Share2, ExternalLink, Check, Moon,
-    Instagram, Facebook, Linkedin, MessageCircle, Twitter, Globe, Link as LinkIcon
+    Instagram, Facebook, Linkedin, MessageCircle, Twitter, Globe, Link as LinkIcon, Info
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -1909,7 +1910,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         >
                                             <Text style={[styles.tagText, {
                                                 color: certifications.includes(cert)
-                                                    ? (isDarkMode ? '#000' : '#fff')
+                                                    ? theme.textPrimary
                                                     : theme.textSecondary,
                                             }]}>
                                                 {cert}
@@ -2077,6 +2078,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                     const userId = auth.currentUser?.uid;
                                                     if (userId) {
                                                         try {
+                                                            await AsyncStorage.setItem('pending_sitter_registration', 'true');
                                                             await updateDoc(doc(db, 'users', userId), {
                                                                 isSitter: false,
                                                                 sitterActive: false,
@@ -2159,9 +2161,8 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                         </Text>
                                     </View>
 
-                                    <View style={{ gap: 16 }}>
+                                    <View style={{ gap: 12 }}>
                                         <View>
-                                            <Text style={[styles.fieldLabel, { color: theme.textPrimary, marginBottom: 8 }]}>{t('sitterDash.linkOrUsername')}</Text>
                                             <TextInput
                                                 style={[styles.settingsInputGlass, {
                                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F5F5F7',
@@ -2175,49 +2176,63 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                                 }]}
                                                 value={activeSocialPlatform.value}
                                                 onChangeText={(text) => {
-                                                    // Auto-extract username from pasted URLs
                                                     let cleaned = text.trim();
-                                                    
-                                                    // Instagram: instagram.com/username or https://www.instagram.com/username/
                                                     if (activeSocialPlatform.id === 'instagram') {
                                                         const igMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9_.]+)\/?/);
                                                         if (igMatch) cleaned = igMatch[1];
                                                     }
-                                                    // Facebook: facebook.com/username or fb.com/username
                                                     if (activeSocialPlatform.id === 'facebook') {
                                                         const fbMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?(?:facebook|fb)\.com\/(?:profile\.php\?id=)?([a-zA-Z0-9_.]+)\/?/);
                                                         if (fbMatch) cleaned = fbMatch[1];
                                                     }
-                                                    // LinkedIn: linkedin.com/in/username
                                                     if (activeSocialPlatform.id === 'linkedin') {
                                                         const liMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/([a-zA-Z0-9_-]+)\/?/);
                                                         if (liMatch) cleaned = liMatch[1];
                                                     }
-                                                    
                                                     activeSocialPlatform.setValue(cleaned);
                                                     setActiveSocialPlatform(prev => prev ? ({ ...prev, value: cleaned }) : null);
                                                 }}
-                                                placeholder={activeSocialPlatform.id === 'whatsapp' ? activeSocialPlatform.placeholder : `${activeSocialPlatform.placeholder} ${t('sitter.orPasteLink')}`}
+                                                placeholder={activeSocialPlatform.placeholder}
                                                 placeholderTextColor={theme.textSecondary}
                                                 autoCapitalize="none"
                                                 autoCorrect={false}
                                                 autoFocus={true}
                                             />
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingHorizontal: 4 }}>
-                                                {activeSocialPlatform.prefix && (
-                                                    <Text style={{ color: theme.textSecondary, fontSize: 12, textAlign: 'left' }}>
-                                                        {activeSocialPlatform.prefix}{activeSocialPlatform.value || '...'}
-                                                    </Text>
-                                                )}
-                                                {activeSocialPlatform.value && !validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) && (
-                                                    <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
-                                                        {activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput')}
-                                                    </Text>
-                                                )}
-                                            </View>
+
+                                            {/* Preview row */}
+                                            {activeSocialPlatform.prefix && (
+                                                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 6, paddingHorizontal: 4 }}>
+                                                    {activeSocialPlatform.prefix}{activeSocialPlatform.value || '...'}
+                                                </Text>
+                                            )}
+
+                                            {/* Validation error */}
+                                            {activeSocialPlatform.value && !validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) && (
+                                                <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600', marginTop: 4, paddingHorizontal: 4 }}>
+                                                    {activeSocialPlatform.id === 'whatsapp' ? t('sitterDash.invalidPhone') : t('sitterDash.invalidInput')}
+                                                </Text>
+                                            )}
                                         </View>
 
-                                        {/* Open App Button - for Instagram, Facebook, LinkedIn */}
+                                        {/* Info hint */}
+                                        <View style={{
+                                            flexDirection: 'row-reverse',
+                                            alignItems: 'flex-start',
+                                            gap: 8,
+                                            padding: 12,
+                                            borderRadius: 12,
+                                            backgroundColor: `${activeSocialPlatform.color}10`,
+                                        }}>
+                                            <Info size={15} color={activeSocialPlatform.color} strokeWidth={2} style={{ marginTop: 1 }} />
+                                            <Text style={{ flex: 1, fontSize: 13, color: activeSocialPlatform.color, textAlign: 'right', lineHeight: 20 }}>
+                                                {activeSocialPlatform.id === 'whatsapp'
+                                                    ? 'הכנס מספר טלפון עם קידומת מדינה, לדוגמה: +972501234567'
+                                                    : `הכנס שם משתמש בלבד, לדוגמה: johndoe\nהדבקת לינק מלא מ-${activeSocialPlatform.name} עובד גם — נחלץ אוטומטית`
+                                                }
+                                            </Text>
+                                        </View>
+
+                                        {/* Open App Button */}
                                         {activeSocialPlatform.id !== 'whatsapp' && (
                                             <TouchableOpacity
                                                 style={{
@@ -2258,33 +2273,7 @@ const SitterDashboardScreen = ({ navigation }: any) => {
                                             >
                                                 <ExternalLink size={15} color={activeSocialPlatform.color} strokeWidth={2} />
                                                 <Text style={{ fontSize: 13, fontWeight: '600', color: activeSocialPlatform.color }}>
-                                                    {t('sitter.openToCopyUsername', { name: activeSocialPlatform.name })}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        )}
-
-                                        {/* Test Link Button */}
-                                        {activeSocialPlatform.value && validateUsername(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value) && (
-                                            <TouchableOpacity
-                                                style={{
-                                                    flexDirection: 'row',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: 8,
-                                                    paddingVertical: 12,
-                                                    borderRadius: 12,
-                                                    borderWidth: 1,
-                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
-                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                                                }}
-                                                onPress={() => {
-                                                    openSocialLink(activeSocialPlatform.id as SocialPlatform, activeSocialPlatform.value);
-                                                }}
-                                                activeOpacity={0.7}
-                                            >
-                                                <ExternalLink size={16} color={activeSocialPlatform.color} strokeWidth={2} />
-                                                <Text style={{ fontSize: 14, fontWeight: '600', color: activeSocialPlatform.color }}>
-                                                    {t('sitterDash.checkLink')}
+                                                    פתח את {activeSocialPlatform.name} למצוא את שם המשתמש שלי
                                                 </Text>
                                             </TouchableOpacity>
                                         )}

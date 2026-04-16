@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -292,6 +293,8 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                 photoUrl: photoUrl,
             });
 
+            // Clear pending sitter registration flag (set when deregistering)
+            await AsyncStorage.removeItem('pending_sitter_registration');
             // Navigate directly to dashboard
             navigation.replace('SitterDashboard');
         } catch (error) {
@@ -620,22 +623,10 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
 
         return (
             <View style={styles.stepContent}>
-                {/* Premium Step Header */}
-                <View style={styles.stepHeader}>
-                    <View style={styles.stepIconOuter}>
-                        <LinearGradient
-                            colors={isDarkMode ? ['#2C2C2E', '#3A3A3C'] : ['#F2F2F7', '#E5E5EA']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.stepIconGradient}
-                        >
-                            <Camera size={26} color={isDarkMode ? '#fff' : '#1C1C1E'} strokeWidth={1.8} />
-                        </LinearGradient>
-                    </View>
-                    <Text style={[styles.stepSubtitle, { color: theme.textSecondary }]}>
-                        {subtitleText}
-                    </Text>
-                </View>
+                {/* Subtitle only — no icon box */}
+                <Text style={[styles.stepSubtitle, { color: theme.textSecondary, textAlign: 'center', marginBottom: 8 }]}>
+                    {subtitleText}
+                </Text>
 
                 <TouchableOpacity style={styles.photoUpload} onPress={pickImage} activeOpacity={0.85}>
                     {profilePhoto ? (
@@ -653,32 +644,31 @@ const SitterRegistrationScreen = ({ navigation }: any) => {
                             </View>
                         </View>
                     ) : (
-                        <View style={styles.photoPlaceholderOuter}>
-                            {/* Dashed ring with gradient hint */}
-                            <LinearGradient
-                                colors={isDarkMode ? ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.03)'] : ['#F2F2F7', '#E5E5EA']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.photoPlaceholderInner}
-                            >
-                                <View style={styles.photoUploadIcon}>
-                                    <LinearGradient
-                                        colors={['#1C1C1E', '#3A3A3C']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={styles.photoUploadIconGradient}
-                                    >
-                                        <Camera size={28} color="#fff" strokeWidth={1.8} />
-                                    </LinearGradient>
-                                </View>
-                                <Text style={[styles.photoPlaceholderText, { color: theme.textPrimary }]}>{placeholderText}</Text>
-                                <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>
-                                    {placeholderHint}
-                                </Text>
-                            </LinearGradient>
-                        </View>
+                        <>
+                            <View style={styles.photoPlaceholderOuter}>
+                                <LinearGradient
+                                    colors={isDarkMode ? ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)'] : ['#F0F0F0', '#E8E8E8']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.photoPlaceholderInner}
+                                >
+                                    <User size={72} color={isDarkMode ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.16)'} strokeWidth={1.2} />
+                                </LinearGradient>
+                            </View>
+                            {/* Camera badge — outside overflow:hidden so it's fully visible */}
+                            <View style={[styles.photoEditBadge, { backgroundColor: '#1C1C1E' }]}>
+                                <Camera size={14} color="#fff" strokeWidth={2.5} />
+                            </View>
+                        </>
                     )}
                 </TouchableOpacity>
+
+                {!profilePhoto && (
+                    <View style={{ alignItems: 'center', gap: 4, marginTop: 14 }}>
+                        <Text style={[styles.photoPlaceholderText, { color: theme.textPrimary }]}>{placeholderText}</Text>
+                        <Text style={[styles.photoPlaceholderHint, { color: theme.textSecondary }]}>{placeholderHint}</Text>
+                    </View>
+                )}
 
                 {/* Trust badge */}
                 <View style={[styles.trustBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#F2F2F7' }]}>
@@ -1113,16 +1103,17 @@ const styles = StyleSheet.create({
         width: 180,
         height: 180,
         borderRadius: 90,
-        borderWidth: 2,
-        borderStyle: 'dashed',
-        borderColor: 'rgba(0,0,0,0.15)',
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
     },
     photoPlaceholderInner: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 10,
     },
     photoUploadIcon: {
         marginBottom: 4,
