@@ -9,6 +9,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, withRepeat, interpolate } from 'react-native-reanimated';
 import { useLanguage } from '../context/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -28,6 +29,7 @@ export default function NightLightModal({
     const { theme, isDarkMode } = useTheme();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
+    const insets = useSafeAreaInsets();
     const controlsOpacity = useSharedValue(1);
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
@@ -294,7 +296,7 @@ export default function NightLightModal({
                 {...panResponder.panHandlers}
             >
                 {/* Drag Handle - Visual indicator */}
-                <TouchableOpacity style={styles.dragHandle} onPress={handleCloseModal} activeOpacity={0.7}>
+                <TouchableOpacity style={[styles.dragHandle, { paddingTop: Math.max(insets.top, 16) }]} onPress={handleCloseModal} activeOpacity={0.7}>
                     <Text style={{ color: brightness > 0.5 ? 'rgba(0,0,0,0.6)' : '#FFF5E1', fontSize: 11, fontWeight: '600' }}>לסגירה</Text>
                 </TouchableOpacity>
 
@@ -468,7 +470,6 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         left: 0,
         right: 0,
         alignItems: 'center',
-        paddingTop: 12,
         paddingBottom: 8,
         zIndex: 10,
         minHeight: 50,
