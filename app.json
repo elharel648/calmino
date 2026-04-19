@@ -39,7 +39,10 @@
       "./plugins/withFirebaseWarningFix",
       "./plugins/withLiveActivity",
       "@react-native-google-signin/google-signin",
-      "@react-native-firebase/perf"
+      "@react-native-firebase/perf",
+      "expo-asset",
+      "expo-sharing",
+      "expo-web-browser"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",
