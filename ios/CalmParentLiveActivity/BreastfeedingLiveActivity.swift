@@ -22,6 +22,7 @@ struct BreastfeedingLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
+                DynamicIslandExpandedRegion(.center) { EmptyView() }
             } compactLeading: {
                 Image(systemName: "heart.fill")
                     .font(.system(size: 14, weight: .semibold))

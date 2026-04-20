@@ -17,6 +17,7 @@ struct SleepLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
+                DynamicIslandExpandedRegion(.center) { EmptyView() }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
                     .font(.system(size: 14, weight: .semibold))

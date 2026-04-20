@@ -22,6 +22,7 @@ struct FeedingLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
+                DynamicIslandExpandedRegion(.center) { EmptyView() }
             } compactLeading: {
                 Image(systemName: feedingIconName(context.state.mealType))
                     .font(.system(size: 14, weight: .semibold))
