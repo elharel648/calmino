@@ -72,7 +72,7 @@ struct FeedingLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 10) {
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
+                    Button(intent: StopTimerIntent()) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(.white)

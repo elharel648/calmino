@@ -103,7 +103,7 @@ struct BreastfeedingLockScreenView: View {
                 // Right — controls
                 VStack(spacing: 12) {
                     // Switch side
-                    Link(destination: URL(string: "calmparentapp://switch-side")!) {
+                    Button(intent: SwitchSideIntent()) {
                         Image(systemName: "arrow.left.arrow.right")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(.white)
@@ -112,7 +112,7 @@ struct BreastfeedingLockScreenView: View {
                     }
 
                     // Stop
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=breastfeeding")!) {
+                    Button(intent: StopTimerIntent()) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(.white)
