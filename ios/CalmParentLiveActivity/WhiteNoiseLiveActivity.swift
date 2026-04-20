@@ -14,6 +14,23 @@ struct WhiteNoiseLiveActivity: Widget {
         ActivityConfiguration(for: WhiteNoiseActivityAttributes.self) { context in
             WhiteNoiseLockScreenView(context: context)
                 .colorScheme(.dark)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.center) { EmptyView() }
+            } compactLeading: {
+                Image(systemName: "waveform")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.cyan)
+            } compactTrailing: {
+                Text(context.state.startTime, style: .timer)
+                    .monospacedDigit()
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+            } minimal: {
+                Image(systemName: "waveform")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.cyan)
+            }
         }
     }
 }

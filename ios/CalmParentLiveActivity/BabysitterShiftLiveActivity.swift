@@ -17,6 +17,23 @@ struct BabysitterShiftLiveActivity: Widget {
         ActivityConfiguration(for: BabysitterShiftAttributes.self) { context in
             // Lock Screen UI
             BabysitterShiftLockScreenView(context: context)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.center) { EmptyView() }
+            } compactLeading: {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.green)
+            } compactTrailing: {
+                Text(context.state.startTime, style: .timer)
+                    .monospacedDigit()
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+            } minimal: {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.green)
+            }
         }
     }
 }
