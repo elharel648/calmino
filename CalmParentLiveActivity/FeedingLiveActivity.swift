@@ -72,7 +72,7 @@ struct FeedingLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 10) {
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=\(context.state.mealType)")!) {
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(.white)
@@ -95,6 +95,15 @@ struct FeedingLockScreenView: View {
 }
 
 // MARK: - Helper Functions
+
+func feedingTypeASCII(_ mealType: String) -> String {
+    switch mealType.lowercased() {
+    case "bottle", "בקבוק": return "bottle"
+    case "pumping", "שאיבה": return "pumping"
+    case let t where t.contains("breastfeeding") || t.contains("הנקה"): return "breastfeeding"
+    default: return "food"
+    }
+}
 
 @available(iOS 16.2, *)
 func feedingIconName(_ mealType: String) -> String {
