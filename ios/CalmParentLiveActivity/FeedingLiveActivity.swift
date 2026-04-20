@@ -20,6 +20,22 @@ struct FeedingLiveActivity: Widget {
         ActivityConfiguration(for: MealActivityAttributes.self) { context in
             FeedingLockScreenView(context: context)
                 .colorScheme(.dark)
+        } dynamicIsland: { context in
+            DynamicIsland {
+            } compactLeading: {
+                Image(systemName: feedingIconName(context.state.mealType))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(feedingAccent)
+            } compactTrailing: {
+                Text(context.state.startTime, style: .timer)
+                    .monospacedDigit()
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+            } minimal: {
+                Image(systemName: feedingIconName(context.state.mealType))
+                    .font(.system(size: 13))
+                    .foregroundStyle(feedingAccent)
+            }
         }
     }
 }
@@ -72,13 +88,15 @@ struct FeedingLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 10) {
-                    Button(intent: StopTimerIntent()) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 58, height: 58)
-                            .background(feedingAccent, in: Circle())
-                            .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
+                    if #available(iOS 17, *) {
+                        Button(intent: StopTimerIntent()) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 58, height: 58)
+                                .background(feedingAccent, in: Circle())
+                                .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
+                        }
                     }
                     Text("שמירה")
                         .font(.system(size: 12, weight: .semibold))

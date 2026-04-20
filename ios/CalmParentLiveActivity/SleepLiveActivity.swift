@@ -15,6 +15,22 @@ struct SleepLiveActivity: Widget {
         ActivityConfiguration(for: SleepActivityAttributes.self) { context in
             SleepLockScreenView(context: context)
                 .colorScheme(.dark)
+        } dynamicIsland: { context in
+            DynamicIsland {
+            } compactLeading: {
+                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.purple)
+            } compactTrailing: {
+                Text(context.state.startTime, style: .timer)
+                    .monospacedDigit()
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+            } minimal: {
+                Image(systemName: "moon.zzz.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.purple)
+            }
         }
     }
 }
@@ -67,13 +83,15 @@ struct SleepLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 10) {
-                    Button(intent: StopTimerIntent()) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 58, height: 58)
-                            .background(sleepColor, in: Circle())
-                            .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
+                    if #available(iOS 17, *) {
+                        Button(intent: StopTimerIntent()) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 58, height: 58)
+                                .background(sleepColor, in: Circle())
+                                .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
+                        }
                     }
                     Text("שמירה")
                         .font(.system(size: 12, weight: .semibold))

@@ -20,6 +20,24 @@ struct BreastfeedingLiveActivity: Widget {
         ActivityConfiguration(for: BreastfeedingActivityAttributes.self) { context in
             BreastfeedingLockScreenView(context: context)
                 .colorScheme(.dark)
+        } dynamicIsland: { context in
+            DynamicIsland {
+            } compactLeading: {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(breastfeedingColor)
+            } compactTrailing: {
+                if let start = context.state.sideStartTime {
+                    Text(start, style: .timer)
+                        .monospacedDigit()
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            } minimal: {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(breastfeedingColor)
+            }
         }
     }
 }
@@ -102,23 +120,25 @@ struct BreastfeedingLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 12) {
-                    // Switch side
-                    Button(intent: SwitchSideIntent()) {
-                        Image(systemName: "arrow.left.arrow.right")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(breastfeedingColor.opacity(0.5), in: Circle())
-                    }
+                    if #available(iOS 17, *) {
+                        // Switch side
+                        Button(intent: SwitchSideIntent()) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(breastfeedingColor.opacity(0.5), in: Circle())
+                        }
 
-                    // Stop
-                    Button(intent: StopTimerIntent()) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 52, height: 52)
-                            .background(breastfeedingColor, in: Circle())
-                            .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
+                        // Stop
+                        Button(intent: StopTimerIntent()) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 52, height: 52)
+                                .background(breastfeedingColor, in: Circle())
+                                .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
+                        }
                     }
                 }
                 .environment(\.layoutDirection, .rightToLeft)
