@@ -15,9 +15,14 @@ struct SleepLiveActivity: Widget {
         ActivityConfiguration(for: SleepActivityAttributes.self) { context in
             SleepLockScreenView(context: context)
                 .colorScheme(.dark)
+                .widgetURL(URL(string: "calmparentapp://stop-timer?type=sleep"))
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.center) { EmptyView() }
+                DynamicIslandExpandedRegion(.center) {
+                    Text("\(context.state.sleepType) · \(context.state.babyName)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
                     .font(.system(size: 14, weight: .semibold))

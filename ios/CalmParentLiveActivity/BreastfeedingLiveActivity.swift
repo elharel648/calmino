@@ -20,9 +20,14 @@ struct BreastfeedingLiveActivity: Widget {
         ActivityConfiguration(for: BreastfeedingActivityAttributes.self) { context in
             BreastfeedingLockScreenView(context: context)
                 .colorScheme(.dark)
+                .widgetURL(URL(string: "calmparentapp://stop-timer?type=breastfeeding"))
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.center) { EmptyView() }
+                DynamicIslandExpandedRegion(.center) {
+                    Text("הנקה · \(context.attributes.babyName)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             } compactLeading: {
                 Image(systemName: "heart.fill")
                     .font(.system(size: 14, weight: .semibold))

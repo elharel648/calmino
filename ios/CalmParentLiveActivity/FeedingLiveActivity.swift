@@ -20,9 +20,14 @@ struct FeedingLiveActivity: Widget {
         ActivityConfiguration(for: MealActivityAttributes.self) { context in
             FeedingLockScreenView(context: context)
                 .colorScheme(.dark)
+                .widgetURL(URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))"))
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.center) { EmptyView() }
+                DynamicIslandExpandedRegion(.center) {
+                    Text("\(feedingTypeHebrew(context.state.mealType)) · \(context.attributes.babyName)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             } compactLeading: {
                 Image(systemName: feedingIconName(context.state.mealType))
                     .font(.system(size: 14, weight: .semibold))
