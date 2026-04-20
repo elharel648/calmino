@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import InlineLoader from '../components/Common/InlineLoader';
-import { View, StyleSheet, ScrollView, Share, Alert,  StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager } from 'react-native';
+import { View, StyleSheet, ScrollView, Share, Alert,  StatusBar, RefreshControl, TouchableOpacity, Text, Animated, Platform, useWindowDimensions, InteractionManager, AppState } from 'react-native';
 import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -50,6 +50,7 @@ import { undoService } from '../services/undoService';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '../utils/logger';
+import { liveActivityService } from '../services/liveActivityService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Modal } from 'react-native';
 import { getWrappedData, WrappedData } from '../services/wrappedService';
@@ -294,6 +295,8 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
     // --- Focus Effect ---
     const [quickActionsFocusKey, setQuickActionsFocusKey] = useState(0);
+    const checkPendingLiveActivityActionRef = useRef<(() => void) | null>(null);
+
     useFocusEffect(
         useCallback(() => {
             if (profile.id) {
@@ -302,8 +305,19 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                 refreshMeds();
             }
             setQuickActionsFocusKey(k => k + 1);
+            checkPendingLiveActivityActionRef.current?.();
         }, [profile.id, fetchBabyData, refreshHomeData, refreshMeds])
     );
+
+    // Listen for app coming to foreground
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state === 'active') {
+                checkPendingLiveActivityActionRef.current?.();
+            }
+        });
+        return () => sub.remove();
+    }, []);
 
 
     // --- Handlers ---
@@ -351,6 +365,34 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             setTimelineRefresh(prev => prev + 1);
         });
     }, [user, profile.id, refreshHomeData, scheduleFeedingReminder]);
+
+    // --- Live Activity Intent Handler ---
+    const checkPendingLiveActivityAction = useCallback(async () => {
+        try {
+            const pending = await liveActivityService.getPendingTimerAction();
+            if (!pending || pending.action !== 'stop') return;
+            await liveActivityService.clearPendingTimerAction();
+            if (!user || !profile.id) return;
+            const typeMap: Record<string, string> = {
+                sleep: 'sleep', food: 'food', bottle: 'food',
+                בקבוק: 'food', הנקה: 'food', white_noise: 'sleep',
+            };
+            const mappedType = typeMap[pending.timerType] || pending.timerType;
+            if (!mappedType) return;
+            await handleSaveTracking({
+                type: mappedType,
+                duration: pending.elapsedSeconds,
+                timestamp: new Date(),
+                note: '',
+            });
+        } catch (e) {
+            logger.warn('checkPendingLiveActivityAction error:', e);
+        }
+    }, [user, profile.id, handleSaveTracking]);
+
+    useEffect(() => {
+        checkPendingLiveActivityActionRef.current = checkPendingLiveActivityAction;
+    }, [checkPendingLiveActivityAction]);
 
     const shareMessage = useMemo(() => {
         const today = new Date();
