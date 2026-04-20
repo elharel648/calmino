@@ -66,44 +66,40 @@ struct BreastfeedingLiveActivity: Widget {
 
                 // ── Expanded Bottom — Controls ──
                 DynamicIslandExpandedRegion(.bottom) {
-                    if #available(iOS 17, *) {
-                        HStack(spacing: 8) {
-                            // Switch Side
-                            Button(intent: SwitchSideIntent()) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.left.arrow.right")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text(context.state.activeSide == "left" ? "ימין" : "שמאל")
-                                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 9)
-                                .background(breastfeedingColor.opacity(0.15), in: Capsule())
+                    HStack(spacing: 8) {
+                        // Switch Side
+                        Link(destination: URL(string: "calmparentapp://switch-side")!) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.left.arrow.right")
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(context.state.activeSide == "left" ? "ימין" : "שמאל")
+                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
                             }
-                            .buttonStyle(.plain)
-
-                            Spacer()
-
-                            // Stop
-                            Button(intent: StopTimerIntent()) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 12, weight: .bold))
-                                    Text("סיום ושמירה")
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 9)
-                                .background(breastfeedingColor, in: Capsule())
-                            }
-                            .buttonStyle(.plain)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(breastfeedingColor.opacity(0.15), in: Capsule())
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 6)
-                        .environment(\.layoutDirection, .rightToLeft)
+
+                        Spacer()
+
+                        // Stop
+                        Link(destination: URL(string: "calmparentapp://stop-timer?type=breastfeeding")!) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("סיום ושמירה")
+                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 9)
+                            .background(breastfeedingColor, in: Capsule())
+                        }
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
+                    .environment(\.layoutDirection, .rightToLeft)
                 }
             } compactLeading: {
                 HStack(spacing: 4) {
@@ -211,35 +207,27 @@ struct BreastfeedingLockScreenView: View {
                 Spacer()
 
                 // Right — controls
-                if #available(iOS 17, *) {
-                    VStack(spacing: 12) {
-                        // Switch side
-                        Button(intent: SwitchSideIntent()) {
-                            Image(systemName: "arrow.left.arrow.right")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(breastfeedingColor.opacity(0.5), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-
-                        // Stop
-                        Button(intent: StopTimerIntent()) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 52, height: 52)
-                                .background(breastfeedingColor, in: Circle())
-                                .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
-                        }
-                        .buttonStyle(.plain)
+                VStack(spacing: 12) {
+                    // Switch side
+                    Link(destination: URL(string: "calmparentapp://switch-side")!) {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(breastfeedingColor.opacity(0.5), in: Circle())
                     }
-                    .environment(\.layoutDirection, .rightToLeft)
-                } else {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 32, weight: .thin))
-                        .foregroundStyle(breastfeedingColor.opacity(0.35))
+
+                    // Stop
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=breastfeeding")!) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 52, height: 52)
+                            .background(breastfeedingColor, in: Circle())
+                            .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
+                    }
                 }
+                .environment(\.layoutDirection, .rightToLeft)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)

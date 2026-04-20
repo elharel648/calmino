@@ -54,28 +54,25 @@ struct SleepLiveActivity: Widget {
 
                 // ── Expanded Bottom ─────────────────────────────────────
                 DynamicIslandExpandedRegion(.bottom) {
-                    if #available(iOS 17, *) {
-                        HStack(spacing: 10) {
-                            Spacer()
-                            Button(intent: StopTimerIntent()) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 14, weight: .bold))
-                                    Text("סיום ושמירה")
-                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 22)
-                                .padding(.vertical, 10)
-                                .background(sleepColor, in: Capsule())
+                    HStack(spacing: 10) {
+                        Spacer()
+                        Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                Text("סיום ושמירה")
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                             }
-                            .buttonStyle(.plain)
-                            Spacer()
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 22)
+                            .padding(.vertical, 10)
+                            .background(sleepColor, in: Capsule())
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 6)
-                        .environment(\.layoutDirection, .rightToLeft)
+                        Spacer()
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
+                    .environment(\.layoutDirection, .rightToLeft)
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
@@ -148,28 +145,20 @@ struct SleepLockScreenView: View {
                 Spacer()
 
                 // Right — controls
-                if #available(iOS 17, *) {
-                    VStack(spacing: 10) {
-                        Button(intent: StopTimerIntent()) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 58, height: 58)
-                                .background(sleepColor, in: Circle())
-                                .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
-                        }
-                        .buttonStyle(.plain)
-                        
-                        Text("שמירה")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.8))
+                VStack(spacing: 10) {
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 58, height: 58)
+                            .background(sleepColor, in: Circle())
+                            .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
                     }
-                    .environment(\.layoutDirection, .rightToLeft)
-                } else {
-                    Image(systemName: "moon.stars.fill")
-                        .font(.system(size: 32, weight: .thin))
-                        .foregroundStyle(sleepColor.opacity(0.35))
+                    Text("שמירה")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
                 }
+                .environment(\.layoutDirection, .rightToLeft)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)

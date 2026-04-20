@@ -394,7 +394,7 @@ function LiveActivityURLHandler() {
           } catch (error) {
             logger.error('Error resuming timer from Live Activity:', error);
           }
-        } else if (path === 'save-timer' || url.href.includes('save-timer')) {
+        } else if (path === 'save-timer' || path === 'stop-timer' || url.href.includes('save-timer') || url.href.includes('stop-timer')) {
           // Save timer data — use actual RN timer state for accuracy
           const type = url.searchParams.get('type') || '';
           const side = url.searchParams.get('side') || '';
