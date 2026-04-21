@@ -129,6 +129,7 @@ import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
 import analytics from '@react-native-firebase/analytics';
 import { setAnalyticsUser, clearAnalyticsUser } from './services/analyticsService';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 
 // --- Android Foreground Service Registration (Disabled) ---
 // if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
@@ -601,6 +602,19 @@ export default function App() {
   const appStateRef = useRef(AppState.currentState);
   const colorScheme = useColorScheme();
   const themeBgColor = colorScheme === 'dark' ? '#0F0F0F' : '#F8F6F4';
+
+  // Request ATT (App Tracking Transparency) permission for Meta Ads attribution
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || showAnimatedSplash || !user) return;
+    const timer = setTimeout(async () => {
+      try {
+        await requestTrackingPermissionsAsync();
+      } catch (e) {
+        logger.warn('ATT request failed:', e);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [showAnimatedSplash, user]);
 
   // Clean up any stuck Live Activities / Android notifications from previous session on cold launch
   useEffect(() => {

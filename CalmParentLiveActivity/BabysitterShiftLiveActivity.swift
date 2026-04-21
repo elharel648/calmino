@@ -17,6 +17,17 @@ struct BabysitterShiftLiveActivity: Widget {
         ActivityConfiguration(for: BabysitterShiftAttributes.self) { context in
             // Lock Screen UI
             BabysitterShiftLockScreenView(context: context)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+            } compactLeading: {
+                EmptyView()
+            } compactTrailing: {
+                EmptyView()
+            } minimal: {
+                EmptyView()
+            }
         }
     }
 }

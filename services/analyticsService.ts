@@ -1,6 +1,7 @@
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
 import perf from '@react-native-firebase/perf';
+import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { logger } from '../utils/logger';
 
 const track = async (event: string, params?: Record<string, string | number | boolean>) => {
@@ -42,6 +43,26 @@ export const analyticsDeleteAccount = () =>
 // Screens — called manually where needed
 export const analyticsScreen = (screenName: string) =>
   analytics().logScreenView({ screen_name: screenName, screen_class: screenName }).catch(() => {});
+
+// ── Meta (Facebook) Events ──────────────────────────────────────────
+
+export const metaLogCompleteRegistration = (method: 'google' | 'apple' | 'email') => {
+  try {
+    AppEventsLogger.logEvent('fb_mobile_complete_registration', {
+      fb_registration_method: method,
+    });
+  } catch (e) {
+    logger.warn('[Meta] Failed to log registration event:', e);
+  }
+};
+
+export const metaLogEvent = (eventName: string, params?: Record<string, string | number>) => {
+  try {
+    AppEventsLogger.logEvent(eventName, params);
+  } catch (e) {
+    logger.warn('[Meta] Failed to log event:', eventName, e);
+  }
+};
 
 // Performance — wrap any async operation to measure it
 export const perfTrace = async <T>(traceName: string, fn: () => Promise<T>): Promise<T> => {

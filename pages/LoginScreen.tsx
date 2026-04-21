@@ -27,7 +27,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { analyticsLogin, analyticsSignUp } from '../services/analyticsService';
+import { analyticsLogin, analyticsSignUp, metaLogCompleteRegistration } from '../services/analyticsService';
 
 import {
   createUserWithEmailAndPassword,
@@ -232,6 +232,7 @@ export default function LoginScreen({
           }
         }
         analyticsSignUp('google');
+        metaLogCompleteRegistration('google');
       } else {
         analyticsLogin('google');
       }
@@ -299,6 +300,7 @@ export default function LoginScreen({
               }
             }
             analyticsSignUp('google');
+        metaLogCompleteRegistration('google');
           } else {
             analyticsLogin('google');
           }
@@ -477,6 +479,7 @@ export default function LoginScreen({
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         analyticsSignUp('email');
+        metaLogCompleteRegistration('email');
         await updateProfile(userCredential.user, { displayName: displayName.trim() });
         await callFirebaseFunction('sendVerificationEmail', { email: email.trim() });
 
@@ -1130,6 +1133,7 @@ export default function LoginScreen({
                           }
                         }
                         analyticsSignUp('apple');
+                        metaLogCompleteRegistration('apple');
                       } else {
                         analyticsLogin('apple');
                       }

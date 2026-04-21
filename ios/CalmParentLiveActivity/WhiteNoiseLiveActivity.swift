@@ -16,20 +16,14 @@ struct WhiteNoiseLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.center) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
             } compactLeading: {
-                Image(systemName: "waveform")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.cyan)
+                EmptyView()
             } compactTrailing: {
-                Text(context.state.startTime, style: .timer)
-                    .monospacedDigit()
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
+                EmptyView()
             } minimal: {
-                Image(systemName: "waveform")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.cyan)
+                EmptyView()
             }
         }
     }

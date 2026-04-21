@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx expo run:ios:*)"
+      "Bash(npx expo run:ios:*)",
+      "Bash(curl -s -X POST http://localhost:8081/reload)",
+      "Bash(export PATH=\"$HOME/Library/Android/sdk/platform-tools:$PATH\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Read(//Users/zivtothani/**)",
+      "Bash(open /Users/zivtothani/Calmino-PageLand/index.html)",
+      "Bash(xcodebuild -workspace ios/Calmino.xcworkspace -scheme Calmino -sdk iphonesimulator -destination \"id=8F2D5753-196A-4239-89A3-EE10F1F144DA\" -configuration Debug build)",
+      "Bash(grep -n \"ActivityConfiguration\" ios/CalmParentLiveActivity/*.swift)",
+      "Bash(xcodebuild -workspace ios/Calmino.xcworkspace -scheme Calmino -sdk iphonesimulator -destination 'id=8F2D5753-196A-4239-89A3-EE10F1F144DA' -configuration Debug build)",
+      "Bash(git checkout *)"
+    ],
+    "additionalDirectories": [
+      "/Users/zivtothani/Calmino-PageLand"
     ]
   }
 }
