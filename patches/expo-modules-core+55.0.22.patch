@@ -17,3 +17,19 @@ index 0000000..421d3a8
 +- (NSArray<NSString *> *)supportedEvents;
 +
 +@end
+diff --git a/node_modules/expo-modules-core/ios/Legacy/Protocols/EXLegacyExpoViewProtocol.h b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXLegacyExpoViewProtocol.h
+new file mode 100644
+index 0000000..4fed3af
+--- /dev/null
++++ b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXLegacyExpoViewProtocol.h
+@@ -0,0 +1,10 @@
++// Compatibility stub for EXLegacyExpoViewProtocol - removed in expo-modules-core 55
++
++#pragma once
++
++#import <Foundation/Foundation.h>
++
++@protocol EXLegacyExpoViewProtocol <NSObject>
++@optional
++- (void)setProxiedProperties:(NSDictionary *)props;
++@end
