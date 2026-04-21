@@ -17,6 +17,20 @@ index 0000000..421d3a8
 +- (NSArray<NSString *> *)supportedEvents;
 +
 +@end
+diff --git a/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitterService.h b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitterService.h
+new file mode 100644
+index 0000000..8b3b859
+--- /dev/null
++++ b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitterService.h
+@@ -0,0 +1,8 @@
++// Compatibility stub for EXEventEmitterService - removed in expo-modules-core 55
++#pragma once
++#import <Foundation/Foundation.h>
++#import <ExpoModulesCore/EXInternalModule.h>
++
++@protocol EXEventEmitterService <NSObject>
++- (void)sendEventWithName:(NSString *)name body:(id)body;
++@end
 diff --git a/node_modules/expo-modules-core/ios/Legacy/Protocols/EXLegacyExpoViewProtocol.h b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXLegacyExpoViewProtocol.h
 new file mode 100644
 index 0000000..4fed3af
