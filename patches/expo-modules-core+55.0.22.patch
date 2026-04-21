@@ -1,0 +1,19 @@
+diff --git a/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h
+new file mode 100644
+index 0000000..421d3a8
+--- /dev/null
++++ b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h
+@@ -0,0 +1,13 @@
++// Copyright © 2018 650 Industries. All rights reserved.
++
++#import <Foundation/Foundation.h>
++#import <ExpoModulesCore/EXDefines.h>
++#import <ExpoModulesCore/EXExportedModule.h>
++
++@protocol EXEventEmitter
++
++- (void)startObserving;
++- (void)stopObserving;
++- (NSArray<NSString *> *)supportedEvents;
++
++@end
