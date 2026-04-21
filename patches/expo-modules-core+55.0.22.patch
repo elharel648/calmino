@@ -1,8 +1,8 @@
 diff --git a/node_modules/expo-modules-core/ios/EXAppDefines.h b/node_modules/expo-modules-core/ios/EXAppDefines.h
-index 96f34c4..f705432 100644
+index 96f34c4..a16fba3 100644
 --- a/node_modules/expo-modules-core/ios/EXAppDefines.h
 +++ b/node_modules/expo-modules-core/ios/EXAppDefines.h
-@@ -25,3 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
+@@ -25,3 +25,26 @@ NS_ASSUME_NONNULL_BEGIN
  @end
  
  NS_ASSUME_NONNULL_END
@@ -15,11 +15,25 @@ index 96f34c4..f705432 100644
 +#ifndef EXFatal
 +#define EXFatal(error) NSLog(@"EXFatal: %@", (error))
 +#endif
++
++// Logging macros removed in expo-modules-core 55
++#ifndef EXLogWarn
++#define EXLogWarn(format, ...) NSLog((@"[WARN] " format), ##__VA_ARGS__)
++#endif
++#ifndef EXLogError
++#define EXLogError(format, ...) NSLog((@"[ERROR] " format), ##__VA_ARGS__)
++#endif
++#ifndef EXLogInfo
++#define EXLogInfo(format, ...) NSLog((@"[INFO] " format), ##__VA_ARGS__)
++#endif
++#ifndef EXLog
++#define EXLog(format, ...) NSLog((format), ##__VA_ARGS__)
++#endif
 diff --git a/node_modules/expo-modules-core/ios/EXDefines.h b/node_modules/expo-modules-core/ios/EXDefines.h
-index 7412ee7..421d1b6 100644
+index 7412ee7..fb4711f 100644
 --- a/node_modules/expo-modules-core/ios/EXDefines.h
 +++ b/node_modules/expo-modules-core/ios/EXDefines.h
-@@ -93,3 +93,12 @@ typedef struct EXModuleInfo {
+@@ -93,3 +93,26 @@ typedef struct EXModuleInfo {
  typedef void (^EXDirectEventBlock)(NSDictionary *body);
  typedef void (NS_SWIFT_SENDABLE ^EXPromiseResolveBlock)(id result);
  typedef void (NS_SWIFT_SENDABLE ^EXPromiseRejectBlock)(NSString *code, NSString *message, NSError *error);
@@ -31,6 +45,20 @@ index 7412ee7..421d1b6 100644
 +
 +#ifndef EXFatal
 +#define EXFatal(error) NSLog(@"EXFatal: %@", (error))
++#endif
++
++// Logging macros removed in expo-modules-core 55
++#ifndef EXLogWarn
++#define EXLogWarn(format, ...) NSLog((@"[WARN] " format), ##__VA_ARGS__)
++#endif
++#ifndef EXLogError
++#define EXLogError(format, ...) NSLog((@"[ERROR] " format), ##__VA_ARGS__)
++#endif
++#ifndef EXLogInfo
++#define EXLogInfo(format, ...) NSLog((@"[INFO] " format), ##__VA_ARGS__)
++#endif
++#ifndef EXLog
++#define EXLog(format, ...) NSLog((format), ##__VA_ARGS__)
 +#endif
 diff --git a/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h
 new file mode 100644
