@@ -1,3 +1,37 @@
+diff --git a/node_modules/expo-modules-core/ios/EXAppDefines.h b/node_modules/expo-modules-core/ios/EXAppDefines.h
+index 96f34c4..f705432 100644
+--- a/node_modules/expo-modules-core/ios/EXAppDefines.h
++++ b/node_modules/expo-modules-core/ios/EXAppDefines.h
+@@ -25,3 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
+ @end
+ 
+ NS_ASSUME_NONNULL_END
++
++// Compatibility macros removed in expo-modules-core 55
++#ifndef EXErrorWithMessage
++#define EXErrorWithMessage(message) ([NSError errorWithDomain:@"EXError" code:0 userInfo:@{NSLocalizedDescriptionKey: (message)}])
++#endif
++
++#ifndef EXFatal
++#define EXFatal(error) NSLog(@"EXFatal: %@", (error))
++#endif
+diff --git a/node_modules/expo-modules-core/ios/EXDefines.h b/node_modules/expo-modules-core/ios/EXDefines.h
+index 7412ee7..421d1b6 100644
+--- a/node_modules/expo-modules-core/ios/EXDefines.h
++++ b/node_modules/expo-modules-core/ios/EXDefines.h
+@@ -93,3 +93,12 @@ typedef struct EXModuleInfo {
+ typedef void (^EXDirectEventBlock)(NSDictionary *body);
+ typedef void (NS_SWIFT_SENDABLE ^EXPromiseResolveBlock)(id result);
+ typedef void (NS_SWIFT_SENDABLE ^EXPromiseRejectBlock)(NSString *code, NSString *message, NSError *error);
++
++// Compatibility macros removed in expo-modules-core 55
++#ifndef EXErrorWithMessage
++#define EXErrorWithMessage(message) ([NSError errorWithDomain:@"EXError" code:0 userInfo:@{NSLocalizedDescriptionKey: (message)}])
++#endif
++
++#ifndef EXFatal
++#define EXFatal(error) NSLog(@"EXFatal: %@", (error))
++#endif
 diff --git a/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h b/node_modules/expo-modules-core/ios/Legacy/Protocols/EXEventEmitter.h
 new file mode 100644
 index 0000000..421d3a8
