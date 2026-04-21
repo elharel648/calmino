@@ -396,6 +396,8 @@ function LiveActivityURLHandler() {
           }
         } else if (path === 'save-timer' || path === 'stop-timer' || url.href.includes('save-timer') || url.href.includes('stop-timer')) {
           // Save timer data — use actual RN timer state for accuracy
+          // Small delay so React context is hydrated after app wakes from background
+          await new Promise(r => setTimeout(r, 400));
           const type = url.searchParams.get('type') || '';
           const side = url.searchParams.get('side') || '';
 

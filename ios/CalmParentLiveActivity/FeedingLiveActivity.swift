@@ -2,8 +2,6 @@
 //  FeedingLiveActivity.swift
 //  Feeding Live Activity - Bottle, Pumping
 //
-//  Premium design with pause/play/stop controls
-//
 
 import ActivityKit
 import WidgetKit
@@ -23,20 +21,73 @@ struct FeedingLiveActivity: Widget {
                 .widgetURL(URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))"))
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.center) {
-                    Text("\(feedingTypeHebrew(context.state.mealType)) · \(context.attributes.babyName)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 8) {
+                        Image(systemName: context.state.isPaused ? "pause.circle.fill" : feedingIconName(context.state.mealType))
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(feedingAccent)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(context.attributes.babyName)
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text(feedingTypeHebrew(context.state.mealType))
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                    }
+                    .padding(.leading, 4)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Group {
+                        if context.state.isPaused {
+                            Text("מושהה")
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text(context.state.startTime, style: .timer)
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(.trailing, 4)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    HStack(spacing: 10) {
+                        Spacer()
+                        Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                Text("סיום ושמירה")
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 22)
+                            .padding(.vertical, 10)
+                            .background(feedingAccent, in: Capsule())
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
+                    .environment(\.layoutDirection, .rightToLeft)
                 }
             } compactLeading: {
-                Image(systemName: feedingIconName(context.state.mealType))
+                Image(systemName: context.state.isPaused ? "pause.circle.fill" : feedingIconName(context.state.mealType))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(feedingAccent)
+                    .foregroundStyle(context.state.isPaused ? .orange : feedingAccent)
             } compactTrailing: {
-                Text(context.state.startTime, style: .timer)
-                    .monospacedDigit()
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
+                if context.state.isPaused {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                } else {
+                    Text(context.state.startTime, style: .timer)
+                        .monospacedDigit()
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
             } minimal: {
                 Image(systemName: feedingIconName(context.state.mealType))
                     .font(.system(size: 13))
@@ -45,7 +96,6 @@ struct FeedingLiveActivity: Widget {
         }
     }
 }
-
 // MARK: - Lock Screen View
 
 @available(iOS 16.2, *)
@@ -93,8 +143,8 @@ struct FeedingLockScreenView: View {
                 Spacer()
 
                 // Right — controls
-                VStack(spacing: 10) {
-                    if #available(iOS 17, *) {
+                if #available(iOS 17, *) {
+                    VStack(spacing: 10) {
                         Button(intent: StopTimerIntent()) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 22, weight: .bold))
@@ -103,12 +153,18 @@ struct FeedingLockScreenView: View {
                                 .background(feedingAccent, in: Circle())
                                 .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
                         }
+                        .buttonStyle(.plain)
+                        
+                        Text("שמירה")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.8))
                     }
-                    Text("שמירה")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                    .environment(\.layoutDirection, .rightToLeft)
+                } else {
+                    Image(systemName: feedingIconName(context.state.mealType))
+                        .font(.system(size: 32, weight: .thin))
+                        .foregroundStyle(feedingAccent.opacity(0.35))
                 }
-                .environment(\.layoutDirection, .rightToLeft)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -119,15 +175,6 @@ struct FeedingLockScreenView: View {
 }
 
 // MARK: - Helper Functions
-
-func feedingTypeASCII(_ mealType: String) -> String {
-    switch mealType.lowercased() {
-    case "bottle", "בקבוק": return "bottle"
-    case "pumping", "שאיבה": return "pumping"
-    case let t where t.contains("breastfeeding") || t.contains("הנקה"): return "breastfeeding"
-    default: return "food"
-    }
-}
 
 @available(iOS 16.2, *)
 func feedingIconName(_ mealType: String) -> String {
@@ -177,5 +224,14 @@ func feedingTypeIcon(_ mealType: String) -> String {
         return "🔄"
     default:
         return "🍽️"
+    }
+}
+
+func feedingTypeASCII(_ mealType: String) -> String {
+    switch mealType.lowercased() {
+    case "bottle", "בקבוק": return "bottle"
+    case "pumping", "שאיבה": return "pumping"
+    case let t where t.contains("breastfeeding") || t.contains("הנקה"): return "breastfeeding"
+    default: return "food"
     }
 }
