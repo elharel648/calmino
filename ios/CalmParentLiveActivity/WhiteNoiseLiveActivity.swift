@@ -16,15 +16,58 @@ struct WhiteNoiseLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { EmptyView() }
-                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "speaker.wave.3.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(noiseColor)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(context.attributes.soundName)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text("רעש לבן")
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(noiseColor)
+                        }
+                    }
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.trailing)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if #available(iOS 17.0, *) {
+                        Button(intent: StopTimerIntent()) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "stop.fill")
+                                Text("כיבוי")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.red.opacity(0.8), in: Capsule())
+                        }
+                        .environment(\.layoutDirection, .rightToLeft)
+                    }
+                }
             } compactLeading: {
-                EmptyView()
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(noiseColor)
             } compactTrailing: {
-                EmptyView()
+                Text(context.state.startTime, style: .timer)
+                    .font(.system(size: 11, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(noiseColor)
             } minimal: {
-                EmptyView()
+                Image(systemName: "speaker.wave.2.fill")
+                    .foregroundStyle(noiseColor)
             }
+            .widgetURL(URL(string: "calmparentapp://white-noise")!)
         }
     }
 }
@@ -65,26 +108,18 @@ struct WhiteNoiseLockScreenView: View {
                 Spacer()
                 
                 if #available(iOS 17, *) {
-                    HStack {
-                        Spacer()
-                        
-                        // Close/Turn-off (Deep Link to open the app)
-                        Link(destination: URL(string: "calmino://white-noise?action=stop")!) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "stop.fill")
-                                    .font(.system(size: 12, weight: .bold))
-                                Text("כיבוי")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.red.opacity(0.8), in: Capsule())
+                    Button(intent: StopTimerIntent()) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "stop.fill")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("כיבוי")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
                         }
-                        
-                        Spacer()
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.red.opacity(0.8), in: Capsule())
                     }
-                    .environment(\.layoutDirection, .rightToLeft)
                 } else {
                     Image(systemName: "music.note")
                         .font(.system(size: 32, weight: .thin))

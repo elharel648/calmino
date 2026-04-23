@@ -17,15 +17,71 @@ struct SleepLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { EmptyView() }
-                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 6) {
+                        Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(context.attributes.babyName)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text(context.state.sleepType)
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(sleepColor)
+                        }
+                    }
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if context.state.isPaused {
+                        Text("מושהה")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.trailing)
+                    } else {
+                        Text(context.state.startTime, style: .timer)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if #available(iOS 17.0, *) {
+                        Button(intent: StopTimerIntent()) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("שמירה")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(sleepColor, in: Capsule())
+                        }
+                        .environment(\.layoutDirection, .rightToLeft)
+                    }
+                }
             } compactLeading: {
-                EmptyView()
+                Image(systemName: context.state.isPaused ? "pause.fill" : "moon.zzz.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
             } compactTrailing: {
-                EmptyView()
+                if context.state.isPaused {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                } else {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 11, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(sleepColor)
+                }
             } minimal: {
-                EmptyView()
+                Image(systemName: "moon.zzz.fill")
+                    .foregroundStyle(sleepColor)
             }
+            .widgetURL(URL(string: "calmparentapp://sleep")!)
         }
     }
 }

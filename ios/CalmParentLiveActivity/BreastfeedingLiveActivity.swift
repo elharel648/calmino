@@ -22,15 +22,88 @@ struct BreastfeedingLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { EmptyView() }
-                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 6) {
+                        Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(context.attributes.babyName)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text(context.state.activeSide == "left" ? "שמאל" : context.state.activeSide == "right" ? "ימין" : "הנקה")
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(breastfeedingColor)
+                        }
+                    }
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if context.state.isPaused {
+                        Text("מושהה")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.trailing)
+                    } else if let sideStart = context.state.sideStartTime {
+                        Text(sideStart, style: .timer)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if #available(iOS 17.0, *) {
+                        HStack(spacing: 10) {
+                            Button(intent: SwitchSideIntent()) {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "arrow.left.arrow.right")
+                                    Text("החלף")
+                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(breastfeedingColor.opacity(0.6), in: Capsule())
+                            }
+                            Button(intent: StopTimerIntent()) {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text("שמירה")
+                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(breastfeedingColor, in: Capsule())
+                            }
+                        }
+                        .environment(\.layoutDirection, .rightToLeft)
+                    }
+                }
             } compactLeading: {
-                EmptyView()
+                Image(systemName: context.state.isPaused ? "pause.fill" : "heart.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
             } compactTrailing: {
-                EmptyView()
+                if context.state.isPaused {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                } else if let sideStart = context.state.sideStartTime {
+                    Text(sideStart, style: .timer)
+                        .font(.system(size: 11, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(breastfeedingColor)
+                } else {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(breastfeedingColor)
+                }
             } minimal: {
-                EmptyView()
+                Image(systemName: "heart.fill")
+                    .foregroundStyle(breastfeedingColor)
             }
+            .widgetURL(URL(string: "calmparentapp://breastfeeding")!)
         }
     }
 }

@@ -19,15 +19,55 @@ struct BabysitterShiftLiveActivity: Widget {
             BabysitterShiftLockScreenView(context: context)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { EmptyView() }
-                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.blue)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(context.attributes.babysitterName)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text("בייביסיטר פעילה")
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if context.state.isPaused {
+                        Text("מושהה")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.trailing)
+                    } else {
+                        Text(context.state.startTime, style: .timer)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
             } compactLeading: {
-                EmptyView()
+                Image(systemName: context.state.isPaused ? "pause.fill" : "person.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(context.state.isPaused ? .orange : .blue)
             } compactTrailing: {
-                EmptyView()
+                if context.state.isPaused {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                } else {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 11, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.blue)
+                }
             } minimal: {
-                EmptyView()
+                Image(systemName: "person.fill")
+                    .foregroundStyle(.blue)
             }
+            .widgetURL(URL(string: "calmparentapp://babysitter")!)
         }
     }
 }
