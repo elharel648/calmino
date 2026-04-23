@@ -39,7 +39,26 @@
       "./plugins/withFirebaseWarningFix",
       "./plugins/withLiveActivity",
       "@react-native-google-signin/google-signin",
-      "@react-native-firebase/perf"
+      "@react-native-firebase/perf",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1959278551368310",
+          "clientToken": "dd0436ec2dcb8a66ad887e92e26d09cc",
+          "displayName": "Calmino",
+          "scheme": "fb1959278551368310",
+          "advertiserIDCollectionEnabled": true,
+          "autoLogAppEventsEnabled": true,
+          "isAutoInitEnabled": true,
+          "iosUserTrackingPermission": "Calmino אוספת מידע כדי להציג לך פרסומות מותאמות אישית ולשפר את חוויית השימוש שלך."
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Calmino אוספת מידע כדי להציג לך פרסומות מותאמות אישית ולשפר את חוויית השימוש שלך."
+        }
+      ]
     ],
     "splash": {
       "image": "./assets/splash-clean.png",

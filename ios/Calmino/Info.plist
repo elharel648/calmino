@@ -35,11 +35,36 @@
           <string>calmparentapp</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>fb1959278551368310</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>6</string>
+    <key>FacebookAdvertiserIDCollectionEnabled</key>
+    <true/>
+    <key>FacebookAppID</key>
+    <string>1959278551368310</string>
+    <key>FacebookAutoInitEnabled</key>
+    <true/>
+    <key>FacebookAutoLogAppEventsEnabled</key>
+    <true/>
+    <key>FacebookClientToken</key>
+    <string>dd0436ec2dcb8a66ad887e92e26d09cc</string>
+    <key>FacebookDisplayName</key>
+    <string>Calmino</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>fbapi</string>
+      <string>fb-messenger-api</string>
+      <string>fbauth2</string>
+      <string>fbshareextension</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -77,8 +102,21 @@
     <string>Allow $(PRODUCT_NAME) to access your reminders</string>
     <key>NSSupportsLiveActivities</key>
     <true/>
+    <key>NSUserTrackingUsageDescription</key>
+    <string>Calmino אוספת מידע כדי להציג לך פרסומות מותאמות אישית ולשפר את חוויית השימוש שלך.</string>
     <key>RCTNewArchEnabled</key>
     <true/>
+    <key>SKAdNetworkItems</key>
+    <array>
+      <dict>
+        <key>SKAdNetworkIdentifier</key>
+        <string>v9wttpbfk9.skadnetwork</string>
+      </dict>
+      <dict>
+        <key>SKAdNetworkIdentifier</key>
+        <string>n38lu8286q.skadnetwork</string>
+      </dict>
+    </array>
     <key>UIBackgroundModes</key>
     <array>
       <string>audio</string>

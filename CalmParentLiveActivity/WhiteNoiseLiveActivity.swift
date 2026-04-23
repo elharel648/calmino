@@ -14,6 +14,17 @@ struct WhiteNoiseLiveActivity: Widget {
         ActivityConfiguration(for: WhiteNoiseActivityAttributes.self) { context in
             WhiteNoiseLockScreenView(context: context)
                 .colorScheme(.dark)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+            } compactLeading: {
+                EmptyView()
+            } compactTrailing: {
+                EmptyView()
+            } minimal: {
+                EmptyView()
+            }
         }
     }
 }

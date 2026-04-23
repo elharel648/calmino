@@ -20,6 +20,17 @@ struct FeedingLiveActivity: Widget {
         ActivityConfiguration(for: MealActivityAttributes.self) { context in
             FeedingLockScreenView(context: context)
                 .colorScheme(.dark)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) { EmptyView() }
+                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+            } compactLeading: {
+                EmptyView()
+            } compactTrailing: {
+                EmptyView()
+            } minimal: {
+                EmptyView()
+            }
         }
     }
 }
@@ -72,13 +83,21 @@ struct FeedingLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 10) {
-                    Button(intent: StopTimerIntent()) {
+                    if #available(iOS 17.0, *) {
+                        Button(intent: StopTimerIntent()) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 58, height: 58)
+                                .background(feedingAccent, in: Circle())
+                                .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
+                        }
+                    } else {
                         Image(systemName: "checkmark")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 58, height: 58)
                             .background(feedingAccent, in: Circle())
-                            .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
                     }
                     Text("שמירה")
                         .font(.system(size: 12, weight: .semibold))
