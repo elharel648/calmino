@@ -573,11 +573,40 @@ function LiveActivityURLHandler() {
       }
     };
 
+    // Cold launch retry: AppState starts as 'active' so 'change' never fires on first open.
+    // We retry until activeChild is ready (it loads async from Firebase).
+    // Max 10 retries × 800ms = 8 seconds window.
+    // 'cancelled' flag prevents stale loops from running after effect cleanup.
+    let cancelled = false;
+    let coldLaunchAttempts = 0;
+    const maxColdLaunchAttempts = 10;
+    let coldLaunchTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const tryColdLaunchSync = async () => {
+      if (cancelled || coldLaunchAttempts >= maxColdLaunchAttempts) return;
+      coldLaunchAttempts++;
+
+      // If activeChild isn't ready yet, retry after a short delay
+      if (!activeChild?.childId || !auth.currentUser) {
+        logger.log(`⏳ Cold launch sync waiting for activeChild (attempt ${coldLaunchAttempts})...`);
+        coldLaunchTimer = setTimeout(tryColdLaunchSync, 800);
+        return;
+      }
+
+      // activeChild is ready — run the sync
+      if (!cancelled) await syncFromIntent();
+    };
+
+    // Start the cold launch sync after a brief initial delay
+    coldLaunchTimer = setTimeout(tryColdLaunchSync, 500);
+
     const appStateSubscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') syncFromIntent();
     });
 
     return () => {
+      cancelled = true;
+      if (coldLaunchTimer) clearTimeout(coldLaunchTimer);
       subscription.remove();
       appStateSubscription.remove();
     };
