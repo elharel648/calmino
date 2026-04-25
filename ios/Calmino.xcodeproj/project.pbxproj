@@ -550,7 +550,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CalmParentLiveActivity/CalmParentLiveActivity.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = Q5555SW7GS;
 				INFOPLIST_FILE = CalmParentLiveActivity/Info.plist;
