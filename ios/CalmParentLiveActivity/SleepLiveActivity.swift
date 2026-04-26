@@ -47,20 +47,18 @@ struct SleepLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if #available(iOS 17.0, *) {
-                        Button(intent: StopTimerIntent()) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("שמירה")
-                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                            .background(sleepColor, in: Capsule())
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("שמירה")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
                         }
-                        .environment(\.layoutDirection, .rightToLeft)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(sleepColor, in: Capsule())
                     }
+                    .environment(\.layoutDirection, .rightToLeft)
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.fill" : "moon.zzz.fill")
@@ -134,21 +132,13 @@ struct SleepLockScreenView: View {
 
                 // Right — controls
                 VStack(spacing: 10) {
-                    if #available(iOS 17.0, *) {
-                        Button(intent: StopTimerIntent()) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 58, height: 58)
-                                .background(sleepColor, in: Circle())
-                                .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
-                        }
-                    } else {
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 58, height: 58)
                             .background(sleepColor, in: Circle())
+                            .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
                     }
                     Text("שמירה")
                         .font(.system(size: 12, weight: .semibold))
