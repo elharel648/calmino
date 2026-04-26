@@ -225,10 +225,29 @@
 			productReference = 13B07F961A680F5B00A75B9A /* Calmino.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AA11BB22CC33DD44EE55FF66 /* Install LiveActivity Profile */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Install LiveActivity Profile";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "PROFILES_DIR=\"$HOME/Library/MobileDevice/Provisioning Profiles\"\nmkdir -p \"$PROFILES_DIR\"\nPROFILE_SRC=\"${SRCROOT}/LiveActivity_AppStore.mobileprovision\"\nif [ -f \"$PROFILE_SRC\" ]; then\n  cp \"$PROFILE_SRC\" \"$PROFILES_DIR/LiveActivity_AppStore.mobileprovision\"\n  echo \"LiveActivity profile installed\"\nfi\n";
+		};
 		7035D7395867423CA0C8BE16 /* CalmParentLiveActivity */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EF900952CEB5477788624EE9 /* Build configuration list for PBXNativeTarget "CalmParentLiveActivity" */;
 			buildPhases = (
+				AA11BB22CC33DD44EE55FF66 /* Install LiveActivity Profile */,
 				A64C419CB96649959F406B7D /* Sources */,
 				E03FECF161824A9C82E124D0 /* Frameworks */,
 				1719F1A47BAA439F97D35AAB /* Resources */,
