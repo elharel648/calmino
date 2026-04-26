@@ -41,7 +41,7 @@ struct SharedTimerState {
 
 // MARK: - App Intents
 
-@available(iOS 16.2, *)
+@available(iOS 17.0, *)
 struct PauseTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "השהה טיימר"
     static var description = IntentDescription("השהה את הטיימר המופעל")
@@ -112,7 +112,7 @@ struct PauseTimerIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 16.2, *)
+@available(iOS 17.0, *)
 struct ResumeTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "המשך טיימר"
     
@@ -175,7 +175,7 @@ struct ResumeTimerIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 16.2, *)
+@available(iOS 17.0, *)
 struct StopTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "סיים טיימר"
 
@@ -219,7 +219,7 @@ struct StopTimerIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 16.2, *)
+@available(iOS 17.0, *)
 struct SwitchSideIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "החלף צד"
     
