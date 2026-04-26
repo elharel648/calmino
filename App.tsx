@@ -489,6 +489,10 @@ function LiveActivityURLHandler() {
         } else if (path === 'stop-whitenoise' || url.href.includes('stop-whitenoise')) {
           try {
             await audio.stopSound();
+            if (Platform.OS === 'ios') {
+              const { liveActivityService } = await import('./services/liveActivityService');
+              await liveActivityService.stopWhiteNoise();
+            }
           } catch (error) {
             logger.error('Error stopping white noise from Live Activity:', error);
           }
