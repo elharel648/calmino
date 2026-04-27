@@ -23,16 +23,16 @@ struct BreastfeedingLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
-                            .font(.system(size: 16))
+                            .font(.system(size: 22, weight: .semibold))
                             .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
-                        VStack(alignment: .leading, spacing: 1) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.babyName)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
                             Text(context.state.activeSide == "left" ? "שמאל" : context.state.activeSide == "right" ? "ימין" : "הנקה")
-                                .font(.system(size: 10, design: .rounded))
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
                                 .foregroundStyle(breastfeedingColor)
                         }
                     }
@@ -40,12 +40,12 @@ struct BreastfeedingLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     if context.state.isPaused {
                         Text("מושהה")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.trailing)
                     } else if let sideStart = context.state.sideStartTime {
                         Text(sideStart, style: .timer)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.trailing)
@@ -57,23 +57,25 @@ struct BreastfeedingLiveActivity: Widget {
                         Link(destination: URL(string: "calmparentapp://switch-side?side=\(newSideDI)")!) {
                             HStack(spacing: 5) {
                                 Image(systemName: "arrow.left.arrow.right")
+                                    .font(.system(size: 14))
                                 Text("החלף")
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 12)
                             .background(breastfeedingColor.opacity(0.6), in: Capsule())
                         }
                         Link(destination: URL(string: "calmparentapp://stop-timer?type=breast")!) {
                             HStack(spacing: 5) {
                                 Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 14))
                                 Text("שמירה")
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 12)
                             .background(breastfeedingColor, in: Capsule())
                         }
                     }

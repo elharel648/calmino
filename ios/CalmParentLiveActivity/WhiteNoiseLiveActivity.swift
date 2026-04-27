@@ -17,23 +17,23 @@ struct WhiteNoiseLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image(systemName: "speaker.wave.3.fill")
-                            .font(.system(size: 16))
+                            .font(.system(size: 22, weight: .semibold))
                             .foregroundStyle(noiseColor)
-                        VStack(alignment: .leading, spacing: 1) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.soundName)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
                             Text("רעש לבן")
-                                .font(.system(size: 10, design: .rounded))
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
                                 .foregroundStyle(noiseColor)
                         }
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(context.state.startTime, style: .timer)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.trailing)
@@ -42,12 +42,13 @@ struct WhiteNoiseLiveActivity: Widget {
                     Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
                         HStack(spacing: 6) {
                             Image(systemName: "stop.fill")
+                                .font(.system(size: 16))
                             Text("כיבוי")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 12)
                         .background(Color.red.opacity(0.8), in: Capsule())
                     }
                     .environment(\.layoutDirection, .rightToLeft)

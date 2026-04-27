@@ -23,16 +23,16 @@ struct FeedingLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image(systemName: feedingIconName(context.state.mealType))
-                            .font(.system(size: 16))
+                            .font(.system(size: 22, weight: .semibold))
                             .foregroundStyle(feedingAccent)
-                        VStack(alignment: .leading, spacing: 1) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.babyName)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
                             Text(feedingTypeHebrew(context.state.mealType))
-                                .font(.system(size: 10, design: .rounded))
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
                                 .foregroundStyle(feedingAccent)
                         }
                     }
@@ -40,12 +40,12 @@ struct FeedingLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     if context.state.isPaused {
                         Text("מושהה")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.trailing)
                     } else {
                         Text(context.state.startTime, style: .timer)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.trailing)
@@ -55,12 +55,13 @@ struct FeedingLiveActivity: Widget {
                     Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
                         HStack(spacing: 6) {
                             Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16))
                             Text("שמירה")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 12)
                         .background(feedingAccent, in: Capsule())
                     }
                     .environment(\.layoutDirection, .rightToLeft)
