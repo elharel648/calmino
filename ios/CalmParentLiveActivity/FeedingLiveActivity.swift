@@ -52,19 +52,20 @@ struct FeedingLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 16))
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(height: 0.5)
+                            .padding(.bottom, 10)
+                        Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
                             Text("שמירה")
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(feedingAccent.opacity(0.9), in: Capsule())
                         }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(feedingAccent, in: Capsule())
                     }
-                    .environment(\.layoutDirection, .rightToLeft)
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.fill" : feedingIconName(context.state.mealType))
