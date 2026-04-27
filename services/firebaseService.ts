@@ -298,9 +298,11 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
       let allEvents = [...events];
       
       if (cached) {
-         const parsed = JSON.parse(cached).map((item: any) => ({
+         let parsedRaw: any[];
+         try { parsedRaw = JSON.parse(cached); } catch { parsedRaw = []; }
+         const parsed = parsedRaw.map((item: any) => ({
              ...item,
-             timestamp: new Date(item.timestamp)
+             timestamp: item.timestamp ? new Date(item.timestamp) : new Date()
          }));
          
          // Merge events that aren't already explicitly pulled from Firebase cache

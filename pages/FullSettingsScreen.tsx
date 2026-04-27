@@ -298,7 +298,7 @@ if (data.settings.language !== undefined) {
   };
 
   const handleDeleteChild = async () => {
-    if (!activeChild) return Alert.alert(t('common.error'), t('alerts.noChildSelected'));
+    if (!activeChild?.childId) return Alert.alert(t('common.error'), t('alerts.noChildSelected'));
 
     // Only the baby's creator (parentUid) can delete the child
     const currentUid = auth.currentUser?.uid;
@@ -306,7 +306,7 @@ if (data.settings.language !== undefined) {
       return Alert.alert(t('common.error'), t('settings.onlyCreatorCanDelete'));
     }
 
-    const childName = activeChild.childName;
+    const childName = activeChild.childName ?? '';
 
     Alert.alert(
       `${t('alerts.deleteChild')} ${childName}?`,
@@ -327,7 +327,7 @@ if (data.settings.language !== undefined) {
                   style: 'destructive',
                   onPress: async () => {
                     try {
-                      const deletedChildId = activeChild.childId;
+                      const deletedChildId = activeChild?.childId;
                       await deleteChild(deletedChildId);
 
                       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

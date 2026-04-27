@@ -292,7 +292,7 @@ export default function ReportsScreen() {
       // Main query - optimized with order and limit
       const q = query(
         collection(db, 'events'),
-        where('childId', '==', activeChild.childId),
+        where('childId', '==', activeChild?.childId),
         where('timestamp', '>=', Timestamp.fromDate(start)),
         where('timestamp', '<=', Timestamp.fromDate(end)),
         orderBy('timestamp', 'desc'),
@@ -484,7 +484,7 @@ export default function ReportsScreen() {
 
         const prevQ = query(
           collection(db, 'events'),
-          where('childId', '==', activeChild.childId),
+          where('childId', '==', activeChild?.childId),
           where('timestamp', '>=', Timestamp.fromDate(prevStart)),
           where('timestamp', '<=', Timestamp.fromDate(endOfDay(prevEnd)))
         );
@@ -543,7 +543,7 @@ export default function ReportsScreen() {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const q = query(
       collection(db, 'events'),
-      where('childId', '==', activeChild.childId),
+      where('childId', '==', activeChild?.childId),
       limit(1)
     );
     const unsub = onSnapshot(q, () => {
@@ -551,7 +551,7 @@ export default function ReportsScreen() {
       // Debounce on Android to prevent rapid re-fetches causing animation loops
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => fetchDataRef.current(), Platform.OS === 'android' ? 2000 : 500);
-    }, () => {}); // ignore errors silently
+    }, (err) => { logger.warn('[ReportsScreen] Firestore listener error:', err); });
     return () => { unsub(); if (debounceTimer) clearTimeout(debounceTimer); };
   }, [activeChild?.childId]);
 

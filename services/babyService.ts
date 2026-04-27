@@ -338,7 +338,8 @@ export const checkIfBabyExists = async (): Promise<boolean> => {
     // OFFLINE FALLBACK: If Firebase queries yielded nothing (e.g. cache miss when offline), pull from AsyncStorage
     const cached = await AsyncStorage.getItem('offline_childrenList');
     if (cached) {
-      const parsed = JSON.parse(cached);
+      let parsed: any;
+      try { parsed = JSON.parse(cached); } catch { parsed = null; }
       if (parsed && Array.isArray(parsed) && parsed.length > 0) {
         return true;
       }

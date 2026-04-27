@@ -217,7 +217,8 @@ const ParentBookingsScreen = ({ navigation }: any) => {
                             try {
                                 const sitterToken = await getUserPushToken(booking.babysitterId);
                                 if (sitterToken) {
-                                    const userDoc = await getDoc(doc(db, 'users', auth.currentUser?.uid || ''));
+                                    if (!auth.currentUser?.uid) return;
+                                    const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
                                     const parentName = userDoc.data()?.displayName || 'הורה';
                                     await sendPushNotification(
                                         sitterToken,
