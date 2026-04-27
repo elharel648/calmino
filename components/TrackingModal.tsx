@@ -208,8 +208,7 @@ const IsolatedDurationPicker = ({
   }
 
   const [date, setDate] = useState(() => {
-    const d = new Date(0);
-    d.setHours(initialHours, initialMinutes, 0, 0);
+    const d = new Date(2020, 0, 1, initialHours, initialMinutes, 0, 0);
     return d;
   });
 
