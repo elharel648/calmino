@@ -27,18 +27,38 @@ struct BreastfeedingLiveActivity: Widget {
             DynamicIsland {
                 // Expanded Region
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
-                        if #available(iOS 17.0, *) {
-                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
-                                .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
-                                .symbolEffect(.pulse, isActive: !context.state.isPaused)
-                        } else {
-                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
-                                .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
+                    VStack(alignment: .leading, spacing: 6) {
+                        // Header
+                        HStack(spacing: 6) {
+                            if #available(iOS 17.0, *) {
+                                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
+                                    .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
+                                    .symbolEffect(.pulse, isActive: !context.state.isPaused)
+                            } else {
+                                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "heart.fill")
+                                    .foregroundStyle(context.state.isPaused ? .orange : breastfeedingColor)
+                            }
+                            Text("הנקה")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
                         }
-                        Text("הנקה")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+
+                        // Switch Side — one interactive element in leading region
+                        if #available(iOS 17.0, *) {
+                            Button(intent: SwitchSideIntent()) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.left.arrow.right")
+                                        .font(.system(size: 11, weight: .bold))
+                                    Text(context.state.activeSide == "left" ? "שמאל" : "ימין")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(breastfeedingColor.opacity(0.35), in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.leading, 8)
                 }
@@ -58,49 +78,29 @@ struct BreastfeedingLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
+                    // ONE interactive element only per region — Apple constraint
                     if #available(iOS 17.0, *) {
-                        HStack(spacing: 16) {
-                            // Save — App Intent
-                            Button(intent: StopTimerIntent()) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 13, weight: .bold))
-                                    Text("שמירה")
-                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 12)
-                                .background(breastfeedingColor.opacity(0.9), in: Capsule())
-                                .contentShape(Capsule())
+                        Button(intent: StopTimerIntent()) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 14, weight: .bold))
+                                Text("שמירה וסיום")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
                             }
-                            .buttonStyle(.plain)
-
-                            // Switch Side — App Intent
-                            Button(intent: SwitchSideIntent()) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "arrow.left.arrow.right")
-                                        .font(.system(size: 13, weight: .bold))
-                                    Text(context.state.activeSide == "left" ? "שמאל" : "ימין")
-                                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 12)
-                                .background(breastfeedingColor.opacity(0.3), in: Capsule())
-                                .contentShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(breastfeedingColor.opacity(0.9), in: Capsule())
                         }
+                        .buttonStyle(.plain)
                         .padding(.top, 8)
                         .padding(.bottom, 6)
                     } else {
-                        // iOS 16 fallback — Link only
                         Link(destination: URL(string: "calmparentapp://stop-timer?type=breast")!) {
                             Text("שמירה וסיום")
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 24)
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(breastfeedingColor.opacity(0.9), in: Capsule())
                         }
