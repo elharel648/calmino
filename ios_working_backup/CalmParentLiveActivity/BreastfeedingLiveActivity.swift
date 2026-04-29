@@ -78,34 +78,21 @@ struct BreastfeedingLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    // ONE interactive element only per region — Apple constraint
-                    if #available(iOS 17.0, *) {
-                        Button(intent: StopTimerIntent()) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 14, weight: .bold))
-                                Text("שמירה וסיום")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(breastfeedingColor.opacity(0.9), in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, 8)
-                        .padding(.bottom, 6)
-                    } else {
-                        Link(destination: URL(string: "calmparentapp://stop-timer?type=breast")!) {
+                    // ONE element — Link opens app for saving (no conflict, SwitchSide is in .leading)
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=breast")!) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
                             Text("שמירה וסיום")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(breastfeedingColor.opacity(0.9), in: Capsule())
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
                         }
-                        .padding(.bottom, 6)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(breastfeedingColor.opacity(0.9), in: Capsule())
                     }
+                    .padding(.top, 8)
+                    .padding(.bottom, 6)
                 }
             } compactLeading: {
                 if #available(iOS 17.0, *) {
