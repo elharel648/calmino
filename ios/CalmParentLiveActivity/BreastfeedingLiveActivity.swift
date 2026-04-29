@@ -236,18 +236,30 @@ struct BreastfeedingLockScreenView: View {
 
                 // Right — controls (no RTL env — it breaks tap areas)
                 VStack(spacing: 14) {
-                    // Switch side — Link opens app to switch side
-                    let newSide = context.state.activeSide == "left" ? "right" : "left"
-                    Link(destination: URL(string: "calmparentapp://switch-side?side=\(newSide)")!) {
-                        Image(systemName: "arrow.left.arrow.right")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 46, height: 46)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                    // Switch side — App Intent: runs IN BACKGROUND, no app open needed
+                    if #available(iOS 17.0, *) {
+                        Button(intent: SwitchSideIntent()) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 46, height: 46)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        // iOS 16 fallback
+                        Link(destination: URL(string: "calmparentapp://switch-side?side=\(context.state.activeSide == "left" ? "right" : "left")")!) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 46, height: 46)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                        }
                     }
 
-                    // Stop — Link opens app for saving
+                    // Stop — Link opens app for saving (intentional — we need the save UI)
                     Link(destination: URL(string: "calmparentapp://stop-timer?type=breast")!) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 18, weight: .bold))
