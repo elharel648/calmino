@@ -103,7 +103,6 @@ struct FeedingLockScreenView: View {
 
     var body: some View {
         ZStack {
-            // Background
             Rectangle()
                 .fill(Color.black)
             RadialGradient(
@@ -113,55 +112,52 @@ struct FeedingLockScreenView: View {
                 endRadius: 200
             )
 
-            HStack(alignment: .center, spacing: 0) {
-                // Left — info + timer
-                VStack(alignment: .leading, spacing: 8) {
-                    // Header
+            VStack(spacing: 12) {
+                HStack(alignment: .center, spacing: 0) {
+                    // Left — info + timer
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : feedingIconName(context.state.mealType))
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(context.state.isPaused ? .orange : feedingAccent)
+                            Text("\(context.attributes.babyName) · \(feedingTypeHebrew(context.state.mealType))")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.75))
+                        }
+
+                        if context.state.isPaused {
+                            Text("מושהה")
+                                .font(.system(size: 38, weight: .bold, design: .rounded))
+                                .foregroundStyle(.orange)
+                        } else {
+                            Text(context.state.startTime, style: .timer)
+                                .font(.system(size: 38, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    Spacer()
+                }
+
+                // Full-width stop capsule — consistent with Dynamic Island
+                Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
                     HStack(spacing: 8) {
-                        Image(systemName: context.state.isPaused ? "pause.circle.fill" : feedingIconName(context.state.mealType))
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(context.state.isPaused ? .orange : feedingAccent)
-                        Text("\(context.attributes.babyName) · \(feedingTypeHebrew(context.state.mealType))")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
-
-                    // Timer
-                    if context.state.isPaused {
-                        Text("מושהה")
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .foregroundStyle(.orange)
-                    } else {
-                        Text(context.state.startTime, style: .timer)
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.white)
-                    }
-                }
-
-                Spacer()
-
-                // Right — controls
-                VStack(spacing: 10) {
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 58, height: 58)
-                            .background(feedingAccent, in: Circle())
-                            .shadow(color: feedingAccent.opacity(0.4), radius: 8, y: 4)
+                            .font(.system(size: 14, weight: .bold))
+                        Text("שמירה וסיום")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
-                    Text("שמירה")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(feedingAccent.opacity(0.9), in: Capsule())
                 }
-                .environment(\.layoutDirection, .rightToLeft)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
         }
         .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 0))
+        .clipShape(ContainerRelativeShape())
     }
 }
 

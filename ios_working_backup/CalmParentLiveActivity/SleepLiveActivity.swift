@@ -134,63 +134,58 @@ struct SleepLockScreenView: View {
                 .blur(radius: 30)
                 .offset(x: -100, y: 50)
 
-            HStack(alignment: .center, spacing: 0) {
-                // Left — info + timer
-                VStack(alignment: .leading, spacing: 8) {
-                    // Header
-                    HStack(spacing: 8) {
-                        if #available(iOS 17.0, *) {
-                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
-                                .symbolEffect(.pulse, isActive: !context.state.isPaused)
-                        } else {
-                            Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
+            VStack(spacing: 12) {
+                HStack(alignment: .center, spacing: 0) {
+                    // Left — info + timer
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            if #available(iOS 17.0, *) {
+                                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
+                                    .symbolEffect(.pulse, isActive: !context.state.isPaused)
+                            } else {
+                                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "moon.zzz.fill")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(context.state.isPaused ? .orange : sleepColor)
+                            }
+                            Text("\(context.attributes.babyName) · \(context.state.sleepType)")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.9))
                         }
-                        
-                        Text("\(context.attributes.babyName) · \(context.state.sleepType)")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
 
-                    // Timer
-                    if context.state.isPaused {
-                        Text("מושהה")
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .foregroundStyle(.orange)
-                            .shadow(color: .orange.opacity(0.4), radius: 8, y: 2)
-                    } else {
-                        Text(context.state.startTime, style: .timer)
-                            .font(.system(size: 40, weight: .heavy, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.white)
-                            .shadow(color: .white.opacity(0.3), radius: 5, y: 2)
+                        if context.state.isPaused {
+                            Text("מושהה")
+                                .font(.system(size: 38, weight: .bold, design: .rounded))
+                                .foregroundStyle(.orange)
+                                .shadow(color: .orange.opacity(0.4), radius: 8, y: 2)
+                        } else {
+                            Text(context.state.startTime, style: .timer)
+                                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundStyle(.white)
+                                .shadow(color: .white.opacity(0.3), radius: 5, y: 2)
+                        }
                     }
+                    Spacer()
                 }
 
-                Spacer()
-
-                // Right — controls
-                VStack(spacing: 10) {
-                    // Stop must ALWAYS be a Deep Link so it opens the app for saving!
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                // Full-width stop capsule — consistent with Dynamic Island
+                Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                    HStack(spacing: 8) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 58, height: 58)
-                            .background(sleepColor, in: Circle())
-                            .shadow(color: sleepColor.opacity(0.4), radius: 8, y: 4)
+                            .font(.system(size: 14, weight: .bold))
+                        Text("שמירה וסיום")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
-                    Text("שמירה")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(sleepColor.opacity(0.9), in: Capsule())
                 }
-                .environment(\.layoutDirection, .rightToLeft)
             }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 18)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
         }
         .frame(maxWidth: .infinity)
         .clipShape(ContainerRelativeShape())

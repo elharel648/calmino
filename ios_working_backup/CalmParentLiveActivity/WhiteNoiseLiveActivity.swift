@@ -93,41 +93,43 @@ struct WhiteNoiseLockScreenView: View {
                 endRadius: 200
             )
             
-            HStack(alignment: .center, spacing: 0) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "speaker.wave.3.fill")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(noiseColor)
-                        Text(context.attributes.soundName)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.75))
+            VStack(spacing: 12) {
+                HStack(alignment: .center, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "speaker.wave.3.fill")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(noiseColor)
+                            Text(context.attributes.soundName)
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.75))
+                        }
+                        Text(context.state.startTime, style: .timer)
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
                     }
-                    Text(context.state.startTime, style: .timer)
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
+                    Spacer()
                 }
-                
-                Spacer()
-                
+
+                // Full-width stop capsule — consistent with other activities
                 Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image(systemName: "stop.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         Text("כיבוי")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.red.opacity(0.8), in: Capsule())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(noiseColor.opacity(0.8), in: Capsule())
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
         }
         .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 0))
+        .clipShape(ContainerRelativeShape())
     }
 }
