@@ -58,12 +58,16 @@ struct FeedingLiveActivity: Widget {
                             .frame(height: 0.5)
                             .padding(.bottom, 10)
                         Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
-                            Text("שמירה")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(feedingAccent.opacity(0.9), in: Capsule())
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 15, weight: .bold))
+                                Text("שמירה וסיום")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(feedingAccent.opacity(0.9), in: Capsule())
                         }
                     }
                 }

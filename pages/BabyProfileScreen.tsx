@@ -100,21 +100,22 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } else {
-      if (selectedDate) setPendingDate(selectedDate);
+      // iOS: Update the birth date INSTANTLY as the user scrolls the wheel!
+      // This fixes the drop-off issue where users scrolled but forgot to click "Confirm".
+      if (selectedDate) {
+        setBirthDate(selectedDate);
+        if (Platform.OS !== 'web') Haptics.selectionAsync();
+      }
     }
   };
 
   const handleDateConfirm = () => {
-    const chosen = pendingDate ?? birthDate ?? new Date();
-    setBirthDate(chosen);
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowDatePicker(false);
-    setPendingDate(null);
   };
 
   const handleDateCancel = () => {
     setShowDatePicker(false);
-    setPendingDate(null);
   };
 
   const handleGenderSelect = (selected: 'boy' | 'girl') => {
@@ -263,27 +264,49 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
             />
           )}
 
-          {showDatePicker && Platform.OS === 'ios' && (
-            <View style={styles.datePickerIosWrapper}>
-              <View style={styles.datePickerHeader}>
-                <TouchableOpacity onPress={handleDateCancel} style={styles.datePickerHeaderBtn}>
-                  <Text style={styles.datePickerCancel}>{t('common.cancel')}</Text>
+          {/* iOS Date Picker — Premium Bottom Sheet (no confirm/cancel friction) */}
+          {Platform.OS === 'ios' && (
+            <Modal
+              visible={showDatePicker}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setShowDatePicker(false)}
+            >
+              <TouchableOpacity
+                style={styles.datePickerOverlay}
+                activeOpacity={1}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <TouchableOpacity activeOpacity={1} style={styles.datePickerSheet}>
+                  {/* Handle */}
+                  <View style={styles.datePickerHandle} />
+
+                  {/* Title */}
+                  <Text style={styles.datePickerTitle}>{t('child.birthDate')}</Text>
+
+                  {/* Picker — updates live on scroll, no confirm needed */}
+                  <DateTimePicker
+                    value={birthDate ?? new Date()}
+                    mode="date"
+                    display="spinner"
+                    locale="he"
+                    maximumDate={new Date()}
+                    onChange={onDateChange}
+                    style={{ width: '100%' }}
+                    textColor={theme.textPrimary}
+                  />
+
+                  {/* Done button */}
+                  <TouchableOpacity
+                    style={[styles.datePickerDoneBtn, { backgroundColor: theme.primary }]}
+                    onPress={() => setShowDatePicker(false)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.datePickerDoneText}>{'סיום'}</Text>
+                  </TouchableOpacity>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleDateConfirm} style={styles.datePickerHeaderBtn}>
-                  <Text style={styles.datePickerConfirm}>{t('common.confirm')}</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={pendingDate ?? birthDate ?? new Date()}
-                mode="date"
-                display="spinner"
-                locale="he"
-                maximumDate={new Date()}
-                onChange={onDateChange}
-                style={{ width: '100%' }}
-                textColor={theme.textPrimary}
-              />
-            </View>
+              </TouchableOpacity>
+            </Modal>
           )}
 
           {/* Premium Submit Button */}
@@ -527,38 +550,55 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // iOS date picker wrapper
-  datePickerIosWrapper: {
-    marginTop: -8,
-    marginBottom: 24,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+  // iOS Date Picker — Premium Bottom Sheet
+  datePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
   },
-  datePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  datePickerSheet: {
+    backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 34,
+    paddingTop: 12,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 20,
   },
-  datePickerHeaderBtn: {
-    minWidth: 60,
+  datePickerHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+    marginBottom: 16,
   },
-  datePickerCancel: {
-    fontSize: 16,
-    textAlign: 'right',
-    color: theme.textSecondary,
+  datePickerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: isDarkMode ? '#FFFFFF' : '#1C1C1E',
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  datePickerConfirm: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.primary,
-    textAlign: 'left',
+  datePickerDoneBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#C8806A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  datePickerDoneText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
   },
 
   // Submit button

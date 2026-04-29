@@ -18,69 +18,60 @@ struct WhiteNoiseLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .font(.system(size: 18, weight: .semibold))
+                        Image(systemName: "speaker.wave.3.fill")
+                            .font(.system(size: 22, weight: .semibold))
                             .foregroundStyle(noiseColor)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("מנגן כרגע")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
                             Text(context.attributes.soundName)
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.5))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                            Text("רעש לבן")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(noiseColor)
                         }
                     }
-                    .padding(.leading, 4)
                 }
-                
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(context.state.startTime, style: .timer)
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.white)
-                        .padding(.trailing, 4)
+                        .multilineTextAlignment(.trailing)
                 }
-                
                 DynamicIslandExpandedRegion(.bottom) {
-                    if #available(iOS 17, *) {
-                        HStack {
-                            Spacer()
-                            
-                            // Close/Turn-off (Deep Link to open the app)
-                            Link(destination: URL(string: "calmino://white-noise?action=stop")!) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "stop.fill")
-                                        .font(.system(size: 12, weight: .bold))
-                                    Text("כיבוי")
-                                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.red.opacity(0.8), in: Capsule())
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(height: 0.5)
+                            .padding(.bottom, 10)
+                        Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                Text("כיבוי")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
                             }
-                            
-                            Spacer()
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.red.opacity(0.75), in: Capsule())
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 8)
-                        .environment(\.layoutDirection, .rightToLeft)
                     }
                 }
             } compactLeading: {
                 Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(noiseColor)
             } compactTrailing: {
                 Text(context.state.startTime, style: .timer)
+                    .font(.system(size: 11, weight: .semibold))
                     .monospacedDigit()
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(noiseColor)
             } minimal: {
-                Image(systemName: "speaker.wave.3.fill")
-                    .font(.system(size: 13))
+                Image(systemName: "speaker.wave.2.fill")
                     .foregroundStyle(noiseColor)
             }
+            .widgetURL(URL(string: "calmparentapp://white-noise")!)
         }
     }
 }
@@ -120,31 +111,17 @@ struct WhiteNoiseLockScreenView: View {
                 
                 Spacer()
                 
-                if #available(iOS 17, *) {
-                    HStack {
-                        Spacer()
-                        
-                        // Close/Turn-off (Deep Link to open the app)
-                        Link(destination: URL(string: "calmino://white-noise?action=stop")!) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "stop.fill")
-                                    .font(.system(size: 12, weight: .bold))
-                                Text("כיבוי")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.red.opacity(0.8), in: Capsule())
-                        }
-                        
-                        Spacer()
+                Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 12, weight: .bold))
+                        Text("כיבוי")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
                     }
-                    .environment(\.layoutDirection, .rightToLeft)
-                } else {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 32, weight: .thin))
-                        .foregroundStyle(noiseColor.opacity(0.35))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.red.opacity(0.8), in: Capsule())
                 }
             }
             .padding(.horizontal, 20)

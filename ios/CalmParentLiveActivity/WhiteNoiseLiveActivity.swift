@@ -45,12 +45,16 @@ struct WhiteNoiseLiveActivity: Widget {
                             .frame(height: 0.5)
                             .padding(.bottom, 10)
                         Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
-                            Text("כיבוי")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color.red.opacity(0.75), in: Capsule())
+                            HStack(spacing: 8) {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                Text("כיבוי")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.red.opacity(0.75), in: Capsule())
                         }
                     }
                 }
