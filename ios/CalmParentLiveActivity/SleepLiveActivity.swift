@@ -140,7 +140,7 @@ struct SleepLockScreenView: View {
                     // Right side — info + timer (RTL)
                     VStack(alignment: .trailing, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text("\(context.attributes.babyName) \u00b7 \(context.state.sleepType)")
+                            Text("\(context.attributes.babyName) · \(context.state.sleepType)")
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.9))
                             if #available(iOS 17.0, *) {
@@ -156,7 +156,7 @@ struct SleepLockScreenView: View {
                         }
 
                         if context.state.isPaused {
-                            Text("\u05de\u05d5\u05e9\u05d4\u05d4")
+                            Text("מושהה")
                                 .font(.system(size: 38, weight: .bold, design: .rounded))
                                 .foregroundStyle(.orange)
                                 .shadow(color: .orange.opacity(0.4), radius: 8, y: 2)
@@ -176,7 +176,7 @@ struct SleepLockScreenView: View {
                 // Full-width stop capsule
                 Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
                     HStack(spacing: 8) {
-                        Text("\u05e9\u05de\u05d9\u05e8\u05d4 \u05d5\u05e1\u05d9\u05d5\u05dd")
+                        Text("שמירה וסיום")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                         Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .bold))

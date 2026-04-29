@@ -118,7 +118,7 @@ struct WhiteNoiseLockScreenView: View {
                 // Full-width stop capsule
                 Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
                     HStack(spacing: 8) {
-                        Text("\u05db\u05d9\u05d1\u05d5\u05d9")
+                        Text("כיבוי")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                         Image(systemName: "stop.fill")
                             .font(.system(size: 14, weight: .bold))
