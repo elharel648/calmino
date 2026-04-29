@@ -43,21 +43,19 @@ struct BreastfeedingLiveActivity: Widget {
                                 .foregroundColor(.white)
                         }
 
-                        // Switch Side — one interactive element in leading region
-                        if #available(iOS 17.0, *) {
-                            Button(intent: SwitchSideIntent()) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.left.arrow.right")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text(context.state.activeSide == "left" ? "שמאל" : "ימין")
-                                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                                }
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(breastfeedingColor.opacity(0.35), in: Capsule())
+                        // Switch Side — Link (reliable across DI + Lock Screen)
+                        let newSide = context.state.activeSide == "left" ? "right" : "left"
+                        Link(destination: URL(string: "calmparentapp://switch-side?side=\(newSide)")!) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.left.arrow.right")
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(context.state.activeSide == "left" ? "שמאל" : "ימין")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
                             }
-                            .buttonStyle(.plain)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(breastfeedingColor.opacity(0.35), in: Capsule())
                         }
                     }
                     .padding(.leading, 8)
