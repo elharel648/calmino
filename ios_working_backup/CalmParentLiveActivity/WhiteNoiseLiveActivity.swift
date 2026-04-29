@@ -95,30 +95,33 @@ struct WhiteNoiseLockScreenView: View {
             
             VStack(spacing: 12) {
                 HStack(alignment: .center, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 6) {
+                    Spacer()
+                    // Right side — info + timer (RTL)
+                    VStack(alignment: .trailing, spacing: 6) {
                         HStack(spacing: 8) {
-                            Image(systemName: "speaker.wave.3.fill")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(noiseColor)
                             Text(context.attributes.soundName)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.75))
+                            Image(systemName: "speaker.wave.3.fill")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(noiseColor)
                         }
                         Text(context.state.startTime, style: .timer)
                             .font(.system(size: 38, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(.white)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    Spacer()
                 }
 
-                // Full-width stop capsule — consistent with other activities
+                // Full-width stop capsule
                 Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
                     HStack(spacing: 8) {
+                        Text("\u05db\u05d9\u05d1\u05d5\u05d9")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                         Image(systemName: "stop.fill")
                             .font(.system(size: 14, weight: .bold))
-                        Text("כיבוי")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)

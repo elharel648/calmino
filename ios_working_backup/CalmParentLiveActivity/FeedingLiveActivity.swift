@@ -114,38 +114,41 @@ struct FeedingLockScreenView: View {
 
             VStack(spacing: 12) {
                 HStack(alignment: .center, spacing: 0) {
-                    // Left — info + timer
-                    VStack(alignment: .leading, spacing: 6) {
+                    Spacer()
+                    // Right side — info + timer (RTL: content on right)
+                    VStack(alignment: .trailing, spacing: 6) {
                         HStack(spacing: 8) {
+                            Text("\(context.attributes.babyName) \u00b7 \(feedingTypeHebrew(context.state.mealType))")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.75))
                             Image(systemName: context.state.isPaused ? "pause.circle.fill" : feedingIconName(context.state.mealType))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(context.state.isPaused ? .orange : feedingAccent)
-                            Text("\(context.attributes.babyName) · \(feedingTypeHebrew(context.state.mealType))")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.75))
                         }
 
                         if context.state.isPaused {
-                            Text("מושהה")
+                            Text("\u05de\u05d5\u05e9\u05d4\u05d4")
                                 .font(.system(size: 38, weight: .bold, design: .rounded))
                                 .foregroundStyle(.orange)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                         } else {
                             Text(context.state.startTime, style: .timer)
                                 .font(.system(size: 38, weight: .bold, design: .rounded))
                                 .monospacedDigit()
                                 .foregroundStyle(.white)
+                                .multilineTextAlignment(.trailing)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                     }
-                    Spacer()
                 }
 
-                // Full-width stop capsule — consistent with Dynamic Island
+                // Full-width stop capsule
                 Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
                     HStack(spacing: 8) {
+                        Text("\u05e9\u05de\u05d9\u05e8\u05d4 \u05d5\u05e1\u05d9\u05d5\u05dd")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                         Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .bold))
-                        Text("שמירה וסיום")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
