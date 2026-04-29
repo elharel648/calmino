@@ -234,21 +234,20 @@ struct BreastfeedingLockScreenView: View {
 
                 Spacer()
 
-                // Right — controls
+                // Right — controls (no RTL env — it breaks tap areas)
                 VStack(spacing: 14) {
-                    if #available(iOS 17.0, *) {
-                        // Switch side (Pill shape)
-                        Button(intent: SwitchSideIntent()) {
-                            Image(systemName: "arrow.left.arrow.right")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 46, height: 46)
-                                .background(.ultraThinMaterial, in: Circle())
-                                .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
-                        }
+                    // Switch side — Link opens app to switch side
+                    let newSide = context.state.activeSide == "left" ? "right" : "left"
+                    Link(destination: URL(string: "calmparentapp://switch-side?side=\(newSide)")!) {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
                     }
 
-                    // Stop (Distinct shape)
+                    // Stop — Link opens app for saving
                     Link(destination: URL(string: "calmparentapp://stop-timer?type=breast")!) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 18, weight: .bold))
@@ -258,7 +257,6 @@ struct BreastfeedingLockScreenView: View {
                             .shadow(color: breastfeedingColor.opacity(0.4), radius: 8, y: 4)
                     }
                 }
-                .environment(\.layoutDirection, .rightToLeft)
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 18)
