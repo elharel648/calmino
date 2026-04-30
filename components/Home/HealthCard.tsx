@@ -148,10 +148,10 @@ const AnimatedVaccineRow = ({ vaccine, isDone, justCompleted, theme, isDarkMode,
 
     const animatedBg = rowBg.interpolate({
         inputRange: [0, 1],
-        outputRange: [isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF', isDarkMode ? 'rgba(107, 154, 196, 0.1)' : 'rgba(107, 154, 196, 0.08)'],
+        outputRange: [isDarkMode ? 'rgba(255,255,255,0.04)' : '#FFFFFF', isDarkMode ? 'rgba(0, 0, 0, 0.05)' : 'rgba(0, 0, 0, 0.04)'],
     });
 
-    const healthColor = '#6B9AC4'; // Steel blue matching reference design
+    const healthColor = '#94A3B8'; // Steel blue matching reference design
 
     return (
         <Animated.View style={[
@@ -1091,8 +1091,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <TouchableWithoutFeedback>
                                 <View style={[styles.datePickerCard, { width: '85%', padding: 24, alignItems: 'flex-end' }]}>
                             <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 12, gap: 12 }}>
-                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(107, 154, 196, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Info size={20} color="#6B9AC4" />
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0, 0, 0, 0.04)', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Info size={20} color="#94A3B8" />
                                 </View>
                                 <Text style={[styles.datePickerTitle, { flex: 1, textAlign: 'right', marginBottom: 0 }]}>{selectedVaccineInfo.name}</Text>
                             </View>
@@ -1171,7 +1171,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}>
                         {doneVaccines}/{totalVaccines} {t('health.vaccinesCompleted') || 'חיסונים הושלמו'}
                     </Text>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#6B9AC4' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#94A3B8' }}>
                         {Math.round(progress * 100)}%
                     </Text>
                 </View>
@@ -1179,7 +1179,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     <View style={{
                         height: 8,
                         width: `${Math.round(progress * 100)}%`,
-                        backgroundColor: '#6B9AC4',
+                        backgroundColor: '#94A3B8',
                         borderRadius: 4,
                     }} />
                 </View>
@@ -1188,21 +1188,21 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             {/* Next Vaccine Highlight OR Celebration Card */}
             {progress >= 1 ? (
                 <View style={{
-                    backgroundColor: 'rgba(107, 154, 196, 0.1)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.05)',
                     borderRadius: 16,
                     padding: 16,
                     marginBottom: 20,
                     borderWidth: 1,
-                    borderColor: 'rgba(107, 154, 196, 0.25)',
+                    borderColor: 'rgba(0, 0, 0, 0.08)',
                     flexDirection: 'row-reverse',
                     alignItems: 'center',
                     gap: 12,
                 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#6B9AC4', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#94A3B8', alignItems: 'center', justifyContent: 'center' }}>
                         <Award size={24} color="#FFFFFF" strokeWidth={2.5} />
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#6B9AC4', textAlign: 'right', marginBottom: 2 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#94A3B8', textAlign: 'right', marginBottom: 2 }}>
                             כל הכבוד!
                         </Text>
                         <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: 'right' }}>
@@ -1213,7 +1213,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
             ) : nextVaccine && (
                 <TouchableOpacity
                     style={{
-                        backgroundColor: 'rgba(107, 154, 196, 0.1)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.05)',
                         borderRadius: 16,
                         padding: 16,
                         marginBottom: 20,
@@ -1226,17 +1226,17 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     onPress={() => handleVaccinePress(nextVaccine!.key)}
                     activeOpacity={0.7}
                 >
-                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#6B9AC4', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#94A3B8', alignItems: 'center', justifyContent: 'center' }}>
                         <Syringe size={20} color="#FFFFFF" strokeWidth={2} />
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 11, color: '#6B9AC4', fontWeight: '600', marginBottom: 2 }}>
+                        <Text style={{ fontSize: 11, color: '#94A3B8', fontWeight: '600', marginBottom: 2 }}>
                             {t('health.nextVaccine') || 'החיסון הבא'}
                         </Text>
                         <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
                             {nextVaccine.name}
                         </Text>
-                        <Text style={{ fontSize: 12, color: '#6B9AC4', fontWeight: '500', marginTop: 2 }}>
+                        <Text style={{ fontSize: 12, color: '#94A3B8', fontWeight: '500', marginTop: 2 }}>
                             {nextVaccine.ageTitle}
                         </Text>
                     </View>
@@ -1351,7 +1351,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                     style={styles.addVaccineBtn}
                     onPress={() => setShowAddVaccine(true)}
                 >
-                    <Plus size={20} color="#6B9AC4" />
+                    <Plus size={20} color="#94A3B8" />
                     <Text style={styles.addVaccineBtnText}>{t('health.addVaccine')}</Text>
                 </TouchableOpacity>
             ) : (
@@ -1399,7 +1399,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                             <View style={{ flex: 1, alignItems: 'flex-end' }}>
                                 <Text style={[styles.vaccineName, { textAlign: 'right' }]}>{vaccine.name}</Text>
                                 {vaccine.date && (
-                                    <Text style={{ fontSize: 11, color: '#6B9AC4', marginTop: 2, fontWeight: '500' }}>
+                                    <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, fontWeight: '500' }}>
                                         נוסף: {new Date(vaccine.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </Text>
                                 )}
@@ -1676,7 +1676,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
                         <TouchableOpacity
                             style={{
                                 alignSelf: 'center',
-                                backgroundColor: '#6B9AC4',
+                                backgroundColor: '#94A3B8',
                                 paddingVertical: 10,
                                 paddingHorizontal: 32,
                                 borderRadius: 10,
@@ -2952,10 +2952,10 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     optionRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        backgroundColor: theme.cardSecondary,
+        backgroundColor: isDarkMode ? theme.cardSecondary : '#FFFFFF',
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: theme.border,
+        borderColor: isDarkMode ? theme.border : 'rgba(0,0,0,0.07)',
         padding: 14,
         gap: 12,
     },
@@ -2979,28 +2979,28 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     screenSubtitle: { fontSize: 13, color: theme.textTertiary, marginTop: 10 },
 
     // Vaccine styles
-    addVaccineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(107, 154, 196, 0.1)', padding: 14, borderRadius: 14, marginBottom: 20 },
-    addVaccineBtnText: { fontSize: 15, fontWeight: '600', color: '#6B9AC4' },
+    addVaccineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(0, 0, 0, 0.05)', padding: 14, borderRadius: 14, marginBottom: 20 },
+    addVaccineBtnText: { fontSize: 15, fontWeight: '600', color: '#94A3B8' },
     addVaccineForm: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
     addVaccineInput: { flex: 1, backgroundColor: theme.card, borderRadius: 12, padding: 14, fontSize: 15, textAlign: 'right', textAlignVertical: 'center', borderWidth: 1, borderColor: theme.border, writingDirection: 'rtl' },
-    addVaccineSubmit: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#6B9AC4', alignItems: 'center', justifyContent: 'center' },
+    addVaccineSubmit: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#94A3B8', alignItems: 'center', justifyContent: 'center' },
     vaccineGroup: { marginBottom: 20 },
     ageBadge: { alignSelf: 'flex-end', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 12 },
     ageBadgeText: { color: theme.card, fontWeight: '700', fontSize: 14 },
     ageBadgeMinimal: { alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, marginBottom: 10, backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border },
     ageBadgeTextMinimal: { color: theme.textSecondary, fontWeight: '600', fontSize: 13 },
     vaccineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.card, padding: 16, borderRadius: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 0 },
-    vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDarkMode ? 'rgba(107, 154, 196, 0.1)' : 'rgba(107, 154, 196, 0.08)', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: isDarkMode ? 'rgba(107, 154, 196, 0.3)' : 'rgba(107, 154, 196, 0.25)' },
+    vaccineRowDone: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.05)' : 'rgba(0, 0, 0, 0.04)', padding: 16, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: isDarkMode ? 'rgba(107, 154, 196, 0.3)' : 'rgba(0, 0, 0, 0.08)' },
     vaccineName: { fontSize: 15, color: theme.textPrimary, fontWeight: '500', textAlign: 'right', writingDirection: 'rtl' },
     vaccineNameDone: { fontSize: 15, color: '#8BAFC8', fontWeight: '500', textDecorationLine: 'line-through', textAlign: 'right', writingDirection: 'rtl' },
     checkbox: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
-    checkboxChecked: { backgroundColor: '#6B9AC4', borderColor: '#6B9AC4' },
+    checkboxChecked: { backgroundColor: '#94A3B8', borderColor: '#94A3B8' },
     modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     datePickerCard: { backgroundColor: theme.card, borderRadius: 20, padding: 20, width: '85%', alignItems: 'center' },
     datePickerTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 4 },
-    datePickerSubtitle: { fontSize: 13, color: '#6B9AC4', marginBottom: 8 },
+    datePickerSubtitle: { fontSize: 13, color: '#94A3B8', marginBottom: 8 },
     datePickerButtons: { flexDirection: 'row-reverse', gap: 12, marginTop: 16, width: '100%', justifyContent: 'center' },
-    datePickerConfirm: { backgroundColor: '#6B9AC4', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+    datePickerConfirm: { backgroundColor: '#94A3B8', paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
     datePickerConfirmText: { color: theme.card, fontWeight: '700' },
     datePickerCancel: { backgroundColor: theme.cardSecondary, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
     datePickerCancelText: { color: theme.textSecondary, fontWeight: '600' },

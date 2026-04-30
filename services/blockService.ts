@@ -7,10 +7,10 @@ export interface BlockedUser {
     name: string;
     image?: string;
     blockedAt: Date | any; // allow for firebase timestamp
-    type: 'sitter' | 'parent';
+    type: 'user';
 }
 
-export const blockUser = async (currentUserId: string, targetUserId: string, targetName: string, targetImage?: string, targetType: 'sitter' | 'parent' = 'sitter'): Promise<boolean> => {
+export const blockUser = async (currentUserId: string, targetUserId: string, targetName: string, targetImage?: string, targetType: 'user' = 'user'): Promise<boolean> => {
     try {
         const userRef = doc(db, 'users', currentUserId);
         const userDoc = await getDoc(userRef);

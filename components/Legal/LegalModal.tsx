@@ -155,7 +155,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Account details: full name, email address, encrypted password{'\n'}
     • Child profile: name, date of birth, gender, profile photo{'\n'}
     • Tracking data: feeding (time, amount, type), sleep (start/end times), diaper changes, nutritional supplements, vaccinations, medications, growth measurements (weight, height, head circumference){'\n'}
-    • Location data (GPS) — to enable the discovery of nearby babysitters, the app collects exact and coarse location data only with your explicit permission and only while using the app. This data is not retained in history, is not sold, and can be revoked at any time.{'\n'}
+    • Location data (GPS) — the app may collect location data only with your explicit permission and only while using the app. This data is not retained in history, is not sold, and can be revoked at any time.{'\n'}
     • Notes and records you enter manually{'\n'}
     • Photos and magic moments you choose to save{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Information collected automatically:{'\n'}</Text>
@@ -171,7 +171,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     We use your information solely for these purposes:{'\n'}
     • Providing, maintaining, and improving the app's services{'\n'}
     • Displaying personal data, charts, and statistics{'\n'}
-    • Sharing data with family members and babysitters according to permissions you set{'\n'}
+    • Sharing data with family members according to permissions you set{'\n'}
     • Sending notifications and reminders you explicitly requested{'\n'}
     • Providing technical support{'\n'}
     • Complying with legal obligations{'\n'}
@@ -346,13 +346,11 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     Calmino is a baby and child health tracking application that enables:{'\n'}
     • Tracking feeding, sleep, diapers, nutritional supplements, vaccinations, and medications{'\n'}
     • Measuring growth metrics and growth curves{'\n'}
-    • Sharing data with family members and babysitters{'\n'}
+    • Sharing data with family members{'\n'}
     • Creating statistics, reports, and insights{'\n'}
     • Recording magic moments and milestones{'\n'}
-    • Managing customized reminders and notifications{'\n'}
-    • Babysitter discovery and connection between parents and independent babysitters{'\n\n'}
-    <Text style={styles.bold}>Minimum age for use: 16.</Text> The service is not intended for users under the age of 16.{'\n'}
-    <Text style={styles.bold}>Minimum age to register as a babysitter: 18.</Text> Registration as a babysitter requires being 18 years of age or older.{'\n\n'}
+    • Managing customized reminders and notifications{'\n\n'}
+    <Text style={styles.bold}>Minimum age for use: 16.</Text> The service is not intended for users under the age of 16.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. User Account{'\n'}</Text>
     3.1 <Text style={styles.bold}>Registration:</Text> You must provide truthful, accurate, and current information.{'\n'}
@@ -364,7 +362,7 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     <Text style={[styles.section, { color: textColor }]}>4. Permitted and Prohibited Use{'\n'}</Text>
     <Text style={[styles.subsection, { color: textColor }]}>Permitted:{'\n'}</Text>
     • Personal and family use for managing care of your children{'\n'}
-    • Sharing data with family members and babysitters you have authorized{'\n\n'}
+    • Sharing data with family members you have authorized{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>Strictly prohibited:{'\n'}</Text>
     • Commercial use without a written license from us{'\n'}
     • Uploading illegal, offensive, misleading, or rights-infringing content{'\n'}
@@ -394,14 +392,11 @@ const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subti
     • <Text style={styles.bold}>Apple WeatherKit</Text> - Weather data{'\n\n'}
     Your use of these services is also subject to their respective policies and terms of service. Calmino is not responsible for the availability, performance, or changes in third-party services.{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability, Medical Disclaimer, and Babysitter Services{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>8. Limitation of Liability and Medical Disclaimer{'\n'}</Text>
     8.1 The service is provided <Text style={styles.bold}>"AS IS"</Text> and "AS AVAILABLE" without warranty of any kind.{'\n'}
     8.2 <Text style={styles.bold}>The app does not replace professional medical advice.</Text> The information displayed is for documentation and tracking purposes only. Always consult a qualified pediatrician for any medical questions.{'\n'}
-    8.3 <Text style={styles.bold}>Babysitter Marketplace — Absolute and Fundamental Waiver of Liability:</Text> Calmino provides a digital platform ("bulletin board") connecting parents with independent babysitters. <Text style={styles.bold}>The Company is not an employment agency, does not employ the babysitters, does not interview them, does not conduct any background, integrity, or criminal record checks whatsoever, and does not vouch for them in any way.</Text> Any engagement, employment, or meeting facilitated through the App is at the sole risk and responsibility of the parents. It is your strict obligation as a parent to exercise due diligence, request identification, and verify references before leaving your children in their care.{'\n'}
-    <Text style={styles.bold}>Contact Outside the Platform:</Text> Communication between parents and babysitters takes place via external messaging services (such as WhatsApp). Calmino is not a party to such communication, does not monitor it, and is not responsible for its content or outcomes.{'\n'}
-    <Text style={styles.bold}>Complete Waiver of Claims:</Text> By using the App to find a babysitter, you hereby completely, conclusively, and irrevocably waive any claim, demand, or lawsuit against Calmino, its directors, or employees for any direct or indirect damage, bodily injury, property damage, theft, negligence, or criminal act caused by a babysitter found through the platform.{'\n'}
-    8.4 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; meetings with babysitters; or technical failure.{'\n'}
-    8.5 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
+    8.3 Calmino is not liable for direct, indirect, incidental, special, punitive, or consequential damages arising from: use or inability to use the service; data loss; reliance on information from the app; or technical failure.{'\n'}
+    8.4 Our total liability shall not exceed the amount you paid in the last year of subscription, or ₪200 — whichever is less.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Intellectual Property{'\n'}</Text>
     All rights in the app — including source code, design, user interface, logo, the name "Calmino", and all content we created — are the exclusive property of Calmino and are protected by copyright, trademark, and patent laws.{'\n'}

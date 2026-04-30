@@ -3,11 +3,6 @@
  * מאפשר import נוח יותר של כל ה-hooks
  */
 
-// Location & Sitters
-export { default as useLocation } from './useLocation';
-export { default as useSitters } from './useSitters';
-export { default as useFilters } from './useFilters';
-
 // Home & Data
 export { default as useHomeData } from './useHomeData';
 export { default as useBabyProfile } from './useBabyProfile';

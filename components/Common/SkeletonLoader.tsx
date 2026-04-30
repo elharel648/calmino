@@ -47,33 +47,6 @@ export const SkeletonBone = ({ width = '100%', height = 16, borderRadius = 8, st
     );
 };
 
-// ─── Sitter Card Skeleton ─────────────────────────────────────────────────────
-export const SitterCardSkeleton = () => (
-    <View style={s.sitterCard}>
-        {/* Photo */}
-        <SkeletonBone width={54} height={54} borderRadius={27} />
-        {/* Info */}
-        <View style={s.sitterInfo}>
-            <SkeletonBone width="60%" height={15} borderRadius={6} style={{ marginBottom: 8 }} />
-            <SkeletonBone width="40%" height={12} borderRadius={5} style={{ marginBottom: 6 }} />
-            <SkeletonBone width="30%" height={11} borderRadius={5} />
-        </View>
-        {/* Price */}
-        <View style={s.sitterPrice}>
-            <SkeletonBone width={36} height={20} borderRadius={6} style={{ marginBottom: 4 }} />
-            <SkeletonBone width={28} height={10} borderRadius={4} />
-        </View>
-    </View>
-);
-
-// ─── Sitter List Skeleton (full screen) ──────────────────────────────────────
-export const SitterListSkeleton = () => (
-    <View style={s.listContainer}>
-        {[...Array(6)].map((_, i) => (
-            <SitterCardSkeleton key={i} />
-        ))}
-    </View>
-);
 
 // ─── Stats Card Skeleton ──────────────────────────────────────────────────────
 export const StatsCardSkeleton = () => (
@@ -149,19 +122,6 @@ export const ProfileSkeleton = () => (
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-    // Sitter
-    sitterCard: {
-        flexDirection: 'row-reverse',
-        alignItems: 'center',
-        gap: 12,
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-        marginBottom: 1,
-    },
-    sitterInfo: { flex: 1, alignItems: 'flex-end' },
-    sitterPrice: { alignItems: 'flex-end' },
-    listContainer: { paddingTop: 4 },
-
     // Stats
     statsCard: {
         borderRadius: 16,

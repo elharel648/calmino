@@ -81,7 +81,7 @@ const BlockedUsersScreen = ({ navigation }: any) => {
 
                             <View style={styles.info}>
                                 <Text style={[styles.name, { color: theme.textPrimary }]}>{item.name}</Text>
-                                <Text style={[styles.type, { color: theme.textSecondary }]}>{item.type === 'sitter' ? 'בייביסיטר' : 'הורה'}</Text>
+                                <Text style={[styles.type, { color: theme.textSecondary }]}>{t('blockedUsers.user')}</Text>
                             </View>
 
                             {item.image ? (

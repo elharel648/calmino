@@ -4,7 +4,11 @@ import SwiftUI
 import AppIntents
 
 // MARK: - Design Tokens
+
 private let noiseColor = Color(red: 0.15, green: 0.65, blue: 0.85)
+private let noiseGlow = Color(red: 0.25, green: 0.75, blue: 0.95)
+private let pureOledBlack = Color.black
+private let subtleGray = Color(white: 0.1)
 
 // MARK: - White Noise Live Activity
 
@@ -16,62 +20,129 @@ struct WhiteNoiseLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
+                // MARK: Expanded Region - Leading
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
-                        Image(systemName: "speaker.wave.3.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(noiseColor)
+                        ZStack {
+                            Circle()
+                                .fill(noiseColor.opacity(0.15))
+                                .frame(width: 28, height: 28)
+                            
+                            if #available(iOS 17.0, *) {
+                                Image(systemName: "speaker.wave.3.fill")
+                                    .foregroundStyle(noiseColor)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .symbolEffect(.pulse)
+                            } else {
+                                Image(systemName: "speaker.wave.3.fill")
+                                    .foregroundStyle(noiseColor)
+                                    .font(.system(size: 14, weight: .bold))
+                            }
+                        }
+                        
                         VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.soundName)
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
+                                .contentTransition(.opacity)
                             Text("רעש לבן")
                                 .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(noiseColor)
+                                .foregroundStyle(noiseColor.opacity(0.9))
                         }
                     }
+                    .padding(.leading, 4)
+                    .padding(.top, 4)
                 }
+                
+                // MARK: Expanded Region - Trailing
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.startTime, style: .timer)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.trailing)
+                    VStack(alignment: .trailing, spacing: 0) {
+                        Text(context.state.startTime, style: .timer)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(noiseColor)
+                            .monospacedDigit()
+                            .transition(.blurReplace)
+                    }
+                    .padding(.trailing, 4)
+                    .padding(.top, 8)
                 }
+                
+                // MARK: Expanded Region - Bottom
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 12) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.12))
+                            .fill(
+                                LinearGradient(
+                                    colors: [.clear, .white.opacity(0.15), .clear],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .frame(height: 0.5)
-                            .padding(.bottom, 10)
+                            .padding(.top, 4)
+                        
                         Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "stop.fill")
-                                    .font(.system(size: 14, weight: .bold))
+                            HStack(spacing: 6) {
                                 Text("כיבוי")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                                Image(systemName: "stop.circle.fill")
+                                    .font(.system(size: 16, weight: .bold))
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Color.red.opacity(0.75), in: Capsule())
+                            .padding(.vertical, 12)
+                            .background(
+                                Capsule()
+                                    .fill(Color.red.opacity(0.85))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.red.opacity(0.25), radius: 8, y: 4)
                         }
+                        .padding(.horizontal, 4)
                     }
+                    .padding(.bottom, 6)
                 }
             } compactLeading: {
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(noiseColor)
+                // MARK: Compact Leading
+                HStack {
+                    if #available(iOS 17.0, *) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .foregroundStyle(noiseColor)
+                            .font(.system(size: 12, weight: .medium))
+                            .symbolEffect(.pulse)
+                    } else {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .foregroundStyle(noiseColor)
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                }
             } compactTrailing: {
-                Text(context.state.startTime, style: .timer)
-                    .font(.system(size: 11, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(noiseColor)
+                // MARK: Compact Trailing
+                ZStack(alignment: .trailing) {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(noiseColor)
+                        .monospacedDigit()
+                        .fixedSize(horizontal: true, vertical: false)
+                        .transition(.scale.combined(with: .opacity))
+                }
+                .padding(.trailing, 4)
             } minimal: {
-                Image(systemName: "speaker.wave.2.fill")
-                    .foregroundStyle(noiseColor)
+                // MARK: Minimal
+                if #available(iOS 17.0, *) {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .foregroundStyle(noiseColor)
+                        .symbolEffect(.pulse)
+                } else {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .foregroundStyle(noiseColor)
+                }
             }
             .widgetURL(URL(string: "calmparentapp://white-noise")!)
+            .keylineTint(noiseColor)
         }
     }
 }
@@ -84,55 +155,76 @@ struct WhiteNoiseLockScreenView: View {
     
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(Color.black)
-            RadialGradient(
-                colors: [noiseColor.opacity(0.25), .clear],
-                center: .topLeading,
-                startRadius: 20,
-                endRadius: 200
+            // OLED Black Background
+            LinearGradient(
+                colors: [subtleGray, pureOledBlack],
+                startPoint: .top,
+                endPoint: .bottom
             )
             
-            VStack(spacing: 12) {
-                HStack(alignment: .center, spacing: 0) {
-                    Spacer()
-                    // Right side — info + timer (RTL)
-                    VStack(alignment: .trailing, spacing: 6) {
-                        HStack(spacing: 8) {
-                            Text(context.attributes.soundName)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.75))
-                            Image(systemName: "speaker.wave.3.fill")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(noiseColor)
+            // Ambient Glow
+            GeometryReader { proxy in
+                Circle()
+                    .fill(noiseGlow.opacity(0.12))
+                    .frame(width: proxy.size.width * 0.8, height: proxy.size.width * 0.8)
+                    .blur(radius: 60)
+                    .position(x: proxy.size.width, y: 0)
+            }
+            
+            VStack(spacing: 20) {
+                // Header & Timer (RTL Optimized)
+                HStack(alignment: .center) {
+                    // Quick Stop Button (Left Side)
+                    Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
+                        ZStack {
+                            Circle()
+                                .fill(.white.opacity(0.1))
+                                .frame(width: 44, height: 44)
+                            
+                            Image(systemName: "stop.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color.red.opacity(0.9))
                         }
+                    }
+                    
+                    Spacer()
+                    
+                    // Info (Right Side)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text(context.attributes.soundName)
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.6))
+                            
+                            if #available(iOS 17.0, *) {
+                                Image(systemName: "speaker.wave.3.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(noiseColor)
+                                    .symbolEffect(.pulse)
+                            } else {
+                                Image(systemName: "speaker.wave.3.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(noiseColor)
+                            }
+                        }
+                        
                         Text(context.state.startTime, style: .timer)
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .font(.system(size: 38, weight: .heavy, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(.white)
-                            .multilineTextAlignment(.trailing)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .shadow(color: .black.opacity(0.8), radius: 2, y: 1)
+                            .contentTransition(.numericText())
                     }
-                }
-
-                // Full-width stop capsule
-                Link(destination: URL(string: "calmparentapp://stop-whitenoise")!) {
-                    HStack(spacing: 8) {
-                        Text("כיבוי")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(noiseColor.opacity(0.8), in: Capsule())
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
         .frame(maxWidth: .infinity)
-        .clipShape(ContainerRelativeShape())
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+        )
     }
 }

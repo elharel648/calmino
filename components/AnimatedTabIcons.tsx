@@ -109,43 +109,6 @@ export const AnimatedTimelineIcon = ({ focused, color, size }: any) => {
     );
 };
 
-// 3. Babysitter Icon (Chunky User with Sparkles/Check)
-export const AnimatedSitterIcon = ({ focused, color, size }: any) => {
-    const headY = useSharedValue(focused ? 0 : 2);
-    const scale = useSharedValue(focused ? 1 : 0.95);
-    const checkScale = useSharedValue(focused ? 1 : 0);
-
-    useEffect(() => {
-        if (focused) {
-            scale.value = withSequence(withTiming(0.9, {duration: 100}), withSpring(1.05, SPRING_CONFIG));
-            headY.value = withSequence(withTiming(3, {duration: 100}), withSpring(-2, SPRING_CONFIG), withSpring(0));
-            checkScale.value = withDelay(150, withSpring(1, { damping: 6, stiffness: 300 }));
-        } else {
-            scale.value = withSpring(0.95);
-            headY.value = withTiming(2);
-            checkScale.value = withTiming(0, { duration: 150 });
-        }
-    }, [focused]);
-
-    const headProps = useAnimatedProps(() => ({ transform: [{ translateY: headY.value }] as any }));
-    const containerStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-    const checkProps = useAnimatedProps(() => ({ transform: [{ scale: checkScale.value }] as any }));
-
-    return (
-        <Animated.View style={[{ width: size, height: size }, containerStyle]}>
-            <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-                {/* Body */}
-                <Path d="M4 22C4 17.5817 7.58172 14 12 14C16.4183 14 20 17.5817 20 22H4Z" fill={color} />
-                {/* Bouncing Head */}
-                <AnimatedCircle cx="12" cy="7" r="5" fill={color} animatedProps={headProps} />
-                {/* Check/Badge */}
-                <AnimatedCircle cx="19" cy="11" r="5" fill="#FFFFFF" animatedProps={checkProps} />
-                <AnimatedPath d="M17 11.5L18.5 13L21 9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" animatedProps={checkProps} />
-            </Svg>
-        </Animated.View>
-    );
-};
-
 // 4. Account Icon (Settings Gear or Profile)
 // Using a chunky User Profile for Account as requested
 export const AnimatedAccountIcon = ({ focused, color, size }: any) => {

@@ -3,7 +3,7 @@
 //  CalmParentApp
 //
 //  Shared Activity Attributes for Main App and Widget Extension
-//  This file should be added to BOTH targets!
+//  CRITICAL: Ensure this file's Target Membership includes BOTH the Main App and the Widget Extension.
 //
 
 import ActivityKit
@@ -29,7 +29,7 @@ public struct BabysitterShiftAttributes: ActivityAttributes {
     
     // Static attributes
     public var babysitterName: String
-    public var babysitterPhoto: String? // URL or emoji
+    public var babysitterPhoto: String? // URL or emoji fallback
     
     public init(babysitterName: String, babysitterPhoto: String? = nil) {
         self.babysitterName = babysitterName
@@ -43,11 +43,11 @@ public struct BabysitterShiftAttributes: ActivityAttributes {
 public struct MealActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         public var startTime: Date
-        public var mealType: String // "ארוחת בוקר", "צהריים", "ערב", "חטיף"
+        public var mealType: String // e.g., "ארוחת בוקר", "צהריים", "ערב", "חטיף"
         public var babyName: String
         public var foodItems: [String]
         public var isPaused: Bool
-        public var progress: Double // 0.0 - 1.0
+        public var progress: Double // Range: 0.0 - 1.0
         
         public init(startTime: Date, mealType: String, babyName: String, foodItems: [String], isPaused: Bool, progress: Double) {
             self.startTime = startTime
@@ -59,6 +59,7 @@ public struct MealActivityAttributes: ActivityAttributes {
         }
     }
     
+    // Static attributes
     public var babyName: String
     public var babyEmoji: String
     
@@ -75,11 +76,11 @@ public struct SleepActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         public var startTime: Date        // Timer anchor (adjusted on resume to keep elapsed accurate)
         public var babyName: String
-        public var sleepType: String      // "תנומת צהריים", "שינת לילה"
+        public var sleepType: String      // e.g., "תנומת צהריים", "שינת לילה"
         public var isAwake: Bool
         public var isPaused: Bool
         public var activeSeconds: Int     // Accumulated active seconds (used to restore timer on resume)
-        public var quality: String?       // "טוב", "רגיל", "לא טוב"
+        public var quality: String?       // e.g., "טוב", "רגיל", "לא טוב"
 
         public init(startTime: Date, babyName: String, sleepType: String, isAwake: Bool, isPaused: Bool = false, activeSeconds: Int = 0, quality: String? = nil) {
             self.startTime = startTime
@@ -92,6 +93,7 @@ public struct SleepActivityAttributes: ActivityAttributes {
         }
     }
 
+    // Static attributes
     public var babyName: String
     public var babyEmoji: String
 
@@ -106,10 +108,10 @@ public struct SleepActivityAttributes: ActivityAttributes {
 @available(iOS 16.2, *)
 public struct BreastfeedingActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        public var leftSideSeconds: Int     // Accumulated left side active seconds
-        public var rightSideSeconds: Int    // Accumulated right side active seconds
-        public var activeSide: String?      // "left", "right", nil = between sides
-        public var sideStartTime: Date?     // When current active side timer started
+        public var leftSideSeconds: Int    // Accumulated left side active seconds
+        public var rightSideSeconds: Int   // Accumulated right side active seconds
+        public var activeSide: String?     // "left", "right", or nil (between sides)
+        public var sideStartTime: Date?    // When current active side timer started
         public var isPaused: Bool
 
         public init(leftSideSeconds: Int = 0, rightSideSeconds: Int = 0, activeSide: String? = nil, sideStartTime: Date? = nil, isPaused: Bool = false) {
@@ -121,6 +123,7 @@ public struct BreastfeedingActivityAttributes: ActivityAttributes {
         }
     }
 
+    // Static attributes
     public var babyName: String
 
     public init(babyName: String) {
@@ -135,7 +138,7 @@ public struct PlayActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         public var startTime: Date
         public var babyName: String
-        public var activityType: String // "משחק חופשי", "קריאה", "שירה", "משחק חוץ"
+        public var activityType: String // e.g., "משחק חופשי", "קריאה", "שירה", "משחק חוץ"
         public var isPaused: Bool
         
         public init(startTime: Date, babyName: String, activityType: String, isPaused: Bool) {
@@ -146,6 +149,7 @@ public struct PlayActivityAttributes: ActivityAttributes {
         }
     }
     
+    // Static attributes
     public var babyName: String
     public var babyEmoji: String
     
@@ -167,7 +171,8 @@ public struct WhiteNoiseActivityAttributes: ActivityAttributes {
         }
     }
 
-    public var soundId: String    // "lullaby" | "gentle" | "birds" | "rain"
+    // Static attributes
+    public var soundId: String    // e.g., "lullaby", "gentle", "birds", "rain"
     public var soundName: String  // Hebrew display name
 
     public init(soundId: String, soundName: String) {
@@ -182,8 +187,8 @@ public struct WhiteNoiseActivityAttributes: ActivityAttributes {
 public struct ParentMeditationAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         public var startTime: Date
-        public var duration: TimeInterval // משך במילישניות
-        public var meditationType: String // "נשימות", "סריקת גוף", "הרפיה"
+        public var duration: TimeInterval // Target duration in seconds/milliseconds
+        public var meditationType: String // e.g., "נשימות", "סריקת גוף", "הרפיה"
         public var isActive: Bool
         
         public init(startTime: Date, duration: TimeInterval, meditationType: String, isActive: Bool) {
@@ -194,6 +199,7 @@ public struct ParentMeditationAttributes: ActivityAttributes {
         }
     }
     
+    // Static attributes
     public var parentName: String
     
     public init(parentName: String) {

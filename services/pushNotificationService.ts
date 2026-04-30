@@ -59,19 +59,6 @@ export async function registerForPushNotifications(): Promise<string | null> {
                 lightColor: '#6366F1',
             });
 
-            // Chat notifications channel
-            await Notifications.setNotificationChannelAsync('chat', {
-                name: 'הודעות צ\'אט',
-                importance: Notifications.AndroidImportance.HIGH,
-                sound: 'default',
-            });
-
-            // Booking notifications channel
-            await Notifications.setNotificationChannelAsync('booking', {
-                name: 'עדכוני הזמנות',
-                importance: Notifications.AndroidImportance.HIGH,
-                sound: 'default',
-            });
         }
 
         return pushToken;

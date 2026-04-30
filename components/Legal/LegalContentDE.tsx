@@ -33,8 +33,7 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     • Kontodaten: vollständiger Name, E-Mail-Adresse, verschlüsseltes Passwort{'\n'}
     • Kinderprofil: Name, Geburtsdatum, Geschlecht, Profilbild{'\n'}
     • Tracking-Daten: Fütterung (Zeit, Menge, Art), Schlaf (Start-/Endzeiten), Windelwechsel, Nahrungsergänzungsmittel, Impfungen, Medikamente, Wachstumsmessungen (Gewicht, Größe, Kopfumfang){'\n'}
-    • Standortdaten (GPS) — um das Auffinden von Babysittern in der Nähe zu ermöglichen, erfasst die App genaue und grobe Standortdaten nur mit Ihrer ausdrücklichen Zustimmung und nur während der Nutzung. Diese Daten werden nicht historisch gespeichert, nicht verkauft und die Zustimmung kann jederzeit widerrufen werden.{'\n'}
-    • Chat-Nachrichten zwischen Eltern und Babysittern über die App{'\n'}
+    • Standortdaten (GPS) — die App erfasst Standortdaten nur mit Ihrer ausdrücklichen Zustimmung und nur während der Nutzung. Diese Daten werden nicht historisch gespeichert, nicht verkauft und die Zustimmung kann jederzeit widerrufen werden.{'\n'}
     • Notizen und Aufzeichnungen, die Sie manuell eingeben{'\n'}
     • Fotos und magische Momente, die Sie speichern möchten{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Automatisch erfasste Informationen:{'\n'}</Text>
@@ -50,7 +49,7 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     Wir verwenden Ihre Informationen ausschließlich für folgende Zwecke:{'\n'}
     • Bereitstellung, Wartung und Verbesserung der App-Dienste{'\n'}
     • Anzeige persönlicher Daten, Diagramme und Statistiken{'\n'}
-    • Teilen von Daten mit Familienmitgliedern und Babysittern gemäß Ihren Berechtigungseinstellungen{'\n'}
+    • Teilen von Daten mit Familienmitgliedern gemäß Ihren Berechtigungseinstellungen{'\n'}
     • Senden von ausdrücklich angeforderten Benachrichtigungen und Erinnerungen{'\n'}
     • Bereitstellung technischen Supports{'\n'}
     • Erfüllung gesetzlicher Pflichten{'\n'}
@@ -123,11 +122,10 @@ export const TermsContentDE = ({ textColor, subtitleColor }: { textColor: string
     Calmino ist eine Gesundheits-Tracking-App für Babys und Kinder, die ermöglicht:{'\n'}
     • Tracking von Fütterung, Schlaf, Windeln, Nahrungsergänzung, Impfungen und Medikamenten{'\n'}
     • Messung von Wachstumsindikatoren und Wachstumskurven{'\n'}
-    • Teilen von Daten mit Familienmitgliedern und Babysittern{'\n'}
+    • Teilen von Daten mit Familienmitgliedern{'\n'}
     • Erstellung von Statistiken, Berichten und Analysen{'\n'}
     • Aufzeichnung magischer Momente und Meilensteine{'\n'}
-    • Verwaltung personalisierter Erinnerungen und Benachrichtigungen{'\n'}
-    • Babysitter-Such-, Buchungsvermittlung und Chat-Nachrichten{'\n\n'}
+    • Verwaltung personalisierter Erinnerungen und Benachrichtigungen{'\n\n'}
     <Text style={styles.bold}>Mindestalter: 16 Jahre.</Text> Der Dienst ist nicht für Nutzer unter 16 Jahren bestimmt.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. Benutzerkonto{'\n'}</Text>
@@ -140,7 +138,7 @@ export const TermsContentDE = ({ textColor, subtitleColor }: { textColor: string
     <Text style={[styles.section, { color: textColor }]}>4. Erlaubte und verbotene Nutzung{'\n'}</Text>
     <Text style={[styles.subsection, { color: textColor }]}>Erlaubt:{'\n'}</Text>
     • Persönliche und familiäre Nutzung zur Betreuung Ihrer Kinder{'\n'}
-    • Teilen von Daten mit autorisierten Familienmitgliedern und Babysittern{'\n\n'}
+    • Teilen von Daten mit autorisierten Familienmitgliedern{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>Streng verboten:{'\n'}</Text>
     • Kommerzielle Nutzung ohne schriftliche Lizenz{'\n'}
     • Hochladen illegaler, beleidigender, irreführender oder rechtsverletzender Inhalte{'\n'}
@@ -168,13 +166,11 @@ export const TermsContentDE = ({ textColor, subtitleColor }: { textColor: string
     • <Text style={styles.bold}>RevenueCat</Text> - Verwaltung von Abonnements und Käufen{'\n'}
     • <Text style={styles.bold}>Apple WeatherKit</Text> - Wetterdaten{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>8. Haftungsbeschränkung, medizinischer Haftungsausschluss und Babysitter-Dienste{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>8. Haftungsbeschränkung und medizinischer Haftungsausschluss{'\n'}</Text>
     8.1 Der Dienst wird <Text style={styles.bold}>"wie besehen"</Text> ohne jegliche Garantie bereitgestellt.{'\n'}
     8.2 <Text style={styles.bold}>Die App ersetzt keine professionelle medizinische Beratung.</Text> Konsultieren Sie immer einen qualifizierten Kinderarzt.{'\n'}
-    8.3 <Text style={styles.bold}>Babysitter-Marktplatz — Absoluter Haftungsausschluss:</Text> Calmino bietet eine digitale Plattform ("Schwarzes Brett"), die Eltern mit unabhängigen Babysittern verbindet. <Text style={styles.bold}>Das Unternehmen ist keine Arbeitsagentur, beschäftigt keine Babysitter, führt keine Interviews mit ihnen durch, macht keinerlei Hintergrund-, Integritäts- oder Vorstrafenprüfungen und bürgt in keiner Weise für sie.</Text> Jedes Engagement, jede Beschäftigung oder jedes Treffen, das über die App zustande kommt, liegt in der alleinigen Verantwortung der Eltern. Es ist Ihre strikte Pflicht, Vorsicht walten zu lassen, Ausweise zu verlangen und Referenzen zu überprüfen, bevor Sie Ihre Kinder anvertrauen.{'\n'}
-    <Text style={styles.bold}>Vollständiger Verzicht:</Text> Durch die Nutzung der App zur Suche nach einem Babysitter verzichten Sie hiermit vollständig, endgültig und unwiderruflich auf alle Ansprüche, Forderungen oder Klagen gegen Calmino, seine Direktoren oder Mitarbeiter für jeglichen direkten oder indirekten Schaden, Personenschaden, Sachschaden, Diebstahl, Fahrlässigkeit oder kriminelle Handlungen, die durch einen über die Plattform gefundenen Babysitter verursacht wurden.{'\n'}
-    8.4 Calmino haftet nicht für direkte, indirekte, zufällige, besondere oder Folgeschäden.{'\n'}
-    8.5 Unsere Gesamthaftung übersteigt nicht den im letzten Jahr gezahlten Betrag oder 200 ₪ — je nachdem, welcher Betrag geringer ist.{'\n\n'}
+    8.3 Calmino haftet nicht für direkte, indirekte, zufällige, besondere oder Folgeschäden.{'\n'}
+    8.4 Unsere Gesamthaftung übersteigt nicht den im letzten Jahr gezahlten Betrag oder 200 ₪ — je nachdem, welcher Betrag geringer ist.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Geistiges Eigentum{'\n'}</Text>
     Alle Rechte an der App sind ausschließliches Eigentum von Calmino und durch Urheberrechts-, Marken- und Patentgesetze geschützt.{'\n\n'}

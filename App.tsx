@@ -45,7 +45,7 @@ import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Home, BarChart2, User, Settings, Lock, Baby, UserCheck } from 'lucide-react-native';
+import { Home, BarChart2, User, Settings, Lock, Baby } from 'lucide-react-native';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -80,16 +80,6 @@ import NotificationsScreen from './pages/NotificationsScreen';
 import OnboardingCarousel, { ONBOARDING_KEY } from './components/Onboarding/OnboardingCarousel';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// מסכי הבייביסיטר
-import BabySitterScreen from './pages/BabySitterScreen';
-import SitterProfileScreen from './pages/SitterProfileScreen';
-import SitterRegistrationScreen from './pages/SitterRegistrationScreen';
-import SitterDashboardScreen from './pages/SitterDashboardScreen';
-import MyReviewsScreen from './pages/MyReviewsScreen';
-import RatingScreen from './pages/RatingScreen';
-
-import ParentBookingsScreen from './pages/ParentBookingsScreen';
-
 import { checkIfBabyExists } from './services/babyService';
 import { SleepTimerProvider, useSleepTimer } from './context/SleepTimerContext';
 import { FoodTimerProvider, useFoodTimer } from './context/FoodTimerContext';
@@ -106,11 +96,10 @@ import { GuestProvider } from './context/GuestContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import GuestLoginPrompt from './components/GuestLoginPrompt';
-import { 
-  AnimatedHomeIcon, 
-  AnimatedTimelineIcon, 
-  AnimatedSitterIcon, 
-  AnimatedAccountIcon 
+import {
+  AnimatedHomeIcon,
+  AnimatedTimelineIcon,
+  AnimatedAccountIcon
 } from './components/AnimatedTabIcons';
 import Reanimated, {
   useSharedValue,
@@ -143,8 +132,6 @@ import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const AccountStack = createNativeStackNavigator();
-// ✅ יצירת Stack לבייביסיטר
-const BabysitterStack = createNativeStackNavigator();
 
 // --- רכיבים עזר ---
 
@@ -216,20 +203,16 @@ const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => 
 };
 
 // --- Main App Navigator (uses theme and role-based permissions) ---
-function MainAppNavigator({ isAppSitter, pendingSitterReg }: { isAppSitter?: boolean; pendingSitterReg?: boolean }) {
+function MainAppNavigator() {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
-  const { canAccessProfile, canAccessReports, canAccessBabysitter, allChildren } = useActiveChild();
+  const { canAccessProfile, canAccessReports } = useActiveChild();
 
   const homeTabName = t('navigation.home');
   const accountTabName = t('navigation.account');
   const reportsTabName = t('navigation.reports');
-  const babysitterTabName = t('navigation.babysitter');
 
-  // pendingSitterReg: user deregistered as sitter — keep babysitter tab accessible so they can re-register
-  const effectiveCanAccessBabysitter = canAccessBabysitter || !!pendingSitterReg;
-  // Sitters (or pending re-registration) without a child profile land on the Babysitter tab
-  const initialTab = ((isAppSitter || pendingSitterReg) && allChildren.length === 0) ? babysitterTabName : homeTabName;
+  const initialTab = homeTabName;
 
   return (
     <Tab.Navigator
@@ -257,21 +240,12 @@ function MainAppNavigator({ isAppSitter, pendingSitterReg }: { isAppSitter?: boo
         )
       }
 
-      {/* Babysitter */}
-      {
-        effectiveCanAccessBabysitter && (
-          <Tab.Screen name={babysitterTabName} component={BabysitterStackScreen} options={{
-            tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedSitterIcon} label={t('navigation.babysitter')} />
-          }} />
-        )
-      }
-
       {/* Home - always visible */}
       <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
         tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedHomeIcon} label={t('navigation.home')} />
       }} />
 
-    </Tab.Navigator >
+    </Tab.Navigator>
   );
 }
 
@@ -325,29 +299,6 @@ function CreateBabyScreen({ navigation }: any) {
         onClose={() => navigation.goBack()}
       />
     </Modal>
-  );
-}
-
-// ✅ Stack לבייביסיטר - מחבר את הרשימה, הפרופיל והצ'אט
-function BabysitterStackScreen() {
-  return (
-    <BabysitterStack.Navigator
-      id="BabysitterStack"
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' }
-      }}
-    >
-      <BabysitterStack.Screen name="SitterList" component={BabySitterScreen} />
-      <BabysitterStack.Screen name="SitterProfile" component={SitterProfileScreen} />
-      <BabysitterStack.Screen name="SitterRegistration" component={SitterRegistrationScreen} />
-      <BabysitterStack.Screen name="SitterDashboard" component={SitterDashboardScreen} />
-      <BabysitterStack.Screen name="MyReviews" component={MyReviewsScreen} />
-      <BabysitterStack.Screen name="RatingScreen" component={RatingScreen} />
-      <BabysitterStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
-
-      <BabysitterStack.Screen name="ParentBookings" component={ParentBookingsScreen} />
-    </BabysitterStack.Navigator>
   );
 }
 
@@ -485,6 +436,38 @@ function LiveActivityURLHandler() {
             }
           } catch (error) {
             logger.error('Error saving timer from Live Activity:', error);
+          }
+        } else if (path === 'discard-timer' || url.href.includes('discard-timer')) {
+          // Discard timer — stop WITHOUT saving (user pressed X)
+          await new Promise(r => setTimeout(r, 300));
+          const type = url.searchParams.get('type') || '';
+          try {
+            // Stop in-app timer
+            if (type.includes('הנקה') || type.includes('breast')) {
+              if (foodTimer.breastIsRunning) foodTimer.stopBreast();
+            } else if (type.includes('שאיבה') || type.includes('pump')) {
+              if (foodTimer.pumpingIsRunning) foodTimer.stopPumping();
+            } else if (type.includes('בקבוק') || type.includes('bottle')) {
+              if (foodTimer.bottleIsRunning) foodTimer.stopBottle();
+            } else if (type.includes('שינה') || type.includes('sleep')) {
+              if (sleepTimer.isRunning) sleepTimer.stop();
+            }
+            // End Live Activity
+            if (Platform.OS === 'ios') {
+              const { liveActivityService } = await import('./services/liveActivityService');
+              if (type.includes('הנקה') || type.includes('breast')) {
+                await liveActivityService.stopBreastfeedingTimer();
+              } else if (type.includes('שאיבה') || type.includes('pump')) {
+                await liveActivityService.stopPumpingTimer();
+              } else if (type.includes('בקבוק') || type.includes('bottle')) {
+                await liveActivityService.stopBottleTimer();
+              } else if (type.includes('שינה') || type.includes('sleep')) {
+                await liveActivityService.stopSleepTimer();
+              }
+            }
+            logger.info(`⏹ Timer discarded (no save): ${type}`);
+          } catch (error) {
+            logger.error('Error discarding timer from Live Activity:', error);
           }
         } else if (path === 'stop-whitenoise' || url.href.includes('stop-whitenoise')) {
           try {
@@ -624,8 +607,6 @@ export default function App() {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [hasBabyProfile, setHasBabyProfile] = useState<boolean | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isAppSitter, setIsAppSitter] = useState<boolean>(false);
-  const [pendingSitterReg, setPendingSitterReg] = useState(false);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [childrenReady, setChildrenReady] = useState(false);
@@ -714,10 +695,6 @@ export default function App() {
                 'vaccine_reminder': 'medication',
                 'daily_summary': 'reminder',
                 'custom_reminder': 'reminder',
-                'booking_new': 'reminder',
-                'booking_update': 'reminder',
-                'booking_cancelled': 'reminder',
-                'chat_message': 'reminder',
                 'family_join': 'reminder',
                 'family_removed': 'reminder',
               };
@@ -730,7 +707,7 @@ export default function App() {
                 message: notification.request.content.body || '',
                 timestamp: new Date(),
                 isRead: false,
-                isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
+                isUrgent: notificationType === 'vaccine_reminder',
               });
             } catch (error) {
               logger.error('Failed to save notification:', error);
@@ -759,10 +736,6 @@ export default function App() {
           'vaccine_reminder': 'medication',
           'daily_summary': 'reminder',
           'custom_reminder': 'reminder',
-          'booking_new': 'reminder',
-          'booking_update': 'reminder',
-          'booking_cancelled': 'reminder',
-          'chat_message': 'reminder',
           'family_join': 'reminder',
           'family_removed': 'reminder',
         };
@@ -773,7 +746,7 @@ export default function App() {
           message: response.notification.request.content.body || '',
           timestamp: new Date(),
           isRead: false,
-          isUrgent: type === 'vaccine_reminder' || type === 'booking_new',
+          isUrgent: type === 'vaccine_reminder',
         }).catch((e) => logger.warn('Failed to save tapped notification:', e));
       }
 
@@ -809,10 +782,6 @@ export default function App() {
           'vaccine_reminder': 'medication',
           'daily_summary': 'reminder',
           'custom_reminder': 'reminder',
-          'booking_new': 'reminder',
-          'booking_update': 'reminder',
-          'booking_cancelled': 'reminder',
-          'chat_message': 'reminder',
           'family_join': 'reminder',
           'family_removed': 'reminder',
         };
@@ -830,7 +799,7 @@ export default function App() {
             message: content.body || '',
             timestamp: notification.date ? new Date(notification.date * 1000) : new Date(),
             isRead: false,
-            isUrgent: notificationType === 'vaccine_reminder' || notificationType === 'booking_new',
+            isUrgent: notificationType === 'vaccine_reminder',
           });
         }
 
@@ -916,7 +885,6 @@ export default function App() {
           setChildrenReady(false);
           setUser(null);
           setHasBabyProfile(null);
-          setIsAppSitter(false);
           setIsLocked(false);
           setIsAppLoading(false);
         }
@@ -925,7 +893,6 @@ export default function App() {
         setChildrenReady(false);
         setUser(null);
         setHasBabyProfile(null);
-        setIsAppSitter(false);
         setIsLocked(false);
         setIsAppLoading(false);
       }
@@ -941,34 +908,6 @@ export default function App() {
         cleanupPresence();
       };
     }
-  }, [user]);
-
-  // Check pending sitter registration flag (set when deregistering as sitter)
-  useEffect(() => {
-    if (!user) {
-      setPendingSitterReg(false);
-      return;
-    }
-    AsyncStorage.getItem('pending_sitter_registration').then(val => {
-      setPendingSitterReg(val === 'true');
-    });
-  }, [user]);
-
-  // Live-sync the isSitter flag so routing stays correct if it changes mid-session
-  // (covers the race where checkBiometricSettingsAndProfile timed out on first load)
-  useEffect(() => {
-    if (!user) return;
-    const userRef = doc(db, 'users', user.uid);
-    const unsubscribe = onSnapshot(
-      userRef,
-      (snap) => {
-        if (!snap.exists()) return;
-        const data = snap.data();
-        setIsAppSitter(data.isSitter === true);
-      },
-      (err) => logger.log('User doc snapshot error:', err)
-    );
-    return unsubscribe;
   }, [user]);
 
   // Re-lock app with biometrics every time it comes to foreground
@@ -992,16 +931,13 @@ export default function App() {
     try {
       const userRef = doc(db, 'users', uid);
 
-      // 2000ms timeout timeout for loading user profile, defaults to null
+      // 2000ms timeout for loading user profile, defaults to null
       const userSnap = await fetchWithTimeout(getDoc(userRef), 2000, null);
 
       let needsUnlock = false;
-      let sitterFlag = false;
 
       if (userSnap && userSnap.exists()) {
         const data = userSnap.data();
-        sitterFlag = data.isSitter === true;
-
         const settings = data.settings;
         if (settings && settings.biometricsEnabled) {
           needsUnlock = true;
@@ -1014,16 +950,12 @@ export default function App() {
 
       // 2000ms timeout for checking baby exists, defaults to true (assuming returning users mostly have babies)
       const babyExists = await fetchWithTimeout(checkIfBabyExists(), 2000, true);
-      // Batch both state updates so React renders them in a single pass —
-      // prevents a flash of BabyProfileScreen when isAppSitter hasn't been set yet.
-      setIsAppSitter(sitterFlag);
       setHasBabyProfile(babyExists);
       setIsAppLoading(false);
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);
 
     } catch (error) {
       logger.log('Error during startup checks:', error);
-      setIsAppSitter(false);
       setIsAppLoading(false);
     }
   };
@@ -1099,9 +1031,8 @@ export default function App() {
     ); // Keep splash visible natively, but show Liquid Glass if splash was already hidden (e.g. after login)
   }
 
-  // Only force BabyProfileScreen for parents (non-sitters, non-guests).
-  // Sitters skip this entirely and land on the Babysitter tab instead — see MainAppNavigator below.
-  if (user && hasBabyProfile === false && !isAppSitter && !pendingSitterReg) {
+  // Only force BabyProfileScreen for parents (non-guests).
+  if (user && hasBabyProfile === false) {
     return (
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <LanguageProvider>
@@ -1146,7 +1077,7 @@ export default function App() {
             <ThemeProvider>
               <ToastProvider>
                 <GuestProvider initialIsGuest={isGuestMode} onExitGuest={() => setIsGuestMode(false)}>
-                <ActiveChildProvider onReady={handleChildrenReady} isSitter={isAppSitter}>
+                <ActiveChildProvider onReady={handleChildrenReady}>
                   <QuickActionsProvider>
                     <SleepTimerProvider>
                       <FoodTimerProvider>
@@ -1183,18 +1114,11 @@ export default function App() {
                                             FullSettings: 'settings',
                                           },
                                         },
-                                        Babysitter: {
-                                          screens: {
-                                            SitterList: 'babysitter',
-                                            SitterProfile: 'babysitter/:sitterId',
-                                            SitterDashboard: 'babysitter/dashboard',
-                                          },
-                                        },
                                       },
                                     },
                                   }}
                                 >
-                                  <MainAppNavigator isAppSitter={isAppSitter} pendingSitterReg={pendingSitterReg} />
+                                  <MainAppNavigator />
                                 </NavigationContainer>
                               ) : (
                                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>

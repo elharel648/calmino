@@ -20,8 +20,6 @@ import { logger } from '../utils/logger';
 export type FeatureKey =
     | 'statistics'
     | 'growth_charts'
-    | 'babysitter'
-    | 'babysitter_calculator'
     | 'export_reports'
     | 'white_noise'
     | 'night_light'
@@ -43,7 +41,6 @@ export type FeatureKey =
 export const FREE_LIMITS = {
     maxChildren: 1,
     maxFamilyMembers: 2,
-    maxBabysitterBookingsPerMonth: 1,
     reportHistoryDays: 7,
     canExport: false,
     hasAds: true,
@@ -53,7 +50,6 @@ export const FREE_LIMITS = {
 export const PREMIUM_ACCESS = {
     maxChildren: Infinity,
     maxFamilyMembers: Infinity,
-    maxBabysitterBookingsPerMonth: Infinity,
     reportHistoryDays: Infinity,
     canExport: true,
     hasAds: false,

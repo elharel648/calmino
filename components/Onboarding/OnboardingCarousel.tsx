@@ -3,7 +3,6 @@ import {
     Modal, View, Text, TouchableOpacity, StyleSheet,
     Dimensions, NativeScrollEvent, NativeSyntheticEvent, Platform, Image,
 } from 'react-native';
-import { LiquidGlassView } from '@callstack/liquid-glass';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     FadeIn, FadeInDown, FadeInUp,
@@ -33,7 +32,6 @@ const SLIDE_CONFIGS: SlideConfig[] = [
     { gradient: ['#7B3030', '#C8806A', '#D49A80'], accentColor: '#FFFFFF' },
     { gradient: ['#1a0a2e', '#2d1b4e', '#1e0e3e'], accentColor: '#A78BFA' },
     { gradient: ['#0a1e28', '#0d2A37', '#073828'], accentColor: '#34D399' },
-    { gradient: ['#2e0f14', '#1f090d', '#0f0406'], accentColor: '#F43F5E' },
     { gradient: ['#0f1923', '#1a2844', '#0f3460'], accentColor: '#C8806A' },
 ];
 
@@ -223,7 +221,7 @@ const wsc = StyleSheet.create({
 // (Timer Slide Removed as requested)
 
 // ─── SLIDE 2: QUICK ACTIONS SHOWCASE ────────────────────────────────────────
-import { Moon, Utensils, Droplets, Activity, Users, UserPlus, Heart, Stethoscope, Syringe, Thermometer, Rocket, Star, MapPin, Music, Pill, Award, Sparkles, Lightbulb, Bell, Plus, TrendingUp, HeartPulse } from 'lucide-react-native';
+import { Moon, Utensils, Droplets, Activity, Users, UserPlus, Heart, Rocket, Music, Pill, Award, Sparkles, Lightbulb, Bell, TrendingUp, HeartPulse } from 'lucide-react-native';
 
 // Exact colors + icons from QuickActionsConfig / ThemeContext
 const QUICK_ACTIONS_GRID = [
@@ -413,115 +411,7 @@ const stc = StyleSheet.create({
     slideSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'center', lineHeight: 22, maxWidth: 310, marginTop: 16 },
 });
 
-// ─── SLIDE 4: BABYSITTER ─────────────────────────────────────────────────────
-
-const SITTER_LIST = [
-    { name: 'שירה רוזנברג', city: 'הרצליה', rating: 4.5, reviews: 8, price: 50, experience: 'שנת ניסיון', availableTonight: false, isFavorite: true,  emoji: '👩🏻' },
-    { name: 'נועה כהן',     city: 'תל אביב', rating: 4.9, reviews: 24, price: 70, experience: '3 שנות ניסיון', availableTonight: true,  isFavorite: false, emoji: '👩🏽‍🦱' },
-    { name: 'מאיה אברהם',   city: 'תל אביב', rating: 5.0, reviews: 42, price: 90, experience: '10 שנות ניסיון', availableTonight: true,  isFavorite: true,  emoji: '👩🏻‍🦳' },
-];
-
-function BabysitterSlideContent() {
-    const { t } = useLanguage();
-    return (
-        <View style={bsc.container}>
-            <Animated.Text entering={FadeInDown.delay(80).springify()} style={bsc.slideTitle}>
-                {t('onboarding.slide4.title')}
-            </Animated.Text>
-
-            <View style={bsc.list}>
-                {SITTER_LIST.map((sitter, i) => (
-                    <Animated.View key={i} entering={FadeInDown.delay(160 + i * 110).springify()}>
-                        <LiquidGlassView
-                            style={bsc.card}
-                            effect="regular"
-                            colorScheme="dark"
-                        >
-                            <View style={bsc.cardTop}>
-                                {/* Avatar */}
-                                <View style={bsc.photoWrapper}>
-                                    <View style={bsc.avatarCircle}>
-                                        <Text style={bsc.avatarEmoji}>{sitter.emoji}</Text>
-                                    </View>
-                                    {sitter.availableTonight && <View style={bsc.availableDot} />}
-                                </View>
-
-                                {/* Info */}
-                                <View style={bsc.info}>
-                                    <View style={bsc.nameRow}>
-                                        <Heart size={15} color={sitter.isFavorite ? '#F43F5E' : 'rgba(255,255,255,0.3)'} fill={sitter.isFavorite ? '#F43F5E' : 'transparent'} strokeWidth={sitter.isFavorite ? 0 : 1.5} />
-                                        {sitter.availableTonight && (
-                                            <View style={bsc.tonightBadge}><Text style={bsc.tonightText}>{t('onboarding.slide4.availableTonight')}</Text></View>
-                                        )}
-                                        <Text style={bsc.sitterName}>{sitter.name}</Text>
-                                    </View>
-                                    <View style={bsc.metaRow}>
-                                        <Star size={11} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
-                                        <Text style={bsc.ratingText}>{sitter.rating.toFixed(1)}</Text>
-                                        <Text style={bsc.reviewCount}>({sitter.reviews})</Text>
-                                        <View style={bsc.dot} />
-                                        <Text style={bsc.experience}>{sitter.experience}</Text>
-                                    </View>
-                                    <View style={bsc.locationRow}>
-                                        <MapPin size={10} color="rgba(255,255,255,0.5)" strokeWidth={2} />
-                                        <Text style={bsc.locationText}>{sitter.city}</Text>
-                                    </View>
-                                </View>
-
-                                {/* Price */}
-                                <View style={bsc.priceBlock}>
-                                    <Text style={bsc.price}>{sitter.price} ₪</Text>
-                                    <Text style={bsc.priceLabel}>{t('onboarding.slide4.perHour')}</Text>
-                                </View>
-                            </View>
-                        </LiquidGlassView>
-                    </Animated.View>
-                ))}
-            </View>
-
-            <Animated.Text entering={FadeInUp.delay(660).springify()} style={bsc.slideSubtitle}>
-                {t('onboarding.slide4.subtitle')}
-            </Animated.Text>
-        </View>
-    );
-}
-
-const bsc = StyleSheet.create({
-    container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, gap: 14, width: '100%' },
-    slideTitle: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', letterSpacing: -1 },
-
-    list: { width: '100%', gap: 10 },
-    card: { borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, overflow: 'hidden' },
-    cardTop: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-
-    photoWrapper: { position: 'relative', flexShrink: 0 },
-    avatarCircle: { width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-    avatarEmoji: { fontSize: 32 },
-    availableDot: { position: 'absolute', bottom: 0, right: 0, width: 13, height: 13, borderRadius: 7, backgroundColor: '#C8806A', borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
-
-    info: { flex: 1, alignItems: 'flex-end' },
-    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
-    sitterName: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
-    tonightBadge: { backgroundColor: 'rgba(200,128,106,0.35)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
-    tonightText: { fontSize: 10, fontWeight: '700', color: '#FFBFA8' },
-
-    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 3 },
-    ratingText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
-    reviewCount: { fontSize: 11, color: 'rgba(255,255,255,0.55)' },
-    dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.3)' },
-    experience: { fontSize: 11, color: 'rgba(255,255,255,0.55)' },
-
-    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-    locationText: { fontSize: 11, color: 'rgba(255,255,255,0.5)' },
-
-    priceBlock: { alignItems: 'center', minWidth: 44 },
-    price: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
-    priceLabel: { fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: '600' },
-
-    slideSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'center', lineHeight: 23, maxWidth: 300 },
-});
-
-// ─── SLIDE 5: FAMILY SHARING ─────────────────────────────────────────────────
+// ─── SLIDE 4: FAMILY SHARING ─────────────────────────────────────────────────
 
 const FAMILY_LIST = [
     { name: 'דני (אני)', email: 'dani@gmail.com', roleKey: 'admin', initial: 'ד' },
@@ -766,9 +656,6 @@ const handleNext = () => {
                     </View>
                     <View style={[s.slide, { width }]}>
                         <StatisticsSlideContent />
-                    </View>
-                    <View style={[s.slide, { width }]}>
-                        <BabysitterSlideContent />
                     </View>
                     <View style={[s.slide, { width }]}>
                         <FamilySharingSlideContent />

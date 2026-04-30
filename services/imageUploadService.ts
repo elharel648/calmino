@@ -53,7 +53,7 @@ async function uriToBlob(uri: string): Promise<Blob> {
 /**
  * Upload image to Firebase Storage using JS SDK
  * @param uri - Local image URI
- * @param path - Storage path (e.g., "sitterPhotos/userId/photo.jpg")
+ * @param path - Storage path (e.g., "childPhotos/userId/photo.jpg")
  * @returns Download URL
  */
 export async function uploadImage(uri: string, path: string): Promise<string> {
@@ -128,30 +128,6 @@ async function uploadImageAsBase64(uri: string): Promise<string> {
         logger.error('❌ Base64 conversion failed:', error);
         throw new Error('Failed to save image. Please check your internet connection and try again.');
     }
-}
-
-/**
- * Upload sitter profile photo
- */
-export async function uploadSitterPhoto(uri: string): Promise<string> {
-    const userId = auth.currentUser?.uid;
-    if (!userId) throw new Error('Not authenticated');
-
-    const path = `sitterPhotos/${userId}/profile_${Date.now()}.jpg`;
-    const downloadURL = await uploadImage(uri, path);
-
-    const userRef = doc(db, 'users', userId);
-    await setDoc(userRef, { photoUrl: downloadURL }, { merge: true });
-
-    try {
-        const sitterRef = doc(db, 'sitters', userId);
-        await setDoc(sitterRef, { image: downloadURL }, { merge: true });
-    } catch (e) {
-        // Sitter doc may not exist yet
-    }
-
-    logger.debug('✅', 'Sitter photo saved');
-    return downloadURL;
 }
 
 /**

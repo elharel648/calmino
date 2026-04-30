@@ -179,46 +179,6 @@ export interface Comparison {
 }
 
 // ===================
-// SITTER TYPES
-// ===================
-
-export interface Sitter {
-    id: string;
-    userId: string;
-    name: string;
-    email: string;
-    phone?: string;
-    bio?: string;
-    experience?: string;
-    hourlyRate?: number;
-    rating?: number;
-    reviewCount?: number;
-    photoUrl?: string;
-    isApproved: boolean;
-    isAvailable: boolean;
-    location?: {
-        city?: string;
-        area?: string;
-    };
-    certifications?: string[];
-    createdAt: Date | Timestamp;
-}
-
-export interface Booking {
-    id: string;
-    parentId: string;
-    sitterId: string;
-    childId: string;
-    date: Date | Timestamp;
-    startTime: string;
-    endTime: string;
-    status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-    totalAmount?: number;
-    notes?: string;
-    createdAt: Date | Timestamp;
-}
-
-// ===================
 // UTILITY TYPES
 // ===================
 

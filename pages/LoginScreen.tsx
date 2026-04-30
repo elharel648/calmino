@@ -18,7 +18,7 @@ import { StyleSheet,
   Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, Briefcase, User, QrCode, Compass } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Check, Shield, Users, X, User, QrCode, Compass } from 'lucide-react-native';
 import LegalModal, { LegalType } from '../components/Legal/LegalModal';
 import ConfettiBurst from '../components/Effects/ConfettiBurst';
 import * as Google from 'expo-auth-session/providers/google';
@@ -159,9 +159,6 @@ export default function LoginScreen({
 
   // Legal modals
   const [legalModal, setLegalModal] = useState<LegalType | null>(null);
-
-  // Babysitter registration
-  const [registerAsBabysitter, setRegisterAsBabysitter] = useState(false);
 
   // Terms and Privacy Agreement
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -504,7 +501,6 @@ export default function LoginScreen({
               minimumAge: 16,
             },
           },
-          ...(registerAsBabysitter ? { isSitter: true, sitterActive: false } : {}),
         }, { merge: true });
 
         // If user has a pending invite code, join the family
@@ -837,44 +833,6 @@ export default function LoginScreen({
             {/* Registration Options */}
             {!isLogin && (
               <View style={styles.registrationOptions}>
-                {/* Babysitter Registration */}
-                <TouchableOpacity
-                  style={[
-                    styles.optionCard,
-                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.04)' : '#FAFAFA', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F0F0F0' },
-                    registerAsBabysitter && {
-                      borderColor: '#F59E0B',
-                      backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.08)' : '#FFFDF5',
-                    }
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    setRegisterAsBabysitter(!registerAsBabysitter);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.optionRow}>
-                    <View style={[styles.optionIcon, { backgroundColor: registerAsBabysitter ? '#F59E0B' : (isDarkMode ? 'rgba(245,158,11,0.15)' : '#FEF3C7') }]}>
-                      <Briefcase size={16} color={registerAsBabysitter ? '#fff' : '#D97706'} strokeWidth={2.5} />
-                    </View>
-                    <View style={styles.optionTextWrap}>
-                      <Text style={[styles.optionTitle, { color: theme.textPrimary }]}>
-                        {t('login.babysitter.title')}
-                      </Text>
-                      <Text style={[styles.optionSubtitle, { color: theme.textSecondary }]}>
-                        {t('login.babysitter.subtitle')}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={[
-                    styles.optionCheckbox,
-                    { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : '#D1D5DB' },
-                    registerAsBabysitter && { backgroundColor: '#F59E0B', borderColor: '#F59E0B' }
-                  ]}>
-                    {registerAsBabysitter && <Check size={12} color="#fff" strokeWidth={3} />}
-                  </View>
-                </TouchableOpacity>
-
                 {/* Join Family Code */}
                 <TouchableOpacity
                   style={[

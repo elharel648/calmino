@@ -353,51 +353,7 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
         creatorName = creatorDoc.data()?.displayName || creatorDoc.data()?.name || 'מישהו';
     } catch (e) { /* fallback to default */ }
 
-    // Determine if this is a guest/babysitter invite or family invite
-    const isGuestInvite = invite.type === 'guest' || invite.childId;
-
-    if (isGuestInvite) {
-        // ── 3️⃣ BABYSITTER GUEST INVITE ──
-        let childName = 'התינוק';
-        if (invite.childId) {
-            try {
-                const childDoc = await db.doc(`babies/${invite.childId}`).get();
-                childName = childDoc.data()?.name || 'התינוק';
-            } catch (e) { /* fallback */ }
-        }
-
-        const bodyContent = `
-            <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך לשמור על <strong>${childName}</strong> דרך Calmino!</p>
-            
-            <div style="background:linear-gradient(135deg,#C8806A,#D4A373);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
-                <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד הגישה שלך:</p>
-                <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${inviteCode}</p>
-                <p style="color:rgba(255,255,255,0.7);margin:12px 0 0;font-size:13px;">⏰ הקוד תקף ל-24 שעות</p>
-            </div>
-            
-            <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
-                <p style="color:#2d3436;font-weight:600;margin:0 0 12px;">איך להצטרף:</p>
-                <p style="color:#636e72;margin:6px 0;">1. הורידו את אפליקציית <strong>Calmino</strong></p>
-                <p style="color:#636e72;margin:6px 0;">2. הירשמו וגשו להגדרות</p>
-                <p style="color:#636e72;margin:6px 0;">3. לחצו "הצטרף עם קוד" והזינו את הקוד למעלה</p>
-            </div>`;
-
-        await db.collection('mail').add({
-            to: [targetEmail],
-            headers: {
-                'X-Priority': '1',
-                'X-Mailer': 'Calmino App',
-                'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
-            },
-            message: {
-                subject: `${creatorName} הזמין/ה אותך לשמור על ${childName} - Calmino`,
-                text: `${creatorName} הזמין/ה אותך לשמור על ${childName} דרך Calmino. קוד הגישה: ${inviteCode}. הורד את האפליקציה והזן את הקוד.`,
-                html: calminoEmailTemplate('!קיבלת הזמנה לשמרטפות', bodyContent),
-            },
-        });
-
-        console.log(`✅ Babysitter invite email queued for ${targetEmail}`);
-    } else {
+    {
         // ── FAMILY MEMBER INVITE ──
         const bodyContent = `
             <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
@@ -433,62 +389,6 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
     }
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 4️⃣ NEW REVIEW EMAIL — Sent to babysitter when a parent leaves a review
-// ══════════════════════════════════════════════════════════════════════════════
-
-export const onReviewCreated = onDocumentCreated('reviews/{reviewId}', async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) return;
-
-    const review = snapshot.data();
-    const sitterId = review.babysitterId || review.sitterId;
-    if (!sitterId) return;
-
-    // Get sitter email
-    const sitterDoc = await db.doc(`users/${sitterId}`).get();
-    if (!sitterDoc.exists) return;
-
-    const sitterEmail = sitterDoc.data()?.email;
-    if (!sitterEmail) return;
-
-    const sitterName = sitterDoc.data()?.displayName || sitterDoc.data()?.name || 'בייביסיטר';
-    const parentName = review.parentName || 'הורה';
-    const rating = review.rating || 5;
-    const comment = review.comment || review.text || '';
-
-    // Generate stars
-    const stars = '⭐'.repeat(Math.min(rating, 5));
-
-    const bodyContent = `
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">שלום <strong>${sitterName}</strong> 👋</p>
-        <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${parentName}</strong> השאיר/ה לך דירוג חדש!</p>
-        
-        <div style="background:#f8f9fa;border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
-            <p style="font-size:32px;margin:0;">${stars}</p>
-            <p style="color:#2d3436;font-size:18px;font-weight:600;margin:12px 0 0;">${rating}/5</p>
-            ${comment ? `<p style="color:#636e72;font-style:italic;margin:16px 0 0;font-size:15px;">"${comment}"</p>` : ''}
-        </div>
-        
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">פתחו את האפליקציה כדי לראות את כל הדירוגים שלכם.</p>
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">המשיכו ככה! 💪</p>`;
-
-    await db.collection('mail').add({
-        to: [sitterEmail],
-        headers: {
-            'X-Priority': '1',
-            'X-Mailer': 'Calmino App',
-            'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
-        },
-        message: {
-            subject: `קיבלת דירוג חדש מ${parentName}! - Calmino`,
-            text: `שלום ${sitterName}, ${parentName} השאיר/ה לך דירוג ${rating}/5. ${comment ? `"${comment}"` : ''} פתחו את Calmino לפרטים.`,
-            html: calminoEmailTemplate('!קיבלת דירוג חדש', bodyContent),
-        },
-    });
-
-    console.log(`✅ Review email queued for sitter ${sitterId}`);
-});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 5️⃣ CHAT EMAIL — Sent when user receives a message and is offline
@@ -742,7 +642,7 @@ export const onChatMessageCreated = onDocumentCreated('chats/{chatId}/messages/{
     if (!receiverId) return;
 
     // Get sender name
-    const senderName = chatData.parentId === senderId ? chatData.parentName : chatData.sitterName;
+    const senderName = chatData.parentName || chatData.senderName || 'משתמש';
 
     // Get receiver data
     const userDoc = await db.doc(`users/${receiverId}`).get();
@@ -817,49 +717,6 @@ export const onChatMessageCreated = onDocumentCreated('chats/{chatId}/messages/{
     }
 });
 
-export const onBookingCreated = onDocumentCreated('bookings/{bookingId}', async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) return;
-
-    const booking = snapshot.data();
-    const receiverId = booking.sitterId; // Assuming sitter receives the request
-
-    // Get receiver push token
-    const userDoc = await db.doc(`users/${receiverId}`).get();
-    if (!userDoc.exists) return;
-
-    const pushToken = userDoc.data()?.pushToken;
-    if (!pushToken || !pushToken.startsWith('ExponentPushToken[')) return;
-
-    try {
-        const message = {
-            to: pushToken,
-            sound: 'default',
-            title: 'בקשת בייביסיטר חדשה!',
-            body: `${booking.parentName} שלח/ה לך בקשה לשמירה ב-${new Date(booking.startTime).toLocaleDateString('he-IL')}`,
-            data: { type: 'booking_new', bookingId: event.params.bookingId },
-            channelId: 'booking',
-        };
-
-        const response = await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Accept-encoding': 'gzip, deflate',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(message),
-        });
-
-        if (response.ok) {
-            console.log(`Push notification sent to ${receiverId} for new booking ${event.params.bookingId}`);
-        } else {
-            console.error(`Push notification HTTP error: ${response.status}`, await response.text());
-        }
-    } catch (error) {
-        console.error('Error sending push for booking:', error);
-    }
-});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 6️⃣ FAMILY JOIN PUSH — Sent to admins when a new member/guest joins
@@ -884,7 +741,7 @@ export const onFamilyMemberJoined = onDocumentUpdated('families/{familyId}', asy
     for (const newMemberId of newMemberIds) {
         const newMember = afterMembers[newMemberId];
         const memberName = newMember.name || 'משתמש חדש';
-        const roleText = newMember.role === 'guest' ? 'כאורח/בייביסיטר' : 'כחבר משפחה';
+        const roleText = newMember.role === 'guest' ? 'כאורח' : 'כחבר משפחה';
         const babyName = afterData.babyName || 'המשפחה';
 
         // Find all admins to notify

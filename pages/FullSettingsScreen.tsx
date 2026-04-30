@@ -262,9 +262,8 @@ if (data.settings.language !== undefined) {
     try {
       const allKeys = await AsyncStorage.getAllKeys();
       const keysToRemove = allKeys.filter(k => 
-        k === 'offline_childrenList' || 
+        k === 'offline_childrenList' ||
         k.startsWith('history_cache_') ||
-        k === '@sitters_cache' ||
         k === '@offline_queue'
       );
       if (keysToRemove.length > 0) await AsyncStorage.multiRemove(keysToRemove);
@@ -507,31 +506,7 @@ if (data.settings.language !== undefined) {
                         logger.error('Error leaving family:', error);
                       }
 
-                      // 4. Delete bookings where user is parent or babysitter
-                      try {
-                        const parentBookingsQuery = query(
-                          collection(db, 'bookings'),
-                          where('parentId', '==', userId)
-                        );
-                        const babysitterBookingsQuery = query(
-                          collection(db, 'bookings'),
-                          where('babysitterId', '==', userId)
-                        );
-                        const [parentBookingsSnapshot, babysitterBookingsSnapshot] = await Promise.all([
-                          getDocs(parentBookingsQuery),
-                          getDocs(babysitterBookingsQuery)
-                        ]);
-                        const deleteBookingPromises = [
-                          ...parentBookingsSnapshot.docs.map((bookingDoc) => deleteDoc(doc(db, 'bookings', bookingDoc.id))),
-                          ...babysitterBookingsSnapshot.docs.map((bookingDoc) => deleteDoc(doc(db, 'bookings', bookingDoc.id)))
-                        ];
-                        await Promise.all(deleteBookingPromises);
-                        logger.log('✅ Deleted all bookings');
-                      } catch (error) {
-                        logger.error('Error deleting bookings:', error);
-                      }
-
-                      // 5. Remove user from chats (update participants list)
+                      // 4. Remove user from chats (update participants list)
                       try {
                         const chatsQuery = query(
                           collection(db, 'chats'),
@@ -568,22 +543,7 @@ if (data.settings.language !== undefined) {
                         logger.error('Error updating chats:', error);
                       }
 
-                      // 6. Delete sitter document if user is a sitter
-                      try {
-                        const sitterDoc = doc(db, 'sitters', userId);
-                        const sitterSnap = await getDoc(sitterDoc);
-                        if (sitterSnap.exists()) {
-                          const sitterData = sitterSnap.data();
-                          if (sitterData.image) await deleteStorageObjectByUrl(sitterData.image);
-
-                          await deleteDoc(sitterDoc);
-                          logger.log('✅ Deleted sitter document');
-                        }
-                      } catch (error) {
-                        logger.error('Error deleting sitter document:', error);
-                      }
-
-                      // 7. Delete notifications for this user
+                      // 5. Delete notifications for this user
                       try {
                         const notificationsQuery = query(
                           collection(db, 'notifications'),
@@ -599,15 +559,12 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting notifications:', error);
                       }
 
-                      // 8. Delete user document from Firestore + Storage
-                      // Save essential flags BEFORE deletion so we can restore if auth fails
-                      let savedIsSitter = false;
+                      // 6. Delete user document from Firestore + Storage
                       let savedDisplayName = '';
                       try {
                         const userDoc = await getDoc(doc(db, 'users', userId));
                         if (userDoc.exists()) {
                           const uData = userDoc.data();
-                          savedIsSitter = uData.isSitter === true;
                           savedDisplayName = uData.displayName || '';
                           if (uData.photoUrl) {
                             await deleteStorageObjectByUrl(uData.photoUrl);
@@ -619,7 +576,7 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting user document:', error);
                       }
 
-                      // 9. Delete Firebase Auth user LAST
+                      // 7. Delete Firebase Auth user LAST
                       try {
                         await deleteUser(user);
                         analyticsDeleteAccount();
@@ -628,11 +585,10 @@ if (data.settings.language !== undefined) {
                         setLoading(false);
                         if (authErr?.code === 'auth/requires-recent-login') {
                           // Auth user persists — restore minimal user doc so the
-                          // next login session retains the sitter flag and routing works.
+                          // next login session retains the display name.
                           try {
                             await setDoc(doc(db, 'users', userId), {
                               displayName: savedDisplayName,
-                              ...(savedIsSitter ? { isSitter: true, sitterActive: false } : {}),
                             });
                             logger.log('🔄 Restored minimal user doc after auth/requires-recent-login');
                           } catch (_) {}
@@ -657,7 +613,7 @@ if (data.settings.language !== undefined) {
                         }
                       }
 
-                      // 10. Always sign out
+                      // 8. Always sign out
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       setLoading(false);
                       try {

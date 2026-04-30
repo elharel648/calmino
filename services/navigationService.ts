@@ -69,14 +69,6 @@ export function navigateToReports() {
 }
 
 /**
- * Navigate to Babysitter tab
- */
-export function navigateToBabysitter() {
-    const babysitterTab = getTranslation ? getTranslation('navigation.babysitter') : 'בייביסיטר';
-    navigate(babysitterTab);
-}
-
-/**
  * Navigate to Notifications screen
  */
 export function navigateToNotifications() {
@@ -115,28 +107,6 @@ export function navigateFromNotification(type: string, data?: any) {
         case 'vaccine_reminder':
             // Go to notifications screen
             navigateToNotifications();
-            break;
-
-        case 'chat_message':
-            navigateToBabysitter();
-            break;
-
-        case 'booking_new':
-        case 'booking_update':
-        case 'booking_cancelled':
-            // Go to bookings screen
-            if (navigationRef.isReady()) {
-                navigationRef.dispatch(
-                    CommonActions.navigate({
-                        name: getTranslation ? getTranslation('navigation.babysitter') : 'בייביסיטר',
-                        params: {
-                            screen: 'ParentBookings',
-                        },
-                    })
-                );
-            } else {
-                navigateToBabysitter();
-            }
             break;
 
         default:

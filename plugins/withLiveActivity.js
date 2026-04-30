@@ -27,7 +27,6 @@ const withLiveActivity = (config) => {
 
       // רשימה מעודכנת של קבצים להעתקה
       const filesToCopy = [
-        'BabysitterShiftLiveActivity.swift',
         'SleepLiveActivity.swift',
         'FeedingLiveActivity.swift',
         'BreastfeedingLiveActivity.swift',
@@ -105,7 +104,6 @@ const withLiveActivity = (config) => {
 
     // הוספת קבצי ה-Widget ל-Target של ה-Widget
     const widgetFiles = [
-      'BabysitterShiftLiveActivity.swift',
       'SleepLiveActivity.swift',
       'FeedingLiveActivity.swift',
       'BreastfeedingLiveActivity.swift',
@@ -162,7 +160,6 @@ const withLiveActivity = (config) => {
         mainSourcesPhase.files = mainSourcesPhase.files.filter(f => {
           const comment = f.comment || '';
           if (
-            comment.includes('BabysitterShiftLiveActivity.swift') ||
             comment.includes('SleepLiveActivity.swift') ||
             comment.includes('FeedingLiveActivity.swift') ||
             comment.includes('BreastfeedingLiveActivity.swift') ||
