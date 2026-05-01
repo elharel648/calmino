@@ -52,12 +52,15 @@ const BOTTOM_OFFSET = 28;
 const FULLSCREEN_SCREENS: string[] = [];
 
 import { useScrollTracking } from '../../context/ScrollTrackingContext';
+import { useQuickActions } from '../../context/QuickActionsContext';
+import { Plus } from 'lucide-react-native';
 
 // ─── Component ───────────────────────────────────────────────────────────────
 const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
   ({ state, descriptors, navigation }) => {
     const { isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
+    const { setFabSheetVisible } = useQuickActions();
     
     // Responsive scroll tracking
     const { scrollY } = useScrollTracking();
@@ -179,6 +182,18 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
             </View>
           )}
 
+          {/* ─── FAB (+) button — left side ──────────────────────── */}
+          <TouchableOpacity
+            style={styles.fab}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setFabSheetVisible(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Plus size={22} color="#fff" strokeWidth={2.8} />
+          </TouchableOpacity>
+
           {/* ─── Tab Items Layer (on top of glass via zIndex) ────── */}
           <View style={styles.tabsRow} pointerEvents="box-none">
             {state.routes.map((route, index) => {
@@ -261,7 +276,8 @@ const styles = StyleSheet.create({
     height: BAR_H,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingLeft: 8,
+    paddingRight: 60, // space for FAB on the right
     zIndex: 10,
   },
   tab: {
@@ -270,6 +286,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
+  },
+  fab: {
+    position: 'absolute',
+    right: 6,
+    bottom: 7,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#C8806A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 20,
+    shadowColor: '#C8806A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
   },
   iconWrap: {
     alignItems: 'center',

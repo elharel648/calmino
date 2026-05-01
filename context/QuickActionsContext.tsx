@@ -28,6 +28,12 @@ interface QuickActionsContextType {
     toggleActionVisibility: (key: QuickActionKey) => void;
     resetToDefault: () => void;
     isProtected: (key: QuickActionKey) => boolean;
+    // FAB sheet
+    fabSheetVisible: boolean;
+    setFabSheetVisible: (v: boolean) => void;
+    pendingFABAction: QuickActionKey | null;
+    triggerFABAction: (action: QuickActionKey) => void;
+    clearFABAction: () => void;
 }
 
 const STORAGE_KEY_ORDER = '@quick_actions_order';
@@ -39,6 +45,8 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     const [actionOrder, setActionOrder] = useState<QuickActionKey[]>(DEFAULT_ORDER);
     const [hiddenActions, setHiddenActions] = useState<QuickActionKey[]>([]);
     const [isEditMode, setEditMode] = useState(false);
+    const [fabSheetVisible, setFabSheetVisible] = useState(false);
+    const [pendingFABAction, setPendingFABAction] = useState<QuickActionKey | null>(null);
 
     // Load saved preferences on mount
     useEffect(() => {
@@ -131,6 +139,14 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
                 toggleActionVisibility,
                 resetToDefault,
                 isProtected,
+                fabSheetVisible,
+                setFabSheetVisible,
+                pendingFABAction,
+                triggerFABAction: (action: QuickActionKey) => {
+                    setPendingFABAction(action);
+                    setFabSheetVisible(false);
+                },
+                clearFABAction: () => setPendingFABAction(null),
             }}
         >
             {children}

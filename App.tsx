@@ -96,6 +96,7 @@ import { GuestProvider } from './context/GuestContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import GuestLoginPrompt from './components/GuestLoginPrompt';
+import FABQuickActionsSheet from './components/Home/FABQuickActionsSheet';
 import {
   AnimatedHomeIcon,
   AnimatedTimelineIcon,
@@ -1131,6 +1132,7 @@ export default function App() {
                         </AudioProvider>
                       </FoodTimerProvider>
                     </SleepTimerProvider>
+                    <FABQuickActionsSheet />
                   </QuickActionsProvider>
                 </ActiveChildProvider>
                 <GuestLoginPrompt onLoginPress={() => setIsGuestMode(false)} />

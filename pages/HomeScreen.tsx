@@ -46,6 +46,7 @@ import { auth, db } from '../services/firebaseConfig';
 import { doc, updateDoc, collection, query, getDocs, limit } from 'firebase/firestore';
 import { saveEventToFirebase, formatTimeFromTimestamp } from '../services/firebaseService';
 import { useToast } from '../context/ToastContext';
+import { useQuickActions } from '../context/QuickActionsContext';
 import { undoService } from '../services/undoService';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
@@ -209,6 +210,24 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isEditChildModalOpen, setIsEditChildModalOpen] = useState(false);
     const user = auth.currentUser;
     const { isGuest, promptLogin } = useGuest();
+    const { pendingFABAction, clearFABAction } = useQuickActions();
+
+    // Execute pending FAB action when screen is focused
+    useEffect(() => {
+        if (!pendingFABAction) return;
+        const actionMap: Record<string, () => void> = {
+            food:         () => setTrackingModalType('food'),
+            sleep:        () => setTrackingModalType('sleep'),
+            diaper:       () => setTrackingModalType('diaper'),
+            magicMoments: () => setIsMagicMomentsOpen(true),
+        };
+        const fn = actionMap[pendingFABAction];
+        if (fn) {
+            setTimeout(() => { fn(); clearFABAction(); }, 200);
+        } else {
+            clearFABAction();
+        }
+    }, [pendingFABAction]);
 
     // Cinematic Wrapped state (to be converted to Periodic Journey later)
     const [showWrapped, setShowWrapped] = useState(false);
