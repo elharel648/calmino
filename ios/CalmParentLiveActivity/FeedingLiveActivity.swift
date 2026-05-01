@@ -61,13 +61,13 @@ struct FeedingLiveActivity: Widget {
                             Text("מושהה")
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
                                 .foregroundColor(.orange)
-                                .transition(.blurReplace)
+                                .transition(.scale.combined(with: .opacity))
                         } else {
                             Text(context.state.startTime, style: .timer)
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
                                 .foregroundColor(feedingAccent)
                                 .monospacedDigit()
-                                .transition(.blurReplace)
+                                .transition(.scale.combined(with: .opacity))
                         }
                     }
                     .padding(.trailing, 4)

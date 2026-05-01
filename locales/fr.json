@@ -104,6 +104,7 @@
     "diapers": "Couches",
     "supplements": "Suppléments",
     "editOrder": "Modifier l'Ordre",
+    "editOrderHint": "Appui long pour glisser et réorganiser • Appuyez sur l'œil pour masquer",
     "comparison": {
       "title": "Comparaison avec la Semaine Dernière",
       "yesterday": "Comparaison avec Hier",
@@ -331,6 +332,7 @@
     "nightLight": "Veilleuse",
     "quickReminder": "Rappel Rapide",
     "custom": "Ajouter",
+    "customize": "Personnaliser",
     "active": {
       "food": "En train de manger",
       "sleep": "En train de dormir"

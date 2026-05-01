@@ -104,6 +104,7 @@
     "diapers": "Windeln",
     "supplements": "Nahrungsergänzungsmittel",
     "editOrder": "Reihenfolge bearbeiten",
+    "editOrderHint": "Lang drücken zum Ziehen und Neuordnen • Auge antippen zum Ausblenden",
     "comparison": {
       "title": "Vergleich zur letzten Woche",
       "yesterday": "Vergleich zu gestern",
@@ -331,6 +332,7 @@
     "nightLight": "Nachtlicht",
     "quickReminder": "Schnelle Erinnerung",
     "custom": "Hinzufügen",
+    "customize": "Anpassen",
     "active": {
       "food": "Mahlzeit",
       "sleep": "Schläft"

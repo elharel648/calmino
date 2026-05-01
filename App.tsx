@@ -96,7 +96,7 @@ import { GuestProvider } from './context/GuestContext';
 // Removed in-app DynamicIsland - using native iOS Live Activity instead
 import ErrorBoundary from './components/ErrorBoundary';
 import GuestLoginPrompt from './components/GuestLoginPrompt';
-import FABQuickActionsSheet from './components/Home/FABQuickActionsSheet';
+import RadialSOSMenu from './components/Home/RadialSOSMenu';
 import {
   AnimatedHomeIcon,
   AnimatedTimelineIcon,
@@ -1127,12 +1127,12 @@ export default function App() {
                                   <PremiumLoader size={48} />
                                 </View>
                               )}
+                              <RadialSOSMenu />
                             </SafeAreaProvider>
                           </PremiumProvider>
                         </AudioProvider>
                       </FoodTimerProvider>
                     </SleepTimerProvider>
-                    <FABQuickActionsSheet />
                   </QuickActionsProvider>
                 </ActiveChildProvider>
                 <GuestLoginPrompt onLoginPress={() => setIsGuestMode(false)} />

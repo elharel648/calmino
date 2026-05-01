@@ -61,7 +61,7 @@ struct WhiteNoiseLiveActivity: Widget {
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(noiseColor)
                             .monospacedDigit()
-                            .transition(.blurReplace)
+                            .transition(.scale.combined(with: .opacity))
                     }
                     .padding(.trailing, 4)
                     .padding(.top, 8)

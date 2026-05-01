@@ -6,10 +6,12 @@ import { auth } from '../services/firebaseConfig';
 import { getBlockedUsers, unblockUser, BlockedUser } from '../services/blockService';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 import { UserX } from 'lucide-react-native';
 
 const BlockedUsersScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
     const [loading, setLoading] = useState(true);
 

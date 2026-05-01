@@ -170,10 +170,6 @@ export default function ReportsScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Screen-level breathe-in animation
-  const screenFade = useRef(new RNAnimated.Value(0)).current;
-  const screenSlide = useRef(new RNAnimated.Value(24)).current;
-
   // Premium Download Button Animation
   const [isDownloadPressed, setIsDownloadPressed] = useState(false);
   const downloadScale = useSharedValue(1);
@@ -220,27 +216,6 @@ export default function ReportsScreen() {
     };
   });
 
-  useFocusEffect(
-    React.useCallback(() => {
-      screenFade.setValue(0);
-      screenSlide.setValue(24);
-      RNAnimated.parallel([
-        RNAnimated.timing(screenFade, {
-          toValue: 1,
-          duration: 380,
-          useNativeDriver: true,
-          easing: (t: number) => 1 - Math.pow(1 - t, 3),
-        }),
-        RNAnimated.spring(screenSlide, {
-          toValue: 0,
-          useNativeDriver: true,
-          stiffness: 110,
-          damping: 16,
-          mass: 0.7,
-        } as any),
-      ]).start();
-    }, [])
-  );
   const [allEvents, setAllEvents] = useState<any[]>([]);
   const [weeklyGoals, setWeeklyGoals] = useState<{
     sleepDaysGoal: number;
@@ -1947,13 +1922,7 @@ export default function ReportsScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
   const mainContent = (
-    <RNAnimated.View style={[
-      styles.container,
-      {
-        opacity: screenFade,
-        transform: [{ translateY: screenSlide }],
-      }
-    ]}>
+    <View style={styles.container}>
       {/* Enhanced Background - Minimalist Apple Style */}
       <LinearGradient
         colors={isDarkMode
@@ -2124,7 +2093,7 @@ export default function ReportsScreen() {
           </ScrollView>
         </View>
       </Modal>
-    </RNAnimated.View>
+    </View>
   );
 
   return (

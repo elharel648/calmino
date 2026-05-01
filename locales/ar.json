@@ -104,6 +104,7 @@
     "diapers": "الحفاضات",
     "supplements": "المكملات",
     "editOrder": "تعديل الترتيب",
+    "editOrderHint": "اضغط طويلاً للسحب وإعادة الترتيب • اضغط على العين للإخفاء",
     "comparison": {
       "title": "مقارنة بالأسبوع الماضي",
       "yesterday": "مقارنة بالأمس",
@@ -331,6 +332,7 @@
     "nightLight": "ضوء ليلي",
     "quickReminder": "تذكير سريع",
     "custom": "إضافة",
+    "customize": "تخصيص",
     "active": {
       "food": "يأكل/تأكل",
       "sleep": "نائم/نائمة"

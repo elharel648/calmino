@@ -104,6 +104,7 @@
     "diapers": "Pañales",
     "supplements": "Suplementos",
     "editOrder": "Editar Orden",
+    "editOrderHint": "Mantén presionado para arrastrar y reordenar • Toca el ojo para ocultar",
     "comparison": {
       "title": "Comparación con la Semana Pasada",
       "yesterday": "Comparación con Ayer",
@@ -331,6 +332,7 @@
     "nightLight": "Luz Nocturna",
     "quickReminder": "Recordatorio Rápido",
     "custom": "Agregar",
+    "customize": "Personalizar",
     "active": {
       "food": "Alimentando",
       "sleep": "Durmiendo"

@@ -104,6 +104,7 @@
     "diapers": "Diapers",
     "supplements": "Supplements",
     "editOrder": "Edit Order",
+    "editOrderHint": "Long press to drag and reorder • Tap the eye to hide",
     "comparison": {
       "title": "Comparison to Last Week",
       "yesterday": "Comparison to Yesterday",
@@ -331,6 +332,7 @@
     "nightLight": "Night Light",
     "quickReminder": "Quick Reminder",
     "custom": "Add",
+    "customize": "Customize",
     "active": {
       "food": "Feeding",
       "sleep": "Sleeping"

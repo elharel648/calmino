@@ -34,10 +34,18 @@ interface QuickActionsContextType {
     pendingFABAction: QuickActionKey | null;
     triggerFABAction: (action: QuickActionKey) => void;
     clearFABAction: () => void;
+    // Radial SOS actions
+    sosActions: QuickActionKey[];
+    setSosActions: (actions: QuickActionKey[]) => void;
+    sosEditVisible: boolean;
+    setSosEditVisible: (v: boolean) => void;
 }
 
 const STORAGE_KEY_ORDER = '@quick_actions_order';
 const STORAGE_KEY_HIDDEN = '@quick_actions_hidden';
+const STORAGE_KEY_SOS = '@quick_actions_sos';
+
+const DEFAULT_SOS_ACTIONS: QuickActionKey[] = ['whiteNoise', 'food', 'diaper', 'magicMoments'];
 
 const QuickActionsContext = createContext<QuickActionsContextType | undefined>(undefined);
 
@@ -47,6 +55,8 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     const [isEditMode, setEditMode] = useState(false);
     const [fabSheetVisible, setFabSheetVisible] = useState(false);
     const [pendingFABAction, setPendingFABAction] = useState<QuickActionKey | null>(null);
+    const [sosActions, setSosActionsState] = useState<QuickActionKey[]>(DEFAULT_SOS_ACTIONS);
+    const [sosEditVisible, setSosEditVisible] = useState(false);
 
     // Load saved preferences on mount
     useEffect(() => {
@@ -55,9 +65,10 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     const loadPreferences = async () => {
         try {
-            const [savedOrder, savedHidden] = await Promise.all([
+            const [savedOrder, savedHidden, savedSos] = await Promise.all([
                 AsyncStorage.getItem(STORAGE_KEY_ORDER),
                 AsyncStorage.getItem(STORAGE_KEY_HIDDEN),
+                AsyncStorage.getItem(STORAGE_KEY_SOS),
             ]);
 
             if (savedOrder) {
@@ -76,6 +87,9 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
             if (savedHidden) {
                 setHiddenActions(JSON.parse(savedHidden));
+            }
+            if (savedSos) {
+                setSosActionsState(JSON.parse(savedSos));
             }
         } catch {
             // AsyncStorage can fail on simulator - non-critical
@@ -147,6 +161,13 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
                     setFabSheetVisible(false);
                 },
                 clearFABAction: () => setPendingFABAction(null),
+                sosActions,
+                setSosActions: (actions: QuickActionKey[]) => {
+                    setSosActionsState(actions);
+                    AsyncStorage.setItem(STORAGE_KEY_SOS, JSON.stringify(actions)).catch(() => {});
+                },
+                sosEditVisible,
+                setSosEditVisible,
             }}
         >
             {children}

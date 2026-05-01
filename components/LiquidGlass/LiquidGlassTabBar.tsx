@@ -60,7 +60,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
   ({ state, descriptors, navigation }) => {
     const { isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
-    const { setFabSheetVisible } = useQuickActions();
+    const { setFabSheetVisible, setSosEditVisible } = useQuickActions();
     
     // Responsive scroll tracking
     const { scrollY } = useScrollTracking();
@@ -189,6 +189,11 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setFabSheetVisible(true);
             }}
+            onLongPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              setSosEditVisible(true);
+            }}
+            delayLongPress={500}
             activeOpacity={0.85}
           >
             <Plus size={22} color="#fff" strokeWidth={2.8} />
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     left: 0,
-    right: 0,
+    right: 68, // Stop before the FAB to create visual separation
     height: BAR_H,
     borderRadius: BAR_R,
   },
@@ -272,12 +277,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     left: 0,
-    right: 0,
+    right: 68, // Match the barGlass width
     height: BAR_H,
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 8,
-    paddingRight: 60, // space for FAB on the right
+    paddingRight: 8, // Equal padding on both sides
     zIndex: 10,
   },
   tab: {
@@ -300,9 +305,9 @@ const styles = StyleSheet.create({
     zIndex: 20,
     shadowColor: '#C8806A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   iconWrap: {
     alignItems: 'center',
