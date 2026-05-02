@@ -86,9 +86,10 @@ interface Props {
     onDiaper: () => void;
     onNightLight: () => void;
     onQuickReminder: () => void;
+    onEditRadial?: () => void;
 }
 
-const ControlCenter: React.FC<Props> = ({ visible, onClose, onDiaper, onNightLight, onQuickReminder }) => {
+const ControlCenter: React.FC<Props> = ({ visible, onClose, onDiaper, onNightLight, onQuickReminder, onEditRadial }) => {
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
     const { start: startSleep, stop: stopSleep, isRunning: isSleepRunning, isPaused: isSleepPaused, elapsedSeconds: sleepElapsed } = useSleepTimer();
@@ -339,6 +340,18 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose, onDiaper, onNightLig
                             </TouchableOpacity>
                         </View>
 
+                        {/* ── EDIT RADIAL ── */}
+                        {onEditRadial && (
+                            <TouchableOpacity
+                                style={[styles.editRadialBtn, { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }]}
+                                onPress={() => { onClose(); setTimeout(() => onEditRadial(), 200); }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={{ fontSize: 18 }}>✏️</Text>
+                                <Text style={[styles.editRadialLabel, { color: theme.textSecondary }]}>ערוך קיצורי לחיצה מהירה</Text>
+                            </TouchableOpacity>
+                        )}
+
                         <View style={{ height: 8 }} />
                     </ScrollView>
                 </View>
@@ -402,6 +415,11 @@ const styles = StyleSheet.create({
         flex: 1, flexDirection: 'row-reverse', alignItems: 'center', padding: 13, borderRadius: 14, borderWidth: 1, gap: 8,
     },
     toolLabel: { fontSize: 13, fontWeight: '600' },
+    editRadialBtn: {
+        flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
+        padding: 12, borderRadius: 14, borderWidth: 1, gap: 8, marginTop: 16,
+    },
+    editRadialLabel: { fontSize: 14, fontWeight: '500' },
 });
 
 export default ControlCenter;

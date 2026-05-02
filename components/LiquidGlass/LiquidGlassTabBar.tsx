@@ -187,7 +187,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
             style={styles.fab}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setSosEditVisible(true);
+              setFabSheetVisible(true);
             }}
             onLongPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);

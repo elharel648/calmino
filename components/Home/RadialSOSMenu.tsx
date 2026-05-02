@@ -179,6 +179,10 @@ export default function RadialSOSMenu() {
                 onDiaper={() => { triggerFABAction('diaper'); navigateToHome(); }}
                 onNightLight={() => { triggerFABAction('nightLight'); navigateToHome(); }}
                 onQuickReminder={() => { triggerFABAction('quickReminder'); navigateToHome(); }}
+                onEditRadial={() => {
+                    setSosEditVisible(false);
+                    setTimeout(() => setSosEditVisible(true), 100);
+                }}
             />
         </>
     );
