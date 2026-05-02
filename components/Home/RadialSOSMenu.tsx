@@ -16,6 +16,8 @@ import { useQuickActions, QuickActionKey } from '../../context/QuickActionsConte
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAudio, SoundId } from '../../context/AudioContext';
+import { useSleepTimer } from '../../context/SleepTimerContext';
+import { useFoodTimer } from '../../context/FoodTimerContext';
 import { QUICK_ACTION_BASE_CONFIG } from './quickActionsConfig';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -31,9 +33,9 @@ const TIP_STORAGE_KEY = '@radial_edit_tip_seen';
 
 // All actions that can appear in the SOS menu
 const SOS_AVAILABLE: QuickActionKey[] = [
-    'food', 'sleep', 'diaper', 'whiteNoise', 'sos',
-    'health', 'growth', 'milestones', 'magicMoments', 'teeth',
-    'nightLight', 'supplements', 'quickReminder'
+    'breastfeeding', 'bottle', 'pumping', 'sleep', 'whiteNoise',
+    'food', 'diaper', 'sos', 'health', 'growth', 'milestones',
+    'magicMoments', 'teeth', 'nightLight', 'supplements', 'quickReminder'
 ];
 
 export default function RadialSOSMenu() {
@@ -42,6 +44,8 @@ export default function RadialSOSMenu() {
     const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const audio = useAudio();
+    const { start: startSleep, isRunning: isSleepRunning, stop: stopSleep } = useSleepTimer();
+    const { startBreast, startBottle, startPumping } = useFoodTimer();
 
     const isOpen = useSharedValue(0);
     const [renderMenu, setRenderMenu] = useState(false);
@@ -112,11 +116,19 @@ export default function RadialSOSMenu() {
     };
 
     const handleAction = (action: QuickActionKey) => {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         closeMenu();
         setTimeout(() => {
             if (action === 'whiteNoise') {
                 if (audio.activeSound) { audio.stopSound(); } else { audio.playSound(DEFAULT_WHITE_NOISE); }
+            } else if (action === 'sleep') {
+                if (isSleepRunning) { stopSleep(); } else { startSleep(); }
+            } else if (action === 'breastfeeding') {
+                startBreast('right');
+            } else if (action === 'bottle') {
+                startBottle();
+            } else if (action === 'pumping') {
+                startPumping();
             } else {
                 triggerFABAction(action);
             }

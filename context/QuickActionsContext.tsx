@@ -7,7 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type QuickActionKey =
     | 'food' | 'sleep' | 'diaper' | 'supplements' | 'whiteNoise'
     | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'custom'
-    | 'teeth' | 'nightLight' | 'quickReminder';
+    | 'teeth' | 'nightLight' | 'quickReminder'
+    | 'breastfeeding' | 'bottle' | 'pumping';
 
 // Default order of actions (top to bottom natively, reversed for horizontal slider)
 const DEFAULT_ORDER: QuickActionKey[] = [
@@ -45,7 +46,7 @@ const STORAGE_KEY_ORDER = '@quick_actions_order';
 const STORAGE_KEY_HIDDEN = '@quick_actions_hidden';
 const STORAGE_KEY_SOS = '@quick_actions_sos';
 
-const DEFAULT_SOS_ACTIONS: QuickActionKey[] = ['whiteNoise', 'food', 'diaper', 'magicMoments'];
+const DEFAULT_SOS_ACTIONS: QuickActionKey[] = ['sleep', 'breastfeeding', 'bottle', 'whiteNoise'];
 
 const QuickActionsContext = createContext<QuickActionsContextType | undefined>(undefined);
 

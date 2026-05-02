@@ -1,5 +1,5 @@
 import React from 'react';
-import { Utensils, Moon, Music, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert } from 'lucide-react-native';
+import { Utensils, Moon, Music, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Baby, Milk, Waves } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
 import DiaperIcon from '../Common/DiaperIcon';
@@ -35,4 +35,7 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     nightLight: { icon: Lightbulb, labelKey: 'actions.nightLight', activeLabelKey: 'actions.nightLight' },
     quickReminder: { icon: Bell, labelKey: 'actions.quickReminder', activeLabelKey: 'actions.quickReminder' },
     custom: { icon: Plus, labelKey: 'actions.custom', activeLabelKey: 'actions.custom', hasBorder: true },
+    breastfeeding: { icon: Baby, labelKey: 'actions.breastfeeding', activeLabelKey: 'actions.active.breastfeeding' },
+    bottle: { icon: Milk, labelKey: 'actions.bottle', activeLabelKey: 'actions.active.bottle' },
+    pumping: { icon: Waves, labelKey: 'actions.pumping', activeLabelKey: 'actions.active.pumping' },
 };

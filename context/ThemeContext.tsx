@@ -55,6 +55,9 @@ export const COLORS = {
             teeth:         { color: '#8ECAE6', lightColor: 'rgba(142, 202, 230, 0.15)', accentColor: '#8ECAE6' }, // Soft Sky Blue
             nightLight:    { color: '#E9C46A', lightColor: 'rgba(233, 196, 106, 0.15)', accentColor: '#E9C46A' }, // Soft Sand
             quickReminder: { color: '#A29BFE', lightColor: 'rgba(162, 155, 254, 0.15)', accentColor: '#A29BFE' }, // Pastel Purple
+            breastfeeding: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' }, // Lilac Mauve
+            bottle:        { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
+            pumping:       { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.15)', accentColor: '#83C5BE' }, // Muted Teal
         },
     },
     dark: {
@@ -101,6 +104,9 @@ export const COLORS = {
             teeth:         { color: '#8ECAE6', lightColor: 'rgba(142, 202, 230, 0.22)', accentColor: '#8ECAE6' },
             nightLight:    { color: '#E9C46A', lightColor: 'rgba(233, 196, 106, 0.22)', accentColor: '#E9C46A' },
             quickReminder: { color: '#A29BFE', lightColor: 'rgba(162, 155, 254, 0.22)', accentColor: '#A29BFE' },
+            breastfeeding: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
+            bottle:        { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            pumping:       { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.22)', accentColor: '#83C5BE' },
         },
     }
 };
