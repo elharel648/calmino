@@ -8,7 +8,7 @@
  * • Haptic feedback on every interaction
  */
 
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import {
     View, Text, StyleSheet, Modal, Pressable,
     TouchableOpacity, Dimensions, Platform, TouchableWithoutFeedback,
@@ -25,6 +25,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSleepTimer } from '../../context/SleepTimerContext';
 import { useAudio, SoundId } from '../../context/AudioContext';
+import { useFoodTimer } from '../../context/FoodTimerContext';
 import { QUICK_ACTION_BASE_CONFIG } from './quickActionsConfig';
 import { navigateToHome } from '../../services/navigationService';
 
@@ -151,10 +152,13 @@ const FABQuickActionsSheet: React.FC = () => {
 
     const { isRunning: isSleepRunning, isPaused: isSleepPaused, elapsedSeconds: sleepElapsed, start: startSleep, stop: stopSleep } = useSleepTimer();
     const { activeSound, playSound, stopSound } = useAudio();
+    const { startBreast, startBottle, startPumping, breastIsRunning, bottleIsRunning, pumpingIsRunning } = useFoodTimer();
+    const [showFoodSub, setShowFoodSub] = useState(false);
 
     // Active states
     const isSleepActive      = isSleepRunning && !isSleepPaused;
     const isWhiteNoiseActive = activeSound !== null;
+    const isFoodActive       = breastIsRunning || bottleIsRunning || pumpingIsRunning;
 
     // Reanimated sheet
     const translateY = useSharedValue(SCREEN_H);
@@ -190,8 +194,26 @@ const FABQuickActionsSheet: React.FC = () => {
         setTimeout(() => setEditMode(true), 320);
     }, []);
 
+    const handleFoodSubAction = useCallback((type: 'breastRight' | 'breastLeft' | 'bottle' | 'pumping') => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        if (type === 'breastRight') startBreast('right');
+        else if (type === 'breastLeft') startBreast('left');
+        else if (type === 'bottle') startBottle();
+        else if (type === 'pumping') startPumping();
+        setShowFoodSub(false);
+        setFabSheetVisible(false);
+    }, [startBreast, startBottle, startPumping]);
+
     const handleAction = useCallback((key: QuickActionKey) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        // ── Food: show sub-menu ──
+        if (key === 'food') {
+            setShowFoodSub(prev => !prev);
+            return;
+        }
+
+        setShowFoodSub(false);
 
         // ── Instant execution for primary timers ──
         if (key === 'sleep') {
@@ -281,15 +303,43 @@ const FABQuickActionsSheet: React.FC = () => {
                         </View>
                     )}
 
+                    {/* Food sub-menu */}
+                    {showFoodSub && (
+                        <View style={styles.foodSubMenu}>
+                            <Text style={[styles.foodSubTitle, { color: theme.textSecondary }]}>בחר סוג האכלה</Text>
+                            <View style={styles.foodSubRow}>
+                                {[
+                                    { type: 'breastRight' as const, label: 'הנקה ימין', emoji: '🤱' },
+                                    { type: 'breastLeft'  as const, label: 'הנקה שמאל', emoji: '🤱' },
+                                    { type: 'bottle'      as const, label: 'בקבוק',      emoji: '🍼' },
+                                    { type: 'pumping'     as const, label: 'שאיבה',      emoji: '🔄' },
+                                ].map(item => (
+                                    <TouchableOpacity
+                                        key={item.type}
+                                        style={[styles.foodSubBtn, { backgroundColor: '#D4A373' + '22', borderColor: '#D4A373' + '44' }]}
+                                        onPress={() => handleFoodSubAction(item.type)}
+                                    >
+                                        <Text style={styles.foodSubEmoji}>{item.emoji}</Text>
+                                        <Text style={[styles.foodSubLabel, { color: '#D4A373' }]}>{item.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
                     {/* Grid */}
                     <View style={styles.grid}>
                         {visibleActions.map((key) => (
                             <ActionButton
                                 key={key}
                                 actionKey={key}
-                                isActive={(key === 'sleep' && isSleepActive) || (key === 'whiteNoise' && isWhiteNoiseActive)}
+                                isActive={
+                                    (key === 'sleep' && isSleepActive) ||
+                                    (key === 'whiteNoise' && isWhiteNoiseActive) ||
+                                    (key === 'food' && isFoodActive)
+                                }
                                 onPress={() => handleAction(key)}
-                                onLongPress={key === 'sleep' || key === 'whiteNoise' ? undefined : () => {
+                                onLongPress={key === 'sleep' || key === 'whiteNoise' || key === 'food' ? undefined : () => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                                     triggerFABAction(key);
                                     navigateToHome();
@@ -366,6 +416,34 @@ const styles = StyleSheet.create({
         borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
     },
     actionLabel: { fontSize: 11, fontWeight: '500', textAlign: 'center' },
+    foodSubMenu: {
+        marginBottom: 12,
+        paddingHorizontal: 4,
+    },
+    foodSubTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 10,
+        opacity: 0.7,
+    },
+    foodSubRow: {
+        flexDirection: 'row-reverse',
+        gap: 8,
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+    },
+    foodSubBtn: {
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 16,
+        borderWidth: 1,
+        gap: 4,
+        minWidth: 76,
+    },
+    foodSubEmoji: { fontSize: 22 },
+    foodSubLabel: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
 });
 
 export default FABQuickActionsSheet;
