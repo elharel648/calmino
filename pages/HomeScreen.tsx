@@ -216,10 +216,16 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     useEffect(() => {
         if (!pendingFABAction) return;
         const actionMap: Record<string, () => void> = {
-            food:         () => setTrackingModalType('food'),
-            sleep:        () => setTrackingModalType('sleep'),
-            diaper:       () => setTrackingModalType('diaper'),
-            magicMoments: () => setIsMagicMomentsOpen(true),
+            food:          () => setTrackingModalType('food'),
+            sleep:         () => setTrackingModalType('sleep'),
+            diaper:        () => setTrackingModalType('diaper'),
+            magicMoments:  () => setIsMagicMomentsOpen(true),
+            health:        () => setIsHealthOpen(true),
+            growth:        () => setIsGrowthOpen(true),
+            milestones:    () => setIsMilestonesOpen(true),
+            sos:           () => setIsCalmModeOpen(true),
+            nightLight:    () => setIsNightLightOpen(true),
+            quickReminder: () => setIsQuickReminderOpen(true),
         };
         const fn = actionMap[pendingFABAction];
         if (fn) {
