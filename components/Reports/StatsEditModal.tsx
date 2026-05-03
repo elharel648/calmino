@@ -2,7 +2,7 @@ import React, { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Dimensions, Animated as RNAnimated, PanResponder } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, GripVertical, RotateCcw, Utensils, Moon, Pill } from 'lucide-react-native';
+import { X, GripVertical, RotateCcw, Utensils, Moon, Pill, TrendingUp, Clock } from 'lucide-react-native';
 import DiaperIcon from '../Common/DiaperIcon';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,9 +13,9 @@ import { useLanguage } from '../../context/LanguageContext';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Stats keys
-export type StatKey = 'food' | 'sleep' | 'diapers' | 'supplements';
+export type StatKey = 'food' | 'sleep' | 'diapers' | 'supplements' | 'growth' | 'history';
 
-export const DEFAULT_STATS_ORDER: StatKey[] = ['food', 'sleep', 'diapers', 'supplements'];
+export const DEFAULT_STATS_ORDER: StatKey[] = ['food', 'sleep', 'diapers', 'supplements', 'growth', 'history'];
 export const STATS_ORDER_KEY = '@stats_order';
 
 const ICONS: Record<StatKey, any> = {
@@ -23,6 +23,8 @@ const ICONS: Record<StatKey, any> = {
     sleep: Moon,
     diapers: DiaperIcon,
     supplements: Pill,
+    growth: TrendingUp,
+    history: Clock,
 };
 
 interface StatsEditModalProps {
@@ -148,6 +150,8 @@ const StatsEditModal: React.FC<StatsEditModalProps> = memo(({ visible, onClose, 
             sleep:       { color: theme.actionColors.sleep.accentColor,       lightColor: theme.actionColors.sleep.lightColor,       label: t('reports.metrics.sleep') },
             diapers:     { color: theme.actionColors.diaper.accentColor,      lightColor: theme.actionColors.diaper.lightColor,      label: t('reports.metrics.diapers') },
             supplements: { color: theme.actionColors.supplements.accentColor, lightColor: theme.actionColors.supplements.lightColor, label: t('reports.metrics.supplements') },
+            growth:      { color: theme.actionColors.growth.accentColor,      lightColor: theme.actionColors.growth.lightColor,      label: 'גדילה' },
+            history:     { color: theme.actionColors.tools.accentColor,       lightColor: theme.actionColors.tools.lightColor,       label: 'יומן' },
         };
         const data = colorMap[item.key];
 

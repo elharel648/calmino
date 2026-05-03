@@ -158,11 +158,13 @@ export default function ReportsScreen() {
   const { isPremium } = usePremium();
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Load stats order
+  // Load stats order — migrate old 4-item lists by appending growth + history
   useEffect(() => {
     AsyncStorage.getItem(STATS_ORDER_KEY).then(json => {
       if (json) {
-        setStatsOrder(JSON.parse(json));
+        const saved: StatKey[] = JSON.parse(json);
+        const merged = [...saved, ...DEFAULT_STATS_ORDER.filter(k => !saved.includes(k))];
+        setStatsOrder(merged);
       }
     }).catch((e) => logger.warn('Failed to load stats order:', e));
   }, []);
@@ -1580,45 +1582,44 @@ export default function ReportsScreen() {
               />
             </AnimatedCard>
           );
-          return null;
-        })}
-
-        {/* Growth Cube */}
-        <AnimatedCard index={4}>
-          {renderLockedSection(
-            <GrowthStatCube
-              childId={activeChild?.childId}
-              onPress={() => setShowGrowthScreen(true)}
-            />,
-            true
-          )}
-        </AnimatedCard>
-
-        {/* History Cube */}
-        <AnimatedCard index={5}>
-          {renderLockedSection(
-            <TouchableOpacity
-              style={[styles.statCard, { backgroundColor: theme.card }]}
-              onPress={() => setShowHistoryModal(true)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeaderRow}>
-                <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.tools.color }]}>
-                  <Clock size={20} color="#FFFFFF" strokeWidth={1.5} />
-                </View>
-              </View>
-
-              <View style={styles.cardBottomSection}>
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.history.title')}</Text>
-                <View style={styles.statValueRow}>
-                  <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>{t('reports.history.journal')}</Text>
-                </View>
-                <Text style={[styles.statSubValue, { color: theme.textTertiary, marginTop: 4 }]}>{t('reports.history.fullTimeline')}</Text>
-              </View>
+          if (key === 'growth') return (
+            <AnimatedCard key="growth" index={idx}>
+              {renderLockedSection(
+                <GrowthStatCube
+                  childId={activeChild?.childId}
+                  onPress={() => setShowGrowthScreen(true)}
+                />,
+                true
+              )}
+            </AnimatedCard>
+          );
+          if (key === 'history') return (
+            <AnimatedCard key="history" index={idx}>
+              {renderLockedSection(
+                <TouchableOpacity
+                  style={[styles.statCard, { backgroundColor: theme.card }]}
+                  onPress={() => setShowHistoryModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.cardHeaderRow}>
+                    <View style={[styles.statIconWrap, { backgroundColor: theme.actionColors.tools.color }]}>
+                      <Clock size={20} color="#FFFFFF" strokeWidth={1.5} />
+                    </View>
+                  </View>
+                  <View style={styles.cardBottomSection}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('reports.history.title')}</Text>
+                    <View style={styles.statValueRow}>
+                      <Text style={[styles.statValue, { color: theme.textPrimary, fontSize: 20 }]}>{t('reports.history.journal')}</Text>
+                    </View>
+                    <Text style={[styles.statSubValue, { color: theme.textTertiary, marginTop: 4 }]}>{t('reports.history.fullTimeline')}</Text>
+                  </View>
             </TouchableOpacity>,
             true
           )}
         </AnimatedCard>
+          );
+          return null;
+        })}
 
         <TouchableOpacity
           style={[styles.editStatsBtn, {
