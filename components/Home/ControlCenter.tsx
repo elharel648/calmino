@@ -3,25 +3,29 @@
  * User selects up to 4 actions → they appear in the radial arc on short press
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, Modal,
-    TouchableWithoutFeedback, ScrollView, Dimensions,
+    TouchableWithoutFeedback, ScrollView, Dimensions, PanResponder,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
+
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { X, Check, Lock, Zap } from 'lucide-react-native';
+import { Check, Lock, Zap, ChevronDown, ChevronUp, EyeOff } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
 import { QUICK_ACTION_BASE_CONFIG } from './quickActionsConfig';
 
 const MAX = 4;
+const STORAGE_KEY_COLLAPSED = '@cc_collapsed_sections';
+const STORAGE_KEY_HIDDEN_SECTIONS = '@cc_hidden_sections';
 
 // Actions that trigger immediately (no screen navigation)
 const INSTANT_ACTIONS = new Set<QuickActionKey>(['sleep', 'whiteNoise', 'whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain', 'breastfeeding', 'breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping']);
@@ -35,6 +39,21 @@ const SECTIONS: { title: string; items: QuickActionKey[]; cols?: 2 | 3 }[] = [
     { title: 'כלים', items: ['nightLight', 'quickReminder', 'growth', 'milestones', 'sos'] },
 ];
 
+// Only keys that exist in sections are valid selections
+const VALID_KEYS = new Set(SECTIONS.flatMap(s => s.items));
+
+const LABEL_MAP: Partial<Record<QuickActionKey, string>> = {
+    breastfeeding: 'הנקה', breastfeedingRight: 'הנקה R', breastfeedingLeft: 'הנקה L',
+    bottle: 'בקבוק', pumping: 'שאיבה', diaper: 'החתלה', sleep: 'שינה', food: 'אוכל',
+    whiteNoise: 'רעש לבן', whiteNoiseLullaby: 'שיר ערש', whiteNoiseGentle: 'מוזיקה עדינה',
+    whiteNoiseBirds: 'ציפורים', whiteNoiseRain: 'גשם',
+    healthDoctor: 'ביקור רופא', healthVaccines: 'חיסונים', healthIllness: 'מחלות',
+    healthTemperature: 'טמפרטורה', healthMedications: 'תרופות', healthTipatHalav: 'טיפת חלב',
+    healthAllergies: 'אלרגיות', healthHistory: 'היסטוריה',
+    nightLight: 'פנס לילה', quickReminder: 'תזכורת', health: 'בריאות',
+    growth: 'צמיחה', milestones: 'אבני דרך', sos: 'SOS',
+};
+
 interface Props {
     visible: boolean;
     onClose: () => void;
@@ -44,14 +63,31 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
     const { sosActions, setSosActions } = useQuickActions();
-    const [selected, setSelected] = useState<QuickActionKey[]>([...sosActions]);
+
+    // Filter stale keys that no longer exist in any section
+    const [selected, setSelected] = useState<QuickActionKey[]>(
+        sosActions.filter(k => VALID_KEYS.has(k))
+    );
     const [showMaxHint, setShowMaxHint] = useState(false);
+    const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+    const [hiddenSections, setHiddenSections] = useState<Set<string>>(new Set());
+    const [editMode, setEditMode] = useState(false);
+
+    // Load persisted prefs
+    useEffect(() => {
+        AsyncStorage.multiGet([STORAGE_KEY_COLLAPSED, STORAGE_KEY_HIDDEN_SECTIONS])
+            .then(([[, collapsed], [, hidden]]) => {
+                if (collapsed) setCollapsedSections(new Set(JSON.parse(collapsed)));
+                if (hidden) setHiddenSections(new Set(JSON.parse(hidden)));
+            })
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
-        if (visible) setSelected([...sosActions]);
+        if (visible) setSelected(sosActions.filter(k => VALID_KEYS.has(k)));
     }, [visible]);
 
-    const translateY = useSharedValue(600);
+    const translateY = useSharedValue(SCREEN_HEIGHT);
     const backdropOp = useSharedValue(0);
 
     useEffect(() => {
@@ -59,13 +95,35 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
             translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
             backdropOp.value = withTiming(1, { duration: 180 });
         } else {
-            translateY.value = withTiming(600, { duration: 200, easing: Easing.in(Easing.cubic) });
+            translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200, easing: Easing.in(Easing.cubic) });
             backdropOp.value = withTiming(0, { duration: 180 });
         }
     }, [visible]);
 
     const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
     const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOp.value }));
+
+    // Swipe-down to dismiss
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponderCapture: () => false,
+            onMoveShouldSetPanResponder: (_, gs) =>
+                gs.dy > 10 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+            onPanResponderMove: (_, gs) => {
+                if (gs.dy > 0) translateY.value = gs.dy;
+            },
+            onPanResponderRelease: (_, gs) => {
+                if (gs.dy > 80 || gs.vy > 0.5) {
+                    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200, easing: Easing.in(Easing.cubic) });
+                    backdropOp.value = withTiming(0, { duration: 180 });
+                    setTimeout(onClose, 200);
+                } else {
+                    translateY.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.cubic) });
+                }
+            },
+        })
+    ).current;
 
     const toggle = (key: QuickActionKey) => {
         if (!selected.includes(key) && selected.length >= MAX) {
@@ -80,6 +138,26 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
         );
     };
 
+    const toggleCollapse = useCallback((title: string) => {
+        Haptics.selectionAsync();
+        setCollapsedSections(prev => {
+            const next = new Set(prev);
+            next.has(title) ? next.delete(title) : next.add(title);
+            AsyncStorage.setItem(STORAGE_KEY_COLLAPSED, JSON.stringify([...next])).catch(() => {});
+            return next;
+        });
+    }, []);
+
+    const toggleHideSection = useCallback((title: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setHiddenSections(prev => {
+            const next = new Set(prev);
+            next.has(title) ? next.delete(title) : next.add(title);
+            AsyncStorage.setItem(STORAGE_KEY_HIDDEN_SECTIONS, JSON.stringify([...next])).catch(() => {});
+            return next;
+        });
+    }, []);
+
     const save = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setSosActions(selected);
@@ -88,6 +166,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
 
     const bg = isDarkMode ? 'rgba(22,22,26,0.97)' : 'rgba(248,246,244,0.97)';
     const cardBg = isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF';
+    const sectionTitleColor = isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)';
 
     if (!visible) return null;
 
@@ -104,19 +183,30 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                     style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden' }]}
                 />
                 <View style={[styles.inner, { backgroundColor: bg, paddingBottom: insets.bottom + 12 }]}>
-                    <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+
+                    {/* Swipe handle */}
+                    <View style={styles.handleArea} {...panResponder.panHandlers}>
+                        <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+                    </View>
 
                     {/* Header */}
                     <View style={styles.header}>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>קיצורי לחיצה מהירה</Text>
-                        <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }]}>
-                            <X size={16} color={theme.textSecondary} strokeWidth={2.5} />
+                        <TouchableOpacity
+                            onPress={() => setEditMode(e => !e)}
+                            style={[styles.editModeBtn, { backgroundColor: editMode ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)') }]}
+                        >
+                            <EyeOff size={14} color={editMode ? '#fff' : theme.textSecondary} strokeWidth={2} />
                         </TouchableOpacity>
                     </View>
 
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        בחר עד {MAX} קיצורים שיופיעו בלחיצה על "+" ({selected.length}/{MAX})
+                        {editMode
+                            ? 'לחץ על עין להסתיר/להציג קטגוריה'
+                            : `בחר עד ${MAX} קיצורים שיופיעו בלחיצה על "+" (${selected.length}/${MAX})`
+                        }
                     </Text>
+
                     {showMaxHint && (
                         <View style={[styles.maxHint, { backgroundColor: isDarkMode ? 'rgba(255,100,80,0.15)' : 'rgba(200,80,60,0.08)', borderColor: isDarkMode ? 'rgba(255,100,80,0.3)' : 'rgba(200,80,60,0.2)' }]}>
                             <Text style={[styles.maxHintText, { color: isDarkMode ? '#FF7060' : '#C8503C' }]}>
@@ -126,91 +216,97 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                     )}
 
                     <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-                        {SECTIONS.map(section => (
-                            <View key={section.title} style={styles.section}>
-                                <Text style={[styles.sectionTitle, { color: isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)' }]}>
-                                    {section.title}
-                                </Text>
-                                <View style={styles.itemsRow}>
-                                    {section.items.map((key) => {
-                                        const config = QUICK_ACTION_BASE_CONFIG[key];
-                                        const colors = theme.actionColors[key as keyof typeof theme.actionColors];
-                                        const Icon = config?.icon;
-                                        if (!Icon || !colors) return null;
+                        {SECTIONS.map(section => {
+                            const isHidden = hiddenSections.has(section.title);
+                            const isCollapsed = collapsedSections.has(section.title);
 
-                                        const isSelected = selected.includes(key);
-                                        const isDisabled = !isSelected && selected.length >= MAX;
-
-                                        const itemWidthStyle = section.cols === 2
-                                            ? { width: '47%' as const }
-                                            : { width: '30%' as const };
-
-                                        return (
+                            return (
+                                <View key={section.title} style={[styles.section, isHidden && styles.sectionHidden]}>
+                                    {/* Section header — tappable to collapse, shows hide button in edit mode */}
+                                    <TouchableOpacity
+                                        style={styles.sectionHeader}
+                                        onPress={() => !editMode && toggleCollapse(section.title)}
+                                        activeOpacity={editMode ? 1 : 0.6}
+                                    >
+                                        <View style={styles.sectionHeaderLeft}>
+                                            {!editMode && (
+                                                isCollapsed
+                                                    ? <ChevronDown size={12} color={sectionTitleColor} strokeWidth={2.5} />
+                                                    : <ChevronUp size={12} color={sectionTitleColor} strokeWidth={2.5} />
+                                            )}
+                                        </View>
+                                        <Text style={[styles.sectionTitle, { color: isHidden ? (isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)') : sectionTitleColor }]}>
+                                            {section.title}
+                                            {isHidden ? '  (מוסתר)' : ''}
+                                        </Text>
+                                        {editMode && (
                                             <TouchableOpacity
-                                                key={key}
-                                                style={[
-                                                    styles.item,
-                                                    itemWidthStyle,
-                                                    {
-                                                        backgroundColor: isSelected ? colors.color : cardBg,
-                                                        borderColor: isSelected ? colors.color : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'),
-                                                        opacity: isDisabled ? 0.38 : 1,
-                                                    }
-                                                ]}
-                                                onPress={() => toggle(key)}
-                                                activeOpacity={isDisabled ? 0.6 : 0.75}
+                                                onPress={() => toggleHideSection(section.title)}
+                                                style={[styles.hideSectionBtn, { backgroundColor: isHidden ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)') }]}
+                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                             >
-                                                <Icon size={22} color={isSelected ? '#fff' : colors.color} strokeWidth={2} />
-                                                <Text style={[styles.itemLabel, { color: isSelected ? '#fff' : theme.textPrimary }]} numberOfLines={2}>
-                                                    {key === 'breastfeeding' ? 'הנקה' :
-                                                     key === 'breastfeedingRight' ? 'הנקה R' :
-                                                     key === 'breastfeedingLeft' ? 'הנקה L' :
-                                                     key === 'bottle' ? 'בקבוק' :
-                                                     key === 'pumping' ? 'שאיבה' :
-                                                     key === 'diaper' ? 'החתלה' :
-                                                     key === 'sleep' ? 'שינה' :
-                                                     key === 'whiteNoise' ? 'רעש לבן' :
-                                                     key === 'whiteNoiseLullaby' ? 'שיר ערש' :
-                                                     key === 'whiteNoiseGentle' ? 'מוזיקה עדינה' :
-                                                     key === 'whiteNoiseBirds' ? 'ציפורים' :
-                                                     key === 'whiteNoiseRain' ? 'גשם' :
-                                                     key === 'healthDoctor' ? 'ביקור רופא' :
-                                                     key === 'healthVaccines' ? 'חיסונים' :
-                                                     key === 'healthIllness' ? 'מחלות' :
-                                                     key === 'healthTemperature' ? 'טמפרטורה' :
-                                                     key === 'healthMedications' ? 'תרופות' :
-                                                     key === 'healthTipatHalav' ? 'טיפת חלב' :
-                                                     key === 'healthAllergies' ? 'אלרגיות' :
-                                                     key === 'healthHistory' ? 'היסטוריה' :
-                                                     key === 'nightLight' ? 'פנס לילה' :
-                                                     key === 'quickReminder' ? 'תזכורת' :
-                                                     key === 'health' ? 'בריאות' :
-                                                     key === 'growth' ? 'צמיחה' :
-                                                     key === 'milestones' ? 'אבני דרך' :
-                                                     key === 'sos' ? 'SOS' :
-                                                     key === 'food' ? 'אוכל' : key}
-                                                </Text>
-                                                {isSelected && (
-                                                    <View style={styles.checkBadge}>
-                                                        <Check size={10} color="#fff" strokeWidth={3} />
-                                                    </View>
-                                                )}
-                                                {!isSelected && !isDisabled && INSTANT_ACTIONS.has(key) && (
-                                                    <View style={[styles.instantBadge, { backgroundColor: colors.color }]}>
-                                                        <Zap size={8} color="#fff" strokeWidth={2.5} fill="#fff" />
-                                                    </View>
-                                                )}
-                                                {isDisabled && (
-                                                    <View style={[styles.lockBadge, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.12)' }]}>
-                                                        <Lock size={8} color={isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
-                                                    </View>
-                                                )}
+                                                <EyeOff size={12} color={isHidden ? '#fff' : theme.textSecondary} strokeWidth={2} />
                                             </TouchableOpacity>
-                                        );
-                                    })}
+                                        )}
+                                    </TouchableOpacity>
+
+                                    {/* Items — hidden when section collapsed or hidden */}
+                                    {!isCollapsed && !isHidden && (
+                                        <View style={styles.itemsRow}>
+                                            {section.items.map((key) => {
+                                                const config = QUICK_ACTION_BASE_CONFIG[key];
+                                                const colors = theme.actionColors[key as keyof typeof theme.actionColors];
+                                                const Icon = config?.icon;
+                                                if (!Icon || !colors) return null;
+
+                                                const isSelected = selected.includes(key);
+                                                const isDisabled = !isSelected && selected.length >= MAX;
+                                                const itemWidthStyle = section.cols === 2
+                                                    ? { width: '47%' as const }
+                                                    : { width: '30%' as const };
+
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={key}
+                                                        style={[
+                                                            styles.item,
+                                                            itemWidthStyle,
+                                                            {
+                                                                backgroundColor: isSelected ? colors.color : cardBg,
+                                                                borderColor: isSelected ? colors.color : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'),
+                                                                opacity: isDisabled ? 0.38 : 1,
+                                                            }
+                                                        ]}
+                                                        onPress={() => toggle(key)}
+                                                        activeOpacity={isDisabled ? 0.6 : 0.75}
+                                                    >
+                                                        <Icon size={22} color={isSelected ? '#fff' : colors.color} strokeWidth={2} />
+                                                        <Text style={[styles.itemLabel, { color: isSelected ? '#fff' : theme.textPrimary }]} numberOfLines={2}>
+                                                            {LABEL_MAP[key] ?? key}
+                                                        </Text>
+                                                        {isSelected && (
+                                                            <View style={styles.checkBadge}>
+                                                                <Check size={10} color="#fff" strokeWidth={3} />
+                                                            </View>
+                                                        )}
+                                                        {!isSelected && !isDisabled && INSTANT_ACTIONS.has(key) && (
+                                                            <View style={[styles.instantBadge, { backgroundColor: colors.color }]}>
+                                                                <Zap size={8} color="#fff" strokeWidth={2.5} fill="#fff" />
+                                                            </View>
+                                                        )}
+                                                        {isDisabled && (
+                                                            <View style={[styles.lockBadge, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.12)' }]}>
+                                                                <Lock size={8} color={isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
+                                                            </View>
+                                                        )}
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+                                    )}
                                 </View>
-                            </View>
-                        ))}
+                            );
+                        })}
                         <View style={{ height: 12 }} />
                     </ScrollView>
 
@@ -238,13 +334,18 @@ const styles = StyleSheet.create({
         height: SCREEN_HEIGHT * 0.88,
     },
     inner: { paddingHorizontal: 16, borderTopLeftRadius: 28, borderTopRightRadius: 28, flex: 1 },
-    handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 2 },
-    header: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+    handleArea: { alignItems: 'center', paddingTop: 12, paddingBottom: 8, paddingHorizontal: 40, minHeight: 36 },
+    handle: { width: 36, height: 4, borderRadius: 2 },
+    header: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
     title: { fontSize: 17, fontWeight: '700' },
     subtitle: { fontSize: 13, marginBottom: 12, textAlign: 'right' },
-    closeBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    editModeBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     section: { marginBottom: 16 },
-    sectionTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, textAlign: 'right' },
+    sectionHidden: { opacity: 0.5 },
+    sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 },
+    sectionHeaderLeft: { width: 20, alignItems: 'flex-end' },
+    sectionTitle: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5, flex: 1, textAlign: 'right' },
+    hideSectionBtn: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginLeft: 6 },
     itemsRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
     item: {
         width: '30%', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1.5, gap: 6,
@@ -261,8 +362,7 @@ const styles = StyleSheet.create({
     instantBadge: {
         position: 'absolute', top: 6, right: 6,
         width: 14, height: 14, borderRadius: 7,
-        alignItems: 'center', justifyContent: 'center',
-        opacity: 0.85,
+        alignItems: 'center', justifyContent: 'center', opacity: 0.85,
     },
     lockBadge: {
         position: 'absolute', top: 6, right: 6,
