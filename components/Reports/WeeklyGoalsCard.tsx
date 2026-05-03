@@ -27,45 +27,56 @@ interface RingProps {
   isStreak?: boolean;
 }
 
-const Ring = memo(({ met, goal, color, size = 76, strokeWidth = 7, delay = 0, label, isStreak }: RingProps) => {
+function hexToRgb(hex: string): string {
+  const c = hex.replace('#', '');
+  return `${parseInt(c.slice(0,2),16)},${parseInt(c.slice(2,4),16)},${parseInt(c.slice(4,6),16)}`;
+}
+
+const Ring = memo(({ met, goal, color, size = 84, strokeWidth = 9, delay = 0, label, isStreak }: RingProps) => {
   const { theme, isDarkMode } = useTheme();
   const R = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * R;
   const pct = goal > 0 ? Math.min(met / goal, 1) : 0;
+  const hasData = met > 0;
 
   const progress = useSharedValue(0);
   useEffect(() => {
-    progress.value = withDelay(delay, withTiming(pct, {
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-    }));
+    progress.value = withDelay(delay, withTiming(pct, { duration: 950, easing: Easing.out(Easing.cubic) }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   useEffect(() => {
-    progress.value = withTiming(pct, { duration: 600, easing: Easing.out(Easing.cubic) });
+    progress.value = withTiming(pct, { duration: 650, easing: Easing.out(Easing.cubic) });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [met, goal]);
 
-  const animProps = useAnimatedProps(() => ({
-    strokeDashoffset: circ * (1 - progress.value),
-  }));
+  const animProps = useAnimatedProps(() => ({ strokeDashoffset: circ * (1 - progress.value) }));
+  const glowProps = useAnimatedProps(() => ({ strokeDashoffset: circ * (1 - progress.value) }));
 
-  const trackColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+  // Tinted track — matches ring color, not generic gray
+  const trackAlpha = isDarkMode ? 0.14 : 0.11;
+  const trackColor = `rgba(${hexToRgb(color)},${trackAlpha})`;
   const cx = size / 2;
   const cy = size / 2;
 
   return (
     <View style={styles.ringWrap}>
       <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-        {/* Track */}
-        <Circle
-          cx={cx} cy={cy} r={R}
-          stroke={trackColor}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        {/* Fill */}
+        {/* Tinted track */}
+        <Circle cx={cx} cy={cy} r={R} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+        {/* Glow layer (wider, lower opacity) */}
+        {hasData && (
+          <AnimatedCircle
+            cx={cx} cy={cy} r={R}
+            stroke={color}
+            strokeWidth={strokeWidth + 5}
+            fill="none"
+            strokeDasharray={circ}
+            animatedProps={glowProps}
+            strokeLinecap="round"
+            opacity={isDarkMode ? 0.18 : 0.13}
+          />
+        )}
+        {/* Main fill */}
         <AnimatedCircle
           cx={cx} cy={cy} r={R}
           stroke={color}
@@ -76,21 +87,23 @@ const Ring = memo(({ met, goal, color, size = 76, strokeWidth = 7, delay = 0, la
           strokeLinecap="round"
         />
       </Svg>
-      {/* Center text */}
+      {/* Center */}
       <View style={[styles.ringCenter, { width: size, height: size }]}>
         {isStreak ? (
           <>
-            <Flame size={size * 0.24} color={color} strokeWidth={2.5} />
-            <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.22 }]}>{met}</Text>
+            <Flame size={size * 0.22} color={color} strokeWidth={2.5} />
+            <Text style={[styles.ringNum, { color: hasData ? theme.textPrimary : theme.textTertiary, fontSize: size * 0.22 }]}>{met}</Text>
           </>
-        ) : (
+        ) : hasData ? (
           <>
             <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.27 }]}>{met}</Text>
             <Text style={[styles.ringDenom, { color: theme.textTertiary, fontSize: size * 0.155 }]}>/{goal}</Text>
           </>
+        ) : (
+          <Text style={[styles.ringDash, { color: theme.textTertiary, fontSize: size * 0.28 }]}>—</Text>
         )}
       </View>
-      <Text style={[styles.ringLabel, { color: theme.textSecondary }]}>{label}</Text>
+      <Text style={[styles.ringLabel, { color: hasData ? theme.textSecondary : theme.textTertiary }]}>{label}</Text>
     </View>
   );
 });
@@ -169,4 +182,5 @@ const styles = StyleSheet.create({
   ringNum: { fontWeight: '800', letterSpacing: -0.5 },
   ringDenom: { fontWeight: '500', marginTop: 2 },
   ringLabel: { fontSize: 12, fontWeight: '500' },
+  ringDash: { fontWeight: '300', letterSpacing: 1 },
 });
