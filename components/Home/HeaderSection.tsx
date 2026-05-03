@@ -14,6 +14,7 @@ import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { notificationStorageService } from '../../services/notificationStorageService';
 import { logger } from '../../utils/logger';
 import { TYPOGRAPHY, SPACING } from '../../utils/designSystem';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface DailyStats {
     feedCount: number;
@@ -390,12 +391,23 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
                         {/* Option 1: New Child */}
                         <TouchableOpacity
-                            style={[styles.modalOption, { backgroundColor: theme.cardSecondary }]}
+                            style={[styles.modalOption, { 
+                                backgroundColor: isDarkMode ? '#2D2D3A' : '#FFFFFF',
+                                borderColor: isDarkMode ? '#3D3D4A' : '#F3F4F6',
+                                borderWidth: 1,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.03,
+                                shadowRadius: 8,
+                                elevation: 1,
+                            }]}
                             onPress={handleAddNewChild}
-                            activeOpacity={0.6}
+                            activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: theme.primaryLight }]}>
-                                <UserPlus size={22} color={theme.primary} strokeWidth={1.8} />
+                            <View style={[styles.modalOptionIcon, { 
+                                backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : 'rgba(200,128,106,0.1)',
+                            }]}>
+                                <UserPlus size={22} color="#C8806A" strokeWidth={2} />
                             </View>
                             <View style={styles.modalOptionText}>
                                 <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.registerNewChild')}</Text>
@@ -405,12 +417,23 @@ const HeaderSection = memo<HeaderSectionProps>(({
 
                         {/* Option 2: Join with Code */}
                         <TouchableOpacity
-                            style={[styles.modalOption, { backgroundColor: theme.cardSecondary }]}
+                            style={[styles.modalOption, { 
+                                backgroundColor: isDarkMode ? '#2D2D3A' : '#FFFFFF',
+                                borderColor: isDarkMode ? '#3D3D4A' : '#F3F4F6',
+                                borderWidth: 1,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.03,
+                                shadowRadius: 8,
+                                elevation: 1,
+                            }]}
                             onPress={handleJoinWithCode}
-                            activeOpacity={0.6}
+                            activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { backgroundColor: theme.successLight }]}>
-                                <Link2 size={22} color={theme.success} strokeWidth={1.8} />
+                            <View style={[styles.modalOptionIcon, { 
+                                backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : 'rgba(125,175,143,0.1)',
+                            }]}>
+                                <Link2 size={22} color="#7DAF8F" strokeWidth={2} />
                             </View>
                             <View style={styles.modalOptionText}>
                                 <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.joinWithCode')}</Text>

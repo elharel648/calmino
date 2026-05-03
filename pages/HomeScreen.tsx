@@ -4,8 +4,7 @@ import { View, StyleSheet, ScrollView, Share, Alert,  StatusBar, RefreshControl,
 import { WifiOff, Clock } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-
-// Hooks
+import { LinearGradient } from 'expo-linear-gradient';
 import { useHomeData } from '../hooks/useHomeData';
 import { useMedications } from '../hooks/useMedications';
 import { useGuardian } from '../hooks/useGuardian';
@@ -496,7 +495,30 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     }, [guestExpiresAt, t]);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.container}>
+            {/* Enhanced Background - Minimalist Apple Style */}
+            <LinearGradient
+                colors={isDarkMode
+                    ? ['#0F0F0F', '#1C1C1E', '#0A0A0A', '#0F0F0F']
+                    : ['#FAFAFA', '#F7F7F7', '#F3F3F3', '#FAFAFA']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                locations={[0, 0.3, 0.7, 1]}
+                style={StyleSheet.absoluteFill}
+            />
+
+            {/* Radial Glow at Top - Warm Pink */}
+            <LinearGradient
+                colors={isDarkMode
+                    ? ['rgba(200, 128, 106, 0.10)', 'transparent']
+                    : ['rgba(200, 128, 106, 0.06)', 'transparent']
+                }
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 0.6 }}
+                style={StyleSheet.absoluteFill}
+            />
+
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 

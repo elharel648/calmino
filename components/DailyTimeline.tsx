@@ -1047,11 +1047,6 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       }]} />
                       <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
-                        shadowColor: config.color,
-                        shadowOpacity: isFirst ? (isDarkMode ? 0.65 : 0.42) : (isDarkMode ? 0.3 : 0.16),
-                        shadowRadius: isFirst ? 14 : 6,
-                        shadowOffset: { width: 0, height: isFirst ? 5 : 2 },
-                        elevation: isFirst ? 10 : 4,
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                       </View>

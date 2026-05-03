@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Modal, Pressable } from 'react-native';
-import { Plus, ChevronDown, Check, X, UserPlus, Link } from 'lucide-react-native';
+import { Plus, ChevronLeft, ChevronDown, Check, X, UserPlus, Link } from 'lucide-react-native';
 import { useActiveChild, ActiveChild } from '../../context/ActiveChildContext';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
