@@ -2,124 +2,86 @@ import React, { useEffect, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withSpring, withDelay, withSequence,
-  withRepeat, withTiming, Easing,
+  withSpring, withDelay, withRepeat,
+  withSequence, withTiming, Easing,
 } from 'react-native-reanimated';
-import { Moon, ClipboardList, Flame } from 'lucide-react-native';
+import { Moon, ClipboardCheck, Flame } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 const SLEEP_COLOR  = '#C8806A';
 const DOC_COLOR    = '#10B981';
 const STREAK_COLOR = '#F97316';
 
-// ─── Single day dot ───────────────────────────────────────────────────────────
+// ─── Stat tile ────────────────────────────────────────────────────────────────
 
-interface DayDotProps {
-  label: string;
-  logged: boolean;
-  goodSleep: boolean;
-  isToday: boolean;
-  index: number;
-}
-
-const DayDot = memo(({ label, logged, goodSleep, isToday, index }: DayDotProps) => {
-  const { theme, isDarkMode } = useTheme();
-  const scale = useSharedValue(0);
-  const innerScale = useSharedValue(0);
-
-  useEffect(() => {
-    scale.value = withDelay(index * 50, withSpring(1, { mass: 0.4, stiffness: 320, damping: 16 }));
-    if (goodSleep && logged) {
-      innerScale.value = withDelay(index * 50 + 200, withSpring(1, { mass: 0.3, stiffness: 400, damping: 14 }));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const dotStyle  = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const innerStyle = useAnimatedStyle(() => ({ transform: [{ scale: innerScale.value }] }));
-
-  const dotBg = logged
-    ? (goodSleep ? SLEEP_COLOR : DOC_COLOR)
-    : isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-
-  const borderColor = isToday
-    ? theme.primary
-    : logged ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)');
-
-  return (
-    <View style={styles.dayCol}>
-      <Animated.View style={[styles.dot, { backgroundColor: dotBg, borderColor, borderWidth: isToday && !logged ? 2 : 1.5 }, dotStyle]}>
-        {/* Inner white dot for sleep+logged premium days */}
-        {goodSleep && logged && (
-          <Animated.View style={[styles.innerDot, innerStyle]} />
-        )}
-      </Animated.View>
-      <Text style={[
-        styles.dayLabel,
-        { color: isToday ? theme.textPrimary : (logged ? theme.textSecondary : theme.textTertiary) },
-        isToday && styles.dayLabelToday,
-      ]}>
-        {label}
-      </Text>
-    </View>
-  );
-});
-DayDot.displayName = 'DayDot';
-
-// ─── Stat row ─────────────────────────────────────────────────────────────────
-
-interface StatRowProps {
+interface StatTileProps {
   icon: React.ElementType;
-  label: string;
   met: number;
   goal: number;
+  label: string;
   color: string;
+  delay?: number;
 }
 
-const StatRow = memo(({ icon: Icon, label, met, goal, color }: StatRowProps) => {
-  const { theme } = useTheme();
-  const pct = goal > 0 ? met / goal : 0;
-  const width = useSharedValue(0);
+const StatTile = memo(({ icon: Icon, met, goal, label, color, delay = 0 }: StatTileProps) => {
+  const { theme, isDarkMode } = useTheme();
+  const scale = useSharedValue(0.88);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withDelay(400, withSpring(pct, { mass: 0.6, stiffness: 100, damping: 18 }));
+    scale.value   = withDelay(delay, withSpring(1, { mass: 0.5, stiffness: 200, damping: 16 }));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 260 }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    width.value = withSpring(pct, { mass: 0.6, stiffness: 100, damping: 18 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [met, goal]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
 
-  const fillStyle = useAnimatedStyle(() => ({ flex: width.value }));
+  const tileBg = isDarkMode
+    ? `rgba(${hexToRgb(color)}, 0.13)`
+    : `rgba(${hexToRgb(color)}, 0.08)`;
+
+  const pct = goal > 0 ? met / goal : 0;
+  const hasData = met > 0;
 
   return (
-    <View style={styles.statRow}>
-      <Text style={[styles.statCount, { color }]}>{met}/{goal}</Text>
-      <View style={styles.statBar}>
-        <Animated.View style={[styles.statBarFill, { backgroundColor: color }, fillStyle]} />
-        <View style={{ flex: Math.max(1 - pct, 0.001) }} />
+    <Animated.View style={[styles.tile, { backgroundColor: tileBg }, style]}>
+      <View style={styles.tileTop}>
+        <Icon size={16} color={hasData ? color : (isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)')} strokeWidth={2} />
       </View>
-      <View style={styles.statLabelRow}>
-        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
-        <Icon size={13} color={color} strokeWidth={2} />
+      <View style={styles.tileCenter}>
+        <Text style={[styles.tileNum, { color: hasData ? color : (isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)') }]}>
+          {met}
+        </Text>
+        <Text style={[styles.tileDenom, { color: theme.textTertiary }]}>
+          /{goal}
+        </Text>
       </View>
-    </View>
+      <Text style={[styles.tileLabel, { color: hasData ? theme.textSecondary : theme.textTertiary }]}>
+        {label}
+      </Text>
+      {/* Subtle fill bar */}
+      <View style={[styles.tileBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]}>
+        <View style={[styles.tileBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: color, opacity: hasData ? 0.6 : 0 }]} />
+      </View>
+    </Animated.View>
   );
 });
-StatRow.displayName = 'StatRow';
+StatTile.displayName = 'StatTile';
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
 
-const StreakSection = memo(({ streak }: { streak: number }) => {
+const StreakRow = memo(({ streak }: { streak: number }) => {
   const { theme, isDarkMode } = useTheme();
   const pulse = useSharedValue(1);
 
   useEffect(() => {
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1.18, { duration: 900, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1,    { duration: 900, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.2, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1,   { duration: 900, easing: Easing.inOut(Easing.ease) })
       ), -1, false
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,31 +89,44 @@ const StreakSection = memo(({ streak }: { streak: number }) => {
 
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
-  const msg = streak >= 14 ? 'שתי שבועות! 🏆'
+  const msg =
+    streak >= 14 ? 'שבועיים ברצף! 🏆'
     : streak >= 7  ? 'שבוע שלם!'
     : streak >= 4  ? 'אתה בדרך!'
     : streak >= 2  ? 'המשך כך'
-    : 'יום ראשון ברצף';
+    : 'יום ראשון ✨';
 
   return (
-    <View style={[styles.streakWrap, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)' }]}>
+    <View style={[styles.streakRow, {
+      backgroundColor: isDarkMode ? 'rgba(249,115,22,0.1)' : 'rgba(249,115,22,0.07)',
+    }]}>
       <View style={styles.streakLeft}>
         <Text style={[styles.streakMsg, { color: theme.textTertiary }]}>{msg}</Text>
-        <View style={styles.streakTitleRow}>
-          <Text style={[styles.streakTitle, { color: theme.textPrimary }]}>רצף תיעוד</Text>
+        <View style={styles.streakLabelRow}>
+          <Text style={[styles.streakLabel, { color: theme.textPrimary }]}>רצף תיעוד</Text>
           <Animated.View style={pulseStyle}>
             <Flame size={15} color={STREAK_COLOR} strokeWidth={2.5} />
           </Animated.View>
         </View>
       </View>
-      <View style={[styles.streakBadge, { backgroundColor: isDarkMode ? 'rgba(249,115,22,0.16)' : 'rgba(249,115,22,0.09)' }]}>
+      <View style={styles.streakRight}>
         <Text style={[styles.streakNum, { color: STREAK_COLOR }]}>{streak}</Text>
         <Text style={[styles.streakUnit, { color: STREAK_COLOR }]}>ימים</Text>
       </View>
     </View>
   );
 });
-StreakSection.displayName = 'StreakSection';
+StreakRow.displayName = 'StreakRow';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function hexToRgb(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return `${r},${g},${b}`;
+}
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
@@ -168,59 +143,37 @@ export interface WeeklyGoalsCardProps {
 }
 
 const WeeklyGoalsCard = memo(({
-  title, sleepDaysMet, sleepDaysGoal,
-  docDaysMet, docDaysGoal, streak,
-  perDayLogged = [], perDaySleep = [], dayLabels = [],
+  title,
+  sleepDaysMet, sleepDaysGoal,
+  docDaysMet, docDaysGoal,
+  streak,
 }: WeeklyGoalsCardProps) => {
-  const { theme, isDarkMode } = useTheme();
-  const numDots = Math.min(perDayLogged.length, 7);
-
-  // Overall score for header badge
-  const total = docDaysGoal > 0 ? (docDaysMet + sleepDaysMet) / (docDaysGoal + sleepDaysGoal) : 0;
-  const badge = total >= 1 ? { text: 'שבוע מושלם 🎉', color: DOC_COLOR }
-    : total >= 0.65 ? { text: 'שבוע מצוין', color: DOC_COLOR }
-    : total >= 0.35 ? { text: 'בדרך הנכונה', color: SLEEP_COLOR }
-    : { text: 'בוא נשפר', color: theme.textTertiary };
+  const { theme } = useTheme();
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
+      <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
 
-      {/* Title row */}
-      <View style={styles.titleRow}>
-        <View style={[styles.badge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' }]}>
-          <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
-        </View>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
+      <View style={styles.tilesRow}>
+        <StatTile
+          icon={ClipboardCheck}
+          met={docDaysMet}
+          goal={docDaysGoal}
+          label="ימים תועדו"
+          color={DOC_COLOR}
+          delay={0}
+        />
+        <StatTile
+          icon={Moon}
+          met={sleepDaysMet}
+          goal={sleepDaysGoal}
+          label="שינה 8+ שעות"
+          color={SLEEP_COLOR}
+          delay={80}
+        />
       </View>
 
-      {/* Dots week view */}
-      {numDots > 0 && (
-        <View style={styles.dotsRow}>
-          {Array.from({ length: numDots }, (_, i) => (
-            <DayDot
-              key={i}
-              index={i}
-              label={dayLabels[i] ?? ''}
-              logged={perDayLogged[i] ?? false}
-              goodSleep={perDaySleep[i] ?? false}
-              isToday={i === 0}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Divider */}
-      <View style={[styles.divider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }]} />
-
-      {/* Stats */}
-      <View style={styles.statsBlock}>
-        <StatRow icon={Moon}          label="שינה 8+ שעות"  met={sleepDaysMet} goal={sleepDaysGoal} color={SLEEP_COLOR} />
-        <View style={{ height: 12 }} />
-        <StatRow icon={ClipboardList} label="ימים עם תיעוד" met={docDaysMet}   goal={docDaysGoal}   color={DOC_COLOR}   />
-      </View>
-
-      {/* Streak */}
-      {streak > 0 && <StreakSection streak={streak} />}
+      {streak > 0 && <StreakRow streak={streak} />}
     </View>
   );
 });
@@ -229,65 +182,39 @@ export default WeeklyGoalsCard;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const DOT_SIZE = 30;
-
 const styles = StyleSheet.create({
   card: {
     borderRadius: 20, padding: 18, marginTop: 20,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
+    gap: 14,
   },
-  titleRow: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 20,
+  title: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3, textAlign: 'right' },
+  // Tiles
+  tilesRow: { flexDirection: 'row-reverse', gap: 10 },
+  tile: {
+    flex: 1, borderRadius: 16, padding: 14, gap: 4, overflow: 'hidden',
   },
-  title: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  // Dots
-  dotsRow: {
-    flexDirection: 'row-reverse', justifyContent: 'space-between',
-    paddingHorizontal: 2, marginBottom: 18,
+  tileTop: { flexDirection: 'row-reverse' },
+  tileCenter: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 1 },
+  tileNum: { fontSize: 34, fontWeight: '800', letterSpacing: -1, lineHeight: 40 },
+  tileDenom: { fontSize: 14, fontWeight: '500' },
+  tileLabel: { fontSize: 12, fontWeight: '500', textAlign: 'right' },
+  tileBar: {
+    height: 3, borderRadius: 2, marginTop: 6, overflow: 'hidden',
   },
-  dayCol: { alignItems: 'center', gap: 6, flex: 1 },
-  dot: {
-    width: DOT_SIZE, height: DOT_SIZE, borderRadius: DOT_SIZE / 2,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  innerDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-  },
-  dayLabel: { fontSize: 11, fontWeight: '500' },
-  dayLabelToday: { fontWeight: '700' },
-  // Divider
-  divider: { height: StyleSheet.hairlineWidth, marginBottom: 16 },
-  // Stats
-  statsBlock: { paddingHorizontal: 2 },
-  statRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
-  statLabelRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5, flex: 1 },
-  statLabel: { fontSize: 13, fontWeight: '500', textAlign: 'right' },
-  statCount: { fontSize: 13, fontWeight: '700', minWidth: 30, textAlign: 'left' },
-  statBar: {
-    width: 80, height: 5, borderRadius: 3,
-    flexDirection: 'row', overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
-  statBarFill: { height: '100%', borderRadius: 3 },
+  tileBarFill: { height: '100%', borderRadius: 2 },
   // Streak
-  streakWrap: {
+  streakRow: {
     flexDirection: 'row-reverse', alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12,
   },
   streakLeft: { alignItems: 'flex-end', gap: 2 },
-  streakTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
-  streakTitle: { fontSize: 14, fontWeight: '600' },
+  streakLabelRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
+  streakLabel: { fontSize: 14, fontWeight: '600' },
   streakMsg: { fontSize: 11 },
-  streakBadge: {
-    flexDirection: 'row', alignItems: 'baseline',
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, gap: 2,
-  },
-  streakNum: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  streakUnit: { fontSize: 12, fontWeight: '600' },
+  streakRight: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+  streakNum: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  streakUnit: { fontSize: 13, fontWeight: '600' },
 });
