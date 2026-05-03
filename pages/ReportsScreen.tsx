@@ -223,7 +223,10 @@ export default function ReportsScreen() {
     docDaysGoal: number;
     docDaysMet: number;
     streak: number;
-  }>({ sleepDaysGoal: 7, sleepDaysMet: 0, docDaysGoal: 7, docDaysMet: 0, streak: 0 });
+    perDayLogged: boolean[];
+    perDaySleep: boolean[];
+    dayLabels: string[];
+  }>({ sleepDaysGoal: 7, sleepDaysMet: 0, docDaysGoal: 7, docDaysMet: 0, streak: 0, perDayLogged: [], perDaySleep: [], dayLabels: [] });
 
   // Get date range
   const getDateRange = useCallback(() => {
@@ -431,12 +434,31 @@ export default function ReportsScreen() {
         }
       }
 
+      // Per-day arrays for the day-bar visualization (today first = index 0)
+      const hebrewDayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+      const numSlots = Math.min(7, Math.max(daysInRange, dayKeys.length));
+      const perDayLogged: boolean[] = [];
+      const perDaySleep: boolean[] = [];
+      const dayLabels: string[] = [];
+      const todayDate = new Date();
+      for (let i = 0; i < numSlots; i++) {
+        const date = subDays(todayDate, i);
+        const dateKey = format(date, 'yyyy-MM-dd');
+        const dayData = dayMap[dateKey];
+        perDayLogged.push(dayData ? (dayData.foodCount > 0 || dayData.sleepCount > 0 || dayData.diapers > 0) : false);
+        perDaySleep.push(dayData ? dayData.sleep >= 8 : false);
+        dayLabels.push(hebrewDayNames[date.getDay()]);
+      }
+
       setWeeklyGoals({
         sleepDaysGoal: Math.min(daysInRange, dayKeys.length),
         sleepDaysMet,
         docDaysGoal: Math.min(daysInRange, dayKeys.length),
         docDaysMet,
         streak: currentStreak,
+        perDayLogged,
+        perDaySleep,
+        dayLabels,
       });
 
       // Weekly chart data
@@ -1702,6 +1724,9 @@ export default function ReportsScreen() {
           docDaysMet={weeklyGoals.docDaysMet}
           docDaysGoal={weeklyGoals.docDaysGoal}
           streak={weeklyGoals.streak}
+          perDayLogged={weeklyGoals.perDayLogged}
+          perDaySleep={weeklyGoals.perDaySleep}
+          dayLabels={weeklyGoals.dayLabels}
         />
       )}
     </ScrollView>
