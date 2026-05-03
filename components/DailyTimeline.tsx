@@ -18,18 +18,6 @@ import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
 
-// ─── Dashed vertical line — fixed height segment ─────────────────────────────
-const DashedLine = ({ color, hidden }: { color: string; hidden?: boolean }) => (
-  <View style={{ width: 2, flex: 1, overflow: 'hidden', alignItems: 'center' }}>
-    {hidden ? null : Array.from({ length: 30 }).map((_, i) => (
-      <View key={i} style={{
-        width: 2, height: 4, borderRadius: 1,
-        backgroundColor: color,
-        marginBottom: 4, opacity: 0.32,
-      }} />
-    ))}
-  </View>
-);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Pulsing 'now' dot ───────────────────────────────────────────────────────
@@ -1054,20 +1042,20 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       <Text style={[styles.elegantTimeMain, { color: theme.textTertiary }]} numberOfLines={1}>{timeStr}</Text>
                     </View>
 
-                    {/* MIDDLE: TRACK — large icon + dashed lines */}
+                    {/* MIDDLE: TRACK */}
                     <View style={styles.elegantTrack}>
-                      <DashedLine color={config.color} hidden={isFirst} />
+                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }]} />
                       <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
                         shadowColor: config.color,
-                        shadowOpacity: isDarkMode ? 0.45 : 0.28,
+                        shadowOpacity: isDarkMode ? 0.45 : 0.3,
                         shadowRadius: 10,
                         shadowOffset: { width: 0, height: 4 },
                         elevation: 6,
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                       </View>
-                      <DashedLine color={config.color} hidden={isLast} />
+                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }]} />
                     </View>
 
                     {/* LEFT: CONTENT */}
@@ -1547,18 +1535,18 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   elegantTrack: {
-    width: 60,
+    width: 62,
     alignItems: 'center',
   },
-  elegantLineTop: { width: 1, flex: 1 },
-  elegantLineBottom: { width: 1, flex: 1 },
+  elegantLineTop: { width: 1.5, flex: 1 },
+  elegantLineBottom: { width: 1.5, flex: 1 },
   elegantIconWrapper: {
     width: 50,
     height: 50,
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 2,
+    marginVertical: 3,
   },
   elegantCardContainer: {
     flex: 1,
