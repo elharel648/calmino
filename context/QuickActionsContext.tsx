@@ -9,6 +9,8 @@ export type QuickActionKey =
     | 'whiteNoiseLullaby' | 'whiteNoiseGentle' | 'whiteNoiseBirds' | 'whiteNoiseRain'
     | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'custom'
     | 'teeth' | 'nightLight' | 'quickReminder'
+    | 'healthDoctor' | 'healthVaccines' | 'healthIllness' | 'healthTemperature'
+    | 'healthMedications' | 'healthTipatHalav' | 'healthAllergies' | 'healthHistory'
     | 'breastfeeding' | 'breastfeedingRight' | 'breastfeedingLeft' | 'bottle' | 'pumping';
 
 // Default order of actions (top to bottom natively, reversed for horizontal slider)

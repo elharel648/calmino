@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Utensils, Moon, Music, Music2, Bird, CloudRain, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Baby, Milk, Waves } from 'lucide-react-native';
+import { Utensils, Moon, Music, Music2, Bird, CloudRain, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Baby, Milk, Waves, Stethoscope, Syringe, Heart, Thermometer, MapPin, ShieldAlert, ClipboardList } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
 import DiaperIcon from '../Common/DiaperIcon';
@@ -44,7 +44,15 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     whiteNoiseBirds:   { icon: Bird,      labelKey: 'actions.whiteNoiseBirds',   activeLabelKey: 'actions.whiteNoiseBirds' },
     whiteNoiseRain:    { icon: CloudRain, labelKey: 'actions.whiteNoiseRain',    activeLabelKey: 'actions.whiteNoiseRain' },
     sos: { icon: SOSIcon, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },
-    health: { icon: HeartPulse, labelKey: 'actions.health', activeLabelKey: 'actions.health' },
+    health:              { icon: HeartPulse,    labelKey: 'actions.health',              activeLabelKey: 'actions.health' },
+    healthDoctor:        { icon: Stethoscope,   labelKey: 'actions.healthDoctor',        activeLabelKey: 'actions.healthDoctor' },
+    healthVaccines:      { icon: Syringe,       labelKey: 'actions.healthVaccines',      activeLabelKey: 'actions.healthVaccines' },
+    healthIllness:       { icon: Heart,         labelKey: 'actions.healthIllness',       activeLabelKey: 'actions.healthIllness' },
+    healthTemperature:   { icon: Thermometer,   labelKey: 'actions.healthTemperature',   activeLabelKey: 'actions.healthTemperature' },
+    healthMedications:   { icon: Pill,          labelKey: 'actions.healthMedications',   activeLabelKey: 'actions.healthMedications' },
+    healthTipatHalav:    { icon: MapPin,        labelKey: 'actions.healthTipatHalav',    activeLabelKey: 'actions.healthTipatHalav' },
+    healthAllergies:     { icon: ShieldAlert,   labelKey: 'actions.healthAllergies',     activeLabelKey: 'actions.healthAllergies' },
+    healthHistory:       { icon: ClipboardList, labelKey: 'actions.healthHistory',       activeLabelKey: 'actions.healthHistory' },
     growth: { icon: TrendingUp, labelKey: 'actions.growth', activeLabelKey: 'actions.growth' },
     milestones: { icon: Award, labelKey: 'actions.milestones', activeLabelKey: 'actions.milestones' },
     magicMoments: { icon: Sparkles, labelKey: 'actions.magicMoments', activeLabelKey: 'actions.magicMoments' },

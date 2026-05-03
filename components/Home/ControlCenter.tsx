@@ -29,7 +29,8 @@ const SECTIONS: { title: string; items: QuickActionKey[]; cols?: 2 | 3 }[] = [
     { title: 'שינה', items: ['sleep'] },
     { title: 'האכלה', items: ['breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping', 'food', 'diaper'] },
     { title: 'רעש לבן', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'], cols: 2 },
-    { title: 'כלים', items: ['nightLight', 'quickReminder', 'health', 'growth', 'milestones', 'sos'] },
+    { title: 'בריאות', items: ['healthDoctor', 'healthVaccines', 'healthIllness', 'healthTemperature', 'healthMedications', 'healthTipatHalav', 'healthAllergies', 'healthHistory'] },
+    { title: 'כלים', items: ['nightLight', 'quickReminder', 'growth', 'milestones', 'sos'] },
 ];
 
 interface Props {
@@ -161,6 +162,14 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                                      key === 'whiteNoiseGentle' ? 'מוזיקה עדינה' :
                                                      key === 'whiteNoiseBirds' ? 'ציפורים' :
                                                      key === 'whiteNoiseRain' ? 'גשם' :
+                                                     key === 'healthDoctor' ? 'ביקור רופא' :
+                                                     key === 'healthVaccines' ? 'חיסונים' :
+                                                     key === 'healthIllness' ? 'מחלות' :
+                                                     key === 'healthTemperature' ? 'טמפרטורה' :
+                                                     key === 'healthMedications' ? 'תרופות' :
+                                                     key === 'healthTipatHalav' ? 'טיפת חלב' :
+                                                     key === 'healthAllergies' ? 'אלרגיות' :
+                                                     key === 'healthHistory' ? 'היסטוריה' :
                                                      key === 'nightLight' ? 'פנס לילה' :
                                                      key === 'quickReminder' ? 'תזכורת' :
                                                      key === 'health' ? 'בריאות' :

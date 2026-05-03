@@ -222,6 +222,14 @@ const QuickActions = memo<QuickActionsProps>(({
         whiteNoiseGentle: { onPress: () => { } },
         whiteNoiseBirds: { onPress: () => { } },
         whiteNoiseRain: { onPress: () => { } },
+        healthDoctor: { onPress: () => { } },
+        healthVaccines: { onPress: () => { } },
+        healthIllness: { onPress: () => { } },
+        healthTemperature: { onPress: () => { } },
+        healthMedications: { onPress: () => { } },
+        healthTipatHalav: { onPress: () => { } },
+        healthAllergies: { onPress: () => { } },
+        healthHistory: { onPress: () => { } },
     }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount, totalSupplements, activeSound, whiteNoiseElapsed, stopSound]);
 
     const visibleActions = useMemo(() =>

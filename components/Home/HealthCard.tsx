@@ -35,6 +35,7 @@ interface HealthCardProps {
     dynamicStyles: { text: string };
     visible?: boolean;
     onClose?: () => void;
+    initialScreen?: HealthScreen;
 }
 
 type HealthScreen = 'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies';
@@ -249,7 +250,7 @@ const AnimatedVaccineRow = ({ vaccine, isDone, justCompleted, theme, isDarkMode,
     );
 };
 
-const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) => {
+const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: HealthCardProps) => {
     const { theme, isDarkMode } = useTheme();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const { t } = useLanguage();
@@ -858,12 +859,17 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose }: HealthCardProps) =
         },
     }), [slideAnim, backdropAnim, closeModal]);
 
-    // Sync with external visible prop
+    // Sync with external visible prop + deep-link to a specific screen
     useEffect(() => {
         if (visible !== undefined) {
             setIsModalOpen(visible);
+            if (visible && initialScreen) {
+                setCurrentScreen(initialScreen);
+            } else if (!visible) {
+                setCurrentScreen('menu');
+            }
         }
-    }, [visible]);
+    }, [visible, initialScreen]);
 
     // Animate modal in/out
     useEffect(() => {

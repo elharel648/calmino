@@ -195,6 +195,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isWhiteNoiseOpen, setIsWhiteNoiseOpen] = useState(false);
     const [isSupplementsOpen, setIsSupplementsOpen] = useState(false);
     const [isHealthOpen, setIsHealthOpen] = useState(false);
+    const [healthInitialScreen, setHealthInitialScreen] = useState<'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies'>('menu');
     const [isGrowthOpen, setIsGrowthOpen] = useState(false);
     const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
     const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
@@ -220,7 +221,15 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             sleep:         () => setTrackingModalType('sleep'),
             diaper:        () => setTrackingModalType('diaper'),
             magicMoments:  () => setIsMagicMomentsOpen(true),
-            health:        () => setIsHealthOpen(true),
+            health:              () => { setHealthInitialScreen('menu');        setIsHealthOpen(true); },
+            healthDoctor:        () => { setHealthInitialScreen('doctor');      setIsHealthOpen(true); },
+            healthVaccines:      () => { setHealthInitialScreen('vaccines');    setIsHealthOpen(true); },
+            healthIllness:       () => { setHealthInitialScreen('illness');     setIsHealthOpen(true); },
+            healthTemperature:   () => { setHealthInitialScreen('temperature'); setIsHealthOpen(true); },
+            healthMedications:   () => { setHealthInitialScreen('medications'); setIsHealthOpen(true); },
+            healthTipatHalav:    () => { setHealthInitialScreen('tipat_halav');setIsHealthOpen(true); },
+            healthAllergies:     () => { setHealthInitialScreen('allergies');   setIsHealthOpen(true); },
+            healthHistory:       () => { setHealthInitialScreen('history');     setIsHealthOpen(true); },
             growth:        () => setIsGrowthOpen(true),
             milestones:    () => setIsMilestonesOpen(true),
             sos:           () => setIsCalmModeOpen(true),
@@ -610,7 +619,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                 />
                             </View>
 
-                            <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => setIsHealthOpen(false)} />
+                            <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => { setIsHealthOpen(false); setHealthInitialScreen('menu'); }} initialScreen={healthInitialScreen} />
 
                             <DailyTimeline 
                                 refreshTrigger={timelineRefresh} 

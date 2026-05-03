@@ -51,7 +51,15 @@ export const COLORS = {
             whiteNoiseRain:    { color: '#4E7FA6', lightColor: 'rgba(78, 127, 166, 0.15)', accentColor: '#4E7FA6' }, // Steel Blue – גשם
             sos:           { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' }, // Dusty Rose
             custom:        { color: '#A5A58D', lightColor: 'rgba(165, 165, 141, 0.15)', accentColor: '#A5A58D' }, // Soft Stone
-            health:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.15)', accentColor: '#8EB168' }, // Soft Olive
+            health:              { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.15)', accentColor: '#8EB168' }, // Soft Olive
+            healthDoctor:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.15)', accentColor: '#8EB168' },
+            healthVaccines:      { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)',  accentColor: '#557A9D' },
+            healthIllness:       { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' },
+            healthTemperature:   { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' },
+            healthMedications:   { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' },
+            healthTipatHalav:    { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.15)', accentColor: '#83C5BE' },
+            healthAllergies:     { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' },
+            healthHistory:       { color: '#A5A58D', lightColor: 'rgba(165, 165, 141, 0.15)', accentColor: '#A5A58D' },
             growth:        { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.15)', accentColor: '#83C5BE' }, // Muted Teal
             milestones:    { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
             magicMoments:  { color: '#8D4A60', lightColor: 'rgba(141, 74, 96, 0.15)', accentColor: '#8D4A60' }, // Wine/Maroon
@@ -106,7 +114,15 @@ export const COLORS = {
             whiteNoiseRain:    { color: '#4E7FA6', lightColor: 'rgba(78, 127, 166, 0.22)', accentColor: '#4E7FA6' },
             sos:           { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
             custom:        { color: '#A5A58D', lightColor: 'rgba(165, 165, 141, 0.22)', accentColor: '#A5A58D' },
-            health:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.22)', accentColor: '#8EB168' },
+            health:              { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.22)', accentColor: '#8EB168' },
+            healthDoctor:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.22)', accentColor: '#8EB168' },
+            healthVaccines:      { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)',  accentColor: '#557A9D' },
+            healthIllness:       { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
+            healthTemperature:   { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            healthMedications:   { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
+            healthTipatHalav:    { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.22)', accentColor: '#83C5BE' },
+            healthAllergies:     { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
+            healthHistory:       { color: '#A5A58D', lightColor: 'rgba(165, 165, 141, 0.22)', accentColor: '#A5A58D' },
             growth:        { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.22)', accentColor: '#83C5BE' },
             milestones:    { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
             magicMoments:  { color: '#8D4A60', lightColor: 'rgba(141, 74, 96, 0.22)', accentColor: '#8D4A60' },
