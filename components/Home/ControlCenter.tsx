@@ -6,8 +6,10 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, Modal,
-    TouchableWithoutFeedback, ScrollView,
+    TouchableWithoutFeedback, ScrollView, Dimensions,
 } from 'react-native';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
@@ -43,6 +45,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
     const insets = useSafeAreaInsets();
     const { sosActions, setSosActions } = useQuickActions();
     const [selected, setSelected] = useState<QuickActionKey[]>([...sosActions]);
+    const [showMaxHint, setShowMaxHint] = useState(false);
 
     useEffect(() => {
         if (visible) setSelected([...sosActions]);
@@ -67,6 +70,8 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
     const toggle = (key: QuickActionKey) => {
         if (!selected.includes(key) && selected.length >= MAX) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            setShowMaxHint(true);
+            setTimeout(() => setShowMaxHint(false), 2000);
             return;
         }
         Haptics.selectionAsync();
@@ -112,6 +117,13 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         בחר עד {MAX} קיצורים שיופיעו בלחיצה על "+" ({selected.length}/{MAX})
                     </Text>
+                    {showMaxHint && (
+                        <View style={[styles.maxHint, { backgroundColor: isDarkMode ? 'rgba(255,100,80,0.15)' : 'rgba(200,80,60,0.08)', borderColor: isDarkMode ? 'rgba(255,100,80,0.3)' : 'rgba(200,80,60,0.2)' }]}>
+                            <Text style={[styles.maxHintText, { color: isDarkMode ? '#FF7060' : '#C8503C' }]}>
+                                הגעת למקסימום — בטל בחירה קיימת כדי להוסיף
+                            </Text>
+                        </View>
+                    )}
 
                     <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
                         {SECTIONS.map(section => (
@@ -223,7 +235,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden',
         shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
         shadowOpacity: 0.2, shadowRadius: 20, elevation: 16,
-        maxHeight: '88%',
+        height: SCREEN_HEIGHT * 0.88,
     },
     inner: { paddingHorizontal: 16, borderTopLeftRadius: 28, borderTopRightRadius: 28, flex: 1 },
     handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 2 },
@@ -257,6 +269,11 @@ const styles = StyleSheet.create({
         width: 14, height: 14, borderRadius: 7,
         alignItems: 'center', justifyContent: 'center',
     },
+    maxHint: {
+        marginBottom: 10, paddingHorizontal: 12, paddingVertical: 8,
+        borderRadius: 10, borderWidth: 1,
+    },
+    maxHintText: { fontSize: 12, fontWeight: '600', textAlign: 'right' },
     saveBtn: {
         marginTop: 8, padding: 15, borderRadius: 16, alignItems: 'center',
         shadowColor: '#C8806A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
