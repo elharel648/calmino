@@ -1044,7 +1044,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
                     {/* MIDDLE: TRACK */}
                     <View style={styles.elegantTrack}>
-                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }]} />
+                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : config.color, opacity: isFirst ? 0 : 0.25 }]} />
                       <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
                         shadowColor: config.color,
@@ -1055,7 +1055,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                       </View>
-                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }]} />
+                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : config.color, opacity: isLast ? 0 : 0.25 }]} />
                     </View>
 
                     {/* LEFT: CONTENT */}
