@@ -217,47 +217,45 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
 
                                     {/* Register new child */}
                                     <TouchableOpacity
-                                        style={[styles.addOptionRow, { backgroundColor: isDarkMode ? '#1E1E2A' : '#F9FAFB' }]}
+                                        style={[styles.addOptionRow, {
+                                            backgroundColor: isDarkMode ? theme.cardSecondary : '#FFFFFF',
+                                            borderColor: isDarkMode ? theme.border : 'rgba(0,0,0,0.07)',
+                                        }]}
                                         onPress={handleAddChild}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : '#F7EDE8' }]}>
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : 'rgba(200,128,106,0.1)' }]}>
                                             <UserPlus size={18} color="#C8806A" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
                                             <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>רישום ילד חדש</Text>
                                             <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>צור פרופיל חדש לילד</Text>
                                         </View>
-                                        <ChevronDown size={16} color={theme.textTertiary} style={{ transform: [{ rotate: '90deg' }] }} />
                                     </TouchableOpacity>
 
                                     {/* Join with code */}
                                     <TouchableOpacity
-                                        style={[styles.addOptionRow, { backgroundColor: isDarkMode ? '#1E1E2A' : '#F9FAFB' }]}
+                                        style={[styles.addOptionRow, {
+                                            backgroundColor: isDarkMode ? theme.cardSecondary : '#FFFFFF',
+                                            borderColor: isDarkMode ? theme.border : 'rgba(0,0,0,0.07)',
+                                        }]}
                                         onPress={() => {
                                             try {
-                                                logger.log('🔗 Join with code button pressed');
                                                 setDropdownOpen(false);
-                                                logger.log('🔗 Dropdown closed, waiting before opening JoinModal...');
-                                                // Add delay to prevent modal collision
-                                                setTimeout(() => {
-                                                    logger.log('🔗 Now calling onJoinWithCode');
-                                                    onJoinWithCode?.();
-                                                }, 300);
+                                                setTimeout(() => { onJoinWithCode?.(); }, 300);
                                             } catch (error) {
                                                 logger.error('🔗 CRASH ERROR:', error);
                                             }
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : '#E8F2EC' }]}>
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : 'rgba(125,175,143,0.1)' }]}>
                                             <Link size={18} color="#7DAF8F" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
                                             <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>הצטרפות עם קוד</Text>
                                             <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>קיבלת קוד מהשותף?</Text>
                                         </View>
-                                        <ChevronDown size={16} color={theme.textTertiary} style={{ transform: [{ rotate: '90deg' }] }} />
                                     </TouchableOpacity>
                                 </View>
                             )}
@@ -670,31 +668,34 @@ const styles = StyleSheet.create({
     addOptionRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        padding: 12,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        marginBottom: 8,
+        padding: 14,
+        borderRadius: 16,
+        borderWidth: 1,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
     },
     addOptionIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
     },
     addOptionText: {
         flex: 1,
-        marginHorizontal: 12,
+        marginHorizontal: 14,
         alignItems: 'flex-end',
     },
     addOptionTitle: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#1F2937',
     },
     addOptionSubtitle: {
         fontSize: 12,
-        color: '#6B7280',
         marginTop: 2,
     },
 
