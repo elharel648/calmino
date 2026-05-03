@@ -1,172 +1,159 @@
 import React, { useEffect, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-  withSequence,
-  withRepeat,
-  withTiming,
-  Easing,
+  useSharedValue, useAnimatedStyle,
+  withSpring, withDelay, withSequence,
+  withRepeat, withTiming, Easing,
 } from 'react-native-reanimated';
-import { Flame } from 'lucide-react-native';
+import { Moon, ClipboardList, Flame } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 
+const SLEEP_COLOR  = '#C8806A';
+const DOC_COLOR    = '#10B981';
 const STREAK_COLOR = '#F97316';
-const SLEEP_COLOR = '#C8806A';
-const DOC_COLOR = '#10B981';
 
-// ─── Animated day bar ────────────────────────────────────────────────────────
+// ─── Single day dot ───────────────────────────────────────────────────────────
 
-interface DayBarProps {
+interface DayDotProps {
   label: string;
   logged: boolean;
   goodSleep: boolean;
-  index: number;
   isToday: boolean;
+  index: number;
 }
 
-const DayBar = memo(({ label, logged, goodSleep, index, isToday }: DayBarProps) => {
+const DayDot = memo(({ label, logged, goodSleep, isToday, index }: DayDotProps) => {
   const { theme, isDarkMode } = useTheme();
-
-  const heightPct = goodSleep ? 1 : logged ? 0.58 : 0.18;
-  const BAR_MAX = 44;
-  const targetH = BAR_MAX * heightPct;
-
-  const h = useSharedValue(0);
-  const op = useSharedValue(0);
+  const scale = useSharedValue(0);
+  const innerScale = useSharedValue(0);
 
   useEffect(() => {
-    h.value = withDelay(index * 60, withSpring(targetH, { mass: 0.5, stiffness: 180, damping: 14 }));
-    op.value = withDelay(index * 60, withTiming(1, { duration: 300 }));
+    scale.value = withDelay(index * 50, withSpring(1, { mass: 0.4, stiffness: 320, damping: 16 }));
+    if (goodSleep && logged) {
+      innerScale.value = withDelay(index * 50 + 200, withSpring(1, { mass: 0.3, stiffness: 400, damping: 14 }));
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-animate if data changes
-  useEffect(() => {
-    h.value = withSpring(targetH, { mass: 0.5, stiffness: 180, damping: 14 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logged, goodSleep]);
+  const dotStyle  = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const innerStyle = useAnimatedStyle(() => ({ transform: [{ scale: innerScale.value }] }));
 
-  const barStyle = useAnimatedStyle(() => ({ height: h.value, opacity: op.value }));
-
-  const barColor = goodSleep
-    ? SLEEP_COLOR
-    : logged
-    ? DOC_COLOR
+  const dotBg = logged
+    ? (goodSleep ? SLEEP_COLOR : DOC_COLOR)
     : isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+
+  const borderColor = isToday
+    ? theme.primary
+    : logged ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)');
 
   return (
     <View style={styles.dayCol}>
-      {/* Bar */}
-      <View style={[styles.barTrack, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}>
-        <Animated.View
-          style={[
-            styles.barFill,
-            { backgroundColor: barColor },
-            isToday && { borderColor: barColor, borderWidth: 2, opacity: 1 },
-            barStyle,
-          ]}
-        />
-      </View>
-      {/* Day label */}
+      <Animated.View style={[styles.dot, { backgroundColor: dotBg, borderColor, borderWidth: isToday && !logged ? 2 : 1.5 }, dotStyle]}>
+        {/* Inner white dot for sleep+logged premium days */}
+        {goodSleep && logged && (
+          <Animated.View style={[styles.innerDot, innerStyle]} />
+        )}
+      </Animated.View>
       <Text style={[
         styles.dayLabel,
-        { color: isToday ? theme.textPrimary : theme.textTertiary },
-        isToday && { fontWeight: '700' },
+        { color: isToday ? theme.textPrimary : (logged ? theme.textSecondary : theme.textTertiary) },
+        isToday && styles.dayLabelToday,
       ]}>
         {label}
       </Text>
-      {isToday && <View style={[styles.todayDot, { backgroundColor: theme.primary }]} />}
     </View>
   );
 });
-DayBar.displayName = 'DayBar';
+DayDot.displayName = 'DayDot';
 
-// ─── Animated progress bar ───────────────────────────────────────────────────
+// ─── Stat row ─────────────────────────────────────────────────────────────────
 
-interface ProgressRowProps {
+interface StatRowProps {
+  icon: React.ElementType;
   label: string;
   met: number;
   goal: number;
   color: string;
 }
 
-const ProgressRow = memo(({ label, met, goal, color }: ProgressRowProps) => {
+const StatRow = memo(({ icon: Icon, label, met, goal, color }: StatRowProps) => {
   const { theme } = useTheme();
-  const pct = goal > 0 ? Math.min(met / goal, 1) : 0;
+  const pct = goal > 0 ? met / goal : 0;
   const width = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withDelay(300, withSpring(pct, { mass: 0.6, stiffness: 120, damping: 16 }));
+    width.value = withDelay(400, withSpring(pct, { mass: 0.6, stiffness: 100, damping: 18 }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    width.value = withSpring(pct, { mass: 0.6, stiffness: 120, damping: 16 });
+    width.value = withSpring(pct, { mass: 0.6, stiffness: 100, damping: 18 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [met, goal]);
 
-  const barStyle = useAnimatedStyle(() => ({ flex: width.value }));
+  const fillStyle = useAnimatedStyle(() => ({ flex: width.value }));
 
   return (
-    <View style={styles.progressRow}>
-      <Text style={[styles.progressCount, { color }]}>{met}/{goal}</Text>
-      <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressFill, { backgroundColor: color }, barStyle]} />
-        <View style={{ flex: Math.max(1 - pct, 0) }} />
+    <View style={styles.statRow}>
+      <Text style={[styles.statCount, { color }]}>{met}/{goal}</Text>
+      <View style={styles.statBar}>
+        <Animated.View style={[styles.statBarFill, { backgroundColor: color }, fillStyle]} />
+        <View style={{ flex: Math.max(1 - pct, 0.001) }} />
       </View>
-      <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>{label}</Text>
+      <View style={styles.statLabelRow}>
+        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
+        <Icon size={13} color={color} strokeWidth={2} />
+      </View>
     </View>
   );
 });
-ProgressRow.displayName = 'ProgressRow';
+StatRow.displayName = 'StatRow';
 
-// ─── Streak section ──────────────────────────────────────────────────────────
+// ─── Streak ───────────────────────────────────────────────────────────────────
 
-const StreakRow = memo(({ streak }: { streak: number }) => {
+const StreakSection = memo(({ streak }: { streak: number }) => {
   const { theme, isDarkMode } = useTheme();
-  const flamePulse = useSharedValue(1);
+  const pulse = useSharedValue(1);
 
   useEffect(() => {
-    flamePulse.value = withRepeat(
+    pulse.value = withRepeat(
       withSequence(
-        withTiming(1.2, { duration: 900, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1,   { duration: 900, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.18, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1,    { duration: 900, easing: Easing.inOut(Easing.ease) })
       ), -1, false
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const flameStyle = useAnimatedStyle(() => ({ transform: [{ scale: flamePulse.value }] }));
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
-  const msg = streak >= 7 ? '🎉 שבוע מושלם!'
-    : streak >= 4 ? 'אתה בדרך!'
-    : streak >= 2 ? 'המשך כך'
+  const msg = streak >= 14 ? 'שתי שבועות! 🏆'
+    : streak >= 7  ? 'שבוע שלם!'
+    : streak >= 4  ? 'אתה בדרך!'
+    : streak >= 2  ? 'המשך כך'
     : 'יום ראשון ברצף';
 
   return (
-    <View style={[styles.streakRow, { borderTopColor: theme.border }]}>
-      <View style={[styles.streakBadge, { backgroundColor: isDarkMode ? 'rgba(249,115,22,0.18)' : 'rgba(249,115,22,0.1)' }]}>
-        <Text style={[styles.streakDays, { color: STREAK_COLOR }]}>{streak}</Text>
-        <Text style={[styles.streakUnit, { color: STREAK_COLOR }]}> ימים</Text>
-      </View>
-      <View style={styles.streakInfo}>
-        <Text style={[styles.streakMsg, { color: theme.textSecondary }]}>{msg}</Text>
-        <View style={styles.streakLabelRow}>
-          <Animated.View style={flameStyle}>
-            <Flame size={14} color={STREAK_COLOR} strokeWidth={2.5} />
+    <View style={[styles.streakWrap, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)' }]}>
+      <View style={styles.streakLeft}>
+        <Text style={[styles.streakMsg, { color: theme.textTertiary }]}>{msg}</Text>
+        <View style={styles.streakTitleRow}>
+          <Text style={[styles.streakTitle, { color: theme.textPrimary }]}>רצף תיעוד</Text>
+          <Animated.View style={pulseStyle}>
+            <Flame size={15} color={STREAK_COLOR} strokeWidth={2.5} />
           </Animated.View>
-          <Text style={[styles.streakLabel, { color: theme.textPrimary }]}>רצף תיעוד</Text>
         </View>
+      </View>
+      <View style={[styles.streakBadge, { backgroundColor: isDarkMode ? 'rgba(249,115,22,0.16)' : 'rgba(249,115,22,0.09)' }]}>
+        <Text style={[styles.streakNum, { color: STREAK_COLOR }]}>{streak}</Text>
+        <Text style={[styles.streakUnit, { color: STREAK_COLOR }]}>ימים</Text>
       </View>
     </View>
   );
 });
-StreakRow.displayName = 'StreakRow';
+StreakSection.displayName = 'StreakSection';
 
-// ─── Main card ────────────────────────────────────────────────────────────────
+// ─── Card ─────────────────────────────────────────────────────────────────────
 
 export interface WeeklyGoalsCardProps {
   title: string;
@@ -181,43 +168,36 @@ export interface WeeklyGoalsCardProps {
 }
 
 const WeeklyGoalsCard = memo(({
-  title,
-  sleepDaysMet,
-  sleepDaysGoal,
-  docDaysMet,
-  docDaysGoal,
-  streak,
-  perDayLogged = [],
-  perDaySleep = [],
-  dayLabels = [],
+  title, sleepDaysMet, sleepDaysGoal,
+  docDaysMet, docDaysGoal, streak,
+  perDayLogged = [], perDaySleep = [], dayLabels = [],
 }: WeeklyGoalsCardProps) => {
   const { theme, isDarkMode } = useTheme();
+  const numDots = Math.min(perDayLogged.length, 7);
 
-  const total = docDaysGoal > 0 ? docDaysMet / docDaysGoal : 0;
-  const statusMsg = total >= 1 ? 'שבוע מושלם 🎉'
-    : total >= 0.7 ? 'שבוע מצוין!'
-    : total >= 0.4 ? 'בדרך הנכונה'
-    : 'בוא נשפר';
-
-  const statusColor = total >= 0.7 ? DOC_COLOR : total >= 0.4 ? SLEEP_COLOR : theme.textTertiary;
-  const numBars = Math.min(perDayLogged.length, 7);
+  // Overall score for header badge
+  const total = docDaysGoal > 0 ? (docDaysMet + sleepDaysMet) / (docDaysGoal + sleepDaysGoal) : 0;
+  const badge = total >= 1 ? { text: 'שבוע מושלם 🎉', color: DOC_COLOR }
+    : total >= 0.65 ? { text: 'שבוע מצוין', color: DOC_COLOR }
+    : total >= 0.35 ? { text: 'בדרך הנכונה', color: SLEEP_COLOR }
+    : { text: 'בוא נשפר', color: theme.textTertiary };
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={[styles.statusPill, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)' }]}>
-          <Text style={[styles.statusText, { color: statusColor }]}>{statusMsg}</Text>
+      {/* Title row */}
+      <View style={styles.titleRow}>
+        <View style={[styles.badge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' }]}>
+          <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
         </View>
         <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
       </View>
 
-      {/* Day bars */}
-      {numBars > 0 && (
-        <View style={styles.barsRow}>
-          {Array.from({ length: numBars }, (_, i) => (
-            <DayBar
+      {/* Dots week view */}
+      {numDots > 0 && (
+        <View style={styles.dotsRow}>
+          {Array.from({ length: numDots }, (_, i) => (
+            <DayDot
               key={i}
               index={i}
               label={dayLabels[i] ?? ''}
@@ -229,44 +209,18 @@ const WeeklyGoalsCard = memo(({
         </View>
       )}
 
-      {/* Legend */}
-      {numBars > 0 && (
-        <View style={styles.legend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }]} />
-            <Text style={[styles.legendText, { color: theme.textTertiary }]}>לא תועד</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: DOC_COLOR }]} />
-            <Text style={[styles.legendText, { color: theme.textTertiary }]}>תועד</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: SLEEP_COLOR }]} />
-            <Text style={[styles.legendText, { color: theme.textTertiary }]}>שינה 8+</Text>
-          </View>
-        </View>
-      )}
-
       {/* Divider */}
-      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+      <View style={[styles.divider, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }]} />
 
-      {/* Progress rows */}
-      <ProgressRow
-        label="שינה 8+ שעות"
-        met={sleepDaysMet}
-        goal={sleepDaysGoal}
-        color={SLEEP_COLOR}
-      />
-      <View style={{ height: 10 }} />
-      <ProgressRow
-        label="ימים עם תיעוד"
-        met={docDaysMet}
-        goal={docDaysGoal}
-        color={DOC_COLOR}
-      />
+      {/* Stats */}
+      <View style={styles.statsBlock}>
+        <StatRow icon={Moon}          label="שינה 8+ שעות"  met={sleepDaysMet} goal={sleepDaysGoal} color={SLEEP_COLOR} />
+        <View style={{ height: 12 }} />
+        <StatRow icon={ClipboardList} label="ימים עם תיעוד" met={docDaysMet}   goal={docDaysGoal}   color={DOC_COLOR}   />
+      </View>
 
       {/* Streak */}
-      {streak > 0 && <StreakRow streak={streak} />}
+      {streak > 0 && <StreakSection streak={streak} />}
     </View>
   );
 });
@@ -275,100 +229,65 @@ export default WeeklyGoalsCard;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+const DOT_SIZE = 30;
+
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    padding: 18,
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1,
+    borderRadius: 20, padding: 18, marginTop: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
   },
-  header: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
+  titleRow: {
+    flexDirection: 'row-reverse', alignItems: 'center',
+    justifyContent: 'space-between', marginBottom: 20,
   },
-  title: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
-  statusPill: {
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+  title: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeText: { fontSize: 12, fontWeight: '600' },
+  // Dots
+  dotsRow: {
+    flexDirection: 'row-reverse', justifyContent: 'space-between',
+    paddingHorizontal: 2, marginBottom: 18,
   },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  // Day bars
-  barsRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 4,
+  dayCol: { alignItems: 'center', gap: 6, flex: 1 },
+  dot: {
+    width: DOT_SIZE, height: DOT_SIZE, borderRadius: DOT_SIZE / 2,
+    alignItems: 'center', justifyContent: 'center',
   },
-  dayCol: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 5,
-  },
-  barTrack: {
-    width: '70%',
-    height: 44,
-    borderRadius: 6,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: {
-    width: '100%',
-    borderRadius: 6,
+  innerDot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   dayLabel: { fontSize: 11, fontWeight: '500' },
-  todayDot: { width: 4, height: 4, borderRadius: 2 },
-  // Legend
-  legend: {
-    flexDirection: 'row-reverse',
-    gap: 12,
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  legendItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 10 },
-  divider: { height: StyleSheet.hairlineWidth, marginBottom: 14 },
-  // Progress rows
-  progressRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressLabel: { fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'right' },
-  progressCount: { fontSize: 13, fontWeight: '700', width: 32, textAlign: 'left' },
-  progressTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    flexDirection: 'row',
+  dayLabelToday: { fontWeight: '700' },
+  // Divider
+  divider: { height: StyleSheet.hairlineWidth, marginBottom: 16 },
+  // Stats
+  statsBlock: { paddingHorizontal: 2 },
+  statRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  statLabelRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5, flex: 1 },
+  statLabel: { fontSize: 13, fontWeight: '500', textAlign: 'right' },
+  statCount: { fontSize: 13, fontWeight: '700', minWidth: 30, textAlign: 'left' },
+  statBar: {
+    width: 80, height: 5, borderRadius: 3,
+    flexDirection: 'row', overflow: 'hidden',
     backgroundColor: 'transparent',
-    overflow: 'hidden',
   },
-  progressFill: { borderRadius: 3, height: '100%' },
+  statBarFill: { height: '100%', borderRadius: 3 },
   // Streak
-  streakRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
+  streakWrap: {
+    flexDirection: 'row-reverse', alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 14,
-    marginTop: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth,
   },
+  streakLeft: { alignItems: 'flex-end', gap: 2 },
+  streakTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
+  streakTitle: { fontSize: 14, fontWeight: '600' },
+  streakMsg: { fontSize: 11 },
   streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    flexDirection: 'row', alignItems: 'baseline',
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, gap: 2,
   },
-  streakDays: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+  streakNum: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
   streakUnit: { fontSize: 12, fontWeight: '600' },
-  streakInfo: { alignItems: 'flex-end', gap: 2 },
-  streakLabelRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
-  streakLabel: { fontSize: 14, fontWeight: '600' },
-  streakMsg: { fontSize: 12 },
 });
