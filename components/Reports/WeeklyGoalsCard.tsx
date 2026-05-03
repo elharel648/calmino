@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { Flame } from 'lucide-react-native';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useTheme } from '../../context/ThemeContext';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -23,9 +24,10 @@ interface RingProps {
   strokeWidth?: number;
   delay?: number;
   label: string;
+  isStreak?: boolean;
 }
 
-const Ring = memo(({ met, goal, color, size = 76, strokeWidth = 7, delay = 0, label }: RingProps) => {
+const Ring = memo(({ met, goal, color, size = 76, strokeWidth = 7, delay = 0, label, isStreak }: RingProps) => {
   const { theme, isDarkMode } = useTheme();
   const R = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * R;
@@ -76,12 +78,17 @@ const Ring = memo(({ met, goal, color, size = 76, strokeWidth = 7, delay = 0, la
       </Svg>
       {/* Center text */}
       <View style={[styles.ringCenter, { width: size, height: size }]}>
-        <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.27 }]}>
-          {met}
-        </Text>
-        <Text style={[styles.ringDenom, { color: theme.textTertiary, fontSize: size * 0.155 }]}>
-          /{goal}
-        </Text>
+        {isStreak ? (
+          <>
+            <Flame size={size * 0.24} color={color} strokeWidth={2.5} />
+            <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.22 }]}>{met}</Text>
+          </>
+        ) : (
+          <>
+            <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.27 }]}>{met}</Text>
+            <Text style={[styles.ringDenom, { color: theme.textTertiary, fontSize: size * 0.155 }]}>/{goal}</Text>
+          </>
+        )}
       </View>
       <Text style={[styles.ringLabel, { color: theme.textSecondary }]}>{label}</Text>
     </View>
@@ -91,50 +98,7 @@ Ring.displayName = 'Ring';
 
 // ─── Streak pill ──────────────────────────────────────────────────────────────
 
-const StreakPill = memo(({ streak }: { streak: number }) => {
-  const { theme, isDarkMode } = useTheme();
-
-  const pulse = useSharedValue(1);
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1.2, { duration: 900, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1,   { duration: 900, easing: Easing.inOut(Easing.ease) })
-      ), -1, false
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const flameStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
-
-  const msg =
-    streak >= 14 ? 'שבועיים! 🏆'
-    : streak >= 7  ? 'שבוע שלם!'
-    : streak >= 4  ? 'אתה בדרך!'
-    : streak >= 2  ? 'המשך כך'
-    : 'יום ראשון ✨';
-
-  return (
-    <View style={[styles.pill, {
-      backgroundColor: isDarkMode ? 'rgba(249,115,22,0.12)' : 'rgba(249,115,22,0.08)',
-      borderColor: isDarkMode ? 'rgba(249,115,22,0.25)' : 'rgba(249,115,22,0.18)',
-    }]}>
-      <View style={styles.pillLeft}>
-        <Text style={[styles.pillMsg, { color: theme.textTertiary }]}>{msg}</Text>
-        <View style={styles.pillLabelRow}>
-          <Text style={[styles.pillLabel, { color: theme.textPrimary }]}>רצף תיעוד</Text>
-          <Animated.View style={flameStyle}>
-            <Flame size={14} color={STREAK_COLOR} strokeWidth={2.5} />
-          </Animated.View>
-        </View>
-      </View>
-      <View style={styles.pillRight}>
-        <Text style={[styles.pillNum, { color: STREAK_COLOR }]}>{streak}</Text>
-        <Text style={[styles.pillUnit, { color: STREAK_COLOR }]}>ימים</Text>
-      </View>
-    </View>
-  );
-});
-StreakPill.displayName = 'StreakPill';
+// StreakPill removed — streak is shown as a third ring
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
@@ -166,23 +130,12 @@ const WeeklyGoalsCard = memo(({
       <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
 
       <View style={styles.ringsRow}>
-        <Ring
-          met={docDaysMet}
-          goal={docDaysGoal}
-          color="#10B981"
-          label="ימים תועדו"
-          delay={0}
-        />
-        <Ring
-          met={sleepDaysMet}
-          goal={sleepDaysGoal}
-          color="#C8806A"
-          label="שינה 8+"
-          delay={120}
-        />
+        <Ring met={docDaysMet}   goal={docDaysGoal}   color="#10B981"    label="תיעוד"    delay={0}   />
+        <Ring met={sleepDaysMet} goal={sleepDaysGoal} color="#C8806A"    label="שינה 8+"  delay={100} />
+        {streak > 0 && (
+          <Ring met={Math.min(streak, 7)} goal={7} color={STREAK_COLOR} label="רצף" delay={200} isStreak />
+        )}
       </View>
-
-      {streak > 0 && <StreakPill streak={streak} />}
     </View>
   );
 });
@@ -216,18 +169,4 @@ const styles = StyleSheet.create({
   ringNum: { fontWeight: '800', letterSpacing: -0.5 },
   ringDenom: { fontWeight: '500', marginTop: 2 },
   ringLabel: { fontSize: 12, fontWeight: '500' },
-  // Streak pill
-  pill: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 16, borderWidth: 1,
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  pillLeft: { alignItems: 'flex-end', gap: 2 },
-  pillLabelRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
-  pillLabel: { fontSize: 14, fontWeight: '600' },
-  pillMsg: { fontSize: 11 },
-  pillRight: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  pillNum: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  pillUnit: { fontSize: 12, fontWeight: '600' },
 });
