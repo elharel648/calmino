@@ -18,6 +18,20 @@ import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
 
+// ─── Dashed vertical line ────────────────────────────────────────────────────
+const DashedLine = ({ color, hidden }: { color: string; hidden?: boolean }) => (
+  <View style={{ flex: 1, alignItems: 'center', overflow: 'hidden', paddingVertical: 3 }}>
+    {Array.from({ length: 50 }).map((_, i) => (
+      <View key={i} style={{
+        width: 2, height: 4, borderRadius: 1,
+        backgroundColor: hidden ? 'transparent' : color,
+        marginBottom: 4, opacity: 0.38,
+      }} />
+    ))}
+  </View>
+);
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Pulsing 'now' dot ───────────────────────────────────────────────────────
 const PulseDot = () => {
   const scale = useRef(new RNAnimated.Value(1)).current;
@@ -1035,68 +1049,50 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       <SwipeableRow onDelete={triggerDelete}>
                   <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.elegantEventRow}>
                     
-                    {/* FAR RIGHT: TIME BLOCK */}
+                    {/* FAR RIGHT: TIME */}
                     <View style={styles.elegantTimeBlock}>
-                      <Text style={[styles.elegantTimeMain, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
+                      <Text style={[styles.elegantTimeMain, { color: theme.textTertiary }]} numberOfLines={1}>{timeStr}</Text>
                     </View>
 
-                    {/* MIDDLE RIGHT: TIMELINE TRACK */}
+                    {/* MIDDLE: TRACK — large icon + dashed lines */}
                     <View style={styles.elegantTrack}>
-                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : config.color }]} />
-                      <View style={[styles.elegantIconWrapper, { 
+                      <DashedLine color={config.color} hidden={isFirst} />
+                      <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
-                        shadowColor: isDarkMode ? 'transparent' : config.color,
-                        shadowOpacity: 0.2,
-                        shadowRadius: 4,
-                        shadowOffset: { width: 0, height: 2 },
-                        borderWidth: 1.5,
-                        borderColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+                        shadowColor: config.color,
+                        shadowOpacity: isDarkMode ? 0.45 : 0.28,
+                        shadowRadius: 10,
+                        shadowOffset: { width: 0, height: 4 },
+                        elevation: 6,
                       }]}>
-                        <Icon size={14} color="#FFFFFF" strokeWidth={2.5} />
+                        <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                       </View>
-                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : config.color }]} />
+                      <DashedLine color={config.color} hidden={isLast} />
                     </View>
 
-                    {/* LEFT: CARD CONTENT */}
+                    {/* LEFT: FLOATING CONTENT — no card background */}
                     <View style={styles.elegantCardContainer}>
-                      <View style={[styles.elegantCard, { backgroundColor: theme.card, borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }]}>
-                        {/* Color accent strip - right side for RTL */}
-                        <View style={[styles.accentStrip, { backgroundColor: config.color }]} />
-                        
-                        {/* Right side of card: Texts */}
-                        <View style={styles.elegantCardTextContainer}>
-                          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 5 }}>
-                            {details !== config.label ? (
-                              <Text style={[styles.elegantCategoryLabel, { color: isDarkMode ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)' }]}>{config.label}</Text>
-                            ) : null}
-                          </View>
-                          <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
-                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}
-                        </View>
-
-                        {/* Left side: Reporter Badge only */}
-                        {showBadge ? (
+                      <View style={styles.elegantCard}>
+                        {/* Category label */}
+                        {details !== config.label && (
+                          <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                        )}
+                        {/* Title */}
+                        <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
+                        {/* Subtext */}
+                        {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={2}>{subtext}</Text> : null}
+                        {/* Reporter badge inline */}
+                        {showBadge && (
                           <View style={styles.elegantCardLeft}>
                             {photoUrl ? (
-                              <Image 
-                                source={{ uri: photoUrl }} 
-                                style={[
-                                  styles.cardReporterBadge, 
-                                  { 
-                                    borderWidth: 0, 
-                                    padding: 0, 
-                                    backgroundColor: 'transparent' 
-                                  }
-                                ]} 
-                              />
+                              <Image source={{ uri: photoUrl }} style={[styles.cardReporterBadge, { borderWidth: 0, backgroundColor: 'transparent' }]} />
                             ) : (
-                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.8)' }]}>
+                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
                                 <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
                               </View>
                             )}
                           </View>
-                        ) : null}
-
+                        )}
                       </View>
                     </View>
 
@@ -1530,18 +1526,17 @@ const styles = StyleSheet.create({
   // ===== ELEGANT TIMELINE (HOME/FLAT VIEW) =====
   elegantEventRow: {
     flexDirection: 'row-reverse',
-    minHeight: 80,
+    minHeight: 88,
     alignItems: 'stretch',
   },
   elegantTimeBlock: {
-    width: 58,
-    paddingTop: 16,
+    width: 52,
+    paddingTop: 20,
     alignItems: 'center',
-    paddingLeft: 2,
   },
   elegantTimeMain: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     fontVariant: ['tabular-nums'],
     letterSpacing: -0.2,
   },
@@ -1552,57 +1547,32 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   elegantTrack: {
-    width: 38,
+    width: 60,
     alignItems: 'center',
   },
-  elegantLineTop: {
-    width: 1,
-    flex: 1,
-  },
-  elegantLineBottom: {
-    width: 1,
-    flex: 1,
-  },
+  elegantLineTop: { width: 1, flex: 1 },
+  elegantLineBottom: { width: 1, flex: 1 },
   elegantIconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 16, // Perfectly circular at 32px
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 8,
-    paddingRight: 6,
+    paddingVertical: 16,
+    paddingRight: 8,
+    justifyContent: 'center',
   },
   elegantCard: {
     flex: 1,
-    borderRadius: 18,
-    borderWidth: 0.5,
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 62,
-    overflow: 'hidden',
-    // Warm premium shadow
-    shadowColor: '#8B6B4A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 14,
-    elevation: 2,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 2,
   },
-  accentStrip: {
-    width: 3,
-    borderTopRightRadius: 18,
-    borderBottomRightRadius: 18,
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    opacity: 0.85,
-  },
+  accentStrip: { width: 0 },
   elegantCardTextContainer: {
     flex: 1,
     alignItems: 'flex-end',
@@ -1610,30 +1580,29 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   elegantCategoryLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
-    marginBottom: 3,
-    letterSpacing: 0.4,
-    opacity: 0.75,
+    letterSpacing: 0.3,
+    marginBottom: 1,
   },
   elegantCardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     textAlign: 'right',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   elegantCardSubtext: {
     fontSize: 13,
     fontWeight: '400',
-    marginTop: 3,
-    opacity: 0.8,
+    marginTop: 2,
+    opacity: 0.7,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   elegantCardLeft: {
     alignItems: 'flex-start',
     justifyContent: 'center',
-    paddingRight: 12,
+    marginTop: 4,
   },
   cardReporterBadge: {
     width: 24,
