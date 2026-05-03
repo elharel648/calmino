@@ -1392,8 +1392,10 @@ export default function ReportsScreen() {
   ).current;
 
   const prevLoadingRef = useRef(loading);
+  const hasAnimatedRef = useRef(false);
+  const prevTimeRangeRef = useRef(timeRange);
+
   useEffect(() => {
-    const wasLoading = prevLoadingRef.current;
     prevLoadingRef.current = loading;
 
     // Android: skip card animations entirely — show cards immediately to avoid jitter
@@ -1404,8 +1406,20 @@ export default function ReportsScreen() {
       return;
     }
 
-    // iOS: animate only when loading transitions from true to false
     if (loading) return;
+
+    const timeRangeChanged = prevTimeRangeRef.current !== timeRange;
+    prevTimeRangeRef.current = timeRange;
+
+    // Only animate on first load or when user explicitly switches time range.
+    // Re-fetches (Firestore updates, tab revisits) show cards immediately.
+    if (hasAnimatedRef.current && !timeRangeChanged) {
+      cardAnims.forEach(a => a.setValue(1));
+      cardSlides.forEach(a => a.setValue(0));
+      cardScales.forEach(a => a.setValue(1));
+      return;
+    }
+    hasAnimatedRef.current = true;
 
     // Reset all
     cardAnims.forEach(a => a.setValue(0));
@@ -2141,7 +2155,7 @@ const styles = StyleSheet.create({
   // Header
   header: { paddingTop: Platform.OS === 'ios' ? 60 : 45, paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  headerTitle: { fontSize: 26, fontWeight: '700', textAlign: 'right', marginBottom: 14 },
+  headerTitle: { fontSize: 28, fontWeight: '700', textAlign: 'right', marginBottom: 14, letterSpacing: -0.5 },
   exportBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 
   // Filters
@@ -2170,14 +2184,14 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20, justifyContent: 'space-between' },
   editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16 },
   editStatsText: { fontSize: 13, fontWeight: '600' },
-  statCard: { width: '100%', minHeight: 165, padding: 20, borderRadius: 24, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 18, elevation: 0, borderWidth: 1, borderColor: 'rgba(0,0,0,0.02)' },
+  statCard: { width: '100%', minHeight: 165, padding: 18, borderRadius: 24, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 24, elevation: 0, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' },
   cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' },
   cardBottomSection: { width: '100%', alignItems: 'flex-end', marginTop: 'auto' },
-  statIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  statIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   statValueRow: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 6 },
-  statValue: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  statLabel: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
-  statSubValue: { fontSize: 12, fontWeight: '500' },
+  statValue: { fontSize: 28, fontWeight: '800', letterSpacing: -0.8 },
+  statLabel: { fontSize: 13, fontWeight: '500', marginBottom: 2 },
+  statSubValue: { fontSize: 13, fontWeight: '500' },
   trendBadge: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8 },
 
   // Insights
@@ -2199,8 +2213,8 @@ const styles = StyleSheet.create({
   quickStatDivider: { width: 1, height: 36, marginHorizontal: 16 },
 
   // Charts
-  chartCard: { borderRadius: 14, padding: 14, marginBottom: 14 },
-  chartTitle: { fontSize: 15, fontWeight: '600', textAlign: 'right', marginBottom: 12 },
+  chartCard: { borderRadius: 14, padding: 16, marginBottom: 14 },
+  chartTitle: { fontSize: 15, fontWeight: '600', textAlign: 'right', marginBottom: 14, letterSpacing: -0.2 },
   chart: { borderRadius: 10, alignSelf: 'center' },
 
   // Modal
