@@ -90,10 +90,11 @@ const Ring = memo(({ met, goal, color, size = 84, strokeWidth = 9, delay = 0, la
       {/* Center */}
       <View style={[styles.ringCenter, { width: size, height: size }]}>
         {isStreak ? (
-          <>
-            <Flame size={size * 0.22} color={color} strokeWidth={2.5} />
-            <Text style={[styles.ringNum, { color: hasData ? theme.textPrimary : theme.textTertiary, fontSize: size * 0.22 }]}>{met}</Text>
-          </>
+          hasData ? (
+            <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.27 }]}>{met}</Text>
+          ) : (
+            <Text style={[styles.ringDash, { color: theme.textTertiary, fontSize: size * 0.28 }]}>—</Text>
+          )
         ) : hasData ? (
           <>
             <Text style={[styles.ringNum, { color: theme.textPrimary, fontSize: size * 0.27 }]}>{met}</Text>
