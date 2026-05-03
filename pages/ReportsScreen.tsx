@@ -1404,15 +1404,16 @@ export default function ReportsScreen() {
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // ✨ Premium Staggered entry animation — spring-based
+  // Minimal Apple-style fade entrance
   const cardAnims = useRef(
     Array.from({ length: 8 }, () => new RNAnimated.Value(0))
   ).current;
   const cardSlides = useRef(
-    Array.from({ length: 8 }, () => new RNAnimated.Value(32))
+    Array.from({ length: 8 }, () => new RNAnimated.Value(6))
   ).current;
+  // Scale is always 1 — no scale animation
   const cardScales = useRef(
-    Array.from({ length: 8 }, () => new RNAnimated.Value(0.94))
+    Array.from({ length: 8 }, () => new RNAnimated.Value(1))
   ).current;
 
   const prevLoadingRef = useRef(loading);
@@ -1445,54 +1446,29 @@ export default function ReportsScreen() {
     }
     hasAnimatedRef.current = true;
 
-    // Reset all
+    // Reset
     cardAnims.forEach(a => a.setValue(0));
-    cardSlides.forEach(a => a.setValue(32));
-    cardScales.forEach(a => a.setValue(0.94));
+    cardSlides.forEach(a => a.setValue(6));
 
-    // Stagger each card: smooth timing physics on Android to ensure 60fps, rich spring physics on iOS
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 2);
 
     const animations = cardAnims.map((anim, i) =>
       RNAnimated.parallel([
         RNAnimated.timing(anim, {
           toValue: 1,
-          duration: 420,
-          delay: i * 70,
-          easing: easeOutCubic,
+          duration: 220,
+          easing: easeOut,
           useNativeDriver: true,
         }),
-        Platform.OS === 'ios'
-          ? RNAnimated.spring(cardSlides[i], {
-              toValue: 0,
-              useNativeDriver: true,
-              stiffness: 120,
-              damping: 14,
-              mass: 0.6,
-            } as any)
-          : RNAnimated.timing(cardSlides[i], {
-              toValue: 0,
-              duration: 450,
-              easing: (t: number) => 1 - Math.pow(1 - t, 3), 
-              useNativeDriver: true,
-            }),
-        Platform.OS === 'ios'
-          ? RNAnimated.spring(cardScales[i], {
-              toValue: 1,
-              useNativeDriver: true,
-              stiffness: 120,
-              damping: 14,
-              mass: 0.6,
-            } as any)
-          : RNAnimated.timing(cardScales[i], {
-              toValue: 1,
-              duration: 450,
-              easing: (t: number) => 1 - Math.pow(1 - t, 3),
-              useNativeDriver: true,
-            }),
+        RNAnimated.timing(cardSlides[i], {
+          toValue: 0,
+          duration: 220,
+          easing: easeOut,
+          useNativeDriver: true,
+        }),
       ])
     );
-    RNAnimated.stagger(70, animations).start();
+    RNAnimated.stagger(16, animations).start();
   }, [loading, timeRange]);
 
   const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => (
