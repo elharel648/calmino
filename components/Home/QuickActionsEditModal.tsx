@@ -35,12 +35,8 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                 }).start();
             };
             
-            // Defer animation on Android to allow for component mount batching
-            if (Platform.OS === 'android') {
-                setTimeout(startAnimation, 30);
-            } else {
-                startAnimation();
-            }
+            // Defer animation to next frame to allow for component mount batching
+            requestAnimationFrame(startAnimation);
         } else {
             slideAnim.setValue(SCREEN_HEIGHT);
         }
@@ -114,20 +110,19 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
 
         return (
             <ScaleDecorator>
-                <TouchableOpacity
-                    activeOpacity={0.85}
-                    onLongPress={drag}
-                    delayLongPress={200}
-                    disabled={isActive}
+                <View
                     style={[
                         styles.itemContainer,
                         {
-                            backgroundColor: isActive
-                                ? (isDarkMode ? '#2A2A2A' : '#F0F4FF')
-                                : (isDarkMode ? '#1E1E1E' : '#F9FAFB'),
+                            backgroundColor: isDarkMode ? theme.cardSecondary : '#FFFFFF',
                             borderColor: isActive
                                 ? theme.primary
-                                : (isDarkMode ? '#333' : '#E5E7EB'),
+                                : (isDarkMode ? theme.border : 'rgba(0,0,0,0.07)'),
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: isDarkMode ? 0 : 0.04,
+                            shadowRadius: 4,
+                            elevation: 1,
                         },
                         isHidden && {
                             opacity: 0.5,
@@ -170,10 +165,15 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                     </Text>
 
                     {/* Drag Handle indicator (left side, RTL) */}
-                    <View style={styles.dragHandle}>
+                    <TouchableOpacity
+                        style={styles.dragHandle}
+                        onPressIn={drag}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        disabled={isActive}
+                    >
                         <GripVertical size={20} color={isDarkMode ? '#666' : '#C7C7CC'} strokeWidth={1.5} />
-                    </View>
-                </TouchableOpacity>
+                    </TouchableOpacity>
+                </View>
             </ScaleDecorator>
         );
     }, [theme, isDarkMode, hiddenActions, handleToggleVisibility, t]);
@@ -214,7 +214,7 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
 
                     {/* Instructions */}
                     <View style={styles.instructionsRow}>
-                        <Text style={[styles.instructionsText, { color: theme.textTertiary }]}>{t('stats.editOrderHint') || 'לחיצה ארוכה על שורה כדי לגרור ולשנות סדר • לחץ על העין להסתיר'}</Text>
+                        <Text style={[styles.instructionsText, { color: theme.textTertiary }]}>{t('stats.editOrderHint') || 'גרור בעזרת האייקון בצד כדי לשנות סדר • לחץ על העין להסתיר'}</Text>
                     </View>
 
                     {/* Draggable List */}
@@ -306,10 +306,10 @@ const styles = StyleSheet.create({
     itemContainer: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        marginVertical: 4,
-        borderRadius: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        marginVertical: 5,
+        borderRadius: 16,
         borderWidth: 1,
     },
     iconContainer: {
