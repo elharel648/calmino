@@ -12,7 +12,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const STREAK_COLOR = '#F97316';
+const STREAK_COLOR = '#C8956A'; // warm amber — matches app terracotta palette
 
 // ─── Ring ─────────────────────────────────────────────────────────────────────
 
