@@ -25,10 +25,10 @@ const MAX = 4;
 const INSTANT_ACTIONS = new Set<QuickActionKey>(['sleep', 'whiteNoise', 'whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain', 'breastfeeding', 'breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping']);
 
 // ─── Available actions organized by section ────────────────────────────────────
-const SECTIONS: { title: string; items: QuickActionKey[] }[] = [
+const SECTIONS: { title: string; items: QuickActionKey[]; cols?: 2 | 3 }[] = [
     { title: 'שינה', items: ['sleep'] },
     { title: 'האכלה', items: ['breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping', 'food', 'diaper'] },
-    { title: 'רעש לבן', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'] },
+    { title: 'רעש לבן', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'], cols: 2 },
     { title: 'כלים', items: ['nightLight', 'quickReminder', 'health', 'growth', 'milestones', 'sos'] },
 ];
 
@@ -119,7 +119,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                     {section.title}
                                 </Text>
                                 <View style={styles.itemsRow}>
-                                    {section.items.map(key => {
+                                    {section.items.map((key) => {
                                         const config = QUICK_ACTION_BASE_CONFIG[key];
                                         const colors = theme.actionColors[key as keyof typeof theme.actionColors];
                                         const Icon = config?.icon;
@@ -128,11 +128,16 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                         const isSelected = selected.includes(key);
                                         const isDisabled = !isSelected && selected.length >= MAX;
 
+                                        const itemWidthStyle = section.cols === 2
+                                            ? { width: '47%' as const }
+                                            : { width: '30%' as const };
+
                                         return (
                                             <TouchableOpacity
                                                 key={key}
                                                 style={[
                                                     styles.item,
+                                                    itemWidthStyle,
                                                     {
                                                         backgroundColor: isSelected ? colors.color : cardBg,
                                                         borderColor: isSelected ? colors.color : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'),
@@ -169,7 +174,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                                         <Check size={10} color="#fff" strokeWidth={3} />
                                                     </View>
                                                 )}
-                                                {!isSelected && INSTANT_ACTIONS.has(key) && (
+                                                {!isSelected && !isDisabled && INSTANT_ACTIONS.has(key) && (
                                                     <View style={[styles.instantBadge, { backgroundColor: colors.color }]}>
                                                         <Zap size={8} color="#fff" strokeWidth={2.5} fill="#fff" />
                                                     </View>
