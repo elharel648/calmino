@@ -1526,12 +1526,12 @@ const styles = StyleSheet.create({
   // ===== ELEGANT TIMELINE (HOME/FLAT VIEW) =====
   elegantEventRow: {
     flexDirection: 'row-reverse',
-    minHeight: 80,
-    alignItems: 'center',
+    minHeight: 76,
+    alignItems: 'stretch',
   },
   elegantTimeBlock: {
     width: 52,
-    paddingTop: 20,
+    paddingTop: 14,
     alignItems: 'center',
   },
   elegantTimeMain: {
@@ -1549,7 +1549,6 @@ const styles = StyleSheet.create({
   elegantTrack: {
     width: 60,
     alignItems: 'center',
-    alignSelf: 'stretch',
   },
   elegantLineTop: { width: 1, flex: 1 },
   elegantLineBottom: { width: 1, flex: 1 },
@@ -1563,10 +1562,9 @@ const styles = StyleSheet.create({
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingRight: 8,
     justifyContent: 'center',
-    alignSelf: 'center',
   },
   elegantCard: {
     alignItems: 'flex-end',
