@@ -1048,10 +1048,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
                         shadowColor: config.color,
-                        shadowOpacity: isDarkMode ? 0.4 : 0.22,
-                        shadowRadius: 8,
-                        shadowOffset: { width: 0, height: 3 },
-                        elevation: 5,
+                        shadowOpacity: isFirst ? (isDarkMode ? 0.65 : 0.42) : (isDarkMode ? 0.3 : 0.16),
+                        shadowRadius: isFirst ? 14 : 6,
+                        shadowOffset: { width: 0, height: isFirst ? 5 : 2 },
+                        elevation: isFirst ? 10 : 4,
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                       </View>
@@ -1069,10 +1069,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             {details !== config.label && (
                               <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
                             )}
-                            <Text style={[styles.inlineTime, { color: theme.textTertiary }]}>{timeStr}</Text>
+                            <Text style={[styles.inlineTime, { color: theme.textSecondary }]}>{timeStr}</Text>
                           </View>
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
-                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={2}>{subtext}</Text> : null}
+                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textTertiary }]} numberOfLines={2} ellipsizeMode="tail">{subtext}</Text> : null}
                         </View>
                         {showBadge ? (
                           <View style={styles.elegantCardLeft}>
@@ -1532,8 +1532,9 @@ const styles = StyleSheet.create({
   },
   inlineTime: {
     fontSize: 12,
-    fontWeight: '400',
+    fontWeight: '600',
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.1,
   },
   elegantTrack: {
     width: 62,
@@ -1552,7 +1553,7 @@ const styles = StyleSheet.create({
   elegantCardContainer: {
     flex: 1,
     paddingVertical: 14,
-    paddingRight: 6,
+    paddingRight: 16,
   },
   elegantCard: {
     flex: 1,
