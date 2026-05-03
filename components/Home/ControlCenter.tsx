@@ -1,425 +1,253 @@
 /**
- * ControlCenter — Premium FAB Control Center
- *
- * Sections:
- * 1. Timers: שינה, האכלה (הנקה/בקבוק/שאיבה), החתלה
- * 2. רעש לבן: all 4 sounds
- * 3. כלים: פנס, תזכורת מהירה
- *
- * Active indicators: pulse animation + elapsed time
+ * ControlCenter — Picker for radial arc shortcuts
+ * User selects up to 4 actions → they appear in the radial arc on short press
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, Modal,
-    TouchableWithoutFeedback, Platform, ScrollView,
+    TouchableWithoutFeedback, ScrollView,
 } from 'react-native';
 import Animated, {
-    useSharedValue, useAnimatedStyle, withSpring, withTiming,
-    withRepeat, withSequence, Easing,
+    useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Moon, Baby, Milk, Waves, Music, Lightbulb, Bell, X, ChevronDown } from 'lucide-react-native';
+import { X, Check, Lock, Zap } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { useSleepTimer } from '../../context/SleepTimerContext';
-import { useFoodTimer } from '../../context/FoodTimerContext';
-import { useAudio, SoundId } from '../../context/AudioContext';
-import { useQuickActions } from '../../context/QuickActionsContext';
-import { navigateToHome } from '../../services/navigationService';
-import DiaperIcon from '../Common/DiaperIcon';
+import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
+import { QUICK_ACTION_BASE_CONFIG } from './quickActionsConfig';
 
-// ─── Sound config ─────────────────────────────────────────────────────────────
-const SOUNDS: { id: SoundId; label: string; emoji: string }[] = [
-    { id: 'lullaby4', label: 'גשם', emoji: '🌧️' },
-    { id: 'lullaby2', label: 'מוזיקה עדינה', emoji: '🎵' },
-    { id: 'lullaby3', label: 'ציפורים', emoji: '🐦' },
-    { id: 'lullaby1', label: 'שיר ערש', emoji: '🎶' },
+const MAX = 4;
+
+// Actions that trigger immediately (no screen navigation)
+const INSTANT_ACTIONS = new Set<QuickActionKey>(['sleep', 'whiteNoise', 'whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain', 'breastfeeding', 'breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping']);
+
+// ─── Available actions organized by section ────────────────────────────────────
+const SECTIONS: { title: string; items: QuickActionKey[] }[] = [
+    { title: 'שינה', items: ['sleep'] },
+    { title: 'האכלה', items: ['breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping', 'food', 'diaper'] },
+    { title: 'רעש לבן', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'] },
+    { title: 'כלים', items: ['nightLight', 'quickReminder', 'health', 'growth', 'milestones', 'sos'] },
 ];
 
-// ─── Elapsed formatter ────────────────────────────────────────────────────────
-function fmtElapsed(sec: number): string {
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = sec % 60;
-    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-// ─── Pulse hook ───────────────────────────────────────────────────────────────
-function usePulse(active: boolean) {
-    const scale = useSharedValue(1);
-    const opacity = useSharedValue(1);
-    useEffect(() => {
-        if (active) {
-            scale.value = withRepeat(withSequence(
-                withTiming(1.06, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1.00, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-            ), -1, true);
-            opacity.value = withRepeat(withSequence(
-                withTiming(0.85, { duration: 800 }),
-                withTiming(1, { duration: 800 }),
-            ), -1, true);
-        } else {
-            scale.value = withTiming(1, { duration: 200 });
-            opacity.value = withTiming(1, { duration: 200 });
-        }
-    }, [active]);
-    return useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-        opacity: opacity.value,
-    }));
-}
-
-// ─── Section title ─────────────────────────────────────────────────────────────
-const SectionTitle = ({ title, color, isDark }: { title: string; color: string; isDark: boolean }) => (
-    <Text style={[styles.sectionTitle, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)' }]}>
-        {title}
-    </Text>
-);
-
-// ─── ControlCenter ─────────────────────────────────────────────────────────────
 interface Props {
     visible: boolean;
     onClose: () => void;
-    onDiaper: () => void;
-    onNightLight: () => void;
-    onQuickReminder: () => void;
-    onEditRadial?: () => void;
 }
 
-const ControlCenter: React.FC<Props> = ({ visible, onClose, onDiaper, onNightLight, onQuickReminder, onEditRadial }) => {
+const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
-    const { start: startSleep, stop: stopSleep, isRunning: isSleepRunning, isPaused: isSleepPaused, elapsedSeconds: sleepElapsed } = useSleepTimer();
-    const { startBreast, startBottle, startPumping, breastIsRunning, bottleIsRunning, pumpingIsRunning, breastElapsedSeconds, bottleElapsedSeconds, pumpingElapsedSeconds } = useFoodTimer();
-    const { activeSound, playSound, stopSound } = useAudio();
+    const { sosActions, setSosActions } = useQuickActions();
+    const [selected, setSelected] = useState<QuickActionKey[]>([...sosActions]);
 
-    const isSleepActive = isSleepRunning && !isSleepPaused;
-    const sleepPulse = usePulse(isSleepActive);
-    const breastPulse = usePulse(breastIsRunning);
-    const bottlePulse = usePulse(bottleIsRunning);
-    const pumpingPulse = usePulse(pumpingIsRunning);
+    useEffect(() => {
+        if (visible) setSelected([...sosActions]);
+    }, [visible]);
 
     const translateY = useSharedValue(600);
     const backdropOp = useSharedValue(0);
 
     useEffect(() => {
         if (visible) {
-            translateY.value = withSpring(0, { damping: 22, stiffness: 220, mass: 0.9 });
-            backdropOp.value = withTiming(1, { duration: 220 });
+            translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+            backdropOp.value = withTiming(1, { duration: 180 });
         } else {
-            translateY.value = withTiming(600, { duration: 280, easing: Easing.in(Easing.ease) });
-            backdropOp.value = withTiming(0, { duration: 220 });
+            translateY.value = withTiming(600, { duration: 200, easing: Easing.in(Easing.cubic) });
+            backdropOp.value = withTiming(0, { duration: 180 });
         }
     }, [visible]);
 
     const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
     const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOp.value }));
 
+    const toggle = (key: QuickActionKey) => {
+        if (!selected.includes(key) && selected.length >= MAX) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return;
+        }
+        Haptics.selectionAsync();
+        setSelected(prev =>
+            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+        );
+    };
+
+    const save = () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setSosActions(selected);
+        onClose();
+    };
+
     const bg = isDarkMode ? 'rgba(22,22,26,0.97)' : 'rgba(248,246,244,0.97)';
-    const cardBg = isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.85)';
-    const cardBorder = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
-
-    const handleSleep = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        if (isSleepActive) { stopSleep(); } else { startSleep(); }
-        onClose();
-    };
-
-    const handleBreast = (side: 'right' | 'left') => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        startBreast(side);
-        onClose();
-    };
-
-    const handleBottle = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        startBottle();
-        onClose();
-    };
-
-    const handlePumping = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        startPumping();
-        onClose();
-    };
-
-    const handleDiaper = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onClose();
-        setTimeout(() => onDiaper(), 200);
-    };
-
-    const handleSound = (id: SoundId) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        if (activeSound === id) { stopSound(); } else { playSound(id); }
-    };
-
-    const handleNightLight = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onClose();
-        setTimeout(() => onNightLight(), 200);
-    };
-
-    const handleQuickReminder = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onClose();
-        setTimeout(() => onQuickReminder(), 200);
-    };
+    const cardBg = isDarkMode ? 'rgba(255,255,255,0.08)' : '#FFFFFF';
 
     if (!visible) return null;
 
     return (
         <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
-            {/* Backdrop */}
             <TouchableWithoutFeedback onPress={onClose}>
                 <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }, backdropStyle]} />
             </TouchableWithoutFeedback>
 
-            {/* Sheet */}
             <Animated.View style={[styles.sheet, sheetStyle]}>
                 <BlurView
                     tint={isDarkMode ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
                     intensity={90}
                     style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden' }]}
                 />
-                <View style={[styles.sheetInner, { backgroundColor: bg, paddingBottom: insets.bottom + 12 }]}>
-                    {/* Handle */}
+                <View style={[styles.inner, { backgroundColor: bg, paddingBottom: insets.bottom + 12 }]}>
                     <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>מרכז שליטה</Text>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>קיצורי לחיצה מהירה</Text>
                         <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }]}>
                             <X size={16} color={theme.textSecondary} strokeWidth={2.5} />
                         </TouchableOpacity>
                     </View>
 
+                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                        בחר עד {MAX} קיצורים שיופיעו בלחיצה על "+" ({selected.length}/{MAX})
+                    </Text>
+
                     <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-                        {/* ── SLEEP ── */}
-                        <SectionTitle title="שינה" color={theme.textSecondary} isDark={isDarkMode} />
-                        <Animated.View style={[sleepPulse, styles.sleepRow]}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.sleepBtn,
-                                    { backgroundColor: isSleepActive ? '#4A6572' : cardBg, borderColor: isSleepActive ? '#4A6572' : cardBorder }
-                                ]}
-                                onPress={handleSleep}
-                                activeOpacity={0.8}
-                            >
-                                <Moon size={22} color={isSleepActive ? '#fff' : '#4A6572'} strokeWidth={2} />
-                                <View style={styles.sleepTextWrap}>
-                                    <Text style={[styles.sleepLabel, { color: isSleepActive ? '#fff' : theme.textPrimary }]}>
-                                        {isSleepActive ? 'עצור שינה' : 'התחל שינה'}
-                                    </Text>
-                                    {isSleepActive && sleepElapsed != null && (
-                                        <Text style={[styles.sleepTimer, { color: 'rgba(255,255,255,0.75)' }]}>
-                                            {fmtElapsed(sleepElapsed)}
-                                        </Text>
-                                    )}
+                        {SECTIONS.map(section => (
+                            <View key={section.title} style={styles.section}>
+                                <Text style={[styles.sectionTitle, { color: isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)' }]}>
+                                    {section.title}
+                                </Text>
+                                <View style={styles.itemsRow}>
+                                    {section.items.map(key => {
+                                        const config = QUICK_ACTION_BASE_CONFIG[key];
+                                        const colors = theme.actionColors[key as keyof typeof theme.actionColors];
+                                        const Icon = config?.icon;
+                                        if (!Icon || !colors) return null;
+
+                                        const isSelected = selected.includes(key);
+                                        const isDisabled = !isSelected && selected.length >= MAX;
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={key}
+                                                style={[
+                                                    styles.item,
+                                                    {
+                                                        backgroundColor: isSelected ? colors.color : cardBg,
+                                                        borderColor: isSelected ? colors.color : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'),
+                                                        opacity: isDisabled ? 0.38 : 1,
+                                                    }
+                                                ]}
+                                                onPress={() => toggle(key)}
+                                                activeOpacity={isDisabled ? 0.6 : 0.75}
+                                            >
+                                                <Icon size={22} color={isSelected ? '#fff' : colors.color} strokeWidth={2} />
+                                                <Text style={[styles.itemLabel, { color: isSelected ? '#fff' : theme.textPrimary }]} numberOfLines={2}>
+                                                    {key === 'breastfeeding' ? 'הנקה' :
+                                                     key === 'breastfeedingRight' ? 'הנקה R' :
+                                                     key === 'breastfeedingLeft' ? 'הנקה L' :
+                                                     key === 'bottle' ? 'בקבוק' :
+                                                     key === 'pumping' ? 'שאיבה' :
+                                                     key === 'diaper' ? 'החתלה' :
+                                                     key === 'sleep' ? 'שינה' :
+                                                     key === 'whiteNoise' ? 'רעש לבן' :
+                                                     key === 'whiteNoiseLullaby' ? 'שיר ערש' :
+                                                     key === 'whiteNoiseGentle' ? 'מוזיקה עדינה' :
+                                                     key === 'whiteNoiseBirds' ? 'ציפורים' :
+                                                     key === 'whiteNoiseRain' ? 'גשם' :
+                                                     key === 'nightLight' ? 'פנס לילה' :
+                                                     key === 'quickReminder' ? 'תזכורת' :
+                                                     key === 'health' ? 'בריאות' :
+                                                     key === 'growth' ? 'צמיחה' :
+                                                     key === 'milestones' ? 'אבני דרך' :
+                                                     key === 'sos' ? 'SOS' :
+                                                     key === 'food' ? 'אוכל' : key}
+                                                </Text>
+                                                {isSelected && (
+                                                    <View style={styles.checkBadge}>
+                                                        <Check size={10} color="#fff" strokeWidth={3} />
+                                                    </View>
+                                                )}
+                                                {!isSelected && INSTANT_ACTIONS.has(key) && (
+                                                    <View style={[styles.instantBadge, { backgroundColor: colors.color }]}>
+                                                        <Zap size={8} color="#fff" strokeWidth={2.5} fill="#fff" />
+                                                    </View>
+                                                )}
+                                                {isDisabled && (
+                                                    <View style={[styles.lockBadge, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.12)' }]}>
+                                                        <Lock size={8} color={isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
+                                                    </View>
+                                                )}
+                                            </TouchableOpacity>
+                                        );
+                                    })}
                                 </View>
-                                {isSleepActive && <View style={styles.activeDot} />}
-                            </TouchableOpacity>
-                        </Animated.View>
-
-                        {/* ── FEEDING ── */}
-                        <SectionTitle title="האכלה" color={theme.textSecondary} isDark={isDarkMode} />
-                        <View style={styles.feedGrid}>
-                            {/* הנקה ימין */}
-                            <Animated.View style={[breastPulse, { flex: 1 }]}>
-                                <TouchableOpacity
-                                    style={[styles.feedBtn, { backgroundColor: breastIsRunning ? '#B5838D' : cardBg, borderColor: breastIsRunning ? '#B5838D' : cardBorder }]}
-                                    onPress={() => handleBreast('right')}
-                                    activeOpacity={0.8}
-                                >
-                                    <Baby size={18} color={breastIsRunning ? '#fff' : '#B5838D'} strokeWidth={2} />
-                                    <Text style={[styles.feedLabel, { color: breastIsRunning ? '#fff' : theme.textPrimary }]}>הנקה ימין</Text>
-                                    {breastIsRunning && <Text style={styles.feedTimer}>{fmtElapsed(breastElapsedSeconds ?? 0)}</Text>}
-                                </TouchableOpacity>
-                            </Animated.View>
-                            {/* הנקה שמאל */}
-                            <Animated.View style={[breastPulse, { flex: 1 }]}>
-                                <TouchableOpacity
-                                    style={[styles.feedBtn, { backgroundColor: breastIsRunning ? '#B5838D' : cardBg, borderColor: breastIsRunning ? '#B5838D' : cardBorder }]}
-                                    onPress={() => handleBreast('left')}
-                                    activeOpacity={0.8}
-                                >
-                                    <Baby size={18} color={breastIsRunning ? '#fff' : '#B5838D'} strokeWidth={2} />
-                                    <Text style={[styles.feedLabel, { color: breastIsRunning ? '#fff' : theme.textPrimary }]}>הנקה שמאל</Text>
-                                    {breastIsRunning && <Text style={styles.feedTimer}>{fmtElapsed(breastElapsedSeconds ?? 0)}</Text>}
-                                </TouchableOpacity>
-                            </Animated.View>
-                        </View>
-                        <View style={[styles.feedGrid, { marginTop: 8 }]}>
-                            {/* בקבוק */}
-                            <Animated.View style={[bottlePulse, { flex: 1 }]}>
-                                <TouchableOpacity
-                                    style={[styles.feedBtn, { backgroundColor: bottleIsRunning ? '#D4A373' : cardBg, borderColor: bottleIsRunning ? '#D4A373' : cardBorder }]}
-                                    onPress={handleBottle}
-                                    activeOpacity={0.8}
-                                >
-                                    <Milk size={18} color={bottleIsRunning ? '#fff' : '#D4A373'} strokeWidth={2} />
-                                    <Text style={[styles.feedLabel, { color: bottleIsRunning ? '#fff' : theme.textPrimary }]}>בקבוק</Text>
-                                    {bottleIsRunning && <Text style={styles.feedTimer}>{fmtElapsed(bottleElapsedSeconds ?? 0)}</Text>}
-                                </TouchableOpacity>
-                            </Animated.View>
-                            {/* שאיבה */}
-                            <Animated.View style={[pumpingPulse, { flex: 1 }]}>
-                                <TouchableOpacity
-                                    style={[styles.feedBtn, { backgroundColor: pumpingIsRunning ? '#83C5BE' : cardBg, borderColor: pumpingIsRunning ? '#83C5BE' : cardBorder }]}
-                                    onPress={handlePumping}
-                                    activeOpacity={0.8}
-                                >
-                                    <Waves size={18} color={pumpingIsRunning ? '#fff' : '#83C5BE'} strokeWidth={2} />
-                                    <Text style={[styles.feedLabel, { color: pumpingIsRunning ? '#fff' : theme.textPrimary }]}>שאיבה</Text>
-                                    {pumpingIsRunning && <Text style={styles.feedTimer}>{fmtElapsed(pumpingElapsedSeconds ?? 0)}</Text>}
-                                </TouchableOpacity>
-                            </Animated.View>
-                        </View>
-
-                        {/* ── DIAPER ── */}
-                        <TouchableOpacity
-                            style={[styles.diaperBtn, { backgroundColor: cardBg, borderColor: cardBorder, marginTop: 8 }]}
-                            onPress={handleDiaper}
-                            activeOpacity={0.8}
-                        >
-                            <DiaperIcon size={20} color="#6A9C89" strokeWidth={2} />
-                            <Text style={[styles.diaperLabel, { color: theme.textPrimary }]}>החתלה מהירה</Text>
-                        </TouchableOpacity>
-
-                        {/* ── WHITE NOISE ── */}
-                        <View style={styles.sectionHeader}>
-                            <SectionTitle title="רעש לבן" color={theme.textSecondary} isDark={isDarkMode} />
-                            {activeSound && (
-                                <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); stopSound(); }} style={styles.stopSoundBtn}>
-                                    <Text style={styles.stopSoundText}>עצור</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                        <View style={styles.soundGrid}>
-                            {SOUNDS.map(s => {
-                                const isActive = activeSound === s.id;
-                                return (
-                                    <TouchableOpacity
-                                        key={s.id}
-                                        style={[styles.soundBtn, {
-                                            backgroundColor: isActive ? '#557A9D' : cardBg,
-                                            borderColor: isActive ? '#557A9D' : cardBorder,
-                                        }]}
-                                        onPress={() => handleSound(s.id)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text style={styles.soundEmoji}>{s.emoji}</Text>
-                                        <Text style={[styles.soundLabel, { color: isActive ? '#fff' : theme.textPrimary }]}>{s.label}</Text>
-                                        {isActive && <View style={[styles.soundDot, { backgroundColor: '#fff' }]} />}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-
-                        {/* ── TOOLS ── */}
-                        <SectionTitle title="כלים" color={theme.textSecondary} isDark={isDarkMode} />
-                        <View style={styles.toolsRow}>
-                            <TouchableOpacity
-                                style={[styles.toolBtn, { backgroundColor: cardBg, borderColor: cardBorder }]}
-                                onPress={handleNightLight}
-                                activeOpacity={0.8}
-                            >
-                                <Lightbulb size={20} color="#E9C46A" strokeWidth={2} />
-                                <Text style={[styles.toolLabel, { color: theme.textPrimary }]}>פנס לילה</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.toolBtn, { backgroundColor: cardBg, borderColor: cardBorder }]}
-                                onPress={handleQuickReminder}
-                                activeOpacity={0.8}
-                            >
-                                <Bell size={20} color="#A29BFE" strokeWidth={2} />
-                                <Text style={[styles.toolLabel, { color: theme.textPrimary }]}>תזכורת מהירה</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* ── EDIT RADIAL ── */}
-                        {onEditRadial && (
-                            <TouchableOpacity
-                                style={[styles.editRadialBtn, { borderColor: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }]}
-                                onPress={() => { onClose(); setTimeout(() => onEditRadial(), 200); }}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={{ fontSize: 18 }}>✏️</Text>
-                                <Text style={[styles.editRadialLabel, { color: theme.textSecondary }]}>ערוך קיצורי לחיצה מהירה</Text>
-                            </TouchableOpacity>
-                        )}
-
-                        <View style={{ height: 8 }} />
+                            </View>
+                        ))}
+                        <View style={{ height: 12 }} />
                     </ScrollView>
+
+                    {/* Save button */}
+                    <TouchableOpacity
+                        style={[styles.saveBtn, { backgroundColor: theme.primary, opacity: selected.length === 0 ? 0.5 : 1 }]}
+                        onPress={save}
+                        disabled={selected.length === 0}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.saveBtnText}>שמור קיצורים ({selected.length}/{MAX})</Text>
+                    </TouchableOpacity>
                 </View>
             </Animated.View>
         </Modal>
     );
 };
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     sheet: {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden',
         shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
         shadowOpacity: 0.2, shadowRadius: 20, elevation: 16,
+        maxHeight: '88%',
     },
-    sheetInner: { paddingHorizontal: 16, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+    inner: { paddingHorizontal: 16, borderTopLeftRadius: 28, borderTopRightRadius: 28, flex: 1 },
     handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 2 },
     header: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-    headerTitle: { fontSize: 17, fontWeight: '700' },
+    title: { fontSize: 17, fontWeight: '700' },
+    subtitle: { fontSize: 13, marginBottom: 12, textAlign: 'right' },
     closeBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    sectionTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 14, marginBottom: 8, marginRight: 2 },
-    sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginRight: 2 },
-    // Sleep
-    sleepRow: { marginBottom: 4 },
-    sleepBtn: {
-        flexDirection: 'row-reverse', alignItems: 'center', padding: 14, borderRadius: 16,
-        borderWidth: 1, gap: 10,
-        shadowColor: '#4A6572', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4,
-    },
-    sleepTextWrap: { flex: 1 },
-    sleepLabel: { fontSize: 15, fontWeight: '600' },
-    sleepTimer: { fontSize: 13, fontWeight: '500', marginTop: 2 },
-    activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.7)' },
-    // Feeding
-    feedGrid: { flexDirection: 'row-reverse', gap: 8 },
-    feedBtn: {
-        flex: 1, alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, gap: 6,
+    section: { marginBottom: 16 },
+    sectionTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, textAlign: 'right' },
+    itemsRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
+    item: {
+        width: '30%', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1.5, gap: 6,
+        position: 'relative',
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
     },
-    feedLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-    feedTimer: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
-    // Diaper
-    diaperBtn: {
-        flexDirection: 'row-reverse', alignItems: 'center', padding: 13, borderRadius: 14, borderWidth: 1, gap: 10,
+    itemLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+    checkBadge: {
+        position: 'absolute', top: 6, left: 6,
+        width: 16, height: 16, borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        alignItems: 'center', justifyContent: 'center',
     },
-    diaperLabel: { fontSize: 14, fontWeight: '600' },
-    // Sounds
-    soundGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
-    soundBtn: {
-        width: '47%', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, gap: 6, position: 'relative',
+    instantBadge: {
+        position: 'absolute', top: 6, right: 6,
+        width: 14, height: 14, borderRadius: 7,
+        alignItems: 'center', justifyContent: 'center',
+        opacity: 0.85,
     },
-    soundEmoji: { fontSize: 24 },
-    soundLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-    soundDot: { position: 'absolute', top: 8, left: 8, width: 7, height: 7, borderRadius: 4 },
-    stopSoundBtn: { backgroundColor: 'rgba(255,80,80,0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-    stopSoundText: { fontSize: 12, fontWeight: '600', color: '#FF5050' },
-    // Tools
-    toolsRow: { flexDirection: 'row-reverse', gap: 8 },
-    toolBtn: {
-        flex: 1, flexDirection: 'row-reverse', alignItems: 'center', padding: 13, borderRadius: 14, borderWidth: 1, gap: 8,
+    lockBadge: {
+        position: 'absolute', top: 6, right: 6,
+        width: 14, height: 14, borderRadius: 7,
+        alignItems: 'center', justifyContent: 'center',
     },
-    toolLabel: { fontSize: 13, fontWeight: '600' },
-    editRadialBtn: {
-        flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
-        padding: 12, borderRadius: 14, borderWidth: 1, gap: 8, marginTop: 16,
+    saveBtn: {
+        marginTop: 8, padding: 15, borderRadius: 16, alignItems: 'center',
+        shadowColor: '#C8806A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
     },
-    editRadialLabel: { fontSize: 14, fontWeight: '500' },
+    saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
 
 export default ControlCenter;

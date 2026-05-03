@@ -1,5 +1,6 @@
 import React from 'react';
-import { Utensils, Moon, Music, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Baby, Milk, Waves } from 'lucide-react-native';
+import { View, Text } from 'react-native';
+import { Utensils, Moon, Music, Music2, Bird, CloudRain, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Baby, Milk, Waves } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
 import DiaperIcon from '../Common/DiaperIcon';
@@ -20,12 +21,28 @@ export const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; colo
     </Svg>
 );
 
+const BreastfeedingSideIcon = ({ size, color, strokeWidth = 2, side }: { size: number; color: string; strokeWidth?: number; side: 'R' | 'L' }) => (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        <Baby size={size * 0.78} color={color} strokeWidth={strokeWidth} />
+        <View style={{ position: 'absolute', bottom: 0, right: side === 'R' ? 0 : undefined, left: side === 'L' ? 0 : undefined, width: size * 0.38, height: size * 0.38, borderRadius: size * 0.19, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: size * 0.22, fontWeight: '800', color: '#fff', lineHeight: size * 0.26 }}>{side}</Text>
+        </View>
+    </View>
+);
+
+const BreastfeedingRIcon = (props: { size: number; color: string; strokeWidth?: number }) => <BreastfeedingSideIcon {...props} side="R" />;
+const BreastfeedingLIcon = (props: { size: number; color: string; strokeWidth?: number }) => <BreastfeedingSideIcon {...props} side="L" />;
+
 export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> = {
     food: { icon: Utensils, labelKey: 'actions.food', activeLabelKey: 'actions.active.food' },
     sleep: { icon: Moon, labelKey: 'actions.sleep', activeLabelKey: 'actions.active.sleep' },
     diaper: { icon: DiaperIcon, labelKey: 'actions.diaper', activeLabelKey: 'actions.diaper' },
     supplements: { icon: Pill, labelKey: 'actions.supplements', activeLabelKey: 'actions.supplements' },
-    whiteNoise: { icon: Music, labelKey: 'actions.whiteNoise', activeLabelKey: 'actions.whiteNoise' },
+    whiteNoise:        { icon: Music,     labelKey: 'actions.whiteNoise',        activeLabelKey: 'actions.whiteNoise' },
+    whiteNoiseLullaby: { icon: Music,     labelKey: 'actions.whiteNoiseLullaby', activeLabelKey: 'actions.whiteNoiseLullaby' },
+    whiteNoiseGentle:  { icon: Music2,    labelKey: 'actions.whiteNoiseGentle',  activeLabelKey: 'actions.whiteNoiseGentle' },
+    whiteNoiseBirds:   { icon: Bird,      labelKey: 'actions.whiteNoiseBirds',   activeLabelKey: 'actions.whiteNoiseBirds' },
+    whiteNoiseRain:    { icon: CloudRain, labelKey: 'actions.whiteNoiseRain',    activeLabelKey: 'actions.whiteNoiseRain' },
     sos: { icon: SOSIcon, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },
     health: { icon: HeartPulse, labelKey: 'actions.health', activeLabelKey: 'actions.health' },
     growth: { icon: TrendingUp, labelKey: 'actions.growth', activeLabelKey: 'actions.growth' },
@@ -36,6 +53,8 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     quickReminder: { icon: Bell, labelKey: 'actions.quickReminder', activeLabelKey: 'actions.quickReminder' },
     custom: { icon: Plus, labelKey: 'actions.custom', activeLabelKey: 'actions.custom', hasBorder: true },
     breastfeeding: { icon: Baby, labelKey: 'actions.breastfeeding', activeLabelKey: 'actions.active.breastfeeding' },
+    breastfeedingRight: { icon: BreastfeedingRIcon, labelKey: 'actions.breastfeedingRight', activeLabelKey: 'actions.active.breastfeeding' },
+    breastfeedingLeft: { icon: BreastfeedingLIcon, labelKey: 'actions.breastfeedingLeft', activeLabelKey: 'actions.active.breastfeeding' },
     bottle: { icon: Milk, labelKey: 'actions.bottle', activeLabelKey: 'actions.active.bottle' },
     pumping: { icon: Waves, labelKey: 'actions.pumping', activeLabelKey: 'actions.active.pumping' },
 };

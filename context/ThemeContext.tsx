@@ -44,7 +44,11 @@ export const COLORS = {
             sleep:         { color: '#4A6572', lightColor: 'rgba(74, 101, 114, 0.15)', accentColor: '#4A6572' }, // Muted Navy
             diaper:        { color: '#6A9C89', lightColor: 'rgba(106, 156, 137, 0.15)', accentColor: '#6A9C89' }, // Sage Teal
             supplements:   { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' }, // Lilac Mauve
-            whiteNoise:    { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)', accentColor: '#557A9D' }, // Slate Blue
+            whiteNoise:        { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)', accentColor: '#557A9D' }, // Slate Blue
+            whiteNoiseLullaby: { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.15)', accentColor: '#557A9D' }, // Slate Blue – שיר ערש
+            whiteNoiseGentle:  { color: '#6A8EAE', lightColor: 'rgba(106, 142, 174, 0.15)', accentColor: '#6A8EAE' }, // Periwinkle – מוזיקה עדינה
+            whiteNoiseBirds:   { color: '#6A9C89', lightColor: 'rgba(106, 156, 137, 0.15)', accentColor: '#6A9C89' }, // Sage – ציפורים
+            whiteNoiseRain:    { color: '#4E7FA6', lightColor: 'rgba(78, 127, 166, 0.15)', accentColor: '#4E7FA6' }, // Steel Blue – גשם
             sos:           { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.15)', accentColor: '#CD8B87' }, // Dusty Rose
             custom:        { color: '#A5A58D', lightColor: 'rgba(165, 165, 141, 0.15)', accentColor: '#A5A58D' }, // Soft Stone
             health:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.15)', accentColor: '#8EB168' }, // Soft Olive
@@ -55,9 +59,11 @@ export const COLORS = {
             teeth:         { color: '#8ECAE6', lightColor: 'rgba(142, 202, 230, 0.15)', accentColor: '#8ECAE6' }, // Soft Sky Blue
             nightLight:    { color: '#E9C46A', lightColor: 'rgba(233, 196, 106, 0.15)', accentColor: '#E9C46A' }, // Soft Sand
             quickReminder: { color: '#A29BFE', lightColor: 'rgba(162, 155, 254, 0.15)', accentColor: '#A29BFE' }, // Pastel Purple
-            breastfeeding: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' }, // Lilac Mauve
-            bottle:        { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
-            pumping:       { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.15)', accentColor: '#83C5BE' }, // Muted Teal
+            breastfeeding:      { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' }, // Lilac Mauve
+            breastfeedingRight: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' },
+            breastfeedingLeft:  { color: '#9B7FBD', lightColor: 'rgba(155, 127, 189, 0.15)', accentColor: '#9B7FBD' }, // Soft Purple
+            bottle:             { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
+            pumping:            { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.15)', accentColor: '#83C5BE' }, // Muted Teal
         },
     },
     dark: {
@@ -93,7 +99,11 @@ export const COLORS = {
             sleep:         { color: '#4A6572', lightColor: 'rgba(74, 101, 114, 0.22)', accentColor: '#4A6572' },
             diaper:        { color: '#6A9C89', lightColor: 'rgba(106, 156, 137, 0.22)', accentColor: '#6A9C89' },
             supplements:   { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
-            whiteNoise:    { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)', accentColor: '#557A9D' },
+            whiteNoise:        { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)', accentColor: '#557A9D' },
+            whiteNoiseLullaby: { color: '#557A9D', lightColor: 'rgba(85, 122, 157, 0.22)', accentColor: '#557A9D' },
+            whiteNoiseGentle:  { color: '#6A8EAE', lightColor: 'rgba(106, 142, 174, 0.22)', accentColor: '#6A8EAE' },
+            whiteNoiseBirds:   { color: '#6A9C89', lightColor: 'rgba(106, 156, 137, 0.22)', accentColor: '#6A9C89' },
+            whiteNoiseRain:    { color: '#4E7FA6', lightColor: 'rgba(78, 127, 166, 0.22)', accentColor: '#4E7FA6' },
             sos:           { color: '#CD8B87', lightColor: 'rgba(205, 139, 135, 0.22)', accentColor: '#CD8B87' },
             custom:        { color: '#A5A58D', lightColor: 'rgba(165, 165, 141, 0.22)', accentColor: '#A5A58D' },
             health:        { color: '#8EB168', lightColor: 'rgba(142, 177, 104, 0.22)', accentColor: '#8EB168' },
@@ -104,9 +114,11 @@ export const COLORS = {
             teeth:         { color: '#8ECAE6', lightColor: 'rgba(142, 202, 230, 0.22)', accentColor: '#8ECAE6' },
             nightLight:    { color: '#E9C46A', lightColor: 'rgba(233, 196, 106, 0.22)', accentColor: '#E9C46A' },
             quickReminder: { color: '#A29BFE', lightColor: 'rgba(162, 155, 254, 0.22)', accentColor: '#A29BFE' },
-            breastfeeding: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
-            bottle:        { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
-            pumping:       { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.22)', accentColor: '#83C5BE' },
+            breastfeeding:      { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
+            breastfeedingRight: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
+            breastfeedingLeft:  { color: '#9B7FBD', lightColor: 'rgba(155, 127, 189, 0.22)', accentColor: '#9B7FBD' },
+            bottle:             { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            pumping:            { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.22)', accentColor: '#83C5BE' },
         },
     }
 };

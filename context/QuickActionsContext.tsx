@@ -6,9 +6,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Define all available quick action keys
 export type QuickActionKey =
     | 'food' | 'sleep' | 'diaper' | 'supplements' | 'whiteNoise'
+    | 'whiteNoiseLullaby' | 'whiteNoiseGentle' | 'whiteNoiseBirds' | 'whiteNoiseRain'
     | 'sos' | 'health' | 'growth' | 'milestones' | 'magicMoments' | 'custom'
     | 'teeth' | 'nightLight' | 'quickReminder'
-    | 'breastfeeding' | 'bottle' | 'pumping';
+    | 'breastfeeding' | 'breastfeedingRight' | 'breastfeedingLeft' | 'bottle' | 'pumping';
 
 // Default order of actions (top to bottom natively, reversed for horizontal slider)
 const DEFAULT_ORDER: QuickActionKey[] = [

@@ -29,10 +29,9 @@ import ControlCenter from './ControlCenter';
 const FAB_SIZE = 48;
 const FAB_RIGHT = 16 + 6;
 const FAB_BOTTOM_OFFSET = 7;
-const MENU_RADIUS = 110;
+const MENU_RADIUS = 140;
 const ITEM_SIZE = 56;
 const DEFAULT_WHITE_NOISE: SoundId = 'lullaby4';
-const ANGLES = [0, Math.PI / 6, Math.PI / 3, Math.PI / 2];
 
 export default function RadialSOSMenu() {
     const { fabSheetVisible, setFabSheetVisible, sosActions, sosEditVisible, setSosEditVisible, triggerFABAction } = useQuickActions();
@@ -45,11 +44,17 @@ export default function RadialSOSMenu() {
     const isOpen = useSharedValue(0);
     const [renderMenu, setRenderMenu] = useState(false);
 
+    // Dynamic angles: spread evenly from 0° to 90° based on how many actions are selected
+    const count = Math.min(sosActions.length, 4);
+    const computedAngles = [0, 1, 2, 3].map(i =>
+        count <= 1 ? 0 : (i * Math.PI) / (2 * (count - 1))
+    );
+
     useEffect(() => {
         if (fabSheetVisible) {
             setRenderMenu(true);
-            isOpen.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 1, 0.5, 1) });
-            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            isOpen.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         } else {
             isOpen.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.ease) }, (finished) => {
                 if (finished) runOnJS(setRenderMenu)(false);
@@ -68,10 +73,20 @@ export default function RadialSOSMenu() {
         setTimeout(() => {
             if (action === 'whiteNoise') {
                 if (audio.activeSound) { audio.stopSound(); } else { audio.playSound(DEFAULT_WHITE_NOISE); }
+            } else if (action === 'whiteNoiseLullaby') {
+                audio.activeSound === 'lullaby1' ? audio.stopSound() : audio.playSound('lullaby1');
+            } else if (action === 'whiteNoiseGentle') {
+                audio.activeSound === 'lullaby2' ? audio.stopSound() : audio.playSound('lullaby2');
+            } else if (action === 'whiteNoiseBirds') {
+                audio.activeSound === 'lullaby3' ? audio.stopSound() : audio.playSound('lullaby3');
+            } else if (action === 'whiteNoiseRain') {
+                audio.activeSound === 'lullaby4' ? audio.stopSound() : audio.playSound('lullaby4');
             } else if (action === 'sleep') {
                 if (isSleepRunning) { stopSleep(); } else { startSleep(); }
-            } else if (action === 'breastfeeding') {
+            } else if (action === 'breastfeeding' || action === 'breastfeedingRight') {
                 startBreast('right');
+            } else if (action === 'breastfeedingLeft') {
+                startBreast('left');
             } else if (action === 'bottle') {
                 startBottle();
             } else if (action === 'pumping') {
@@ -91,7 +106,6 @@ export default function RadialSOSMenu() {
     const fabStyle = useAnimatedStyle(() => ({
         transform: [
             { rotateZ: `${interpolate(isOpen.value, [0, 1], [0, -45])}deg` },
-            { scale: interpolate(isOpen.value, [0, 0.5, 1], [1, 0.9, 1]) },
         ] as any,
     }));
 
@@ -99,19 +113,19 @@ export default function RadialSOSMenu() {
     const nodeStyles = [
         useAnimatedStyle(() => {
             const d = interpolate(isOpen.value, [0, 1], [0, MENU_RADIUS], Extrapolate.CLAMP);
-            return { transform: [{ translateX: -d * Math.sin(ANGLES[0]) }, { translateY: -d * Math.cos(ANGLES[0]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
+            return { transform: [{ translateX: -d * Math.sin(computedAngles[0]) }, { translateY: -d * Math.cos(computedAngles[0]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
         }),
         useAnimatedStyle(() => {
             const d = interpolate(isOpen.value, [0, 1], [0, MENU_RADIUS], Extrapolate.CLAMP);
-            return { transform: [{ translateX: -d * Math.sin(ANGLES[1]) }, { translateY: -d * Math.cos(ANGLES[1]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
+            return { transform: [{ translateX: -d * Math.sin(computedAngles[1]) }, { translateY: -d * Math.cos(computedAngles[1]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
         }),
         useAnimatedStyle(() => {
             const d = interpolate(isOpen.value, [0, 1], [0, MENU_RADIUS], Extrapolate.CLAMP);
-            return { transform: [{ translateX: -d * Math.sin(ANGLES[2]) }, { translateY: -d * Math.cos(ANGLES[2]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
+            return { transform: [{ translateX: -d * Math.sin(computedAngles[2]) }, { translateY: -d * Math.cos(computedAngles[2]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
         }),
         useAnimatedStyle(() => {
             const d = interpolate(isOpen.value, [0, 1], [0, MENU_RADIUS], Extrapolate.CLAMP);
-            return { transform: [{ translateX: -d * Math.sin(ANGLES[3]) }, { translateY: -d * Math.cos(ANGLES[3]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
+            return { transform: [{ translateX: -d * Math.sin(computedAngles[3]) }, { translateY: -d * Math.cos(computedAngles[3]) }, { scale: isOpen.value }] as any, opacity: isOpen.value };
         }),
     ];
 
@@ -138,7 +152,11 @@ export default function RadialSOSMenu() {
                         // Active state indicator
                         const isActive =
                             (actionKey === 'sleep' && isSleepRunning) ||
-                            (actionKey === 'whiteNoise' && !!audio.activeSound);
+                            (actionKey === 'whiteNoise' && !!audio.activeSound) ||
+                            (actionKey === 'whiteNoiseLullaby' && audio.activeSound === 'lullaby1') ||
+                            (actionKey === 'whiteNoiseGentle' && audio.activeSound === 'lullaby2') ||
+                            (actionKey === 'whiteNoiseBirds' && audio.activeSound === 'lullaby3') ||
+                            (actionKey === 'whiteNoiseRain' && audio.activeSound === 'lullaby4');
 
                         return (
                             <Animated.View key={actionKey} style={[styles.nodeContainer, { right: FAB_RIGHT, bottom: baseBottom }, nodeStyles[i]]}>
@@ -176,13 +194,6 @@ export default function RadialSOSMenu() {
             <ControlCenter
                 visible={sosEditVisible}
                 onClose={() => setSosEditVisible(false)}
-                onDiaper={() => { triggerFABAction('diaper'); navigateToHome(); }}
-                onNightLight={() => { triggerFABAction('nightLight'); navigateToHome(); }}
-                onQuickReminder={() => { triggerFABAction('quickReminder'); navigateToHome(); }}
-                onEditRadial={() => {
-                    setSosEditVisible(false);
-                    setTimeout(() => setSosEditVisible(true), 100);
-                }}
             />
         </>
     );

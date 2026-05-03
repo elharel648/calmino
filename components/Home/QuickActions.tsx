@@ -90,6 +90,7 @@ const QuickActions = memo<QuickActionsProps>(({
         Object.keys(QUICK_ACTION_BASE_CONFIG).forEach(key => {
             const base = QUICK_ACTION_BASE_CONFIG[key as QuickActionKey];
             const colors = theme.actionColors[key as keyof typeof theme.actionColors];
+            if (!colors) return;
             combined[key] = {
                 ...base,
                 color: colors.color,
@@ -212,6 +213,15 @@ const QuickActions = memo<QuickActionsProps>(({
         nightLight: { onPress: onNightLightPress || (() => { }) },
         custom: { onPress: onCustomPress || (() => { }) },
         quickReminder: { onPress: onQuickReminderPress || (() => { }), badge: reminderCount && reminderCount > 0 ? String(reminderCount) : undefined },
+        breastfeeding: { onPress: () => { } },
+        breastfeedingRight: { onPress: () => { } },
+        breastfeedingLeft: { onPress: () => { } },
+        bottle: { onPress: () => { } },
+        pumping: { onPress: () => { } },
+        whiteNoiseLullaby: { onPress: () => { } },
+        whiteNoiseGentle: { onPress: () => { } },
+        whiteNoiseBirds: { onPress: () => { } },
+        whiteNoiseRain: { onPress: () => { } },
     }), [handleFoodPress, handleSleepPress, onDiaperPress, onSupplementsPress, onWhiteNoisePress, onSOSPress, onHealthPress, onGrowthPress, onMilestonesPress, onMagicMomentsPress, onTeethPress, onNightLightPress, onCustomPress, foodIsRunning, sleepIsRunning, foodFormatTime, sleepFormatTime, foodElapsed, sleepElapsed, lastFeedTime, lastSleepTime, takenCount, totalSupplements, activeSound, whiteNoiseElapsed, stopSound]);
 
     const visibleActions = useMemo(() =>
