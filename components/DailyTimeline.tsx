@@ -18,14 +18,14 @@ import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
 
-// ─── Dashed vertical line ────────────────────────────────────────────────────
+// ─── Dashed vertical line — fixed height segment ─────────────────────────────
 const DashedLine = ({ color, hidden }: { color: string; hidden?: boolean }) => (
-  <View style={{ flex: 1, alignItems: 'center', overflow: 'hidden', paddingVertical: 3 }}>
-    {Array.from({ length: 50 }).map((_, i) => (
+  <View style={{ width: 2, flex: 1, overflow: 'hidden', alignItems: 'center' }}>
+    {hidden ? null : Array.from({ length: 30 }).map((_, i) => (
       <View key={i} style={{
         width: 2, height: 4, borderRadius: 1,
-        backgroundColor: hidden ? 'transparent' : color,
-        marginBottom: 4, opacity: 0.38,
+        backgroundColor: color,
+        marginBottom: 4, opacity: 0.32,
       }} />
     ))}
   </View>
@@ -1526,8 +1526,8 @@ const styles = StyleSheet.create({
   // ===== ELEGANT TIMELINE (HOME/FLAT VIEW) =====
   elegantEventRow: {
     flexDirection: 'row-reverse',
-    minHeight: 88,
-    alignItems: 'stretch',
+    minHeight: 80,
+    alignItems: 'center',
   },
   elegantTimeBlock: {
     width: 52,
@@ -1549,6 +1549,7 @@ const styles = StyleSheet.create({
   elegantTrack: {
     width: 60,
     alignItems: 'center',
+    alignSelf: 'stretch',
   },
   elegantLineTop: { width: 1, flex: 1 },
   elegantLineBottom: { width: 1, flex: 1 },
@@ -1562,15 +1563,14 @@ const styles = StyleSheet.create({
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingRight: 8,
     justifyContent: 'center',
+    alignSelf: 'center',
   },
   elegantCard: {
-    flex: 1,
     alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
   accentStrip: { width: 0 },
   elegantCardTextContainer: {
