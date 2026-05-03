@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Check, Lock, Zap, ChevronDown, ChevronUp, EyeOff } from 'lucide-react-native';
+import { Check, Lock, Zap, ChevronDown, ChevronUp, EyeOff, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
@@ -207,6 +207,35 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                         }
                     </Text>
 
+                    {/* Selected chips strip */}
+                    {selected.length > 0 && (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={styles.chipsScroll}
+                            contentContainerStyle={{ flexDirection: 'row-reverse', gap: 6, paddingHorizontal: 2 }}
+                        >
+                            {selected.map(key => {
+                                const config = QUICK_ACTION_BASE_CONFIG[key];
+                                const colors = theme.actionColors[key as keyof typeof theme.actionColors];
+                                const Icon = config?.icon;
+                                if (!Icon || !colors) return null;
+                                return (
+                                    <TouchableOpacity
+                                        key={key}
+                                        style={[styles.chip, { backgroundColor: colors.color }]}
+                                        onPress={() => toggle(key)}
+                                        activeOpacity={0.75}
+                                    >
+                                        <Icon size={12} color="#fff" strokeWidth={2} />
+                                        <Text style={styles.chipLabel}>{LABEL_MAP[key] ?? key}</Text>
+                                        <X size={10} color="rgba(255,255,255,0.75)" strokeWidth={2.5} />
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    )}
+
                     {showMaxHint && (
                         <View style={[styles.maxHint, { backgroundColor: isDarkMode ? 'rgba(255,100,80,0.15)' : 'rgba(200,80,60,0.08)', borderColor: isDarkMode ? 'rgba(255,100,80,0.3)' : 'rgba(200,80,60,0.2)' }]}>
                             <Text style={[styles.maxHintText, { color: isDarkMode ? '#FF7060' : '#C8503C' }]}>
@@ -374,6 +403,12 @@ const styles = StyleSheet.create({
         borderRadius: 10, borderWidth: 1,
     },
     maxHintText: { fontSize: 12, fontWeight: '600', textAlign: 'right' },
+    chipsScroll: { marginBottom: 12, flexShrink: 0 },
+    chip: {
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20,
+    },
+    chipLabel: { color: '#fff', fontSize: 12, fontWeight: '600' },
     saveBtn: {
         marginTop: 8, padding: 15, borderRadius: 16, alignItems: 'center',
         shadowColor: '#C8806A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
