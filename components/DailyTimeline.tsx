@@ -1070,29 +1070,29 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       <DashedLine color={config.color} hidden={isLast} />
                     </View>
 
-                    {/* LEFT: FLOATING CONTENT — no card background */}
+                    {/* LEFT: CONTENT */}
                     <View style={styles.elegantCardContainer}>
                       <View style={styles.elegantCard}>
-                        {/* Category label */}
-                        {details !== config.label && (
-                          <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
-                        )}
-                        {/* Title */}
-                        <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
-                        {/* Subtext */}
-                        {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={2}>{subtext}</Text> : null}
-                        {/* Reporter badge inline */}
-                        {showBadge && (
+                        {/* Texts */}
+                        <View style={styles.elegantCardTextContainer}>
+                          {details !== config.label ? (
+                            <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                          ) : null}
+                          <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
+                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}
+                        </View>
+                        {/* Reporter badge */}
+                        {showBadge ? (
                           <View style={styles.elegantCardLeft}>
                             {photoUrl ? (
                               <Image source={{ uri: photoUrl }} style={[styles.cardReporterBadge, { borderWidth: 0, backgroundColor: 'transparent' }]} />
                             ) : (
-                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]}>
                                 <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
                               </View>
                             )}
                           </View>
-                        )}
+                        ) : null}
                       </View>
                     </View>
 
@@ -1562,20 +1562,24 @@ const styles = StyleSheet.create({
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 10,
-    paddingRight: 8,
-    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingRight: 6,
   },
   elegantCard: {
-    alignItems: 'flex-end',
-    gap: 3,
+    flex: 1,
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    minHeight: 62,
+    overflow: 'hidden',
   },
   accentStrip: { width: 0 },
   elegantCardTextContainer: {
     flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
   elegantCategoryLabel: {
     fontSize: 11,
