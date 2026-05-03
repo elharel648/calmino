@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
-import { Sparkles, Camera, X, RefreshCw, Plus, Calendar, Baby, Moon, Heart, Smile, Hand, Shapes, Utensils, Flower2, Eye, Bug, ArrowUp, Music, Footprints, Film, ChevronLeft, Images } from 'lucide-react-native';
+import { Sparkles, Camera, X, RefreshCw, Plus, Calendar, Baby, Moon, Heart, Smile, Hand, Shapes, Utensils, Flower2, Eye, Bug, ArrowUp, Music, Footprints, Film, ChevronLeft, Images, Trash2 } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -80,7 +80,7 @@ export default function MagicMomentsModal({
     const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
     const { activeChild } = useActiveChild();
-    const { baby, babyAgeMonths, updatePhoto, updateAlbumNote, updateAlbumDate, refresh } = useBabyProfile(activeChild?.childId);
+    const { baby, babyAgeMonths, updatePhoto, updateAlbumNote, updateAlbumDate, deleteAlbumPhoto, refresh } = useBabyProfile(activeChild?.childId);
 
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
@@ -290,6 +290,29 @@ export default function MagicMomentsModal({
         setTimeout(async () => {
             await updatePhoto('album', viewingImage.month);
         }, 300);
+    };
+
+    const handleDeletePhoto = async () => {
+        if (!viewingImage) return;
+        
+        Alert.alert(
+            t('common.delete'),
+            t('magicMoments.confirmDelete'),
+            [
+                { text: t('common.cancel'), style: 'cancel' },
+                { 
+                    text: t('common.delete'), 
+                    style: 'destructive',
+                    onPress: async () => {
+                        const monthToDelete = viewingImage.month;
+                        setViewingImage(null);
+                        setTimeout(async () => {
+                            await deleteAlbumPhoto(monthToDelete);
+                        }, 300);
+                    }
+                }
+            ]
+        );
     };
 
     const handleAddCustomPhoto = async (month: number) => {
@@ -555,6 +578,12 @@ export default function MagicMomentsModal({
                                                     },
                                                 ]}
                                                 onPress={() => handleMonthPress(month)}
+                                                onLongPress={() => {
+                                                    if (photoUrl) {
+                                                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                        setViewingImage({ url: photoUrl, month });
+                                                    }
+                                                }}
                                                 activeOpacity={0.7}
                                             >
                                                 {photoUrl ? (
@@ -650,6 +679,12 @@ export default function MagicMomentsModal({
                                                             },
                                                         ]}
                                                         onPress={() => handleMonthPress(month)}
+                                                        onLongPress={() => {
+                                                            if (photoUrl) {
+                                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                                setViewingImage({ url: photoUrl, month });
+                                                            }
+                                                        }}
                                                         activeOpacity={0.7}
                                                     >
                                                         <Image
@@ -847,11 +882,18 @@ export default function MagicMomentsModal({
                         {/* Footer Actions */}
                         <View style={styles.viewerFooter}>
                             <TouchableOpacity
-                                style={styles.replaceButton}
+                                style={[styles.replaceButton, { backgroundColor: 'rgba(255,255,255,0.15)', marginRight: 'auto' }]}
                                 onPress={handleReplacePhoto}
                             >
                                 <RefreshCw color="#FFF" size={20} />
                                 <Text style={styles.replaceButtonText}>{t('magicMoments.replacePhoto')}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.replaceButton, { backgroundColor: 'rgba(255,59,48,0.2)' }]}
+                                onPress={handleDeletePhoto}
+                            >
+                                <Trash2 color="#FF3B30" size={20} />
                             </TouchableOpacity>
                             {viewingImage && (
                                 <Text style={styles.viewerMonthText}>{t('magicMoments.monthNum', { num: viewingImage.month.toString() })}</Text>

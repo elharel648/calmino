@@ -23,6 +23,7 @@ interface UseBabyProfileReturn {
     updateBasicInfo: (data: { name: string; gender: 'boy' | 'girl' | 'other'; birthDate: Date }) => Promise<void>;
     updateAlbumNote: (month: number, note: string) => Promise<void>;
     updateAlbumDate: (month: number, date: Date) => Promise<void>;
+    deleteAlbumPhoto: (month: number) => Promise<void>;
 }
 
 export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
@@ -393,11 +394,47 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         }
     }, [baby?.id, baby?.albumDates]);
 
+    const deleteAlbumPhoto = useCallback(async (month: number) => {
+        if (!baby?.id) return;
+        try {
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            const currentAlbum = baby.album || {};
+            const currentNotes = baby.albumNotes || {};
+            const currentDates = baby.albumDates || {};
+            
+            const updatedAlbum = { ...currentAlbum };
+            const updatedNotes = { ...currentNotes };
+            const updatedDates = { ...currentDates };
+            
+            delete updatedAlbum[month];
+            delete updatedNotes[month];
+            delete updatedDates[month];
+
+            await updateBabyData(baby.id, { 
+                album: updatedAlbum,
+                albumNotes: updatedNotes,
+                albumDates: updatedDates 
+            });
+
+            setBaby(prev => prev ? { 
+                ...prev, 
+                album: updatedAlbum,
+                albumNotes: updatedNotes,
+                albumDates: updatedDates 
+            } : null);
+        } catch (e) {
+            logger.error('Error deleting album photo:', e);
+            Alert.alert('שגיאה', 'לא הצלחנו למחוק את התמונה');
+        }
+    }, [baby?.id, baby?.album, baby?.albumNotes, baby?.albumDates]);
+
 
     return {
         baby, loading, savingImage, babyAgeMonths, birthDateObj,
         refresh: loadData, updatePhoto, updateBirthDate, updateStats,
-        updateAllStats, updateBasicInfo, updateAlbumNote, updateAlbumDate,
+        updateAllStats, updateBasicInfo, updateAlbumNote, updateAlbumDate, deleteAlbumPhoto,
     };
 };
 
