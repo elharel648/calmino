@@ -1035,41 +1035,45 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   >
                     <PremiumTimelineEvent isRecent={isRecent}>
                       <SwipeableRow onDelete={triggerDelete}>
-                  <TouchableOpacity activeOpacity={0.8} onPress={() => onEditEvent?.(event)} style={styles.elegantEventRow}>
-                    
-                    {/* FAR RIGHT: TIME */}
-                    <View style={styles.elegantTimeBlock}>
-                      <Text style={[styles.elegantTimeMain, { color: theme.textTertiary }]} numberOfLines={1}>{timeStr}</Text>
-                    </View>
-
+                  <TouchableOpacity
+                    activeOpacity={0.65}
+                    onPress={() => onEditEvent?.(event)}
+                    style={styles.elegantEventRow}
+                  >
                     {/* MIDDLE: TRACK */}
                     <View style={styles.elegantTrack}>
-                      <View style={[styles.elegantLineTop, { backgroundColor: isFirst ? 'transparent' : config.color, opacity: isFirst ? 0 : 0.25 }]} />
+                      <View style={[styles.elegantLineTop, {
+                        backgroundColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'),
+                      }]} />
                       <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
                         shadowColor: config.color,
-                        shadowOpacity: isDarkMode ? 0.45 : 0.3,
-                        shadowRadius: 10,
-                        shadowOffset: { width: 0, height: 4 },
-                        elevation: 6,
+                        shadowOpacity: isDarkMode ? 0.4 : 0.22,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 3 },
+                        elevation: 5,
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                       </View>
-                      <View style={[styles.elegantLineBottom, { backgroundColor: isLast ? 'transparent' : config.color, opacity: isLast ? 0 : 0.25 }]} />
+                      <View style={[styles.elegantLineBottom, {
+                        backgroundColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'),
+                      }]} />
                     </View>
 
                     {/* LEFT: CONTENT */}
                     <View style={styles.elegantCardContainer}>
                       <View style={styles.elegantCard}>
-                        {/* Texts */}
                         <View style={styles.elegantCardTextContainer}>
-                          {details !== config.label ? (
-                            <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
-                          ) : null}
+                          {/* Category + time on same row */}
+                          <View style={styles.metaRow}>
+                            {details !== config.label && (
+                              <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                            )}
+                            <Text style={[styles.inlineTime, { color: theme.textTertiary }]}>{timeStr}</Text>
+                          </View>
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
-                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={3}>{subtext}</Text> : null}
+                          {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textSecondary }]} numberOfLines={2}>{subtext}</Text> : null}
                         </View>
-                        {/* Reporter badge */}
                         {showBadge ? (
                           <View style={styles.elegantCardLeft}>
                             {photoUrl ? (
@@ -1517,22 +1521,19 @@ const styles = StyleSheet.create({
     minHeight: 76,
     alignItems: 'stretch',
   },
-  elegantTimeBlock: {
-    width: 52,
-    paddingTop: 14,
+  elegantTimeBlock: { width: 0 },
+  elegantTimeMain: { fontSize: 13 },
+  elegantTimeAgo: { fontSize: 11 },
+  metaRow: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
   },
-  elegantTimeMain: {
-    fontSize: 13,
-    fontWeight: '500',
+  inlineTime: {
+    fontSize: 12,
+    fontWeight: '400',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.2,
-  },
-  elegantTimeAgo: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: 4,
-    opacity: 0.8,
   },
   elegantTrack: {
     width: 62,
@@ -1572,8 +1573,7 @@ const styles = StyleSheet.create({
   elegantCategoryLabel: {
     fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 0.3,
-    marginBottom: 1,
+    letterSpacing: 0.2,
   },
   elegantCardTitle: {
     fontSize: 16,
