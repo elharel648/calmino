@@ -1550,7 +1550,7 @@ const styles = StyleSheet.create({
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 14,
     paddingRight: 6,
   },
   elegantCard: {
@@ -1559,7 +1559,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 14,
-    minHeight: 62,
+    minHeight: 66,
     overflow: 'hidden',
   },
   accentStrip: { width: 0 },
