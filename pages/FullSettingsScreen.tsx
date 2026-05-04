@@ -920,33 +920,6 @@ if (data.settings.language !== undefined) {
           </View>
         </View>
 
-        {/* Demo buttons */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 4, gap: 8 }}>
-          <TouchableOpacity
-            style={{ padding: 13, borderRadius: 14, backgroundColor: 'rgba(99,179,237,0.12)', borderWidth: 1, borderColor: 'rgba(99,179,237,0.25)', alignItems: 'center' }}
-            onPress={async () => {
-              try {
-                const { seedDemoData } = await import('../services/demoDataSeeder');
-                const r = await seedDemoData();
-                Alert.alert('✅', `${r.childrenCreated} ילדים · ${r.eventsCreated} אירועים`);
-              } catch (e: any) { Alert.alert('שגיאה', e?.message); }
-            }}
-          >
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#63B3ED' }}>🎬 הוסף נתוני דמו</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ padding: 10, borderRadius: 14, alignItems: 'center' }}
-            onPress={async () => {
-              try {
-                const { clearDemoData } = await import('../services/demoDataSeeder');
-                await clearDemoData();
-                Alert.alert('✅', 'נמחק');
-              } catch (e: any) { Alert.alert('שגיאה', e?.message); }
-            }}
-          >
-            <Text style={{ fontSize: 12, color: '#FC8181' }}>🗑️ מחק נתוני דמו</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Logo + version + website link */}
         <TouchableOpacity
