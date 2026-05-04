@@ -99,7 +99,6 @@ export default function SettingsScreen() {
   const [isTermsModalVisible, setTermsModalVisible] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
   const [messageSent, setMessageSent] = useState(false);
-  const [demoTapCount, setDemoTapCount] = useState(0);
   const insets = useSafeAreaInsets();
 
   useFocusEffect(
@@ -921,37 +920,38 @@ if (data.settings.language !== undefined) {
           </View>
         </View>
 
+        {/* Demo buttons */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 4, gap: 8 }}>
+          <TouchableOpacity
+            style={{ padding: 13, borderRadius: 14, backgroundColor: 'rgba(99,179,237,0.12)', borderWidth: 1, borderColor: 'rgba(99,179,237,0.25)', alignItems: 'center' }}
+            onPress={async () => {
+              try {
+                const { seedDemoData } = await import('../services/demoDataSeeder');
+                const r = await seedDemoData();
+                Alert.alert('✅', `${r.childrenCreated} ילדים · ${r.eventsCreated} אירועים`);
+              } catch (e: any) { Alert.alert('שגיאה', e?.message); }
+            }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#63B3ED' }}>🎬 הוסף נתוני דמו</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ padding: 10, borderRadius: 14, alignItems: 'center' }}
+            onPress={async () => {
+              try {
+                const { clearDemoData } = await import('../services/demoDataSeeder');
+                await clearDemoData();
+                Alert.alert('✅', 'נמחק');
+              } catch (e: any) { Alert.alert('שגיאה', e?.message); }
+            }}
+          >
+            <Text style={{ fontSize: 12, color: '#FC8181' }}>🗑️ מחק נתוני דמו</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Logo + version + website link */}
         <TouchableOpacity
           style={{ alignItems: 'center', marginTop: 8, marginBottom: 20 }}
-          onPress={async () => {
-            const newCount = demoTapCount + 1;
-            setDemoTapCount(newCount);
-            if (newCount >= 5) {
-              setDemoTapCount(0);
-              Alert.alert('🎬 מצב מוקאפ', 'מה תרצה לעשות?', [
-                { text: 'ביטול', style: 'cancel' },
-                { text: '🗑️ נקה דמו', style: 'destructive', onPress: async () => {
-                  try {
-                    const { clearDemoData } = await import('../services/demoDataSeeder');
-                    await clearDemoData();
-                    Alert.alert('✅ נוקה', 'כל נתוני הדמו נמחקו');
-                  } catch (e: any) { Alert.alert('שגיאה', e?.message); }
-                }},
-                { text: '🌱 הוסף דמו', onPress: async () => {
-                  try {
-                    const { seedDemoData } = await import('../services/demoDataSeeder');
-                    const result = await seedDemoData();
-                    Alert.alert('✅ הושלם!', `${result.childrenCreated} ילדים · ${result.eventsCreated} אירועים`);
-                  } catch (e: any) { Alert.alert('שגיאה', e?.message); }
-                }},
-              ]);
-            } else if (newCount >= 3) {
-              Linking.openURL('https://www.calmino.co.il');
-            } else {
-              Linking.openURL('https://www.calmino.co.il');
-            }
-          }}
+          onPress={() => Linking.openURL('https://www.calmino.co.il')}
           activeOpacity={0.7}
         >
           <Image
