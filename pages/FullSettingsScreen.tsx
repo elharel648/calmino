@@ -921,6 +921,39 @@ if (data.settings.language !== undefined) {
         </View>
 
 
+        {/* Demo */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 16, gap: 8 }}>
+          <TouchableOpacity
+            style={{ padding: 14, borderRadius: 14, backgroundColor: '#EBF8FF', alignItems: 'center' }}
+            onPress={async () => {
+              try {
+                const { seedDemoData } = await import('../services/demoDataSeeder');
+                Alert.alert('טוען...', 'מוסיף נתוני מוקאפ, יקח כ-30 שניות');
+                const r = await seedDemoData();
+                Alert.alert('✅ הושלם', `${r.childrenCreated} ילדים + ${r.eventsCreated} אירועים נוספו`);
+              } catch (e: any) {
+                Alert.alert('שגיאה', e?.message || 'משהו השתבש');
+              }
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2B6CB0' }}>🎬 הוסף נתוני מוקאפ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ alignItems: 'center', padding: 8 }}
+            onPress={async () => {
+              try {
+                const { clearDemoData } = await import('../services/demoDataSeeder');
+                await clearDemoData();
+                Alert.alert('✅', 'נמחק');
+              } catch (e: any) {
+                Alert.alert('שגיאה', e?.message || 'משהו השתבש');
+              }
+            }}
+          >
+            <Text style={{ fontSize: 13, color: '#E53E3E' }}>מחק מוקאפ</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Logo + version + website link */}
         <TouchableOpacity
           style={{ alignItems: 'center', marginTop: 8, marginBottom: 20 }}
