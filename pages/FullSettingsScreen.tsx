@@ -926,31 +926,20 @@ if (data.settings.language !== undefined) {
           <TouchableOpacity
             style={{ padding: 14, borderRadius: 14, backgroundColor: '#EBF8FF', alignItems: 'center' }}
             onPress={async () => {
-              try {
-                const { seedDemoData } = await import('../services/demoDataSeeder');
-                Alert.alert('טוען...', 'מוסיף נתוני מוקאפ, יקח כ-30 שניות');
-                const r = await seedDemoData();
-                Alert.alert('✅ הושלם', `${r.childrenCreated} ילדים + ${r.eventsCreated} אירועים נוספו`);
-              } catch (e: any) {
-                Alert.alert('שגיאה', e?.message || 'משהו השתבש');
-              }
+              const { clearDemoData, seedDemoData } = await import('../services/demoDataSeeder');
+              Alert.alert('מוקאפ', 'ימחק ילדי דמו קיימים ויוסיף 4 חדשים עם תמונות', [
+                { text: 'ביטול', style: 'cancel' },
+                { text: 'המשך', onPress: async () => {
+                  try {
+                    await clearDemoData();
+                    const r = await seedDemoData();
+                    Alert.alert('✅', `${r.childrenCreated} ילדים נוספו - עבור לבית ובחר ילד`);
+                  } catch (e: any) { Alert.alert('שגיאה', e?.message); }
+                }}
+              ]);
             }}
           >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2B6CB0' }}>🎬 הוסף נתוני מוקאפ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ alignItems: 'center', padding: 8 }}
-            onPress={async () => {
-              try {
-                const { clearDemoData } = await import('../services/demoDataSeeder');
-                await clearDemoData();
-                Alert.alert('✅', 'נמחק');
-              } catch (e: any) {
-                Alert.alert('שגיאה', e?.message || 'משהו השתבש');
-              }
-            }}
-          >
-            <Text style={{ fontSize: 13, color: '#E53E3E' }}>מחק מוקאפ</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2B6CB0' }}>🎬 הגדר 4 ילדי מוקאפ</Text>
           </TouchableOpacity>
         </View>
 
