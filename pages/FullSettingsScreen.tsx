@@ -920,6 +920,43 @@ if (data.settings.language !== undefined) {
           </View>
         </View>
 
+        {/* Demo Data (hidden section for App Store screenshots) */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+          <TouchableOpacity
+            style={{ padding: 14, borderRadius: 14, backgroundColor: 'rgba(99,179,237,0.1)', borderWidth: 1, borderColor: 'rgba(99,179,237,0.3)', alignItems: 'center' }}
+            onPress={async () => {
+              const user = auth.currentUser;
+              if (!user || !activeChild?.childId) return Alert.alert('שגיאה', 'אין תינוק פעיל');
+              Alert.alert('נתוני דמו', 'להוסיף נתוני דמו ריאליסטיים לצילומי מסך?', [
+                { text: 'ביטול', style: 'cancel' },
+                { text: 'הוסף', onPress: async () => {
+                  try {
+                    const { seedDemoData } = await import('../services/demoDataSeeder');
+                    await seedDemoData(user.uid, activeChild.childId);
+                    Alert.alert('✅ הושלם', 'נתוני הדמו הוספו בהצלחה');
+                  } catch (e: any) {
+                    Alert.alert('שגיאה', e?.message);
+                  }
+                }},
+              ]);
+            }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#63B3ED' }}>🎬 הוסף נתוני דמו לצילומי מסך</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ padding: 10, borderRadius: 14, marginTop: 8, alignItems: 'center' }}
+            onPress={async () => {
+              const user = auth.currentUser;
+              if (!user || !activeChild?.childId) return;
+              const { clearDemoData } = await import('../services/demoDataSeeder');
+              await clearDemoData(user.uid, activeChild.childId);
+              Alert.alert('✅ נוקה', 'נתוני הדמו נמחקו');
+            }}
+          >
+            <Text style={{ fontSize: 12, color: '#A0AEC0' }}>מחק נתוני דמו</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Logo + version + website link */}
         <TouchableOpacity
           style={{ alignItems: 'center', marginTop: 8, marginBottom: 20 }}
