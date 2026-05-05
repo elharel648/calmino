@@ -220,7 +220,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
             const results: InviteResult[] = [];
             for (const childId of selectedChildren) {
                 const child = allChildren.find(c => c.childId === childId);
-                const childName = child?.childName || 'ילד';
+                const childName = child?.childName || t('common.child');
                 const result = await createGuestInvite(childId, targetFamilyId, expiryHours);
                 if (result) {
                     results.push({
@@ -499,7 +499,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                             {t('guestInvite.activeInvites')} ({activeInvites.length})
                                         </Text>
                                         {activeInvites.map((invite) => {
-                                            const childName = allChildren.find(c => c.childId === invite.childId)?.childName || 'ילד';
+                                            const childName = allChildren.find(c => c.childId === invite.childId)?.childName || t('common.child');
                                             return (
                                                 <View
                                                     key={invite.code}
@@ -630,7 +630,7 @@ const GuestInviteModal: React.FC<Props> = ({ visible, onClose, familyId, onSucce
                                                 <Copy size={15} color="#C8806A" />
                                             )}
                                             <Text style={{ fontSize: 13, fontWeight: '600', color: copied === result.code ? '#7DAF8F' : '#C8806A', marginRight: 4 }}>
-                                                {copied === result.code ? '✓ הועתק' : 'העתק'}
+                                                {copied === result.code ? t('common.copied') : t('common.copy')}
                                             </Text>
                                         </TouchableOpacity>
                                     </View>

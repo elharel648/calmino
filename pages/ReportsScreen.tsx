@@ -20,7 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, FadeIn, FadeInDown, withDelay, withTiming } from 'react-native-reanimated';
 import { ANIMATIONS } from '../utils/designSystem';
 import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, SlidersHorizontal, Film } from 'lucide-react-native';
 import DiaperIcon from '../components/Common/DiaperIcon';
@@ -103,6 +103,33 @@ interface WeeklyData {
 type TimeRange = 'day' | 'week' | 'month' | 'custom';
 type TabName = 'summary';
 type MetricType = 'sleep' | 'food' | 'diapers' | 'supplements' | null;
+
+const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = 0;
+    progress.value = withDelay(
+      index * 40,
+      Platform.OS === 'android'
+        ? withTiming(1, { duration: 350 })
+        : withSpring(1, { damping: 18, stiffness: 150 })
+    );
+  }, [index, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [
+      { translateY: Platform.OS === 'android' ? 0 : 15 * (1 - progress.value) }
+    ]
+  }));
+
+  return (
+    <Animated.View style={[{ width: '48%', marginBottom: 14 }, animatedStyle]}>
+      {children}
+    </Animated.View>
+  );
+};
 
 export default function ReportsScreen() {
   const { theme, isDarkMode } = useTheme();
@@ -437,7 +464,7 @@ export default function ReportsScreen() {
       }
 
       // Per-day arrays for the day-bar visualization (today first = index 0)
-      const hebrewDayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+      const hebrewDayNames = [t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')];
       const numSlots = Math.min(7, Math.max(daysInRange, dayKeys.length));
       const perDayLogged: boolean[] = [];
       const perDaySleep: boolean[] = [];
@@ -517,6 +544,8 @@ export default function ReportsScreen() {
 
         setPrevWeekStats(prevStats);
       }
+
+
 
     } catch (error) {
       logger.error('ReportsScreen fetchData error:', error);
@@ -1064,7 +1093,7 @@ export default function ReportsScreen() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
-          dialogTitle: `${t('reports.export.systemReport') || 'דוח מערכת'} - ${activeChild?.childName || t('reports.misc.baby')}`,
+          dialogTitle: `${t('reports.export.systemReport')} - ${activeChild?.childName || t('reports.misc.baby')}`,
           UTI: 'com.adobe.pdf'
         });
       } else {
@@ -1081,6 +1110,7 @@ export default function ReportsScreen() {
 
   // Calculate comparison
   const comparison: WeekComparison | null = useMemo(() => {
+
     if (!prevWeekStats) return null;
     return {
       sleepChange: prevWeekStats.sleep > 0
@@ -1351,10 +1381,10 @@ export default function ReportsScreen() {
     if (total === 0) return null;
 
     const items = [
-      { name: `${t('reports.feeding.bottle') || 'בקבוק'} 🍼`, value: dailyStats.feedingTypes.bottle, color: '#818CF8' },
-      { name: `${t('reports.feeding.breast') || 'הנקה'} 🤱`, value: dailyStats.feedingTypes.breast, color: '#A78BFA' },
-      { name: `${t('reports.feeding.pumping') || 'שאיבה'} 🥛`, value: dailyStats.feedingTypes.pumping, color: '#F472B6' },
-      { name: `${t('reports.feeding.solids') || 'מוצקים'} 🥣`, value: dailyStats.feedingTypes.solids, color: '#C4B5FD' }
+      { name: `${t('reports.feeding.bottle')} 🍼`, value: dailyStats.feedingTypes.bottle, color: '#818CF8' },
+      { name: `${t('reports.feeding.breast')} 🤱`, value: dailyStats.feedingTypes.breast, color: '#A78BFA' },
+      { name: `${t('reports.feeding.pumping')} 🥛`, value: dailyStats.feedingTypes.pumping, color: '#F472B6' },
+      { name: `${t('reports.feeding.solids')} 🥣`, value: dailyStats.feedingTypes.solids, color: '#C4B5FD' }
     ].filter(item => item.value > 0);
 
     // Calculate percentages for the progress bars
@@ -1404,86 +1434,7 @@ export default function ReportsScreen() {
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // Minimal Apple-style fade entrance
-  const cardAnims = useRef(
-    Array.from({ length: 8 }, () => new RNAnimated.Value(0))
-  ).current;
-  const cardSlides = useRef(
-    Array.from({ length: 8 }, () => new RNAnimated.Value(6))
-  ).current;
-  // Scale is always 1 — no scale animation
-  const cardScales = useRef(
-    Array.from({ length: 8 }, () => new RNAnimated.Value(1))
-  ).current;
 
-  const prevLoadingRef = useRef(loading);
-  const hasAnimatedRef = useRef(false);
-  const prevTimeRangeRef = useRef(timeRange);
-
-  useEffect(() => {
-    prevLoadingRef.current = loading;
-
-    // Android: skip card animations entirely — show cards immediately to avoid jitter
-    if (Platform.OS === 'android') {
-      cardAnims.forEach(a => a.setValue(1));
-      cardSlides.forEach(a => a.setValue(0));
-      cardScales.forEach(a => a.setValue(1));
-      return;
-    }
-
-    if (loading) return;
-
-    const timeRangeChanged = prevTimeRangeRef.current !== timeRange;
-    prevTimeRangeRef.current = timeRange;
-
-    // Only animate on first load or when user explicitly switches time range.
-    // Re-fetches (Firestore updates, tab revisits) show cards immediately.
-    if (hasAnimatedRef.current && !timeRangeChanged) {
-      cardAnims.forEach(a => a.setValue(1));
-      cardSlides.forEach(a => a.setValue(0));
-      cardScales.forEach(a => a.setValue(1));
-      return;
-    }
-    hasAnimatedRef.current = true;
-
-    // Reset
-    cardAnims.forEach(a => a.setValue(0));
-    cardSlides.forEach(a => a.setValue(6));
-
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 2);
-
-    const animations = cardAnims.map((anim, i) =>
-      RNAnimated.parallel([
-        RNAnimated.timing(anim, {
-          toValue: 1,
-          duration: 220,
-          easing: easeOut,
-          useNativeDriver: true,
-        }),
-        RNAnimated.timing(cardSlides[i], {
-          toValue: 0,
-          duration: 220,
-          easing: easeOut,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    RNAnimated.stagger(16, animations).start();
-  }, [loading, timeRange]);
-
-  const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => (
-    <RNAnimated.View style={{
-      width: '48%',
-      marginBottom: 14,
-      opacity: cardAnims[Math.min(index, 7)],
-      transform: [
-        { translateY: cardSlides[Math.min(index, 7)] },
-        { scale: cardScales[Math.min(index, 7)] },
-      ],
-    }}>
-      {children}
-    </RNAnimated.View>
-  );
 
   // Summary Tab
   const SummaryTab = () => (

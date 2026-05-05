@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-    View, StyleSheet, TouchableOpacity, Platform,
+    View, StyleSheet, TouchableOpacity, Platform, Text,
 } from 'react-native';
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming,
@@ -24,6 +24,8 @@ import { useFoodTimer } from '../../context/FoodTimerContext';
 import { QUICK_ACTION_BASE_CONFIG } from './quickActionsConfig';
 import { navigateToHome } from '../../services/navigationService';
 import ControlCenter from './ControlCenter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../../context/LanguageContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FAB_SIZE = 48;
@@ -36,6 +38,7 @@ const DEFAULT_WHITE_NOISE: SoundId = 'lullaby4';
 export default function RadialSOSMenu() {
     const { fabSheetVisible, setFabSheetVisible, sosActions, sosEditVisible, setSosEditVisible, triggerFABAction } = useQuickActions();
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const audio = useAudio();
     const { start: startSleep, isRunning: isSleepRunning, stop: stopSleep } = useSleepTimer();
@@ -43,6 +46,7 @@ export default function RadialSOSMenu() {
 
     const isOpen = useSharedValue(0);
     const [renderMenu, setRenderMenu] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
 
     // Dynamic angles: spread evenly from 0° to 90° based on how many actions are selected
     const count = Math.min(sosActions.length, 4);
@@ -55,6 +59,15 @@ export default function RadialSOSMenu() {
             setRenderMenu(true);
             isOpen.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            
+            // Check for tooltip on first open
+            AsyncStorage.getItem('hasSeenRadialLongPressHint').then(val => {
+                if (!val) {
+                    setShowTooltip(true);
+                    // Save immediately so it only ever shows once, even if they don't long-press
+                    AsyncStorage.setItem('hasSeenRadialLongPressHint', 'true');
+                }
+            });
         } else {
             isOpen.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.ease) }, (finished) => {
                 if (finished) runOnJS(setRenderMenu)(false);
@@ -65,6 +78,12 @@ export default function RadialSOSMenu() {
     const closeMenu = () => {
         setFabSheetVisible(false);
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
+
+    const handleLongPress = () => {
+        closeMenu();
+        if (showTooltip) setShowTooltip(false);
+        setTimeout(() => setSosEditVisible(true), 300);
     };
 
     const handleAction = (action: QuickActionKey) => {
@@ -167,10 +186,7 @@ export default function RadialSOSMenu() {
                                         isActive && styles.nodeActive,
                                     ]}
                                     onPress={() => handleAction(actionKey)}
-                                    onLongPress={() => {
-                                        closeMenu();
-                                        setTimeout(() => setSosEditVisible(true), 300);
-                                    }}
+                                    onLongPress={handleLongPress}
                                     delayLongPress={400}
                                     activeOpacity={0.75}
                                 >
@@ -181,12 +197,22 @@ export default function RadialSOSMenu() {
                         );
                     })}
 
-                    {/* X to close */}
+                    {/* X to close (or long press to edit) */}
                     <Animated.View style={[styles.fabClone, { right: FAB_RIGHT, bottom: baseBottom }, fabStyle]}>
-                        <TouchableOpacity style={styles.fabInner} onPress={closeMenu} activeOpacity={0.9}>
+                        <TouchableOpacity style={styles.fabInner} onPress={closeMenu} onLongPress={handleLongPress} delayLongPress={400} activeOpacity={0.9}>
                             <X size={26} color="#FFF" strokeWidth={3} />
                         </TouchableOpacity>
                     </Animated.View>
+
+                    {/* First-time Tooltip */}
+                    {showTooltip && (
+                        <Animated.View style={[styles.tooltipContainer, { right: FAB_RIGHT - 20, bottom: baseBottom + 65, opacity: isOpen }]} pointerEvents="none">
+                            <View style={[styles.tooltipBubble, { backgroundColor: isDarkMode ? '#2C2C2E' : '#333333' }]}>
+                                <Text style={styles.tooltipText}>{t('fab.longPressHint')}</Text>
+                            </View>
+                            <View style={[styles.tooltipTail, { borderTopColor: isDarkMode ? '#2C2C2E' : '#333333' }]} />
+                        </Animated.View>
+                    )}
                 </View>
             )}
 
@@ -230,5 +256,39 @@ const styles = StyleSheet.create({
         backgroundColor: '#C8806A', alignItems: 'center', justifyContent: 'center',
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+    },
+    tooltipContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        zIndex: 10002,
+    },
+    tooltipBubble: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    tooltipText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    tooltipTail: {
+        width: 0,
+        height: 0,
+        backgroundColor: 'transparent',
+        borderStyle: 'solid',
+        borderLeftWidth: 8,
+        borderRightWidth: 8,
+        borderTopWidth: 8,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        alignSelf: 'center',
+        marginRight: 40, // Position tail slightly right to align with the button
     },
 });

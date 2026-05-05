@@ -302,7 +302,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
                     onPress={() => setShowDatePicker(false)}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.datePickerDoneText}>{'סיום'}</Text>
+                    <Text style={styles.datePickerDoneText}>{t('common.finish')}</Text>
                   </TouchableOpacity>
                 </TouchableOpacity>
               </TouchableOpacity>

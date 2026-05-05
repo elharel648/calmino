@@ -72,20 +72,7 @@ const GrowthStatCube = memo(({ childId, onPress }: GrowthStatCubeProps) => {
     const scale = useSharedValue(1);
 
     useEffect(() => {
-        if (childId) {
-            
-            getMeasurementsForChart(childId, 6).then((measurements) => {
-                const weights = measurements
-                    .filter(m => m.weight !== undefined)
-                    .map(m => m.weight as number);
-                setWeightData(weights);
-                if (weights.length > 0) {
-                    setLatestWeight(weights[weights.length - 1]);
-                }
-            });
 
-            getGrowthChange(childId).then(setChange);
-        }
     }, [childId]);
 
     const handlePress = () => {

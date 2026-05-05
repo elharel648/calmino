@@ -15,6 +15,7 @@ const ACCENT_COLOR = '#C8806A';
 // Compact time chip used inside supplement rows
 function CompactTimePicker({ value, onChange, disabled }: { value: string; onChange: (t: string) => void; disabled?: boolean }) {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [show, setShow] = useState(false);
     const getDate = (s: string) => { const [h, m] = s.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
     const fmt = (d: Date) => `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
@@ -39,9 +40,9 @@ function CompactTimePicker({ value, onChange, disabled }: { value: string; onCha
                     <View style={styles.timeModalOverlay}>
                         <View style={[styles.timeModalContent, { backgroundColor: theme.card }]}>
                             <View style={[styles.timeModalHeader, { borderBottomColor: theme.divider }]}>
-                                <TouchableOpacity onPress={() => setShow(false)}><Text style={{ color: theme.textSecondary, fontSize: 16 }}>ביטול</Text></TouchableOpacity>
-                                <Text style={[styles.timeModalTitle, { color: theme.textPrimary }]}>בחר שעה</Text>
-                                <TouchableOpacity onPress={() => setShow(false)}><Text style={{ color: ACCENT_COLOR, fontSize: 16, fontWeight: '600' }}>אישור</Text></TouchableOpacity>
+                                <TouchableOpacity onPress={() => setShow(false)}><Text style={{ color: theme.textSecondary, fontSize: 16 }}>{t('common.cancel')}</Text></TouchableOpacity>
+                                <Text style={[styles.timeModalTitle, { color: theme.textPrimary }]}>{t('settings.timePickerTitle')}</Text>
+                                <TouchableOpacity onPress={() => setShow(false)}><Text style={{ color: ACCENT_COLOR, fontSize: 16, fontWeight: '600' }}>{t('common.confirm')}</Text></TouchableOpacity>
                             </View>
                             <DateTimePicker value={getDate(value)} mode="time" is24Hour display="spinner" locale="he-IL" textColor={theme.textPrimary} style={{ height: 200 }}
                                 onChange={(e, d) => { if (d && e.type !== 'dismissed') onChange(fmt(d)); }} />
@@ -191,7 +192,7 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
       iconColor: '#FFFFFF',
       iconBg: theme.actionColors.food.color,
       title: t('settings.feedingReminder'),
-      getSubtitle: () => `כל ${settings.feedingIntervalHours} שעות`,
+      getSubtitle: () => t('settings.everyHours', { count: settings.feedingIntervalHours }),
       enabled: settings.feedingReminder,
       onToggle: (val) => updateSettings({ feedingReminder: val }),
       disabled: !settings.enabled,
@@ -206,7 +207,7 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
           />
           <View style={[styles.suppDivider, { backgroundColor: theme.divider }]} />
           <View style={styles.suppRow}>
-            <Text style={[styles.suppName, { color: theme.textPrimary }]}>שעת התחלה</Text>
+            <Text style={[styles.suppName, { color: theme.textPrimary }]}>{t('settings.startTimeLabel')}</Text>
             <CompactTimePicker
               value={settings.feedingStartTime || "08:00"}
               disabled={!settings.enabled}
@@ -222,8 +223,8 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
       iconBg: theme.actionColors.supplements.color,
       title: t('settings.supplementsReminder'),
       getSubtitle: () => supplements.length > 0
-        ? `${supplements.length} תוספים מוגדרים`
-        : 'כל יום בשעה שתבחרי',
+        ? t('settings.supplementsConfigured', { count: supplements.length })
+        : t('settings.everyDayAtYourTime'),
       enabled: settings.supplementReminder,
       onToggle: (val) => updateSettings({ supplementReminder: val }),
       disabled: !settings.enabled,
@@ -231,7 +232,7 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
         <View style={styles.cardChildContent}>
           {supplements.length === 0 ? (
             <Text style={[styles.emptySupplements, { color: theme.textSecondary }]}>
-              אין תוספים מוגדרים — הוסיפי תוספים בדף הבית
+              {t('settings.noSupplements')}
             </Text>
           ) : (
             supplements.map((supp, i) => {
@@ -304,13 +305,13 @@ export default function PremiumNotificationSettings({ supplements = [] }: Premiu
                 const granted = await notificationService.requestPermissions();
                 if (!granted) {
                   Alert.alert(
-                    'לא ניתן להפעיל התראות',
-                    'יש לאשר קבלת התראות בהגדרות המכשיר כדי להפעיל תזכורות.',
+                    t('settings.cannotEnableNotifications'),
+                    t('settings.enableNotificationsInSettings'),
                     [
-                      { text: t('common.cancel') || 'ביטול', style: 'cancel' },
-                      { 
-                        text: 'פתח הגדרות', 
-                        onPress: () => Linking.openSettings() 
+                      { text: t('common.cancel'), style: 'cancel' },
+                      {
+                        text: t('settings.openSettings'),
+                        onPress: () => Linking.openSettings()
                       }
                     ]
                   );

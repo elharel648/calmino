@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { useLanguage } from '../context/LanguageContext';
 import {
     Family,
     FamilyMember,
@@ -36,6 +37,9 @@ interface UseFamilyReturn {
 }
 
 export const useFamily = (): UseFamilyReturn => {
+    const { t } = useLanguage();
+    const tRef = useRef(t);
+    tRef.current = t;
     const [family, setFamily] = useState<Family | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -136,7 +140,7 @@ export const useFamily = (): UseFamilyReturn => {
             const result = await joinFamily(code);
             return { success: result.success, message: result.message };
         } catch (error) {
-            return { success: false, message: 'שגיאה בהצטרפות למשפחה. נסה שוב.' };
+            return { success: false, message: tRef.current('family.joinError') };
         }
     }, []);
 

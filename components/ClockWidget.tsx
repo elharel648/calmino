@@ -38,7 +38,7 @@ export default function ClockWidget({
         if (isRunning) {
             const timeStr = formatTime(currentTime);
             sendTimer({
-                title: isCountdown ? 'ספירה לאחור' : 'שעון עצר',
+                title: isCountdown ? t('clock.countdown') : t('clock.stopwatch'),
                 time: timeStr,
                 isRunning: true,
                 color: '#C8806A',
@@ -85,7 +85,7 @@ export default function ClockWidget({
                             {formatTime(currentTime)}
                         </Text>
                         <Text style={[styles.labelText, { color: theme.textSecondary }]}>
-                            {isCountdown ? 'ספירה לאחור' : 'שעון עצר'}
+                            {isCountdown ? t('clock.countdown') : t('clock.stopwatch')}
                         </Text>
                     </View>
 

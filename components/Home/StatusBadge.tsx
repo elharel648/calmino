@@ -32,13 +32,13 @@ const StatusBadge = memo<StatusBadgeProps>(({ babyName, status, onToggle }) => {
                 styles.statusBadge,
                 isSleeping ? styles.statusSleep : styles.statusAwake,
             ]}
-            accessibilityLabel={`${babyName} ${isSleeping ? 'ישנה' : 'ערה'}. לחץ לשינוי`}
+            accessibilityLabel={isSleeping ? t('status.accessSleeping', { name: babyName }) : t('status.accessAwake', { name: babyName })}
             accessibilityRole="button"
         >
             <Text style={styles.statusText}>
-                {isSleeping ? `${babyName} ישנה 😴` : `${babyName} ערה 😃`}
+                {isSleeping ? t('status.textSleeping', { name: babyName }) : t('status.textAwake', { name: babyName })}
             </Text>
-            <Text style={styles.statusSubText}>(לחץ לשינוי)</Text>
+            <Text style={styles.statusSubText}>({t('status.tapToChange')})</Text>
         </TouchableOpacity>
     );
 });

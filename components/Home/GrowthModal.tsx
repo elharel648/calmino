@@ -610,7 +610,7 @@ export default function GrowthModal({
                                                 <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.kg')}</Text>
                                             </View>
                                         </View>
-                                        {renderInputBadge('weight', weight, baby?.stats?.weight ? `${baby.stats.weight} ק״ג` : undefined)}
+                                        {renderInputBadge('weight', weight, baby?.stats?.weight ? `${baby.stats.weight} ${t('growth.kg')}` : undefined)}
                                     </View>
 
                                     {/* Height */}
@@ -639,7 +639,7 @@ export default function GrowthModal({
                                                 <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
                                             </View>
                                         </View>
-                                        {renderInputBadge('length', height, baby?.stats?.height ? `${baby.stats.height} ס״מ` : undefined)}
+                                        {renderInputBadge('length', height, baby?.stats?.height ? `${baby.stats.height} ${t('growth.cm')}` : undefined)}
                                     </View>
 
                                     {/* Head Circumference */}
@@ -668,7 +668,7 @@ export default function GrowthModal({
                                                 <Text style={[styles.unit, { color: theme.textTertiary }]}>{t('growth.cm')}</Text>
                                             </View>
                                         </View>
-                                        {renderInputBadge('head', headCircumference, baby?.stats?.headCircumference ? `${baby.stats.headCircumference} ס״מ` : undefined)}
+                                        {renderInputBadge('head', headCircumference, baby?.stats?.headCircumference ? `${baby.stats.headCircumference} ${t('growth.cm')}` : undefined)}
                                     </View>
                                 </View>
 

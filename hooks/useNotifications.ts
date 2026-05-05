@@ -2,6 +2,7 @@ import { logger } from '../utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { notificationService, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/notificationService';
+import { useLanguage } from '../context/LanguageContext';
 
 interface UseNotificationsReturn {
     settings: NotificationSettings;
@@ -17,6 +18,9 @@ interface UseNotificationsReturn {
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
+    const { t } = useLanguage();
+    const tRef = useRef(t);
+    tRef.current = t;
     const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
     const [isInitialized, setIsInitialized] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
@@ -127,7 +131,7 @@ export const useNotifications = (): UseNotificationsReturn => {
 
     // Send test notification
     const sendTestNotification = useCallback(async () => {
-        await notificationService.sendImmediate('feeding_reminder', 'זו התראת בדיקה! 🎉');
+        await notificationService.sendImmediate('feeding_reminder', tRef.current('notifications.testMessage'));
     }, []);
 
     return {

@@ -1,8 +1,9 @@
 import { logger } from '../utils/logger';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Location from 'expo-location';
 import { WeatherData } from '../types/home';
 import { weatherKitService } from '../services/weatherKitService';
+import { useLanguage } from '../context/LanguageContext';
 
 interface UseWeatherReturn {
     weather: WeatherData;
@@ -14,27 +15,32 @@ interface UseWeatherReturn {
  * Requires iOS 16+ and WeatherKit entitlement
  */
 export const useWeather = (): UseWeatherReturn => {
+    const { t } = useLanguage();
+    const tRef = useRef(t);
+    tRef.current = t;
+
     const [weather, setWeather] = useState<WeatherData>({
         temp: 24,
-        city: 'טוען...',
+        city: t('weather.loading'),
         icon: '☁️',
-        recommendation: 'טוען...',
+        recommendation: t('weather.loading'),
         loading: true,
     });
 
     const getRecommendation = useCallback((temp: number): string => {
-        if (temp >= 25) return 'חם ☀️ שכבה דקה.';
-        if (temp >= 20) return 'נעים 😎 שכבה ארוכה.';
-        if (temp >= 15) return 'קריר 🍃 שתי שכבות.';
-        return 'קר 🥶 לחמם טוב!';
+        const tFn = tRef.current;
+        if (temp >= 25) return tFn('weather.recHot');
+        if (temp >= 20) return tFn('weather.recWarm');
+        if (temp >= 15) return tFn('weather.recCool');
+        return tFn('weather.recCold');
     }, []);
 
     const getCityName = async (lat: number, lon: number): Promise<string> => {
         try {
             const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
-            return address?.city || address?.region || 'איזורך';
+            return address?.city || address?.region || tRef.current('weather.yourArea');
         } catch {
-            return 'איזורך';
+            return tRef.current('weather.yourArea');
         }
     };
 
@@ -48,7 +54,7 @@ export const useWeather = (): UseWeatherReturn => {
                 setWeather(prev => ({
                     ...prev,
                     loading: false,
-                    recommendation: 'אין גישה למיקום',
+                    recommendation: tRef.current('weather.noLocation'),
                     error: 'permission_denied',
                 }));
                 return;
@@ -76,9 +82,9 @@ export const useWeather = (): UseWeatherReturn => {
             logger.log('Weather fetch issue:', e);
             setWeather({
                 temp: 22,
-                city: 'ישראל',
+                city: tRef.current('weather.yourArea'),
                 icon: '☁️',
-                recommendation: 'בדוק חיבור 🔧',
+                recommendation: tRef.current('weather.checkConnection'),
                 loading: false,
                 error: 'fetch_failed',
             });

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Baby, Utensils, Moon, AlertCircle, Clock, Sparkles } from 'lucide-react-native';
 import { useSleepTimer } from '../../context/SleepTimerContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SmartStatusCardProps {
     babyName: string;
@@ -13,8 +14,8 @@ interface SmartStatusCardProps {
     onPress?: () => void;
 }
 
-// Calculate age from birth date
-const calculateAge = (birthDate: any): string => {
+// Calculate age from birth date — needs t() for locale-aware strings
+const calculateAge = (birthDate: any, t: (key: string, opts?: any) => string): string => {
     if (!birthDate) return '';
 
     const now = new Date();
@@ -32,17 +33,17 @@ const calculateAge = (birthDate: any): string => {
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays < 7) {
-        return `${diffDays} ימים`;
+        return t('age.days', { count: diffDays });
     } else if (diffDays < 30) {
         const weeks = Math.floor(diffDays / 7);
-        return `${weeks} שבועות`;
+        return t('age.weeks', { count: weeks });
     } else if (diffDays < 365) {
         const months = Math.floor(diffDays / 30);
-        return `${months} חודשים`;
+        return t('age.months', { count: months });
     } else {
         const years = Math.floor(diffDays / 365);
         const months = Math.floor((diffDays % 365) / 30);
-        return months > 0 ? `שנה ו-${months} חודשים` : 'שנה';
+        return months > 0 ? t('age.yearsMonths', { count: years, months }) : t('age.oneYear');
     }
 };
 
@@ -67,22 +68,26 @@ const getHoursSince = (timeStr: string): number => {
     return diffHours;
 };
 
-// Generate smart alert
-const getSmartAlert = (lastFeedTime: string, lastSleepTime: string, isSleeping: boolean): { text: string; icon: any; color: string } | null => {
+// Generate smart alert — needs t() for locale-aware strings
+const getSmartAlert = (
+    lastFeedTime: string,
+    lastSleepTime: string,
+    isSleeping: boolean,
+    t: (key: string) => string
+): { text: string; icon: any; color: string } | null => {
     if (isSleeping) {
-        return null; // Don't show alerts while sleeping
+        return null;
     }
 
     const hoursSinceFeed = getHoursSince(lastFeedTime);
     const hoursSinceSleep = getHoursSince(lastSleepTime);
 
-    // Priority: Feed > Sleep
     if (hoursSinceFeed >= 3) {
-        return { text: '🍼 הגיע זמן לאכול?', icon: Utensils, color: '#F59E0B' };
+        return { text: t('smartStatus.timeToEat'), icon: Utensils, color: '#F59E0B' };
     }
 
     if (hoursSinceSleep >= 2) {
-        return { text: '😴 אולי הגיע זמן לנמנם?', icon: Moon, color: '#C8806A' };
+        return { text: t('smartStatus.timeToNap'), icon: Moon, color: '#C8806A' };
     }
 
     return null;
@@ -96,12 +101,13 @@ const SmartStatusCard = memo(({
     onPress
 }: SmartStatusCardProps) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const { isRunning, elapsedSeconds, formatTime } = useSleepTimer();
 
-    const age = useMemo(() => calculateAge(birthDate), [birthDate]);
+    const age = useMemo(() => calculateAge(birthDate, t), [birthDate, t]);
     const alert = useMemo(
-        () => getSmartAlert(lastFeedTime, lastSleepTime, isRunning),
-        [lastFeedTime, lastSleepTime, isRunning]
+        () => getSmartAlert(lastFeedTime, lastSleepTime, isRunning, t),
+        [lastFeedTime, lastSleepTime, isRunning, t]
     );
 
     // Format last event
@@ -113,7 +119,7 @@ const SmartStatusCard = memo(({
         if (lastSleepTime && lastSleepTime !== '--:--') {
             parts.push(`😴 ${lastSleepTime}`);
         }
-        return parts.length > 0 ? parts.join(' • ') : 'עדיין אין תיעודים';
+        return parts.length > 0 ? parts.join(' • ') : t('smartStatus.noRecordings');
     }, [lastFeedTime, lastSleepTime]);
 
     return (
@@ -149,7 +155,7 @@ const SmartStatusCard = memo(({
                     <View style={styles.sleepingRow}>
                         <Moon size={18} color="#fff" />
                         <Text style={styles.sleepingText}>
-                            ישנ/ה כבר {formatTime(elapsedSeconds)}
+                            {t('smartStatus.sleepingFor', { time: formatTime(elapsedSeconds) })}
                         </Text>
                     </View>
                 ) : (

@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Alert, Platform, ActionSheetIOS } from 'react-native';
+import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
@@ -27,6 +28,7 @@ interface UseBabyProfileReturn {
 }
 
 export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
+    const { t } = useLanguage();
     const [baby, setBaby] = useState<BabyData | null>(null);
     const [loading, setLoading] = useState(true);
     const [savingImage, setSavingImage] = useState(false);
@@ -288,9 +290,9 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         if (Platform.OS === 'ios') {
             ActionSheetIOS.showActionSheetWithOptions(
                 {
-                    options: ['ביטול', 'צלם תמונה', 'בחר מהגלריה'],
+                    options: [t('photo.cancel'), t('photo.takePhoto'), t('photo.chooseFromGallery')],
                     cancelButtonIndex: 0,
-                    title: 'בחר מקור תמונה',
+                    title: t('photo.selectSource'),
                 },
                 async (buttonIndex) => {
                     logger.log('📱 Action sheet button pressed:', buttonIndex);
@@ -318,12 +320,12 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
         } else {
             // Android - use Alert for action sheet
             Alert.alert(
-                'בחר מקור תמונה',
+                t('photo.selectSource'),
                 '',
                 [
-                    { text: 'ביטול', style: 'cancel' },
+                    { text: t('photo.cancel'), style: 'cancel' },
                     {
-                        text: 'צלם תמונה',
+                        text: t('photo.takePhoto'),
                         onPress: async () => {
                             logger.log('📷 User selected camera (Android)');
                             const result = await takePhotoWithCamera(type);
@@ -335,7 +337,7 @@ export const useBabyProfile = (childId?: string): UseBabyProfileReturn => {
                         }
                     },
                     {
-                        text: 'בחר מהגלריה',
+                        text: t('photo.chooseFromGallery'),
                         onPress: async () => {
                             logger.log('📸 User selected gallery (Android)');
                             const result = await pickImageFromLibrary(type, monthIndex);

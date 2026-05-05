@@ -33,8 +33,6 @@ export const PrivacyContentES = ({ textColor, subtitleColor }: { textColor: stri
     • Datos de cuenta: nombre completo, dirección de correo electrónico, contraseña cifrada{'\n'}
     • Perfil del niño: nombre, fecha de nacimiento, género, foto de perfil{'\n'}
     • Datos de seguimiento: alimentación (hora, cantidad, tipo), sueño (horas de inicio/fin), cambios de pañal, suplementos nutricionales, vacunas, medicamentos, medidas de crecimiento (peso, altura, circunferencia de cabeza){'\n'}
-    • Datos de ubicación (GPS) — para permitir el descubrimiento de niñeras cercanas, la aplicación recopila datos de ubicación (exacta y aproximada) solo con su permiso explícito y durante el uso. Estos datos no se guardan en el historial, no se venden y el permiso se puede revocar en cualquier momento.{'\n'}
-    • Mensajes de chat enviados entre padres y niñeras a través de la aplicación{'\n'}
     • Notas y registros que ingresa manualmente{'\n'}
     • Fotos y momentos mágicos que elige guardar{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Información recopilada automáticamente:{'\n'}</Text>
@@ -50,7 +48,7 @@ export const PrivacyContentES = ({ textColor, subtitleColor }: { textColor: stri
     Usamos su información únicamente para estos fines:{'\n'}
     • Proporcionar, mantener y mejorar los servicios de la aplicación{'\n'}
     • Mostrar datos personales, gráficos y estadísticas{'\n'}
-    • Compartir datos con familiares y niñeras según los permisos que usted establezca{'\n'}
+    • Compartir datos con familiares según los permisos que usted establezca{'\n'}
     • Enviar notificaciones y recordatorios que usted solicitó explícitamente{'\n'}
     • Proporcionar soporte técnico{'\n'}
     • Cumplir con obligaciones legales{'\n'}
@@ -123,11 +121,10 @@ export const TermsContentES = ({ textColor, subtitleColor }: { textColor: string
     Calmino es una aplicación de seguimiento de salud para bebés y niños que permite:{'\n'}
     • Seguimiento de alimentación, sueño, pañales, suplementos, vacunas y medicamentos{'\n'}
     • Medición de indicadores y curvas de crecimiento{'\n'}
-    • Compartir datos con familiares y niñeras{'\n'}
+    • Compartir datos con familiares{'\n'}
     • Creación de estadísticas, informes y análisis{'\n'}
     • Registro de momentos mágicos e hitos{'\n'}
     • Gestión de recordatorios y notificaciones personalizadas{'\n'}
-    • Servicios de búsqueda de niñeras, coordinación de reservas y mensajería{'\n\n'}
     <Text style={styles.bold}>Edad mínima de uso: 16 años.</Text> El servicio no está destinado a usuarios menores de 16 años.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. Cuenta de usuario{'\n'}</Text>
@@ -140,7 +137,7 @@ export const TermsContentES = ({ textColor, subtitleColor }: { textColor: string
     <Text style={[styles.section, { color: textColor }]}>4. Uso permitido y prohibido{'\n'}</Text>
     <Text style={[styles.subsection, { color: textColor }]}>Permitido:{'\n'}</Text>
     • Uso personal y familiar para gestionar el cuidado de sus hijos{'\n'}
-    • Compartir datos con familiares y niñeras autorizados{'\n\n'}
+    • Compartir datos con familiares autorizados{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>Estrictamente prohibido:{'\n'}</Text>
     • Uso comercial sin licencia escrita{'\n'}
     • Subir contenido ilegal, ofensivo, engañoso o que viole derechos{'\n'}
@@ -168,13 +165,11 @@ export const TermsContentES = ({ textColor, subtitleColor }: { textColor: string
     • <Text style={styles.bold}>RevenueCat</Text> - Gestión de suscripciones y compras{'\n'}
     • <Text style={styles.bold}>Apple WeatherKit</Text> - Datos meteorológicos{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>8. Limitación de responsabilidad, descargo médico y servicios de niñera{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>8. Limitación de responsabilidad y descargo médico{'\n'}</Text>
     8.1 El servicio se proporciona <Text style={styles.bold}>"tal cual"</Text> sin garantía de ningún tipo.{'\n'}
     8.2 <Text style={styles.bold}>La aplicación no reemplaza el consejo médico profesional.</Text> Consulte siempre a un pediatra calificado.{'\n'}
-    8.3 <Text style={styles.bold}>Mercado de Niñeras — Renuncia Absoluta de Responsabilidad:</Text> Calmino proporciona una plataforma digital ("tablón de anuncios") que conecta a padres con niñeras independientes. <Text style={styles.bold}>La Empresa no es una agencia de empleo, no emplea a las niñeras, no las entrevista, no realiza verificaciones de antecedentes, integridad o antecedentes penales de ningún tipo, y no las respalda.</Text> Cualquier compromiso, empleo o encuentro facilitado a través de la App se realiza bajo el riesgo y responsabilidad exclusivos de los padres. Es su estricta obligación actuar con debida diligencia, solicitar identificación y verificar referencias antes de confiarles a sus hijos.{'\n'}
-    <Text style={styles.bold}>Renuncia Completa:</Text> Al usar la App para encontrar a una niñera, usted renuncia por la presente de manera completa, definitiva e irrevocable a cualquier reclamo, demanda o demanda contra Calmino, sus directores o empleados por cualquier daño directo o indirecto, daño corporal, daño a la propiedad, robo, negligencia o acto criminal causado por una niñera encontrada a través de la plataforma.{'\n'}
-    8.4 Calmino no es responsable de daños directos, indirectos, incidentales, especiales o consecuentes.{'\n'}
-    8.5 Nuestra responsabilidad total no excederá el monto pagado en el último año, o 200 ₪ — lo que sea menor.{'\n\n'}
+    8.3 Calmino no es responsable de daños directos, indirectos, incidentales, especiales o consecuentes.{'\n'}
+    8.4 Nuestra responsabilidad total no excederá el monto pagado en el último año, o 200 ₪ — lo que sea menor.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Propiedad intelectual{'\n'}</Text>
     Todos los derechos de la aplicación son propiedad exclusiva de Calmino y están protegidos por leyes de derechos de autor, marcas y patentes.{'\n\n'}

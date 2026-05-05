@@ -1293,16 +1293,16 @@ export default function LoginScreen({
             <View style={[styles.welcomeIconWrap, { backgroundColor: isDarkMode ? 'rgba(200, 128, 106, 0.15)' : 'rgba(200, 128, 106, 0.1)' }]}>
               <Check size={32} color="#C8806A" strokeWidth={2.5} />
             </View>
-            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>{"איזה כיף שהצטרפת!"}</Text>
+            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>{t('login.welcomeJoined')}</Text>
             <Text style={[styles.welcomeMessage, { color: theme.textSecondary }]}>
-              {"החשבון שלך נוצר בהצלחה.\nכל מה שנשאר עכשיו זה להתחבר ולהתחיל."}
+              {t('login.accountCreated')}
             </Text>
-            <TouchableOpacity 
-              style={[styles.welcomeBtn, { backgroundColor: theme.primary }]} 
-              onPress={() => { setShowSuccessModal(false); setIsLogin(true); }} 
+            <TouchableOpacity
+              style={[styles.welcomeBtn, { backgroundColor: theme.primary }]}
+              onPress={() => { setShowSuccessModal(false); setIsLogin(true); }}
               activeOpacity={0.85}
             >
-              <Text style={styles.welcomeBtnText}>{"בואו נתחיל"}</Text>
+              <Text style={styles.welcomeBtnText}>{t('login.letsStart')}</Text>
             </TouchableOpacity>
           </View>
         </View>

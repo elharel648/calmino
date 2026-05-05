@@ -21,7 +21,7 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
         }
 
         try {
-            const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message || 'עדכון מ-Calmino')}`;
+            const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message || t('export.shareDailySummary'))}`;
             const canOpen = await Linking.canOpenURL(whatsappUrl);
 
             if (canOpen) {
@@ -53,7 +53,7 @@ const ShareStatusButton = memo<ShareStatusButtonProps>(({ onShare, message }) =>
                 <Share2 size={14} color={theme.textTertiary} strokeWidth={1.8} />
             )}
             <Text style={[styles.text, { color: showSuccess ? theme.success : theme.textTertiary }]}>
-                {showSuccess ? 'נשלח!' : t('export.shareDailySummary')}
+                {showSuccess ? t('export.sent') : t('export.shareDailySummary')}
             </Text>
         </TouchableOpacity>
     );

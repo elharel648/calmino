@@ -47,8 +47,10 @@ export default function SettingsScreen() {
   const { t } = useLanguage();
   const navigation = useNavigation<any>();
   const { activeChild, refreshChildren } = useActiveChild();
-  const { baby, updateBasicInfo, updatePhoto, refresh, birthDateObj, babyAgeMonths } = useBabyProfile(activeChild?.childId);
-  const { family, isAdmin, members, rename: renameFamily, remove: removeMember, leave: leaveFamily } = useFamily();
+  let { baby, updateBasicInfo, updatePhoto, refresh, birthDateObj, babyAgeMonths } = useBabyProfile(activeChild?.childId);
+  let { family, isAdmin, members, rename: renameFamily, remove: removeMember, leave: leaveFamily } = useFamily();
+
+
   const { isPremium } = usePremium();
   const user = auth.currentUser;
 
@@ -56,8 +58,8 @@ export default function SettingsScreen() {
   const [joinModalVisible, setJoinModalVisible] = useState(false);
   const [isGuestInviteOpen, setIsGuestInviteOpen] = useState(false);
   const [isEditBasicInfoOpen, setIsEditBasicInfoOpen] = useState(false);
-  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(user?.photoURL || null);
   const [userName, setUserName] = useState<string>(user?.displayName || '');
+  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(user?.photoURL || null);
   const displayEmail = user?.email;
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
@@ -565,7 +567,7 @@ export default function SettingsScreen() {
                       </View>
                       <View style={[styles.memberAvatar, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
                         <Text style={[styles.memberInitial, { color: roleConfig.color }]}>
-                          {(member.name || 'מ').charAt(0).toUpperCase()}
+                          {(member.name || '?').charAt(0).toUpperCase()}
                         </Text>
                       </View>
                     </View>
@@ -574,6 +576,8 @@ export default function SettingsScreen() {
               </View>
             </Animated.View>
           )}
+
+
 
           {/* Family Actions - Premium Design with Visual Hierarchy */}
           {renderLockedSection(

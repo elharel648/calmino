@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, Minus, Plus, X, Scale, Ruler, Baby, Calendar,
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -57,6 +58,7 @@ const GrowthCharts = ({
     onAddEntry
 }: GrowthChartsProps) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [isLinear, setIsLinear] = useState(false);
     const [activeTab, setActiveTab] = useState<'weight' | 'height'>('weight');
     const [showAddModal, setShowAddModal] = useState(false);
@@ -81,10 +83,10 @@ const GrowthCharts = ({
         const std = standards[type];
         const month = Math.min(ageInMonths, 12);
 
-        if (value <= std.p3[month]) return 'מתחת לאחוזון 3';
-        if (value <= std.p50[month]) return `אחוזון ${Math.round((value - std.p3[month]) / (std.p50[month] - std.p3[month]) * 47 + 3)}`;
-        if (value <= std.p97[month]) return `אחוזון ${Math.round((value - std.p50[month]) / (std.p97[month] - std.p50[month]) * 47 + 50)}`;
-        return 'מעל אחוזון 97';
+        if (value <= std.p3[month]) return t('growth.belowPercentile3');
+        if (value <= std.p50[month]) return t('growth.percentileBand', { value: Math.round((value - std.p3[month]) / (std.p50[month] - std.p3[month]) * 47 + 3) });
+        if (value <= std.p97[month]) return t('growth.percentileBand', { value: Math.round((value - std.p50[month]) / (std.p97[month] - std.p50[month]) * 47 + 50) });
+        return t('growth.abovePercentile97');
     };
 
     // Get trend
@@ -105,7 +107,7 @@ const GrowthCharts = ({
 
     const handleAddEntry = () => {
         if (!newWeight && !newHeight) {
-            Alert.alert('שים לב', 'יש להזין לפחות משקל או גובה');
+            Alert.alert(t('growth.alertTitle'), t('growth.alertNoData'));
             return;
         }
 
@@ -135,7 +137,7 @@ const GrowthCharts = ({
         );
 
         return {
-            labels: labels.length > 0 ? labels : ['היום'],
+            labels: labels.length > 0 ? labels : [t('date.today')],
             datasets: [{ data: values.length > 0 ? values : [0] }],
         };
     }, [entries, activeTab]);
@@ -149,9 +151,9 @@ const GrowthCharts = ({
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     <Text style={[styles.title, { color: theme.textPrimary }]}>
-                        גרף גדילה {isLinear ? '(לינארי)' : '(אחוזונים)'}
+                        {isLinear ? t('growth.chartTitleLinear') : t('growth.chartTitlePercentile')}
                     </Text>
-                    <Text style={styles.ageText}>{ageInMonths} חודשים</Text>
+                    <Text style={styles.ageText}>{t('growth.ageMonths', { count: ageInMonths })}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity
@@ -210,7 +212,7 @@ const GrowthCharts = ({
 
                 <View style={styles.emptyChart}>
                     <Calendar size={32} color="#D1D5DB" />
-                    <Text style={styles.emptyText}>הוסף לפחות 2 מדידות לראות גרף</Text>
+                    <Text style={styles.emptyText}>{t('growth.noDataHint')}</Text>
                 </View>
             )}
 
@@ -223,38 +225,38 @@ const GrowthCharts = ({
                                 <X size={22} color="#6B7280" />
                             </TouchableOpacity>
                             <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
-                                הוסף מדידה
+                                {t('growth.addMeasurement')}
                             </Text>
                             <View style={{ width: 22 }} />
                         </View>
 
                         <View style={styles.inputRow}>
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>משקל (ק"ג)</Text>
+                                <Text style={styles.inputLabel}>{t('growth.weightInputLabel')}</Text>
                                 <TextInput
                                     style={[styles.input, { color: theme.textPrimary }]}
                                     value={newWeight}
                                     onChangeText={setNewWeight}
                                     keyboardType="decimal-pad"
-                                    placeholder="לדוגמה: 7.5"
+                                    placeholder={t('growth.weightExample')}
                                     placeholderTextColor="#9CA3AF"
                                 />
                             </View>
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>גובה (ס"מ)</Text>
+                                <Text style={styles.inputLabel}>{t('growth.heightInputLabel')}</Text>
                                 <TextInput
                                     style={[styles.input, { color: theme.textPrimary }]}
                                     value={newHeight}
                                     onChangeText={setNewHeight}
                                     keyboardType="decimal-pad"
-                                    placeholder="לדוגמה: 65"
+                                    placeholder={t('growth.heightExample')}
                                     placeholderTextColor="#9CA3AF"
                                 />
                             </View>
                         </View>
 
                         <TouchableOpacity style={styles.saveButton} onPress={handleAddEntry}>
-                            <Text style={styles.saveButtonText}>שמור</Text>
+                            <Text style={styles.saveButtonText}>{t('common.save')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

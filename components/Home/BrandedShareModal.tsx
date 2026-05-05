@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { X, Share2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const FRAME_WIDTH = SCREEN_WIDTH * 0.88;
@@ -38,10 +39,11 @@ export default function BrandedShareModal({
     babyName,
 }: BrandedShareModalProps) {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const frameRef = useRef<View>(null);
     const [isSharing, setIsSharing] = useState(false);
 
-    const monthLabel = month === 0 ? 'יום הלידה' : `חודש ${month}`;
+    const monthLabel = month === 0 ? t('share.birthdayLabel') : t('share.monthLabel', { month });
 
     const handleShare = async () => {
         if (!frameRef.current) return;
@@ -62,7 +64,7 @@ export default function BrandedShareModal({
             if (isAvailable) {
                 await Sharing.shareAsync(uri, {
                     mimeType: 'image/png',
-                    dialogTitle: `רגע קסום של ${babyName}`,
+                    dialogTitle: t('share.magicMomentTitle', { name: babyName }),
                     UTI: 'public.png',
                 });
             }

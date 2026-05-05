@@ -21,7 +21,7 @@ export default function ExportTimelineButton() {
 
     const handleExport = async () => {
         if (!activeChild?.childId || !activeChild?.childName) {
-            Alert.alert(t('common.error'), 'לא נמצא ילד פעיל');
+            Alert.alert(t('common.error'), t('export.noActiveChild'));
             return;
         }
 
@@ -46,12 +46,12 @@ export default function ExportTimelineButton() {
             });
 
             if (success) {
-                Alert.alert('הצלחה!', 'הדוח יוצא בהצלחה');
+                Alert.alert(t('common.successTitle'), t('export.exportSuccess'));
             } else {
-                Alert.alert(t('common.error'), 'לא הצלחנו לייצא את הדוח');
+                Alert.alert(t('common.error'), t('export.exportFailed'));
             }
         } catch (error) {
-            Alert.alert(t('common.error'), 'משהו השתבש בייצוא');
+            Alert.alert(t('common.error'), t('export.exportError'));
         } finally {
             setExporting(false);
         }
@@ -69,7 +69,7 @@ export default function ExportTimelineButton() {
             ) : (
                 <>
                     <FileDown size={18} color="#FFF" strokeWidth={2} />
-                    <Text style={styles.buttonText}>ייצא PDF לרופא</Text>
+                    <Text style={styles.buttonText}>{t('export.exportPdfForDoctor')}</Text>
                 </>
             )}
         </TouchableOpacity>

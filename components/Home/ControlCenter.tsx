@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { Check, Lock, Zap, ChevronDown, ChevronUp, EyeOff, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useQuickActions, QuickActionKey } from '../../context/QuickActionsContext';
 import { QUICK_ACTION_BASE_CONFIG } from './quickActionsConfig';
 
@@ -31,28 +32,16 @@ const STORAGE_KEY_HIDDEN_SECTIONS = '@cc_hidden_sections';
 const INSTANT_ACTIONS = new Set<QuickActionKey>(['sleep', 'whiteNoise', 'whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain', 'breastfeeding', 'breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping']);
 
 // ─── Available actions organized by section ────────────────────────────────────
-const SECTIONS: { title: string; items: QuickActionKey[]; cols?: 2 | 3 }[] = [
-    { title: 'שינה', items: ['sleep'] },
-    { title: 'האכלה', items: ['breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping', 'food', 'diaper'] },
-    { title: 'רעש לבן', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'], cols: 2 },
-    { title: 'בריאות', items: ['healthDoctor', 'healthVaccines', 'healthIllness', 'healthTemperature', 'healthMedications', 'healthTipatHalav', 'healthAllergies', 'healthHistory'] },
-    { title: 'כלים', items: ['nightLight', 'quickReminder', 'growth', 'milestones', 'sos'] },
+const SECTION_DEFS: { titleKey: string; items: QuickActionKey[]; cols?: 2 | 3 }[] = [
+    { titleKey: 'controlCenter.section.sleep',      items: ['sleep'] },
+    { titleKey: 'controlCenter.section.feeding',    items: ['breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping', 'food', 'diaper'] },
+    { titleKey: 'controlCenter.section.whiteNoise', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'], cols: 2 },
+    { titleKey: 'controlCenter.section.health',     items: ['healthDoctor', 'healthVaccines', 'healthIllness', 'healthTemperature', 'healthMedications', 'healthTipatHalav', 'healthAllergies', 'healthHistory'] },
+    { titleKey: 'controlCenter.section.tools',      items: ['nightLight', 'quickReminder', 'growth', 'milestones', 'sos'] },
 ];
 
 // Only keys that exist in sections are valid selections
-const VALID_KEYS = new Set(SECTIONS.flatMap(s => s.items));
-
-const LABEL_MAP: Partial<Record<QuickActionKey, string>> = {
-    breastfeeding: 'הנקה', breastfeedingRight: 'הנקה R', breastfeedingLeft: 'הנקה L',
-    bottle: 'בקבוק', pumping: 'שאיבה', diaper: 'החתלה', sleep: 'שינה', food: 'אוכל',
-    whiteNoise: 'רעש לבן', whiteNoiseLullaby: 'שיר ערש', whiteNoiseGentle: 'מוזיקה עדינה',
-    whiteNoiseBirds: 'ציפורים', whiteNoiseRain: 'גשם',
-    healthDoctor: 'ביקור רופא', healthVaccines: 'חיסונים', healthIllness: 'מחלות',
-    healthTemperature: 'טמפרטורה', healthMedications: 'תרופות', healthTipatHalav: 'טיפת חלב',
-    healthAllergies: 'אלרגיות', healthHistory: 'היסטוריה',
-    nightLight: 'פנס לילה', quickReminder: 'תזכורת', health: 'בריאות',
-    growth: 'צמיחה', milestones: 'אבני דרך', sos: 'SOS',
-};
+const VALID_KEYS = new Set(SECTION_DEFS.flatMap(s => s.items));
 
 interface Props {
     visible: boolean;
@@ -61,6 +50,7 @@ interface Props {
 
 const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const { sosActions, setSosActions } = useQuickActions();
 
@@ -191,7 +181,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>קיצורי לחיצה מהירה</Text>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>{t('controlCenter.title')}</Text>
                         <TouchableOpacity
                             onPress={() => setEditMode(e => !e)}
                             style={[styles.editModeBtn, { backgroundColor: editMode ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)') }]}
@@ -202,8 +192,8 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
 
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         {editMode
-                            ? 'לחץ על עין להסתיר/להציג קטגוריה'
-                            : `בחר עד ${MAX} קיצורים שיופיעו בלחיצה על "+" (${selected.length}/${MAX})`
+                            ? t('controlCenter.editHint')
+                            : t('controlCenter.subtitle', { count: selected.length, max: MAX })
                         }
                     </Text>
 
@@ -228,7 +218,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                         activeOpacity={0.75}
                                     >
                                         <Icon size={12} color="#fff" strokeWidth={2} />
-                                        <Text style={styles.chipLabel}>{LABEL_MAP[key] ?? key}</Text>
+                                        <Text style={styles.chipLabel}>{t(QUICK_ACTION_BASE_CONFIG[key]?.labelKey ?? key)}</Text>
                                         <X size={10} color="rgba(255,255,255,0.75)" strokeWidth={2.5} />
                                     </TouchableOpacity>
                                 );
@@ -239,22 +229,23 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                     {showMaxHint && (
                         <View style={[styles.maxHint, { backgroundColor: isDarkMode ? 'rgba(255,100,80,0.15)' : 'rgba(200,80,60,0.08)', borderColor: isDarkMode ? 'rgba(255,100,80,0.3)' : 'rgba(200,80,60,0.2)' }]}>
                             <Text style={[styles.maxHintText, { color: isDarkMode ? '#FF7060' : '#C8503C' }]}>
-                                הגעת למקסימום — בטל בחירה קיימת כדי להוסיף
+                                {t('controlCenter.maxReached')}
                             </Text>
                         </View>
                     )}
 
                     <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-                        {SECTIONS.map(section => {
-                            const isHidden = hiddenSections.has(section.title);
-                            const isCollapsed = collapsedSections.has(section.title);
+                        {SECTION_DEFS.map(section => {
+                            const isHidden = hiddenSections.has(section.titleKey);
+                            const isCollapsed = collapsedSections.has(section.titleKey);
+                            const sectionLabel = t(section.titleKey);
 
                             return (
-                                <View key={section.title} style={[styles.section, isHidden && styles.sectionHidden]}>
+                                <View key={section.titleKey} style={[styles.section, isHidden && styles.sectionHidden]}>
                                     {/* Section header — tappable to collapse, shows hide button in edit mode */}
                                     <TouchableOpacity
                                         style={styles.sectionHeader}
-                                        onPress={() => !editMode && toggleCollapse(section.title)}
+                                        onPress={() => !editMode && toggleCollapse(section.titleKey)}
                                         activeOpacity={editMode ? 1 : 0.6}
                                     >
                                         <View style={styles.sectionHeaderLeft}>
@@ -265,12 +256,12 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                             )}
                                         </View>
                                         <Text style={[styles.sectionTitle, { color: isHidden ? (isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)') : sectionTitleColor }]}>
-                                            {section.title}
-                                            {isHidden ? '  (מוסתר)' : ''}
+                                            {sectionLabel}
+                                            {isHidden ? `  ${t('controlCenter.hidden')}` : ''}
                                         </Text>
                                         {editMode && (
                                             <TouchableOpacity
-                                                onPress={() => toggleHideSection(section.title)}
+                                                onPress={() => toggleHideSection(section.titleKey)}
                                                 style={[styles.hideSectionBtn, { backgroundColor: isHidden ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)') }]}
                                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                             >
@@ -311,7 +302,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                                                     >
                                                         <Icon size={22} color={isSelected ? '#fff' : colors.color} strokeWidth={2} />
                                                         <Text style={[styles.itemLabel, { color: isSelected ? '#fff' : theme.textPrimary }]} numberOfLines={2}>
-                                                            {LABEL_MAP[key] ?? key}
+                                                            {t(config.labelKey)}
                                                         </Text>
                                                         {isSelected && (
                                                             <View style={styles.checkBadge}>
@@ -346,7 +337,7 @@ const ControlCenter: React.FC<Props> = ({ visible, onClose }) => {
                         disabled={selected.length === 0}
                         activeOpacity={0.85}
                     >
-                        <Text style={styles.saveBtnText}>שמור קיצורים ({selected.length}/{MAX})</Text>
+                        <Text style={styles.saveBtnText}>{t('controlCenter.save', { count: selected.length, max: MAX })}</Text>
                     </TouchableOpacity>
                 </View>
             </Animated.View>

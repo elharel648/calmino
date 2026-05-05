@@ -28,6 +28,7 @@ import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence,
 import SwipeableRow from '../SwipeableRow';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLanguage } from '../../context/LanguageContext';
+import * as Localization from 'expo-localization';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -48,17 +49,17 @@ interface AllergyEntry {
     note?: string;
 }
 
-const PRESET_ALLERGENS: { key: string; name: string; icon: LucideIcon }[] = [
-    { key: 'milk', name: 'חלב', icon: Milk },
-    { key: 'eggs', name: 'ביצים', icon: Egg },
-    { key: 'peanuts', name: 'בוטנים', icon: Bean },
-    { key: 'treeNuts', name: 'אגוזים', icon: Nut },
-    { key: 'soy', name: 'סויה', icon: Bean },
-    { key: 'wheat', name: 'חיטה/גלוטן', icon: Wheat },
-    { key: 'fish', name: 'דגים', icon: Fish },
-    { key: 'sesame', name: 'שומשום', icon: CircleDot },
-    { key: 'medication', name: 'תרופות', icon: Pill },
-    { key: 'dust', name: 'אבק', icon: Wind },
+const PRESET_ALLERGENS: { key: string; name: string; labelKey: string; icon: LucideIcon }[] = [
+    { key: 'milk', name: 'חלב', labelKey: 'health.allergenMilk', icon: Milk },
+    { key: 'eggs', name: 'ביצים', labelKey: 'health.allergenEggs', icon: Egg },
+    { key: 'peanuts', name: 'בוטנים', labelKey: 'health.allergenPeanuts', icon: Bean },
+    { key: 'treeNuts', name: 'אגוזים', labelKey: 'health.allergenTreeNuts', icon: Nut },
+    { key: 'soy', name: 'סויה', labelKey: 'health.allergenSoy', icon: Bean },
+    { key: 'wheat', name: 'חיטה/גלוטן', labelKey: 'health.allergenWheat', icon: Wheat },
+    { key: 'fish', name: 'דגים', labelKey: 'health.allergenFish', icon: Fish },
+    { key: 'sesame', name: 'שומשום', labelKey: 'health.allergenSesame', icon: CircleDot },
+    { key: 'medication', name: 'תרופות', labelKey: 'health.allergenMedication', icon: Pill },
+    { key: 'dust', name: 'אבק', labelKey: 'health.allergenDust', icon: Wind },
 ];
 
 interface HealthOption {
@@ -69,16 +70,22 @@ interface HealthOption {
     iconColor: string;
 }
 
-// Common illnesses and medications
-const COMMON_ILLNESSES = [
-    'אדמת', 'אבעבועות רוח', 'ברונכיטיס', 'דלקת הגרון', 'דלקת אוזניים',
-    'זיהום בדרכי הנשימה', 'כאבי בקיעת שיניים', 'נזלת', 'קר', 'שלשול',
-    'שפעת', 'שיעול יבש', 'שיעול רטוב', 'חום'
-];
-
-const COMMON_MEDICATIONS = [
-    'אנטיביוטיקה', 'אנטי דלקתי', 'הקלה בכאב', 'ויטמין C', 'ויטמין D',
-    'טיפות', 'מחטא', 'נוגד חום', 'פרוביוטיקה', 'תרסיסים'
+// Common illnesses — name kept for Firestore storage, labelKey for display
+const COMMON_ILLNESSES: { name: string; labelKey: string }[] = [
+    { name: 'אדמת', labelKey: 'health.illnessRubella' },
+    { name: 'אבעבועות רוח', labelKey: 'health.illnessChickenpox' },
+    { name: 'ברונכיטיס', labelKey: 'health.illnessBronchitis' },
+    { name: 'דלקת הגרון', labelKey: 'health.illnessThroat' },
+    { name: 'דלקת אוזניים', labelKey: 'health.illnessEar' },
+    { name: 'זיהום בדרכי הנשימה', labelKey: 'health.illnessRespiratory' },
+    { name: 'כאבי בקיעת שיניים', labelKey: 'health.illnessTeething' },
+    { name: 'נזלת', labelKey: 'health.illnessRunnyNose' },
+    { name: 'קר', labelKey: 'health.illnessCold' },
+    { name: 'שלשול', labelKey: 'health.illnessDiarrhea' },
+    { name: 'שפעת', labelKey: 'health.illnessFlu' },
+    { name: 'שיעול יבש', labelKey: 'health.illnessDryCough' },
+    { name: 'שיעול רטוב', labelKey: 'health.illnessWetCough' },
+    { name: 'חום', labelKey: 'health.illnessFever' },
 ];
 
 // Health Options will be defined inside the component to use ThemeContext
@@ -143,8 +150,8 @@ const AnimatedVaccineRow = ({ vaccine, isDone, justCompleted, theme, isDarkMode,
     const dateVal = isDone && typeof vaccineData === 'object' ? (vaccineData as any)?.date : null;
     const dateStr = dateVal
         ? (dateVal?.seconds
-            ? new Date(dateVal.seconds * 1000).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })
-            : new Date(dateVal).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }))
+            ? new Date(dateVal.seconds * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+            : new Date(dateVal).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))
         : '';
 
     const animatedBg = rowBg.interpolate({
@@ -256,16 +263,35 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(visible || false);
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
-    const HEALTH_OPTIONS: HealthOption[] = useMemo(() => [
-        { key: 'doctor', label: 'health.doctorVisit', description: 'רישום ומעקב ביקורי רופא', icon: Stethoscope, iconColor: theme.actionColors.health.color },
-        { key: 'vaccines', label: 'health.vaccines', description: 'מעקב חיסוני שגרה', icon: Syringe, iconColor: theme.actionColors.tools.color },
-        { key: 'illness', label: 'health.illnesses', description: 'תיעוד מחלות ותסמינים', icon: Heart, iconColor: theme.actionColors.sos.color },
-        { key: 'temperature', label: 'health.temperature', description: 'מדידת חום ומעקב מגמות', icon: Thermometer, iconColor: theme.actionColors.food.color },
-        { key: 'medications', label: 'health.medications', description: 'ניהול תרופות ותזכורות', icon: Pill, iconColor: theme.actionColors.supplements.color },
-        { key: 'tipat_halav', label: 'health.tipatHalav', description: 'מציאת תחנה קרובה', icon: MapPin, iconColor: theme.actionColors.growth.color },
-        { key: 'allergies' as HealthScreen, label: 'health.allergies', description: 'רישום ומעקב אלרגיות', icon: ShieldAlert, iconColor: theme.actionColors.sos.color },
-        { key: 'history', label: 'health.history', description: 'צפייה בכל הרשומות', icon: ClipboardList, iconColor: theme.actionColors.custom.color },
-    ], [theme]);
+    const HEALTH_OPTIONS: HealthOption[] = useMemo(() => {
+        const options: HealthOption[] = [
+            { key: 'doctor', label: 'health.doctorVisit', description: t('health.descDoctor'), icon: Stethoscope, iconColor: theme.actionColors.health.color },
+            { key: 'vaccines', label: 'health.vaccines', description: t('health.descVaccines'), icon: Syringe, iconColor: theme.actionColors.tools.color },
+            { key: 'illness', label: 'health.illnesses', description: t('health.descIllness'), icon: Heart, iconColor: theme.actionColors.sos.color },
+            { key: 'temperature', label: 'health.temperature', description: t('health.descTemperature'), icon: Thermometer, iconColor: theme.actionColors.food.color },
+            { key: 'medications', label: 'health.medications', description: t('health.descMedications'), icon: Pill, iconColor: theme.actionColors.supplements.color },
+            { key: 'tipat_halav', label: 'health.tipatHalav', description: t('health.descTipatHalav'), icon: MapPin, iconColor: theme.actionColors.growth.color },
+            { key: 'allergies' as HealthScreen, label: 'health.allergies', description: t('health.descAllergies'), icon: ShieldAlert, iconColor: theme.actionColors.sos.color },
+            { key: 'history', label: 'health.history', description: t('health.descHistory'), icon: ClipboardList, iconColor: theme.actionColors.custom.color },
+        ];
+
+        // Filter out Israel-only features if not in Israel
+        let isIsrael = true; // Default to true (Israel) if check fails
+        try {
+            const locales = Localization.getLocales();
+            const region = Localization.region;
+            isIsrael = locales?.[0]?.regionCode === 'IL' || region === 'IL';
+        } catch (e) {
+            // If native module is not yet linked/built, keep features visible to avoid disruption
+            console.warn('Localization module not found, defaulting to Israel region');
+        }
+
+        if (!isIsrael) {
+            return options.filter(opt => opt.key !== 'vaccines' && opt.key !== 'tipat_halav');
+        }
+
+        return options;
+    }, [theme, t]);
 
     const scaleAnims = useRef(HEALTH_OPTIONS.map(() => new Animated.Value(1))).current;
 
@@ -494,8 +520,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             const babyDoc = await getDoc(doc(db, 'babies', activeChild.childId));
             if (babyDoc.exists()) {
                 const data = babyDoc.data();
-                setVaccines(data.vaccines || {});
-                setCustomVaccines(data.customVaccines || []);
+
             }
         } catch (error) {
             logger.log('Error loading vaccines:', error);
@@ -555,11 +580,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 // 1. Add to Health History (healthLog)
                 const vaccineName = VACCINE_SCHEDULE.flatMap(g => g.vaccines).find(v => v.key === key)?.name || key;
                 const vaccineDate = timestamp.toDate();
-                const dateStr = vaccineDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+                const dateStr = vaccineDate.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
                 const historyEntry = {
                     type: 'vaccine',
                     name: vaccineName,
-                    note: `בוצע: ${dateStr}`,
+                    note: t('health.performedOn', { date: dateStr }),
+                    isDone: true,
                     timestamp: timestamp.toDate().toISOString()
                 };
                 await updateDoc(doc(db, 'babies', childId), { healthLog: arrayUnion(historyEntry) });
@@ -569,7 +595,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 await saveEventToFirebase(user.uid, childId, {
                     type: 'custom',
                     subType: 'vaccine',
-                    note: `חיסון: ${vaccineName}`,
+                    note: t('health.vaccineNote', { name: vaccineName }),
                     timestamp: date || new Date()
                 });
             }
@@ -677,10 +703,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             endDate.setMinutes(endDate.getMinutes() + 30);
 
             await ExpoCalendar.createEventAsync(defaultCal.id, {
-                title: `חיסון: ${vaccineName}`,
+                title: t('health.vaccineTitle', { name: vaccineName }),
                 startDate,
                 endDate,
-                notes: `תזכורת חיסון לתינוק - ${vaccineName}`,
+                notes: t('health.vaccineAppointmentNote', { name: vaccineName }),
                 alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }], // 1hr and 1day before
             });
 
@@ -689,7 +715,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 const appointmentEntry = {
                     type: 'vaccine',
                     name: vaccineName,
-                    note: `תור חיסון: ${vaccineName} - ${startDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+                    note: t('health.vaccineTitleCalendar', { name: vaccineName, date: startDate.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) }),
                     timestamp: new Date().toISOString(),
                     appointmentDate: startDate.toISOString(),
                 };
@@ -702,7 +728,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 await saveEventToFirebase(user.uid, childId, {
                     type: 'custom',
                     subType: 'vaccine',
-                    note: `תור חיסון: ${vaccineName} (${startDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })})`,
+                    note: t('health.vaccineNote', { name: vaccineName }),
                     timestamp: new Date(),
                 });
             }
@@ -1132,11 +1158,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                     </View>
                                     
                                     <Text style={[styles.datePickerTitle, { textAlign: 'center', marginBottom: 8 }]}>
-                                        {t('health.removeVaccineTitle') || 'ביטול סימון חיסון'}
+                                        {t('health.removeVaccineTitle')}
                                     </Text>
                                     
                                     <Text style={{ fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
-                                        {t('health.removeVaccineMessage') || 'האם אתה בטוח שברצונך לבטל את סימון החיסון?'}
+                                        {t('health.removeVaccineMessage')}
                                     </Text>
 
                                     <View style={{ flexDirection: 'row-reverse', gap: 12, width: '100%' }}>
@@ -1147,14 +1173,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                                 setUnmarkVaccineKey(null);
                                             }}
                                         >
-                                            <Text style={styles.datePickerConfirmText}>{t('common.confirm') || 'אישור'}</Text>
+                                            <Text style={styles.datePickerConfirmText}>{t('common.confirm')}</Text>
                                         </TouchableOpacity>
                                         
                                         <TouchableOpacity 
                                             style={[styles.datePickerCancel, { flex: 1, alignItems: 'center' }]} 
                                             onPress={() => setUnmarkVaccineKey(null)}
                                         >
-                                            <Text style={styles.datePickerCancelText}>{t('common.cancel') || 'ביטול'}</Text>
+                                            <Text style={styles.datePickerCancelText}>{t('common.cancel')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -1175,7 +1201,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>
                 <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                     <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}>
-                        {doneVaccines}/{totalVaccines} {t('health.vaccinesCompleted') || 'חיסונים הושלמו'}
+                        {doneVaccines}/{totalVaccines} {t('health.vaccinesCompleted')}
                     </Text>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#94A3B8' }}>
                         {Math.round(progress * 100)}%
@@ -1209,10 +1235,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
                         <Text style={{ fontSize: 16, fontWeight: '700', color: '#94A3B8', textAlign: 'right', marginBottom: 2 }}>
-                            כל הכבוד!
+                            {t('health.allVaccinesDoneTitle')}
                         </Text>
                         <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: 'right' }}>
-                            השלמתם את כל חיסוני השגרה המומלצים בהצלחה.
+                            {t('health.allVaccinesDoneMsg')}
                         </Text>
                     </View>
                 </View>
@@ -1237,7 +1263,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     </View>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
                         <Text style={{ fontSize: 11, color: '#94A3B8', fontWeight: '600', marginBottom: 2 }}>
-                            {t('health.nextVaccine') || 'החיסון הבא'}
+                            {t('health.nextVaccine')}
                         </Text>
                         <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary, textAlign: 'right' }}>
                             {nextVaccine.name}
@@ -1406,7 +1432,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                 <Text style={[styles.vaccineName, { textAlign: 'right' }]}>{vaccine.name}</Text>
                                 {vaccine.date && (
                                     <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, fontWeight: '500' }}>
-                                        נוסף: {new Date(vaccine.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {t('health.vaccineAdded')} {new Date(vaccine.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </Text>
                                 )}
                             </View>
@@ -1636,19 +1662,19 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
 
             {/* Doctor Name */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('health.doctorName') || 'שם הרופא'}</Text>
+                <Text style={styles.inputLabel}>{t('health.doctorName')}</Text>
                 <TextInput
                     style={styles.textInput}
                     value={doctorName}
                     onChangeText={setDoctorName}
-                    placeholder={t('health.doctorNamePlaceholder') || 'ד"ר...'}
+                    placeholder={t('health.doctorNamePlaceholder')}
                     placeholderTextColor="#9CA3AF"
                 />
             </View>
 
             {/* Visit Date */}
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('health.visitDate') || 'תאריך הביקור'}</Text>
+                <Text style={styles.inputLabel}>{t('health.visitDate')}</Text>
                 <TouchableOpacity
                     style={{
                         flexDirection: 'row-reverse',
@@ -1663,7 +1689,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     onPress={() => setShowDoctorDatePicker(!showDoctorDatePicker)}
                 >
                     <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>
-                        {doctorVisitDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {doctorVisitDate.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                     </Text>
                     <CalendarPlus size={18} color={theme.textSecondary} />
                 </TouchableOpacity>
@@ -1733,7 +1759,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                             <Image source={{ uri: doctorPhoto }} style={styles.uploadPreview} />
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                 <Check size={14} color="#10B981" strokeWidth={2.5} />
-                                <Text style={styles.uploadButtonTextSuccess}>תמונה הועלתה</Text>
+                                <Text style={styles.uploadButtonTextSuccess}>{t('health.photoUploaded')}</Text>
                             </View>
                         </>
                     ) : (
@@ -1813,11 +1839,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             <View style={styles.chipsContainerRTL}>
                 {COMMON_ILLNESSES.map(illness => (
                     <TouchableOpacity
-                        key={illness}
-                        style={[styles.chip, selectedIllness === illness && styles.chipActive]}
-                        onPress={() => { setSelectedIllness(illness); setCustomIllness(''); }}
+                        key={illness.name}
+                        style={[styles.chip, selectedIllness === illness.name && styles.chipActive]}
+                        onPress={() => { setSelectedIllness(illness.name); setCustomIllness(''); }}
                     >
-                        <Text style={[styles.chipText, selectedIllness === illness && styles.chipTextActive]}>{illness}</Text>
+                        <Text style={[styles.chipText, selectedIllness === illness.name && styles.chipTextActive]}>{t(illness.labelKey)}</Text>
                     </TouchableOpacity>
                 ))}
                 {/* Plus button for custom illness */}
@@ -1832,12 +1858,12 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             {/* Custom illness input */}
             {selectedIllness === 'custom' && (
                 <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>שם המחלה</Text>
+                    <Text style={styles.inputLabel}>{t('health.illnessNameLabel')}</Text>
                     <TextInput
                         style={styles.textInput}
                         value={customIllness}
                         onChangeText={setCustomIllness}
-                        placeholder="כתוב שם מחלה..."
+                        placeholder={t('health.illnessNamePlaceholder')}
                         placeholderTextColor="#9CA3AF"
                     />
                 </View>
@@ -1866,7 +1892,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Clock size={14} color="#EF4444" />
                         <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>
-                            {illnessStartDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {illnessStartDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                         </Text>
                     </View>
                 </TouchableOpacity>
@@ -1885,7 +1911,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                             style={{ height: 160 }}
                         />
                         <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessStartPicker(false)}>
-                            <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>אישור</Text>
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: '#EF4444' }}>{t('common.confirm')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -1917,7 +1943,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                 borderColor: illnessOngoing ? '#FECACA' : theme.border,
                             }}
                         >
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: illnessOngoing ? '#EF4444' : '#9CA3AF' }}>כן</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: illnessOngoing ? '#EF4444' : '#9CA3AF' }}>{t('common.yes')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => { setIllnessOngoing(false); setIllnessEndDate(new Date()); }}
@@ -1950,11 +1976,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                             }}
                             onPress={() => setShowIllnessEndPicker(!showIllnessEndPicker)}
                         >
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>סיום / החלמה</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>{t('health.illnessEnd')}</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <Clock size={14} color="#10B981" />
                                 <Text style={{ fontSize: 15, fontWeight: '700', color: '#10B981' }}>
-                                    {illnessEndDate?.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }) || '-'}
+                                    {illnessEndDate?.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) || '-'}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -1974,7 +2000,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                     style={{ height: 160 }}
                                 />
                                 <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB' }} onPress={() => setShowIllnessEndPicker(false)}>
-                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#10B981' }}>אישור</Text>
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#10B981' }}>{t('common.confirm')}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -2000,7 +2026,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 {!illnessOngoing && illnessEndDate && (
                     <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 10, padding: 10, alignItems: 'center' }}>
                         <Text style={{ fontSize: 13, color: '#6B7280' }}>
-                            משך: {Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24)))} ימים
+                            {t('health.illnessDuration', { days: Math.max(1, Math.ceil((illnessEndDate.getTime() - illnessStartDate.getTime()) / (1000 * 60 * 60 * 24))) })}
                         </Text>
                     </View>
                 )}
@@ -2132,7 +2158,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 onPress={() => setCurrentScreen('medications_add' as any)}
             >
                 <Plus size={20} color={theme.actionColors.supplements.color} />
-                <Text style={[styles.addVaccineBtnText, { color: theme.actionColors.supplements.color }]}>הוסף תרופה חדשה</Text>
+                <Text style={[styles.addVaccineBtnText, { color: theme.actionColors.supplements.color }]}>{t('health.addMedication')}</Text>
             </TouchableOpacity>
 
             {loadingMeds ? (
@@ -2144,8 +2170,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: theme.actionColors.supplements.lightColor, alignItems: 'center', justifyContent: 'center' }}>
                         <Pill size={36} color={theme.actionColors.supplements.color} />
                     </View>
-                    <Text style={{ fontSize: 16, color: theme.textPrimary, fontWeight: '600', marginTop: 16 }}>אין תרופות עדיין</Text>
-                    <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>לחץ על "הוסף תרופה" כדי להתחיל</Text>
+                    <Text style={{ fontSize: 16, color: theme.textPrimary, fontWeight: '600', marginTop: 16 }}>{t('health.noMedicationsYet')}</Text>
+                    <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>{t('health.noMedicationsHint')}</Text>
                 </View>
             ) : (
                 savedMedications.map((med) => (
@@ -2420,7 +2446,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                                     </Text>
                                                 ) : null}
                                                 <Text style={{ fontSize: 11, color: theme.textTertiary, textAlign: 'right', marginTop: 4 }}>
-                                                    {new Date(allergy.diagnosisDate).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    {new Date(allergy.diagnosisDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </Text>
                                             </View>
 
@@ -2469,7 +2495,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                             <Text style={{
                                                 fontSize: 14, fontWeight: isSelected ? '700' : '500',
                                                 color: isSelected ? '#FFFFFF' : theme.textPrimary,
-                                            }}>{allergen.name}</Text>
+                                            }}>{t(allergen.labelKey)}</Text>
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -2575,19 +2601,19 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             const today = new Date();
             const isToday = d.toDateString() === today.toDateString();
             if (isToday) {
-                return `היום, ${d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
+                return `${t('date.today')}, ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
             }
-            return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
         };
 
         const getTypeConfig = (type: string) => {
             switch (type) {
-                case 'temperature': return { label: 'חום', icon: Thermometer, color: theme.actionColors.food.color, bg: theme.actionColors.food.lightColor };
-                case 'doctor': return { label: 'רופא', icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor };
-                case 'illness': return { label: 'מחלה', icon: Heart, color: theme.actionColors.sos.color, bg: theme.actionColors.sos.lightColor };
-                case 'medication': return { label: 'תרופה', icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor };
-                case 'vaccine': return { label: 'חיסון', icon: Syringe, color: theme.actionColors.tools.color, bg: theme.actionColors.tools.lightColor };
-                default: return { label: 'שונות', icon: ClipboardList, color: theme.actionColors.custom.color, bg: theme.actionColors.custom.lightColor };
+                case 'temperature': return { label: t('health.fever'), icon: Thermometer, color: theme.actionColors.food.color, bg: theme.actionColors.food.lightColor };
+                case 'doctor': return { label: t('health.doctorVisit'), icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor };
+                case 'illness': return { label: t('health.illnesses'), icon: Heart, color: theme.actionColors.sos.color, bg: theme.actionColors.sos.lightColor };
+                case 'medication': return { label: t('health.medications'), icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor };
+                case 'vaccine': return { label: t('health.vaccines'), icon: Syringe, color: theme.actionColors.tools.color, bg: theme.actionColors.tools.lightColor };
+                default: return { label: t('health.history'), icon: ClipboardList, color: theme.actionColors.custom.color, bg: theme.actionColors.custom.lightColor };
             }
         };
 
@@ -2643,7 +2669,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     {loadingHistory ? (
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
                             <InlineLoader size="large" color={theme.textPrimary}  />
-                            <Text style={{ color: theme.textSecondary, marginTop: 12 }}>טוען...</Text>
+                            <Text style={{ color: theme.textSecondary, marginTop: 12 }}>{t('health.uploading')}</Text>
                         </View>
                     ) : filteredLogs.length === 0 ? (
                         <View style={{ alignItems: 'center', marginTop: 40 }}>
@@ -2654,7 +2680,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                 <ClipboardList size={36} color={theme.textTertiary} />
                             </View>
                             <Text style={{ fontSize: 16, color: theme.textPrimary, fontWeight: '600', marginTop: 16 }}>
-                                {historyFilter === 'all' ? 'אין שמירות עדיין' : 'אין שמירות בקטגוריה זו'}
+                                {historyFilter === 'all' ? t('health.noHistoryYet') : t('health.noHistoryInCategory')}
                             </Text>
                         </View>
                     ) : (
@@ -2711,10 +2737,10 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
                                                     <Bell size={13} color="#6366F1" />
                                                     <Text style={{ fontSize: 13, color: '#6366F1', fontWeight: '600' }}>
-                                                        תור: {new Date(item.appointmentDate).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                        {t('health.vaccineTitle', { name: new Date(item.appointmentDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) })}
                                                     </Text>
                                                 </View>
-                                            ) : item.type === 'vaccine' && item.note?.startsWith('בוצע') ? (
+                                            ) : item.type === 'vaccine' && (item.isDone || item.note?.startsWith('בוצע')) ? (
                                                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
                                                     <Check size={13} color="#10B981" />
                                                     <Text style={{ fontSize: 13, color: '#10B981', fontWeight: '600' }}>
@@ -2737,7 +2763,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                                             }}
                                                         >
                                                             <Camera size={14} color={theme.success} />
-                                                            <Text style={{ fontSize: 12, color: theme.success, fontWeight: '500' }}>תמונה</Text>
+                                                            <Text style={{ fontSize: 12, color: theme.success, fontWeight: '500' }}>{t('health.addPhoto')}</Text>
                                                         </TouchableOpacity>
                                                     )}
                                                     {item.documentName && (

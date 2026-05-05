@@ -33,8 +33,6 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     • Détails du compte : nom complet, adresse email, mot de passe chiffré{'\n'}
     • Profil de l'enfant : nom, date de naissance, sexe, photo de profil{'\n'}
     • Données de suivi : alimentation (heure, quantité, type), sommeil (heures de début/fin), changes de couches, compléments alimentaires, vaccinations, médicaments, mesures de croissance (poids, taille, périmètre crânien){'\n'}
-    • Données de localisation (GPS) — pour permettre la découverte de baby-sitters à proximité, l'application collecte des données de localisation (précises et générales) uniquement avec votre autorisation explicite et pendant l'utilisation. Ces données ne sont pas conservées dans l'historique, ne sont pas vendues et l'autorisation peut être révoquée à tout moment.{'\n'}
-    • Messages de chat envoyés entre parents et baby-sitters via l'application{'\n'}
     • Notes et enregistrements que vous saisissez manuellement{'\n'}
     • Photos et moments magiques que vous choisissez de sauvegarder{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>b. Informations collectées automatiquement :{'\n'}</Text>
@@ -50,7 +48,7 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     Nous utilisons vos informations uniquement aux fins suivantes :{'\n'}
     • Fournir, maintenir et améliorer les services de l'application{'\n'}
     • Afficher les données personnelles, graphiques et statistiques{'\n'}
-    • Partager les données avec les membres de la famille et baby-sitters selon les autorisations que vous définissez{'\n'}
+    • Partager les données avec les membres de la famille selon les autorisations que vous définissez{'\n'}
     • Envoyer les notifications et rappels que vous avez explicitement demandés{'\n'}
     • Fournir un support technique{'\n'}
     • Respecter les obligations légales{'\n'}
@@ -123,11 +121,10 @@ export const TermsContentFR = ({ textColor, subtitleColor }: { textColor: string
     Calmino est une application de suivi de santé pour bébés et enfants permettant :{'\n'}
     • Le suivi de l'alimentation, du sommeil, des couches, des compléments alimentaires, des vaccinations et des médicaments{'\n'}
     • La mesure des indicateurs de croissance et des courbes de croissance{'\n'}
-    • Le partage de données avec les membres de la famille et les baby-sitters{'\n'}
+    • Le partage de données avec les membres de la famille{'\n'}
     • La création de statistiques, rapports et analyses{'\n'}
     • L'enregistrement de moments magiques et d'étapes clés{'\n'}
     • La gestion de rappels et notifications personnalisés{'\n'}
-    • Les services de recherche de baby-sitters, de coordination de réservations et de messagerie{'\n\n'}
     <Text style={styles.bold}>Âge minimum d'utilisation : 16 ans.</Text> Le service n'est pas destiné aux utilisateurs de moins de 16 ans.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>3. Compte utilisateur{'\n'}</Text>
@@ -140,7 +137,7 @@ export const TermsContentFR = ({ textColor, subtitleColor }: { textColor: string
     <Text style={[styles.section, { color: textColor }]}>4. Utilisation autorisée et interdite{'\n'}</Text>
     <Text style={[styles.subsection, { color: textColor }]}>Autorisé :{'\n'}</Text>
     • Usage personnel et familial pour la gestion des soins de vos enfants{'\n'}
-    • Partage de données avec les membres de la famille et baby-sitters autorisés{'\n\n'}
+    • Partage de données avec les membres de la famille autorisés{'\n\n'}
     <Text style={[styles.subsection, { color: textColor }]}>Strictement interdit :{'\n'}</Text>
     • Utilisation commerciale sans licence écrite de notre part{'\n'}
     • Téléchargement de contenu illégal, offensant, trompeur ou portant atteinte aux droits{'\n'}
@@ -168,13 +165,11 @@ export const TermsContentFR = ({ textColor, subtitleColor }: { textColor: string
     • <Text style={styles.bold}>RevenueCat</Text> - Gestion des abonnements et achats.{'\n'}
     • <Text style={styles.bold}>Apple WeatherKit</Text> - Données météorologiques.{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>8. Limitation de responsabilité, avertissement médical et services de baby-sitter{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>8. Limitation de responsabilité et avertissement médical{'\n'}</Text>
     8.1 Le service est fourni <Text style={styles.bold}>"tel quel"</Text> sans garantie d'aucune sorte.{'\n'}
     8.2 <Text style={styles.bold}>L'application ne remplace pas un avis médical professionnel.</Text> Consultez toujours un pédiatre qualifié.{'\n'}
-    8.3 <Text style={styles.bold}>Marché des baby-sitters — Renonciation absolue de responsabilité :</Text> Calmino fournit une plateforme numérique ("tableau d'affichage") reliant les parents et les baby-sitters indépendants. <Text style={styles.bold}>La Société n'est pas une agence pour l'emploi, n'emploie pas les baby-sitters, ne les interviewe pas, n'effectue aucune vérification des antécédents, d'intégrité ou de casier judiciaire d'aucune sorte, et ne se porte pas garante pour eux.</Text> Tout engagement, emploi ou rencontre facilité par l'application se fait à vos risques et sous votre seule responsabilité de parent. Il est de votre stricte obligation de faire preuve de diligence, de demander une pièce d'identité et de vérifier les références avant de leur confier vos enfants.{'\n'}
-    <Text style={styles.bold}>Renonciation complète :</Text> En utilisant l'application pour trouver une baby-sitter, vous renoncez par la présente, de manière complète, définitive et irrévocable, à toute réclamation, demande ou poursuite contre Calmino, ses administrateurs ou employés pour tout dommage direct ou indirect, blessure corporelle, dommage matériel, vol, négligence ou acte criminel causé par une baby-sitter trouvée via la plateforme.{'\n'}
-    8.4 Calmino n'est pas responsable des dommages directs, indirects, accessoires, spéciaux ou consécutifs.{'\n'}
-    8.5 Notre responsabilité totale ne dépassera pas le montant payé la dernière année, ou 200 ₪ — le montant le moins élevé.{'\n\n'}
+    8.3 Calmino n'est pas responsable des dommages directs, indirects, accessoires, spéciaux ou consécutifs.{'\n'}
+    8.4 Notre responsabilité totale ne dépassera pas le montant payé la dernière année, ou 200 ₪ — le montant le moins élevé.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>9. Propriété intellectuelle{'\n'}</Text>
     Tous les droits sur l'application sont la propriété exclusive de Calmino et sont protégés par les lois sur le droit d'auteur, les marques et les brevets.{'\n\n'}

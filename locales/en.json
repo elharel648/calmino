@@ -34,7 +34,15 @@
     "yesterday": "Yesterday",
     "week": "Week",
     "month": "Month",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "child": "Child",
+    "copy": "Copy",
+    "copied": "✓ Copied",
+    "finish": "Finish",
+    "hide": "Hide",
+    "showMore": "{count} more",
+    "hello": "Hello",
+    "successTitle": "Success!"
   },
   "errors": {
     "somethingWentWrong": "Oops! Something went wrong",
@@ -95,7 +103,8 @@
       "sentFrom": "_Sent from Calmino 💙_",
       "time": "Time",
       "sleepDuration": "Sleep duration"
-    }
+    },
+    "collectingData": "Collecting data for analysis..."
   },
   "stats": {
     "title": "Statistics",
@@ -245,7 +254,16 @@
     "followInstagram": "Follow us on Instagram",
     "joinCommunity": "Join our community",
     "vitaminD": "Vitamin D",
-    "ironSupplement": "Iron"
+    "ironSupplement": "Iron",
+    "supplementsConfigured": "{count} supplements configured",
+    "everyDayAtYourTime": "Every day at your chosen time",
+    "noSupplements": "No supplements set — add supplements on the Home screen",
+    "cannotEnableNotifications": "Cannot Enable Notifications",
+    "enableNotificationsInSettings": "Please allow notifications in device settings to enable reminders.",
+    "timePickerTitle": "Select time",
+    "everyHours": "Every {count} hours",
+    "startTimeLabel": "Start time",
+    "everyUnitLabel": "Every {unit}:"
   },
   "navigation": {
     "home": "Home",
@@ -271,7 +289,8 @@
     "clearAllMessage": "Delete all notifications?",
     "minutesAgo": "{count} minutes ago",
     "hoursAgo": "{count} hours ago",
-    "daysAgo": "{count} days ago"
+    "daysAgo": "{count} days ago",
+    "testMessage": "This is a test notification! 🎉"
   },
   "timeline": {
     "title": "Daily Timeline",
@@ -298,7 +317,14 @@
     "edit": "Edit",
     "delete": "Delete",
     "confirmDelete": "Delete this?",
-    "eventDeleted": "Event deleted"
+    "eventDeleted": "Event deleted",
+    "diaperChange": "Diaper change",
+    "vaccine": "Vaccine",
+    "vaccineLabel": "💉 Vaccine",
+    "customAction": "Custom action",
+    "toothErupted": "Tooth erupted",
+    "breastRight": "Right",
+    "breastLeft": "Left"
   },
   "time": {
     "now": "Now",
@@ -315,7 +341,14 @@
     "summaryTime": "Summary Time",
     "hour": "hour",
     "minute": "minute",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "minutesShort": "{count} min",
+    "hoursShort": "{count} hr",
+    "daysShort": "{count} d",
+    "minutesCount": "{count} minutes",
+    "secondsCount": "{count} seconds",
+    "hoursLabel": "Hours",
+    "minutesLabel": "Minutes"
   },
   "actions": {
     "food": "Food",
@@ -335,14 +368,57 @@
     "customize": "Customize",
     "active": {
       "food": "Feeding",
-      "sleep": "Sleeping"
-    }
+      "sleep": "Sleeping",
+      "breastfeeding": "Nursing",
+      "bottle": "Bottle feeding",
+      "pumping": "Pumping"
+    },
+    "breastfeeding": "Breastfeeding",
+    "breastfeedingRight": "Breast R",
+    "breastfeedingLeft": "Breast L",
+    "bottle": "Bottle",
+    "pumping": "Pumping",
+    "whiteNoiseLullaby": "Lullaby",
+    "whiteNoiseGentle": "Gentle Music",
+    "whiteNoiseBirds": "Birds",
+    "whiteNoiseRain": "Rain",
+    "healthDoctor": "Doctor Visit",
+    "healthVaccines": "Vaccines",
+    "healthIllness": "Illness",
+    "healthTemperature": "Temperature",
+    "healthMedications": "Medications",
+    "healthTipatHalav": "Tipat Halav",
+    "healthAllergies": "Allergies",
+    "healthHistory": "History",
+    "addActionPlaceholder": "E.g.: Bath, Play...",
+    "addDetailsPlaceholder": "Add more details...",
+    "saved": "Saved!",
+    "addAction": "Add Action",
+    "addActionTitle": "Add Action",
+    "quickActionsSection": "Quick Actions",
+    "actionNameLabel": "Action Name",
+    "selectIcon": "Select Icon",
+    "dateAndTime": "Date & Time",
+    "notesOptional": "Notes (optional)",
+    "presetBath": "Bath",
+    "presetGame": "Play",
+    "presetStory": "Story",
+    "presetDrink": "Drink",
+    "presetWalk": "Walk"
   },
   "age": {
     "days": "{count} days",
     "months": "{count} months",
     "years": "{count} year",
-    "yearsMonths": "{count} year and {months} months"
+    "yearsMonths": "{count} year and {months} months",
+    "weeks": "{count} weeks",
+    "oneYear": "1 year",
+    "prefixBoy": "",
+    "prefixGirl": "",
+    "oneDay": "one day",
+    "weeksCount": "{count} weeks",
+    "monthsCount": "{count} months",
+    "andMonths": "and {count} months"
   },
   "account": {
     "title": "Account",
@@ -499,7 +575,15 @@
     "startTime": "Start",
     "saveRecord": "Save Record",
     "saved": "Saved!",
-    "whenHappened": "When did it happen?"
+    "whenHappened": "When did it happen?",
+    "timerRequired": "Start the timer before saving.",
+    "sleepDurationRequired": "Enter a sleep duration greater than 0.",
+    "endTimeDifferent": "End time must be different from start time.",
+    "diaperTypeRequired": "Select a diaper type before saving.",
+    "missingTimestamp": "Error: Missing timestamp. Please try again.",
+    "missingDuration": "Error: Missing duration. Please try again.",
+    "paused": "Paused",
+    "sleepNotePlaceholder": "e.g.: Slept deeply, woke up once..."
   },
   "milestones": {
     "enterTitle": "Please enter a title",
@@ -561,7 +645,17 @@
     "featureLocked": "Premium Content",
     "upgradeToUnlock": "Upgrade to Premium to unlock this feature",
     "upgradeCta": "Upgrade to Premium",
-    "maybeLater": "Maybe later"
+    "maybeLater": "Maybe later",
+    "productUnavailable": "Product not available right now",
+    "welcomeTitle": "🎉 Welcome to Premium!",
+    "welcomeMsg": "Enjoy all the advanced features",
+    "excellent": "Excellent!",
+    "restoredTitle": "✅ Restored!",
+    "restoredMsg": "Your subscription has been restored successfully",
+    "noPurchasesFound": "No purchases found",
+    "noPurchasesMsg": "We couldn't find an existing subscription to restore",
+    "purchaseError": "We couldn't complete the purchase",
+    "restoreError": "We couldn't restore purchases"
   },
   "units": {
     "km": "km"
@@ -715,9 +809,27 @@
     "codeMustBe6": "Code must be 6 digits",
     "join": "Join",
     "success": "Joined successfully! 🎉",
-    "error": "Error joining. Try again.",
+    "error": {
+      "mustLogin": "You must be logged in",
+      "expiredCode": "The invite code has expired",
+      "usedCode": "The invite code has already been used",
+      "ownInvite": "You cannot join your own invite",
+      "familyNotFound": "Family not found",
+      "alreadyMember": "You are already a member of this family",
+      "alreadyInOther": "You are already part of another family",
+      "invalidCode": "Invalid invite code",
+      "generic": "Error joining family"
+    },
     "tipFamily": "💡 Family code: full access to all children",
-    "tipGuest": "💡 Guest code: access for 24 hours only"
+    "tipGuest": "💡 Guest code: access for 24 hours only",
+    "cameraPermissionRequired": "Camera access is required to scan QR codes",
+    "alreadyInFamily": "Heads Up",
+    "alreadyInFamilyMsg": "You are already part of the \"{name}\" family.\nIf you continue, you will lose access to its data.\n\nContinue and join?",
+    "yesJoin": "Yes, Join",
+    "scannerTitle": "Scanning family code",
+    "aimCamera": "Point the camera at the barcode",
+    "orScanQR": "Or scan QR code",
+    "existingFamilyFallback": "existing"
   },
   "login": {
     "welcomeBack": "Welcome Back",
@@ -840,7 +952,10 @@
     },
     "appName": "Calmino",
     "appSubtitle": "Smart and quiet management for new parents",
-    "exploreApp": "Explore Calmino"
+    "exploreApp": "Explore Calmino",
+    "welcomeJoined": "Welcome aboard!",
+    "accountCreated": "Your account was created successfully.\nAll that's left is to sign in and get started.",
+    "letsStart": "Let's get started"
   },
   "guest": {
     "loginRequiredTitle": "Login Required",
@@ -907,7 +1022,10 @@
     "joinWithCodeSubtitle": "Received a code from partner?"
   },
   "share": {
-    "message": "Hey! I'm using Calmino and it really helps me manage baby care. Highly recommend! 👶📱"
+    "message": "Hey! I'm using Calmino and it really helps me manage baby care. Highly recommend! 👶📱",
+    "birthdayLabel": "Birthday",
+    "monthLabel": "Month {month}",
+    "magicMomentTitle": "A magic moment of {name}"
   },
   "babysitter": {
     "findSitter": "Find Sitter",
@@ -1020,7 +1138,13 @@
       "feeding": "Feeding Tip",
       "general": "General Tip",
       "shortNaps": "Very short naps. Try creating a quieter, darker environment.",
-      "keepTracking": "Keep tracking - the more data, the more accurate insights!"
+      "keepTracking": "Keep tracking - the more data, the more accurate insights!",
+      "longNaps": "Long stable naps - great! Average of {hours} hours.",
+      "avgSleepTime": "Average sleep time: {time}. Stay consistent!",
+      "largeFeedings": "Large feedings (avg {ml} ml). Baby is eating well!",
+      "longFeedingInterval": "Long interval between feedings ({hours} hrs). Tummy is growing!",
+      "sleepImproved": "Sleep improved by {hours} hours vs last week! 🎉",
+      "sleepDeclined": "Sleep has decreased vs last week. Maybe there's a routine change?"
     },
     "share": {
       "dailySummary": "Daily Summary",
@@ -1028,7 +1152,8 @@
       "error": "Could not share the report",
       "dataDisclaimer": "All data rights reserved to parents only.",
       "notSupported": "File sharing is not supported on this device",
-      "cannotShare": "Cannot share"
+      "cannotShare": "Cannot share",
+      "dailySummaryMsg": "📊 Daily summary{nameSuffix}\n\n🍼 Feedings: {foodCount} times ({food} ml)\n😴 Sleep: {sleep} hours ({sleepCount} naps)\n🧷 Diapers: {diapers}\n💊 Supplements: {supplements}\n\nSent from Calmino app 💜"
     },
     "sleep": {
       "bestSleepDay": "Best sleep day",
@@ -1132,11 +1257,29 @@
       "title": "History",
       "fullTimeline": "Full Timeline",
       "fullHistory": "Full History"
-    }
+    },
+    "tracking": "Tracking",
+    "sleep8Plus": "Sleep 8h+",
+    "streak": "Streak"
   },
   "calmMode": {
     "nightMode": "Night Mode",
-    "title": "Calm Mode"
+    "title": "Calm Mode",
+    "sectionEmergency": "IMMEDIATE EMERGENCY",
+    "sectionHMO": "HEALTH FUNDS",
+    "emergencyMDA": "Ambulance",
+    "emergencyPolice": "Police",
+    "emergencyPoison": "Poison Control",
+    "subtitleMedicalEmergency": "Medical emergency",
+    "subtitleImmediateDanger": "Immediate danger",
+    "subtitleSubstanceSwallowed": "Substance swallowed",
+    "simulatorTitle": "Simulator Detected",
+    "simulatorMsg": "On a real device, the call would go to {name}: {number}",
+    "understood": "Got it",
+    "hmoClalitSubtitle": "Nurse line 24/7",
+    "hmoMaccabiSubtitle": "Nurse line",
+    "hmoMeuhedetSubtitle": "Pregnancy & birth",
+    "hmoLeumitSubtitle": "Medical line"
   },
   "child": {
     "name": "Child Name",
@@ -1155,7 +1298,13 @@
     "addBaby": "Add Baby",
     "addNewBaby": "Add New Baby",
     "deleteChild": "Delete Child",
-    "babyName": "Baby Name"
+    "babyName": "Baby Name",
+    "namePlaceholder": "Enter name",
+    "registerNew": "Register new child",
+    "createNewProfile": "Create a new child profile",
+    "joinWithCode": "Join with code",
+    "gotCodeFromPartner": "Got a code from your partner?",
+    "selectChild": "Select child"
   },
   "onboarding": {
     "start": "Get Started",
@@ -1164,7 +1313,7 @@
     "next": "Next",
     "cta": "Let's Start!",
     "slide1": {
-      "greeting": "Hello, {{name}}! 👋",
+      "greeting": "Hello, {name}! 👋",
       "title": "Welcome to Calmino",
       "subtitle": "Every moment with your baby, in one place.\nSimple, smart and calm."
     },
@@ -1194,7 +1343,8 @@
       "diapers": "Diapers",
       "sleepHours": "Sleep Hours",
       "supplementsLabel": "Supplements",
-      "naps": "naps"
+      "naps": "naps",
+      "feedingsMl": "17908 ml"
     },
     "slide4": {
       "title": "Find a Sitter",
@@ -1205,12 +1355,19 @@
     "slide5": {
       "title": "One Family, Full Sync.",
       "subtitle": "Everyone updated in real time, from any device.",
-      "membersCount": "{{count}} members",
+      "membersCount": "{count} members",
       "admin": "Admin",
       "member": "Member",
       "guest": "Guest",
       "inviteFamily": "Invite Family",
-      "inviteSubtitle": "Access code for all children"
+      "inviteSubtitle": "Access code for all children",
+      "demoFamily": "The Noam Family",
+      "demoName1": "Danny (me)",
+      "demoName2": "Mom",
+      "demoName3": "Grandma Rachel",
+      "demoInitial1": "D",
+      "demoInitial2": "M",
+      "demoInitial3": "G"
     }
   },
   "family": {
@@ -1229,7 +1386,23 @@
     "scanQR": "Scan QR",
     "guestInvite": "Guest Invite",
     "removeFromFamily": "Remove from Family",
-    "leaveFamily": "Leave Family"
+    "leaveFamily": "Leave Family",
+    "familyName": "{name}'s Family",
+    "memberCount": "{count} members",
+    "oneMemberCount": "1 member",
+    "onlyYouOnline": "Only you are online",
+    "membersOnline": "{count} online",
+    "watchingNow": "watching now",
+    "othersAndMore": "+ {count} more",
+    "connected": "connected",
+    "joinError": "Error joining family. Please try again.",
+    "guestDisplayName": "Guest",
+    "newMemberName": "New user",
+    "userFallback": "User",
+    "babyFallback": "the baby",
+    "guestSuccess": "You joined {childName} as a guest! Access for 24 hours only 🎉",
+    "memberSuccess": "You joined the {familyName} family! Full access to all children 🎉",
+    "familyFallback": "the family"
   },
   "growth": {
     "growth": "Growth",
@@ -1251,7 +1424,20 @@
     "cm": "cm",
     "deleteMeasurement": "Delete Measurement",
     "additionalNotes": "Additional notes...",
-    "autoUpdateTooltip": "A measurement saved for today will automatically update the baby's profile statistics"
+    "autoUpdateTooltip": "A measurement saved for today will automatically update the baby's profile statistics",
+    "belowPercentile3": "Below 3rd percentile",
+    "percentileBand": "Percentile {value}",
+    "abovePercentile97": "Above 97th percentile",
+    "alertTitle": "Notice",
+    "alertNoData": "Please enter at least weight or height",
+    "chartTitleLinear": "Growth Chart (Linear)",
+    "chartTitlePercentile": "Growth Chart (Percentiles)",
+    "ageMonths": "{count} months",
+    "noDataHint": "Add at least 2 measurements to view chart",
+    "weightInputLabel": "Weight (kg)",
+    "heightInputLabel": "Height (cm)",
+    "weightExample": "E.g.: 7.5",
+    "heightExample": "E.g.: 65"
   },
   "auth": {
     "login": "Login",
@@ -1321,7 +1507,12 @@
     "ageDays": "{count} days",
     "ageMonths": "{count} months",
     "ageYearsMonths": "{years} year and {months} months",
-    "ageYears": "{years} year"
+    "ageYears": "{years} year",
+    "pageTitle": "My Baby",
+    "journeyTitle": "Our Journey",
+    "journeySubtitle": "All of {name}'s moments",
+    "journeyFallback": "The Cinematic Summary",
+    "loadError": "Error loading profile"
   },
   "babyProfile": {
     "title": "Register New Child",
@@ -1373,7 +1564,16 @@
     "title": "Weather",
     "temperature": "Temperature",
     "humidity": "Humidity",
-    "airQuality": "Air Quality"
+    "airQuality": "Air Quality",
+    "accessibilityLabel": "Weather in {city}: {temp} degrees. {recommendation}",
+    "loading": "Loading...",
+    "recHot": "Hot ☀️ Light layer.",
+    "recWarm": "Warm 😎 Long sleeve.",
+    "recCool": "Cool 🍃 Two layers.",
+    "recCold": "Cold 🥶 Bundle up!",
+    "yourArea": "Your area",
+    "noLocation": "No location access",
+    "checkConnection": "Check connection 🔧"
   },
   "health": {
     "title": "Health",
@@ -1452,13 +1652,101 @@
     "noFeverData": "No temperature readings yet",
     "addTwoReadings": "Add at least 2 readings to see chart",
     "feverLine": "Fever Line",
-    "exportHealthReport": "Export Health Report (PDF)"
+    "exportHealthReport": "Export Health Report (PDF)",
+    "allergenMilk": "Milk",
+    "allergenEggs": "Eggs",
+    "allergenPeanuts": "Peanuts",
+    "allergenTreeNuts": "Tree Nuts",
+    "allergenSoy": "Soy",
+    "allergenWheat": "Wheat/Gluten",
+    "allergenFish": "Fish",
+    "allergenSesame": "Sesame",
+    "allergenMedication": "Medications",
+    "allergenDust": "Dust",
+    "illnessRubella": "Rubella",
+    "illnessChickenpox": "Chickenpox",
+    "illnessBronchitis": "Bronchitis",
+    "illnessThroat": "Throat Infection",
+    "illnessEar": "Ear Infection",
+    "illnessRespiratory": "Respiratory Infection",
+    "illnessTeething": "Teething Pain",
+    "illnessRunnyNose": "Runny Nose",
+    "illnessCold": "Cold",
+    "illnessDiarrhea": "Diarrhea",
+    "illnessFlu": "Flu",
+    "illnessDryCough": "Dry Cough",
+    "illnessWetCough": "Wet Cough",
+    "illnessFever": "Fever",
+    "medAntibiotic": "Antibiotic",
+    "medAntiInflammatory": "Anti-inflammatory",
+    "medPainRelief": "Pain Relief",
+    "medVitaminC": "Vitamin C",
+    "medVitaminD": "Vitamin D",
+    "medDrops": "Drops",
+    "medAntiseptic": "Antiseptic",
+    "medFeverReducer": "Fever Reducer",
+    "medProbiotic": "Probiotic",
+    "medSprays": "Sprays",
+    "descDoctor": "Record and track doctor visits",
+    "descVaccines": "Track routine vaccines",
+    "descIllness": "Document illnesses and symptoms",
+    "descTemperature": "Measure fever and track trends",
+    "descMedications": "Manage medications and reminders",
+    "descTipatHalav": "Find nearest clinic",
+    "descAllergies": "Record and track allergies",
+    "descHistory": "View all health records",
+    "illnessNameLabel": "Illness Name",
+    "illnessNamePlaceholder": "Enter illness name...",
+    "illnessOngoing": "Yes",
+    "illnessEnd": "Recovery / End",
+    "illnessDuration": "Duration: {days} days",
+    "addMedication": "Add New Medication",
+    "noMedicationsYet": "No medications yet",
+    "noMedicationsHint": "Tap \"Add Medication\" to get started",
+    "timesPerDay": "{count}x/day",
+    "reminderLabel": "Reminder",
+    "takenLabel": "Taken",
+    "doneBtnLabel": "Got it",
+    "confirmBtnLabel": "Confirm",
+    "uploading": "Uploading...",
+    "photoUploaded": "Photo uploaded",
+    "performedOn": "Done: {date}",
+    "vaccineNote": "Vaccine: {name}",
+    "vaccineTitle": "Vaccine: {name}",
+    "vaccineTitleCalendar": "Baby vaccine reminder - {name}",
+    "vaccineAppointmentNote": "Vaccine appointment: {name} - {date}",
+    "allVaccinesDoneTitle": "Congratulations!",
+    "allVaccinesDoneMsg": "You have completed all recommended routine vaccines successfully.",
+    "noHistoryYet": "No records yet",
+    "noHistoryInCategory": "No records in this category",
+    "vaccineAdded": "Added:",
+    "medSearchPlaceholder": "Search medication (e.g., Tylenol, Nurofen...)",
+    "dosagePlaceholder": "Amount (e.g., 5 ml, one pill)",
+    "timesPerDaySingular": "time",
+    "timesPerDayPlural": "times",
+    "notesPlaceholder": "Notes (e.g., before meals)",
+    "saving": "Saving...",
+    "saveMedication": "Save Medication",
+    "timesPerDayLabel": "Times per day",
+    "medicationName": "Medication Name",
+    "useCustomMed": "Use: \"{name}\"",
+    "medNotInDictionary": "Medication not in dictionary — you can type a custom name",
+    "medInfoTitle": "Info about {name}",
+    "commonDosageInfo": "Common dosage: {dosage}",
+    "addToEdit": "Add to edit ✎",
+    "formLabel": "Form: {form}",
+    "medInfoDisclaimer": "General information only. Consult a doctor.",
+    "medicationNameRequired": "Please enter a medication name",
+    "dosageLabel": "Dosage",
+    "administrationTimes": "Administration times",
+    "reminderAlerts": "Reminder alerts"
   },
   "nightLight": {
     "title": "Night Light",
     "tapToHideControls": "Tap screen to hide controls",
     "color": "Color",
-    "brightness": "Brightness"
+    "brightness": "Brightness",
+    "tapToClose": "Tap to close"
   },
   "teethTracker": {
     "title": "Baby Teeth Chart",
@@ -1481,7 +1769,9 @@
     "editToothDate": "Edit tooth eruption date",
     "whenDidToothErupt": "When did the tooth erupt?",
     "removeTooth": "Remove tooth",
-    "updateDate": "Update date"
+    "updateDate": "Update date",
+    "erupted": "Erupted",
+    "tooth": "Tooth"
   },
   "misc": {
     "uploadPhoto": "Upload Photo",
@@ -1507,7 +1797,13 @@
   "export": {
     "pdf": "Export PDF",
     "export": "Export",
-    "shareDailySummary": "Share Daily Summary"
+    "shareDailySummary": "Share Daily Summary",
+    "exportPdfForDoctor": "Export PDF for Doctor",
+    "sent": "Sent!",
+    "noActiveChild": "No active child found",
+    "exportSuccess": "Report exported successfully",
+    "exportFailed": "Failed to export report",
+    "exportError": "Something went wrong with the export"
   },
   "blocked": {
     "title": "Blocked Users",
@@ -1548,7 +1844,9 @@
   },
   "network": {
     "noConnection": "No Internet Connection",
-    "checking": "Checking connection..."
+    "checking": "Checking connection...",
+    "backOnline": "Back online!",
+    "oops": "Oops!"
   },
   "bookings": {
     "myBookings": "My Bookings",
@@ -1823,7 +2121,7 @@
       "emptyFact": "When you start logging feedings\nyou'll see all your dedication"
     },
     "finale": {
-      "subtitle": "Journey Summary \u00b7 Calmino",
+      "subtitle": "Journey Summary · Calmino",
       "diapers": "Diapers",
       "sleepHours": "Sleep Hours",
       "feedings": "Feedings",
@@ -1844,5 +2142,155 @@
     "reputationSubtitle": "Get reviews from parents, track profile views, and share your profile on WhatsApp",
     "next": "Next",
     "letsStart": "Let's Start!"
+  },
+  "controlCenter": {
+    "title": "Quick Shortcuts",
+    "subtitle": "Select up to {max} shortcuts for \"+\" ({count}/{max})",
+    "editHint": "Tap the eye to hide/show a category",
+    "maxReached": "Maximum reached — deselect an item to add another",
+    "hidden": "(hidden)",
+    "save": "Save Shortcuts ({count}/{max})",
+    "section": {
+      "sleep": "Sleep",
+      "feeding": "Feeding",
+      "whiteNoise": "White Noise",
+      "health": "Health",
+      "tools": "Tools"
+    }
+  },
+  "fab": {
+    "title": "Quick Actions",
+    "edit": "Customize",
+    "stopSleep": "Stop Sleep",
+    "stop": "Stop",
+    "activeSleep": "Sleep active · {elapsed}",
+    "whiteNoiseActive": "White noise on",
+    "selectFeedingType": "Select feeding type",
+    "timeNight": "Night · Bedtime",
+    "timeMorning": "Morning · Meal time",
+    "timeNoon": "Noon",
+    "timeEvening": "Afternoon / Evening",
+    "breastRight": "Right breast",
+    "breastLeft": "Left breast",
+    "bottle": "Bottle",
+    "pumping": "Pumping",
+    "longPressHint": "Long press the + button to open the Control Center"
+  },
+  "smartStatus": {
+    "noRecordings": "No records yet",
+    "timeToEat": "🍼 Time to eat?",
+    "timeToNap": "😴 Maybe time for a nap?",
+    "sleepingFor": "Sleeping for {time}"
+  },
+  "tipatHalav": {
+    "description": "Find the nearest Tipat Halav station from a database of over 1,800 stations nationwide",
+    "searchPlaceholder": "Search city, town or street...",
+    "resultsFound": "Found {count} stations",
+    "searching": "Searching stations...",
+    "noResults": "No stations found for this search. Try another city.",
+    "noResultsForQuery": "No stations found for \"{query}\"",
+    "prompt": "Enter a city or town name to find the nearest Tipat Halav station",
+    "stationFallback": "Tipat Halav Station",
+    "dialNotSupported": "Dialing not supported",
+    "dialNotSupportedMsg": "This device does not support phone calls (probably a simulator).",
+    "navError": "Error",
+    "cannotOpenNav": "Cannot open a navigation app on this device"
+  },
+  "reminder": {
+    "notificationsDisabled": "Notifications Disabled",
+    "enableNotificationsMsg": "Please enable notifications in device settings to receive reminders",
+    "understood": "Got it",
+    "cannotSetPastReminder": "Cannot set a reminder in the past",
+    "title": "Reminder",
+    "calendarTitle": "Reminder: {message}",
+    "calendarNote": "Created by Calmino app",
+    "savedTitle": "Saved!",
+    "savedWithCalendar": "Reminder saved in app and calendar",
+    "savedPartial": "Saved",
+    "savedWithoutCalendar": "Reminder saved in app, but calendar save failed",
+    "titleDaily": "Daily Reminder",
+    "titleWeekly": "Weekly Reminder",
+    "savedSuccess": "Reminder set successfully",
+    "cannotSave": "Could not save the reminder. Try again.",
+    "deleteConfirm": "Delete this reminder?",
+    "myReminders": "My Reminders",
+    "customPlaceholder": "Or write something else...",
+    "when": "When?",
+    "noRemindersYet": "No reminders yet",
+    "whenToRemindQ": "When would you like us to remind you?",
+    "createFirst": "Create first reminder",
+    "whatToRemind": "What to remind?",
+    "saving": "Saving..."
+  },
+  "teeth": {
+    "molar2": "Second Molar",
+    "molar1": "First Molar",
+    "canine": "Canine",
+    "incisorLat": "Lateral Incisor",
+    "incisorCen": "Central Incisor",
+    "tooth": "Tooth",
+    "erupted": "Erupted"
+  },
+  "checklist": {
+    "title": "Calming Checklist",
+    "item1": "Is the diaper clean?",
+    "item2": "Has it been less than 3 hours since the last meal?",
+    "item3": "Is the baby too hot or cold? (check the nape of the neck)",
+    "item4": "Is there a hair wrapped around the fingers?",
+    "item5": "Is the baby simply too tired?",
+    "item6": "Is something hurting? (ears/teeth)",
+    "allCheckedTitle": "You checked everything",
+    "allCheckedText": "Sometimes babies just need to cry.\nTake a deep breath, you're an amazing parent."
+  },
+  "blockedUsers": {
+    "title": "Blocked Users",
+    "unblockTitle": "Unblock User",
+    "unblockConfirm": "Are you sure you want to unblock {name}?",
+    "unblock": "Unblock",
+    "unblockError": "An error occurred while unblocking.",
+    "empty": "You have no blocked users.",
+    "user": "User"
+  },
+  "guardian": {
+    "invitePartner": "Invite your partner to watch together",
+    "invite": "Invite",
+    "familyOf": "{name}'s family",
+    "me": "Me",
+    "othersAndMore": "+ {count} more",
+    "connected": "connected"
+  },
+  "clock": {
+    "countdown": "Countdown",
+    "stopwatch": "Stopwatch"
+  },
+  "milestone": {
+    "firstWeeks": "First weeks",
+    "ageMonths": "{count} months"
+  },
+  "photo": {
+    "selectSource": "Select photo source",
+    "cancel": "Cancel",
+    "takePhoto": "Take photo",
+    "chooseFromGallery": "Choose from gallery"
+  },
+  "status": {
+    "sleeping": "sleeping",
+    "awake": "awake",
+    "tapToChange": "Tap to change",
+    "accessSleeping": "{name} sleeping. Tap to change",
+    "accessAwake": "{name} awake. Tap to change",
+    "textSleeping": "{name} sleeping 😴",
+    "textAwake": "{name} awake 😃"
+  },
+  "med": {
+    "vitaminD": "Vitamin D",
+    "iron": "Iron",
+    "meReporter": "Me"
+  },
+  "medication": {
+    "reminderTitle": "💊 Medication reminder",
+    "reminderBody": "Time to take {name} ({dosage})",
+    "dosageNote": "Dosage: {dosage}",
+    "calendarNotes": "Dosage: {dosage}{notes}\n\n⚠️ General information only. Consult a doctor."
   }
 }

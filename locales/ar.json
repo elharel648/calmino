@@ -34,7 +34,15 @@
     "yesterday": "أمس",
     "week": "أسبوع",
     "month": "شهر",
-    "unknown": "غير معروف"
+    "unknown": "غير معروف",
+    "child": "طفل",
+    "copy": "نسخ",
+    "copied": "✓ تم النسخ",
+    "finish": "إنهاء",
+    "hide": "إخفاء",
+    "showMore": "{count} المزيد",
+    "hello": "مرحباً",
+    "successTitle": "نجاح!"
   },
   "errors": {
     "somethingWentWrong": "عذراً! حدث خطأ ما",
@@ -95,7 +103,8 @@
       "sentFrom": "_أُرسل من Calmino 💙_",
       "time": "الوقت",
       "sleepDuration": "مدة النوم"
-    }
+    },
+    "collectingData": "جمع البيانات للتحليل..."
   },
   "stats": {
     "title": "الإحصائيات",
@@ -245,7 +254,16 @@
     "followInstagram": "تابعنا على إنستغرام",
     "joinCommunity": "انضم إلى مجتمعنا",
     "vitaminD": "فيتامين د",
-    "ironSupplement": "حديد"
+    "ironSupplement": "حديد",
+    "supplementsConfigured": "{count} مكملات مضبوطة",
+    "everyDayAtYourTime": "كل يوم في الوقت الذي تختاره",
+    "noSupplements": "لا توجد مكملات — أضف المكملات من الصفحة الرئيسية",
+    "cannotEnableNotifications": "لا يمكن تفعيل الإشعارات",
+    "enableNotificationsInSettings": "يرجى السماح بالإشعارات في إعدادات الجهاز.",
+    "timePickerTitle": "اختر الوقت",
+    "everyHours": "كل {count} ساعات",
+    "startTimeLabel": "وقت البداية",
+    "everyUnitLabel": "كل {unit}:"
   },
   "navigation": {
     "home": "الرئيسية",
@@ -271,7 +289,8 @@
     "clearAllMessage": "حذف جميع الإشعارات؟",
     "minutesAgo": "منذ {count} دقائق",
     "hoursAgo": "منذ {count} ساعات",
-    "daysAgo": "منذ {count} أيام"
+    "daysAgo": "منذ {count} أيام",
+    "testMessage": "هذا إشعار تجريبي! 🎉"
   },
   "timeline": {
     "title": "الجدول اليومي",
@@ -298,7 +317,14 @@
     "edit": "تعديل",
     "delete": "حذف",
     "confirmDelete": "حذف هذا؟",
-    "eventDeleted": "تم حذف الحدث"
+    "eventDeleted": "تم حذف الحدث",
+    "diaperChange": "تغيير الحفاضة",
+    "vaccine": "لقاح",
+    "vaccineLabel": "💉 لقاح",
+    "customAction": "إجراء مخصص",
+    "toothErupted": "بزغ سن",
+    "breastRight": "يمين",
+    "breastLeft": "يسار"
   },
   "time": {
     "now": "الآن",
@@ -315,7 +341,14 @@
     "summaryTime": "وقت الملخص",
     "hour": "ساعة",
     "minute": "دقيقة",
-    "minutes": "دقائق"
+    "minutes": "دقائق",
+    "minutesShort": "{count} د",
+    "hoursShort": "{count} س",
+    "daysShort": "{count} أيام",
+    "minutesCount": "{count} دقائق",
+    "secondsCount": "{count} ثواني",
+    "hoursLabel": "ساعات",
+    "minutesLabel": "دقائق"
   },
   "actions": {
     "food": "طعام",
@@ -335,14 +368,57 @@
     "customize": "تخصيص",
     "active": {
       "food": "يأكل/تأكل",
-      "sleep": "نائم/نائمة"
-    }
+      "sleep": "نائم/نائمة",
+      "breastfeeding": "ترضع",
+      "bottle": "رضّاعة",
+      "pumping": "تشفط"
+    },
+    "breastfeeding": "الرضاعة",
+    "breastfeedingRight": "الثدي الأيمن",
+    "breastfeedingLeft": "الثدي الأيسر",
+    "bottle": "رضّاعة",
+    "pumping": "شفط الحليب",
+    "whiteNoiseLullaby": "تهويدة",
+    "whiteNoiseGentle": "موسيقى هادئة",
+    "whiteNoiseBirds": "أصوات طيور",
+    "whiteNoiseRain": "مطر",
+    "healthDoctor": "زيارة طبيب",
+    "healthVaccines": "تطعيمات",
+    "healthIllness": "أمراض",
+    "healthTemperature": "الحرارة",
+    "healthMedications": "أدوية",
+    "healthTipatHalav": "Tipat Halav",
+    "healthAllergies": "حساسية",
+    "healthHistory": "التاريخ الصحي",
+    "addActionPlaceholder": "مثلاً: حمام، لعب...",
+    "addDetailsPlaceholder": "أضف تفاصيل...",
+    "saved": "تم الحفظ!",
+    "addAction": "إضافة نشاط",
+    "addActionTitle": "إضافة إجراء",
+    "quickActionsSection": "إجراءات سريعة",
+    "actionNameLabel": "اسم الإجراء",
+    "selectIcon": "اختر أيقونة",
+    "dateAndTime": "التاريخ والوقت",
+    "notesOptional": "ملاحظات (اختياري)",
+    "presetBath": "حمام",
+    "presetGame": "لعب",
+    "presetStory": "قصة",
+    "presetDrink": "شرب",
+    "presetWalk": "تنزه"
   },
   "age": {
     "days": "{count} أيام",
     "months": "{count} أشهر",
     "years": "{count} سنة",
-    "yearsMonths": "{count} سنة و {months} أشهر"
+    "yearsMonths": "{count} سنة و {months} أشهر",
+    "weeks": "{count} أسابيع",
+    "oneYear": "سنة واحدة",
+    "prefixBoy": "",
+    "prefixGirl": "",
+    "oneDay": "يوم واحد",
+    "weeksCount": "{count} أسابيع",
+    "monthsCount": "{count} أشهر",
+    "andMonths": "و {count} شهر"
   },
   "account": {
     "title": "الحساب",
@@ -499,7 +575,15 @@
     "startTime": "البدء",
     "saveRecord": "حفظ السجل",
     "saved": "تم الحفظ!",
-    "whenHappened": "متى حدث ذلك؟"
+    "whenHappened": "متى حدث ذلك؟",
+    "timerRequired": "ابدأ المؤقت قبل الحفظ.",
+    "sleepDurationRequired": "أدخل مدة نوم أكبر من 0.",
+    "endTimeDifferent": "يجب أن يكون وقت الانتهاء مختلفاً عن وقت البدء.",
+    "diaperTypeRequired": "اختر نوع الحفاضة قبل الحفظ.",
+    "missingTimestamp": "خطأ: الطابع الزمني مفقود. حاول مجدداً.",
+    "missingDuration": "خطأ: المدة مفقودة. حاول مجدداً.",
+    "paused": "متوقف",
+    "sleepNotePlaceholder": "مثال: نوم عميق، استيقظ مرة..."
   },
   "weekday": {
     "sun": "أح",
@@ -531,7 +615,17 @@
     "featureLocked": "محتوى مميز",
     "upgradeToUnlock": "قم بالترقية إلى المميز لفتح هذه الميزة",
     "upgradeCta": "الترقية إلى المميز",
-    "maybeLater": "ربما لاحقاً"
+    "maybeLater": "ربما لاحقاً",
+    "productUnavailable": "المنتج غير متاح حالياً",
+    "welcomeTitle": "🎉 مرحباً في Premium!",
+    "welcomeMsg": "استمتع بجميع الميزات المتقدمة",
+    "excellent": "ممتاز!",
+    "restoredTitle": "✅ تم الاستعادة!",
+    "restoredMsg": "تم استعادة اشتراكك بنجاح",
+    "noPurchasesFound": "لم يتم العثور على مشتريات",
+    "noPurchasesMsg": "لم نجد اشتراكاً موجوداً لاستعادته",
+    "purchaseError": "لم نتمكن من إتمام الشراء",
+    "restoreError": "لم نتمكن من استعادة المشتريات"
   },
   "units": {
     "km": "كم"
@@ -685,9 +779,27 @@
     "codeMustBe6": "يجب أن يتكون الرمز من 6 أرقام",
     "join": "انضم",
     "success": "انضممت بنجاح! 🎉",
-    "error": "خطأ في الانضمام. حاول مجدداً.",
+    "error": {
+      "mustLogin": "يجب تسجيل الدخول",
+      "expiredCode": "رمز الدعوة منتهي الصلاحية",
+      "usedCode": "رمز الدعوة مستخدم بالفعل",
+      "ownInvite": "لا يمكنك الانضمام إلى دعوتك الخاصة",
+      "familyNotFound": "العائلة غير موجودة",
+      "alreadyMember": "أنت بالفعل عضو في هذه العائلة",
+      "alreadyInOther": "أنت بالفعل جزء من عائلة أخرى",
+      "invalidCode": "رمز دعوة غير صالح",
+      "generic": "خطأ في الانضمام للعائلة"
+    },
     "tipFamily": "💡 رمز العائلة: وصول كامل لجميع الأطفال",
-    "tipGuest": "💡 رمز الضيف: وصول لمدة 24 ساعة فقط"
+    "tipGuest": "💡 رمز الضيف: وصول لمدة 24 ساعة فقط",
+    "cameraPermissionRequired": "يلزم الوصول إلى الكاميرا لمسح رموز QR",
+    "alreadyInFamily": "انتبه",
+    "alreadyInFamilyMsg": "أنت بالفعل جزء من عائلة \"{name}\".\nإذا استمررت، ستفقد الوصول إلى بياناتها.\n\nمتابعة والانضمام؟",
+    "yesJoin": "نعم، انضم",
+    "scannerTitle": "مسح رمز العائلة",
+    "aimCamera": "وجّه الكاميرا نحو الباركود",
+    "orScanQR": "أو امسح رمز QR",
+    "existingFamilyFallback": "الحالية"
   },
   "login": {
     "welcomeBack": "مرحباً بعودتك",
@@ -810,7 +922,10 @@
     },
     "appName": "Calmino",
     "appSubtitle": "إدارة ذكية وهادئة للآباء الجدد",
-    "exploreApp": "استكشف Calmino"
+    "exploreApp": "استكشف Calmino",
+    "welcomeJoined": "أهلاً بك!",
+    "accountCreated": "تم إنشاء حسابك بنجاح.\nكل ما تبقى هو تسجيل الدخول والبدء.",
+    "letsStart": "هيا نبدأ"
   },
   "guest": {
     "loginRequiredTitle": "يلزم تسجيل الدخول",
@@ -877,7 +992,10 @@
     "joinWithCodeSubtitle": "هل تلقيت رمزاً من شريكك؟"
   },
   "share": {
-    "message": "مرحباً! أنا أستخدم Calmino وهو يساعدني كثيراً في إدارة رعاية الطفل. أنصح به بشدة! 👶📱"
+    "message": "مرحباً! أنا أستخدم Calmino وهو يساعدني كثيراً في إدارة رعاية الطفل. أنصح به بشدة! 👶📱",
+    "birthdayLabel": "يوم الميلاد",
+    "monthLabel": "الشهر {month}",
+    "magicMomentTitle": "لحظة سحرية لـ {name}"
   },
   "babysitter": {
     "findSitter": "ابحث عن حاضنة",
@@ -1186,7 +1304,13 @@
       "feeding": "نصيحة تغذية",
       "general": "نصيحة عامة",
       "shortNaps": "قيلولات قصيرة جداً. حاول توفير بيئة أكثر هدوءاً وظلاماً.",
-      "keepTracking": "استمر بالتتبع - كلما زادت البيانات، زادت دقة الرؤى!"
+      "keepTracking": "استمر بالتتبع - كلما زادت البيانات، زادت دقة الرؤى!",
+      "longNaps": "قيلولة طويلة ومستقرة - رائع! متوسط {hours} ساعة.",
+      "avgSleepTime": "وقت النوم المتوسط: {time}. حافظ على الانتظام!",
+      "largeFeedings": "وجبات كبيرة (متوسط {ml} مل). الطفل يأكل جيداً!",
+      "longFeedingInterval": "فترة طويلة بين الرضعات ({hours} ساعة). البطن تنمو!",
+      "sleepImproved": "تحسّن النوم بمقدار {hours} ساعة مقارنة بالأسبوع الماضي! 🎉",
+      "sleepDeclined": "انخفض النوم مقارنة بالأسبوع الماضي. ربما هناك تغيير في الروتين؟"
     },
     "share": {
       "dailySummary": "الملخص اليومي",
@@ -1194,7 +1318,8 @@
       "error": "تعذّر مشاركة التقرير",
       "dataDisclaimer": "جميع حقوق البيانات محفوظة للوالدين فقط.",
       "notSupported": "مشاركة الملفات غير مدعومة على هذا الجهاز",
-      "cannotShare": "لا يمكن المشاركة"
+      "cannotShare": "لا يمكن المشاركة",
+      "dailySummaryMsg": "📊 ملخص يومي{nameSuffix}\n\n🍼 الرضعات: {foodCount} مرة ({food} مل)\n😴 النوم: {sleep} ساعة ({sleepCount} قيلولة)\n🧷 الحفاضات: {diapers}\n💊 المكملات: {supplements}\n\nأُرسل من تطبيق Calmino 💜"
     },
     "sleep": {
       "bestSleepDay": "أفضل يوم نوم",
@@ -1298,11 +1423,29 @@
       "title": "السجل",
       "fullTimeline": "الخط الزمني الكامل",
       "fullHistory": "السجل الكامل"
-    }
+    },
+    "tracking": "تتبع",
+    "sleep8Plus": "نوم 8+",
+    "streak": "تسلسل"
   },
   "calmMode": {
     "nightMode": "الوضع الليلي",
-    "title": "وضع الهدوء"
+    "title": "وضع الهدوء",
+    "sectionEmergency": "طوارئ فورية",
+    "sectionHMO": "صناديق الصحة",
+    "emergencyMDA": "إسعاف",
+    "emergencyPolice": "شرطة",
+    "emergencyPoison": "مركز السموم",
+    "subtitleMedicalEmergency": "طوارئ طبية",
+    "subtitleImmediateDanger": "خطر فوري",
+    "subtitleSubstanceSwallowed": "ابتلاع مادة",
+    "simulatorTitle": "تم اكتشاف المحاكاة",
+    "simulatorMsg": "على جهاز حقيقي، سيتصل ب{name}: {number}",
+    "understood": "فهمت",
+    "hmoClalitSubtitle": "خط التمريض 24/7",
+    "hmoMaccabiSubtitle": "خط التمريض",
+    "hmoMeuhedetSubtitle": "الحمل والولادة",
+    "hmoLeumitSubtitle": "الخط الطبي"
   },
   "child": {
     "name": "اسم الطفل",
@@ -1321,7 +1464,13 @@
     "addBaby": "إضافة طفل",
     "addNewBaby": "إضافة طفل جديد",
     "deleteChild": "حذف الطفل",
-    "babyName": "اسم الطفل"
+    "babyName": "اسم الطفل",
+    "namePlaceholder": "أدخل الاسم",
+    "registerNew": "تسجيل طفل جديد",
+    "createNewProfile": "إنشاء ملف شخصي جديد للطفل",
+    "joinWithCode": "الانضمام برمز",
+    "gotCodeFromPartner": "هل تلقيت رمزاً من شريكك؟",
+    "selectChild": "اختر طفلاً"
   },
   "onboarding": {
     "start": "لنبدأ",
@@ -1330,7 +1479,7 @@
     "next": "التالي",
     "cta": "هيا نبدأ!",
     "slide1": {
-      "greeting": "مرحباً، {{name}}! 👋",
+      "greeting": "مرحباً، {name}! 👋",
       "title": "مرحباً بك في Calmino",
       "subtitle": "كل لحظة مع طفلك، في مكان واحد.\nبسيط، ذكي وهادئ."
     },
@@ -1360,7 +1509,8 @@
       "diapers": "الحفاضات",
       "sleepHours": "ساعات النوم",
       "supplementsLabel": "المكملات",
-      "naps": "قيلولة"
+      "naps": "قيلولة",
+      "feedingsMl": "17908 مل"
     },
     "slide4": {
       "title": "ابحث عن مربية",
@@ -1371,12 +1521,19 @@
     "slide5": {
       "title": "عائلة واحدة، تزامن كامل.",
       "subtitle": "الجميع محدّث في الوقت الفعلي، من أي جهاز.",
-      "membersCount": "{{count}} أعضاء",
+      "membersCount": "{count} أعضاء",
       "admin": "مسؤول",
       "member": "عضو",
       "guest": "ضيف",
       "inviteFamily": "دعوة العائلة",
-      "inviteSubtitle": "رمز الوصول لجميع الأطفال"
+      "inviteSubtitle": "رمز الوصول لجميع الأطفال",
+      "demoFamily": "عائلة نوعام",
+      "demoName1": "داني (أنا)",
+      "demoName2": "أمي",
+      "demoName3": "الجدة راحيل",
+      "demoInitial1": "د",
+      "demoInitial2": "أ",
+      "demoInitial3": "ج"
     }
   },
   "family": {
@@ -1395,7 +1552,23 @@
     "scanQR": "مسح QR",
     "guestInvite": "دعوة ضيف",
     "removeFromFamily": "إزالة من العائلة",
-    "leaveFamily": "مغادرة العائلة"
+    "leaveFamily": "مغادرة العائلة",
+    "familyName": "عائلة {name}",
+    "memberCount": "{count} أعضاء",
+    "oneMemberCount": "عضو واحد",
+    "onlyYouOnline": "أنت فقط متصل",
+    "membersOnline": "{count} متصل",
+    "watchingNow": "يشاهد الآن",
+    "othersAndMore": "+ {count} آخرين",
+    "connected": "متصل",
+    "joinError": "خطأ في الانضمام للعائلة. حاول مرة أخرى.",
+    "guestDisplayName": "ضيف",
+    "newMemberName": "مستخدم جديد",
+    "userFallback": "مستخدم",
+    "babyFallback": "الطفل",
+    "guestSuccess": "انضممت كضيف إلى {childName}! وصول لمدة 24 ساعة فقط 🎉",
+    "memberSuccess": "انضممت إلى عائلة {familyName}! وصول كامل لجميع الأطفال 🎉",
+    "familyFallback": "العائلة"
   },
   "growth": {
     "growth": "النمو",
@@ -1417,7 +1590,20 @@
     "cm": "سم",
     "deleteMeasurement": "حذف القياس",
     "additionalNotes": "ملاحظات إضافية...",
-    "autoUpdateTooltip": "القياس المحفوظ لهذا اليوم سيُحدّث إحصائيات الملف الشخصي للطفل تلقائياً"
+    "autoUpdateTooltip": "القياس المحفوظ لهذا اليوم سيُحدّث إحصائيات الملف الشخصي للطفل تلقائياً",
+    "belowPercentile3": "أقل من الشريحة المئوية الثالثة",
+    "percentileBand": "الشريحة المئوية {value}",
+    "abovePercentile97": "أعلى من الشريحة المئوية 97",
+    "alertTitle": "تنبيه",
+    "alertNoData": "يرجى إدخال الوزن أو الطول على الأقل",
+    "chartTitleLinear": "مخطط النمو (خطي)",
+    "chartTitlePercentile": "مخطط النمو (الشرائح المئوية)",
+    "ageMonths": "{count} أشهر",
+    "noDataHint": "أضف قياسَين على الأقل لعرض المخطط",
+    "weightInputLabel": "الوزن (كغ)",
+    "heightInputLabel": "الطول (سم)",
+    "weightExample": "مثال: 7.5",
+    "heightExample": "مثال: 65"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -1487,7 +1673,12 @@
     "ageDays": "{count} أيام",
     "ageMonths": "{count} أشهر",
     "ageYearsMonths": "{years} سنة و {months} أشهر",
-    "ageYears": "{years} سنة"
+    "ageYears": "{years} سنة",
+    "pageTitle": "طفلي",
+    "journeyTitle": "رحلتنا",
+    "journeySubtitle": "جميع لحظات {name}",
+    "journeyFallback": "الملخص السينمائي",
+    "loadError": "خطأ في تحميل الملف الشخصي"
   },
   "babyProfile": {
     "lastName": "اسم العائلة (اختياري)",
@@ -1539,7 +1730,16 @@
     "title": "الطقس",
     "temperature": "الحرارة",
     "humidity": "الرطوبة",
-    "airQuality": "جودة الهواء"
+    "airQuality": "جودة الهواء",
+    "accessibilityLabel": "الطقس في {city}: {temp} درجات. {recommendation}",
+    "loading": "جارٍ التحميل...",
+    "recHot": "حار ☀️ طبقة خفيفة.",
+    "recWarm": "دافئ 😎 كم طويل.",
+    "recCool": "بارد 🍃 طبقتان.",
+    "recCold": "بارد جداً 🥶 تدفأ جيداً!",
+    "yourArea": "منطقتك",
+    "noLocation": "لا يوجد وصول للموقع",
+    "checkConnection": "تحقق من الاتصال 🔧"
   },
   "health": {
     "title": "الصحة",
@@ -1593,7 +1793,94 @@
     "vaccinesCompleted": "تطعيمات مكتملة",
     "nextVaccine": "التطعيم التالي",
     "removeVaccineTitle": "إلغاء علامة التطعيم",
-    "removeVaccineMessage": "هل أنت متأكد أنك تريد إلغاء علامة هذا التطعيم؟"
+    "removeVaccineMessage": "هل أنت متأكد أنك تريد إلغاء علامة هذا التطعيم؟",
+    "allergenMilk": "حليب",
+    "allergenEggs": "بيض",
+    "allergenPeanuts": "فول سوداني",
+    "allergenTreeNuts": "مكسرات",
+    "allergenSoy": "صويا",
+    "allergenWheat": "قمح/غلوتين",
+    "allergenFish": "سمك",
+    "allergenSesame": "سمسم",
+    "allergenMedication": "أدوية",
+    "allergenDust": "غبار",
+    "illnessRubella": "الحصبة الألمانية",
+    "illnessChickenpox": "جدري الماء",
+    "illnessBronchitis": "التهاب قصبي",
+    "illnessThroat": "التهاب الحلق",
+    "illnessEar": "التهاب الأذن",
+    "illnessRespiratory": "عدوى تنفسية",
+    "illnessTeething": "آلام التسنين",
+    "illnessRunnyNose": "سيلان الأنف",
+    "illnessCold": "زكام",
+    "illnessDiarrhea": "إسهال",
+    "illnessFlu": "إنفلونزا",
+    "illnessDryCough": "سعال جاف",
+    "illnessWetCough": "سعال رطب",
+    "illnessFever": "حمى",
+    "medAntibiotic": "مضاد حيوي",
+    "medAntiInflammatory": "مضاد التهاب",
+    "medPainRelief": "مسكن ألم",
+    "medVitaminC": "فيتامين C",
+    "medVitaminD": "فيتامين D",
+    "medDrops": "قطرات",
+    "medAntiseptic": "مطهر",
+    "medFeverReducer": "خافض حرارة",
+    "medProbiotic": "بروبيوتيك",
+    "medSprays": "بخاخات",
+    "descDoctor": "تسجيل ومتابعة زيارات الطبيب",
+    "descVaccines": "متابعة اللقاحات الروتينية",
+    "descIllness": "توثيق الأمراض والأعراض",
+    "descTemperature": "قياس الحمى ومتابعة الاتجاهات",
+    "descMedications": "إدارة الأدوية والتذكيرات",
+    "descTipatHalav": "العثور على أقرب عيادة",
+    "descAllergies": "تسجيل ومتابعة الحساسيات",
+    "descHistory": "عرض جميع السجلات الصحية",
+    "illnessNameLabel": "اسم المرض",
+    "illnessNamePlaceholder": "اكتب اسم المرض...",
+    "illnessOngoing": "نعم",
+    "illnessEnd": "التعافي / الانتهاء",
+    "illnessDuration": "المدة: {days} أيام",
+    "addMedication": "إضافة دواء جديد",
+    "noMedicationsYet": "لا توجد أدوية بعد",
+    "noMedicationsHint": "اضغط على \"إضافة دواء\" للبدء",
+    "timesPerDay": "{count} مرات/يوم",
+    "reminderLabel": "تذكير",
+    "takenLabel": "تم أخذها",
+    "doneBtnLabel": "فهمت",
+    "confirmBtnLabel": "تأكيد",
+    "uploading": "جاري الرفع...",
+    "photoUploaded": "تم رفع الصورة",
+    "performedOn": "تم في: {date}",
+    "vaccineNote": "لقاح: {name}",
+    "vaccineTitle": "لقاح: {name}",
+    "vaccineTitleCalendar": "تذكير لقاح الطفل - {name}",
+    "vaccineAppointmentNote": "موعد لقاح: {name} - {date}",
+    "allVaccinesDoneTitle": "مبروك!",
+    "allVaccinesDoneMsg": "لقد أكملتم جميع اللقاحات الروتينية الموصى بها بنجاح.",
+    "noHistoryYet": "لا توجد سجلات بعد",
+    "noHistoryInCategory": "لا توجد سجلات في هذه الفئة",
+    "vaccineAdded": "أضيف:",
+    "medSearchPlaceholder": "ابحث عن دواء (مثل: بنادول، أيبوبروفين...)",
+    "dosagePlaceholder": "الكمية (مثل: 5 مل، حبة واحدة)",
+    "timesPerDaySingular": "مرة",
+    "timesPerDayPlural": "مرات",
+    "notesPlaceholder": "ملاحظات (مثل: قبل الأكل)",
+    "saving": "جارٍ الحفظ...",
+    "saveMedication": "حفظ الدواء",
+    "timesPerDayLabel": "عدد المرات يومياً",
+    "medicationName": "اسم الدواء",
+    "useCustomMed": "استخدم: \"{name}\"",
+    "medNotInDictionary": "الدواء غير موجود في القاموس — يمكنك كتابة اسم مخصص",
+    "medInfoTitle": "معلومات عن {name}",
+    "commonDosageInfo": "الجرعة الشائعة: {dosage}",
+    "addToEdit": "أضف للتحرير ✎",
+    "formLabel": "الشكل: {form}",
+    "medInfoDisclaimer": "معلومات عامة فقط. استشر طبيباً.",
+    "medicationNameRequired": "يرجى إدخال اسم الدواء",
+    "dosageLabel": "الجرعة",
+    "administrationTimes": "أوقات الإعطاء",
+    "reminderAlerts": "تنبيهات التذكير"
   },
   "misc": {
     "uploadPhoto": "رفع صورة",
@@ -1619,7 +1906,13 @@
   "export": {
     "pdf": "تصدير PDF",
     "export": "تصدير",
-    "shareDailySummary": "مشاركة الملخص اليومي"
+    "shareDailySummary": "مشاركة الملخص اليومي",
+    "exportPdfForDoctor": "تصدير PDF للطبيب",
+    "sent": "تم الإرسال!",
+    "noActiveChild": "لم يتم العثور على طفل نشط",
+    "exportSuccess": "تم تصدير التقرير بنجاح",
+    "exportFailed": "فشل تصدير التقرير",
+    "exportError": "حدث خطأ أثناء التصدير"
   },
   "blocked": {
     "title": "المستخدمون المحظورون",
@@ -1660,7 +1953,9 @@
   },
   "network": {
     "noConnection": "لا يوجد اتصال بالإنترنت",
-    "checking": "جارٍ التحقق من الاتصال..."
+    "checking": "جارٍ التحقق من الاتصال...",
+    "backOnline": "عاد الاتصال!",
+    "oops": "عذرًا!"
   },
   "bookings": {
     "myBookings": "حجوزاتي",
@@ -1727,7 +2022,8 @@
     "title": "ضوء ليلي",
     "tapToHideControls": "اضغط على الشاشة لإخفاء الأزرار",
     "color": "لون",
-    "brightness": "سطوع"
+    "brightness": "سطوع",
+    "tapToClose": "اضغط للإغلاق"
   },
   "teethTracker": {
     "title": "جدول أسنان الطفل",
@@ -1750,7 +2046,9 @@
     "editToothDate": "تعديل تاريخ ظهور السن",
     "whenDidToothErupt": "متى ظهرت السن؟",
     "removeTooth": "إزالة سن",
-    "updateDate": "تحديث التاريخ"
+    "updateDate": "تحديث التاريخ",
+    "erupted": "بزغت",
+    "tooth": "سن"
   },
   "sitterOnboarding": {
     "profileTitle": "مرحباً!",
@@ -1761,5 +2059,155 @@
     "reputationSubtitle": "احصل على تقييمات من الآباء وشارك على الواتساب",
     "next": "التالي",
     "letsStart": "لنبدأ!"
+  },
+  "controlCenter": {
+    "title": "اختصارات سريعة",
+    "subtitle": "اختر حتى {max} اختصارات عند \"+\" ({count}/{max})",
+    "editHint": "اضغط على العين لإخفاء/إظهار فئة",
+    "maxReached": "تم الوصول للحد الأقصى — ألغِ تحديداً لإضافة آخر",
+    "hidden": "(مخفي)",
+    "save": "حفظ الاختصارات ({count}/{max})",
+    "section": {
+      "sleep": "النوم",
+      "feeding": "التغذية",
+      "whiteNoise": "ضوضاء بيضاء",
+      "health": "الصحة",
+      "tools": "الأدوات"
+    }
+  },
+  "fab": {
+    "title": "إجراءات سريعة",
+    "edit": "تخصيص",
+    "stopSleep": "إيقاف النوم",
+    "stop": "إيقاف",
+    "activeSleep": "نوم نشط · {elapsed}",
+    "whiteNoiseActive": "الضوضاء البيضاء تعمل",
+    "selectFeedingType": "اختر نوع التغذية",
+    "timeNight": "ليل · وقت النوم",
+    "timeMorning": "صباح · وقت الأكل",
+    "timeNoon": "ظهر",
+    "timeEvening": "بعد الظهر / مساء",
+    "breastRight": "الثدي الأيمن",
+    "breastLeft": "الثدي الأيسر",
+    "bottle": "رضّاعة",
+    "pumping": "شفط",
+    "longPressHint": "اضغط مطولاً على الزر + لفتح مركز التحكم"
+  },
+  "smartStatus": {
+    "noRecordings": "لا توجد سجلات بعد",
+    "timeToEat": "🍼 حان وقت الأكل؟",
+    "timeToNap": "😴 ربما حان وقت القيلولة؟",
+    "sleepingFor": "نائم منذ {time}"
+  },
+  "tipatHalav": {
+    "description": "ابحث عن أقرب محطة Tipat Halav من قاعدة بيانات تضم أكثر من 1800 محطة في جميع أنحاء البلاد",
+    "searchPlaceholder": "ابحث عن مدينة أو شارع...",
+    "resultsFound": "تم العثور على {count} محطات",
+    "searching": "جارٍ البحث...",
+    "noResults": "لم يتم العثور على محطات لهذا البحث. جرب مدينة أخرى.",
+    "noResultsForQuery": "لم نجد محطات لـ\"{query}\"",
+    "prompt": "أدخل اسم مدينة للعثور على أقرب محطة Tipat Halav",
+    "stationFallback": "محطة Tipat Halav",
+    "dialNotSupported": "الاتصال غير مدعوم",
+    "dialNotSupportedMsg": "هذا الجهاز لا يدعم المكالمات الهاتفية (ربما محاكٍ).",
+    "navError": "خطأ",
+    "cannotOpenNav": "تعذر فتح تطبيق الملاحة"
+  },
+  "reminder": {
+    "notificationsDisabled": "الإشعارات معطلة",
+    "enableNotificationsMsg": "يرجى تمكين الإشعارات في إعدادات الجهاز لتلقي التذكيرات",
+    "understood": "فهمت",
+    "cannotSetPastReminder": "لا يمكن ضبط تذكير في الماضي",
+    "title": "تذكير",
+    "calendarTitle": "تذكير: {message}",
+    "calendarNote": "تم الإنشاء بواسطة تطبيق Calmino",
+    "savedTitle": "تم الحفظ!",
+    "savedWithCalendar": "تم حفظ التذكير في التطبيق والتقويم",
+    "savedPartial": "تم الحفظ",
+    "savedWithoutCalendar": "تم حفظ التذكير في التطبيق، لكن الحفظ في التقويم فشل",
+    "titleDaily": "تذكير يومي",
+    "titleWeekly": "تذكير أسبوعي",
+    "savedSuccess": "تم ضبط التذكير بنجاح",
+    "cannotSave": "تعذر حفظ التذكير. حاول مرة أخرى.",
+    "deleteConfirm": "هل تريد حذف هذا التذكير؟",
+    "myReminders": "تذكيراتي",
+    "customPlaceholder": "أو اكتب شيئًا آخر...",
+    "when": "متى؟",
+    "noRemindersYet": "لا توجد تذكيرات بعد",
+    "whenToRemindQ": "متى تريد أن نذكّرك؟",
+    "createFirst": "إنشاء أول تذكير",
+    "whatToRemind": "بماذا تذكّر؟",
+    "saving": "جاري الحفظ..."
+  },
+  "teeth": {
+    "molar2": "الضرس الثاني",
+    "molar1": "الضرس الأول",
+    "canine": "الناب",
+    "incisorLat": "القاطع الجانبي",
+    "incisorCen": "القاطع المركزي",
+    "tooth": "سن",
+    "erupted": "بزغت"
+  },
+  "checklist": {
+    "title": "قائمة التهدئة",
+    "item1": "هل الحفاضة نظيفة؟",
+    "item2": "هل مرّ أقل من 3 ساعات على آخر رضاعة؟",
+    "item3": "هل يشعر بالحر أو البرد؟ (افحص الرقبة)",
+    "item4": "هل هناك شعرة ملتفة حول الأصابع؟",
+    "item5": "هل الطفل متعب فحسب؟",
+    "item6": "هل يؤلمه شيء؟ (أذنيه/أسنانه)",
+    "allCheckedTitle": "لقد تحققت من كل شيء",
+    "allCheckedText": "أحياناً يحتاج الأطفال فقط إلى البكاء.\nخذ نفساً عميقاً، أنت والد/والدة رائع/ة."
+  },
+  "blockedUsers": {
+    "title": "المستخدمون المحجوبون",
+    "unblockTitle": "إلغاء الحجب",
+    "unblockConfirm": "هل أنت متأكد أنك تريد إلغاء حجب {name}؟",
+    "unblock": "إلغاء الحجب",
+    "unblockError": "حدث خطأ أثناء إلغاء الحجب.",
+    "empty": "ليس لديك مستخدمون محجوبون.",
+    "user": "مستخدم"
+  },
+  "guardian": {
+    "invitePartner": "دعوة الشريك للمشاهدة معاً",
+    "invite": "دعوة",
+    "familyOf": "عائلة {name}",
+    "me": "أنا",
+    "othersAndMore": "+ {count} آخرين",
+    "connected": "متصل"
+  },
+  "clock": {
+    "countdown": "العد التنازلي",
+    "stopwatch": "ساعة إيقاف"
+  },
+  "milestone": {
+    "firstWeeks": "الأسابيع الأولى",
+    "ageMonths": "{count} شهر"
+  },
+  "photo": {
+    "selectSource": "اختر مصدر الصورة",
+    "cancel": "إلغاء",
+    "takePhoto": "التقاط صورة",
+    "chooseFromGallery": "اختر من المعرض"
+  },
+  "status": {
+    "sleeping": "نائم/ة",
+    "awake": "مستيقظ/ة",
+    "tapToChange": "اضغط للتغيير",
+    "accessSleeping": "{name} نائم/ة. اضغط للتغيير",
+    "accessAwake": "{name} مستيقظ/ة. اضغط للتغيير",
+    "textSleeping": "{name} نائم/ة 😴",
+    "textAwake": "{name} مستيقظ/ة 😃"
+  },
+  "med": {
+    "vitaminD": "فيتامين D",
+    "iron": "حديد",
+    "meReporter": "أنا"
+  },
+  "medication": {
+    "reminderTitle": "💊 تذكير بالدواء",
+    "reminderBody": "حان وقت أخذ {name} ({dosage})",
+    "dosageNote": "الجرعة: {dosage}",
+    "calendarNotes": "الجرعة: {dosage}{notes}\n\n⚠️ معلومات عامة فقط. استشر الطبيب."
   }
 }

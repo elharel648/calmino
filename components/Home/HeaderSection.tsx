@@ -64,9 +64,12 @@ const HeaderSection = memo<HeaderSectionProps>(({
     onJoinWithCode,
     onEditChild,
 }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
-    const { allChildren, activeChild, setActiveChild } = useActiveChild();
+    let { allChildren, activeChild, setActiveChild } = useActiveChild();
+    
+
+
     const [uploading, setUploading] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const { weather } = useWeather();
@@ -90,32 +93,34 @@ const HeaderSection = memo<HeaderSectionProps>(({
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
         // Determine gender prefix
-        const genderPrefix = profile.gender === 'girl' ? t('child.girl') : profile.gender === 'boy' ? t('child.boy') : '';
+        const genderPrefix = profile.gender === 'girl' ? t('age.prefixGirl') : profile.gender === 'boy' ? t('age.prefixBoy') : '';
 
         // Special cases
         if (diffDays === 0) {
             return ''; // Don't show anything for day 0
         }
         if (diffDays === 1) {
-            return genderPrefix ? `${genderPrefix} יום אחד` : 'יום אחד';
+            const text = t('age.oneDay');
+            return genderPrefix ? `${genderPrefix} ${text}` : text;
         }
         if (diffDays < 7) {
-            return genderPrefix ? `${genderPrefix} ${diffDays} ימים` : `${diffDays} ימים`;
+            const text = t('age.days', { count: diffDays });
+            return genderPrefix ? `${genderPrefix} ${text}` : text;
         }
         if (diffDays < 30) {
             const weeks = Math.floor(diffDays / 7);
-            const weekText = weeks === 1 ? t('common.week') : `${weeks} שבועות`;
+            const weekText = weeks === 1 ? t('common.week') : t('age.weeksCount', { count: weeks });
             return genderPrefix ? `${genderPrefix} ${weekText}` : weekText;
         }
         const months = Math.floor(diffDays / 30);
         if (months < 12) {
-            const monthText = months === 1 ? t('common.month') : `${months} חודשים`;
+            const monthText = months === 1 ? t('common.month') : t('age.monthsCount', { count: months });
             return genderPrefix ? `${genderPrefix} ${monthText}` : monthText;
         }
         const years = Math.floor(months / 12);
         const remainingMonths = months % 12;
         if (remainingMonths > 0) {
-            const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')} ו-${remainingMonths} חודשים`;
+            const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')} ${t('age.andMonths', { count: remainingMonths })}`;
             return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
         }
         const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')}`;
@@ -259,11 +264,9 @@ const HeaderSection = memo<HeaderSectionProps>(({
                         {profile.name}
                     </Text>
                     {/* Line 3: age + today's date */}
-                    {ageText ? (
-                        <Text style={[styles.ageText, { color: theme.textSecondary }]}>
-                            {ageText}{birthDateStr ? ` · ${birthDateStr}` : ''}
-                        </Text>
-                    ) : null}
+                    <Text style={[styles.ageText, { color: theme.textSecondary }]}>
+                        {ageText} · {birthDateStr}
+                    </Text>
                 </View>
 
                 {/* Notification + Weather */}
@@ -321,9 +324,6 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                             <Image
                                                 source={{ uri: child.photoUrl }}
                                                 style={styles.childAvatarImage}
-                                                onError={() => {
-                                                    // Image failed to load - will show placeholder
-                                                }}
                                             />
                                         ) : (
                                             <View style={[

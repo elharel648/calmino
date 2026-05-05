@@ -5,6 +5,8 @@
 
 import { NativeModules, Platform } from 'react-native';
 import { logger } from '../utils/logger';
+import i18n from './i18n';
+const t = i18n.t.bind(i18n);
 
 interface WeatherKitModule {
     getWeather(latitude: number, longitude: number): Promise<WeatherData>;
@@ -102,10 +104,10 @@ class WeatherKitService {
      * Get temperature recommendation in Hebrew
      */
     getRecommendation(temperature: number): string {
-        if (temperature >= 25) return 'חם ☀️ שכבה דקה.';
-        if (temperature >= 20) return 'נעים 😎 שכבה ארוכה.';
-        if (temperature >= 15) return 'קריר 🍃 שתי שכבות.';
-        return 'קר 🥶 לחמם טוב!';
+        if (temperature >= 25) return t('weather.recHot');
+        if (temperature >= 20) return t('weather.recWarm');
+        if (temperature >= 15) return t('weather.recCool');
+        return t('weather.recCold');
     }
 }
 

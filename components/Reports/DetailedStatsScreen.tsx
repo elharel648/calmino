@@ -399,6 +399,8 @@ export default function DetailedStatsScreen({
         fetchData();
     }, [childId, dateRange, metricType, feedingSubType]);
 
+
+
     // Calculate stats
     const stats = useMemo(() => {
         if (data.length === 0) return { total: 0, average: 0, max: 0, maxDay: '' };

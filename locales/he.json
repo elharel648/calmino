@@ -34,7 +34,15 @@
     "week": "שבוע",
     "month": "חודש",
     "unknown": "לא ידוע",
-    "tapToSelect": "לחצ/י לבחירה"
+    "tapToSelect": "לחצ/י לבחירה",
+    "child": "ילד",
+    "copy": "העתק",
+    "copied": "✓ הועתק",
+    "finish": "סיום",
+    "hide": "הסתר",
+    "showMore": "עוד {count}",
+    "hello": "שלום",
+    "successTitle": "הצלחה!"
   },
   "errors": {
     "somethingWentWrong": "אופס! משהו השתבש",
@@ -95,7 +103,8 @@
       "sentFrom": "_נשלח מ-Calmino 💙_",
       "time": "זמן",
       "sleepDuration": "משך שינה"
-    }
+    },
+    "collectingData": "אוסף נתונים לניתוח..."
   },
   "stats": {
     "title": "סטטיסטיקות",
@@ -245,7 +254,16 @@
     "followInstagram": "עקבו אחרינו באינסטגרם",
     "joinCommunity": "הצטרפו לקהילה שלנו",
     "vitaminD": "ויטמין D",
-    "ironSupplement": "ברזל"
+    "ironSupplement": "ברזל",
+    "supplementsConfigured": "{count} תוספים מוגדרים",
+    "everyDayAtYourTime": "כל יום בשעה שתבחרי",
+    "noSupplements": "אין תוספים מוגדרים — הוסיפי תוספים בדף הבית",
+    "cannotEnableNotifications": "לא ניתן להפעיל התראות",
+    "enableNotificationsInSettings": "יש לאשר קבלת התראות בהגדרות המכשיר כדי להפעיל תזכורות.",
+    "timePickerTitle": "בחר שעה",
+    "everyHours": "כל {count} שעות",
+    "startTimeLabel": "שעת התחלה",
+    "everyUnitLabel": "כל {unit}:"
   },
   "navigation": {
     "home": "בית",
@@ -271,7 +289,8 @@
     "clearAllMessage": "האם למחוק את כל ההתראות?",
     "minutesAgo": "לפני {count} דקות",
     "hoursAgo": "לפני {count} שעות",
-    "daysAgo": "לפני {count} ימים"
+    "daysAgo": "לפני {count} ימים",
+    "testMessage": "זו התראת בדיקה! 🎉"
   },
   "timeline": {
     "title": "סדר היום",
@@ -298,7 +317,14 @@
     "edit": "ערוך",
     "delete": "מחק",
     "confirmDelete": "האם למחוק?",
-    "eventDeleted": "האירוע נמחק"
+    "eventDeleted": "האירוע נמחק",
+    "diaperChange": "החלפת חיתול",
+    "vaccine": "חיסון",
+    "vaccineLabel": "💉 חיסון",
+    "customAction": "פעולה מותאמת",
+    "toothErupted": "בקעה שן",
+    "breastRight": "ימין",
+    "breastLeft": "שמאל"
   },
   "time": {
     "now": "עכשיו",
@@ -315,7 +341,14 @@
     "summaryTime": "זמן סיכום",
     "hour": "שעה",
     "minute": "דקה",
-    "minutes": "דקות"
+    "minutes": "דקות",
+    "minutesShort": "{count} דק'",
+    "hoursShort": "{count} שע'",
+    "daysShort": "{count} ימים",
+    "minutesCount": "{count} דקות",
+    "secondsCount": "{count} שניות",
+    "hoursLabel": "שעות",
+    "minutesLabel": "דקות"
   },
   "actions": {
     "food": "אוכל",
@@ -335,14 +368,57 @@
     "customize": "התאם",
     "active": {
       "food": "מאכילה",
-      "sleep": "ישנ/ה"
-    }
+      "sleep": "ישנ/ה",
+      "breastfeeding": "מניקה",
+      "bottle": "מאכיל/ה בבקבוק",
+      "pumping": "שואב/ת"
+    },
+    "breastfeeding": "הנקה",
+    "breastfeedingRight": "הנקה ימין",
+    "breastfeedingLeft": "הנקה שמאל",
+    "bottle": "בקבוק",
+    "pumping": "שאיבה",
+    "whiteNoiseLullaby": "שיר ערש",
+    "whiteNoiseGentle": "מוזיקה עדינה",
+    "whiteNoiseBirds": "ציפורים",
+    "whiteNoiseRain": "גשם",
+    "healthDoctor": "ביקור רופא",
+    "healthVaccines": "חיסונים",
+    "healthIllness": "מחלות",
+    "healthTemperature": "טמפרטורה",
+    "healthMedications": "תרופות",
+    "healthTipatHalav": "טיפת חלב",
+    "healthAllergies": "אלרגיות",
+    "healthHistory": "היסטוריה",
+    "addActionPlaceholder": "למשל: אמבטיה, משחק...",
+    "addDetailsPlaceholder": "הוסף פרטים נוספים...",
+    "saved": "נשמר!",
+    "addAction": "הוסף פעולה",
+    "addActionTitle": "הוספת פעולה",
+    "quickActionsSection": "פעולות מהירות",
+    "actionNameLabel": "שם הפעולה",
+    "selectIcon": "בחר אייקון",
+    "dateAndTime": "תאריך ושעה",
+    "notesOptional": "הערות (אופציונלי)",
+    "presetBath": "אמבטיה",
+    "presetGame": "משחק",
+    "presetStory": "סיפור",
+    "presetDrink": "שתייה",
+    "presetWalk": "טיול"
   },
   "age": {
     "days": "{count} ימים",
     "months": "{count} חודשים",
     "years": "{count} שנה",
-    "yearsMonths": "{count} שנה ו-{months} חודשים"
+    "yearsMonths": "{count} שנה ו-{months} חודשים",
+    "weeks": "{count} שבועות",
+    "oneYear": "שנה",
+    "prefixBoy": "בן",
+    "prefixGirl": "בת",
+    "oneDay": "יום אחד",
+    "weeksCount": "{count} שבועות",
+    "monthsCount": "{count} חודשים",
+    "andMonths": "ו-{count} חודשים"
   },
   "account": {
     "title": "חשבון",
@@ -499,7 +575,15 @@
     "startTime": "התחלה",
     "saveRecord": "שמור תיעוד",
     "saved": "נשמר!",
-    "whenHappened": "מתי זה קרה?"
+    "whenHappened": "מתי זה קרה?",
+    "timerRequired": "יש להפעיל את הטיימר לפני השמירה.",
+    "sleepDurationRequired": "יש להזין משך שינה גדול מ-0.",
+    "endTimeDifferent": "שעת הסיום חייבת להיות שונה משעת ההתחלה.",
+    "diaperTypeRequired": "יש לבחור סוג חיתול לפני השמירה.",
+    "missingTimestamp": "שגיאה: חסר timestamp. נא לנסות שוב.",
+    "missingDuration": "שגיאה: חסר duration. נא לנסות שוב.",
+    "paused": "מושהה",
+    "sleepNotePlaceholder": "לדוגמה: ישן עמוק, התעורר פעם אחת..."
   },
   "milestones": {
     "enterTitle": "נא להזין כותרת",
@@ -561,7 +645,17 @@
     "featureLocked": "תוכן פרמיום",
     "upgradeToUnlock": "שדרג לפרמיום כדי לפתוח תוכן זה",
     "upgradeCta": "שדרג לפרמיום",
-    "maybeLater": "אולי אחר כך"
+    "maybeLater": "אולי אחר כך",
+    "productUnavailable": "המוצר לא זמין כרגע",
+    "welcomeTitle": "🎉 ברוכים הבאים ל-Premium!",
+    "welcomeMsg": "תהנה מכל התכונות המתקדמות",
+    "excellent": "מעולה!",
+    "restoredTitle": "✅ שוחזר!",
+    "restoredMsg": "המנוי שלך שוחזר בהצלחה",
+    "noPurchasesFound": "לא נמצאו רכישות",
+    "noPurchasesMsg": "לא מצאנו מנוי קיים לשחזר",
+    "purchaseError": "לא הצלחנו להשלים את הרכישה",
+    "restoreError": "לא הצלחנו לשחזר את הרכישות"
   },
   "units": {
     "km": "ק\"מ"
@@ -715,9 +809,27 @@
     "codeMustBe6": "הקוד צריך להיות 6 ספרות",
     "join": "הצטרף",
     "success": "הצטרפת בהצלחה! 🎉",
-    "error": "שגיאה בהצטרפות. נסה שוב.",
+    "error": {
+      "mustLogin": "יש להתחבר למערכת",
+      "expiredCode": "קוד ההזמנה פג תוקף",
+      "usedCode": "קוד ההזמנה כבר נוצל",
+      "ownInvite": "לא ניתן להצטרף להזמנה שיצרת בעצמך",
+      "familyNotFound": "המשפחה לא נמצאה",
+      "alreadyMember": "אתה כבר חלק מהמשפחה הזו",
+      "alreadyInOther": "אתה כבר חלק ממשפחה אחרת",
+      "invalidCode": "קוד הזמנה לא תקין",
+      "generic": "שגיאה בהצטרפות למשפחה"
+    },
     "tipFamily": "💡 קוד משפחה: גישה מלאה לכל הילדים",
-    "tipGuest": "💡 קוד אורח: גישה ל-24 שעות בלבד"
+    "tipGuest": "💡 קוד אורח: גישה ל-24 שעות בלבד",
+    "cameraPermissionRequired": "יש לאשר גישה למצלמה כדי לסרוק QR",
+    "alreadyInFamily": "שים לב",
+    "alreadyInFamilyMsg": "אתה כבר חלק ממשפחת \"{name}\".\nאם תמשיך, תאבד את הגישה לנתוניה.\n\nלהמשיך ולהצטרף?",
+    "yesJoin": "כן, הצטרף",
+    "scannerTitle": "סורק קוד משפחה",
+    "aimCamera": "כוון את המצלמה לברקוד",
+    "orScanQR": "או סרוק קוד QR",
+    "existingFamilyFallback": "הקיימת"
   },
   "login": {
     "welcomeBack": "ברוכים השבים",
@@ -840,7 +952,10 @@
     },
     "appName": "Calmino",
     "appSubtitle": "ניהול חכם ושקט להורים",
-    "exploreApp": "גלה את Calmino"
+    "exploreApp": "גלה את Calmino",
+    "welcomeJoined": "איזה כיף שהצטרפת!",
+    "accountCreated": "החשבון שלך נוצר בהצלחה.\nכל מה שנשאר עכשיו זה להתחבר ולהתחיל.",
+    "letsStart": "בואו נתחיל"
   },
   "guest": {
     "loginRequiredTitle": "נדרשת התחברות",
@@ -907,7 +1022,10 @@
     "joinWithCodeSubtitle": "קיבלת קוד מהשותף?"
   },
   "share": {
-    "message": "היי! אני משתמש/ת ב-Calmino וזה ממש עוזר לי לנהל את הטיפול בבייבי. ממליץ/ה בחום! 👶📱"
+    "message": "היי! אני משתמש/ת ב-Calmino וזה ממש עוזר לי לנהל את הטיפול בבייבי. ממליץ/ה בחום! 👶📱",
+    "birthdayLabel": "יום הלידה",
+    "monthLabel": "חודש {month}",
+    "magicMomentTitle": "רגע קסום של {name}"
   },
   "babysitter": {
     "findSitter": "מצא סיטר",
@@ -994,7 +1112,13 @@
       "feeding": "טיפ האכלה",
       "general": "טיפ כללי",
       "shortNaps": "תנומות קצרות מאוד. נסו ליצור סביבה שקטה וחשוכה יותר.",
-      "keepTracking": "המשיכו לתעד - ככל שיש יותר נתונים, התובנות יהיו מדויקות יותר!"
+      "keepTracking": "המשיכו לתעד - ככל שיש יותר נתונים, התובנות יהיו מדויקות יותר!",
+      "longNaps": "התנומות ארוכות ויציבות - מעולה! ממוצע של {hours} שעות.",
+      "avgSleepTime": "שעת שינה ממוצעת: {time}. שמרו על עקביות!",
+      "largeFeedings": "האכלות גדולות (ממוצע {ml} מ\"ל). התינוק אוכל היטב!",
+      "longFeedingInterval": "מרווח ארוך בין האכלות ({hours} שעות). הבטן מתרחבת!",
+      "sleepImproved": "השינה השתפרה ב-{hours} שעות לעומת השבוע שעבר! 🎉",
+      "sleepDeclined": "ירידה בשינה לעומת השבוע שעבר. אולי יש שינוי בשגרה?"
     },
     "share": {
       "dailySummary": "סיכום יומי",
@@ -1002,7 +1126,8 @@
       "error": "לא הצלחנו לשתף את הדוח",
       "dataDisclaimer": "כל זכויות הנתונים שמורות להורים בלבד.",
       "notSupported": "שיתוף קבצים אינו נתמך במכשיר זה",
-      "cannotShare": "לא ניתן לשתף"
+      "cannotShare": "לא ניתן לשתף",
+      "dailySummaryMsg": "📊 סיכום יומי{nameSuffix}\n\n🍼 האכלה: {foodCount} פעמים ({food} מ\"ל)\n😴 שינה: {sleep} שעות ({sleepCount} תנומות)\n🧷 חיתולים: {diapers}\n💊 תוספים: {supplements}\n\nנשלח מאפליקציית Calmino 💜"
     },
     "sleep": {
       "bestSleepDay": "יום השינה הטוב ביותר",
@@ -1132,11 +1257,29 @@
       "title": "היסטוריה",
       "fullTimeline": "ציר זמן מלא",
       "fullHistory": "היסטוריה מלאה"
-    }
+    },
+    "tracking": "תיעוד",
+    "sleep8Plus": "שינה 8+",
+    "streak": "רצף"
   },
   "calmMode": {
     "nightMode": "מצב לילה",
-    "title": "מצב רגוע"
+    "title": "מצב רגוע",
+    "sectionEmergency": "חירום מיידי",
+    "sectionHMO": "קופות חולים",
+    "emergencyMDA": "מד\"א",
+    "emergencyPolice": "משטרה",
+    "emergencyPoison": "הרעלות",
+    "subtitleMedicalEmergency": "חירום רפואי",
+    "subtitleImmediateDanger": "סכנה מיידית",
+    "subtitleSubstanceSwallowed": "בליעת חומר",
+    "simulatorTitle": "סימולטור זוהה",
+    "simulatorMsg": "במכשיר אמיתי השיחה הייתה יוצאת ל{name}: {number}",
+    "understood": "הבנתי",
+    "hmoClalitSubtitle": "מוקד אחיות 24/7",
+    "hmoMaccabiSubtitle": "מוקד אחיות",
+    "hmoMeuhedetSubtitle": "היריון ולידה",
+    "hmoLeumitSubtitle": "מוקד רפואי"
   },
   "child": {
     "name": "שם הילד",
@@ -1155,7 +1298,13 @@
     "addBaby": "הוסף תינוק",
     "addNewBaby": "הוסף תינוק חדש",
     "deleteChild": "מחק ילד",
-    "babyName": "שם התינוק"
+    "babyName": "שם התינוק",
+    "namePlaceholder": "הזן שם",
+    "registerNew": "רישום ילד חדש",
+    "createNewProfile": "צור פרופיל חדש לילד",
+    "joinWithCode": "הצטרפות עם קוד",
+    "gotCodeFromPartner": "קיבלת קוד מהשותף?",
+    "selectChild": "בחר ילד"
   },
   "onboarding": {
     "start": "התחל",
@@ -1164,7 +1313,7 @@
     "next": "הבא",
     "cta": "בואו נתחיל!",
     "slide1": {
-      "greeting": "שלום, {{name}}! 👋",
+      "greeting": "שלום, {name}! 👋",
       "title": "ברוכים הבאים ל-Calmino",
       "subtitle": "כל רגע עם הבייבי, במקום אחד.\nפשוט, חכם ורגוע."
     },
@@ -1194,7 +1343,8 @@
       "diapers": "חיתולים",
       "sleepHours": "שעות שינה",
       "supplementsLabel": "תוספים",
-      "naps": "תנומות"
+      "naps": "תנומות",
+      "feedingsMl": "17908 מ\"ל"
     },
     "slide4": {
       "title": "מצא סיטר",
@@ -1205,12 +1355,19 @@
     "slide5": {
       "title": "משפחה אחת, סנכרון מלא.",
       "subtitle": "כולם מעודכנים בזמן אמת, מכל מכשיר.",
-      "membersCount": "{{count}} חברים",
+      "membersCount": "{count} חברים",
       "admin": "מנהל",
       "member": "חבר",
       "guest": "אורח",
       "inviteFamily": "הזמן משפחה",
-      "inviteSubtitle": "קוד גישה לכל הילדים"
+      "inviteSubtitle": "קוד גישה לכל הילדים",
+      "demoFamily": "משפחת נועם",
+      "demoName1": "דני (אני)",
+      "demoName2": "אמא",
+      "demoName3": "סבתא רחל",
+      "demoInitial1": "ד",
+      "demoInitial2": "א",
+      "demoInitial3": "ס"
     }
   },
   "family": {
@@ -1229,7 +1386,23 @@
     "scanQR": "סורק QR",
     "guestInvite": "הזמנת אורח",
     "removeFromFamily": "הסר מהמשפחה",
-    "leaveFamily": "עזוב משפחה"
+    "leaveFamily": "עזוב משפחה",
+    "familyName": "משפחת {name}",
+    "memberCount": "{count} חברים",
+    "oneMemberCount": "חבר אחד",
+    "onlyYouOnline": "רק אתה מחובר",
+    "membersOnline": "{count} מחוברים",
+    "watchingNow": "צופה עכשיו",
+    "othersAndMore": "+ {count} נוספים",
+    "connected": "מחובר/ת",
+    "joinError": "שגיאה בהצטרפות למשפחה. נסה שוב.",
+    "guestDisplayName": "אורח",
+    "newMemberName": "משתמש חדש",
+    "userFallback": "משתמש",
+    "babyFallback": "התינוק",
+    "guestSuccess": "הצטרפת כאורח ל{childName}! גישה ל-24 שעות בלבד 🎉",
+    "memberSuccess": "הצטרפת למשפחת {familyName}! גישה מלאה לכל הילדים 🎉",
+    "familyFallback": "המשפחה"
   },
   "growth": {
     "growth": "גדילה",
@@ -1251,7 +1424,20 @@
     "cm": "ס\"מ",
     "deleteMeasurement": "מחק מדידה",
     "additionalNotes": "הערות נוספות...",
-    "autoUpdateTooltip": "מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק"
+    "autoUpdateTooltip": "מדידה שתשמור להיום תעדכן אוטומטית את הסטטיסטיקות בפרופיל התינוק",
+    "belowPercentile3": "מתחת לאחוזון 3",
+    "percentileBand": "אחוזון {value}",
+    "abovePercentile97": "מעל אחוזון 97",
+    "alertTitle": "שים לב",
+    "alertNoData": "יש להזין לפחות משקל או גובה",
+    "chartTitleLinear": "גרף גדילה (לינארי)",
+    "chartTitlePercentile": "גרף גדילה (אחוזונים)",
+    "ageMonths": "{count} חודשים",
+    "noDataHint": "הוסף לפחות 2 מדידות לראות גרף",
+    "weightInputLabel": "משקל (ק\"ג)",
+    "heightInputLabel": "גובה (ס\"מ)",
+    "weightExample": "לדוגמה: 7.5",
+    "heightExample": "לדוגמה: 65"
   },
   "auth": {
     "login": "התחברות",
@@ -1321,7 +1507,12 @@
     "ageDays": "{count} ימים",
     "ageMonths": "{count} חודשים",
     "ageYearsMonths": "{years} שנה ו-{months} חודשים",
-    "ageYears": "{years} שנה"
+    "ageYears": "{years} שנה",
+    "pageTitle": "הבייבי שלי",
+    "journeyTitle": "המסע שלנו",
+    "journeySubtitle": "כל הרגעים של {name}",
+    "journeyFallback": "הסיכום הקולנועי",
+    "loadError": "שגיאה בטעינת הפרופיל"
   },
   "babyProfile": {
     "title": "רישום ילד חדש",
@@ -1373,7 +1564,16 @@
     "title": "מזג אוויר",
     "temperature": "טמפרטורה",
     "humidity": "לחות",
-    "airQuality": "איכות אוויר"
+    "airQuality": "איכות אוויר",
+    "accessibilityLabel": "מזג אוויר ב{city}: {temp} מעלות. {recommendation}",
+    "loading": "טוען...",
+    "recHot": "חם ☀️ שכבה דקה.",
+    "recWarm": "נעים 😎 שכבה ארוכה.",
+    "recCool": "קריר 🍃 שתי שכבות.",
+    "recCold": "קר 🥶 לחמם טוב!",
+    "yourArea": "איזורך",
+    "noLocation": "אין גישה למיקום",
+    "checkConnection": "בדוק חיבור 🔧"
   },
   "health": {
     "title": "בריאות",
@@ -1452,13 +1652,101 @@
     "noFeverData": "אין מדידות חום עדיין",
     "addTwoReadings": "הוסף לפחות 2 מדידות לראות גרף",
     "feverLine": "קו חום",
-    "exportHealthReport": "ייצוא דוח בריאות (PDF)"
+    "exportHealthReport": "ייצוא דוח בריאות (PDF)",
+    "allergenMilk": "חלב",
+    "allergenEggs": "ביצים",
+    "allergenPeanuts": "בוטנים",
+    "allergenTreeNuts": "אגוזים",
+    "allergenSoy": "סויה",
+    "allergenWheat": "חיטה/גלוטן",
+    "allergenFish": "דגים",
+    "allergenSesame": "שומשום",
+    "allergenMedication": "תרופות",
+    "allergenDust": "אבק",
+    "illnessRubella": "אדמת",
+    "illnessChickenpox": "אבעבועות רוח",
+    "illnessBronchitis": "ברונכיטיס",
+    "illnessThroat": "דלקת הגרון",
+    "illnessEar": "דלקת אוזניים",
+    "illnessRespiratory": "זיהום בדרכי הנשימה",
+    "illnessTeething": "כאבי בקיעת שיניים",
+    "illnessRunnyNose": "נזלת",
+    "illnessCold": "קר",
+    "illnessDiarrhea": "שלשול",
+    "illnessFlu": "שפעת",
+    "illnessDryCough": "שיעול יבש",
+    "illnessWetCough": "שיעול רטוב",
+    "illnessFever": "חום",
+    "medAntibiotic": "אנטיביוטיקה",
+    "medAntiInflammatory": "אנטי דלקתי",
+    "medPainRelief": "הקלה בכאב",
+    "medVitaminC": "ויטמין C",
+    "medVitaminD": "ויטמין D",
+    "medDrops": "טיפות",
+    "medAntiseptic": "מחטא",
+    "medFeverReducer": "נוגד חום",
+    "medProbiotic": "פרוביוטיקה",
+    "medSprays": "תרסיסים",
+    "descDoctor": "רישום ומעקב ביקורי רופא",
+    "descVaccines": "מעקב חיסוני שגרה",
+    "descIllness": "תיעוד מחלות ותסמינים",
+    "descTemperature": "מדידת חום ומעקב מגמות",
+    "descMedications": "ניהול תרופות ותזכורות",
+    "descTipatHalav": "מציאת תחנה קרובה",
+    "descAllergies": "רישום ומעקב אלרגיות",
+    "descHistory": "צפייה בכל הרשומות",
+    "illnessNameLabel": "שם המחלה",
+    "illnessNamePlaceholder": "כתוב שם מחלה...",
+    "illnessOngoing": "כן",
+    "illnessEnd": "סיום / החלמה",
+    "illnessDuration": "משך: {days} ימים",
+    "addMedication": "הוסף תרופה חדשה",
+    "noMedicationsYet": "אין תרופות עדיין",
+    "noMedicationsHint": "לחץ על \"הוסף תרופה\" כדי להתחיל",
+    "timesPerDay": "{count}x ביום",
+    "reminderLabel": "תזכורת",
+    "takenLabel": "נלקחה",
+    "doneBtnLabel": "הבנתי",
+    "confirmBtnLabel": "אישור",
+    "uploading": "מעלה...",
+    "photoUploaded": "תמונה הועלתה",
+    "performedOn": "בוצע: {date}",
+    "vaccineNote": "חיסון: {name}",
+    "vaccineTitle": "חיסון: {name}",
+    "vaccineTitleCalendar": "תזכורת חיסון לתינוק - {name}",
+    "vaccineAppointmentNote": "תור חיסון: {name} - {date}",
+    "allVaccinesDoneTitle": "כל הכבוד!",
+    "allVaccinesDoneMsg": "השלמתם את כל חיסוני השגרה המומלצים בהצלחה.",
+    "noHistoryYet": "אין שמירות עדיין",
+    "noHistoryInCategory": "אין שמירות בקטגוריה זו",
+    "vaccineAdded": "נוסף:",
+    "medSearchPlaceholder": "חפש תרופה (למשל: אקמול, נורופן...)",
+    "dosagePlaceholder": "כמות (למשל: 5 מ״ל, כדור אחד)",
+    "timesPerDaySingular": "פעם",
+    "timesPerDayPlural": "פעמים",
+    "notesPlaceholder": "הערות (למשל: לפני האוכל)",
+    "saving": "שומר...",
+    "saveMedication": "שמור תרופה",
+    "timesPerDayLabel": "כמות פעמים ביום",
+    "medicationName": "שם התרופה",
+    "useCustomMed": "השתמש ב: \"{name}\"",
+    "medNotInDictionary": "תרופה לא נמצאה במילון — ניתן להקליד שם חופשי",
+    "medInfoTitle": "מידע על {name}",
+    "commonDosageInfo": "מינון נפוץ: {dosage}",
+    "addToEdit": "הוסף לעריכה ✎",
+    "formLabel": "צורה: {form}",
+    "medInfoDisclaimer": "מידע כללי בלבד. יש להתייעץ עם רופא.",
+    "medicationNameRequired": "יש להזין שם תרופה",
+    "dosageLabel": "מינון",
+    "administrationTimes": "שעות מתן",
+    "reminderAlerts": "התראות תזכורת"
   },
   "nightLight": {
     "title": "פנס לילה",
     "tapToHideControls": "לחץ על המסך להסתרת הפקדים",
     "color": "צבע",
-    "brightness": "בהירות"
+    "brightness": "בהירות",
+    "tapToClose": "לסגירה"
   },
   "teethTracker": {
     "title": "תרשים שיני תינוק",
@@ -1481,7 +1769,9 @@
     "editToothDate": "ערוך תאריך בקעת השן",
     "whenDidToothErupt": "מתי בקעה השן?",
     "removeTooth": "הסר שן",
-    "updateDate": "עדכן תאריך"
+    "updateDate": "עדכן תאריך",
+    "erupted": "בקעה",
+    "tooth": "שן"
   },
   "misc": {
     "uploadPhoto": "העלה תמונה",
@@ -1507,7 +1797,13 @@
   "export": {
     "pdf": "ייצוא PDF",
     "export": "ייצוא",
-    "shareDailySummary": "שתף סיכום יומי"
+    "shareDailySummary": "שתף סיכום יומי",
+    "exportPdfForDoctor": "ייצא PDF לרופא",
+    "sent": "נשלח!",
+    "noActiveChild": "לא נמצא ילד פעיל",
+    "exportSuccess": "הדוח יוצא בהצלחה",
+    "exportFailed": "לא הצלחנו לייצא את הדוח",
+    "exportError": "משהו השתבש בייצוא"
   },
   "blocked": {
     "title": "משתמשים חסומים",
@@ -1548,7 +1844,9 @@
   },
   "network": {
     "noConnection": "אין חיבור לאינטרנט",
-    "checking": "בודק חיבור..."
+    "checking": "בודק חיבור...",
+    "backOnline": "חזרת לרשת!",
+    "oops": "אופס!"
   },
   "bookings": {
     "myBookings": "הזמנות שלי",
@@ -1846,5 +2144,155 @@
     "reputationSubtitle": "קבלו ביקורות מהורים, עקבו אחרי צפיות בפרופיל ושתפו אותו בוואטסאפ",
     "next": "הבא",
     "letsStart": "בואו נתחיל!"
+  },
+  "controlCenter": {
+    "title": "קיצורי לחיצה מהירה",
+    "subtitle": "בחר עד {max} קיצורים שיופיעו בלחיצה על \"+\" ({count}/{max})",
+    "editHint": "לחץ על עין להסתיר/להציג קטגוריה",
+    "maxReached": "הגעת למקסימום — בטל בחירה קיימת כדי להוסיף",
+    "hidden": "(מוסתר)",
+    "save": "שמור קיצורים ({count}/{max})",
+    "section": {
+      "sleep": "שינה",
+      "feeding": "האכלה",
+      "whiteNoise": "רעש לבן",
+      "health": "בריאות",
+      "tools": "כלים"
+    }
+  },
+  "fab": {
+    "title": "פעולות מהירות",
+    "edit": "התאמה",
+    "stopSleep": "עצור שינה",
+    "stop": "עצור",
+    "activeSleep": "שינה פעילה · {elapsed}",
+    "whiteNoiseActive": "רעש לבן פועל",
+    "selectFeedingType": "בחר סוג האכלה",
+    "timeNight": "לילה · זמן שינה",
+    "timeMorning": "בוקר · שעת ארוחה",
+    "timeNoon": "צהריים",
+    "timeEvening": "אחה\"צ / ערב",
+    "breastRight": "הנקה ימין",
+    "breastLeft": "הנקה שמאל",
+    "bottle": "בקבוק",
+    "pumping": "שאיבה",
+    "longPressHint": "לחיצה ארוכה על כפתור ה + תפתח את מרכז הבקרה"
+  },
+  "smartStatus": {
+    "noRecordings": "עדיין אין תיעודים",
+    "timeToEat": "🍼 הגיע זמן לאכול?",
+    "timeToNap": "😴 אולי הגיע זמן לנמנם?",
+    "sleepingFor": "ישנ/ה כבר {time}"
+  },
+  "tipatHalav": {
+    "description": "מצאו את תחנת טיפת חלב הקרובה אליכם מתוך מאגר של מעל 1,800 תחנות ברחבי הארץ",
+    "searchPlaceholder": "חפש עיר, ישוב או רחוב...",
+    "resultsFound": "נמצאו {count} תחנות",
+    "searching": "מחפש תחנות...",
+    "noResults": "לא מצאנו תחנות בחיפוש זה. נסה לחפש עיר אחרת.",
+    "noResultsForQuery": "לא מצאנו תחנות ב\"{query}\"",
+    "prompt": "הכנס שם עיר או יישוב כדי למצוא את תחנת טיפת חלב הקרובה אליך",
+    "stationFallback": "תחנת טיפת חלב",
+    "dialNotSupported": "חיוג אינו נתמך",
+    "dialNotSupportedMsg": "המכשיר הזה לא תומך בהוצאת שיחות טלפון (כנראה סימולטור).",
+    "navError": "שגיאה",
+    "cannotOpenNav": "לא ניתן לפתוח אפליקציית ניווט במכשיר זה"
+  },
+  "reminder": {
+    "notificationsDisabled": "התראות כבויות",
+    "enableNotificationsMsg": "יש לאפשר התראות בהגדרות המכשיר כדי לקבל תזכורות",
+    "understood": "הבנתי",
+    "cannotSetPastReminder": "לא ניתן לקבוע תזכורת לעבר",
+    "title": "תזכורת",
+    "calendarTitle": "תזכורת: {message}",
+    "calendarNote": "נוצר באפליקציית Calmino",
+    "savedTitle": "נשמר!",
+    "savedWithCalendar": "התזכורת נשמרה באפליקציה וביומן",
+    "savedPartial": "נשמר",
+    "savedWithoutCalendar": "התזכורת נשמרה באפליקציה, אך השמירה ביומן נכשלה",
+    "titleDaily": "תזכורת יומית",
+    "titleWeekly": "תזכורת שבועית",
+    "savedSuccess": "התזכורת הוגדרה בהצלחה",
+    "cannotSave": "לא ניתן לשמור את התזכורת. נסה שוב.",
+    "deleteConfirm": "למחוק תזכורת זו?",
+    "myReminders": "התזכורות שלי",
+    "customPlaceholder": "או רשום משהו אחר...",
+    "when": "מתי?",
+    "noRemindersYet": "אין תזכורות עדיין",
+    "whenToRemindQ": "מתי תרצה שנזכיר לך משהו?",
+    "createFirst": "צור תזכורת ראשונה",
+    "whatToRemind": "מה להזכיר?",
+    "saving": "שומר..."
+  },
+  "teeth": {
+    "molar2": "טוחנת שנייה",
+    "molar1": "טוחנת ראשונה",
+    "canine": "ניב",
+    "incisorLat": "חותכת צידית",
+    "incisorCen": "חותכת מרכזית",
+    "tooth": "שן",
+    "erupted": "בקעה"
+  },
+  "checklist": {
+    "title": "צ'קליסט הרגעה",
+    "item1": "האם החיתול נקי?",
+    "item2": "האם עברו פחות מ-3 שעות מהאוכל?",
+    "item3": "האם חם/קר לו מדי? (בדיקה בעורף)",
+    "item4": "האם יש שערה כרוכה באצבעות?",
+    "item5": "האם הוא פשוט עייף מדי?",
+    "item6": "האם כואב לו משהו? (אוזניים/שיניים)",
+    "allCheckedTitle": "בדקת הכל",
+    "allCheckedText": "לפעמים תינוקות פשוט צריכים לבכות.\nנשום עמוק, אתה הורה מדהים."
+  },
+  "blockedUsers": {
+    "title": "משתמשים חסומים",
+    "unblockTitle": "הסרת חסימה",
+    "unblockConfirm": "האם אתה בטוח שברצונך להסיר את החסימה מ-{name}?",
+    "unblock": "הסר חסימה",
+    "unblockError": "אירעה שגיאה בהסרת החסימה.",
+    "empty": "אין לך משתמשים חסומים.",
+    "user": "משתמש"
+  },
+  "guardian": {
+    "invitePartner": "הזמן בן/בת זוג לצפות יחד",
+    "invite": "הזמן",
+    "familyOf": "משפחת {name}",
+    "me": "אני",
+    "othersAndMore": "+ {count} נוספים",
+    "connected": "מחובר/ת"
+  },
+  "clock": {
+    "countdown": "ספירה לאחור",
+    "stopwatch": "שעון עצר"
+  },
+  "milestone": {
+    "firstWeeks": "שבועות ראשונים",
+    "ageMonths": "{count} חודשים"
+  },
+  "photo": {
+    "selectSource": "בחר מקור תמונה",
+    "cancel": "ביטול",
+    "takePhoto": "צלם תמונה",
+    "chooseFromGallery": "בחר מהגלריה"
+  },
+  "status": {
+    "sleeping": "ישנה",
+    "awake": "ערה",
+    "tapToChange": "לחץ לשינוי",
+    "accessSleeping": "{name} ישנה. לחץ לשינוי",
+    "accessAwake": "{name} ערה. לחץ לשינוי",
+    "textSleeping": "{name} ישנה 😴",
+    "textAwake": "{name} ערה 😃"
+  },
+  "med": {
+    "vitaminD": "ויטמין D",
+    "iron": "ברזל",
+    "meReporter": "אני"
+  },
+  "medication": {
+    "reminderTitle": "💊 תזכורת תרופה",
+    "reminderBody": "הגיע הזמן לקחת {name} ({dosage})",
+    "dosageNote": "מינון: {dosage}",
+    "calendarNotes": "מינון: {dosage}{notes}\n\n⚠️ מידע כללי בלבד. יש להתייעץ עם רופא."
   }
 }

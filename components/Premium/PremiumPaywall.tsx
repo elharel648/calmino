@@ -54,7 +54,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
     const handlePurchase = async () => {
         const pkg = selectedPlan === 'annual' ? annualPackage : monthlyPackage;
         if (!pkg) {
-            Alert.alert(t('common.error'), 'המוצר לא זמין כרגע');
+            Alert.alert(t('common.error'), t('premium.productUnavailable'));
             return;
         }
 
@@ -65,12 +65,12 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
             const success = await purchase(pkg);
             if (success) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert('🎉 ברוכים הבאים ל-Premium!', 'תהנה מכל התכונות המתקדמות', [
-                    { text: 'מעולה!', onPress: onClose }
+                Alert.alert(t('premium.welcomeTitle'), t('premium.welcomeMsg'), [
+                    { text: t('premium.excellent'), onPress: onClose }
                 ]);
             }
         } catch (error) {
-            Alert.alert(t('common.error'), 'לא הצלחנו להשלים את הרכישה');
+            Alert.alert(t('common.error'), t('premium.purchaseError'));
         } finally {
             setPurchasing(false);
         }
@@ -83,14 +83,14 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
         try {
             const success = await restore();
             if (success) {
-                Alert.alert('✅ שוחזר!', 'המנוי שלך שוחזר בהצלחה', [
-                    { text: 'מעולה!', onPress: onClose }
+                Alert.alert(t('premium.restoredTitle'), t('premium.restoredMsg'), [
+                    { text: t('premium.excellent'), onPress: onClose }
                 ]);
             } else {
-                Alert.alert('לא נמצאו רכישות', 'לא מצאנו מנוי קיים לשחזר');
+                Alert.alert(t('premium.noPurchasesFound'), t('premium.noPurchasesMsg'));
             }
         } catch (error) {
-            Alert.alert(t('common.error'), 'לא הצלחנו לשחזר את הרכישות');
+            Alert.alert(t('common.error'), t('premium.restoreError'));
         } finally {
             setPurchasing(false);
         }

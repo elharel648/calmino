@@ -322,9 +322,9 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
             const hasPermission = await notificationService.requestPermissions();
             if (!hasPermission) {
                 Alert.alert(
-                    'התראות כבויות',
-                    'יש לאפשר התראות בהגדרות המכשיר כדי לקבל תזכורות',
-                    [{ text: 'הבנתי' }]
+                    t('reminder.notificationsDisabled'),
+                    t('reminder.enableNotificationsMsg'),
+                    [{ text: t('reminder.understood') }]
                 );
                 setSaving(false);
                 return;
@@ -339,7 +339,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                     // Within 2 minutes — bump to 10 seconds from now
                     date = new Date(now.getTime() + 10000);
                 } else if (reminderType === 'once') {
-                    Alert.alert(t('common.error'), 'לא ניתן לקבוע תזכורת לעבר');
+                    Alert.alert(t('common.error'), t('reminder.cannotSetPastReminder'));
                     setSaving(false);
                     return;
                 }
@@ -347,7 +347,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
 
             if (reminderType === 'once') {
                 const result = await notificationService.createCustomReminder({
-                    title: 'תזכורת',
+                    title: t('reminder.title'),
                     body: message.trim(),
                     date: date,
                 });
@@ -355,15 +355,15 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                 if (addToCalendar && result) {
                     try {
                         const calendarSuccess = await notificationService.addToCalendar(
-                            'תזכורת: ' + message.trim(),
+                            t('reminder.calendarTitle', { message: message.trim() }),
                             date,
-                            'נוצר באפליקציית Calmino'
+                            t('reminder.calendarNote')
                         );
 
                         if (calendarSuccess) {
-                            Alert.alert('נשמר!', 'התזכורת נשמרה באפליקציה וביומן');
+                            Alert.alert(t('reminder.savedTitle'), t('reminder.savedWithCalendar'));
                         } else {
-                            Alert.alert('נשמר', 'התזכורת נשמרה באפליקציה, אך השמירה ביומן נכשלה');
+                            Alert.alert(t('reminder.savedPartial'), t('reminder.savedWithoutCalendar'));
                         }
 
                         setViewMode('list');
@@ -379,7 +379,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
             } else {
                 if (reminderType === 'daily') {
                     await notificationService.createRecurringReminder({
-                        title: 'תזכורת יומית',
+                        title: t('reminder.titleDaily'),
                         body: message.trim(),
                         hour: date.getHours(),
                         minute: date.getMinutes(),
@@ -387,7 +387,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                     });
                 } else {
                     await notificationService.createRecurringReminder({
-                        title: 'תזכורת שבועית',
+                        title: t('reminder.titleWeekly'),
                         body: message.trim(),
                         hour: date.getHours(),
                         minute: date.getMinutes(),
@@ -401,13 +401,13 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
             loadReminders();
             setMessage('');
             setAddToCalendar(false);
-            Alert.alert('נשמר!', 'התזכורת הוגדרה בהצלחה');
+            Alert.alert(t('reminder.savedTitle'), t('reminder.savedSuccess'));
         } catch (e: any) {
             logger.error('Failed to save reminder', e);
             if (e?.message?.includes('disabled')) {
-                Alert.alert('התראות כבויות', 'יש לאפשר התראות בהגדרות כדי ליצור תזכורות');
+                Alert.alert(t('reminder.notificationsDisabled'), t('reminder.enableNotificationsMsg'));
             } else {
-                Alert.alert(t('common.error'), 'לא ניתן לשמור את התזכורת. נסה שוב.');
+                Alert.alert(t('common.error'), t('reminder.cannotSave'));
             }
         } finally {
             setSaving(false);
@@ -415,7 +415,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
     };
 
     const handleDelete = async (id: string) => {
-        Alert.alert(t('common.delete'), 'למחוק תזכורת זו?', [
+        Alert.alert(t('common.delete'), t('reminder.deleteConfirm'), [
             { text: t('common.cancel'), style: 'cancel' },
             {
                 text: t('timeline.delete'),
@@ -504,7 +504,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 </Reanimated.View>
                             </View>
                             <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-                                {viewMode === 'list' ? 'התזכורות שלי' : t('actions.quickReminder')}
+                                {viewMode === 'list' ? t('reminder.myReminders') : t('actions.quickReminder')}
                             </Text>
                         </View>
 
@@ -547,14 +547,14 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                     <View style={[styles.emptyIconWrapper, { backgroundColor: isDarkMode ? '#222' : '#F9FAFB' }]}>
                                         <Bell size={48} color={theme.textTertiary} />
                                     </View>
-                                    <Text style={[styles.emptyTitle, { color: theme.textSecondary }]}>אין תזכורות עדיין</Text>
-                                    <Text style={[styles.emptySub, { color: theme.textTertiary }]}>מתי תרצה שנזכיר לך משהו?</Text>
+                                    <Text style={[styles.emptyTitle, { color: theme.textSecondary }]}>{t('reminder.noRemindersYet')}</Text>
+                                    <Text style={[styles.emptySub, { color: theme.textTertiary }]}>{t('reminder.whenToRemindQ')}</Text>
 
                                     <TouchableOpacity
                                         style={[styles.createFirstBtn, { backgroundColor: theme.primary }]}
                                         onPress={() => setViewMode('create')}
                                     >
-                                        <Text style={styles.createFirstText}>צור תזכורת ראשונה</Text>
+                                        <Text style={styles.createFirstText}>{t('reminder.createFirst')}</Text>
                                     </TouchableOpacity>
                                 </Reanimated.View>
                             ) : (
@@ -628,7 +628,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                             // Create Mode
                             <View>
                                 {/* Presets - Premium Slider Design */}
-                                <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>מה להזכיר?</Text>
+                                <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('reminder.whatToRemind')}</Text>
                                 <ScrollView
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
@@ -642,8 +642,8 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                         { label: t('tracking.bottle'), icon: BottleIcon, color: theme.actionColors.food.color, bg: theme.actionColors.food.lightColor },
                                         { label: t('tracking.diapers'), icon: DiaperIcon, color: theme.actionColors.diaper.color, bg: theme.actionColors.diaper.lightColor },
                                         { label: t('health.medicine'), icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor },
-                                        { label: 'רופא', icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor },
-                                        { label: 'לישון', icon: Moon, color: theme.actionColors.sleep.color, bg: theme.actionColors.sleep.lightColor },
+                                        { label: t('health.doctorVisit'), icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor },
+                                        { label: t('tracking.sleep'), icon: Moon, color: theme.actionColors.sleep.color, bg: theme.actionColors.sleep.lightColor },
                                     ].map((p, i) => (
                                         <TouchableOpacity
                                             key={i}
@@ -688,17 +688,17 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 {/* Custom Input - Integrated Design */}
                                 <View style={[styles.customInputWrapper, {
                                     backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-                                    borderColor: message && ![' בקבוק', t('tracking.diapers'), t('health.medicine'), 'רופא', 'לישון'].includes(message)
+                                    borderColor: message && ![t('tracking.bottle'), t('tracking.diapers'), t('health.medicine'), t('health.doctorVisit'), t('tracking.sleep')].includes(message)
                                         ? theme.primary
                                         : (isDarkMode ? '#333' : '#E5E7EB')
                                 }]}>
                                     <Sparkles
                                         size={18}
-                                        color={message && ![' בקבוק', t('tracking.diapers'), t('health.medicine'), 'רופא', 'לישון'].includes(message) ? theme.primary : theme.textTertiary}
+                                        color={message && ![t('tracking.bottle'), t('tracking.diapers'), t('health.medicine'), t('health.doctorVisit'), t('tracking.sleep')].includes(message) ? theme.primary : theme.textTertiary}
                                     />
                                     <TextInput
                                         style={[styles.customInput, { color: theme.textPrimary }]}
-                                        placeholder="או רשום משהו אחר..."
+                                        placeholder={t('reminder.customPlaceholder')}
                                         placeholderTextColor={theme.textTertiary}
                                         value={message}
                                         onChangeText={setMessage}
@@ -708,7 +708,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 </View>
 
                                 {/* Time Selection - Ultra Minimalist */}
-                                <Text style={[styles.minimalLabel, { color: theme.textTertiary }]}>מתי?</Text>
+                                <Text style={[styles.minimalLabel, { color: theme.textTertiary }]}>{t('reminder.when')}</Text>
 
 
 
@@ -878,7 +878,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                     activeOpacity={0.8}
                                 >
                                     {saving ? (
-                                        <Text style={styles.minimalSaveText}>שומר...</Text>
+                                        <Text style={styles.minimalSaveText}>{t('reminder.saving')}</Text>
                                     ) : (
                                         <Text style={styles.minimalSaveText}>{t('common.save')}</Text>
                                     )}

@@ -9,6 +9,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Flame } from 'lucide-react-native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -135,6 +136,7 @@ const WeeklyGoalsCard = memo(({
   streak,
 }: WeeklyGoalsCardProps) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <View style={[styles.card, {
@@ -144,10 +146,10 @@ const WeeklyGoalsCard = memo(({
       <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
 
       <View style={styles.ringsRow}>
-        <Ring met={docDaysMet}   goal={docDaysGoal}   color="#10B981"    label="תיעוד"    delay={0}   />
-        <Ring met={sleepDaysMet} goal={sleepDaysGoal} color="#C8806A"    label="שינה 8+"  delay={100} />
+        <Ring met={docDaysMet}   goal={docDaysGoal}   color="#10B981"    label={t('reports.tracking')}    delay={0}   />
+        <Ring met={sleepDaysMet} goal={sleepDaysGoal} color="#C8806A"    label={t('reports.sleep8Plus')}  delay={100} />
         {streak > 0 && (
-          <Ring met={Math.min(streak, 7)} goal={7} color={STREAK_COLOR} label="רצף" delay={200} isStreak />
+          <Ring met={Math.min(streak, 7)} goal={7} color={STREAK_COLOR} label={t('reports.streak')} delay={200} isStreak />
         )}
       </View>
     </View>

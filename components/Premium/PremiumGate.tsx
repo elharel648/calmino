@@ -61,12 +61,12 @@ const PremiumGate: React.FC<PremiumGateProps> = ({ feature, children, onUpgrade,
 
                     {/* Title */}
                     <Text style={[styles.title, { color: theme.textPrimary }]}>
-                        {t('premium.featureLocked') || 'תוכן פרמיום'}
+                        {t('premium.featureLocked')}
                     </Text>
 
                     {/* Description */}
                     <Text style={[styles.description, { color: theme.textSecondary }]}>
-                        {t('premium.upgradeToUnlock') || 'שדרג לפרמיום כדי לפתוח תוכן זה'}
+                        {t('premium.upgradeToUnlock')}
                     </Text>
 
                     {/* CTA Button */}
@@ -87,7 +87,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({ feature, children, onUpgrade,
                             >
                                 <Sparkles size={16} color="#fff" strokeWidth={2} />
                                 <Text style={styles.upgradeText}>
-                                    {t('premium.upgradeCta') || 'שדרג לפרמיום'}
+                                    {t('premium.upgradeCta')}
                                 </Text>
                             </LinearGradient>
                         </TouchableOpacity>

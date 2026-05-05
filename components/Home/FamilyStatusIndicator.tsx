@@ -74,11 +74,11 @@ const FamilyStatusIndicator = memo(({ onPress }: FamilyStatusIndicatorProps) => 
 
                 <View style={styles.textSection}>
                     <Text style={styles.title}>
-                        {onlineCount === 1 ? 'רק אתה מחובר' : `${onlineCount} מחוברים`}
+                        {onlineCount === 1 ? t('family.onlyYouOnline') : t('family.membersOnline', { count: onlineCount })}
                     </Text>
                     {otherOnline.length > 0 && (
                         <Text style={styles.subtitle}>
-                            {otherOnline.map(m => m.name).join(', ')} צופה עכשיו
+                            {otherOnline.map(m => m.name).join(', ')} {t('family.watchingNow')}
                         </Text>
                     )}
                 </View>

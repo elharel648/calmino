@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Scale, Ruler, Activity } from 'lucide-react-native';
 import { GrowthStats } from '../../types/profile';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface GrowthSectionProps {
     stats?: GrowthStats;
@@ -35,31 +36,32 @@ const MetricPill = memo(({ icon: Icon, label, value, unit, color, bgColor, onEdi
 MetricPill.displayName = 'MetricPill';
 
 const GrowthSection = memo(({ stats, onEditWeight, onEditHeight, onEditHead }: GrowthSectionProps) => {
+    const { t } = useLanguage();
     return (
         <View style={styles.container}>
             <MetricPill
                 icon={Scale}
-                label="משקל"
+                label="weight"
                 value={stats?.weight}
-                unit="ק״ג"
+                unit={t('growth.kg')}
                 color="#C8806A"
                 bgColor="#EFF6FF"
                 onEdit={onEditWeight}
             />
             <MetricPill
                 icon={Ruler}
-                label="גובה"
+                label="height"
                 value={stats?.height}
-                unit="ס״מ"
+                unit={t('growth.cm')}
                 color="#10B981"
                 bgColor="#ECFDF5"
                 onEdit={onEditHeight}
             />
             <MetricPill
                 icon={Activity}
-                label="היקף"
+                label="head"
                 value={stats?.headCircumference}
-                unit="ס״מ"
+                unit={t('growth.cm')}
                 color="#8B5CF6"
                 bgColor="#F5F3FF"
                 onEdit={onEditHead}

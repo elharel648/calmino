@@ -78,9 +78,11 @@ interface MagicMomentsModalProps {
 export default function MagicMomentsModal({
     visible, onClose, onOpenStory, onOpenWrapped }: MagicMomentsModalProps) {
     const { theme, isDarkMode } = useTheme();
-  const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { activeChild } = useActiveChild();
-    const { baby, babyAgeMonths, updatePhoto, updateAlbumNote, updateAlbumDate, deleteAlbumPhoto, refresh } = useBabyProfile(activeChild?.childId);
+    let { baby, babyAgeMonths, updatePhoto, updateAlbumNote, updateAlbumDate, deleteAlbumPhoto, refresh } = useBabyProfile(activeChild?.childId);
+
+
 
     const slideAnim = useRef(new RNAnimated.Value(SCREEN_HEIGHT)).current;
     const backdropAnim = useRef(new RNAnimated.Value(0)).current;
@@ -477,7 +479,7 @@ export default function MagicMomentsModal({
                                             .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                                             .map(([month, url]) => {
                                                 const m = parseInt(month);
-                                                const dateObj = baby.albumDates?.[m];
+                                                const dateObj = baby?.albumDates?.[m];
                                                 let dateStr = undefined;
                                                 if (dateObj) {
                                                     const d = typeof (dateObj as any).toDate === 'function' 
@@ -637,7 +639,7 @@ export default function MagicMomentsModal({
                                                         </View>
                                                         {/* Month label */}
                                                         <Text style={[styles.emptyMonthLabel, { color: theme.textTertiary }]}>
-                                                            {isBirthTile ? 'Hello World' : t('magicMoments.month', { num: month.toString() })}
+                                                            {isBirthTile ? (language === 'he' ? 'היום שנולדתי' : 'Hello World') : t('magicMoments.month', { num: month.toString() })}
                                                         </Text>
                                                         <View style={[styles.plusIcon, { backgroundColor: theme.actionColors.magicMoments.color + '15' }]}>
                                                             <Plus size={14} color={theme.actionColors.magicMoments.color} strokeWidth={2} />

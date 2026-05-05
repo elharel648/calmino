@@ -53,7 +53,7 @@ export const IntervalPicker: React.FC<IntervalPickerProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>כל {unit}:</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>{t('settings.everyUnitLabel', { unit })}</Text>
             <View style={styles.optionsContainer}>
                 {options.map((option, index) => {
                     const isSelected = option === value;

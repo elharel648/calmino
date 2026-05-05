@@ -252,14 +252,15 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
 
-        const message = `📊 סיכום יומי${childName ? ` - ${childName}` : ''}
-
-🍼 האכלה: ${dailyStats.foodCount} פעמים (${dailyStats.food} מ"ל)
-😴 שינה: ${dailyStats.sleep.toFixed(1)} שעות (${dailyStats.sleepCount} תנומות)
-🧷 חיתולים: ${dailyStats.diapers}
-💊 תוספים: ${dailyStats.supplements}
-
-נשלח מאפליקציית Calmino 💜`;
+        const message = t('reports.share.dailySummaryMsg', {
+            nameSuffix: childName ? ` - ${childName}` : '',
+            foodCount: dailyStats.foodCount,
+            food: dailyStats.food,
+            sleep: dailyStats.sleep.toFixed(1),
+            sleepCount: dailyStats.sleepCount,
+            diapers: dailyStats.diapers,
+            supplements: dailyStats.supplements,
+        });
 
         try {
             await Share.share({
@@ -308,14 +309,14 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
             });
         } else if (avgSleep > 3) {
             tips.push({
-                tip: `התנומות ארוכות ויציבות - מעולה! ממוצע של ${avgSleep.toFixed(1)} שעות.`,
+                tip: t('reports.tips.longNaps', { hours: avgSleep.toFixed(1) }),
                 category: 'sleep',
             });
         }
 
         if (timeInsights?.avgSleepTime) {
             tips.push({
-                tip: `שעת שינה ממוצעת: ${timeInsights.avgSleepTime}. שמרו על עקביות!`,
+                tip: t('reports.tips.avgSleepTime', { time: timeInsights.avgSleepTime }),
                 category: 'sleep',
             });
         }
@@ -327,14 +328,14 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
 
         if (avgFeeding > 150) {
             tips.push({
-                tip: `האכלה גדולות (ממוצע ${Math.round(avgFeeding)} מ"ל). התינוק אוכל היטב!`,
+                tip: t('reports.tips.largeFeedings', { ml: Math.round(avgFeeding) }),
                 category: 'feeding',
             });
         }
 
         if (timeInsights?.avgFeedingInterval && timeInsights.avgFeedingInterval > 4) {
             tips.push({
-                tip: `מרווח ארוך בין האכלה (${timeInsights.avgFeedingInterval.toFixed(1)} שעות). הבטן מתרחבת!`,
+                tip: t('reports.tips.longFeedingInterval', { hours: timeInsights.avgFeedingInterval.toFixed(1) }),
                 category: 'feeding',
             });
         }
@@ -346,8 +347,8 @@ export function generateAIInsights(data: InsightData, t: (key: string) => string
         if (Math.abs(sleepChange) > 2) {
             tips.push({
                 tip: sleepChange > 0
-                    ? `השינה השתפרה ב-${sleepChange.toFixed(1)} שעות לעומת השבוע שעבר! 🎉`
-                    : `ירידה בשינה לעומת השבוע שעבר. אולי יש שינוי בשגרה?`,
+                    ? t('reports.tips.sleepImproved', { hours: sleepChange.toFixed(1) })
+                    : t('reports.tips.sleepDeclined'),
                 category: 'general',
             });
         }

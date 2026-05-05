@@ -288,13 +288,14 @@ const histStyles = StyleSheet.create({
 export default function DetailedGrowthScreen({
     onClose,
     childId,
-    ageInMonths,
+    ageInMonths: propAge,
     gender,
 }: DetailedGrowthScreenProps) {
     const { theme } = useTheme();
     const { t, language } = useLanguage();
     const dateFnsLocale = DATE_FNS_LOCALES[language] || he;
-    const { baby, refresh } = useBabyProfile(childId);
+    let { baby, refresh } = useBabyProfile(childId);
+    let ageInMonths = propAge;
     const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
     const [change, setChange] = useState<{ weight?: number; height?: number; headCircumference?: number } | null>(null);
     const [loading, setLoading] = useState(true);
@@ -306,6 +307,7 @@ export default function DetailedGrowthScreen({
 
     const fetchData = useCallback(async () => {
         if (!childId) return;
+
         try {
             const data = await getMeasurementsForChart(childId, 50);
             setMeasurements(data);
@@ -327,6 +329,8 @@ export default function DetailedGrowthScreen({
         await refresh?.();
         setRefreshing(false);
     }, [fetchData, refresh]);
+
+
 
     const handleEdit = useCallback((m: GrowthMeasurement) => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

@@ -154,7 +154,7 @@ export default function EditBasicInfoModal({
                                 style={styles.input}
                                 value={name}
                                 onChangeText={setName}
-                                placeholder="הזן שם"
+                                placeholder={t('child.namePlaceholder')}
                                 textAlign="right"
                             />
                         </View>

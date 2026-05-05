@@ -56,6 +56,7 @@ MilestoneRow.displayName = 'MilestoneRow';
 
 const MilestoneTimeline = memo(({ milestones, birthDate, onAdd, onDelete }: MilestoneTimelineProps) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -66,7 +67,7 @@ const MilestoneTimeline = memo(({ milestones, birthDate, onAdd, onDelete }: Mile
             (eventDate.getTime() - birthObj.getTime()) / (1000 * 60 * 60 * 24 * 30)
         );
         if (months >= 0) {
-            return months === 0 ? 'שבועות ראשונים' : `${months} חודשים`;
+            return months === 0 ? t('milestone.firstWeeks') : t('milestone.ageMonths', { count: months });
         }
         return '';
     };
@@ -113,7 +114,7 @@ const MilestoneTimeline = memo(({ milestones, birthDate, onAdd, onDelete }: Mile
             {hasMore && (
                 <TouchableOpacity style={styles.expandBtn} onPress={toggleExpand} activeOpacity={0.7}>
                     {isExpanded ? <ChevronUp size={16} color="#6B7280" /> : <ChevronDown size={16} color="#6B7280" />}
-                    <Text style={styles.expandText}>{isExpanded ? 'הסתר' : `עוד ${hiddenCount}`}</Text>
+                    <Text style={styles.expandText}>{isExpanded ? t('common.hide') : t('common.showMore', { count: hiddenCount })}</Text>
                 </TouchableOpacity>
             )}
         </View>

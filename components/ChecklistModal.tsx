@@ -63,12 +63,12 @@ export default function ChecklistModal({
     };
 
     const checklistItems = [
-        { text: "האם החיתול נקי?", Icon: Baby },
-        { text: "האם עברו פחות מ-3 שעות מהאוכל?", Icon: Heart },
-        { text: "האם חם/קר לו מדי? (בדיקה בעורף)", Icon: Thermometer },
-        { text: "האם יש שערה כרוכה באצבעות?", Icon: Hand },
-        { text: "האם הוא פשוט עייף מדי?", Icon: BedDouble },
-        { text: "האם כואב לו משהו? (אוזניים/שיניים)", Icon: Ear },
+        { text: t('checklist.item1'), Icon: Baby },
+        { text: t('checklist.item2'), Icon: Heart },
+        { text: t('checklist.item3'), Icon: Thermometer },
+        { text: t('checklist.item4'), Icon: Hand },
+        { text: t('checklist.item5'), Icon: BedDouble },
+        { text: t('checklist.item6'), Icon: Ear },
     ];
 
     const progress = checkedItems.size / checklistItems.length;
@@ -117,7 +117,7 @@ export default function ChecklistModal({
                         </TouchableOpacity>
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>צ'קליסט הרגעה</Text>
+                            <Text style={[styles.mainTitle, { color: theme.textPrimary }]}>{t('checklist.title')}</Text>
                             <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
                                 <ListChecks size={18} color={theme.primary} strokeWidth={2} />
                             </View>
@@ -188,9 +188,9 @@ export default function ChecklistModal({
                                 <View style={[styles.sparklesIcon, { backgroundColor: 'rgba(200, 128, 106, 0.15)' }]}>
                                     <Sparkles size={24} color={'#C8806A'} strokeWidth={1.5} />
                                 </View>
-                                <Text style={[styles.allCheckedTitle, { color: theme.textPrimary }]}>בדקת הכל</Text>
+                                <Text style={[styles.allCheckedTitle, { color: theme.textPrimary }]}>{t('checklist.allCheckedTitle')}</Text>
                                 <Text style={[styles.allCheckedText, { color: theme.textSecondary }]}>
-                                    לפעמים תינוקות פשוט צריכים לבכות.{'\n'}נשום עמוק, אתה הורה מדהים.
+                                    {t('checklist.allCheckedText')}
                                 </Text>
                             </Reanimated.View>
                         )}

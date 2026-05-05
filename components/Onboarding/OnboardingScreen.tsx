@@ -27,28 +27,10 @@ interface OnboardingSlide {
     backgroundColor: string;
 }
 
-const slides: OnboardingSlide[] = [
-    {
-        icon: Baby,
-        title: 'ברוכים הבאים ל-Calmino',
-        description: 'אפליקציה אחת לכל מה שצריך כדי לטפל בתינוק שלך',
-        gradientColors: ['#C8806A', '#CD8B87'],
-        backgroundColor: '#EEF2FF',
-    },
-    {
-        icon: BarChart2,
-        title: 'עקוב אחרי הכל',
-        description: 'תעד האכלה, שינה, חיתולים וכל מה שחשוב',
-        gradientColors: ['#8B5CF6', '#A855F7'],
-        backgroundColor: '#F5F3FF',
-    },
-    {
-        icon: Users,
-        title: 'שתף עם המשפחה',
-        description: 'אפשר למשפחה ולסבים לעקוב ולעדכן יחד',
-        gradientColors: ['#10B981', '#34D399'],
-        backgroundColor: '#ECFDF5',
-    },
+const SLIDES_CONFIG = [
+    { icon: Baby, titleKey: 'onboarding.slide1.title', descKey: 'onboarding.slide1.subtitle', gradientColors: ['#C8806A', '#CD8B87'] as const, backgroundColor: '#EEF2FF' },
+    { icon: BarChart2, titleKey: 'onboarding.slide2.title', descKey: 'onboarding.slide2.subtitle', gradientColors: ['#8B5CF6', '#A855F7'] as const, backgroundColor: '#F5F3FF' },
+    { icon: Users, titleKey: 'onboarding.slide5.title', descKey: 'onboarding.slide5.subtitle', gradientColors: ['#10B981', '#34D399'] as const, backgroundColor: '#ECFDF5' },
 ];
 
 interface OnboardingScreenProps {
@@ -60,7 +42,14 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 export default function OnboardingScreen({
     onComplete }: OnboardingScreenProps) {
     const { theme, isDarkMode } = useTheme();
-  const { t } = useLanguage();
+    const { t } = useLanguage();
+    const slides: OnboardingSlide[] = SLIDES_CONFIG.map(s => ({
+        icon: s.icon,
+        title: t(s.titleKey),
+        description: t(s.descKey),
+        gradientColors: s.gradientColors,
+        backgroundColor: s.backgroundColor,
+    }));
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -259,7 +248,7 @@ export default function OnboardingScreen({
                                 style={styles.nextButton}
                             >
                                 <Text style={styles.nextText}>
-                                    {currentIndex === slides.length - 1 ? 'בוא נתחיל!' : t('common.next')}
+                                    {currentIndex === slides.length - 1 ? t('onboarding.cta') : t('common.next')}
                                 </Text>
                                 <ChevronLeft size={20} color="#fff" strokeWidth={2.5} />
                             </LinearGradient>

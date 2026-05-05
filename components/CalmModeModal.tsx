@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withDelay, withSpring } from 'react-native-reanimated';
 import { useLanguage } from '../context/LanguageContext';
 import SOSIcon from './Common/SOSIcon';
+import * as Localization from 'expo-localization';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const RNAnimatedView = RNAnimated.createAnimatedComponent(View);
@@ -170,25 +171,56 @@ export default function CalmModeModal({
       await Linking.openURL(url);
     } else {
       Alert.alert(
-        "סימולטור זוהה",
-        `במכשיר אמיתי השיחה הייתה יוצאת ל${name}: ${phoneNumber}`,
-        [{ text: "הבנתי" }]
+        t('calmMode.simulatorTitle'),
+        t('calmMode.simulatorMsg', { name, number: phoneNumber }),
+        [{ text: t('calmMode.understood') }]
       );
     }
   };
 
-  const emergencyContacts = [
-    { name: 'מד"א', subtitle: 'חירום רפואי', number: '101', Icon: Siren, color: '#FFFFFF', bgColor: '#CD8B87' }, // Dusty Rose
-    { name: 'משטרה', subtitle: 'סכנה מיידית', number: '100', Icon: Shield, color: '#FFFFFF', bgColor: '#557A9D' }, // Slate Blue
-    { name: 'הרעלות', subtitle: 'בליעת חומר', number: '048541900', Icon: Skull, color: '#FFFFFF', bgColor: '#B5838D' }, // Lilac Mauve
-  ];
+  const regionCode = useMemo(() => {
+    try {
+      return Localization.getLocales()?.[0]?.regionCode || Localization.region || 'IL';
+    } catch (e) {
+      return 'IL';
+    }
+  }, []);
 
-  const hmoContacts = [
-    { name: 'כללית', subtitle: 'מוקד אחיות 24/7', number: '*2700' },
-    { name: 'מכבי', subtitle: 'מוקד אחיות', number: '*3555' },
-    { name: 'מאוחדת', subtitle: 'היריון ולידה', number: '*3833' },
-    { name: 'לאומית', subtitle: 'מוקד רפואי', number: '*507' },
-  ];
+  const emergencyContacts = useMemo(() => {
+    if (regionCode === 'US' || regionCode === 'CA') {
+      return [
+        { name: t('calmMode.emergencyUS'), subtitle: t('calmMode.subtitleMedicalEmergency'), number: '911', Icon: Siren, color: '#FFFFFF', bgColor: '#CD8B87' },
+        { name: t('calmMode.emergencyPoliceUS'), subtitle: t('calmMode.subtitleImmediateDanger'), number: '911', Icon: Shield, color: '#FFFFFF', bgColor: '#557A9D' },
+        { name: t('calmMode.emergencyPoison'), subtitle: t('calmMode.subtitleSubstanceSwallowed'), number: '18002221222', Icon: Skull, color: '#FFFFFF', bgColor: '#B5838D' },
+      ];
+    }
+    
+    // Default to European/International standard if not US/Israel
+    if (regionCode !== 'IL') {
+      return [
+        { name: t('calmMode.emergencyEU'), subtitle: t('calmMode.subtitleMedicalEmergency'), number: '112', Icon: Siren, color: '#FFFFFF', bgColor: '#CD8B87' },
+        { name: t('calmMode.emergencyPoliceEU'), subtitle: t('calmMode.subtitleImmediateDanger'), number: '112', Icon: Shield, color: '#FFFFFF', bgColor: '#557A9D' },
+        { name: t('calmMode.emergencyPoison'), subtitle: t('calmMode.subtitleSubstanceSwallowed'), number: '112', Icon: Skull, color: '#FFFFFF', bgColor: '#B5838D' },
+      ];
+    }
+
+    // Israel (Default)
+    return [
+      { name: t('calmMode.emergencyMDA'), subtitle: t('calmMode.subtitleMedicalEmergency'), number: '101', Icon: Siren, color: '#FFFFFF', bgColor: '#CD8B87' },
+      { name: t('calmMode.emergencyPolice'), subtitle: t('calmMode.subtitleImmediateDanger'), number: '100', Icon: Shield, color: '#FFFFFF', bgColor: '#557A9D' },
+      { name: t('calmMode.emergencyPoison'), subtitle: t('calmMode.subtitleSubstanceSwallowed'), number: '048541900', Icon: Skull, color: '#FFFFFF', bgColor: '#B5838D' },
+    ];
+  }, [regionCode, t]);
+
+  const hmoContacts = useMemo(() => {
+    if (regionCode !== 'IL') return [];
+    return [
+      { name: 'כללית', subtitle: t('calmMode.hmoClalitSubtitle'), number: '*2700' },
+      { name: 'מכבי', subtitle: t('calmMode.hmoMaccabiSubtitle'), number: '*3555' },
+      { name: 'מאוחדת', subtitle: t('calmMode.hmoMeuhedetSubtitle'), number: '*3833' },
+      { name: 'לאומית', subtitle: t('calmMode.hmoLeumitSubtitle'), number: '*507' },
+    ];
+  }, [regionCode, t]);
 
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
@@ -253,7 +285,7 @@ export default function CalmModeModal({
               scrollEventThrottle={16}
             >
               {/* Emergency - Premium Row */}
-              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>חירום מיידי</Text>
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('calmMode.sectionEmergency')}</Text>
               <View style={styles.emergencyRow}>
                 {emergencyContacts.map((contact, index) => {
                   const { Icon } = contact;
@@ -290,33 +322,37 @@ export default function CalmModeModal({
               </View>
 
               {/* HMO - Clean List */}
-              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>קופות חולים</Text>
-              <View style={[styles.hmoContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                {hmoContacts.map((hmo, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.hmoRow,
-                      index < hmoContacts.length - 1 && {
-                        borderBottomWidth: 1,
-                        borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6',
-                      }
-                    ]}
-                    onPress={() => makeCall(hmo.number, hmo.name)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.hmoInfo}>
-                      <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
-                      <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
-                    </View>
-                    <View style={styles.hmoCall}>
-                      <View style={[styles.phoneIcon, { backgroundColor: isDarkMode ? 'rgba(205, 139, 135, 0.15)' : '#FDF2F2' }]}>
-                        <Phone size={16} color="#CD8B87" strokeWidth={2.5} />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {hmoContacts.length > 0 && (
+                <>
+                  <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('calmMode.sectionHMO')}</Text>
+                  <View style={[styles.hmoContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                    {hmoContacts.map((hmo, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.hmoRow,
+                          index < hmoContacts.length - 1 && {
+                            borderBottomWidth: 1,
+                            borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6',
+                          }
+                        ]}
+                        onPress={() => makeCall(hmo.number, hmo.name)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.hmoInfo}>
+                          <Text style={[styles.hmoName, { color: theme.textPrimary }]}>{hmo.name}</Text>
+                          <Text style={[styles.hmoSubtitle, { color: theme.textSecondary }]}>{hmo.subtitle}</Text>
+                        </View>
+                        <View style={styles.hmoCall}>
+                          <View style={[styles.phoneIcon, { backgroundColor: isDarkMode ? 'rgba(205, 139, 135, 0.15)' : '#FDF2F2' }]}>
+                            <Phone size={16} color="#CD8B87" strokeWidth={2.5} />
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
             </ScrollView>
         </RNAnimatedView>
       </View>

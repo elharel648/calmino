@@ -322,7 +322,7 @@ const qas = StyleSheet.create({
 // ─── SLIDE 4: STATISTICS ──────────────────────────────────────────────────────
 
 const STATS_DATA = [
-    { val: '120', key: 'feedings', sub: '17908 מ"ל', subKey: null, color: '#DEAA6E', bg: '#FDF8F3', Icon: Utensils },
+    { val: '120', key: 'feedings', sub: null, subKey: 'feedingsMl', color: '#DEAA6E', bg: '#FDF8F3', Icon: Utensils },
     { val: '150', key: 'diapers', sub: ' ', subKey: null, color: '#689A84', bg: '#F2F8F5', Icon: Droplets },
     { val: '268', key: 'sleepHours', sub: null, subKey: 'naps', subPrefix: '60 ', color: '#3A5266', bg: '#F0F3F6', Icon: Moon },
     { val: '30', key: 'supplementsLabel', sub: ' ', subKey: null, color: '#C98696', bg: '#FDF4F6', Icon: Activity },
@@ -413,10 +413,10 @@ const stc = StyleSheet.create({
 
 // ─── SLIDE 4: FAMILY SHARING ─────────────────────────────────────────────────
 
-const FAMILY_LIST = [
-    { name: 'דני (אני)', email: 'dani@gmail.com', roleKey: 'admin', initial: 'ד' },
-    { name: 'אמא', email: 'ima@example.com', roleKey: 'member', initial: 'א' },
-    { name: 'סבתא רחל', email: 'savta@example.com', roleKey: 'guest', initial: 'ס' },
+const FAMILY_LIST_CONFIG = [
+    { nameKey: 'demoName1', email: 'dani@gmail.com', roleKey: 'admin', initialKey: 'demoInitial1' },
+    { nameKey: 'demoName2', email: 'ima@example.com', roleKey: 'member', initialKey: 'demoInitial2' },
+    { nameKey: 'demoName3', email: 'savta@example.com', roleKey: 'guest', initialKey: 'demoInitial3' },
 ];
 
 function FamilySharingSlideContent() {
@@ -435,7 +435,7 @@ function FamilySharingSlideContent() {
                         <Users size={18} color="#1F2937" strokeWidth={2.5} />
                     </View>
                     <View style={fsc.headerTexts}>
-                        <Text style={fsc.cardTitle}>משפחת נועם</Text>
+                        <Text style={fsc.cardTitle}>{t('onboarding.slide5.demoFamily')}</Text>
                         <Text style={fsc.cardSub}>{t('onboarding.slide5.membersCount', { count: 5 })}</Text>
                     </View>
                 </View>
@@ -445,17 +445,17 @@ function FamilySharingSlideContent() {
 
                 {/* Members List */}
                 <View style={fsc.list}>
-                    {FAMILY_LIST.map((m, i) => (
+                    {FAMILY_LIST_CONFIG.map((m, i) => (
                         <Animated.View key={i} entering={FadeInDown.delay(300 + i * 120).springify()} style={fsc.memberRow}>
                             <View style={fsc.rolePill}><Text style={fsc.roleText}>{t('onboarding.slide5.' + m.roleKey)}</Text></View>
 
                             <View style={fsc.memberInfo}>
-                                <Text style={fsc.memberName}>{m.name}</Text>
+                                <Text style={fsc.memberName}>{t('onboarding.slide5.' + m.nameKey)}</Text>
                                 <Text style={fsc.memberEmail}>{m.email}</Text>
                             </View>
 
                             <View style={fsc.initialCircle}>
-                                <Text style={fsc.initialText}>{m.initial}</Text>
+                                <Text style={fsc.initialText}>{t('onboarding.slide5.' + m.initialKey)}</Text>
                             </View>
                         </Animated.View>
                     ))}
@@ -634,7 +634,7 @@ const handleNext = () => {
                 {/* Skip button */}
                 {!isLast && (
                     <TouchableOpacity style={s.skipBtn} onPress={finish} activeOpacity={0.7}>
-                        <Text style={s.skipText}>{t('onboarding.skip') || 'דלג'}</Text>
+                        <Text style={s.skipText}>{t('onboarding.skip')}</Text>
                     </TouchableOpacity>
                 )}
 
@@ -696,8 +696,8 @@ const handleNext = () => {
                                 )}
                                 <Text style={s.btnText}>
                                     {isLast
-                                        ? (t('onboarding.cta')?.replace(/🎉/g, '')?.trim() || 'בואו נתחיל!')
-                                        : (t('onboarding.next')?.replace(/[›‹<>]/g, '')?.trim() || 'הבא')}
+                                        ? t('onboarding.cta').replace(/🎉/g, '').trim()
+                                        : t('onboarding.next').replace(/[›‹<>]/g, '').trim()}
                                 </Text>
                             </View>
                         </LinearGradient>

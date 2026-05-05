@@ -193,13 +193,13 @@ export default function DynamicIsland() {
         }
 
         if (breastIsRunning && breastActiveSide) {
-            const sideText = breastActiveSide === 'left' ? 'שמאל' : 'ימין';
+            const breastTitle = breastActiveSide === 'left' ? t('tracking.breastLeft') : t('tracking.breastRight');
             const currentTime = breastActiveSide === 'left' ? leftBreastTime : rightBreastTime;
             const breastTime = formatFoodTime(currentTime);
 
             // Sync timer to Apple Watch
             sendTimer({
-                title: `הנקה - ${sideText}`,
+                title: breastTitle,
                 time: breastTime,
                 isRunning: true,
                 color: '#10B981',
@@ -207,7 +207,7 @@ export default function DynamicIsland() {
 
             return {
                 icon: Utensils,
-                title: `הנקה - ${sideText}`,
+                title: breastTitle,
                 subtitle: breastTime,
                 color: '#10B981',
             };

@@ -26,27 +26,27 @@ interface TeethTrackerModalProps {
 // Teeth Layout Configuration
 const TEETH_CONFIG = [
     // Upper Arch (Left to Right)
-    { id: 'start_upper_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 80, left: 40 },
-    { id: 'start_upper_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 45, left: 50 },
-    { id: 'start_upper_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 25, left: 75 },
-    { id: 'start_upper_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 10, left: 105 },
-    { id: 'start_upper_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 135 },
-    { id: 'start_upper_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 175 },
-    { id: 'start_upper_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 10, left: 205 },
-    { id: 'start_upper_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 25, left: 235 },
-    { id: 'start_upper_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 45, left: 260 },
-    { id: 'start_upper_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 80, left: 270 },
+    { id: 'start_upper_left_molar_2', label: 'טוחנת שנייה', labelKey: 'teeth.molar2', type: 'molar_2', color: '#A78BFA', rot: 30, top: 80, left: 40 },
+    { id: 'start_upper_left_molar_1', label: 'טוחנת ראשונה', labelKey: 'teeth.molar1', type: 'molar_1', color: '#60A5FA', rot: 20, top: 45, left: 50 },
+    { id: 'start_upper_left_canine', label: 'ניב', labelKey: 'teeth.canine', type: 'canine', color: '#34D399', rot: 10, top: 25, left: 75 },
+    { id: 'start_upper_left_incisor_2', label: 'חותכת צידית', labelKey: 'teeth.incisorLat', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 10, left: 105 },
+    { id: 'start_upper_left_incisor_1', label: 'חותכת מרכזית', labelKey: 'teeth.incisorCen', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 135 },
+    { id: 'start_upper_right_incisor_1', label: 'חותכת מרכזית', labelKey: 'teeth.incisorCen', type: 'incisor_cen', color: '#F87171', rot: 0, top: 5, left: 175 },
+    { id: 'start_upper_right_incisor_2', label: 'חותכת צידית', labelKey: 'teeth.incisorLat', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 10, left: 205 },
+    { id: 'start_upper_right_canine', label: 'ניב', labelKey: 'teeth.canine', type: 'canine', color: '#34D399', rot: -10, top: 25, left: 235 },
+    { id: 'start_upper_right_molar_1', label: 'טוחנת ראשונה', labelKey: 'teeth.molar1', type: 'molar_1', color: '#60A5FA', rot: -20, top: 45, left: 260 },
+    { id: 'start_upper_right_molar_2', label: 'טוחנת שנייה', labelKey: 'teeth.molar2', type: 'molar_2', color: '#A78BFA', rot: -30, top: 80, left: 270 },
     // Lower Arch (Left to Right)
-    { id: 'start_lower_left_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: -30, top: 240, left: 40 },
-    { id: 'start_lower_left_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: -20, top: 275, left: 50 },
-    { id: 'start_lower_left_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: -10, top: 295, left: 75 },
-    { id: 'start_lower_left_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 310, left: 105 },
-    { id: 'start_lower_left_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 135 },
-    { id: 'start_lower_right_incisor_1', label: 'חותכת מרכזית', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 175 },
-    { id: 'start_lower_right_incisor_2', label: 'חותכת צידית', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 310, left: 205 },
-    { id: 'start_lower_right_canine', label: 'ניב', type: 'canine', color: '#34D399', rot: 10, top: 295, left: 235 },
-    { id: 'start_lower_right_molar_1', label: 'טוחנת ראשונה', type: 'molar_1', color: '#60A5FA', rot: 20, top: 275, left: 260 },
-    { id: 'start_lower_right_molar_2', label: 'טוחנת שנייה', type: 'molar_2', color: '#A78BFA', rot: 30, top: 240, left: 270 },
+    { id: 'start_lower_left_molar_2', label: 'טוחנת שנייה', labelKey: 'teeth.molar2', type: 'molar_2', color: '#A78BFA', rot: -30, top: 240, left: 40 },
+    { id: 'start_lower_left_molar_1', label: 'טוחנת ראשונה', labelKey: 'teeth.molar1', type: 'molar_1', color: '#60A5FA', rot: -20, top: 275, left: 50 },
+    { id: 'start_lower_left_canine', label: 'ניב', labelKey: 'teeth.canine', type: 'canine', color: '#34D399', rot: -10, top: 295, left: 75 },
+    { id: 'start_lower_left_incisor_2', label: 'חותכת צידית', labelKey: 'teeth.incisorLat', type: 'incisor_lat', color: '#A3E635', rot: -5, top: 310, left: 105 },
+    { id: 'start_lower_left_incisor_1', label: 'חותכת מרכזית', labelKey: 'teeth.incisorCen', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 135 },
+    { id: 'start_lower_right_incisor_1', label: 'חותכת מרכזית', labelKey: 'teeth.incisorCen', type: 'incisor_cen', color: '#F87171', rot: 0, top: 315, left: 175 },
+    { id: 'start_lower_right_incisor_2', label: 'חותכת צידית', labelKey: 'teeth.incisorLat', type: 'incisor_lat', color: '#A3E635', rot: 5, top: 310, left: 205 },
+    { id: 'start_lower_right_canine', label: 'ניב', labelKey: 'teeth.canine', type: 'canine', color: '#34D399', rot: 10, top: 295, left: 235 },
+    { id: 'start_lower_right_molar_1', label: 'טוחנת ראשונה', labelKey: 'teeth.molar1', type: 'molar_1', color: '#60A5FA', rot: 20, top: 275, left: 260 },
+    { id: 'start_lower_right_molar_2', label: 'טוחנת שנייה', labelKey: 'teeth.molar2', type: 'molar_2', color: '#A78BFA', rot: 30, top: 240, left: 270 },
 ];
 
 const getToothShapeStyle = (type: string) => {
@@ -217,14 +217,15 @@ export default function TeethTrackerModal({
 
                 // Save to timeline if it's a new tooth
                 if (isNewTooth && auth.currentUser) {
-                    const toothConfig = TEETH_CONFIG.find(t => t.id === selectedTooth);
+                    const toothConfig = TEETH_CONFIG.find(tc => tc.id === selectedTooth);
+                    const toothLabel = getToothLabel(toothConfig?.type || '');
                     await saveEventToFirebase(auth.currentUser.uid, activeChild.childId, {
                         type: 'teeth',
                         toothId: selectedTooth,
-                        toothLabel: toothConfig?.label || 'שן',
+                        toothLabel,
                         toothType: toothConfig?.type || '',
                         timestamp: newDate,
-                        note: `בקעה ${toothConfig?.label || 'שן'}`
+                        note: `${t('teethTracker.erupted')} ${toothLabel}`
                     });
                 }
             } catch (e) {

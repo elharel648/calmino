@@ -59,7 +59,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                 setError(null);
             } else {
                 setResults([]);
-                setError('לא מצאנו תחנות בחיפוש זה. נסה לחפש עיר אחרת.');
+                setError(t('tipatHalav.noResults'));
             }
             setLoading(false);
         }, 100); // Small 100ms artificial delay to give a smooth loading feel
@@ -85,10 +85,10 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
             if (supported) {
                 await Linking.openURL(url);
             } else {
-                Alert.alert('חיוג אינו נתמך', 'המכשיר הזה לא תומך בהוצאת שיחות טלפון (כנראה סימולטור).');
+                Alert.alert(t('tipatHalav.dialNotSupported'), t('tipatHalav.dialNotSupportedMsg'));
             }
         } catch (e) {
-            Alert.alert('חיוג אינו נתמך', 'המכשיר הזה לא תומך בהוצאת שיחות טלפון (כנראה סימולטור).');
+            Alert.alert(t('tipatHalav.dialNotSupported'), t('tipatHalav.dialNotSupportedMsg'));
         }
 
         if (Platform.OS !== 'web') {
@@ -134,7 +134,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
             // Ultimate fallback to Google Maps Web
             await Linking.openURL(googleMapsUrl);
         } catch (e) {
-            Alert.alert('שגיאה', 'לא ניתן לפתוח אפליקציית ניווט במכשיר זה');
+            Alert.alert(t('tipatHalav.navError'), t('tipatHalav.cannotOpenNav'));
         }
 
         if (Platform.OS !== 'web') {
@@ -153,7 +153,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                     <MapPin size={24} color="#FFFFFF" strokeWidth={1.8} />
                 </View>
                 <Text style={[styles.headerDescription, { color: theme.textSecondary }]}>
-                    מצאו את תחנת טיפת חלב הקרובה אליכם מתוך מאגר של מעל 1,800 תחנות ברחבי הארץ
+                    {t('tipatHalav.description')}
                 </Text>
             </View>
 
@@ -162,7 +162,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                 <Search size={20} color={theme.textSecondary} />
                 <TextInput
                     style={[styles.searchInput, { color: theme.textPrimary }]}
-                    placeholder="חפש עיר, ישוב או רחוב..."
+                    placeholder={t('tipatHalav.searchPlaceholder')}
                     placeholderTextColor={theme.textSecondary}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -174,7 +174,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
             {results.length > 0 && (
                 <View style={styles.resultsCountRow}>
                     <Text style={[styles.resultsCountText, { color: theme.textSecondary }]}>
-                        נמצאו {results.length} תחנות
+                        {t('tipatHalav.resultsFound', { count: results.length })}
                     </Text>
                 </View>
             )}
@@ -184,7 +184,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                 {loading ? (
                     <View style={styles.centerContent}>
                         <ActivityIndicator size="large" color={healthColor} />
-                        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>מחפש תחנות...</Text>
+                        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>{t('tipatHalav.searching')}</Text>
                     </View>
                 ) : error ? (
                     <View style={styles.centerContent}>
@@ -202,7 +202,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                                     <View style={styles.stationHeader}>
                                         <Building2 size={16} color={healthColor} style={{ marginLeft: 6 }} />
                                         <Text style={[styles.stationName, { color: theme.textPrimary }]}>
-                                            {item.clinic_name || 'תחנת טיפת חלב'}
+                                            {item.clinic_name || t('tipatHalav.stationFallback')}
                                         </Text>
                                     </View>
                                     <Text style={[styles.stationAddress, { color: theme.textSecondary }]}>
@@ -243,7 +243,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                 ) : searchQuery.length > 1 ? (
                     <View style={styles.centerContent}>
                         <MapPin size={40} color={theme.textTertiary} />
-                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>לא מצאנו תחנות ב"{searchQuery}"</Text>
+                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('tipatHalav.noResultsForQuery', { query: searchQuery })}</Text>
                     </View>
                 ) : (
                     <View style={styles.centerContent}>
@@ -251,7 +251,7 @@ const TipatHalavLocator: React.FC<Props> = ({ visible, onClose }) => {
                             <Search size={32} color={healthColor} />
                         </View>
                         <Text style={[styles.emptyText, { color: theme.textSecondary, marginTop: 16 }]}>
-                            הכנס שם עיר או יישוב כדי למצוא את תחנת טיפת חלב הקרובה אליך
+                            {t('tipatHalav.prompt')}
                         </Text>
                     </View>
                 )}

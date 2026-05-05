@@ -1,7 +1,8 @@
 import { logger } from '../utils/logger';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { doc, updateDoc, getDoc, onSnapshot, collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { useLanguage } from '../context/LanguageContext';
+import { doc, updateDoc, getDoc, getDocs, onSnapshot, collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { db, auth } from '../services/firebaseConfig';
 import { getLastEvent, formatTimeFromTimestamp, getRecentHistory } from '../services/firebaseService';
 import { HomeDataState } from '../types/home';
@@ -39,11 +40,13 @@ export const useHomeData = (
     ageMonths: number,
     creatorId?: string
 ): UseHomeDataReturn => {
-    // DEMO MODE removed
+    const { t } = useLanguage();
+    const tRef = useRef(t);
+    tRef.current = t;
     const [lastFeedTime, setLastFeedTime] = useState('--:--');
     const [lastSleepTime, setLastSleepTime] = useState('--:--');
     const [babyStatus, setBabyStatus] = useState<'sleeping' | 'awake'>('awake');
-    const [aiTip, setAiTip] = useState('אוסף נתונים לניתוח...');
+    const [aiTip, setAiTip] = useState(() => t('home.collectingData'));
     const [loadingAI, setLoadingAI] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
@@ -147,13 +150,14 @@ export const useHomeData = (
 
         const formatAgo = (timestamp: any): string => {
             if (!timestamp) return '';
+            const tFn = tRef.current;
             const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
             const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
-            if (diffMins < 1) return 'עכשיו';
-            if (diffMins < 60) return `לפני ${diffMins} דק'`;
+            if (diffMins < 1) return tFn('time.now');
+            if (diffMins < 60) return tFn('time.minutesAgo', { count: diffMins });
             const diffHours = Math.floor(diffMins / 60);
-            if (diffHours < 24) return `לפני ${diffHours} שע'`;
-            return `לפני ${Math.floor(diffHours / 24)} ימים`;
+            if (diffHours < 24) return tFn('time.hoursAgo', { count: diffHours });
+            return tFn('time.daysAgo', { count: Math.floor(diffHours / 24) });
         };
 
         try {
@@ -211,48 +215,45 @@ export const useHomeData = (
             const stats = calculateDailyStats(history);
             setDailyStats(stats);
 
-            // Fetch growth stats
-            if (snap.exists()) {
-                const data = snap.data();
-                if (data.stats && Array.isArray(data.stats) && data.stats.length > 0) {
-                    // Sort by timestamp desc
-                    const sortedStats = [...data.stats].sort((a: any, b: any) => {
-                        const dateA = a.date instanceof Object && a.date.seconds ? new Date(a.date.seconds * 1000) : new Date(a.date || 0);
-                        const dateB = b.date instanceof Object && b.date.seconds ? new Date(b.date.seconds * 1000) : new Date(b.date || 0);
-                        return dateB.getTime() - dateA.getTime();
-                    });
+            // Fetch growth stats from growthMeasurements collection
+            try {
+                const growthQ = query(
+                    collection(db, 'growthMeasurements'),
+                    where('babyId', '==', childId),
+                    orderBy('date', 'desc'),
+                    limit(2)
+                );
+                const growthSnap = await getDocs(growthQ);
+                if (!growthSnap.empty) {
+                    const latest = growthSnap.docs[0].data();
+                    const prev = growthSnap.docs[1]?.data();
 
-                    const latest = sortedStats[0];
-                    // Find previous measurements for diff
-                    const prevWeightObj = sortedStats.find((s: any) => s.weight && s !== latest);
-                    const prevHeightObj = sortedStats.find((s: any) => s.height && s !== latest);
+                    const toDate = (d: any): Date =>
+                        d?.seconds ? new Date(d.seconds * 1000) : new Date(d || 0);
 
-                    let lastWeightDiff;
-                    if (latest.weight && prevWeightObj?.weight) {
-                        const diff = parseFloat(latest.weight) - parseFloat(prevWeightObj.weight);
+                    let lastWeightDiff: string | undefined;
+                    if (latest.weight && prev?.weight) {
+                        const diff = parseFloat(latest.weight) - parseFloat(prev.weight);
                         lastWeightDiff = diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2);
                     }
-
-                    let lastHeightDiff;
-                    if (latest.height && prevHeightObj?.height) {
-                        const diff = parseFloat(latest.height) - parseFloat(prevHeightObj.height);
+                    let lastHeightDiff: string | undefined;
+                    if (latest.height && prev?.height) {
+                        const diff = parseFloat(latest.height) - parseFloat(prev.height);
                         lastHeightDiff = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
                     }
 
-                    const lastDate = latest.date instanceof Object && latest.date.seconds
-                        ? new Date(latest.date.seconds * 1000)
-                        : new Date(latest.date);
-
                     setGrowthStats({
-                        currentWeight: latest.weight,
+                        currentWeight: String(latest.weight ?? ''),
                         lastWeightDiff,
-                        currentHeight: latest.height,
+                        currentHeight: String(latest.height ?? ''),
                         lastHeightDiff,
-                        lastMeasuredDate: lastDate
+                        lastMeasuredDate: toDate(latest.date),
                     });
                 } else {
                     setGrowthStats({});
                 }
+            } catch {
+                setGrowthStats({});
             }
 
             // Push latest data to iOS homescreen widget

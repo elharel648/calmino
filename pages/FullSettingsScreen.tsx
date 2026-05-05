@@ -920,29 +920,6 @@ if (data.settings.language !== undefined) {
           </View>
         </View>
 
-
-        {/* Demo */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 16, gap: 8 }}>
-          <TouchableOpacity
-            style={{ padding: 14, borderRadius: 14, backgroundColor: '#EBF8FF', alignItems: 'center' }}
-            onPress={async () => {
-              const { clearDemoData, seedDemoData } = await import('../services/demoDataSeeder');
-              Alert.alert('מוקאפ', 'ימחק ילדי דמו קיימים ויוסיף 4 חדשים עם תמונות', [
-                { text: 'ביטול', style: 'cancel' },
-                { text: 'המשך', onPress: async () => {
-                  try {
-                    await clearDemoData();
-                    const r = await seedDemoData();
-                    Alert.alert('✅', `${r.childrenCreated} ילדים נוספו - עבור לבית ובחר ילד`);
-                  } catch (e: any) { Alert.alert('שגיאה', e?.message); }
-                }}
-              ]);
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#2B6CB0' }}>🎬 הגדר 4 ילדי מוקאפ</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Logo + version + website link */}
         <TouchableOpacity
           style={{ alignItems: 'center', marginTop: 8, marginBottom: 20 }}

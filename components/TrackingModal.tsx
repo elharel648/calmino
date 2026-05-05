@@ -1126,22 +1126,22 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
     // Validate sleep duration > 0
     if (type === 'sleep') {
       if (sleepMode === 'timer' && (!data.duration || data.duration === 0)) {
-        showError('יש להפעיל את הטיימר לפני השמירה.');
+        showError(t('tracking.timerRequired'));
         return;
       }
       if (sleepMode === 'duration' && (!data.duration || data.duration === 0)) {
-        showError('יש להזין משך שינה גדול מ-0.');
+        showError(t('tracking.sleepDurationRequired'));
         return;
       }
       if (sleepMode === 'timerange' && data.duration === 0) {
-        showError('שעת הסיום חייבת להיות שונה משעת ההתחלה.');
+        showError(t('tracking.endTimeDifferent'));
         return;
       }
     }
 
     // Validate diaper type selected
     if (type === 'diaper' && !subType) {
-      showError('יש לבחור סוג חיתול לפני השמירה.');
+      showError(t('tracking.diaperTypeRequired'));
       return;
     }
 
@@ -1149,12 +1149,12 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
     if (type === 'sleep' && sleepMode === 'timerange') {
       if (!data.timestamp) {
         logger.error('❌ Missing timestamp');
-        showError('שגיאה: חסר timestamp. נא לנסות שוב.');
+        showError(t('tracking.missingTimestamp'));
         return;
       }
       if (data.duration === undefined || data.duration === null) {
         logger.error('❌ Missing duration');
-        showError('שגיאה: חסר duration. נא לנסות שוב.');
+        showError(t('tracking.missingDuration'));
         return;
       }
     }
@@ -1302,7 +1302,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           <Text style={styles.datePickerBtnText}>
             {selectedDate.toDateString() === new Date().toDateString()
               ? t('tracking.today')
-              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+              : selectedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'long', weekday: 'short' })}
           </Text>
         </TouchableOpacity>
       )}
@@ -1472,7 +1472,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   <Text style={[styles.breastTimeValue, { fontSize: 30, letterSpacing: -1, color: theme.textPrimary }, isBottleActive && { color: theme.primary }]}>
                     {formatTime(bottleTimer)}
                   </Text>
-                  <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (isBottleActive && foodTimerContext.bottleIsPaused) ? 1 : 0 }}>{'מושהה'}</Text>
+                  <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (isBottleActive && foodTimerContext.bottleIsPaused) ? 1 : 0 }}>{t('tracking.paused')}</Text>
                   <View style={[styles.breastPlayBtn, isBottleActive && { backgroundColor: theme.primary }]}>
                     {isBottleActive && !foodTimerContext.bottleIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isBottleActive ? '#fff' : theme.textTertiary} />}
                   </View>
@@ -1503,7 +1503,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               >
                 <Text style={[styles.breastTimeLabel, activeSide === 'left' && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.left')}</Text>
                 <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'left' && { color: theme.primary }]}>{formatTime(leftTimer)}</Text>
-                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (activeSide === 'left' && foodTimerContext.breastIsPaused) ? 1 : 0 }}>{'מושהה'}</Text>
+                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (activeSide === 'left' && foodTimerContext.breastIsPaused) ? 1 : 0 }}>{t('tracking.paused')}</Text>
                 <View style={[styles.breastPlayBtn, activeSide === 'left' && { backgroundColor: theme.primary }]}>
                   {activeSide === 'left' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'left' ? '#fff' : theme.textTertiary} />}
                 </View>
@@ -1525,7 +1525,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               >
                 <Text style={[styles.breastTimeLabel, activeSide === 'right' && { color: theme.primary, fontWeight: '700' }]}>{t('tracking.right')}</Text>
                 <Text style={[styles.breastTimeValue, { color: theme.textPrimary }, activeSide === 'right' && { color: theme.primary }]}>{formatTime(rightTimer)}</Text>
-                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (activeSide === 'right' && foodTimerContext.breastIsPaused) ? 1 : 0 }}>{'מושהה'}</Text>
+                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (activeSide === 'right' && foodTimerContext.breastIsPaused) ? 1 : 0 }}>{t('tracking.paused')}</Text>
                 <View style={[styles.breastPlayBtn, activeSide === 'right' && { backgroundColor: theme.primary }]}>
                   {activeSide === 'right' && !foodTimerContext.breastIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={activeSide === 'right' ? '#fff' : theme.textTertiary} />}
                 </View>
@@ -1632,7 +1632,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   <Text style={[styles.breastTimeValue, { fontSize: 28, color: theme.textPrimary }, isPumpingActive && { color: theme.primary }]}>
                     {formatTime(pumpingTimer)}
                   </Text>
-                  <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (isPumpingActive && foodTimerContext.pumpingIsPaused) ? 1 : 0 }}>{'מושהה'}</Text>
+                  <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 4, letterSpacing: -0.2, opacity: (isPumpingActive && foodTimerContext.pumpingIsPaused) ? 1 : 0 }}>{t('tracking.paused')}</Text>
                   <View style={[styles.breastPlayBtn, isPumpingActive && { backgroundColor: theme.primary }]}>
                     {isPumpingActive && !foodTimerContext.pumpingIsPaused ? <Pause size={14} color="#fff" /> : <Play size={14} color={isPumpingActive ? '#fff' : theme.textTertiary} />}
                   </View>
@@ -1815,7 +1815,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           <Text style={styles.datePickerBtnText}>
             {selectedDate.toDateString() === new Date().toDateString()
               ? t('tracking.today')
-              : selectedDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', weekday: 'short' })}
+              : selectedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'long', weekday: 'short' })}
           </Text>
         </TouchableOpacity>
       )}
@@ -1867,7 +1867,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               ]}>
                 {sleepContext.isRunning ? sleepContext.formatTime(sleepContext.elapsedSeconds) : '0:00'}
               </Text>
-              <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 2, letterSpacing: -0.2, opacity: (sleepContext.isRunning && sleepContext.isPaused) ? 1 : 0 }}>{'מושהה'}</Text>
+              <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600', marginTop: 2, letterSpacing: -0.2, opacity: (sleepContext.isRunning && sleepContext.isPaused) ? 1 : 0 }}>{t('tracking.paused')}</Text>
             </View>
             <View style={[
               styles.sleepTimerPlayBtn,
@@ -2118,7 +2118,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               color: theme.textPrimary,
             }
           ]}
-          placeholder="לדוגמה: ישן עמוק, התעורר פעם אחת..."
+          placeholder={t('tracking.sleepNotePlaceholder')}
           placeholderTextColor={theme.textTertiary}
           value={sleepNote}
           onChangeText={setSleepNote}
@@ -2556,7 +2556,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                           <Text style={styles.calendarMonthText}>
                             {calendarView === 'days'
-                              ? selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+                              ? selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
                               : selectedDate.getFullYear().toString()
                             }
                           </Text>
@@ -2721,7 +2721,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 <ChevronLeft size={18} color={theme.textPrimary} strokeWidth={1.5} />
               </TouchableOpacity>
               <Text style={[styles.calendarMonthText, { color: theme.textPrimary }]}>
-                {selectedDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
+                {selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
               </Text>
               <TouchableOpacity style={[styles.calendarNavBtn, { backgroundColor: theme.inputBackground, borderColor: theme.border }]} onPress={() => {
                 const newDate = new Date(selectedDate);
@@ -2734,7 +2734,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
 
             {/* Week Days Header */}
             <View style={styles.calendarWeekRow}>
-              {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map((day, i) => (
+              {[t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')].map((day, i) => (
                 <Text key={i} style={[styles.calendarWeekDay, { color: theme.textTertiary }]}>{day}</Text>
               ))}
             </View>

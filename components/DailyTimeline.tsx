@@ -460,7 +460,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     const getLabelForDate = (date: Date): string => {
       if (date.toDateString() === today.toDateString()) return t('common.today');
       if (date.toDateString() === yesterday.toDateString()) return t('common.yesterday');
-      return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+      return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
     };
 
     // Map: dateString → { label, events, dateObj }
@@ -536,7 +536,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     if (days === 1) return t('timeline.yesterday');
     if (days < 7) return t('time.daysAgo', { count: days });
 
-    return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   };
 
   const getTimeAgoShort = (date: Date): string => {
@@ -545,22 +545,21 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     const seconds = Math.floor(diffMs / 1000);
 
     // Future events or within last minute
-    if (seconds < 60 && seconds > -300) return 'עכשיו';
+    if (seconds < 60 && seconds > -300) return t('time.now');
     // Far future (bad data) — show nothing
     if (seconds <= -300) return '';
 
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} דק'`;
+    if (minutes < 60) return t('time.minutesShort', { count: minutes });
 
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} שע'`;
+    if (hours < 24) return t('time.hoursShort', { count: hours });
 
     const days = Math.floor(hours / 24);
-    if (days === 1) return 'אתמול';
-    if (days < 7) return `${days} ימים`;
+    if (days === 1) return t('common.yesterday');
+    if (days < 7) return t('time.daysShort', { count: days });
 
-    // For older events, show date
-    return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   };
 
   // Format event details
@@ -570,8 +569,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       if (event.startTime && event.endTime && event.duration && event.duration > 0) {
         const h = Math.floor(event.duration / 3600);
         const m = Math.floor((event.duration % 3600) / 60);
-        if (h > 0) return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
-        if (m > 0) return `${m} דק'`;
+        if (h > 0) return `${t('time.hoursShort', { count: h })}${m > 0 ? ' ' + t('time.minutesShort', { count: m }) : ''}`;
+        if (m > 0) return t('time.minutesShort', { count: m });
         // Very short — show amount if available
         return event.amount || t('timeline.food');
       }
@@ -599,10 +598,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         const h = Math.floor(event.duration / 3600);
         const m = Math.floor((event.duration % 3600) / 60);
         const s = Math.floor(event.duration % 60);
-        if (h > 0) return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
-        if (m > 0 && s > 0) return `${m} דק' ו-${s} שנ'`;
-        if (m > 0) return `${m} דקות`;
-        if (s > 0) return `${s} שניות`;
+        if (h > 0) return `${t('time.hoursShort', { count: h })}${m > 0 ? ' ' + t('time.minutesShort', { count: m }) : ''}`;
+        if (m > 0 && s > 0) return `${t('time.minutesShort', { count: m })} ${t('time.secondsCount', { count: s })}`;
+        if (m > 0) return t('time.minutesCount', { count: m });
+        if (s > 0) return t('time.secondsCount', { count: s });
         return t('timeline.sleep');
       }
       // Timerange with no duration: fallback
@@ -616,16 +615,16 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
         const s = Math.floor(event.duration % 60);
         
         if (h > 0) {
-          return `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+          return `${t('time.hoursShort', { count: h })}${m > 0 ? ' ' + t('time.minutesShort', { count: m }) : ''}`;
         }
         if (m > 0 && s > 0) {
-          return `${m} דק' ו-${s} שנ'`;
+          return `${t('time.minutesShort', { count: m })} ${t('time.secondsCount', { count: s })}`;
         }
         if (m > 0) {
-          return `${m} דקות`;
+          return t('time.minutesCount', { count: m });
         }
         if (s > 0) {
-          return `${s} שניות`;
+          return t('time.secondsCount', { count: s });
         }
         return t('timeline.sleep');
       }
@@ -643,9 +642,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       if (event.subType === 'pee') return t('diaper.wet');
       if (event.subType === 'poop') return t('diaper.dirty');
       if (event.subType === 'both') return t('tracking.both');
-      return 'החלפת חיתול';
+      return t('timeline.diaperChange');
     } else if (event.type === 'supplements') {
-      if (event.subType === 'vitaminD') return 'ויטמין D';
+      if (event.subType === 'vitaminD') return t('settings.vitaminD');
       if (event.subType === 'iron') return t('timeline.iron');
       if (event.subType === 'probiotic') return t('timeline.probiotic');
       if (event.subType === 'multivitamin') return 'Multivitamin';
@@ -654,11 +653,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       // Vaccine events: clean display
       if (event.subType === 'vaccine') {
         const note = event.note || '';
-        return note.replace(/^חיסון:\s*/, '') || 'חיסון';
+        return note.replace(/^חיסון:\s*/, '') || t('timeline.vaccine');
       }
-      return event.note || 'פעולה מותאמת';
+      return event.note || t('timeline.customAction');
     } else if (event.type === 'teeth') {
-      return event.toothLabel || event.note || 'בקעה שן';
+      return event.toothLabel || event.note || t('timeline.toothErupted');
     }
     return '';
   };
@@ -688,8 +687,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const mins = parseInt(match[1]);
             const secs = parseInt(match[2]);
             if (mins === 0 && secs < 10) return ''; // threshold: less than 10 seconds = irrelevant
-            if (mins === 0) return `${secs} שנ'`;
-            return `${mins} דק'`;
+            if (mins === 0) return t('time.secondsCount', { count: secs });
+            return t('time.minutesShort', { count: mins });
           };
           const parts = event.note.split(' | ');
           const rightMatch = parts.find(p => p.includes('ימין:'));
@@ -697,8 +696,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           const rightVal = rightMatch ? parseBreastTime(rightMatch) : '';
           const leftVal = leftMatch ? parseBreastTime(leftMatch) : '';
           const segments = [
-            rightVal ? `ימין ${rightVal}` : '',
-            leftVal ? `שמאל ${leftVal}` : '',
+            rightVal ? `${t('timeline.breastRight')} ${rightVal}` : '',
+            leftVal ? `${t('timeline.breastLeft')} ${leftVal}` : '',
           ].filter(Boolean);
           return segments.join(' · ');
         }
@@ -737,7 +736,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       return event.note || '';
     } else if (event.type === 'custom') {
       if (event.subType === 'vaccine') {
-        return '💉 חיסון';
+        return t('timeline.vaccineLabel');
       }
       return '';
     } else if (event.type === 'teeth') {
@@ -756,7 +755,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
   // Hide reporter badge when all events share the same reporter
   const uniqueReporters = new Set(events.map(e => e.creatorId || e.userId).filter(Boolean));
-  const showReporterBadge = uniqueReporters.size > 1;
+  let showReporterBadge = uniqueReporters.size > 1;
 
   if (loading) {
     return (
@@ -870,9 +869,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       const m = Math.floor((event.duration % 3600) / 60);
                       let durationText = '';
                       if (h > 0) {
-                        durationText = `${h} שע' ${m > 0 ? `${m} דק'` : ''}`;
+                        durationText = `${t('time.hoursShort', { count: h })}${m > 0 ? ' ' + t('time.minutesShort', { count: m }) : ''}`;
                       } else if (m > 0) {
-                        durationText = `${m} דקות`;
+                        durationText = t('time.minutesCount', { count: m });
                       }
                       if (durationText) {
                         if (event.amount && event.type === 'food') {
@@ -890,7 +889,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   const memberId = event.creatorId || event.userId;
                   const member = family?.members[memberId];
                   const photoUrl = member?.photoURL || event.reporterPhotoUrl;
-                  const timeStr = event.timestamp.toLocaleTimeString('he-IL', {
+                  const timeStr = event.timestamp.toLocaleTimeString(undefined, {
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false
@@ -975,13 +974,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     {isDayExpanded ? (
                       <>
                         <ChevronUp size={14} color={theme.primary} strokeWidth={2.5} />
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>הצג פחות</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>{t('timeline.showLess')}</Text>
                       </>
                     ) : (
                       <>
                         <ChevronDown size={14} color={theme.primary} strokeWidth={2.5} />
                         <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>
-                          {`עוד ${hiddenCount} רשומות`}
+                          {t('timeline.showMore', { count: hiddenCount })}
                         </Text>
                       </>
                     )}
@@ -1005,7 +1004,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             const subtext = getEventSubtext(event);
             const isRecent = isRecentEvent(event.timestamp);
 
-            const timeStr = event.timestamp.toLocaleTimeString('he-IL', {
+            const timeStr = event.timestamp.toLocaleTimeString(undefined, {
               hour: '2-digit',
               minute: '2-digit',
               hour12: false
@@ -1049,6 +1048,19 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         backgroundColor: config.color,
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
+                        {showBadge && (
+                          <View style={[styles.badgeContainer, { position: 'absolute', bottom: -2, right: -4, zIndex: 10 }]}>
+                            {photoUrl ? (
+                              <View style={[styles.cardReporterBadge, { borderWidth: 1.5, borderColor: theme.background, backgroundColor: theme.background, overflow: 'hidden' }]}>
+                                <Image source={{ uri: photoUrl }} style={{ width: '100%', height: '100%' }} />
+                              </View>
+                            ) : (
+                              <View style={[styles.cardReporterBadge, { backgroundColor: theme.cardSecondary, borderColor: theme.background, borderWidth: 1.5 }]}>
+                                <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
                       </View>
                       <View style={[styles.elegantLineBottom, {
                         backgroundColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'),
@@ -1069,20 +1081,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
                           {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textTertiary }]} numberOfLines={2} ellipsizeMode="tail">{subtext}</Text> : null}
                         </View>
-                        {showBadge ? (
-                          <View style={styles.elegantCardLeft}>
-                            {photoUrl ? (
-                              <Image source={{ uri: photoUrl }} style={[styles.cardReporterBadge, { borderWidth: 0, backgroundColor: 'transparent' }]} />
-                            ) : (
-                              <View style={[styles.cardReporterBadge, { borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]}>
-                                <Text style={[styles.cardReporterText, { color: theme.textPrimary }]}>{reporterInitial}</Text>
-                              </View>
-                            )}
-                          </View>
-                        ) : null}
+                        </View>
                       </View>
-                    </View>
-
                   </TouchableOpacity>
                     </SwipeableRow>
                     </PremiumTimelineEvent>

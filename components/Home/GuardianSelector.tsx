@@ -33,6 +33,7 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
     dynamicStyles,
 }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const { family, members, myRole } = useFamily();
     const currentUser = auth.currentUser;
@@ -57,11 +58,11 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
                         <Users size={16} color="#C8806A" />
                     </View>
                     <Text style={styles.label}>
-                        <Text style={styles.inviteText}>הזמן בן/בת זוג לצפות יחד</Text>
+                        <Text style={styles.inviteText}>{t('guardian.invitePartner')}</Text>
                     </Text>
                 </View>
                 <View style={styles.addBtn}>
-                    <Text style={styles.addBtnText}>הזמן</Text>
+                    <Text style={styles.addBtnText}>{t('guardian.invite')}</Text>
                     <ChevronDown size={14} color="#C8806A" />
                 </View>
             </TouchableOpacity>
@@ -69,7 +70,7 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
     }
 
     // Has family - show members summary
-    const myName = members.find(m => m.id === currentUser?.uid)?.name || 'אני';
+    const myName = members.find(m => m.id === currentUser?.uid)?.name || t('guardian.me');
     const otherMembers = members.filter(m => m.id !== currentUser?.uid);
     const Icon = ROLE_ICONS[myRole || 'member'];
 
@@ -84,11 +85,11 @@ const GuardianSelector = memo<GuardianSelectorProps>(({
                     <Users size={16} color="#10B981" />
                 </View>
                 <View>
-                    <Text style={styles.familyLabel}>משפחת {family.babyName}</Text>
+                    <Text style={styles.familyLabel}>{t('guardian.familyOf', { name: family.babyName })}</Text>
                     <Text style={styles.familySubtext}>
                         {otherMembers.length > 0
-                            ? `${myName} + ${otherMembers.length} נוספים`
-                            : `${myName} - מחובר/ת`
+                            ? `${myName} ${t('guardian.othersAndMore', { count: otherMembers.length })}`
+                            : `${myName} - ${t('guardian.connected')}`
                         }
                     </Text>
                 </View>

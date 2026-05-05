@@ -30,17 +30,17 @@ const BlockedUsersScreen = ({ navigation }: any) => {
     };
 
     const handleUnblock = (user: BlockedUser) => {
-        Alert.alert('הסרת חסימה', `האם אתה בטוח שברצונך להסיר את החסימה מ-${user.name}?`, [
-            { text: 'ביטול', style: 'cancel' },
+        Alert.alert(t('blockedUsers.unblockTitle'), t('blockedUsers.unblockConfirm', { name: user.name }), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'הסר חסימה', onPress: async () => {
+                text: t('blockedUsers.unblock'), onPress: async () => {
                     const currentUserId = auth.currentUser?.uid;
                     if (currentUserId) {
                         const success = await unblockUser(currentUserId, user);
                         if (success) {
                             setBlockedUsers(prev => prev.filter(u => u.id !== user.id));
                         } else {
-                            Alert.alert('שגיאה', 'אירעה שגיאה בהסרת החסימה.');
+                            Alert.alert(t('common.error'), t('blockedUsers.unblockError'));
                         }
                     }
                 }
@@ -54,7 +54,7 @@ const BlockedUsersScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Ionicons name="arrow-forward" size={24} color={theme.textPrimary} />
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.textPrimary }]}>משתמשים חסומים</Text>
+                <Text style={[styles.title, { color: theme.textPrimary }]}>{t('blockedUsers.title')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -65,7 +65,7 @@ const BlockedUsersScreen = ({ navigation }: any) => {
             ) : blockedUsers.length === 0 ? (
                 <View style={styles.center}>
                     <UserX size={64} color={theme.textSecondary} style={{ marginBottom: 16 }} opacity={0.5} />
-                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>אין לך משתמשים חסומים.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('blockedUsers.empty')}</Text>
                 </View>
             ) : (
                 <FlatList
@@ -78,7 +78,7 @@ const BlockedUsersScreen = ({ navigation }: any) => {
                                 style={[styles.unblockBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
                                 onPress={() => handleUnblock(item)}
                             >
-                                <Text style={[styles.unblockText, { color: theme.textPrimary }]}>הסר חסימה</Text>
+                                <Text style={[styles.unblockText, { color: theme.textPrimary }]}>{t('blockedUsers.unblock')}</Text>
                             </TouchableOpacity>
 
                             <View style={styles.info}>

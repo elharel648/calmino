@@ -297,7 +297,7 @@ export default function NightLightModal({
             >
                 {/* Drag Handle - Visual indicator */}
                 <TouchableOpacity style={[styles.dragHandle, { paddingTop: Math.max(insets.top, 16) }]} onPress={handleCloseModal} activeOpacity={0.7}>
-                    <Text style={{ color: brightness > 0.5 ? 'rgba(0,0,0,0.6)' : '#FFF5E1', fontSize: 11, fontWeight: '600' }}>לסגירה</Text>
+                    <Text style={{ color: brightness > 0.5 ? 'rgba(0,0,0,0.6)' : '#FFF5E1', fontSize: 11, fontWeight: '600' }}>{t('nightLight.tapToClose')}</Text>
                 </TouchableOpacity>
 
                 <TouchableWithoutFeedback onPress={() => setControlsVisible(!controlsVisible)}>

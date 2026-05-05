@@ -3,6 +3,8 @@ import { logger } from '../utils/logger';
 import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, collection, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 import { AppState, AppStateStatus } from 'react-native';
+import i18n from './i18n';
+const t = i18n.t.bind(i18n);
 
 // --- Types ---
 export interface FamilyMemberPresence {
@@ -28,7 +30,7 @@ export const setUserOnline = async (familyId: string): Promise<void> => {
             isOnline: true,
             lastSeen: serverTimestamp(),
             userId,
-            name: auth.currentUser?.displayName || 'משתמש',
+            name: auth.currentUser?.displayName || t('family.userFallback'),
         }, { merge: true });
     } catch (e) {
         logger.error('setUserOnline error:', e);
@@ -68,7 +70,7 @@ export const subscribeToFamilyPresence = (
         const memberIds = Object.keys(membersMap);
         const presenceList = memberIds.map((memberId) => ({
             userId: memberId,
-            name: membersMap[memberId]?.name || 'משתמש',
+            name: membersMap[memberId]?.name || t('family.userFallback'),
             isOnline: presenceMap[memberId]?.isOnline || false,
             lastSeen: presenceMap[memberId]?.lastSeen || null,
         }));

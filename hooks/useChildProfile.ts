@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { auth } from '../services/firebaseConfig';
 import { getChildProfile } from '../services/firebaseService';
 import { ChildProfile, DEFAULT_CHILD_PROFILE } from '../types/home';
+import { useLanguage } from '../context/LanguageContext';
 
 interface UseChildProfileReturn {
     profile: ChildProfile;
@@ -18,8 +19,9 @@ interface UseChildProfileReturn {
  * Uses useFocusEffect to refresh data when screen comes into focus
  */
 export const useChildProfile = (): UseChildProfileReturn => {
+    const { t } = useLanguage();
     const [profile, setProfile] = useState<ChildProfile>(DEFAULT_CHILD_PROFILE);
-    const [greeting, setGreeting] = useState('שלום');
+    const [greeting, setGreeting] = useState(() => t('common.hello'));
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -27,10 +29,10 @@ export const useChildProfile = (): UseChildProfileReturn => {
 
     const calculateGreeting = useCallback(() => {
         const hour = new Date().getHours();
-        if (hour >= 5 && hour < 12) return 'בוקר טוב';
-        if (hour >= 12 && hour < 18) return 'צהריים טובים';
-        return 'ערב טוב';
-    }, []);
+        if (hour >= 5 && hour < 12) return t('home.greeting.morning');
+        if (hour >= 12 && hour < 18) return t('home.greeting.afternoon');
+        return t('home.greeting.evening');
+    }, [t]);
 
     const fetchProfile = useCallback(async () => {
         if (!user) {
@@ -63,7 +65,7 @@ export const useChildProfile = (): UseChildProfileReturn => {
             }
         } catch (e) {
             logger.error('Error loading profile:', e);
-            setError('שגיאה בטעינת הפרופיל');
+            setError(t('profile.loadError'));
         } finally {
             setLoading(false);
         }

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Settings, Edit2, Camera, ChevronRight } from 'lucide-react-native';
 
@@ -24,6 +25,7 @@ const ProfileHeader = memo(({
     onAgePress,
 }: ProfileHeaderProps) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     return (
         <View style={styles.container}>
@@ -37,15 +39,15 @@ const ProfileHeader = memo(({
                 <TouchableOpacity
                     onPress={onSettingsPress}
                     style={styles.navBtn}
-                    accessibilityLabel="הגדרות"
+                    accessibilityLabel={t('settings.title')}
                 >
                     <Settings size={20} color="white" />
                 </TouchableOpacity>
-                <Text style={styles.navTitle}>הבייבי שלי</Text>
+                <Text style={styles.navTitle}>{t('profile.pageTitle')}</Text>
                 <TouchableOpacity
                     onPress={onBackPress}
                     style={styles.navBtn}
-                    accessibilityLabel="חזרה"
+                    accessibilityLabel={t('common.back')}
                 >
                     <ChevronRight size={20} color="white" />
                 </TouchableOpacity>
@@ -67,9 +69,9 @@ const ProfileHeader = memo(({
                 </TouchableOpacity>
 
                 <View style={styles.nameSection}>
-                    <Text style={styles.babyName}>{babyName || 'הבייבי'}</Text>
+                    <Text style={styles.babyName}>{babyName || t('profile.myChildFallback')}</Text>
                     <TouchableOpacity style={styles.agePill} onPress={onAgePress}>
-                        <Text style={styles.ageText}>{babyAgeMonths} חודשים</Text>
+                        <Text style={styles.ageText}>{t('profile.ageMonths', { count: babyAgeMonths })}</Text>
                         <Edit2 size={10} color="rgba(255,255,255,0.8)" />
                     </TouchableOpacity>
                 </View>

@@ -45,7 +45,7 @@ export default function ProfileScreen() {
   // Use activeChild instead of useBabyProfile
   const { activeChild, refreshChildren } = useActiveChild();
 
-  const {
+  let {
     baby,
     loading,
     babyAgeMonths,
@@ -55,7 +55,7 @@ export default function ProfileScreen() {
     updateStats,
     updateBasicInfo,
   } = useBabyProfile(activeChild?.childId);
-
+  
   const { addNew: addMilestone, remove: removeMilestone } = useMilestones();
 
   const [editMetric, setEditMetric] = useState<EditMetricState | null>(null);
@@ -278,12 +278,12 @@ export default function ProfileScreen() {
                   </View>
                   <View>
                     <Text style={[styles.journeyTitle, { color: isDarkMode ? '#F5F0E8' : '#1C1410' }]}>
-                      המסע שלנו
+                      {t('profile.journeyTitle')}
                     </Text>
                     <Text style={[styles.journeySub, {
                       color: isDarkMode ? 'rgba(201,168,76,0.55)' : 'rgba(140,100,30,0.75)',
                     }]}>
-                      {activeChild?.childName ? `כל הרגעים של ${activeChild.childName}` : 'הסיכום הקולנועי'}
+                      {activeChild?.childName ? t('profile.journeySubtitle', { name: activeChild.childName }) : t('profile.journeyFallback')}
                     </Text>
                   </View>
                 </View>

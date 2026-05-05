@@ -3,6 +3,8 @@ import { logger } from '../utils/logger';
 // Global navigation service for deep linking from notifications
 
 import { createNavigationContainerRef, CommonActions } from '@react-navigation/native';
+import i18n from './i18n';
+const t = i18n.t.bind(i18n);
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -56,7 +58,7 @@ export function setTranslationFunction(translator: (key: string) => string) {
  * Navigate to Home tab
  */
 export function navigateToHome() {
-    const homeTab = getTranslation ? getTranslation('navigation.home') : 'בית';
+    const homeTab = getTranslation ? getTranslation('navigation.home') : t('navigation.home');
     navigate(homeTab);
 }
 
@@ -64,7 +66,7 @@ export function navigateToHome() {
  * Navigate to Reports tab
  */
 export function navigateToReports() {
-    const reportsTab = getTranslation ? getTranslation('navigation.reports') : 'סטטיסטיקות';
+    const reportsTab = getTranslation ? getTranslation('navigation.reports') : t('navigation.reports');
     navigate(reportsTab);
 }
 
@@ -73,7 +75,7 @@ export function navigateToReports() {
  */
 export function navigateToNotifications() {
     if (navigationRef.isReady()) {
-        const homeTab = getTranslation ? getTranslation('navigation.home') : 'בית';
+        const homeTab = getTranslation ? getTranslation('navigation.home') : t('navigation.home');
         navigationRef.dispatch(
             CommonActions.navigate({
                 name: homeTab,

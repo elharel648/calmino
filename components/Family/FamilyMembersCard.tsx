@@ -14,6 +14,7 @@ import { useFamily } from '../../hooks/useFamily';
 import { FamilyRole } from '../../services/familyService';
 import { auth } from '../../services/firebaseConfig';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface FamilyMembersCardProps {
     onInvitePress: () => void;
@@ -22,11 +23,11 @@ interface FamilyMembersCardProps {
     onEditFamilyName?: () => void;
 }
 
-const ROLE_CONFIG: Record<FamilyRole, { label: string; color: string; icon: any; bgLight: string; bgDark: string }> = {
-    admin: { label: 'מנהל', color: '#F59E0B', icon: Crown, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
-    member: { label: 'חבר', color: '#C8806A', icon: UserCheck, bgLight: '#EEF2FF', bgDark: 'rgba(99,102,241,0.15)' },
-    viewer: { label: 'צופה', color: '#10B981', icon: Eye, bgLight: '#ECFDF5', bgDark: 'rgba(16,185,129,0.15)' },
-    guest: { label: 'אורח', color: '#F59E0B', icon: Clock, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
+const ROLE_STYLE: Record<FamilyRole, { color: string; icon: any; bgLight: string; bgDark: string }> = {
+    admin: { color: '#F59E0B', icon: Crown, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
+    member: { color: '#C8806A', icon: UserCheck, bgLight: '#EEF2FF', bgDark: 'rgba(99,102,241,0.15)' },
+    viewer: { color: '#10B981', icon: Eye, bgLight: '#ECFDF5', bgDark: 'rgba(16,185,129,0.15)' },
+    guest: { color: '#F59E0B', icon: Clock, bgLight: '#FFF7ED', bgDark: 'rgba(245,158,11,0.15)' },
 };
 
 export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
@@ -36,22 +37,32 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
     onEditFamilyName,
 }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const { family, members, isAdmin, remove, leave } = useFamily();
 
+    const getRoleLabel = (role: FamilyRole): string => {
+        switch (role) {
+            case 'admin': return t('family.admin');
+            case 'member': return t('settings.roleMember');
+            case 'viewer': return t('settings.roleViewer');
+            case 'guest': return t('family.guest');
+        }
+    };
+
     const getMemberCountText = (count: number) => {
-        if (count === 1) return 'חבר 1';
-        return `${count} חברים`;
+        if (count === 1) return t('family.oneMemberCount');
+        return t('family.memberCount', { count });
     };
 
     const handleRemoveMember = (memberId: string, memberName: string) => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(
-            'הסרת חבר',
-            `להסיר את ${memberName}?`,
+            t('settings.removeMemberTitle'),
+            t('settings.removeMemberMessage', { name: memberName }),
             [
-                { text: 'ביטול', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'הסר',
+                    text: t('settings.remove'),
                     style: 'destructive',
                     onPress: async () => {
                         const success = await remove(memberId);
@@ -67,12 +78,12 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
     const handleLeaveFamily = () => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(
-            'עזיבת משפחה',
-            'בטוח שברצונך לעזוב?',
+            t('settings.leaveFamilyTitle'),
+            t('settings.leaveFamilyMessage'),
             [
-                { text: 'ביטול', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'עזוב',
+                    text: t('settings.leave'),
                     style: 'destructive',
                     onPress: async () => {
                         const success = await leave();
@@ -95,7 +106,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     activeOpacity={0.7}
                 >
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
-                    <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>צור משפחה</Text>
+                    <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>{t('account.createFamily')}</Text>
                     <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
                         <UserPlus size={16} color="#C8806A" />
                     </View>
@@ -107,7 +118,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     activeOpacity={0.7}
                 >
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
-                    <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>הצטרף עם קוד</Text>
+                    <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
                     <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
                         <Link size={16} color="#10B981" />
                     </View>
@@ -126,7 +137,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         <View style={[styles.familyIconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
                             <Users size={16} color="#C8806A" />
                         </View>
-                        <Text style={[styles.familyName, { color: theme.textPrimary }]}>משפחת {family.babyName}</Text>
+                        <Text style={[styles.familyName, { color: theme.textPrimary }]}>{t('family.familyName', { name: family.babyName })}</Text>
                     </View>
                     <Text style={[styles.memberCount, { color: theme.textSecondary }]}>{getMemberCountText(members.length)}</Text>
                 </View>
@@ -144,9 +155,9 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
             {/* Members */}
             <View style={styles.membersSection}>
                 {members.map((member, index) => {
-                    const config = ROLE_CONFIG[member.role];
+                    const config = ROLE_STYLE[member.role];
                     const isMe = member.id === auth.currentUser?.uid;
-                    const initial = (member.name || 'מ').charAt(0).toUpperCase();
+                    const initial = (member.name || t('settings.userFallback')).charAt(0).toUpperCase();
                     const RoleIcon = config.icon;
 
                     return (
@@ -171,7 +182,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                             {/* Info */}
                             <View style={styles.chipInfo}>
                                 <Text style={[styles.chipName, { color: theme.textPrimary }]} numberOfLines={1}>
-                                    {member.name || 'משתמש'}{isMe ? ' (אני)' : ''}
+                                    {member.name || t('settings.userFallback')}{isMe ? ` (${t('settings.meLabel')})` : ''}
                                 </Text>
                                 {member.email && (
                                     <Text style={[styles.chipEmail, { color: theme.textSecondary }]} numberOfLines={1}>
@@ -183,7 +194,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                             {/* Role Badge */}
                             <View style={[styles.roleBadge, { backgroundColor: isDarkMode ? config.bgDark : config.bgLight }]}>
                                 <Text style={[styles.roleBadgeText, { color: config.color }]}>
-                                    {config.label}
+                                    {getRoleLabel(member.role)}
                                 </Text>
                             </View>
 
@@ -214,7 +225,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         activeOpacity={0.7}
                     >
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
-                        <Text style={[styles.actionText, { color: theme.textPrimary }]}>הזמנה למשפחה</Text>
+                        <Text style={[styles.actionText, { color: theme.textPrimary }]}>{t('account.inviteFamily')}</Text>
                         <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
                             <UserPlus size={14} color="#C8806A" />
                         </View>
@@ -228,7 +239,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         activeOpacity={0.7}
                     >
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
-                        <Text style={[styles.actionText, { color: theme.textPrimary }]}>הזמן אורח</Text>
+                        <Text style={[styles.actionText, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
                         <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
                             <Users size={14} color="#10B981" />
                         </View>
@@ -241,7 +252,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     activeOpacity={0.7}
                 >
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
-                    <Text style={[styles.actionText, { color: theme.textPrimary }]}>הצטרף עם קוד</Text>
+                    <Text style={[styles.actionText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
                     <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FFF7ED' }]}>
                         <Link size={14} color="#F59E0B" />
                     </View>
@@ -254,7 +265,7 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                         activeOpacity={0.7}
                     >
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
-                        <Text style={[styles.actionText, { color: '#EF4444' }]}>עזוב משפחה</Text>
+                        <Text style={[styles.actionText, { color: '#EF4444' }]}>{t('settings.leaveFamilyTitle')}</Text>
                         <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.15)' : '#FEE2E2' }]}>
                             <LogOut size={14} color="#EF4444" />
                         </View>

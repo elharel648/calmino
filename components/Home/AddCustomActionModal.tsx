@@ -76,11 +76,11 @@ const PRESET_ICONS = [
 
 // Quick action presets for common activities
 const QUICK_PRESETS = [
-    { name: 'אמבטיה', icon: 'bath', color: '#8ECAE6' }, // Soft Sky Blue
-    { name: 'משחק', icon: 'gamepad', color: '#6A9C89' }, // Sage Teal
-    { name: 'סיפור', icon: 'book', color: '#557A9D' }, // Slate Blue
-    { name: 'שתייה', icon: 'droplets', color: '#8ECAE6' }, // Soft Sky Blue
-    { name: 'טיול', icon: 'footprints', color: '#8EB168' }, // Soft Olive
+    { nameKey: 'actions.presetBath', icon: 'bath', color: '#8ECAE6' }, // Soft Sky Blue
+    { nameKey: 'actions.presetGame', icon: 'gamepad', color: '#6A9C89' }, // Sage Teal
+    { nameKey: 'actions.presetStory', icon: 'book', color: '#557A9D' }, // Slate Blue
+    { nameKey: 'actions.presetDrink', icon: 'droplets', color: '#8ECAE6' }, // Soft Sky Blue
+    { nameKey: 'actions.presetWalk', icon: 'footprints', color: '#8EB168' }, // Soft Olive
 ];
 
 const ITEM_HEIGHT = 40;
@@ -187,14 +187,14 @@ const AndroidTimePicker = ({
           values={hoursArr}
           selectedValue={hours}
           onValueChange={setHours}
-          label="שעות"
+          label={t('time.hoursLabel')}
           theme={theme}
         />
         <AndroidWheelPicker
           values={minutesArr}
           selectedValue={minutes}
           onValueChange={setMinutes}
-          label="דקות"
+          label={t('time.minutesLabel')}
           theme={theme}
         />
       </View>
@@ -206,7 +206,7 @@ const AndroidTimePicker = ({
           onConfirm(d);
         }}
       >
-        <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>אישור</Text>
+        <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>{t('common.confirm')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -335,13 +335,13 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
     const formatDate = (date: Date) => {
         const today = new Date();
         if (date.toDateString() === today.toDateString()) {
-            return 'היום';
+            return t('date.today');
         }
-        return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+        return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
     };
 
     const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     };
 
     const handleAdd = () => {
@@ -382,7 +382,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
     };
 
     const selectQuickPreset = (preset: typeof QUICK_PRESETS[0]) => {
-        setName(preset.name);
+        setName(t(preset.nameKey));
         setSelectedIcon(preset.icon);
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -441,7 +441,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                 </View>
                             </Reanimated.View>
                         </View>
-                        <Text style={[styles.title, { color: theme.textPrimary }]}>הוספת פעולה</Text>
+                        <Text style={[styles.title, { color: theme.textPrimary }]}>{t('actions.addActionTitle')}</Text>
                     </View>
 
                     {/* Content */}
@@ -454,15 +454,16 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     >
                         {/* Quick Presets */}
                         <View style={styles.quickPresetsSection}>
-                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>פעולות מהירות</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('actions.quickActionsSection')}</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 <View style={styles.quickPresetsRow}>
                                     {QUICK_PRESETS.map((preset) => {
                                         const IconComponent = PRESET_ICONS.find(i => i.key === preset.icon)?.icon || Sparkles;
-                                        const isSelected = name === preset.name && selectedIcon === preset.icon;
+                                        const presetName = t(preset.nameKey);
+                                        const isSelected = name === presetName && selectedIcon === preset.icon;
                                         return (
                                             <TouchableOpacity
-                                                key={preset.name}
+                                                key={preset.nameKey}
                                                 style={[
                                                     styles.quickPresetBtn,
                                                     {
@@ -480,7 +481,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                                         color: isSelected ? '#FFFFFF' : (isDarkMode ? theme.textSecondary : 'rgba(0,0,0,0.55)'),
                                                         fontWeight: isSelected ? '700' : '500'
                                                     }
-                                                ]}>{preset.name}</Text>
+                                                ]}>{presetName}</Text>
                                             </TouchableOpacity>
                                         );
                                     })}
@@ -490,7 +491,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
 
                         {/* Name Input */}
                         <View style={styles.inputSection}>
-                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>שם הפעולה</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('actions.actionNameLabel')}</Text>
                             <TextInput
                                 style={[styles.input, {
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F9FAFB',
@@ -499,7 +500,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                 }]}
                                 value={name}
                                 onChangeText={setName}
-                                placeholder="למשל: אמבטיה, משחק..."
+                                placeholder={t('actions.addActionPlaceholder')}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
                             />
@@ -507,7 +508,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
 
                         {/* Icon Selection - Grid Layout */}
                         <View style={styles.inputSection}>
-                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>בחר אייקון</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('actions.selectIcon')}</Text>
                             <View style={styles.iconsGrid}>
                                 {PRESET_ICONS.map(({ key, icon: Icon, color }) => {
                                     const isSelected = selectedIcon === key;
@@ -539,7 +540,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
 
                         {/* Date & Time Row - Premium Style */}
                         <View style={styles.inputSection}>
-                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>תאריך ושעה</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{t('actions.dateAndTime')}</Text>
                             <View style={styles.dateTimeRow}>
                                 <TouchableOpacity
                                     style={[styles.dateTimeBtn, {
@@ -578,7 +579,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                         <View style={styles.inputSection}>
                             <View style={styles.labelRow}>
                                 <MessageSquare size={14} color={theme.textSecondary} strokeWidth={2} />
-                                <Text style={[styles.sectionLabel, { color: theme.textSecondary, marginBottom: 0 }]}>הערות (אופציונלי)</Text>
+                                <Text style={[styles.sectionLabel, { color: theme.textSecondary, marginBottom: 0 }]}>{t('actions.notesOptional')}</Text>
                             </View>
                             <TextInput
                                 style={[styles.notesInput, {
@@ -588,7 +589,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                 }]}
                                 value={notes}
                                 onChangeText={setNotes}
-                                placeholder="הוסף פרטים נוספים..."
+                                placeholder={t('actions.addDetailsPlaceholder')}
                                 placeholderTextColor={theme.textSecondary}
                                 textAlign="right"
                                 multiline
@@ -610,7 +611,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                     >
                         <Check size={18} color="#fff" strokeWidth={2.5} />
                         <Text style={styles.saveBtnText}>
-                            {saveSuccess ? 'נשמר!' : 'הוסף פעולה'}
+                            {saveSuccess ? t('actions.saved') : t('actions.addAction')}
                         </Text>
                     </TouchableOpacity>
 
@@ -624,7 +625,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                             onPress={() => setShowDatePicker(false)}
                                             hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
                                         >
-                                            <Text style={{ color: theme.actionColors.custom.color, fontSize: 16, fontWeight: '600' }}>סיום</Text>
+                                            <Text style={{ color: theme.actionColors.custom.color, fontSize: 16, fontWeight: '600' }}>{t('common.finish')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
@@ -671,7 +672,7 @@ const AddCustomActionModal = memo<AddCustomActionModalProps>(({ visible, onClose
                                             onPress={() => setShowTimePicker(false)}
                                             hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
                                         >
-                                            <Text style={{ color: theme.actionColors.custom.color, fontSize: 16, fontWeight: '600' }}>סיום</Text>
+                                            <Text style={{ color: theme.actionColors.custom.color, fontSize: 16, fontWeight: '600' }}>{t('common.finish')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}

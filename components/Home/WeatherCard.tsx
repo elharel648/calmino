@@ -34,7 +34,7 @@ const WeatherCard = memo<WeatherCardProps>(({ weather }) => {
     return (
         <View
             style={[styles.weatherCard, { backgroundColor: theme.card }]}
-            accessibilityLabel={`מזג אוויר ב${weather.city}: ${weather.temp} מעלות. ${weather.recommendation}`}
+            accessibilityLabel={t('weather.accessibilityLabel', { city: weather.city, temp: weather.temp, recommendation: weather.recommendation })}
         >
             <View style={[styles.weatherIcon, { borderLeftColor: theme.border }]}>
                 <Text style={[styles.weatherTemp, { color: theme.textPrimary }]}>{weather.temp}°</Text>

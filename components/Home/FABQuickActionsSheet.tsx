@@ -51,12 +51,12 @@ function smartOrder(actions: QuickActionKey[]): QuickActionKey[] {
 }
 
 // ─── Time context label ────────────────────────────────────────────────────────
-function timeContextLabel(): string {
+function timeContextKey(): string {
     const h = new Date().getHours();
-    if (h >= 20 || h < 6)  return 'לילה · זמן שינה';
-    if (h >= 6  && h < 10) return 'בוקר · שעת ארוחה';
-    if (h >= 10 && h < 15) return 'צהריים';
-    return 'אחה"צ / ערב';
+    if (h >= 20 || h < 6)  return 'fab.timeNight';
+    if (h >= 6  && h < 10) return 'fab.timeMorning';
+    if (h >= 10 && h < 15) return 'fab.timeNoon';
+    return 'fab.timeEvening';
 }
 
 // ─── Category colors ──────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ const C: Partial<Record<QuickActionKey, string>> = {
 function elapsed(sec: number): string {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}ש'`;
+    return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 // ─── Pulse hook ───────────────────────────────────────────────────────────────
@@ -108,6 +108,11 @@ const ActionButton = React.memo(({
     const color   = C[actionKey] ?? '#C8806A';
     const IconComp = config.icon;
     const pulseStyle = usePulse(isActive);
+    const { t } = useLanguage();
+
+    const label = actionKey === 'sleep' && isActive ? t('fab.stopSleep') :
+                  actionKey === 'whiteNoise' && isActive ? t('fab.stop') :
+                  t(config.labelKey);
 
     return (
         <Pressable
@@ -132,9 +137,7 @@ const ActionButton = React.memo(({
                 )}
             </Animated.View>
             <Text style={[styles.actionLabel, { color: isActive ? color : theme.textSecondary }]} numberOfLines={1}>
-                {actionKey === 'sleep' && isActive ? 'עצור שינה' :
-                 actionKey === 'whiteNoise' && isActive ? 'עצור' :
-                 (config.labelKey.split('.').pop() ?? actionKey)}
+                {label}
             </Text>
         </Pressable>
     );
@@ -270,12 +273,12 @@ const FABQuickActionsSheet: React.FC = () => {
                     <View style={styles.header}>
                         <TouchableOpacity onPress={handleEdit} style={styles.editBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                             <SlidersHorizontal size={17} color={theme.textSecondary} strokeWidth={1.8} />
-                            <Text style={[styles.editLabel, { color: theme.textSecondary }]}>התאמה</Text>
+                            <Text style={[styles.editLabel, { color: theme.textSecondary }]}>{t('fab.edit')}</Text>
                         </TouchableOpacity>
 
                         <View style={{ alignItems: 'center' }}>
-                            <Text style={[styles.title, { color: theme.textPrimary }]}>פעולות מהירות</Text>
-                            <Text style={[styles.timeCtx, { color: theme.textTertiary }]}>{timeContextLabel()}</Text>
+                            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('fab.title')}</Text>
+                            <Text style={[styles.timeCtx, { color: theme.textTertiary }]}>{t(timeContextKey())}</Text>
                         </View>
 
                         <TouchableOpacity onPress={handleClose} style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }]} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -290,14 +293,14 @@ const FABQuickActionsSheet: React.FC = () => {
                                 <View style={[styles.statusPill, { backgroundColor: '#4A6572' + '28', borderColor: '#4A657240' }]}>
                                     <Moon size={12} color="#4A6572" strokeWidth={2} />
                                     <Text style={[styles.statusText, { color: '#4A6572' }]}>
-                                        שינה פעילה · {elapsed(sleepElapsed ?? 0)}
+                                        {t('fab.activeSleep', { elapsed: elapsed(sleepElapsed ?? 0) })}
                                     </Text>
                                 </View>
                             )}
                             {isWhiteNoiseActive && (
                                 <View style={[styles.statusPill, { backgroundColor: '#557A9D28', borderColor: '#557A9D40' }]}>
                                     <Music size={12} color="#557A9D" strokeWidth={2} />
-                                    <Text style={[styles.statusText, { color: '#557A9D' }]}>רעש לבן פועל</Text>
+                                    <Text style={[styles.statusText, { color: '#557A9D' }]}>{t('fab.whiteNoiseActive')}</Text>
                                 </View>
                             )}
                         </View>
@@ -306,13 +309,13 @@ const FABQuickActionsSheet: React.FC = () => {
                     {/* Food sub-menu */}
                     {showFoodSub && (
                         <View style={styles.foodSubMenu}>
-                            <Text style={[styles.foodSubTitle, { color: theme.textSecondary }]}>בחר סוג האכלה</Text>
+                            <Text style={[styles.foodSubTitle, { color: theme.textSecondary }]}>{t('fab.selectFeedingType')}</Text>
                             <View style={styles.foodSubRow}>
                                 {[
-                                    { type: 'breastRight' as const, label: 'הנקה ימין', emoji: '🤱' },
-                                    { type: 'breastLeft'  as const, label: 'הנקה שמאל', emoji: '🤱' },
-                                    { type: 'bottle'      as const, label: 'בקבוק',      emoji: '🍼' },
-                                    { type: 'pumping'     as const, label: 'שאיבה',      emoji: '🔄' },
+                                    { type: 'breastRight' as const, labelKey: 'fab.breastRight', emoji: '🤱' },
+                                    { type: 'breastLeft'  as const, labelKey: 'fab.breastLeft',  emoji: '🤱' },
+                                    { type: 'bottle'      as const, labelKey: 'fab.bottle',       emoji: '🍼' },
+                                    { type: 'pumping'     as const, labelKey: 'fab.pumping',      emoji: '🔄' },
                                 ].map(item => (
                                     <TouchableOpacity
                                         key={item.type}
@@ -320,7 +323,7 @@ const FABQuickActionsSheet: React.FC = () => {
                                         onPress={() => handleFoodSubAction(item.type)}
                                     >
                                         <Text style={styles.foodSubEmoji}>{item.emoji}</Text>
-                                        <Text style={[styles.foodSubLabel, { color: '#D4A373' }]}>{item.label}</Text>
+                                        <Text style={[styles.foodSubLabel, { color: '#D4A373' }]}>{t(item.labelKey)}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>

@@ -170,8 +170,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         return t('home.greeting.night');
     }, [t]);
 
-    // --- Custom Hooks (using active child ID) ---
-    const {
+    let {
         lastFeedTime,
         lastSleepTime,
         dailyStats,
@@ -180,6 +179,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         isError: homeDataError,
         guestExpiresAt,
     } = useHomeData(profile.id, profile.name, profile.ageMonths, profile.parentId);
+    
+
+    
     const { meds, toggleMed, syncStatus, refresh: refreshMeds, customSupplements, addCustomSupplement, removeCustomSupplement, totalCount, takenCount } = useMedications(profile.id);
     const { currentGuardian, setCurrentGuardian, availableRoles, isPremium } = useGuardian();
     const { scheduleFeedingReminder } = useNotifications();
@@ -646,7 +648,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             <DailyTimeline 
                                 refreshTrigger={timelineRefresh} 
                                 childId={profile.id} 
-                                showOnlyToday={true} 
+                                preloadedEvents={[]}
                                 onEditEvent={(event) => {
                                     if (event.type === 'food' || event.type === 'sleep' || event.type === 'diaper') {
                                         setEditingEvent(event);

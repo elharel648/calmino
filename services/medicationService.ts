@@ -5,6 +5,8 @@ import { logger } from '../utils/logger';
 import * as Notifications from 'expo-notifications';
 import * as Calendar from 'expo-calendar';
 import { Platform, Alert } from 'react-native';
+import i18n from './i18n';
+const t = i18n.t.bind(i18n);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Medication Service — CRUD + Notification Scheduling + Calendar Integration
@@ -116,8 +118,8 @@ export const scheduleMedicationNotifications = async (med: Medication): Promise<
 
             await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: '💊 תזכורת תרופה',
-                    body: `הגיע הזמן לקחת ${med.name} (${med.dosage})`,
+                    title: t('medication.reminderTitle'),
+                    body: t('medication.reminderBody', { name: med.name, dosage: med.dosage }),
                     data: { type: 'medication_reminder', medicationId: med.id },
                 },
                 trigger: {
@@ -217,7 +219,7 @@ export const addMedicationToCalendar = async (med: Medication): Promise<boolean>
 
             await Calendar.createEventAsync(calendarId, {
                 title: `💊 ${med.name}`,
-                notes: `מינון: ${med.dosage}${med.notes ? `\n${med.notes}` : ''}\n\n⚠️ מידע כללי בלבד. יש להתייעץ עם רופא.`,
+                notes: t('medication.calendarNotes', { dosage: med.dosage, notes: med.notes ? `\n${med.notes}` : '' }),
                 startDate,
                 endDate,
                 timeZone: 'Asia/Jerusalem',

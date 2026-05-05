@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native
 import { WifiOff, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetwork } from '../hooks/useNetwork';
+import { useLanguage } from '../context/LanguageContext';
 
 interface OfflineBannerProps {
     onRetry?: () => void;
@@ -13,6 +14,7 @@ interface OfflineBannerProps {
  */
 export const OfflineBanner = ({ onRetry }: OfflineBannerProps) => {
     const { isOffline } = useNetwork();
+    const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const slideAnim = useRef(new Animated.Value(-60)).current;
 
@@ -37,7 +39,7 @@ export const OfflineBanner = ({ onRetry }: OfflineBannerProps) => {
         >
             <View style={styles.bannerContent}>
                 <WifiOff size={18} color="#fff" />
-                <Text style={styles.bannerText}>אין חיבור לאינטרנט</Text>
+                <Text style={styles.bannerText}>{t('network.noConnection')}</Text>
                 {onRetry && (
                     <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
                         <RefreshCw size={16} color="#fff" />
@@ -57,6 +59,7 @@ interface ConnectionToastProps {
  * Toast notification for connection changes
  */
 export const ConnectionToast = ({ show, type }: ConnectionToastProps) => {
+    const { t } = useLanguage();
     const slideAnim = useRef(new Animated.Value(100)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -114,7 +117,7 @@ export const ConnectionToast = ({ show, type }: ConnectionToastProps) => {
                 <AlertCircle size={18} color="#fff" />
             )}
             <Text style={styles.toastText}>
-                {isConnected ? 'חזרת לרשת!' : 'אין חיבור לאינטרנט'}
+                {isConnected ? t('network.backOnline') : t('network.noConnection')}
             </Text>
         </Animated.View>
     );
@@ -129,20 +132,22 @@ interface ErrorStateProps {
  * Full-screen error state
  */
 export const ErrorState = ({
-    message = 'משהו השתבש',
+    message,
     onRetry
 }: ErrorStateProps) => {
+    const { t } = useLanguage();
+    const displayMessage = message ?? t('errors.somethingWentWrong');
     return (
         <View style={styles.errorContainer}>
             <View style={styles.errorIcon}>
                 <AlertCircle size={40} color="#EF4444" />
             </View>
-            <Text style={styles.errorTitle}>אופס!</Text>
-            <Text style={styles.errorMessage}>{message}</Text>
+            <Text style={styles.errorTitle}>{t('network.oops')}</Text>
+            <Text style={styles.errorMessage}>{displayMessage}</Text>
             {onRetry && (
                 <TouchableOpacity style={styles.errorRetryButton} onPress={onRetry}>
                     <RefreshCw size={18} color="#fff" />
-                    <Text style={styles.errorRetryText}>נסה שוב</Text>
+                    <Text style={styles.errorRetryText}>{t('errors.tryAgain')}</Text>
                 </TouchableOpacity>
             )}
         </View>

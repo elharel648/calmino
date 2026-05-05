@@ -12,7 +12,13 @@
       "Bash(xcodebuild -workspace ios/Calmino.xcworkspace -scheme Calmino -sdk iphonesimulator -destination \"id=8F2D5753-196A-4239-89A3-EE10F1F144DA\" -configuration Debug build)",
       "Bash(grep -n \"ActivityConfiguration\" ios/CalmParentLiveActivity/*.swift)",
       "Bash(xcodebuild -workspace ios/Calmino.xcworkspace -scheme Calmino -sdk iphonesimulator -destination 'id=8F2D5753-196A-4239-89A3-EE10F1F144DA' -configuration Debug build)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(bash /tmp/find_hebrew.sh)",
+      "Bash(sed -i '' 's/|| '\\\\''הקיימת'\\\\''/|| t\\('\\\\''joinFamily.existingFamilyFallback'\\\\''\\)/g' services/familyService.ts)",
+      "Bash(sed -i '' 's/message: '\\\\''אתה כבר חלק ממשפחה אחרת'\\\\''/message: t\\('\\\\''joinFamily.error.alreadyInOther'\\\\''\\)/g' services/familyService.ts)",
+      "Bash(sed -i '' 's/|| '\\\\''אורח'\\\\''/|| t\\('\\\\''family.guestDisplayName'\\\\''\\)/g' services/familyService.ts)",
+      "Bash(sed -i '' 's/|| '\\\\''התינוק'\\\\'' : '\\\\''התינוק'\\\\''/|| t\\('\\\\''family.babyFallback'\\\\''\\) : t\\('\\\\''family.babyFallback'\\\\''\\)/g' services/familyService.ts)",
+      "Bash(sed -i '' 's/return { success: false, message: '\\\\''קוד הזמנה לא תקין'\\\\'' }/return { success: false, message: t\\('\\\\''joinFamily.error.invalidCode'\\\\''\\) }/g' services/familyService.ts)"
     ],
     "additionalDirectories": [
       "/Users/zivtothani/Calmino-PageLand"

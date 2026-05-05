@@ -18,6 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Medication } from '../../types/home';
 import { searchMedications, MedicationInfo, CATEGORY_LABELS } from '../../data/medicationsDatabase';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import ReAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 
 if (Platform.OS === 'android') {
@@ -38,6 +39,7 @@ const DEFAULT_TIMES = ['08:00', '12:00', '16:00', '20:00', '10:00', '22:00'];
  */
 const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, saveSuccess }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
 
     const [name, setName] = useState('');
     const [dosage, setDosage] = useState('');
@@ -187,7 +189,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
             {/* Medication Name with Autocomplete */}
             <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>שם התרופה</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>{t('health.medicationName')}</Text>
                 <View style={styles.searchInputWrapper}>
                     <TextInput
                         style={[styles.textInput, {
@@ -202,7 +204,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                                 setShowSuggestions(true);
                             }
                         }}
-                        placeholder="חפש תרופה (למשל: אקמול, נורופן...)"
+                        placeholder={t('health.medSearchPlaceholder')}
                         placeholderTextColor={theme.textSecondary}
                         textAlign="right"
                     />
@@ -224,11 +226,11 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                             <Plus size={16} color={accentColor} />
                             <Text style={[styles.customNameText, { color: accentColor }]}>
-                                {`השתמש ב: "${name.trim()}"`}
+                                {t('health.useCustomMed', { name: name.trim() })}
                             </Text>
                         </View>
                         <Text style={{ fontSize: 11, color: theme.textSecondary, textAlign: 'right', marginTop: 2 }}>
-                            תרופה לא נמצאה במילון — ניתן להקליד שם חופשי
+                            {t('health.medNotInDictionary')}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -285,7 +287,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                         <View style={styles.medInfoHeader}>
                             <Info size={14} color={accentColor} />
                             <Text style={[styles.medInfoTitle, { color: accentColor }]}>
-                                מידע על {selectedMedInfo.name}
+                                {t('health.medInfoTitle', { name: selectedMedInfo.name })}
                             </Text>
                         </View>
                         {selectedMedInfo.commonDosage && (
@@ -293,24 +295,24 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                                 <View style={{ flex: 1, flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
                                     <Pill size={13} color={theme.textSecondary} strokeWidth={1.5} />
                                     <Text style={[styles.medInfoText, { color: theme.textPrimary, flex: 1 }]}>
-                                        מינון נפוץ: {selectedMedInfo.commonDosage}
+                                        {t('health.commonDosageInfo', { dosage: selectedMedInfo.commonDosage })}
                                     </Text>
                                 </View>
-                                <TouchableOpacity 
-                                    style={{ 
-                                        backgroundColor: theme.card, 
-                                        paddingHorizontal: 10, 
-                                        paddingVertical: 4, 
-                                        borderRadius: 8, 
-                                        borderWidth: 1, 
-                                        borderColor: accentBorder 
+                                <TouchableOpacity
+                                    style={{
+                                        backgroundColor: theme.card,
+                                        paddingHorizontal: 10,
+                                        paddingVertical: 4,
+                                        borderRadius: 8,
+                                        borderWidth: 1,
+                                        borderColor: accentBorder
                                     }}
                                     onPress={() => {
                                         setDosage(selectedMedInfo.commonDosage || '');
                                         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                     }}
                                 >
-                                    <Text style={{ fontSize: 11, fontWeight: '600', color: accentColor }}>הוסף לעריכה ✎</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: '600', color: accentColor }}>{t('health.addToEdit')}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -318,14 +320,14 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                             <View style={styles.medInfoRow}>
                                 <Package size={13} color={theme.textSecondary} strokeWidth={1.5} />
                                 <Text style={[styles.medInfoText, { color: theme.textPrimary }]}>
-                                    צורה: {selectedMedInfo.form}
+                                    {t('health.formLabel', { form: selectedMedInfo.form })}
                                 </Text>
                             </View>
                         )}
                         <View style={[styles.disclaimerRow, { borderTopColor: theme.border }]}>
                             <AlertTriangle size={12} color={theme.textSecondary} strokeWidth={1.5} />
                             <Text style={[styles.medInfoDisclaimer, { color: theme.textSecondary }]}>
-                                מידע כללי בלבד. יש להתייעץ עם רופא.
+                                {t('health.medInfoDisclaimer')}
                             </Text>
                         </View>
                     </View>
@@ -333,7 +335,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
                 {nameError && (
                     <View style={styles.errorRow}>
-                        <Text style={[styles.errorText, { color: theme.danger }]}>יש להזין שם תרופה</Text>
+                        <Text style={[styles.errorText, { color: theme.danger }]}>{t('health.medicationNameRequired')}</Text>
                         <AlertCircle size={14} color={theme.danger} />
                     </View>
                 )}
@@ -341,7 +343,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
             {/* Dosage */}
             <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>מינון</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>{t('health.dosageLabel')}</Text>
                 <TextInput
                     style={[styles.textInput, {
                         backgroundColor: inputBg,
@@ -350,7 +352,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                     }]}
                     value={dosage}
                     onChangeText={setDosage}
-                    placeholder="כמות (למשל: 5 מ״ל, כדור אחד)"
+                    placeholder={t('health.dosagePlaceholder')}
                     placeholderTextColor={theme.textSecondary}
                     textAlign="right"
                 />
@@ -358,7 +360,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
             {/* Frequency Stepper */}
             <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>כמות פעמים ביום</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>{t('health.timesPerDayLabel')}</Text>
                 <View style={[styles.stepperContainer, {
                     backgroundColor: inputBg,
                     borderColor: inputBorder,
@@ -386,7 +388,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                             <Text style={[styles.stepperValue, { opacity: 0 }]}>{frequency}</Text>
                         </View>
                         <Text style={[styles.stepperUnit, { color: theme.textSecondary }]}>
-                            {frequency === 1 ? 'פעם' : 'פעמים'}
+                            {frequency === 1 ? t('health.timesPerDaySingular') : t('health.timesPerDayPlural')}
                         </Text>
                     </View>
 
@@ -407,7 +409,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
             <View style={styles.inputGroup}>
                 <View style={styles.timesHeader}>
                     <Clock size={16} color={accentColor} />
-                    <Text style={[styles.inputLabel, { color: theme.textPrimary, marginBottom: 0 }]}>שעות מתן</Text>
+                    <Text style={[styles.inputLabel, { color: theme.textPrimary, marginBottom: 0 }]}>{t('health.administrationTimes')}</Text>
                 </View>
 
                 <View style={styles.timesGrid}>
@@ -452,7 +454,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                                 style={[styles.timePickerDone, { borderTopColor: theme.border }]}
                                 onPress={() => setShowTimePicker(null)}
                             >
-                                <Text style={[styles.timePickerDoneText, { color: accentColor }]}>אישור</Text>
+                                <Text style={[styles.timePickerDoneText, { color: accentColor }]}>{t('common.confirm')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -464,7 +466,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                 <View style={styles.reminderRow}>
                     <View style={styles.reminderInfo}>
                         <Bell size={16} color={accentColor} />
-                        <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>התראות תזכורת</Text>
+                        <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>{t('health.reminderAlerts')}</Text>
                     </View>
                     <Switch
                         value={remindersEnabled}
@@ -482,7 +484,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
 
             {/* Notes */}
             <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>הערות</Text>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>{t('health.notes')}</Text>
                 <TextInput
                     style={[styles.textArea, {
                         backgroundColor: inputBg,
@@ -491,7 +493,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                     }]}
                     value={notes}
                     onChangeText={setNotes}
-                    placeholder="הערות (למשל: לפני האוכל)"
+                    placeholder={t('health.notesPlaceholder')}
                     placeholderTextColor={theme.textSecondary}
                     textAlign="right"
                     multiline
@@ -517,7 +519,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ onSave, saving, s
                         <Check size={22} color="#10B981" strokeWidth={2.5} />
                     ) : (
                         <Text style={styles.saveButtonText}>
-                            {saving ? 'שומר...' : 'שמור תרופה'}
+                            {saving ? t('health.saving') : t('health.saveMedication')}
                         </Text>
                     )}
                 </View>

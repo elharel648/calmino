@@ -72,13 +72,10 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                 >
                     {/* Avatar */}
                     <View style={[styles.triggerAvatar, { borderColor: theme.primary }]}>
-                        {activeChild?.photoUrl && !imageErrors.has(activeChild.childId) ? (
-                            <Image 
-                                source={{ uri: activeChild.photoUrl }} 
+                        {activeChild?.photoUrl ? (
+                            <Image
+                                source={{ uri: activeChild.photoUrl }}
                                 style={styles.triggerAvatarImage}
-                                onError={() => {
-                                    setImageErrors(prev => new Set(prev).add(activeChild.childId));
-                                }}
                             />
                         ) : (
                             <View style={[styles.triggerAvatarPlaceholder, { backgroundColor: theme.primary }]}>
@@ -92,7 +89,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                     {/* Name + Chevron */}
                     <View style={styles.triggerTextSection}>
                         <Text style={[styles.triggerName, { color: theme.textPrimary }]} numberOfLines={1}>
-                            {activeChild?.childName || 'בחר ילד'}
+                            {activeChild?.childName || t('child.selectChild')}
                         </Text>
                         <ChevronDown size={14} color={theme.textSecondary} />
                     </View>
@@ -160,13 +157,10 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                                 styles.rowAvatarWrapper,
                                                 isActive && { borderColor: color.bg }
                                             ]}>
-                                                {child.photoUrl && !imageErrors.has(child.childId) ? (
+                                                {child.photoUrl ? (
                                                     <Image
                                                         source={{ uri: child.photoUrl }}
                                                         style={styles.rowAvatar}
-                                                        onError={() => {
-                                                            setImageErrors(prev => new Set(prev).add(child.childId));
-                                                        }}
                                                     />
                                                 ) : (
                                                     <View style={[
@@ -228,8 +222,8 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                             <UserPlus size={18} color="#C8806A" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
-                                            <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>רישום ילד חדש</Text>
-                                            <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>צור פרופיל חדש לילד</Text>
+                                            <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>{t('child.registerNew')}</Text>
+                                            <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>{t('child.createNewProfile')}</Text>
                                         </View>
                                     </TouchableOpacity>
 
@@ -253,8 +247,8 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                             <Link size={18} color="#7DAF8F" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
-                                            <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>הצטרפות עם קוד</Text>
-                                            <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>קיבלת קוד מהשותף?</Text>
+                                            <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>{t('child.joinWithCode')}</Text>
+                                            <Text style={[styles.addOptionSubtitle, { color: theme.textSecondary }]}>{t('child.gotCodeFromPartner')}</Text>
                                         </View>
                                     </TouchableOpacity>
                                 </View>
@@ -287,13 +281,10 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                             onPress={() => handleSelect(child)}
                             activeOpacity={0.8}
                         >
-                            {child.photoUrl && !imageErrors.has(child.childId) ? (
-                                <Image 
-                                    source={{ uri: child.photoUrl }} 
+                            {child.photoUrl ? (
+                                <Image
+                                    source={{ uri: child.photoUrl }}
                                     style={styles.avatar}
-                                    onError={() => {
-                                        setImageErrors(prev => new Set(prev).add(child.childId));
-                                    }}
                                 />
                             ) : (
                                 <View style={[

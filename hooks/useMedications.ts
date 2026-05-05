@@ -1,8 +1,9 @@
 import { logger } from '../utils/logger';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../services/firebaseConfig';
 import { MedicationsState, CustomSupplement } from '../types/home';
+import { useLanguage } from '../context/LanguageContext';
 
 interface UseMedicationsReturn {
     meds: MedicationsState;
@@ -21,6 +22,9 @@ interface UseMedicationsReturn {
  * Supports default supplements (vitaminD, iron) + user-defined custom supplements
  */
 export const useMedications = (childId: string | undefined): UseMedicationsReturn => {
+    const { t } = useLanguage();
+    const tRef = useRef(t);
+    tRef.current = t;
     // DEMO MODE removed
     const [meds, setMeds] = useState<MedicationsState>({ vitaminD: false, iron: false, custom: {} });
     const [customSupplements, setCustomSupplements] = useState<CustomSupplement[]>([]);
@@ -66,7 +70,7 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
                 subType: type,
                 note: supplementName,
                 timestamp: serverTimestamp(),
-                reporterName: user.displayName || 'אני',
+                reporterName: user.displayName || tRef.current('med.meReporter'),
             });
             logger.log('💊 Supplement event saved:', supplementName);
         } catch (e) {
@@ -199,6 +203,10 @@ export const useMedications = (childId: string | undefined): UseMedicationsRetur
         } catch (e) {
             logger.log('Med refresh error:', e);
         }
+    }, [childId]);
+
+    useEffect(() => {
+        refresh();
     }, [childId]);
 
     return {

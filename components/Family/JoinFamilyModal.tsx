@@ -90,7 +90,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
         if (!permission?.granted) {
             const { status } = await requestPermission();
             if (status !== 'granted') {
-                Alert.alert(t('common.error'), 'יש לאשר גישה למצלמה כדי לסרוק QR');
+                Alert.alert(t('common.error'), t('joinFamily.cameraPermissionRequired'));
                 return;
             }
         }
@@ -117,12 +117,12 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
             // Server signals that user must leave current family first
             if (result.requiresLeave) {
                 Alert.alert(
-                    'שים לב',
-                    `אתה כבר חלק ממשפחת "${result.currentFamilyName}".\nאם תמשיך, תאבד את הגישה לנתוניה.\n\nלהמשיך ולהצטרף?`,
+                    t('joinFamily.alreadyInFamily'),
+                    t('joinFamily.alreadyInFamilyMsg', { name: result.currentFamilyName }),
                     [
                         { text: t('common.cancel'), style: 'cancel' },
                         {
-                            text: 'כן, הצטרף',
+                            text: t('joinFamily.yesJoin'),
                             style: 'destructive',
                             onPress: () => doJoin(true, codeToUse),
                         },
@@ -193,7 +193,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                 <TouchableOpacity onPress={() => setScanning(false)} style={styles.closeBtn}>
                                     <X size={22} color={theme.textPrimary} />
                                 </TouchableOpacity>
-                                <Text style={[styles.title, { color: theme.textPrimary }]}>סורק קוד משפחה</Text>
+                                <Text style={[styles.title, { color: theme.textPrimary }]}>{t('joinFamily.scannerTitle')}</Text>
                                 <View style={{ width: 22 }} />
                             </View>
                             <CameraView
@@ -204,7 +204,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                             />
                             <View style={{ position: 'absolute', bottom: 20, left: 0, right: 0, alignItems: 'center' }}>
                                 <View style={{ backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}>
-                                    <Text style={{ color: '#fff', fontWeight: '600' }}>כוון את המצלמה לברקוד</Text>
+                                    <Text style={{ color: '#fff', fontWeight: '600' }}>{t('joinFamily.aimCamera')}</Text>
                                 </View>
                             </View>
                         </View>
@@ -253,7 +253,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                         if (!permission?.granted) {
                                             const { status } = await requestPermission();
                                             if (status !== 'granted') {
-                                                Alert.alert(t('common.error'), 'יש לאשר גישה למצלמה כדי לסרוק QR');
+                                                Alert.alert(t('common.error'), t('joinFamily.cameraPermissionRequired'));
                                                 return;
                                             }
                                         }
@@ -261,7 +261,7 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                                     }}
                                 >
                                     <QrCode size={18} color={theme.textSecondary} />
-                                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>או סרוק קוד QR</Text>
+                                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>{t('joinFamily.orScanQR')}</Text>
                                 </TouchableOpacity>
                             </View>
 
