@@ -161,8 +161,11 @@ service cloud.firestore {
         hasGuestAccessToBaby(resource.data.childId)
       );
       
-      // Create: any authenticated (typically parents or sitters for a child)
-      allow create: if isAuthenticated();
+      // Create: must be the creator (userId) or parentId — prevents writing to other users' children
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid ||
+        request.resource.data.parentId == request.auth.uid
+      );
       
       // Update/Delete: creator, parent field, or actual parent of the baby (for account deletion)
       allow update, delete: if isAuthenticated() && (
@@ -192,7 +195,7 @@ service cloud.firestore {
     // PRESENCE COLLECTION
     // ===================
     match /presence/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == docId;
       allow write: if isAuthenticated() && request.auth.uid == docId;
     }
 
@@ -328,9 +331,9 @@ service cloud.firestore {
         (resource.data.get('childId', null) != null && (isParentOfBaby(resource.data.childId) || hasFamilyAccessToBaby(resource.data.childId) || hasGuestAccessToBaby(resource.data.childId)))
       );
       
-      // Create: any authenticated user
-      allow create: if isAuthenticated();
-      
+      // Create: must own the log (parentId must match caller)
+      allow create: if isAuthenticated() && request.resource.data.parentId == request.auth.uid;
+
       // Update/Delete: creator only
       allow update, delete: if isAuthenticated() && resource.data.parentId == request.auth.uid;
     }
@@ -345,9 +348,9 @@ service cloud.firestore {
         (resource.data.get('babyId', null) != null && (isParentOfBaby(resource.data.babyId) || hasFamilyAccessToBaby(resource.data.babyId) || hasGuestAccessToBaby(resource.data.babyId)))
       );
       
-      // Create: any authenticated user
-      allow create: if isAuthenticated();
-      
+      // Create: must own the measurement (createdBy must match caller)
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+
       // Update/Delete: creator only
       allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
     }
@@ -422,8 +425,8 @@ service cloud.firestore {
         ))
       );
 
-      // Create: any authenticated user
-      allow create: if isAuthenticated();
+      // Create: must own the record (createdBy must match caller)
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
 
       // Update/Delete: creator only
       allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;

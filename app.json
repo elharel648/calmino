@@ -69,7 +69,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harel.calmparentapp",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -82,8 +82,8 @@
         "NSPhotoLibraryUsageDescription": "האפליקציה צריכה גישה לתמונות כדי להגדיר תמונת פרופיל",
         "NSCameraUsageDescription": "האפליקציה צריכה גישה למצלמה כדי לסרוק ברקוד ולהצטרף למשפחה",
         "NSFaceIDUsageDescription": "אפשר כניסה מהירה ומאובטחת באמצעות Face ID",
-        "NSLocationWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי למצוא בייביסיטרים באזור שלך",
+        "NSLocationWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי להציג את מזג האוויר המעודכן באזורך ולהמליץ על לבוש מתאים לתינוק",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "האפליקציה צריכה גישה למיקום כדי להציג את מזג האוויר המעודכן באזורך ולהמליץ על לבוש מתאים לתינוק",
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
         "UIBackgroundModes": [

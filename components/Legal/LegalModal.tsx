@@ -28,8 +28,8 @@ interface LegalModalProps {
   onClose: () => void;
 }
 
-const LAST_UPDATED_HE = '16 באפריל 2026';
-const LAST_UPDATED_EN = 'April 16, 2026';
+const LAST_UPDATED_HE = '10 במאי 2026';
+const LAST_UPDATED_EN = 'May 10, 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 // ─────────────────────────────────────────────
@@ -37,7 +37,7 @@ const CONTACT_EMAIL = 'calminogroup@gmail.com';
 // ─────────────────────────────────────────────
 const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.1 | עדכון אחרון: {LAST_UPDATED_HE}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.2 | עדכון אחרון: {LAST_UPDATED_HE}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. מבוא{'\n'}</Text>
     Calmino ("אנחנו", "אנו", "החברה") מחויבת להגן על פרטיות המשתמשים שלה. מדיניות פרטיות זו ("המדיניות") מסבירה אילו נתונים אישיים אנחנו אוספים, כיצד אנחנו משתמשים בהם, ואילו זכויות יש לך עליהם.{'\n'}
@@ -105,10 +105,12 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
     • גיבויים טכניים עשויים להישמר עד <Text style={styles.bold}>90 יום</Text> נוספים בלבד{'\n'}
     • מידע הנדרש לשמירה על פי חוק (כגון: עסקאות כספיות) יישמר לתקופה הנדרשת בחוק{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>9. פרטיות ילדים{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>9. פרטיות ילדים ונתוני בריאות{'\n'}</Text>
     השירות מיועד להורים (16+) בלבד. המידע הנוגע לילדים נאסף אך ורק:{'\n'}
     • מיוזמתם, הזנתם ושליטתם המלאה של הוריהם / אפוטרופוסיהם החוקיים{'\n'}
     • למטרות מעקב בריאות אישי בלבד, ללא כל שיתוף מסחרי וללא פרסום ממוקד{'\n\n'}
+    <Text style={styles.bold}>נתוני בריאות כ"קטגוריה מיוחדת" לפי GDPR סעיף 9:{'\n'}</Text>
+    נתוני הבריאות שאתה מזין (חום, חיסונים, תרופות, אלרגיות, תוספי תזונה) מהווים "קטגוריה מיוחדת" של מידע רגיש לפי תקנות GDPR. אנו מעבדים נתונים אלה אך ורק על בסיס הסכמתך המפורשת, לצורך מתן השירות, ובאחריות ובשליטתך המלאה. אין כל שימוש מסחרי בנתונים אלה.{'\n\n'}
     כהורה, שמורה לך הזכות המוחלטת למחוק את כל נתוני ילדיך מהשרתים שלנו לצמיתות ובאופן מיידי ("הזכות להישכח") דרך האפליקציה. איננו אוספים מידע ישירות מילדים.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. זכויותיך{'\n'}</Text>
@@ -136,7 +138,7 @@ const PrivacyContentHE = ({ textColor, subtitleColor }: { textColor: string; sub
 // ─────────────────────────────────────────────
 const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyTextLTR, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Last Updated: {LAST_UPDATED_EN}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.2 | Last Updated: {LAST_UPDATED_EN}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. Introduction{'\n'}</Text>
     Calmino ("we", "us", "the Company") is committed to protecting the privacy of its users. This Privacy Policy ("Policy") explains what personal data we collect, how we use it, and what rights you have over it.{'\n'}
@@ -204,10 +206,12 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
     • Technical backups may be retained for up to <Text style={styles.bold}>90 days</Text> only{'\n'}
     • Information required by law (such as financial transactions) will be retained for the legally required period{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>9. Children's Privacy{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>9. Children's Privacy & Health Data{'\n'}</Text>
     The service is exclusively for use by parents (16+). Information regarding children is collected solely:{'\n'}
     • Under the direct initiative, entry, and full control of their parents / guardians{'\n'}
     • For personal health tracking only, with zero commercial sharing or targeted advertising{'\n\n'}
+    <Text style={styles.bold}>Health Data as "Special Category" under GDPR Article 9:{'\n'}</Text>
+    Health data you enter (temperature, vaccinations, medications, allergies, nutritional supplements) constitutes "special category" sensitive data under GDPR regulations. We process this data solely based on your explicit consent, for the purpose of providing the service, under your full responsibility and control. There is no commercial use of this data whatsoever.{'\n\n'}
     As a parent, you retain the absolute right to delete all of your children's data from our servers permanently and immediately ("Right to be Forgotten") via the App. We never collect information directly from children.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Your Rights{'\n'}</Text>
@@ -235,7 +239,7 @@ const PrivacyContentEN = ({ textColor, subtitleColor }: { textColor: string; sub
 // ─────────────────────────────────────────────
 const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.1 | עדכון אחרון: {LAST_UPDATED_HE}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>גרסה 1.2 | עדכון אחרון: {LAST_UPDATED_HE}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. הסכמה לתנאים{'\n'}</Text>
     בהורדה, התקנה, או שימוש באפליקציית Calmino ("האפליקציה" / "השירות"), הנך מסכים לתנאי שימוש אלה ("התנאים"). אם אינך מסכים, הפסק את השימוש באלתר ומחק את האפליקציה.{'\n'}
@@ -329,7 +333,7 @@ const TermsContentHE = ({ textColor, subtitleColor }: { textColor: string; subti
 // ─────────────────────────────────────────────
 const TermsContentEN = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyTextLTR, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Last Updated: {LAST_UPDATED_EN}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.2 | Last Updated: {LAST_UPDATED_EN}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. Acceptance of Terms{'\n'}</Text>
     By downloading, installing, or using the Calmino application ("the App" / "the Service"), you agree to these Terms of Service ("the Terms"). If you do not agree, discontinue use immediately and delete the app.{'\n'}

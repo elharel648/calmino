@@ -6,8 +6,6 @@ import { Heart, Syringe, Thermometer, Pill, Stethoscope, X, ChevronLeft, Chevron
 import { LineChart } from 'react-native-chart-kit';
 import * as ExpoCalendar from 'expo-calendar';
 import * as Haptics from 'expo-haptics';
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AndroidHebrewCalendar from '../Common/AndroidHebrewCalendar';
@@ -39,7 +37,7 @@ interface HealthCardProps {
     initialScreen?: HealthScreen;
 }
 
-type HealthScreen = 'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies';
+type HealthScreen = 'menu' | 'vaccines' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies';
 
 interface AllergyEntry {
     id: string;
@@ -265,8 +263,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
     const [currentScreen, setCurrentScreen] = useState<HealthScreen>('menu');
     const HEALTH_OPTIONS: HealthOption[] = useMemo(() => {
         const options: HealthOption[] = [
-            { key: 'doctor', label: 'health.doctorVisit', description: t('health.descDoctor'), icon: Stethoscope, iconColor: theme.actionColors.health.color },
-            { key: 'vaccines', label: 'health.vaccines', description: t('health.descVaccines'), icon: Syringe, iconColor: theme.actionColors.tools.color },
+{ key: 'vaccines', label: 'health.vaccines', description: t('health.descVaccines'), icon: Syringe, iconColor: theme.actionColors.tools.color },
             { key: 'illness', label: 'health.illnesses', description: t('health.descIllness'), icon: Heart, iconColor: theme.actionColors.sos.color },
             { key: 'temperature', label: 'health.temperature', description: t('health.descTemperature'), icon: Thermometer, iconColor: theme.actionColors.food.color },
             { key: 'medications', label: 'health.medications', description: t('health.descMedications'), icon: Pill, iconColor: theme.actionColors.supplements.color },
@@ -461,22 +458,11 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
     const [customMed, setCustomMed] = useState('');
     const [medNote, setMedNote] = useState('');
 
-    // Doctor visit state with real uploads
-    const [doctorReason, setDoctorReason] = useState('');
-    const [doctorNote, setDoctorNote] = useState('');
-    const [doctorName, setDoctorName] = useState('');
-    const [doctorVisitDate, setDoctorVisitDate] = useState(new Date());
-    const [showDoctorDatePicker, setShowDoctorDatePicker] = useState(false);
-    const [doctorPhoto, setDoctorPhoto] = useState<string | null>(null);
-    const [doctorDocument, setDoctorDocument] = useState<string | null>(null);
-    const [uploadingPhoto, setUploadingPhoto] = useState(false);
-    const [uploadingDoc, setUploadingDoc] = useState(false);
-    const [savingDoctor, setSavingDoctor] = useState(false);
 
     // History state
     const [healthLog, setHealthLog] = useState<any[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
-    const [historyFilter, setHistoryFilter] = useState<'all' | 'temperature' | 'doctor' | 'illness' | 'medication' | 'vaccine'>('all');
+    const [historyFilter, setHistoryFilter] = useState<'all' | 'temperature' | 'illness' | 'medication' | 'vaccine'>('all');
     const [selectedVaccineInfo, setSelectedVaccineInfo] = useState<{ name: string; description: string } | null>(null);
     const [unmarkVaccineKey, setUnmarkVaccineKey] = useState<string | null>(null);
 
@@ -741,55 +727,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
         setCalendarVaccineKey(null);
     };
 
-    // Photo picker for doctor visit
-    const pickPhoto = async () => {
-        try {
-            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!permission.granted) {
-                Alert.alert(t('misc.saveError'), t('health.galleryPermissionNeeded'));
-                return;
-            }
-
-            setUploadingPhoto(true);
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                quality: 0.7,
-            });
-
-            if (!result.canceled && result.assets[0]) {
-                setDoctorPhoto(result.assets[0].uri);
-                if (Platform.OS !== 'web') {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                }
-            }
-        } catch (error) {
-            logger.log('Photo pick error:', error);
-        } finally {
-            setUploadingPhoto(false);
-        }
-    };
-
-    // Document picker for doctor visit
-    const pickDocument = async () => {
-        try {
-            setUploadingDoc(true);
-            const result = await DocumentPicker.getDocumentAsync({
-                type: ['application/pdf', 'image/*'],
-            });
-
-            if (result.canceled === false && result.assets?.[0]) {
-                setDoctorDocument(result.assets[0].name);
-                if (Platform.OS !== 'web') {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                }
-            }
-        } catch (error) {
-            logger.log('Document pick error:', error);
-        } finally {
-            setUploadingDoc(false);
-        }
-    };
 
     const handleCardPressIn = (index: number) => {
         Animated.spring(scaleAnims[index], { toValue: 0.95, useNativeDriver: true }).start();
@@ -817,13 +754,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
         setIllnessNote('');
         setSelectedMed(null);
         setMedNote('');
-        setDoctorReason('');
-        setDoctorNote('');
-        setDoctorName('');
-        setDoctorVisitDate(new Date());
-        setShowDoctorDatePicker(false);
-        setDoctorPhoto(null);
-        setDoctorDocument(null);
     }, []);
 
     const closeModal = useCallback(() => {
@@ -1651,180 +1581,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
         </ScrollView>
     );
 
-    // Doctor with real uploads
-    const renderDoctor = () => (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.screenContent}>
-            <View style={styles.screenHeader}>
-                <View style={[styles.screenHeaderIconMinimal, { backgroundColor: theme.actionColors.health.color, borderColor: 'transparent' }]}>
-                    <Stethoscope size={24} color="#FFFFFF" strokeWidth={1.8} />
-                </View>
-            </View>
-
-            {/* Doctor Name */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('health.doctorName')}</Text>
-                <TextInput
-                    style={styles.textInput}
-                    value={doctorName}
-                    onChangeText={setDoctorName}
-                    placeholder={t('health.doctorNamePlaceholder')}
-                    placeholderTextColor="#9CA3AF"
-                />
-            </View>
-
-            {/* Visit Date */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('health.visitDate')}</Text>
-                <TouchableOpacity
-                    style={{
-                        flexDirection: 'row-reverse',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: theme.cardSecondary,
-                        borderRadius: 14,
-                        padding: 14,
-                        borderWidth: 1.5,
-                        borderColor: theme.border,
-                    }}
-                    onPress={() => setShowDoctorDatePicker(!showDoctorDatePicker)}
-                >
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textPrimary, textAlign: 'right' }}>
-                        {doctorVisitDate.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </Text>
-                    <CalendarPlus size={18} color={theme.textSecondary} />
-                </TouchableOpacity>
-                {showDoctorDatePicker && (
-                    <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 12, marginTop: 8, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
-                        <DateTimePicker
-                            value={doctorVisitDate}
-                            mode="date"
-                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                            onChange={(e: any, d?: Date) => {
-                                if (Platform.OS === 'android') setShowDoctorDatePicker(false);
-                                if (d) setDoctorVisitDate(d);
-                            }}
-                            maximumDate={new Date()}
-                        />
-                        <TouchableOpacity
-                            style={{
-                                alignSelf: 'center',
-                                backgroundColor: '#94A3B8',
-                                paddingVertical: 10,
-                                paddingHorizontal: 32,
-                                borderRadius: 10,
-                                marginBottom: 12,
-                            }}
-                            onPress={() => setShowDoctorDatePicker(false)}
-                        >
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>אישור</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </View>
-
-            <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('health.visitReason')}</Text>
-                <TextInput
-                    style={styles.textInput}
-                    value={doctorReason}
-                    onChangeText={setDoctorReason}
-                    placeholder={t('health.visitReasonPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
-                />
-            </View>
-
-            <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('health.doctorSummary')}</Text>
-                <TextInput
-                    style={styles.textArea}
-                    value={doctorNote}
-                    onChangeText={setDoctorNote}
-                    placeholder={t('health.doctorSummaryPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
-                    multiline
-                />
-            </View>
-
-            {/* Photo Upload */}
-            <View style={styles.uploadSection}>
-                <TouchableOpacity
-                    style={[styles.uploadButton, doctorPhoto && styles.uploadButtonSuccess]}
-                    onPress={pickPhoto}
-                    disabled={uploadingPhoto}
-                >
-                    {uploadingPhoto ? (
-                        <InlineLoader color="#6B7280"  />
-                    ) : doctorPhoto ? (
-                        <>
-                            <Image source={{ uri: doctorPhoto }} style={styles.uploadPreview} />
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Check size={14} color="#10B981" strokeWidth={2.5} />
-                                <Text style={styles.uploadButtonTextSuccess}>{t('health.photoUploaded')}</Text>
-                            </View>
-                        </>
-                    ) : (
-                        <>
-                            <Camera size={24} color="#6B7280" />
-                            <Text style={styles.uploadButtonText}>{t('health.addPhoto')}</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-
-                {/* Document Upload */}
-                <TouchableOpacity
-                    style={[styles.uploadButton, doctorDocument && styles.uploadButtonSuccess]}
-                    onPress={pickDocument}
-                    disabled={uploadingDoc}
-                >
-                    {uploadingDoc ? (
-                        <InlineLoader color="#6B7280"  />
-                    ) : doctorDocument ? (
-                        <>
-                            <Check size={14} color="#10B981" strokeWidth={2.5} />
-                            <Text style={styles.uploadButtonTextSuccess} numberOfLines={1}>
-                                {doctorDocument}
-                            </Text>
-                        </>
-                    ) : (
-                        <>
-                            <FileText size={24} color="#6B7280" />
-                            <Text style={styles.uploadButtonText}>{t('health.addDocument')}</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-                style={styles.saveButton}
-                onPress={async () => {
-                    setSavingDoctor(true);
-                    try {
-                        await saveEntry('doctor', {
-                            doctorName: doctorName || null,
-                            visitDate: doctorVisitDate.toISOString(),
-                            reason: doctorReason,
-                            note: doctorNote,
-                            photoUri: doctorPhoto || null,
-                            documentName: doctorDocument || null
-                        });
-                    } finally {
-                        setSavingDoctor(false);
-                    }
-                }}
-                disabled={saveSuccess || savingDoctor}
-            >
-                <View style={[styles.saveButtonSolid, saveSuccess && styles.saveButtonSuccess]}>
-                    {savingDoctor ? (
-                        <ActivityIndicator size="small" color={theme.textSecondary} />
-                    ) : saveSuccess ? (
-                        <Check size={18} color="#10B981" strokeWidth={2} />
-                    ) : (
-                        <Text style={styles.saveButtonText}>{t('health.saveVisit')}</Text>
-                    )}
-                </View>
-            </TouchableOpacity>
-        </ScrollView>
-    );
 
     // Illness
     const renderIllness = () => (
@@ -2609,7 +2365,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
         const getTypeConfig = (type: string) => {
             switch (type) {
                 case 'temperature': return { label: t('health.fever'), icon: Thermometer, color: theme.actionColors.food.color, bg: theme.actionColors.food.lightColor };
-                case 'doctor': return { label: t('health.doctorVisit'), icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor };
                 case 'illness': return { label: t('health.illnesses'), icon: Heart, color: theme.actionColors.sos.color, bg: theme.actionColors.sos.lightColor };
                 case 'medication': return { label: t('health.medications'), icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor };
                 case 'vaccine': return { label: t('health.vaccines'), icon: Syringe, color: theme.actionColors.tools.color, bg: theme.actionColors.tools.lightColor };
@@ -2621,7 +2376,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
             { key: 'all', label: t('common.all') },
             { key: 'vaccine', label: t('health.vaccines') },
             { key: 'temperature', label: t('health.fever') },
-            { key: 'doctor', label: t('health.doctorVisit') },
             { key: 'illness', label: t('health.illnesses') },
             { key: 'medication', label: t('health.medications') },
         ];
@@ -2751,29 +2505,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                                 <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'right' }}>{item.note}</Text>
                                             ) : null}
 
-                                            {/* Show photo/document attachments */}
-                                            {(item.photoUri || item.documentName) && (
-                                                <View style={{ flexDirection: 'row-reverse', gap: 8, marginTop: 8 }}>
-                                                    {item.photoUri && (
-                                                        <TouchableOpacity
-                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.successLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
-                                                            onPress={() => {
-                                                                // Open photo in a lightbox or share
-                                                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                            }}
-                                                        >
-                                                            <Camera size={14} color={theme.success} />
-                                                            <Text style={{ fontSize: 12, color: theme.success, fontWeight: '500' }}>{t('health.addPhoto')}</Text>
-                                                        </TouchableOpacity>
-                                                    )}
-                                                    {item.documentName && (
-                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                                                            <FileText size={14} color={theme.primary} />
-                                                            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '500' }} numberOfLines={1}>{item.documentName}</Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-                                            )}
                                             <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
                                                 {formatDate(item.timestamp)}
                                             </Text>
@@ -2791,7 +2522,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
     const getScreenTitle = () => {
         switch (currentScreen) {
             case 'vaccines': return t('health.vaccines');
-            case 'doctor': return t('health.doctorVisit');
             case 'illness': return t('health.illnesses');
             case 'temperature': return t('health.temperature');
             case 'medications': return t('health.medications');
@@ -2805,7 +2535,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
     const getHeaderGradient = (): [string, string] => {
         switch (currentScreen) {
             case 'vaccines': return ['#6366F1', '#4F46E5'];
-            case 'doctor': return ['#10B981', '#059669'];
             case 'illness': return ['#EF4444', '#DC2626'];
             case 'temperature': return ['#F59E0B', '#D97706'];
             case 'medications': return [theme.actionColors.supplements.color, theme.actionColors.supplements.color];
@@ -2910,7 +2639,6 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                     <GestureHandlerRootView style={[styles.modalBody, { backgroundColor: 'transparent' }]}>
                         {currentScreen === 'menu' && renderMenu()}
                         {currentScreen === 'vaccines' && renderVaccines()}
-                        {currentScreen === 'doctor' && renderDoctor()}
                         {currentScreen === 'illness' && renderIllness()}
                         {currentScreen === 'temperature' && renderTemperature()}
                         {currentScreen === 'medications' && renderMedications()}

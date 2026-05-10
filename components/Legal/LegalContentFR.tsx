@@ -2,7 +2,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 
-const LAST_UPDATED = '15 mars 2026';
+const LAST_UPDATED = '10 mai 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 const styles = StyleSheet.create({
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
 
 export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Dernière mise à jour : {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.2 | Dernière mise à jour : {LAST_UPDATED}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. Introduction{'\n'}</Text>
     Calmino ("nous", "notre", "la Société") s'engage à protéger la vie privée de ses utilisateurs. Cette Politique de Confidentialité ("la Politique") explique quelles données personnelles nous collectons, comment nous les utilisons, et quels sont vos droits.{'\n'}
@@ -83,10 +83,12 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
     • Les sauvegardes techniques peuvent être conservées jusqu'à <Text style={styles.bold}>90 jours</Text> uniquement{'\n'}
     • Les informations requises par la loi (comme les transactions financières) seront conservées pour la période légalement requise{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>9. Vie privée des enfants{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>9. Vie privée des enfants et données de santé{'\n'}</Text>
     Le service est exclusivement destiné aux parents et tuteurs (16+). Les informations concernant les enfants sont collectées uniquement :{'\n'}
     • À l'initiative, avec la saisie et sous le contrôle total de leurs parents / tuteurs légaux{'\n'}
     • À des fins de suivi personnel de la santé, sans aucun partage commercial ni publicité ciblée{'\n\n'}
+    <Text style={styles.bold}>Données de santé en tant que "catégorie spéciale" selon l'article 9 du RGPD :{'\n'}</Text>
+    Les données de santé que vous saisissez (température, vaccinations, médicaments, allergies, compléments alimentaires) constituent des données sensibles de "catégorie spéciale" au sens du RGPD. Nous traitons ces données uniquement sur la base de votre consentement explicite, aux fins de la fourniture du service, sous votre entière responsabilité et contrôle. Ces données ne font l'objet d'aucune exploitation commerciale.{'\n\n'}
     En tant que parent, vous conservez le droit absolu de supprimer toutes les données de vos enfants de nos serveurs de manière permanente et immédiate ("Droit à l'oubli") via l'application. Nous ne collectons jamais d'informations directement auprès des enfants.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Vos droits{'\n'}</Text>
@@ -111,7 +113,7 @@ export const PrivacyContentFR = ({ textColor, subtitleColor }: { textColor: stri
 
 export const TermsContentFR = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Dernière mise à jour : {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.2 | Dernière mise à jour : {LAST_UPDATED}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. Acceptation des conditions{'\n'}</Text>
     En téléchargeant, installant ou utilisant l'application Calmino ("l'Application" / "le Service"), vous acceptez ces Conditions d'Utilisation ("les Conditions"). Si vous n'êtes pas d'accord, cessez immédiatement l'utilisation et supprimez l'application.{'\n'}

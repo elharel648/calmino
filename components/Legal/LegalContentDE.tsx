@@ -2,7 +2,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 
-const LAST_UPDATED = '15. März 2026';
+const LAST_UPDATED = '10. Mai 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 const styles = StyleSheet.create({
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
 
 export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Letzte Aktualisierung: {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.2 | Letzte Aktualisierung: {LAST_UPDATED}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. Einleitung{'\n'}</Text>
     Calmino ("wir", "uns", "das Unternehmen") verpflichtet sich zum Schutz der Privatsphäre seiner Nutzer. Diese Datenschutzrichtlinie ("die Richtlinie") erklärt, welche personenbezogenen Daten wir erheben, wie wir sie verwenden und welche Rechte Sie haben.{'\n'}
@@ -84,10 +84,12 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
     • Technische Backups können bis zu <Text style={styles.bold}>90 Tage</Text> aufbewahrt werden{'\n'}
     • Gesetzlich erforderliche Informationen werden für die gesetzlich vorgeschriebene Dauer aufbewahrt{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>9. Datenschutz für Kinder{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>9. Datenschutz für Kinder und Gesundheitsdaten{'\n'}</Text>
     Der Dienst ist ausschließlich für Eltern und Betreuer (16+) bestimmt. Informationen über Kinder werden nur erhoben:{'\n'}
     • Auf direkte Initiative, Eingabe und unter voller Kontrolle ihrer Eltern / gesetzlichen Vormünder{'\n'}
     • Nur zu persönlichen Gesundheits-Tracking-Zwecken, ohne kommerzielle Weitergabe oder gezielte Werbung{'\n\n'}
+    <Text style={styles.bold}>Gesundheitsdaten als "besondere Kategorie" gemäß Artikel 9 DSGVO:{'\n'}</Text>
+    Die von Ihnen eingegebenen Gesundheitsdaten (Temperatur, Impfungen, Medikamente, Allergien, Nahrungsergänzungsmittel) stellen personenbezogene Daten der "besonderen Kategorie" im Sinne der DSGVO dar. Wir verarbeiten diese Daten ausschließlich auf der Grundlage Ihrer ausdrücklichen Einwilligung, zum Zweck der Erbringung des Dienstes, unter Ihrer vollen Verantwortung und Kontrolle. Eine kommerzielle Nutzung dieser Daten findet nicht statt.{'\n\n'}
     Als Elternteil behalten Sie das absolute Recht, alle Daten Ihrer Kinder über die App dauerhaft und sofort von unseren Servern löschen zu lassen ("Recht auf Vergessenwerden"). Wir erheben niemals direkt Informationen von Kindern.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. Ihre Rechte{'\n'}</Text>
@@ -112,7 +114,7 @@ export const PrivacyContentDE = ({ textColor, subtitleColor }: { textColor: stri
 
 export const TermsContentDE = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.1 | Letzte Aktualisierung: {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>Version 1.2 | Letzte Aktualisierung: {LAST_UPDATED}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. Annahme der Bedingungen{'\n'}</Text>
     Durch das Herunterladen, Installieren oder Nutzen der Calmino-App ("die App" / "der Dienst") stimmen Sie diesen Nutzungsbedingungen ("die Bedingungen") zu. Wenn Sie nicht einverstanden sind, beenden Sie die Nutzung sofort und löschen Sie die App.{'\n'}

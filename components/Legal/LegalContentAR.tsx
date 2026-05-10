@@ -2,7 +2,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 
-const LAST_UPDATED = '15 مارس 2026';
+const LAST_UPDATED = '10 مايو 2026';
 const CONTACT_EMAIL = 'calminogroup@gmail.com';
 
 const styles = StyleSheet.create({
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
 
 export const PrivacyContentAR = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>الإصدار 1.1 | آخر تحديث: {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>الإصدار 1.2 | آخر تحديث: {LAST_UPDATED}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. مقدمة{'\n'}</Text>
     تلتزم Calmino ("نحن"، "الشركة") بحماية خصوصية مستخدميها. توضح سياسة الخصوصية هذه ("السياسة") البيانات الشخصية التي نجمعها، وكيف نستخدمها، وما هي حقوقك عليها.{'\n'}
@@ -83,10 +83,12 @@ export const PrivacyContentAR = ({ textColor, subtitleColor }: { textColor: stri
     • قد تُحفظ النسخ الاحتياطية التقنية لمدة تصل إلى <Text style={styles.bold}>90 يوماً</Text> فقط{'\n'}
     • المعلومات المطلوبة قانونياً (مثل المعاملات المالية) ستُحفظ للفترة المطلوبة قانوناً{'\n\n'}
 
-    <Text style={[styles.section, { color: textColor }]}>9. خصوصية الأطفال{'\n'}</Text>
+    <Text style={[styles.section, { color: textColor }]}>9. خصوصية الأطفال وبيانات الصحة{'\n'}</Text>
     الخدمة مخصصة حصرياً للآباء والمربين (16+). يتم جمع المعلومات المتعلقة بالأطفال فقط:{'\n'}
     • بمبادرة وإدخال وتحكم كامل من قبل آبائهم / أولياء أمورهم القانونيين{'\n'}
     • لأغراض المتابعة الصحية الشخصية فقط، بدون أي مشاركة تجارية أو إعلانات مستهدفة{'\n\n'}
+    <Text style={styles.bold}>بيانات الصحة بوصفها "فئة خاصة" وفقاً للمادة 9 من اللائحة العامة لحماية البيانات (GDPR):{'\n'}</Text>
+    تُعدّ بيانات الصحة التي تُدخلها (الحرارة، التطعيمات، الأدوية، الحساسيات، المكملات الغذائية) بيانات حساسة من "فئة خاصة" بموجب اللائحة العامة لحماية البيانات. نعالج هذه البيانات فقط بناءً على موافقتك الصريحة، لغرض تقديم الخدمة، تحت مسؤوليتك وتحكمك الكاملين. لا يوجد أي استخدام تجاري لهذه البيانات.{'\n\n'}
     كأب، تحتفظ بالحق المطلق في حذف جميع بيانات أطفالك من خوادمنا بشكل دائم وفوري ("الحق في النسيان") عبر التطبيق. نحن لا نجمع أي معلومات مباشرة من الأطفال.{'\n\n'}
 
     <Text style={[styles.section, { color: textColor }]}>10. حقوقك{'\n'}</Text>
@@ -111,7 +113,7 @@ export const PrivacyContentAR = ({ textColor, subtitleColor }: { textColor: stri
 
 export const TermsContentAR = ({ textColor, subtitleColor }: { textColor: string; subtitleColor: string }) => (
   <Text style={[styles.bodyText, { color: textColor }]}>
-    <Text style={[styles.updated, { color: subtitleColor }]}>الإصدار 1.1 | آخر تحديث: {LAST_UPDATED}{'\n\n'}</Text>
+    <Text style={[styles.updated, { color: subtitleColor }]}>الإصدار 1.2 | آخر تحديث: {LAST_UPDATED}{'\n\n'}</Text>
 
     <Text style={[styles.section, { color: textColor }]}>1. قبول الشروط{'\n'}</Text>
     بتنزيل أو تثبيت أو استخدام تطبيق Calmino ("التطبيق" / "الخدمة")، فإنك توافق على شروط الاستخدام هذه ("الشروط"). إذا كنت لا توافق، توقف عن الاستخدام فوراً واحذف التطبيق.{'\n'}

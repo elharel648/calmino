@@ -48,10 +48,6 @@ export async function exportHealthPDF(options: HealthPdfOptions): Promise<boolea
             .filter((e: any) => e.type === 'illness')
             .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-        const doctorEntries = healthLog
-            .filter((e: any) => e.type === 'doctor')
-            .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
         // Count completed vaccines
         const totalVaccines = VACCINE_SCHEDULE.length;
         const completedCount = Object.keys(completedVaccines).filter(k => completedVaccines[k]).length;
@@ -63,7 +59,6 @@ export async function exportHealthPDF(options: HealthPdfOptions): Promise<boolea
             allergies,
             temperatureEntries,
             illnessEntries,
-            doctorEntries,
             completedVaccines,
             totalVaccines,
             completedCount,
@@ -95,14 +90,13 @@ function generateHealthHTML(data: {
     allergies: AllergyEntry[];
     temperatureEntries: any[];
     illnessEntries: any[];
-    doctorEntries: any[];
     completedVaccines: Record<string, any>;
     totalVaccines: number;
     completedCount: number;
 }): string {
     const {
         childName, birthDate, allergies, temperatureEntries,
-        illnessEntries, doctorEntries, completedVaccines,
+        illnessEntries, completedVaccines,
         totalVaccines, completedCount
     } = data;
 
@@ -143,15 +137,6 @@ function generateHealthHTML(data: {
     const illnessHTML = illnessEntries.slice(0, 15).map((e: any) => `
         <tr>
             <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; font-weight: 600;">${e.illness || e.name || '-'}</td>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${e.note || '-'}</td>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #9CA3AF; font-size: 12px;">${formatDate(new Date(e.timestamp))}</td>
-        </tr>
-    `).join('');
-
-    // Doctor visits
-    const doctorHTML = doctorEntries.slice(0, 15).map((e: any) => `
-        <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; font-weight: 600;">${e.reason || '-'}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${e.note || '-'}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #9CA3AF; font-size: 12px;">${formatDate(new Date(e.timestamp))}</td>
         </tr>
@@ -337,10 +322,6 @@ function generateHealthHTML(data: {
                     <div class="stat-value" style="color: #6366F1">${illnessEntries.length}</div>
                     <div class="stat-label">מחלות מתועדות</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: #0EA5E9">${doctorEntries.length}</div>
-                    <div class="stat-label">ביקורי רופא</div>
-                </div>
             </div>
 
             <!-- Allergies - CRITICAL SECTION -->
@@ -405,22 +386,6 @@ function generateHealthHTML(data: {
                 </div>
             ` : ''}
 
-            <!-- Doctor Visits -->
-            ${doctorEntries.length > 0 ? `
-                <div class="section">
-                    <div class="section-title"><span class="emoji">🩺</span> ביקורי רופא</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>סיבה</th>
-                                <th>סיכום</th>
-                                <th>תאריך</th>
-                            </tr>
-                        </thead>
-                        <tbody>${doctorHTML}</tbody>
-                    </table>
-                </div>
-            ` : ''}
 
             <div class="footer">
                 דוח זה נוצר באמצעות <span class="brand">Calmino</span> בתאריך ${formatDate(new Date())}<br>

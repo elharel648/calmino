@@ -36,7 +36,7 @@ const SECTION_DEFS: { titleKey: string; items: QuickActionKey[]; cols?: 2 | 3 }[
     { titleKey: 'controlCenter.section.sleep',      items: ['sleep'] },
     { titleKey: 'controlCenter.section.feeding',    items: ['breastfeedingRight', 'breastfeedingLeft', 'bottle', 'pumping', 'food', 'diaper'] },
     { titleKey: 'controlCenter.section.whiteNoise', items: ['whiteNoiseLullaby', 'whiteNoiseGentle', 'whiteNoiseBirds', 'whiteNoiseRain'], cols: 2 },
-    { titleKey: 'controlCenter.section.health',     items: ['healthDoctor', 'healthVaccines', 'healthIllness', 'healthTemperature', 'healthMedications', 'healthTipatHalav', 'healthAllergies', 'healthHistory'] },
+    { titleKey: 'controlCenter.section.health',     items: ['healthVaccines', 'healthIllness', 'healthTemperature', 'healthMedications', 'healthTipatHalav', 'healthAllergies', 'healthHistory'] },
     { titleKey: 'controlCenter.section.tools',      items: ['nightLight', 'quickReminder', 'growth', 'milestones', 'sos'] },
 ];
 

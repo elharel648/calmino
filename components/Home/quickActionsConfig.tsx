@@ -45,7 +45,6 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     whiteNoiseRain:    { icon: CloudRain, labelKey: 'actions.whiteNoiseRain',    activeLabelKey: 'actions.whiteNoiseRain' },
     sos: { icon: SOSIcon, labelKey: 'actions.sos', activeLabelKey: 'actions.sos' },
     health:              { icon: HeartPulse,    labelKey: 'actions.health',              activeLabelKey: 'actions.health' },
-    healthDoctor:        { icon: Stethoscope,   labelKey: 'actions.healthDoctor',        activeLabelKey: 'actions.healthDoctor' },
     healthVaccines:      { icon: Syringe,       labelKey: 'actions.healthVaccines',      activeLabelKey: 'actions.healthVaccines' },
     healthIllness:       { icon: Heart,         labelKey: 'actions.healthIllness',       activeLabelKey: 'actions.healthIllness' },
     healthTemperature:   { icon: Thermometer,   labelKey: 'actions.healthTemperature',   activeLabelKey: 'actions.healthTemperature' },

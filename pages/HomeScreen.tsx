@@ -196,7 +196,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const [isWhiteNoiseOpen, setIsWhiteNoiseOpen] = useState(false);
     const [isSupplementsOpen, setIsSupplementsOpen] = useState(false);
     const [isHealthOpen, setIsHealthOpen] = useState(false);
-    const [healthInitialScreen, setHealthInitialScreen] = useState<'menu' | 'vaccines' | 'doctor' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies'>('menu');
+    const [healthInitialScreen, setHealthInitialScreen] = useState<'menu' | 'vaccines' | 'illness' | 'temperature' | 'medications' | 'medications_add' | 'history' | 'tipat_halav' | 'allergies'>('menu');
     const [isGrowthOpen, setIsGrowthOpen] = useState(false);
     const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
     const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
@@ -223,7 +223,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             diaper:        () => setTrackingModalType('diaper'),
             magicMoments:  () => setIsMagicMomentsOpen(true),
             health:              () => { setHealthInitialScreen('menu');        setIsHealthOpen(true); },
-            healthDoctor:        () => { setHealthInitialScreen('doctor');      setIsHealthOpen(true); },
             healthVaccines:      () => { setHealthInitialScreen('vaccines');    setIsHealthOpen(true); },
             healthIllness:       () => { setHealthInitialScreen('illness');     setIsHealthOpen(true); },
             healthTemperature:   () => { setHealthInitialScreen('temperature'); setIsHealthOpen(true); },

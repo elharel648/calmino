@@ -22,23 +22,21 @@ service firebase.storage {
       allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
     
-    // Child Photos
+    // Child Photos — read restricted to owner only (family members access via signed download URLs)
     match /childPhotos/{userId}/{childId}/{filename} {
-      // Allow authenticated users to upload their children's photos
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
-    
-    // User Photos
+
+    // User Photos — owner only
     match /userPhotos/{userId}/{filename} {
-      // Allow authenticated users to upload their own photos
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
-    
-    // Baby Photos (legacy path compatibility)
+
+    // Baby Photos (legacy path compatibility) — owner only
     match /babyPhotos/{userId}/{babyId}/{filename} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
     }
     
