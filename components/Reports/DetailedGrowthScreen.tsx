@@ -73,7 +73,7 @@ const BABY_MILESTONES = [
     { month: 24, label: 'שנתיים', dot: '#C8806A' },
 ];
 
-// Growth Chart Component — with WHO bands + milestones
+// Growth Chart Component — WHO clinical standard
 const GrowthChart = ({
     data, color, title, unit, type, gender, birthDate,
 }: {
@@ -106,40 +106,43 @@ const GrowthChart = ({
     const whoMetric: 'weight' | 'length' | 'head' = type === 'weight' ? 'weight' : type === 'length' ? 'length' : 'head';
     const whoData = WHO_GROWTH_DATA[genderKey][whoMetric];
 
-    // Age in months per measurement (clamped 0–24)
     const agePoints = data.map(d =>
         birthDate ? Math.max(0, Math.min(24, differenceInMonths(d.date, birthDate))) : 0
     );
     const maxAge = Math.min(24, Math.max(4, Math.max(...agePoints) + 1));
     const whoMonths = Array.from({ length: maxAge + 1 }, (_, i) => i);
 
-    // Y range: full WHO p3–p97 envelope so bands always visible
     const allWhoVals = whoMonths.flatMap(m => { const d = whoData[m]; return d ? [d.p3, d.p97] : []; });
     const yMin = Math.min(...allWhoVals) * 0.97;
     const yMax = Math.max(...allWhoVals) * 1.02;
     const yRange = yMax - yMin || 1;
 
     const cW = SCREEN_WIDTH - 64;
-    const cH = 185;
-    const pad = { top: 12, right: 28, bottom: 30, left: 36 };
+    const cH = 200;
+    const pad = { top: 16, right: 30, bottom: 32, left: 38 };
     const iW = cW - pad.left - pad.right;
     const iH = cH - pad.top - pad.bottom;
 
     const toX = (m: number) => pad.left + (m / maxAge) * iW;
     const toY = (v: number) => pad.top + iH - ((v - yMin) / yRange) * iH;
 
-    // WHO reference paths
     const whoPath = (key: 'p3' | 'p15' | 'p50' | 'p85' | 'p97') =>
         whoMonths.map((m, i) => `${i === 0 ? 'M' : 'L'} ${toX(m).toFixed(1)} ${toY(whoData[m]?.[key] ?? 0).toFixed(1)}`).join(' ');
 
-    // Healthy zone polygon (p15–p85)
+    // Outer envelope p3–p97 (very subtle background tint)
+    const outerZone = [
+        ...whoMonths.map((m, i) => `${i === 0 ? 'M' : 'L'} ${toX(m).toFixed(1)} ${toY(whoData[m]?.p97 ?? 0).toFixed(1)}`),
+        ...whoMonths.slice().reverse().map(m => `L ${toX(m).toFixed(1)} ${toY(whoData[m]?.p3 ?? 0).toFixed(1)}`),
+        'Z',
+    ].join(' ');
+
+    // Healthy zone p15–p85
     const healthyZone = [
         ...whoMonths.map((m, i) => `${i === 0 ? 'M' : 'L'} ${toX(m).toFixed(1)} ${toY(whoData[m]?.p85 ?? 0).toFixed(1)}`),
         ...whoMonths.slice().reverse().map(m => `L ${toX(m).toFixed(1)} ${toY(whoData[m]?.p15 ?? 0).toFixed(1)}`),
         'Z',
     ].join(' ');
 
-    // Baby cubic-bezier curve
     const babyCurve = agePoints.map((age, i) => {
         const x = toX(age); const y = toY(data[i].value);
         if (i === 0) return `M ${x.toFixed(1)} ${y.toFixed(1)}`;
@@ -149,97 +152,128 @@ const GrowthChart = ({
     }).join(' ');
     const babyArea = `${babyCurve} L ${toX(agePoints[agePoints.length - 1]).toFixed(1)} ${(pad.top + iH).toFixed(1)} L ${toX(agePoints[0]).toFixed(1)} ${(pad.top + iH).toFixed(1)} Z`;
 
-    // Latest percentile badge
-    const latestAge = agePoints[agePoints.length - 1];
+    const lastVal = data[data.length - 1].value;
+    const lastAge = agePoints[agePoints.length - 1];
+    const lastX = toX(lastAge);
+    const lastY = toY(lastVal);
+
     const latestPct = Math.round(calculatePercentile(
-        data[data.length - 1].value, latestAge,
+        lastVal, lastAge,
         whoMetric === 'head' ? 'head' : whoMetric,
         gender === 'girl' ? 'girl' : 'boy'
     ));
     const pctStatus = getPercentileStatus(latestPct);
 
-    // X-axis ticks
     const xTicks = [0, 3, 6, 9, 12, 18, 24].filter(m => m <= maxAge);
-    // Y-axis ticks
-    const yTicks = [yMin + yRange * 0.05, yMin + yRange * 0.5, yMax - yRange * 0.05];
-    // Visible milestones
+
+    // 4 evenly distributed Y ticks, rounded to sane precision
+    const yDecimals = type === 'weight' ? 1 : 0;
+    const yTicks = Array.from({ length: 4 }, (_, i) =>
+        parseFloat((yMin + (yRange / 3) * i).toFixed(yDecimals))
+    );
+
     const milestones = BABY_MILESTONES.filter(m => m.month <= maxAge);
+    const gridColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+    const axisColor = isDarkMode ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)';
 
     return (
         <View style={[chartStyles.container, { backgroundColor: theme.card }]}>
-            {/* Header */}
-            <View style={chartStyles.header}>
-                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
+            {/* ── Header: 2-row RTL layout ─────────────────────── */}
+            <View style={{ marginBottom: 14 }}>
+                {/* Row 1: title (right) + percentile badge (left) */}
+                <View style={chartStyles.headerRow1}>
                     <Text style={[chartStyles.title, { color: theme.textPrimary }]}>{title}</Text>
                     <View style={[chartStyles.pctPill, { backgroundColor: pctStatus.bgColor }]}>
                         <Text style={[chartStyles.pctText, { color: pctStatus.color }]}>א׳ {latestPct}</Text>
                     </View>
                 </View>
-                <Text style={[chartStyles.currentValue, { color }]}>
-                    {data[data.length - 1].value.toFixed(1)} {unit}
-                </Text>
+                {/* Row 2: big value (right) + status label (left) */}
+                <View style={chartStyles.headerRow2}>
+                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline', gap: 4 }}>
+                        <Text style={[chartStyles.currentValue, { color: theme.textPrimary }]}>
+                            {lastVal.toFixed(1)}
+                        </Text>
+                        <Text style={[chartStyles.valueUnit, { color: theme.textTertiary }]}>{unit}</Text>
+                    </View>
+                    <Text style={[chartStyles.statusLabel, { color: pctStatus.color }]}>{pctStatus.statusHe}</Text>
+                </View>
             </View>
 
-            {/* SVG */}
+            {/* ── SVG Chart ────────────────────────────────────── */}
             <Svg width={cW} height={cH}>
                 <Defs>
                     <LinearGradient id={`grad-${type}`} x1="0" y1="0" x2="0" y2="1">
-                        <Stop offset="0" stopColor={color} stopOpacity="0.22" />
-                        <Stop offset="1" stopColor={color} stopOpacity="0.01" />
+                        <Stop offset="0" stopColor={color} stopOpacity="0.28" />
+                        <Stop offset="1" stopColor={color} stopOpacity="0.02" />
                     </LinearGradient>
                 </Defs>
 
-                {/* Healthy zone (p15–p85) */}
-                <Path d={healthyZone} fill="rgba(107,175,138,0.10)" />
+                {/* Outer envelope p3–p97 */}
+                <Path d={outerZone} fill={isDarkMode ? 'rgba(212,131,122,0.05)' : 'rgba(212,131,122,0.07)'} />
+
+                {/* Healthy zone p15–p85 */}
+                <Path d={healthyZone} fill="rgba(107,175,138,0.13)" />
+
+                {/* Horizontal grid */}
+                {yTicks.map((v, i) => (
+                    <Line key={i} x1={pad.left} y1={toY(v)} x2={pad.left + iW} y2={toY(v)}
+                        stroke={gridColor} strokeWidth={1} />
+                ))}
+
+                {/* Vertical grid at X ticks */}
+                {xTicks.filter(m => m > 0).map(m => (
+                    <Line key={m} x1={toX(m)} y1={pad.top} x2={toX(m)} y2={pad.top + iH}
+                        stroke={gridColor} strokeWidth={1} strokeDasharray="2,5" />
+                ))}
 
                 {/* WHO reference lines */}
-                <Path d={whoPath('p97')} fill="none" stroke="rgba(212,131,122,0.38)" strokeWidth={1} strokeDasharray="3,4" />
-                <Path d={whoPath('p50')} fill="none" stroke="rgba(107,175,138,0.55)" strokeWidth={1.2} strokeDasharray="5,4" />
-                <Path d={whoPath('p3')}  fill="none" stroke="rgba(212,131,122,0.38)" strokeWidth={1} strokeDasharray="3,4" />
+                <Path d={whoPath('p97')} fill="none" stroke="rgba(212,131,122,0.35)" strokeWidth={1} strokeDasharray="3,4" />
+                <Path d={whoPath('p50')} fill="none" stroke="rgba(107,175,138,0.65)" strokeWidth={1.5} strokeDasharray="5,4" />
+                <Path d={whoPath('p3')}  fill="none" stroke="rgba(212,131,122,0.35)" strokeWidth={1} strokeDasharray="3,4" />
 
-                {/* WHO percentile labels (right edge) */}
-                <SvgText x={cW - 2} y={toY(whoData[maxAge]?.p97 ?? 0) + 3} textAnchor="end" fill="rgba(212,131,122,0.7)" fontSize="7">97</SvgText>
-                <SvgText x={cW - 2} y={toY(whoData[maxAge]?.p50 ?? 0) + 3} textAnchor="end" fill="rgba(107,175,138,0.8)" fontSize="7">50</SvgText>
-                <SvgText x={cW - 2} y={toY(whoData[maxAge]?.p3  ?? 0) + 3} textAnchor="end" fill="rgba(212,131,122,0.7)" fontSize="7">3</SvgText>
-
-                {/* Grid lines */}
-                {yTicks.map((v, i) => (
-                    <Line key={i} x1={pad.left} y1={toY(v)} x2={cW - pad.right} y2={toY(v)}
-                        stroke={isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} strokeWidth={1} />
-                ))}
+                {/* Percentile labels — right edge */}
+                <SvgText x={pad.left + iW + 3} y={toY(whoData[maxAge]?.p97 ?? 0) + 3}
+                    textAnchor="start" fill="rgba(212,131,122,0.65)" fontSize="7.5">97</SvgText>
+                <SvgText x={pad.left + iW + 3} y={toY(whoData[maxAge]?.p50 ?? 0) + 3}
+                    textAnchor="start" fill="rgba(107,175,138,0.8)" fontSize="7.5">50</SvgText>
+                <SvgText x={pad.left + iW + 3} y={toY(whoData[maxAge]?.p3 ?? 0) + 3}
+                    textAnchor="start" fill="rgba(212,131,122,0.65)" fontSize="7.5">3</SvgText>
 
                 {/* Baby gradient fill */}
                 <Path d={babyArea} fill={`url(#grad-${type})`} />
 
                 {/* Baby line */}
-                <Path d={babyCurve} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                <Path d={babyCurve} fill="none" stroke={color} strokeWidth={2.5}
+                    strokeLinecap="round" strokeLinejoin="round" />
 
-                {/* Baby dots */}
-                {agePoints.map((age, i) => (
-                    <Circle key={i} cx={toX(age)} cy={toY(data[i].value)} r={4}
-                        fill="#fff" stroke={color} strokeWidth={2.2} />
+                {/* Intermediate measurement dots */}
+                {agePoints.slice(0, -1).map((age, i) => (
+                    <Circle key={i} cx={toX(age)} cy={toY(data[i].value)} r={3.5}
+                        fill="#fff" stroke={color} strokeWidth={2} />
                 ))}
+
+                {/* Last measurement — halo + solid dot (most recent reading) */}
+                <Circle cx={lastX} cy={lastY} r={11} fill={color} opacity={0.1} />
+                <Circle cx={lastX} cy={lastY} r={6} fill={color} />
+                <Circle cx={lastX} cy={lastY} r={2.5} fill="#fff" />
 
                 {/* Milestone dots on X axis */}
                 {milestones.map(m => (
-                    <Circle key={m.month}
-                        cx={toX(m.month)} cy={pad.top + iH + 8}
-                        r={3} fill={m.dot} opacity={0.75} />
+                    <Circle key={m.month} cx={toX(m.month)} cy={pad.top + iH + 10}
+                        r={3} fill={m.dot} opacity={0.7} />
                 ))}
 
-                {/* X-axis month labels */}
+                {/* X-axis labels (months) */}
                 {xTicks.map(m => (
-                    <SvgText key={m} x={toX(m)} y={cH - 4} textAnchor="middle"
-                        fill={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} fontSize="8">
-                        {m}
-                    </SvgText>
+                    <SvgText key={m} x={toX(m)} y={cH - 2} textAnchor="middle"
+                        fill={axisColor} fontSize="8.5">{m}</SvgText>
                 ))}
 
                 {/* Y-axis labels */}
                 {yTicks.map((v, i) => (
-                    <SvgText key={i} x={pad.left - 3} y={toY(v) + 3} textAnchor="end"
-                        fill={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} fontSize="8">
-                        {v.toFixed(1)}
+                    <SvgText key={i} x={pad.left - 4} y={toY(v) + 3} textAnchor="end"
+                        fill={axisColor} fontSize="8.5">
+                        {v.toFixed(yDecimals)}
                     </SvgText>
                 ))}
             </Svg>
@@ -251,7 +285,7 @@ const GrowthChart = ({
                     <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>טווח תקין WHO</Text>
                 </View>
                 <View style={chartStyles.legendItem}>
-                    <View style={{ width: 14, height: 1.5, backgroundColor: 'rgba(212,131,122,0.5)', borderRadius: 1 }} />
+                    <View style={{ width: 16, height: 1.5, backgroundColor: 'rgba(212,131,122,0.5)', borderRadius: 1 }} />
                     <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>3% / 97%</Text>
                 </View>
             </View>
@@ -260,19 +294,22 @@ const GrowthChart = ({
 };
 
 const chartStyles = StyleSheet.create({
-    container: { borderRadius: 16, padding: 16, marginBottom: 12 },
-    header: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    title: { fontSize: 15, fontWeight: '600', textAlign: 'right' },
-    currentValue: { fontSize: 13, fontWeight: '700' },
-    pctPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-    pctText: { fontSize: 10, fontWeight: '700' },
-    empty: { height: 100, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    container: { borderRadius: 18, padding: 18, marginBottom: 12 },
+    headerRow1: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
+    headerRow2: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 2 },
+    title: { fontSize: 16, fontWeight: '700', textAlign: 'right' },
+    statusLabel: { fontSize: 11, fontWeight: '600' },
+    currentValue: { fontSize: 28, fontWeight: '700' },
+    valueUnit: { fontSize: 13, fontWeight: '500' },
+    pctPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+    pctText: { fontSize: 11, fontWeight: '700' },
+    empty: { height: 120, alignItems: 'center', justifyContent: 'center', gap: 8 },
+    emptyIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
     emptyText: { fontSize: 13, textAlign: 'center' },
-    legend: { flexDirection: 'row-reverse', gap: 12, marginTop: 6, paddingHorizontal: 2 },
-    legendItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
-    legendGreen: { width: 12, height: 8, backgroundColor: 'rgba(107,175,138,0.28)', borderRadius: 2 },
-    legendText: { fontSize: 10 },
+    legend: { flexDirection: 'row-reverse', gap: 14, marginTop: 8, paddingHorizontal: 2 },
+    legendItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
+    legendGreen: { width: 14, height: 9, backgroundColor: 'rgba(107,175,138,0.3)', borderRadius: 3 },
+    legendText: { fontSize: 10, fontWeight: '500' },
 });
 
 // Percentile Card
