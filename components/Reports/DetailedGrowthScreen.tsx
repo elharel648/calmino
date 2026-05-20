@@ -20,6 +20,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { logger } from '../../utils/logger';
 import { format } from 'date-fns';
+import { differenceInMonths } from 'date-fns';
 import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
 import { useTheme } from '../../context/ThemeContext';
 import {
@@ -28,9 +29,9 @@ import {
     GrowthMeasurement
 } from '../../services/growthService';
 import { Timestamp } from 'firebase/firestore';
-import { calculatePercentile, getPercentileStatus } from '../../utils/whoGrowthStandards';
+import { calculatePercentile, getPercentileStatus, WHO_GROWTH_DATA } from '../../utils/whoGrowthStandards';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
-import { Svg, Path, Defs, LinearGradient, Stop, Circle, Line } from 'react-native-svg';
+import { Svg, Path, Defs, LinearGradient, Stop, Circle, Line, Text as SvgText } from 'react-native-svg';
 import GrowthModal from '../Home/GrowthModal';
 import Animated, { FadeInUp, FadeOutDown, Layout } from 'react-native-reanimated';
 import { useLanguage } from '../../context/LanguageContext';
@@ -46,19 +47,28 @@ interface DetailedGrowthScreenProps {
     gender: 'boy' | 'girl' | 'other';
 }
 
-// Growth Chart Component
+// Developmental milestones (0–24 months)
+const BABY_MILESTONES = [
+    { month: 2,  label: 'חיוך',   dot: '#FBBF24' },
+    { month: 4,  label: 'מתהפך',  dot: '#FB923C' },
+    { month: 6,  label: 'יושב',   dot: '#34D399' },
+    { month: 9,  label: 'זוחל',   dot: '#60A5FA' },
+    { month: 12, label: 'צועד',   dot: '#A78BFA' },
+    { month: 18, label: 'הולך',   dot: '#F472B6' },
+    { month: 24, label: 'שנתיים', dot: '#C8806A' },
+];
+
+// Growth Chart Component — with WHO bands + milestones
 const GrowthChart = ({
-    data,
-    color,
-    title,
-    unit
+    data, color, title, unit, type, gender, birthDate,
 }: {
     data: { date: Date; value: number }[];
-    color: string;
-    title: string;
-    unit: string;
+    color: string; title: string; unit: string;
+    type: 'weight' | 'length' | 'head';
+    gender: 'boy' | 'girl' | 'other';
+    birthDate: Date | null;
 }) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
 
     if (!data || data.length < 2) {
@@ -66,7 +76,7 @@ const GrowthChart = ({
             <View style={[chartStyles.container, { backgroundColor: theme.card }]}>
                 <Text style={[chartStyles.title, { color: theme.textPrimary }]}>{title}</Text>
                 <View style={chartStyles.empty}>
-                    <View style={[chartStyles.emptyIcon, { backgroundColor: `${color}15` }]}>
+                    <View style={[chartStyles.emptyIcon, { backgroundColor: `${color}18` }]}>
                         <TrendingUp size={24} color={color} strokeWidth={1.5} />
                     </View>
                     <Text style={[chartStyles.emptyText, { color: theme.textTertiary }]}>
@@ -77,72 +87,169 @@ const GrowthChart = ({
         );
     }
 
-    const width = SCREEN_WIDTH - 64;
-    const height = 140;
-    const padding = { top: 16, right: 16, bottom: 24, left: 44 };
-    const chartWidth = width - padding.left - padding.right;
-    const chartHeight = height - padding.top - padding.bottom;
+    const genderKey = gender === 'girl' ? 'girls' : 'boys';
+    const whoMetric: 'weight' | 'length' | 'head' = type === 'weight' ? 'weight' : type === 'length' ? 'length' : 'head';
+    const whoData = WHO_GROWTH_DATA[genderKey][whoMetric];
 
-    const values = data.map(d => d.value);
-    const min = Math.min(...values) * 0.97;
-    const max = Math.max(...values) * 1.03;
-    const range = max - min || 1;
+    // Age in months per measurement (clamped 0–24)
+    const agePoints = data.map(d =>
+        birthDate ? Math.max(0, Math.min(24, differenceInMonths(d.date, birthDate))) : 0
+    );
+    const maxAge = Math.min(24, Math.max(4, Math.max(...agePoints) + 1));
+    const whoMonths = Array.from({ length: maxAge + 1 }, (_, i) => i);
 
-    const points = data.map((d, i) => ({
-        x: padding.left + (i / (data.length - 1)) * chartWidth,
-        y: padding.top + chartHeight - ((d.value - min) / range) * chartHeight,
-        value: d.value,
-        date: d.date,
-    }));
+    // Y range: full WHO p3–p97 envelope so bands always visible
+    const allWhoVals = whoMonths.flatMap(m => { const d = whoData[m]; return d ? [d.p3, d.p97] : []; });
+    const yMin = Math.min(...allWhoVals) * 0.97;
+    const yMax = Math.max(...allWhoVals) * 1.02;
+    const yRange = yMax - yMin || 1;
 
-    const pathD = points.reduce((path, point, index) => {
-        if (index === 0) return `M ${point.x} ${point.y}`;
-        const prevPoint = points[index - 1];
-        const cpx = (prevPoint.x + point.x) / 2;
-        return `${path} C ${cpx} ${prevPoint.y} ${cpx} ${point.y} ${point.x} ${point.y}`;
-    }, '');
+    const cW = SCREEN_WIDTH - 64;
+    const cH = 175;
+    const pad = { top: 12, right: 28, bottom: 22, left: 36 };
+    const iW = cW - pad.left - pad.right;
+    const iH = cH - pad.top - pad.bottom;
 
-    const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`;
-    const yLabels = [min, max].map(v => v.toFixed(1));
+    const toX = (m: number) => pad.left + (m / maxAge) * iW;
+    const toY = (v: number) => pad.top + iH - ((v - yMin) / yRange) * iH;
+
+    // WHO reference paths
+    const whoPath = (key: 'p3' | 'p15' | 'p50' | 'p85' | 'p97') =>
+        whoMonths.map((m, i) => `${i === 0 ? 'M' : 'L'} ${toX(m).toFixed(1)} ${toY(whoData[m]?.[key] ?? 0).toFixed(1)}`).join(' ');
+
+    // Healthy zone polygon (p15–p85)
+    const healthyZone = [
+        ...whoMonths.map((m, i) => `${i === 0 ? 'M' : 'L'} ${toX(m).toFixed(1)} ${toY(whoData[m]?.p85 ?? 0).toFixed(1)}`),
+        ...whoMonths.slice().reverse().map(m => `L ${toX(m).toFixed(1)} ${toY(whoData[m]?.p15 ?? 0).toFixed(1)}`),
+        'Z',
+    ].join(' ');
+
+    // Baby cubic-bezier curve
+    const babyCurve = agePoints.map((age, i) => {
+        const x = toX(age); const y = toY(data[i].value);
+        if (i === 0) return `M ${x.toFixed(1)} ${y.toFixed(1)}`;
+        const px = toX(agePoints[i - 1]); const py = toY(data[i - 1].value);
+        const cpx = ((px + x) / 2).toFixed(1);
+        return `C ${cpx} ${py.toFixed(1)} ${cpx} ${y.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+    const babyArea = `${babyCurve} L ${toX(agePoints[agePoints.length - 1]).toFixed(1)} ${(pad.top + iH).toFixed(1)} L ${toX(agePoints[0]).toFixed(1)} ${(pad.top + iH).toFixed(1)} Z`;
+
+    // Latest percentile badge
+    const latestAge = agePoints[agePoints.length - 1];
+    const latestPct = Math.round(calculatePercentile(
+        data[data.length - 1].value, latestAge,
+        whoMetric === 'head' ? 'head' : whoMetric,
+        gender === 'girl' ? 'girl' : 'boy'
+    ));
+    const pctStatus = getPercentileStatus(latestPct);
+
+    // X-axis ticks
+    const xTicks = [0, 3, 6, 9, 12, 18, 24].filter(m => m <= maxAge);
+    // Y-axis ticks
+    const yTicks = [yMin + yRange * 0.05, yMin + yRange * 0.5, yMax - yRange * 0.05];
+    // Visible milestones
+    const milestones = BABY_MILESTONES.filter(m => m.month <= maxAge);
 
     return (
         <View style={[chartStyles.container, { backgroundColor: theme.card }]}>
+            {/* Header */}
             <View style={chartStyles.header}>
-                <Text style={[chartStyles.title, { color: theme.textPrimary }]}>{title}</Text>
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
+                    <Text style={[chartStyles.title, { color: theme.textPrimary }]}>{title}</Text>
+                    <View style={[chartStyles.pctPill, { backgroundColor: pctStatus.bgColor }]}>
+                        <Text style={[chartStyles.pctText, { color: pctStatus.color }]}>א׳ {latestPct}</Text>
+                    </View>
+                </View>
                 <Text style={[chartStyles.currentValue, { color }]}>
                     {data[data.length - 1].value.toFixed(1)} {unit}
                 </Text>
             </View>
-            <Svg width={width} height={height}>
+
+            {/* SVG */}
+            <Svg width={cW} height={cH}>
                 <Defs>
-                    <LinearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
-                        <Stop offset="0" stopColor={color} stopOpacity="0.25" />
-                        <Stop offset="1" stopColor={color} stopOpacity="0" />
+                    <LinearGradient id={`grad-${type}`} x1="0" y1="0" x2="0" y2="1">
+                        <Stop offset="0" stopColor={color} stopOpacity="0.22" />
+                        <Stop offset="1" stopColor={color} stopOpacity="0.01" />
                     </LinearGradient>
                 </Defs>
 
-                {[0, 1].map((ratio, i) => (
-                    <Line key={i}
-                        x1={padding.left} y1={padding.top + chartHeight * ratio}
-                        x2={width - padding.right} y2={padding.top + chartHeight * ratio}
-                        stroke={theme.border} strokeWidth={1} strokeDasharray="4,4"
-                    />
+                {/* Healthy zone (p15–p85) */}
+                <Path d={healthyZone} fill="rgba(107,175,138,0.10)" />
+
+                {/* WHO reference lines */}
+                <Path d={whoPath('p97')} fill="none" stroke="rgba(212,131,122,0.38)" strokeWidth={1} strokeDasharray="3,4" />
+                <Path d={whoPath('p50')} fill="none" stroke="rgba(107,175,138,0.55)" strokeWidth={1.2} strokeDasharray="5,4" />
+                <Path d={whoPath('p3')}  fill="none" stroke="rgba(212,131,122,0.38)" strokeWidth={1} strokeDasharray="3,4" />
+
+                {/* WHO percentile labels (right edge) */}
+                <SvgText x={cW - 2} y={toY(whoData[maxAge]?.p97 ?? 0) + 3} textAnchor="end" fill="rgba(212,131,122,0.7)" fontSize="7">97</SvgText>
+                <SvgText x={cW - 2} y={toY(whoData[maxAge]?.p50 ?? 0) + 3} textAnchor="end" fill="rgba(107,175,138,0.8)" fontSize="7">50</SvgText>
+                <SvgText x={cW - 2} y={toY(whoData[maxAge]?.p3  ?? 0) + 3} textAnchor="end" fill="rgba(212,131,122,0.7)" fontSize="7">3</SvgText>
+
+                {/* Grid lines */}
+                {yTicks.map((v, i) => (
+                    <Line key={i} x1={pad.left} y1={toY(v)} x2={cW - pad.right} y2={toY(v)}
+                        stroke={isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} strokeWidth={1} />
                 ))}
 
-                <Path d={areaD} fill={`url(#grad-${title})`} />
-                <Path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+                {/* Baby gradient fill */}
+                <Path d={babyArea} fill={`url(#grad-${type})`} />
 
-                {points.map((point, i) => (
-                    <Circle key={i} cx={point.x} cy={point.y} r={4}
-                        fill="#fff" stroke={color} strokeWidth={2}
-                    />
+                {/* Baby line */}
+                <Path d={babyCurve} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+
+                {/* Baby dots */}
+                {agePoints.map((age, i) => (
+                    <Circle key={i} cx={toX(age)} cy={toY(data[i].value)} r={4}
+                        fill="#fff" stroke={color} strokeWidth={2.2} />
+                ))}
+
+                {/* Milestone tick lines on X axis */}
+                {milestones.map(m => (
+                    <Line key={m.month}
+                        x1={toX(m.month)} y1={pad.top + iH}
+                        x2={toX(m.month)} y2={pad.top + iH + 5}
+                        stroke={m.dot} strokeWidth={1.5} />
+                ))}
+
+                {/* X-axis month labels */}
+                {xTicks.map(m => (
+                    <SvgText key={m} x={toX(m)} y={cH - 4} textAnchor="middle"
+                        fill={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} fontSize="8">
+                        {m}
+                    </SvgText>
+                ))}
+
+                {/* Y-axis labels */}
+                {yTicks.map((v, i) => (
+                    <SvgText key={i} x={pad.left - 3} y={toY(v) + 3} textAnchor="end"
+                        fill={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} fontSize="8">
+                        {v.toFixed(1)}
+                    </SvgText>
                 ))}
             </Svg>
 
-            <View style={chartStyles.yLabels}>
-                {yLabels.reverse().map((label, i) => (
-                    <Text key={i} style={[chartStyles.yLabel, { color: theme.textTertiary }]}>{label}</Text>
+            {/* Milestone row below chart */}
+            <View style={[chartStyles.milestoneRow, { width: iW, marginLeft: pad.left }]}>
+                {milestones.map(m => (
+                    <View key={m.month} style={[chartStyles.milestonePin, { left: (m.month / maxAge) * iW - 12 }]}>
+                        <View style={[chartStyles.milestoneDot, { backgroundColor: m.dot }]} />
+                        <Text style={[chartStyles.milestoneLabel, { color: theme.textTertiary }]} numberOfLines={1}>{m.label}</Text>
+                    </View>
                 ))}
+            </View>
+
+            {/* Legend */}
+            <View style={chartStyles.legend}>
+                <View style={chartStyles.legendItem}>
+                    <View style={chartStyles.legendGreen} />
+                    <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>טווח תקין WHO</Text>
+                </View>
+                <View style={chartStyles.legendItem}>
+                    <View style={{ width: 14, height: 1.5, backgroundColor: 'rgba(212,131,122,0.5)', borderRadius: 1 }} />
+                    <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>3% / 97%</Text>
+                </View>
             </View>
         </View>
     );
@@ -150,14 +257,22 @@ const GrowthChart = ({
 
 const chartStyles = StyleSheet.create({
     container: { borderRadius: 16, padding: 16, marginBottom: 12 },
-    header: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    header: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
     title: { fontSize: 15, fontWeight: '600', textAlign: 'right' },
-    currentValue: { fontSize: 14, fontWeight: '700' },
+    currentValue: { fontSize: 13, fontWeight: '700' },
+    pctPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+    pctText: { fontSize: 10, fontWeight: '700' },
     empty: { height: 100, alignItems: 'center', justifyContent: 'center', gap: 8 },
     emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-    emptyText: { fontSize: 13 },
-    yLabels: { position: 'absolute', left: 20, top: 40, bottom: 48, justifyContent: 'space-between' },
-    yLabel: { fontSize: 10 },
+    emptyText: { fontSize: 13, textAlign: 'center' },
+    milestoneRow: { position: 'relative', height: 36, marginTop: 2 },
+    milestonePin: { position: 'absolute', top: 0, alignItems: 'center', width: 24 },
+    milestoneDot: { width: 5, height: 5, borderRadius: 2.5, marginBottom: 2 },
+    milestoneLabel: { fontSize: 7.5, textAlign: 'center', fontWeight: '500' },
+    legend: { flexDirection: 'row-reverse', gap: 12, marginTop: 6, paddingHorizontal: 2 },
+    legendItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
+    legendGreen: { width: 12, height: 8, backgroundColor: 'rgba(107,175,138,0.28)', borderRadius: 2 },
+    legendText: { fontSize: 10 },
 });
 
 // Percentile Card
@@ -304,6 +419,11 @@ export default function DetailedGrowthScreen({
     const [editMeasurement, setEditMeasurement] = useState<GrowthMeasurement | undefined>(undefined);
 
     const genderKey = gender === 'girl' ? 'girl' : 'boy';
+
+    const birthDate = React.useMemo(() => {
+        if (!baby?.birthDate) return null;
+        return baby.birthDate.toDate ? baby.birthDate.toDate() : new Date(baby.birthDate as any);
+    }, [baby?.birthDate]);
 
     const fetchData = useCallback(async () => {
         if (!childId) return;
@@ -487,9 +607,9 @@ export default function DetailedGrowthScreen({
                         {/* Charts */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reports.growth.trend')}</Text>
-                            <GrowthChart data={chartData.weightData} color={theme.primary} title={t('reports.metrics.weight')} unit={t('reports.units.kg')} />
-                            <GrowthChart data={chartData.heightData} color={theme.actionColors.growth.color} title={t('reports.metrics.height')} unit={t('reports.units.cm')} />
-                            <GrowthChart data={chartData.headData} color={theme.actionColors.quickReminder.color} title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} />
+                            <GrowthChart data={chartData.weightData} color={theme.primary} title={t('reports.metrics.weight')} unit={t('reports.units.kg')} type="weight" gender={gender} birthDate={birthDate} />
+                            <GrowthChart data={chartData.heightData} color={theme.actionColors.growth.color} title={t('reports.metrics.height')} unit={t('reports.units.cm')} type="length" gender={gender} birthDate={birthDate} />
+                            <GrowthChart data={chartData.headData} color={theme.actionColors.quickReminder.color} title={t('reports.metrics.headCircumference')} unit={t('reports.units.cm')} type="head" gender={gender} birthDate={birthDate} />
                         </View>
 
                         {/* History */}
