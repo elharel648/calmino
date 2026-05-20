@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,7 +14,7 @@ export const COLORS = {
     light: {
         background: '#F8F6F4', // Warm off-white — premium Apple Health feel
         card: '#FFFFFF',
-        cardSecondary: '#F2F2F7',
+        cardSecondary: Platform.OS === 'android' ? '#F8F8F8' : '#F2F2F7',
         textPrimary: '#000000',
         textSecondary: '#8E8E93',
         textTertiary: '#AEAEB2',
@@ -32,7 +32,7 @@ export const COLORS = {
         headerGradient: ['#FFFFFF', '#FFFFFF'] as [string, string],
         tabBar: '#FFFFFF',
         tabBarBorder: '#E5E5EA',
-        inputBackground: '#F2F2F7',
+        inputBackground: Platform.OS === 'android' ? '#F8F8F8' : '#F2F2F7',
         modalOverlay: 'rgba(0,0,0,0.5)',
         shadow: '#000000',
         // Shadow colors for dynamic shadows
