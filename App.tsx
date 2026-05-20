@@ -203,16 +203,14 @@ function MainAppNavigator() {
           tabBarActiveTintColor: '#C8806A',
           headerShown: false,
         }}
-        {...(isAndroid && { tabBar: (props: any) => <LiquidGlassTabBar {...props} /> })}
+        tabBar={(props: any) => <LiquidGlassTabBar {...props} />}
       >
         <Tab.Screen
           name="Home"
           component={HomeStackScreen}
           options={{
             title: t('navigation.home'),
-            tabBarIcon: isAndroid
-              ? ({ color, size }: { color: string; size: number }) => <Home size={size} color={color} strokeWidth={2} />
-              : () => ({ sfSymbol: 'house.fill' }),
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => <Home size={size} color={color} strokeWidth={2} />,
           }}
         />
 
@@ -222,9 +220,7 @@ function MainAppNavigator() {
             component={ReportsScreen}
             options={{
               title: t('navigation.reports'),
-              tabBarIcon: isAndroid
-                ? ({ color, size }: { color: string; size: number }) => <BarChart2 size={size} color={color} strokeWidth={2} />
-                : () => ({ sfSymbol: 'chart.bar.fill' }),
+              tabBarIcon: ({ color, size }: { color: string; size: number }) => <BarChart2 size={size} color={color} strokeWidth={2} />,
             }}
           />
         )}
@@ -234,14 +230,10 @@ function MainAppNavigator() {
           component={AccountStackScreen}
           options={{
             title: t('navigation.account'),
-            tabBarIcon: isAndroid
-              ? ({ color, size }: { color: string; size: number }) => <User size={size} color={color} strokeWidth={2} />
-              : () => ({ sfSymbol: 'person.fill' }),
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => <User size={size} color={color} strokeWidth={2} />,
           }}
         />
       </Tab.Navigator>
-
-      {!isAndroid && <FloatingFAB />}
     </View>
   );
 }

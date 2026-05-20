@@ -181,7 +181,6 @@ export default function ReportsScreen() {
   const [showStatsEdit, setShowStatsEdit] = useState(false);
   const [showGrowthModal, setShowGrowthModal] = useState(false);
   const [showGrowthScreen, setShowGrowthScreen] = useState(false);
-  const [showGrowthDemo, setShowGrowthDemo] = useState(false);
 
   // Premium State
   const { isPremium } = usePremium();
@@ -1950,14 +1949,6 @@ export default function ReportsScreen() {
 
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('stats.title')}</Text>
 
-        {/* 🧪 DEMO button — Growth Chart Preview */}
-        <TouchableOpacity
-          onPress={() => setShowGrowthDemo(true)}
-          style={{ alignSelf: 'flex-end', backgroundColor: '#10B981', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-        >
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>👁 תצוגת גרף גדילה</Text>
-        </TouchableOpacity>
-
         {/* Time Range Pills */}
         <View style={styles.filterRow}>
           {(['day', 'week', 'month'] as TimeRange[]).map((range) => (
@@ -2111,21 +2102,6 @@ export default function ReportsScreen() {
         />
       </Modal>
 
-      {/* 🧪 DEMO — Growth Chart Preview (remove after review) */}
-      <Modal
-        visible={showGrowthDemo}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowGrowthDemo(false)}
-      >
-        <DetailedGrowthScreen
-          onClose={() => setShowGrowthDemo(false)}
-          childId=""
-          ageInMonths={12}
-          gender="boy"
-          demoMode
-        />
-      </Modal>
     </>
   );
 }
