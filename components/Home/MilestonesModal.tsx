@@ -617,19 +617,34 @@ export default function MilestonesModal({
 
                     {/* Date Picker */}
                     {showDatePicker && Platform.OS !== 'android' && (
-                        <View style={styles.datePickerContainer}>
-                            <DateTimePicker
-                                value={date}
-                                mode="date"
-                                display="default"
-                                onChange={(event, selectedDate) => {
-                                    setShowDatePicker(false);
-                                    if (selectedDate) {
-                                        setDate(selectedDate);
-                                    }
-                                }}
-                            />
-                        </View>
+                        <Modal transparent animationType="fade" visible={showDatePicker} onRequestClose={() => setShowDatePicker(false)}>
+                            <TouchableWithoutFeedback onPress={() => setShowDatePicker(false)}>
+                                <View style={styles.datePickerOverlay} />
+                            </TouchableWithoutFeedback>
+                            <View style={[styles.datePickerSheet, { backgroundColor: isDarkMode ? '#1C1C1E' : '#FFFFFF' }]}>
+                                <View style={styles.datePickerHandle} />
+                                <DateTimePicker
+                                    value={date}
+                                    mode="date"
+                                    display="inline"
+                                    locale="he"
+                                    themeVariant={isDarkMode ? 'dark' : 'light'}
+                                    style={{ alignSelf: 'center' }}
+                                    onChange={(event, selectedDate) => {
+                                        if (selectedDate) {
+                                            setDate(selectedDate);
+                                        }
+                                    }}
+                                />
+                                <TouchableOpacity
+                                    style={[styles.datePickerConfirm, { backgroundColor: theme.actionColors.milestones.color }]}
+                                    onPress={() => setShowDatePicker(false)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.datePickerConfirmText}>{t('confirm') ?? 'אישור'}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Modal>
                     )}
                     {showDatePicker && Platform.OS === 'android' && (
                         <View style={styles.datePickerContainer}>
@@ -911,7 +926,8 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 3,
+        elevation: 0,
+        ...(Platform.OS === 'android' && { borderWidth: 1, borderColor: 'rgba(0,0,0,0.07)' }),
     },
     milestoneCardInner: {
         borderRadius: 20,
@@ -1089,5 +1105,38 @@ const styles = StyleSheet.create({
     datePickerContainer: {
         paddingHorizontal: 24,
         paddingBottom: 16,
+    },
+    datePickerOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+    },
+    datePickerSheet: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingBottom: 40,
+        paddingTop: 12,
+        paddingHorizontal: 16,
+    },
+    datePickerHandle: {
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(0,0,0,0.15)',
+        alignSelf: 'center',
+        marginBottom: 12,
+    },
+    datePickerConfirm: {
+        marginHorizontal: 24,
+        marginTop: 8,
+        backgroundColor: '#C9A96E',
+        borderRadius: 14,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    datePickerConfirmText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });

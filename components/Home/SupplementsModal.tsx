@@ -190,7 +190,7 @@ const SupplementCard = memo(({
                 shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.04,
                 shadowRadius: 4,
-                elevation: 1,
+                elevation: 0,
             }}>
                 {/* Left side: icon in normal mode, trash in edit mode */}
                 {isEditMode ? (
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        elevation: 5,
+        elevation: 0,
     },
     progressContainer: {
         marginTop: 28,

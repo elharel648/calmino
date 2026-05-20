@@ -180,7 +180,7 @@ export default function CalmModeModal({
 
   const regionCode = useMemo(() => {
     try {
-      return Localization.getLocales()?.[0]?.regionCode || Localization.region || 'IL';
+      return (Localization.getLocales()?.[0] as any)?.regionCode || (Localization as any).region || 'IL';
     } catch (e) {
       return 'IL';
     }
@@ -381,7 +381,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
-    elevation: 3,
+    elevation: 0,
   },
 
   // Drag Handle
@@ -444,7 +444,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 5,
+    elevation: 0,
   },
   mainTitle: {
     fontSize: 24,
@@ -488,7 +488,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
-    elevation: 2,
+    elevation: 0,
   },
   emergencyIcon: {
     width: 52,
@@ -519,7 +519,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
-    elevation: 1,
+    elevation: 0,
   },
   hmoRow: {
     flexDirection: 'row-reverse',

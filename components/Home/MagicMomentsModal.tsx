@@ -1190,7 +1190,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 4,
+        elevation: 0,
     },
     title: {
         fontSize: 26,
@@ -1240,7 +1240,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.04,
         shadowRadius: 10,
-        elevation: 1,
+        elevation: 0,
     },
     statNumber: {
         fontSize: 26,

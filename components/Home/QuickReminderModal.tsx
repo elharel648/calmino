@@ -463,7 +463,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
             {/* Backdrop */}
             <View style={styles.backdrop}>
                 <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose}>
-                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
                 </TouchableOpacity>
 
                 {/* Main Sheet */}
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -10 },
         shadowOpacity: 0.1,
         shadowRadius: 20,
-        elevation: 2,
+        elevation: 0,
     },
     handleContainer: {
         alignItems: 'center',
@@ -997,7 +997,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
-        elevation: 4,
+        elevation: 0,
     },
     createFirstText: {
         color: '#FFF',
@@ -1091,12 +1091,12 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 1,
+        elevation: 0,
     },
     premiumSliderActive: {
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        elevation: 3,
+        elevation: 0,
         transform: [{ scale: 1.02 }],
     },
 
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 1,
+        elevation: 0,
     },
     customInput: {
         flex: 1,
@@ -1288,7 +1288,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 5,
+        elevation: 0,
     },
     minimalSaveText: {
         color: '#FFFFFF',
@@ -1347,7 +1347,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
-        elevation: 4,
+        elevation: 0,
         overflow: 'hidden',
     },
     saveContent: {

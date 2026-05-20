@@ -276,8 +276,8 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
         let isIsrael = true; // Default to true (Israel) if check fails
         try {
             const locales = Localization.getLocales();
-            const region = Localization.region;
-            isIsrael = locales?.[0]?.regionCode === 'IL' || region === 'IL';
+            const region = (Localization as any).region;
+            isIsrael = (locales?.[0] as any)?.regionCode === 'IL' || region === 'IL';
         } catch (e) {
             // If native module is not yet linked/built, keep features visible to avoid disruption
             console.warn('Localization module not found, defaulting to Israel region');
@@ -1943,7 +1943,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                             shadowOffset: { width: 0, height: 1 },
                             shadowOpacity: 0.04,
                             shadowRadius: 4,
-                            elevation: 1,
+                            elevation: 0,
                         }}>
                             {/* Header row */}
                             <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 10 }}>
@@ -2454,7 +2454,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                         shadowOffset: { width: 0, height: 1 },
                                         shadowOpacity: 0.05,
                                         shadowRadius: 4,
-                                        elevation: 1,
+                                        elevation: 0,
                                     }}>
                                         {/* Icon Badge - solid like menu */}
                                         <View style={{
@@ -2666,7 +2666,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
-        elevation: 1
+        elevation: 0
     },
     cardContent: { flexDirection: 'row-reverse', alignItems: 'center' },
     cardIconWrapper: {
@@ -2702,7 +2702,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
-        elevation: 2,
+        elevation: 0,
     },
     modalTitle: { fontSize: 17, fontWeight: '600', color: theme.textPrimary },
     modalBody: { flex: 1, backgroundColor: theme.card },

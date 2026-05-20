@@ -1897,7 +1897,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,
-          elevation: 3,
+          elevation: 0,
           alignItems: 'center',
         }}>
           {!durationConfirmed ? (
@@ -2824,7 +2824,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: -8 },
-    elevation: 3,
+    elevation: 0,
   },
   // Mid swipe zone - between header and scroll content
   midSwipeZone: {
@@ -2928,7 +2928,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   foodTabIconContainer: {
     marginBottom: 4,
@@ -3116,7 +3116,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   appleTimeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 24, marginVertical: 16 },
   appleTimeItem: { alignItems: 'center' },
   appleTimeLabel: { fontSize: 12, color: '#8E8E93', marginBottom: 6, fontWeight: '500' },
-  appleTimeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F2F7', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
+  appleTimeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Platform.OS === 'android' ? '#FFFFFF' : '#F2F2F7', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, ...(Platform.OS === 'android' && { borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' }) },
   appleTimeDigit: { fontSize: 22, fontWeight: '600', color: '#1C1C1E', minWidth: 28, textAlign: 'center' },
   appleTimeColon: { fontSize: 22, fontWeight: '600', color: '#1C1C1E', marginHorizontal: 2 },
   appleTimeArrow: { fontSize: 16, color: '#C7C7CC' },
@@ -3199,7 +3199,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   premiumAmountDisplay: {
     alignItems: 'center',
@@ -3348,7 +3348,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   premiumPumpingAmountDisplay: {
     alignItems: 'center',
@@ -3459,7 +3459,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 5,
+    elevation: 0,
   },
   saveBtnText: { color: theme.card, fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
 
