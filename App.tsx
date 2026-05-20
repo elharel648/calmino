@@ -5,7 +5,9 @@ import * as Updates from 'expo-updates';
 // Global error handler — catches JS errors before they become non-std C++ exceptions
 const originalHandler = ErrorUtils.getGlobalHandler();
 ErrorUtils.setGlobalHandler((error, isFatal) => {
-  console.error('[GLOBAL ERROR]', isFatal ? 'FATAL' : 'non-fatal', error?.message, error?.stack);
+  if (__DEV__) {
+    console.error('[GLOBAL ERROR]', isFatal ? 'FATAL' : 'non-fatal', error?.message, error?.stack);
+  }
   if (!__DEV__) {
     try {
       const crashlytics = require('@react-native-firebase/crashlytics').default;
@@ -42,8 +44,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import AnimatedSplashScreen from './components/Premium/AnimatedSplashScreen';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
+import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import LiquidGlassTabBar from './components/LiquidGlass/LiquidGlassTabBar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Home, BarChart2, User, Settings, Lock, Baby } from 'lucide-react-native';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -62,7 +66,10 @@ const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number, defaultVal: T): P
 import { BlurView } from 'expo-blur';
 import { Canvas, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import LiquidGlassTabBar from './components/LiquidGlass/LiquidGlassTabBar';
+import { useQuickActions } from './context/QuickActionsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Plus } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import LiquidGlassBackground from './components/LiquidGlass/LiquidGlassBackground';
 import { auth, db } from './services/firebaseConfig';
 import { useLanguage } from './context/LanguageContext';
@@ -97,11 +104,6 @@ import { GuestProvider } from './context/GuestContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import GuestLoginPrompt from './components/GuestLoginPrompt';
 import RadialSOSMenu from './components/Home/RadialSOSMenu';
-import {
-  AnimatedHomeIcon,
-  AnimatedTimelineIcon,
-  AnimatedAccountIcon
-} from './components/AnimatedTabIcons';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -130,7 +132,9 @@ import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 
 
 
-const Tab = createBottomTabNavigator();
+const NativeTab = createNativeBottomTabNavigator();
+const AndroidTab = createBottomTabNavigator();
+const Tab: any = Platform.OS === 'ios' ? NativeTab : AndroidTab;
 const HomeStack = createNativeStackNavigator();
 const AccountStack = createNativeStackNavigator();
 
@@ -157,96 +161,88 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
   );
 };
 
-const CustomTabIcon = ({ focused, icon: AnimatedIconComponent, label }: any) => {
-  const { isDarkMode } = useTheme();
-  
-  // Active = brand terracotta filled, Inactive = solid black (crisp, high-contrast)
-  const activeColor = '#C8806A'; 
-  const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000'; 
-  const currentColor = focused ? activeColor : inactiveColor;
-  const iconSize = 26;
-
-  const scale = useSharedValue(focused ? 1.05 : 1);
-
-  React.useEffect(() => {
-    scale.value = withSpring(focused ? 1.05 : 1, { damping: 10, stiffness: 250, mass: 0.8 });
-  }, [focused, scale]);
-
-  const animatedTextStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }]
-  }));
+// --- Floating FAB (hovering above the native tab bar) ---
+function FloatingFAB() {
+  const { setFabSheetVisible, setSosEditVisible } = useQuickActions();
+  const insets = useSafeAreaInsets();
+  const fabBottom = useRef<number | null>(null);
+  if (fabBottom.current === null) fabBottom.current = insets.bottom + 56;
 
   return (
-    <View style={{
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: Platform.OS === 'android' ? 80 : 72,
-      overflow: 'visible',
-    }}>
-      {/* 
-        We pass the dynamic color directly to our custom SVGs.
-        Each SVG handles its own completely unique interaction choreography! 
-      */}
-      <AnimatedIconComponent focused={focused} color={currentColor} size={iconSize} />
-
-      <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit={Platform.OS === 'android'} minimumFontScale={0.8} style={[{
-        color: currentColor,
-        fontSize: 11,
-        marginTop: 6,
-        fontWeight: focused ? '800' : '700',
-        textAlign: 'center',
-        letterSpacing: -0.2,
-      }, animatedTextStyle]}>
-        {label}
-      </Reanimated.Text>
-    </View>
+    <TouchableOpacity
+      style={[styles.floatingFab, { bottom: fabBottom.current }]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setFabSheetVisible(true);
+      }}
+      onLongPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        setSosEditVisible(true);
+      }}
+      delayLongPress={500}
+      activeOpacity={0.85}
+    >
+      <Plus size={22} color="#fff" strokeWidth={2.8} />
+    </TouchableOpacity>
   );
-};
+}
 
 // --- Main App Navigator (uses theme and role-based permissions) ---
 function MainAppNavigator() {
-  const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
-  const { canAccessProfile, canAccessReports } = useActiveChild();
+  const { canAccessReports } = useActiveChild();
 
-  const homeTabName = t('navigation.home');
-  const accountTabName = t('navigation.account');
-  const reportsTabName = t('navigation.reports');
-
-  const initialTab = homeTabName;
+  const isAndroid = Platform.OS === 'android';
 
   return (
-    <Tab.Navigator
-      id="MainTabs"
-      initialRouteName={initialTab}
-      tabBar={(props) => <LiquidGlassTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textSecondary,
-      }}
-    >
-      {/* Account - always visible */}
-      < Tab.Screen name={accountTabName} component={AccountStackScreen} options={{
-        tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedAccountIcon} label={t('navigation.account')} />
-      }} />
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        id={undefined}
+        initialRouteName="Home"
+        screenOptions={{
+          tabBarActiveTintColor: '#C8806A',
+          headerShown: false,
+        }}
+        {...(isAndroid && { tabBar: (props: any) => <LiquidGlassTabBar {...props} /> })}
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeStackScreen}
+          options={{
+            title: t('navigation.home'),
+            tabBarIcon: isAndroid
+              ? ({ color, size }: { color: string; size: number }) => <Home size={size} color={color} strokeWidth={2} />
+              : () => ({ sfSymbol: 'house.fill' }),
+          }}
+        />
 
-      {/* Reports - only for users with children */}
-      {
-        canAccessReports && (
-          <Tab.Screen name={reportsTabName} component={ReportsScreen} options={{
-            tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedTimelineIcon} label={t('navigation.reports')} />
-          }} />
-        )
-      }
+        {canAccessReports && (
+          <Tab.Screen
+            name="Reports"
+            component={ReportsScreen}
+            options={{
+              title: t('navigation.reports'),
+              tabBarIcon: isAndroid
+                ? ({ color, size }: { color: string; size: number }) => <BarChart2 size={size} color={color} strokeWidth={2} />
+                : () => ({ sfSymbol: 'chart.bar.fill' }),
+            }}
+          />
+        )}
 
-      {/* Home - always visible */}
-      <Tab.Screen name={homeTabName} component={HomeStackScreen} options={{
-        tabBarIcon: ({ focused }) => <CustomTabIcon focused={focused} icon={AnimatedHomeIcon} label={t('navigation.home')} />
-      }} />
+        <Tab.Screen
+          name="Account"
+          component={AccountStackScreen}
+          options={{
+            title: t('navigation.account'),
+            tabBarIcon: isAndroid
+              ? ({ color, size }: { color: string; size: number }) => <User size={size} color={color} strokeWidth={2} />
+              : () => ({ sfSymbol: 'person.fill' }),
+          }}
+        />
+      </Tab.Navigator>
 
-    </Tab.Navigator>
+      {!isAndroid && <FloatingFAB />}
+    </View>
   );
 }
 
@@ -312,6 +308,20 @@ function LiveActivityURLHandler() {
   const sleepTimer = useSleepTimer();
   const { activeChild } = useActiveChild();
   const audio = useAudio();
+
+  // Listen for Darwin notification (from extension StopTimerIntent) to stop white noise in background
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let sub: any;
+    try {
+      const { requireNativeModule } = require('expo-modules-core');
+      const ActivityKitManager = requireNativeModule('ActivityKitManager');
+      sub = ActivityKitManager.addListener?.('onWhiteNoiseStopRequest', () => {
+        audio.stopSound().catch(() => {});
+      });
+    } catch {}
+    return () => { try { sub?.remove(); } catch {} };
+  }, [audio]);
 
   useEffect(() => {
     const handleURL = async (event: { url: string }) => {
@@ -527,18 +537,23 @@ function LiveActivityURLHandler() {
       try {
         const { liveActivityService } = await import('./services/liveActivityService');
         const pending = await liveActivityService.getPendingTimerAction();
-        
+
         if (pending && pending.action) {
           logger.log('📱 Syncing pending App Intent:', pending.action, pending.timerType);
-          
+
           if (pending.action === 'stop') {
-            // STOP: Save the timer data to Firebase using elapsed seconds from Swift
             const timerType = pending.timerType || '';
             const elapsed = pending.elapsedSeconds || 0;
-            
-            // Build the save URL with full data
-            const fauxUrl = `calmino://save-timer?type=${encodeURIComponent(timerType)}&elapsedSeconds=${elapsed}`;
-            await handleURL({ url: fauxUrl });
+
+            if (timerType === 'white_noise') {
+              // White noise stop — just stop audio (no Firebase save needed)
+              await audio.stopSound();
+              await liveActivityService.stopWhiteNoise().catch(() => {});
+            } else {
+              // STOP: Save the timer data to Firebase using elapsed seconds from Swift
+              const fauxUrl = `calmino://save-timer?type=${encodeURIComponent(timerType)}&elapsedSeconds=${elapsed}`;
+              await handleURL({ url: fauxUrl });
+            }
             
           } else if (pending.action === 'pause') {
             // PAUSE: Sync in-app timer pause state  
@@ -1159,5 +1174,20 @@ const styles = StyleSheet.create({
   lockTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
   lockSubtitle: { fontSize: 16, marginBottom: 30 },
   unlockButton: { paddingVertical: 12, paddingHorizontal: 30, borderRadius: 25 },
-  unlockButtonText: { fontSize: 16, fontWeight: 'bold' }
+  unlockButtonText: { fontSize: 16, fontWeight: 'bold' },
+  floatingFab: {
+    position: 'absolute',
+    right: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#C8806A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
 });

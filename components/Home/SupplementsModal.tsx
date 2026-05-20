@@ -702,9 +702,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 16 },
         shadowOpacity: 0.25,
         shadowRadius: 32,
-        elevation: 4,
+        elevation: 0,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(0,0,0,0.06)',
     },
     header: {
         flexDirection: 'row-reverse',
