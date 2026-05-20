@@ -38,6 +38,7 @@ import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const ACTIVE_COLOR = '#C8806A'; // Warm terracotta — matches app pastel palette
@@ -157,9 +158,13 @@ const AnimatedFAB = React.memo(({ onPress, onLongPress }: any) => {
 const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
   ({ state, descriptors, navigation }) => {
     const { isDarkMode } = useTheme();
+    const { language } = useLanguage();
     const insets = useSafeAreaInsets();
     const { setFabSheetVisible, setSosEditVisible } = useQuickActions();
-    
+
+    // RTL: Hebrew (and Arabic etc.) → tabs render right-to-left
+    const isRTL = language === 'he' || language === 'ar';
+
     // ── Active tab indicator animation ───────────────────────────
     const tabCount = state.routes.length;
     const tabAreaW = BAR_W - FAB_COLUMN_W - TAB_AREA_PADDING * 2;
@@ -167,19 +172,22 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
     const indicatorW = tabW * 0.72;
     const indicatorH = BAR_H - 18;
 
+    // In RTL, route index 0 (Home) is visually rightmost → flip the visual index
+    const visualIndex = isRTL ? (tabCount - 1 - state.index) : state.index;
+
     const indicatorLeft = React.useRef(
-      new Animated.Value(TAB_AREA_PADDING + state.index * tabW + (tabW - indicatorW) / 2)
+      new Animated.Value(TAB_AREA_PADDING + visualIndex * tabW + (tabW - indicatorW) / 2)
     ).current;
 
     React.useEffect(() => {
       Animated.spring(indicatorLeft, {
-        toValue: TAB_AREA_PADDING + state.index * tabW + (tabW - indicatorW) / 2,
+        toValue: TAB_AREA_PADDING + visualIndex * tabW + (tabW - indicatorW) / 2,
         useNativeDriver: false,
         damping: 18,
         stiffness: 260,
         mass: 0.7,
       }).start();
-    }, [state.index, tabW, indicatorW]);
+    }, [visualIndex, tabW, indicatorW]);
 
     // Responsive scroll tracking
     const { scrollY } = useScrollTracking();
@@ -334,7 +342,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
           />
 
           {/* ─── Tab Items Layer (on top of glass via zIndex) ────── */}
-          <View style={styles.tabsRow} pointerEvents="box-none">
+          <View style={[styles.tabsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]} pointerEvents="box-none">
             {state.routes.map((route, index) => {
               const { options } = descriptors[route.key];
               const isFocused = state.index === index;
