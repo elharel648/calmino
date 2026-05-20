@@ -40,11 +40,26 @@ const DATE_FNS_LOCALES: Record<string, any> = { he, en: enUS, es, ar, fr, de };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Demo mock data — realistic boy growth curve 0–12 months
+const DEMO_BIRTH_DATE = new Date(Date.now() - 365 * 24 * 3600 * 1000); // ~12 months ago
+const makeDemoTs = (monthsAgo: number): Timestamp =>
+    Timestamp.fromDate(new Date(Date.now() - monthsAgo * 30.4 * 24 * 3600 * 1000));
+const DEMO_MEASUREMENTS: GrowthMeasurement[] = [
+    { id: 'd0', babyId: 'demo', date: makeDemoTs(12), weight: 3.4, height: 52, headCircumference: 35, createdBy: 'demo', createdAt: makeDemoTs(12) },
+    { id: 'd1', babyId: 'demo', date: makeDemoTs(10), weight: 5.2, height: 58, headCircumference: 38, createdBy: 'demo', createdAt: makeDemoTs(10) },
+    { id: 'd2', babyId: 'demo', date: makeDemoTs(8),  weight: 6.8, height: 64, headCircumference: 41, createdBy: 'demo', createdAt: makeDemoTs(8) },
+    { id: 'd3', babyId: 'demo', date: makeDemoTs(6),  weight: 7.9, height: 68, headCircumference: 43, createdBy: 'demo', createdAt: makeDemoTs(6) },
+    { id: 'd4', babyId: 'demo', date: makeDemoTs(4),  weight: 8.7, height: 71, headCircumference: 44.5, createdBy: 'demo', createdAt: makeDemoTs(4) },
+    { id: 'd5', babyId: 'demo', date: makeDemoTs(2),  weight: 9.3, height: 74, headCircumference: 45.5, createdBy: 'demo', createdAt: makeDemoTs(2) },
+    { id: 'd6', babyId: 'demo', date: makeDemoTs(0),  weight: 9.8, height: 76, headCircumference: 46.2, createdBy: 'demo', createdAt: makeDemoTs(0) },
+];
+
 interface DetailedGrowthScreenProps {
     onClose: () => void;
     childId: string;
     ageInMonths: number;
     gender: 'boy' | 'girl' | 'other';
+    demoMode?: boolean;
 }
 
 // Developmental milestones (0–24 months)
@@ -405,15 +420,16 @@ export default function DetailedGrowthScreen({
     childId,
     ageInMonths: propAge,
     gender,
+    demoMode = false,
 }: DetailedGrowthScreenProps) {
     const { theme } = useTheme();
     const { t, language } = useLanguage();
     const dateFnsLocale = DATE_FNS_LOCALES[language] || he;
-    let { baby, refresh } = useBabyProfile(childId);
-    let ageInMonths = propAge;
-    const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
+    let { baby, refresh } = useBabyProfile(demoMode ? '' : childId);
+    let ageInMonths = demoMode ? 12 : propAge;
+    const [measurements, setMeasurements] = useState<GrowthMeasurement[]>(demoMode ? DEMO_MEASUREMENTS : []);
     const [change, setChange] = useState<{ weight?: number; height?: number; headCircumference?: number } | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!demoMode);
     const [refreshing, setRefreshing] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [editMeasurement, setEditMeasurement] = useState<GrowthMeasurement | undefined>(undefined);
@@ -421,9 +437,10 @@ export default function DetailedGrowthScreen({
     const genderKey = gender === 'girl' ? 'girl' : 'boy';
 
     const birthDate = React.useMemo(() => {
+        if (demoMode) return DEMO_BIRTH_DATE;
         if (!baby?.birthDate) return null;
         return baby.birthDate.toDate ? baby.birthDate.toDate() : new Date(baby.birthDate as any);
-    }, [baby?.birthDate]);
+    }, [demoMode, baby?.birthDate]);
 
     const fetchData = useCallback(async () => {
         if (!childId) return;
@@ -439,9 +456,10 @@ export default function DetailedGrowthScreen({
     }, [childId]);
 
     useEffect(() => {
+        if (demoMode) { setLoading(false); return; }
         setLoading(true);
         fetchData().finally(() => setLoading(false));
-    }, [fetchData]);
+    }, [fetchData, demoMode]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
