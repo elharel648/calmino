@@ -270,12 +270,10 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
 
     // Pan Responder for Dismiss
     const panResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (_, gestureState) => {
             const { dy, dx } = gestureState;
-            // Only capture vertical gestures that are clearly downward
-            // Higher threshold prevents stealing from Swipeable horizontal gestures
-            return dy > 20 && Math.abs(dy) > Math.abs(dx) * 2;
+            return dy > 0 && Math.abs(dy) > Math.abs(dx);
         },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
@@ -475,10 +473,9 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                             backgroundColor: isDarkMode ? '#121212' : '#FFFFFF'
                         }
                     ]}
-                    {...(Platform.OS !== 'android' ? panResponder.panHandlers : {})}
                 >
-                    {/* Drag Handle */}
-                    <View style={styles.handleContainer} {...(Platform.OS === 'android' ? panResponder.panHandlers : {})}>
+                    {/* Drag Handle — pan handlers here so scroll inside doesn't block */}
+                    <View style={styles.handleContainer} {...panResponder.panHandlers}>
                         <View style={[styles.handle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }]} />
                     </View>
 
