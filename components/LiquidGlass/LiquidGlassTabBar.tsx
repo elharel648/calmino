@@ -14,6 +14,7 @@
 import React, { useCallback } from 'react';
 import {
   View,
+  Text,
   TouchableOpacity,
   StyleSheet,
   Platform,
@@ -43,7 +44,7 @@ const ACTIVE_COLOR = '#C8806A'; // Warm terracotta — matches app pastel palett
 const SCREEN_W = Dimensions.get('window').width;
 const BAR_MARGIN_H = 16;
 const BAR_W = SCREEN_W - BAR_MARGIN_H * 2;
-const BAR_H = 62;
+const BAR_H = 68;
 const BAR_R = 34;
 const CONTAINER_H = BAR_H;
 const BOTTOM_OFFSET = 28;
@@ -86,10 +87,11 @@ const AnimatedTabItem = React.memo(({
   }, [isFocused, scale, translateY]);
 
   const IconComponent = options.tabBarIcon;
-  const accessibilityLabel = options.tabBarAccessibilityLabel ?? options.title ?? route.name;
-
-  // For the active label we can render text if the IconComponent returns it, 
-  // but usually IconComponent renders both icon and text in our custom tab bar setup.
+  const label = options.tabBarLabel ?? options.title ?? route.name;
+  const accessibilityLabel = options.tabBarAccessibilityLabel ?? String(label);
+  const activeColor = ACTIVE_COLOR;
+  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
+  const iconColor = isFocused ? activeColor : inactiveColor;
 
   return (
     <TouchableOpacity
@@ -102,16 +104,19 @@ const AnimatedTabItem = React.memo(({
       style={styles.tab}
     >
       <Animated.View style={[styles.iconWrap, { transform: [{ scale }, { translateY }] }]}>
-        {IconComponent &&
-          IconComponent({
-            focused: isFocused,
-            color: isFocused
-              ? ACTIVE_COLOR
-              : isDarkMode
-                ? 'rgba(255,255,255,0.5)'
-                : 'rgba(0,0,0,0.4)',
-            size: 24,
-          })}
+        {IconComponent && IconComponent({ focused: isFocused, color: iconColor, size: 22 })}
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.tabLabel,
+            {
+              color: iconColor,
+              fontWeight: isFocused ? '600' : '400',
+            },
+          ]}
+        >
+          {String(label)}
+        </Text>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -431,6 +436,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
+    gap: 2,
+  },
+  tabLabel: {
+    fontSize: 10,
+    letterSpacing: 0,
+    textAlign: 'center',
   },
 
 });
