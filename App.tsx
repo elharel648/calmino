@@ -189,10 +189,59 @@ function FloatingFAB() {
 
 // --- Main App Navigator (uses theme and role-based permissions) ---
 function MainAppNavigator() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { canAccessReports } = useActiveChild();
 
   const isAndroid = Platform.OS === 'android';
+  // RTL languages — for iOS native tab bar we reverse route order so
+  // Home appears on the right and Account on the left (correct RTL visual)
+  const isRTL = language === 'he' || language === 'ar';
+
+  const homeScreen = (
+    <Tab.Screen
+      key="Home"
+      name="Home"
+      component={HomeStackScreen}
+      options={{
+        title: t('navigation.home'),
+        tabBarIcon: isAndroid
+          ? ({ color, size }: { color: string; size: number }) => <Home size={size} color={color} strokeWidth={2} />
+          : () => ({ sfSymbol: 'house.fill' }),
+      }}
+    />
+  );
+  const reportsScreen = canAccessReports ? (
+    <Tab.Screen
+      key="Reports"
+      name="Reports"
+      component={ReportsScreen}
+      options={{
+        title: t('navigation.reports'),
+        tabBarIcon: isAndroid
+          ? ({ color, size }: { color: string; size: number }) => <BarChart2 size={size} color={color} strokeWidth={2} />
+          : () => ({ sfSymbol: 'chart.bar.fill' }),
+      }}
+    />
+  ) : null;
+  const accountScreen = (
+    <Tab.Screen
+      key="Account"
+      name="Account"
+      component={AccountStackScreen}
+      options={{
+        title: t('navigation.account'),
+        tabBarIcon: isAndroid
+          ? ({ color, size }: { color: string; size: number }) => <User size={size} color={color} strokeWidth={2} />
+          : () => ({ sfSymbol: 'person.fill' }),
+      }}
+    />
+  );
+
+  // iOS native tab bar renders routes left→right; reverse order for RTL
+  // Android LiquidGlassTabBar handles RTL internally via row-reverse
+  const tabScreens = (!isAndroid && isRTL)
+    ? [accountScreen, reportsScreen, homeScreen]
+    : [homeScreen, reportsScreen, accountScreen];
 
   return (
     <View style={{ flex: 1 }}>
@@ -203,37 +252,12 @@ function MainAppNavigator() {
           tabBarActiveTintColor: '#C8806A',
           headerShown: false,
         }}
-        tabBar={(props: any) => <LiquidGlassTabBar {...props} />}
+        {...(isAndroid && { tabBar: (props: any) => <LiquidGlassTabBar {...props} /> })}
       >
-        <Tab.Screen
-          name="Home"
-          component={HomeStackScreen}
-          options={{
-            title: t('navigation.home'),
-            tabBarIcon: ({ color, size }: { color: string; size: number }) => <Home size={size} color={color} strokeWidth={2} />,
-          }}
-        />
-
-        {canAccessReports && (
-          <Tab.Screen
-            name="Reports"
-            component={ReportsScreen}
-            options={{
-              title: t('navigation.reports'),
-              tabBarIcon: ({ color, size }: { color: string; size: number }) => <BarChart2 size={size} color={color} strokeWidth={2} />,
-            }}
-          />
-        )}
-
-        <Tab.Screen
-          name="Account"
-          component={AccountStackScreen}
-          options={{
-            title: t('navigation.account'),
-            tabBarIcon: ({ color, size }: { color: string; size: number }) => <User size={size} color={color} strokeWidth={2} />,
-          }}
-        />
+        {tabScreens}
       </Tab.Navigator>
+
+      {!isAndroid && <FloatingFAB />}
     </View>
   );
 }
