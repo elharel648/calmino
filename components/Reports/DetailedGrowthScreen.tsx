@@ -120,8 +120,8 @@ const GrowthChart = ({
     const yRange = yMax - yMin || 1;
 
     const cW = SCREEN_WIDTH - 64;
-    const cH = 175;
-    const pad = { top: 12, right: 28, bottom: 22, left: 36 };
+    const cH = 185;
+    const pad = { top: 12, right: 28, bottom: 30, left: 36 };
     const iW = cW - pad.left - pad.right;
     const iH = cH - pad.top - pad.bottom;
 
@@ -220,12 +220,11 @@ const GrowthChart = ({
                         fill="#fff" stroke={color} strokeWidth={2.2} />
                 ))}
 
-                {/* Milestone tick lines on X axis */}
+                {/* Milestone dots on X axis */}
                 {milestones.map(m => (
-                    <Line key={m.month}
-                        x1={toX(m.month)} y1={pad.top + iH}
-                        x2={toX(m.month)} y2={pad.top + iH + 5}
-                        stroke={m.dot} strokeWidth={1.5} />
+                    <Circle key={m.month}
+                        cx={toX(m.month)} cy={pad.top + iH + 8}
+                        r={3} fill={m.dot} opacity={0.75} />
                 ))}
 
                 {/* X-axis month labels */}
@@ -244,16 +243,6 @@ const GrowthChart = ({
                     </SvgText>
                 ))}
             </Svg>
-
-            {/* Milestone row below chart */}
-            <View style={[chartStyles.milestoneRow, { width: iW, marginLeft: pad.left }]}>
-                {milestones.map(m => (
-                    <View key={m.month} style={[chartStyles.milestonePin, { left: (m.month / maxAge) * iW - 12 }]}>
-                        <View style={[chartStyles.milestoneDot, { backgroundColor: m.dot }]} />
-                        <Text style={[chartStyles.milestoneLabel, { color: theme.textTertiary }]} numberOfLines={1}>{m.label}</Text>
-                    </View>
-                ))}
-            </View>
 
             {/* Legend */}
             <View style={chartStyles.legend}>
@@ -280,10 +269,6 @@ const chartStyles = StyleSheet.create({
     empty: { height: 100, alignItems: 'center', justifyContent: 'center', gap: 8 },
     emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
     emptyText: { fontSize: 13, textAlign: 'center' },
-    milestoneRow: { position: 'relative', height: 36, marginTop: 2 },
-    milestonePin: { position: 'absolute', top: 0, alignItems: 'center', width: 24 },
-    milestoneDot: { width: 5, height: 5, borderRadius: 2.5, marginBottom: 2 },
-    milestoneLabel: { fontSize: 7.5, textAlign: 'center', fontWeight: '500' },
     legend: { flexDirection: 'row-reverse', gap: 12, marginTop: 6, paddingHorizontal: 2 },
     legendItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
     legendGreen: { width: 12, height: 8, backgroundColor: 'rgba(107,175,138,0.28)', borderRadius: 2 },
