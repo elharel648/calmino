@@ -62,16 +62,6 @@ interface DetailedGrowthScreenProps {
     demoMode?: boolean;
 }
 
-// Developmental milestones (0–24 months)
-const BABY_MILESTONES = [
-    { month: 2,  label: 'חיוך',   dot: '#FBBF24' },
-    { month: 4,  label: 'מתהפך',  dot: '#FB923C' },
-    { month: 6,  label: 'יושב',   dot: '#34D399' },
-    { month: 9,  label: 'זוחל',   dot: '#60A5FA' },
-    { month: 12, label: 'צועד',   dot: '#A78BFA' },
-    { month: 18, label: 'הולך',   dot: '#F472B6' },
-    { month: 24, label: 'שנתיים', dot: '#C8806A' },
-];
 
 // Growth Chart Component — WHO clinical standard
 const GrowthChart = ({
@@ -172,9 +162,8 @@ const GrowthChart = ({
         parseFloat((yMin + (yRange / 3) * i).toFixed(yDecimals))
     );
 
-    const milestones = BABY_MILESTONES.filter(m => m.month <= maxAge);
     const gridColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-    const axisColor = isDarkMode ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)';
+    const axisColor = isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
 
     return (
         <View style={[chartStyles.container, { backgroundColor: theme.card }]}>
@@ -252,21 +241,19 @@ const GrowthChart = ({
                         fill="#fff" stroke={color} strokeWidth={2} />
                 ))}
 
-                {/* Last measurement — halo + solid dot (most recent reading) */}
-                <Circle cx={lastX} cy={lastY} r={11} fill={color} opacity={0.1} />
+                {/* Last measurement — halo + solid dot */}
+                <Circle cx={lastX} cy={lastY} r={13} fill={color} opacity={0.08} />
                 <Circle cx={lastX} cy={lastY} r={6} fill={color} />
                 <Circle cx={lastX} cy={lastY} r={2.5} fill="#fff" />
 
-                {/* Milestone dots on X axis */}
-                {milestones.map(m => (
-                    <Circle key={m.month} cx={toX(m.month)} cy={pad.top + iH + 10}
-                        r={3} fill={m.dot} opacity={0.7} />
-                ))}
+                {/* X-axis baseline */}
+                <Line x1={pad.left} y1={pad.top + iH} x2={pad.left + iW} y2={pad.top + iH}
+                    stroke={axisColor} strokeWidth={1} opacity={0.4} />
 
                 {/* X-axis labels (months) */}
                 {xTicks.map(m => (
-                    <SvgText key={m} x={toX(m)} y={cH - 2} textAnchor="middle"
-                        fill={axisColor} fontSize="8.5">{m}</SvgText>
+                    <SvgText key={m} x={toX(m)} y={cH - 3} textAnchor="middle"
+                        fill={axisColor} fontSize="9">{m}</SvgText>
                 ))}
 
                 {/* Y-axis labels */}
@@ -282,10 +269,14 @@ const GrowthChart = ({
             <View style={chartStyles.legend}>
                 <View style={chartStyles.legendItem}>
                     <View style={chartStyles.legendGreen} />
-                    <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>טווח תקין WHO</Text>
+                    <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>15%–85% תקין</Text>
                 </View>
                 <View style={chartStyles.legendItem}>
-                    <View style={{ width: 16, height: 1.5, backgroundColor: 'rgba(212,131,122,0.5)', borderRadius: 1 }} />
+                    <View style={{ width: 18, height: 0, borderTopWidth: 1.5, borderTopColor: 'rgba(107,175,138,0.6)', borderStyle: 'dashed' }} />
+                    <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>חציון WHO</Text>
+                </View>
+                <View style={chartStyles.legendItem}>
+                    <View style={{ width: 18, height: 0, borderTopWidth: 1, borderTopColor: 'rgba(212,131,122,0.5)', borderStyle: 'dashed' }} />
                     <Text style={[chartStyles.legendText, { color: theme.textTertiary }]}>3% / 97%</Text>
                 </View>
             </View>
