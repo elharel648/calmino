@@ -19,7 +19,7 @@ interface CalmModeModalProps {
 
 export default function CalmModeModal({
   visible, onClose }: CalmModeModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
 
@@ -179,12 +179,13 @@ export default function CalmModeModal({
   };
 
   const regionCode = useMemo(() => {
+    if (language === 'he') return 'IL';
     try {
       return (Localization.getLocales()?.[0] as any)?.regionCode || (Localization as any).region || 'IL';
     } catch (e) {
       return 'IL';
     }
-  }, []);
+  }, [language]);
 
   const emergencyContacts = useMemo(() => {
     if (regionCode === 'US' || regionCode === 'CA') {
