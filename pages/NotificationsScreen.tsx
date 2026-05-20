@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
-        elevation: 1,
+        elevation: 0,
     },
     emptyState: {
         alignItems: 'center',
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0,
         shadowRadius: 0,
-        elevation: 1,
+        elevation: 0,
         overflow: 'visible',
     },
     notificationTouchable: {

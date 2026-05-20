@@ -83,8 +83,9 @@ service cloud.firestore {
         resource.data.members[request.auth.uid] != null ||
         resource.data.createdBy == request.auth.uid
       );
-      // list: any authenticated user (needed for join-by-invite-code query on inviteCode field)
-      allow list: if isAuthenticated();
+      // list: limited to 1 result — supports invite-code join query (where inviteCode == x, limit 1)
+      // without allowing bulk enumeration of all families.
+      allow list: if isAuthenticated() && request.query.limit <= 1;
       
       // Create: any authenticated
       allow create: if isAuthenticated();
@@ -249,7 +250,7 @@ service cloud.firestore {
         resource.data.babysitterId == request.auth.uid
       );
       
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.parentId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.parentId == request.auth.uid ||
         resource.data.babysitterId == request.auth.uid
@@ -391,7 +392,8 @@ service cloud.firestore {
     // MAIL COLLECTION (Firebase "Trigger Email" Extension)
     // ===================
     match /mail/{msgId} {
-      allow create: if isAuthenticated();
+      // Only allow creating mail tied to the current user's UID to prevent spam abuse
+      allow create: if isAuthenticated() && request.resource.data.get('uid', '') == request.auth.uid;
       allow read, update, delete: if false;
     }
 

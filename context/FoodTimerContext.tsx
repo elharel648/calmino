@@ -7,6 +7,14 @@ import { liveActivityService } from '../services/liveActivityService';
 import quickActionsService from '../services/quickActionsService';
 import { useActiveChild } from '../context/ActiveChildContext';
 
+// Module-level emitter for Live Activity intent events (mirrors AudioContext.tsx pattern)
+let _activityKitEmitter: any = null;
+try {
+    const { requireNativeModule, EventEmitter } = require('expo-modules-core');
+    const mod = requireNativeModule('ActivityKitManager');
+    _activityKitEmitter = new EventEmitter(mod);
+} catch {}
+
 const getFoodKey = (childId: string, type: string) => `timer_${type}_${childId}`;
 
 const persistFood = (childId: string, type: string, state: { isRunning: boolean; isPaused: boolean; elapsedSeconds: number; [key: string]: any }) => {
@@ -460,6 +468,123 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }, []);
+
+    // Ref to avoid stale closure in Live Activity intent listeners
+    const activeChildIdRef = useRef(activeChildId);
+    useEffect(() => { activeChildIdRef.current = activeChildId; }, [activeChildId]);
+
+    // Listen for Live Activity button intents fired from the main app process
+    useEffect(() => {
+        if (Platform.OS !== 'ios' || !_activityKitEmitter) return;
+        const subs = [
+            _activityKitEmitter.addListener('onTimerPauseRequest', (e: any) => {
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                const type = e.timerType as string;
+                if (type === 'bottle') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child || child.bottle.isPaused || !child.bottle.isRunning) return prev;
+                        const updated = { ...child, bottle: { ...child.bottle, isPaused: true } };
+                        persistFood(childId, 'bottle', { isRunning: true, isPaused: true, elapsedSeconds: child.bottle.elapsedSeconds });
+                        return { ...prev, [childId]: updated };
+                    });
+                } else if (type === 'pumping') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child || child.pumping.isPaused || !child.pumping.isRunning) return prev;
+                        const updated = { ...child, pumping: { ...child.pumping, isPaused: true } };
+                        persistFood(childId, 'pumping', { isRunning: true, isPaused: true, elapsedSeconds: child.pumping.elapsedSeconds });
+                        return { ...prev, [childId]: updated };
+                    });
+                } else if (type === 'breastfeeding') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child || child.breast.isPaused || !child.breast.isRunning) return prev;
+                        const updated = { ...child, breast: { ...child.breast, isPaused: true } };
+                        persistFood(childId, 'breast', { isRunning: true, isPaused: true, elapsedSeconds: child.breast.elapsedSeconds, activeSide: child.breast.activeSide, leftBreastTime: child.breast.leftBreastTime, rightBreastTime: child.breast.rightBreastTime });
+                        return { ...prev, [childId]: updated };
+                    });
+                }
+            }),
+            _activityKitEmitter.addListener('onTimerResumeRequest', (e: any) => {
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                const type = e.timerType as string;
+                if (type === 'bottle') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child || !child.bottle.isPaused) return prev;
+                        const updated = { ...child, bottle: { ...child.bottle, isPaused: false } };
+                        persistFood(childId, 'bottle', { isRunning: true, isPaused: false, elapsedSeconds: child.bottle.elapsedSeconds });
+                        return { ...prev, [childId]: updated };
+                    });
+                } else if (type === 'pumping') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child || !child.pumping.isPaused) return prev;
+                        const updated = { ...child, pumping: { ...child.pumping, isPaused: false } };
+                        persistFood(childId, 'pumping', { isRunning: true, isPaused: false, elapsedSeconds: child.pumping.elapsedSeconds });
+                        return { ...prev, [childId]: updated };
+                    });
+                } else if (type === 'breastfeeding') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child || !child.breast.isPaused) return prev;
+                        const updated = { ...child, breast: { ...child.breast, isPaused: false } };
+                        persistFood(childId, 'breast', { isRunning: true, isPaused: false, elapsedSeconds: child.breast.elapsedSeconds, activeSide: child.breast.activeSide, leftBreastTime: child.breast.leftBreastTime, rightBreastTime: child.breast.rightBreastTime });
+                        return { ...prev, [childId]: updated };
+                    });
+                }
+            }),
+            _activityKitEmitter.addListener('onTimerStopRequest', (e: any) => {
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                const type = e.timerType as string;
+                if (type === 'bottle') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child) return prev;
+                        clearFood(childId, 'bottle');
+                        return { ...prev, [childId]: { ...child, bottle: { ...child.bottle, isRunning: false, isPaused: false } } };
+                    });
+                } else if (type === 'pumping') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child) return prev;
+                        clearFood(childId, 'pumping');
+                        return { ...prev, [childId]: { ...child, pumping: { ...child.pumping, isRunning: false, isPaused: false } } };
+                    });
+                } else if (type === 'breastfeeding') {
+                    setTimers(prev => {
+                        const child = prev[childId];
+                        if (!child) return prev;
+                        clearFood(childId, 'breast');
+                        return { ...prev, [childId]: { ...child, breast: { ...child.breast, isRunning: false, isPaused: false } } };
+                    });
+                }
+            }),
+            _activityKitEmitter.addListener('onTimerSwitchSideRequest', (e: any) => {
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                const newSide = e.newSide as 'left' | 'right';
+                setTimers(prev => {
+                    const child = prev[childId];
+                    if (!child) return prev;
+                    const breast = child.breast;
+                    const updates: any = { activeSide: newSide, isPaused: false, elapsedSeconds: 0 };
+                    if (breast.activeSide === 'left') {
+                        updates.leftBreastTime = breast.leftBreastTime + breast.elapsedSeconds;
+                    } else if (breast.activeSide === 'right') {
+                        updates.rightBreastTime = breast.rightBreastTime + breast.elapsedSeconds;
+                    }
+                    persistFood(childId, 'breast', { isRunning: true, isPaused: false, elapsedSeconds: 0, activeSide: newSide, leftBreastTime: updates.leftBreastTime ?? breast.leftBreastTime, rightBreastTime: updates.rightBreastTime ?? breast.rightBreastTime });
+                    return { ...prev, [childId]: { ...child, breast: { ...breast, ...updates } } };
+                });
+            }),
+        ];
+        return () => subs.forEach(s => s.remove());
     }, []);
 
     const contextValue = useMemo(() => ({

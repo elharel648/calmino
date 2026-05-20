@@ -9,6 +9,7 @@
 import AppIntents
 import ActivityKit
 import Foundation
+import CoreFoundation
 
 // MARK: - Shared Constants
 
@@ -214,6 +215,12 @@ struct StopTimerIntent: LiveActivityIntent {
             let s = activity.content.state
             SharedTimerState.writePendingAction(.stop, timerType: "white_noise", elapsedSeconds: 0)
             await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+            // Signal main app (running in background with audio session) to stop audio immediately
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                CFNotificationName("com.calmparent.stop-white-noise" as CFString),
+                nil, nil, true
+            )
         }
         return .result()
     }

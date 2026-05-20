@@ -1,6 +1,15 @@
+//
+//  TimerIntents.swift
+//  CalmParentLiveActivity
+//
+//  App Intents for Live Activity buttons — execute WITHOUT opening the app.
+//  Uses App Groups shared UserDefaults for state sync with React Native.
+//
+
 import AppIntents
 import ActivityKit
 import Foundation
+import CoreFoundation
 
 // MARK: - Shared Constants
 
@@ -19,25 +28,176 @@ struct SharedTimerState {
     static let defaults = UserDefaults(suiteName: appGroupID)
     
     static func writePendingAction(_ action: TimerAction, timerType: String, elapsedSeconds: Int? = nil, side: String? = nil) {
-        guard let defaults = defaults else { return }
-        
-        defaults.set(action.rawValue, forKey: "pendingTimerAction")
-        defaults.set(timerType, forKey: "pendingTimerType")
-        defaults.set(Date().timeIntervalSince1970, forKey: "pendingTimerTimestamp")
-        
+        defaults?.set(action.rawValue, forKey: "pendingTimerAction")
+        defaults?.set(timerType, forKey: "pendingTimerType")
+        defaults?.set(Date().timeIntervalSince1970, forKey: "pendingTimerTimestamp")
         if let s = elapsedSeconds {
-            defaults.set(s, forKey: "pendingTimerElapsed")
+            defaults?.set(s, forKey: "pendingTimerElapsed")
         }
-        
         if let s = side {
-            defaults.set(s, forKey: "pendingTimerSide")
+            defaults?.set(s, forKey: "pendingTimerSide")
         }
     }
 }
 
 // MARK: - App Intents
 
+// ──────────────────────────────────────────────────────────────────────────────
+// StopWhiteNoiseIntent
+// Zero-parameter intent — stops ALL white noise activities and signals the main
+// app's audio engine. No @Parameter means no serialization edge-cases.
+// ──────────────────────────────────────────────────────────────────────────────
+@available(iOS 16.2, *)
+struct StopWhiteNoiseIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "עצור רעש לבן"
+    static var isDiscoverable: Bool = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        for activity in Activity<WhiteNoiseActivityAttributes>.activities {
+            SharedTimerState.writePendingAction(.stop, timerType: "white_noise", elapsedSeconds: 0)
+            await activity.end(
+                ActivityContent(state: activity.content.state, staleDate: nil),
+                dismissalPolicy: .immediate
+            )
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                CFNotificationName("com.calmparent.stop-white-noise" as CFString),
+                nil, nil, true
+            )
+        }
+        return .result()
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// PauseWhiteNoiseIntent — pauses the white noise audio
+// ──────────────────────────────────────────────────────────────────────────────
+@available(iOS 16.2, *)
+struct PauseWhiteNoiseIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "השהה רעש לבן"
+    static var isDiscoverable: Bool = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        for activity in Activity<WhiteNoiseActivityAttributes>.activities {
+            let s = activity.content.state
+            if !s.isPaused {
+                let elapsed = s.elapsedSeconds + Int(Date().timeIntervalSince(s.startTime))
+                let newState = WhiteNoiseActivityAttributes.ContentState(
+                    startTime: s.startTime,
+                    isPaused: true,
+                    elapsedSeconds: elapsed
+                )
+                await activity.update(ActivityContent(state: newState, staleDate: nil))
+                SharedTimerState.writePendingAction(.pause, timerType: "white_noise", elapsedSeconds: elapsed)
+            }
+        }
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName("com.calmparent.pause-white-noise" as CFString),
+            nil, nil, true
+        )
+        return .result()
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ResumeWhiteNoiseIntent — resumes the white noise audio
+// ──────────────────────────────────────────────────────────────────────────────
+@available(iOS 16.2, *)
+struct ResumeWhiteNoiseIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "המשך רעש לבן"
+    static var isDiscoverable: Bool = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        for activity in Activity<WhiteNoiseActivityAttributes>.activities {
+            let s = activity.content.state
+            if s.isPaused {
+                let newStart = Date().addingTimeInterval(-Double(s.elapsedSeconds))
+                let newState = WhiteNoiseActivityAttributes.ContentState(
+                    startTime: newStart,
+                    isPaused: false,
+                    elapsedSeconds: s.elapsedSeconds
+                )
+                await activity.update(ActivityContent(state: newState, staleDate: nil))
+                SharedTimerState.writePendingAction(.resume, timerType: "white_noise")
+            }
+        }
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName("com.calmparent.resume-white-noise" as CFString),
+            nil, nil, true
+        )
+        return .result()
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// EndActivityIntent
+// Ends a specific Live Activity by ID — used by Sleep / Feeding / Breastfeeding
+// buttons. White Noise uses StopWhiteNoiseIntent (no parameters) instead.
+// ──────────────────────────────────────────────────────────────────────────────
 @available(iOS 17.0, *)
+struct EndActivityIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "סיים פעילות"
+    static var isDiscoverable: Bool = false
+
+    @Parameter(title: "Activity ID")
+    var activityId: String
+
+    init() { activityId = "" }
+    init(activityId: String) { self.activityId = activityId }
+
+    func perform() async throws -> some IntentResult {
+        // ── Sleep ─────────────────────────────────────────────────────────
+        for activity in Activity<SleepActivityAttributes>.activities
+            where activity.id == activityId
+        {
+            let s = activity.content.state
+            let elapsed = s.activeSeconds + (s.isPaused ? 0 : Int(Date().timeIntervalSince(s.startTime)))
+            SharedTimerState.writePendingAction(.stop, timerType: "sleep", elapsedSeconds: elapsed)
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+            return .result()
+        }
+
+        // ── Breastfeeding ─────────────────────────────────────────────────
+        for activity in Activity<BreastfeedingActivityAttributes>.activities
+            where activity.id == activityId
+        {
+            let s = activity.content.state
+            var l = s.leftSideSeconds
+            var r = s.rightSideSeconds
+            if !s.isPaused, let start = s.sideStartTime {
+                let e = Int(Date().timeIntervalSince(start))
+                if s.activeSide == "left" { l += e } else { r += e }
+            }
+            SharedTimerState.writePendingAction(.stop, timerType: "הנקה", elapsedSeconds: l + r)
+            SharedTimerState.defaults?.set("L\(l)R\(r)", forKey: "pendingSide")
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+            return .result()
+        }
+
+        // ── Feeding (bottle / pumping) ─────────────────────────────────────
+        for activity in Activity<MealActivityAttributes>.activities
+            where activity.id == activityId
+        {
+            let s = activity.content.state
+            let elapsed = s.isPaused ? Int(s.progress) : Int(Date().timeIntervalSince(s.startTime))
+            SharedTimerState.writePendingAction(.stop, timerType: s.mealType, elapsedSeconds: elapsed)
+            await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+            return .result()
+        }
+
+        return .result()
+    }
+}
+
+@available(iOS 16.2, *)
 struct PauseTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "השהה טיימר"
     static var description = IntentDescription("השהה את הטיימר המופעל")
@@ -45,7 +205,7 @@ struct PauseTimerIntent: LiveActivityIntent {
     init() {}
     
     func perform() async throws -> some IntentResult {
-        // MARK: Sleep
+        // Sleep
         for activity in Activity<SleepActivityAttributes>.activities {
             let currentState = activity.content.state
             if !currentState.isPaused {
@@ -64,7 +224,7 @@ struct PauseTimerIntent: LiveActivityIntent {
             }
         }
         
-        // MARK: Feeding
+        // Feeding
         for activity in Activity<MealActivityAttributes>.activities {
             let currentState = activity.content.state
             if !currentState.isPaused {
@@ -82,7 +242,7 @@ struct PauseTimerIntent: LiveActivityIntent {
             }
         }
         
-        // MARK: Breastfeeding
+        // Breastfeeding
         for activity in Activity<BreastfeedingActivityAttributes>.activities {
             let currentState = activity.content.state
             if !currentState.isPaused, let start = currentState.sideStartTime {
@@ -102,19 +262,20 @@ struct PauseTimerIntent: LiveActivityIntent {
             }
         }
 
+        // WhiteNoise (Only Stop supported usually, but just in case)
+        
         return .result()
     }
 }
 
-@available(iOS 17.0, *)
+@available(iOS 16.2, *)
 struct ResumeTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "המשך טיימר"
-    static var description = IntentDescription("המשך את הטיימר המושהה")
     
     init() {}
     
     func perform() async throws -> some IntentResult {
-        // MARK: Sleep
+        // Sleep
         for activity in Activity<SleepActivityAttributes>.activities {
             let currentState = activity.content.state
             if currentState.isPaused {
@@ -132,7 +293,7 @@ struct ResumeTimerIntent: LiveActivityIntent {
             }
         }
         
-        // MARK: Feeding
+        // Feeding
         for activity in Activity<MealActivityAttributes>.activities {
             let currentState = activity.content.state
             if currentState.isPaused {
@@ -150,7 +311,7 @@ struct ResumeTimerIntent: LiveActivityIntent {
             }
         }
         
-        // MARK: Breastfeeding
+        // Breastfeeding
         for activity in Activity<BreastfeedingActivityAttributes>.activities {
             let currentState = activity.content.state
             if currentState.isPaused {
@@ -170,73 +331,69 @@ struct ResumeTimerIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 17.0, *)
+@available(iOS 16.2, *)
 struct StopTimerIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "סיים טיימר"
-    static var description = IntentDescription("סיים וסגור את הפעילות החיה")
 
     init() {}
 
     func perform() async throws -> some IntentResult {
-        // MARK: Sleep
+        // Sleep
         for activity in Activity<SleepActivityAttributes>.activities {
             let s = activity.content.state
             let elapsed = s.activeSeconds + (s.isPaused ? 0 : Int(Date().timeIntervalSince(s.startTime)))
             SharedTimerState.writePendingAction(.stop, timerType: "sleep", elapsedSeconds: elapsed)
             await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
         }
-        
-        // MARK: Feeding
+        // Feeding
         for activity in Activity<MealActivityAttributes>.activities {
             let s = activity.content.state
             let elapsed = s.isPaused ? Int(s.progress) : Int(Date().timeIntervalSince(s.startTime))
             SharedTimerState.writePendingAction(.stop, timerType: s.mealType, elapsedSeconds: elapsed)
             await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
         }
-        
-        // MARK: Breastfeeding
+        // Breastfeeding
         for activity in Activity<BreastfeedingActivityAttributes>.activities {
             let s = activity.content.state
             var l = s.leftSideSeconds
             var r = s.rightSideSeconds
-            
             if !s.isPaused, let start = s.sideStartTime {
                 let e = Int(Date().timeIntervalSince(start))
                 if s.activeSide == "left" { l += e } else { r += e }
             }
-            
-            SharedTimerState.writePendingAction(.stop, timerType: "breastfeeding", elapsedSeconds: l + r)
+            SharedTimerState.writePendingAction(.stop, timerType: "הנקה", elapsedSeconds: l + r)
             SharedTimerState.defaults?.set("L\(l)R\(r)", forKey: "pendingSide")
             await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
         }
-        
-        // MARK: White Noise
+        // White Noise
         for activity in Activity<WhiteNoiseActivityAttributes>.activities {
             let s = activity.content.state
             SharedTimerState.writePendingAction(.stop, timerType: "white_noise", elapsedSeconds: 0)
             await activity.end(ActivityContent(state: s, staleDate: nil), dismissalPolicy: .immediate)
+            // Signal main app (running in background with audio session) to stop audio immediately
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                CFNotificationName("com.calmparent.stop-white-noise" as CFString),
+                nil, nil, true
+            )
         }
-        
         return .result()
     }
 }
 
-@available(iOS 17.0, *)
+@available(iOS 16.2, *)
 struct SwitchSideIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "החלף צד"
-    static var description = IntentDescription("החלף בין צד שמאל לימין בהנקה")
     
     init() {}
     
     func perform() async throws -> some IntentResult {
-        // MARK: Breastfeeding
         for activity in Activity<BreastfeedingActivityAttributes>.activities {
             let currentState = activity.content.state
             let newSide = currentState.activeSide == "left" ? "right" : "left"
             
             var l = currentState.leftSideSeconds
             var r = currentState.rightSideSeconds
-            
             if !currentState.isPaused, let start = currentState.sideStartTime {
                 let elapsed = Int(Date().timeIntervalSince(start))
                 if currentState.activeSide == "left" { l += elapsed } else { r += elapsed }
@@ -249,11 +406,9 @@ struct SwitchSideIntent: LiveActivityIntent {
                 sideStartTime: Date(),
                 isPaused: false
             )
-            
             await activity.update(ActivityContent(state: newState, staleDate: nil))
             SharedTimerState.writePendingAction(.switchSide, timerType: "breastfeeding", side: newSide)
         }
-        
         return .result()
     }
 }

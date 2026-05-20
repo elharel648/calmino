@@ -256,9 +256,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     const handleOpenStory = useCallback((photos: StoryPhoto[]) => {
         setStoryPhotos(photos);
         setIsMagicMomentsOpen(false);
-        setTimeout(() => {
+        InteractionManager.runAfterInteractions(() => {
             setShowStory(true);
-        }, 400);
+        });
     }, []);
 
     const handleOpenWrapped = useCallback(() => {
@@ -271,7 +271,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         // ← Close MagicMomentsModal FIRST (iOS can't stack 2 independent modals)
         setIsMagicMomentsOpen(false);
         // Wait for dismiss animation, then open Cinematic
-        setTimeout(() => {
+        InteractionManager.runAfterInteractions(() => {
             setShowWrapped(true);
             // Load real Firestore data in background
             const childId = activeChild?.childId || profile.id;
@@ -280,7 +280,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                     .then(d => { if (d) setWrappedData(d); })
                     .catch(() => {});
             }
-        }, 400);
+        });
     }, [activeChild?.childId, profile.id]);
 
     // Fetch reminder count
@@ -644,10 +644,9 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
 
                             <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => { setIsHealthOpen(false); setHealthInitialScreen('menu'); }} initialScreen={healthInitialScreen} />
 
-                            <DailyTimeline 
-                                refreshTrigger={timelineRefresh} 
-                                childId={profile.id} 
-                                preloadedEvents={[]}
+                            <DailyTimeline
+                                refreshTrigger={timelineRefresh}
+                                childId={profile.id}
                                 onEditEvent={(event) => {
                                     if (event.type === 'food' || event.type === 'sleep' || event.type === 'diaper') {
                                         setEditingEvent(event);

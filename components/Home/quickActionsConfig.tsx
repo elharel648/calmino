@@ -51,6 +51,7 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     healthMedications:   { icon: Pill,          labelKey: 'actions.healthMedications',   activeLabelKey: 'actions.healthMedications' },
     healthTipatHalav:    { icon: MapPin,        labelKey: 'actions.healthTipatHalav',    activeLabelKey: 'actions.healthTipatHalav' },
     healthAllergies:     { icon: ShieldAlert,   labelKey: 'actions.healthAllergies',     activeLabelKey: 'actions.healthAllergies' },
+    healthDoctor:        { icon: Stethoscope,   labelKey: 'actions.healthDoctor',        activeLabelKey: 'actions.healthDoctor' },
     healthHistory:       { icon: ClipboardList, labelKey: 'actions.healthHistory',       activeLabelKey: 'actions.healthHistory' },
     growth: { icon: TrendingUp, labelKey: 'actions.growth', activeLabelKey: 'actions.growth' },
     milestones: { icon: Award, labelKey: 'actions.milestones', activeLabelKey: 'actions.milestones' },

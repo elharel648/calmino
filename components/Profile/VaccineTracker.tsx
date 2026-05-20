@@ -236,7 +236,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 5,
-        elevation: 1,
+        elevation: 0,
     },
     headerRow: {
         flexDirection: 'row-reverse',

@@ -379,7 +379,7 @@ export default function TeethTrackerModal({
         >
             <RNAnimated.View style={[styles.overlay, { opacity: backdropAnim }]}>
                 <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose}>
-                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
                 </TouchableOpacity>
 
                 <RNAnimated.View
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
         shadowRadius: 20,
-        elevation: 3,
+        elevation: 0,
     },
     swipeHandle: {
         width: '100%',
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
-        elevation: 4,
+        elevation: 0,
     },
     toothDateText: {
         fontSize: 11,
@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
-        elevation: 6,
+        elevation: 0,
     },
     toothDateTooltipText: {
         color: '#fff',
@@ -848,7 +848,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 1,
+        elevation: 0,
     },
     historyHeader: {
         flexDirection: 'row-reverse',
@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
-        elevation: 2,
+        elevation: 0,
     },
     centerLabels: {
         position: 'absolute',
@@ -950,7 +950,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
-        elevation: 4,
+        elevation: 0,
     },
     jawLabel: {
         fontSize: 16,
@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
-        elevation: 1,
+        elevation: 0,
     },
     legendRow: {
         flexDirection: 'row-reverse',
@@ -1041,7 +1041,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.25,
         shadowRadius: 24,
-        elevation: 4,
+        elevation: 0,
     },
     datePickerHeader: {
         flexDirection: 'row-reverse',
@@ -1101,7 +1101,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 5,
+        elevation: 0,
     },
     datePickerBtnText: {
         fontSize: 16,

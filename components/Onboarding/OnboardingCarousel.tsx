@@ -314,7 +314,7 @@ const qas = StyleSheet.create({
         width: 58, height: 58, borderRadius: 29,
         alignItems: 'center', justifyContent: 'center',
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25, shadowRadius: 8, elevation: 5,
+        shadowOpacity: 0.25, shadowRadius: 8, elevation: 0,
     },
     label: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.8)', textAlign: 'center' },
 });
@@ -394,7 +394,7 @@ const stc = StyleSheet.create({
     filterTextActive: { color: '#000000', fontSize: 13, fontWeight: '700' },
     
     grid: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
-    card: { width: 154, height: 162, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 5 },
+    card: { width: 154, height: 162, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 0 },
     
     cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start' },
     iconBox: { width: 34, height: 34, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
@@ -483,7 +483,7 @@ const fsc = StyleSheet.create({
     container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, gap: 20, width: '100%' },
     slideTitle: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', letterSpacing: -1 },
     
-    card: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 28, padding: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 6 },
+    card: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 28, padding: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 0 },
     
     cardHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14, marginBottom: 16 },
     iconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },

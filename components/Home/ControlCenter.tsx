@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
         position: 'absolute', bottom: 0, left: 0, right: 0,
         borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden',
         shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
-        shadowOpacity: 0.2, shadowRadius: 20, elevation: 16,
+        shadowOpacity: 0.2, shadowRadius: 20, elevation: 0,
         height: SCREEN_HEIGHT * 0.88,
     },
     inner: { paddingHorizontal: 16, borderTopLeftRadius: 28, borderTopRightRadius: 28, flex: 1 },
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     item: {
         width: '30%', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1.5, gap: 6,
         position: 'relative',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 0,
     },
     itemLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
     checkBadge: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     chipLabel: { color: '#fff', fontSize: 12, fontWeight: '600' },
     saveBtn: {
         marginTop: 8, padding: 15, borderRadius: 16, alignItems: 'center',
-        shadowColor: '#C8806A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
+        shadowColor: '#C8806A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 0,
     },
     saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

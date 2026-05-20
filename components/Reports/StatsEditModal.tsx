@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -8 },
         shadowOpacity: 0.14,
         shadowRadius: 24,
-        elevation: 20,
+        elevation: 0,
     },
     pill: {
         width: 36,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
-        elevation: 5,
+        elevation: 0,
     },
     saveBtnText: {
         color: '#fff',

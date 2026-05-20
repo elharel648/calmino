@@ -9,6 +9,72 @@ import ExpoModulesCore
 import ActivityKit
 import Foundation
 import WidgetKit
+import AVFoundation
+
+// Darwin notification name shared with the extension
+private let kDarwinStopWhiteNoise = "com.calmparent.stop-white-noise"
+private let kInternalStopWhiteNoise = NSNotification.Name("CalmParentStopWhiteNoiseInternal")
+private let kDarwinPauseWhiteNoise = "com.calmparent.pause-white-noise"
+private let kDarwinResumeWhiteNoise = "com.calmparent.resume-white-noise"
+private let kInternalPauseWhiteNoise = NSNotification.Name("CalmParentPauseWhiteNoiseInternal")
+private let kInternalResumeWhiteNoise = NSNotification.Name("CalmParentResumeWhiteNoiseInternal")
+
+// Timer intent Darwin notifications
+private let kDarwinPauseTimer = "com.calmparent.pause-timer"
+private let kDarwinResumeTimer = "com.calmparent.resume-timer"
+private let kDarwinStopTimer = "com.calmparent.stop-timer"
+private let kDarwinSwitchSide = "com.calmparent.switch-side"
+private let kInternalPauseTimer = NSNotification.Name("CalmParentPauseTimerInternal")
+private let kInternalResumeTimer = NSNotification.Name("CalmParentResumeTimerInternal")
+private let kInternalStopTimer = NSNotification.Name("CalmParentStopTimerInternal")
+private let kInternalSwitchSide = NSNotification.Name("CalmParentSwitchSideInternal")
+
+// C-compatible Darwin callback — stops audio immediately at OS level (works in background),
+// then posts a local notification so JS can clean up state when it comes to foreground.
+private let _darwinStopCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        // Deactivate audio session — stops all playback even when JS is suspended in background
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Also post local notification so JS can clean up state on foreground
+        NotificationCenter.default.post(name: kInternalStopWhiteNoise, object: nil)
+    }
+}
+
+private let _darwinPauseCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        NotificationCenter.default.post(name: kInternalPauseWhiteNoise, object: nil)
+    }
+}
+
+private let _darwinResumeCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        NotificationCenter.default.post(name: kInternalResumeWhiteNoise, object: nil)
+    }
+}
+
+private let _darwinPauseTimerCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        NotificationCenter.default.post(name: kInternalPauseTimer, object: nil)
+    }
+}
+
+private let _darwinResumeTimerCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        NotificationCenter.default.post(name: kInternalResumeTimer, object: nil)
+    }
+}
+
+private let _darwinStopTimerCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        NotificationCenter.default.post(name: kInternalStopTimer, object: nil)
+    }
+}
+
+private let _darwinSwitchSideCallback: CFNotificationCallback = { _, _, _, _, _ in
+    DispatchQueue.main.async {
+        NotificationCenter.default.post(name: kInternalSwitchSide, object: nil)
+    }
+}
 
 public class ActivityKitManager: Module {
     private var babysitterActivity: Any?
@@ -16,9 +82,146 @@ public class ActivityKitManager: Module {
     private var sleepActivity: Any?
     private var breastfeedingActivity: Any?
     private var whiteNoiseActivity: Any?
-    
+    private var stopObserver: NSObjectProtocol?
+
     public func definition() -> ModuleDefinition {
         Name("ActivityKitManager")
+
+        // ── Events ────────────────────────────────────────────────────────────
+        Events("onWhiteNoiseStopRequest", "onWhiteNoisePauseRequest", "onWhiteNoiseResumeRequest",
+               "onTimerPauseRequest", "onTimerResumeRequest", "onTimerStopRequest", "onTimerSwitchSideRequest")
+
+        // ── Lifecycle: register Darwin notification listener once ─────────────
+        OnCreate {
+            // Register for Darwin notification from extension
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinStopCallback,
+                kDarwinStopWhiteNoise as CFString,
+                nil,
+                .deliverImmediately
+            )
+            // Relay local NSNotification → React Native event
+            self.stopObserver = NotificationCenter.default.addObserver(
+                forName: kInternalStopWhiteNoise,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.sendEvent("onWhiteNoiseStopRequest", [:])
+            }
+
+            // Pause observer
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinPauseCallback,
+                kDarwinPauseWhiteNoise as CFString,
+                nil,
+                .deliverImmediately
+            )
+            NotificationCenter.default.addObserver(
+                forName: kInternalPauseWhiteNoise,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.sendEvent("onWhiteNoisePauseRequest", [:])
+            }
+
+            // Resume observer
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinResumeCallback,
+                kDarwinResumeWhiteNoise as CFString,
+                nil,
+                .deliverImmediately
+            )
+            NotificationCenter.default.addObserver(
+                forName: kInternalResumeWhiteNoise,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.sendEvent("onWhiteNoiseResumeRequest", [:])
+            }
+
+            // Timer: Pause
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinPauseTimerCallback,
+                kDarwinPauseTimer as CFString,
+                nil,
+                .deliverImmediately
+            )
+            NotificationCenter.default.addObserver(
+                forName: kInternalPauseTimer,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                let d = UserDefaults(suiteName: "group.com.calmparent.shared")
+                let timerType = d?.string(forKey: "pendingTimerType") ?? ""
+                self?.sendEvent("onTimerPauseRequest", ["timerType": timerType])
+            }
+
+            // Timer: Resume
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinResumeTimerCallback,
+                kDarwinResumeTimer as CFString,
+                nil,
+                .deliverImmediately
+            )
+            NotificationCenter.default.addObserver(
+                forName: kInternalResumeTimer,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                let d = UserDefaults(suiteName: "group.com.calmparent.shared")
+                let timerType = d?.string(forKey: "pendingTimerType") ?? ""
+                self?.sendEvent("onTimerResumeRequest", ["timerType": timerType])
+            }
+
+            // Timer: Stop
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinStopTimerCallback,
+                kDarwinStopTimer as CFString,
+                nil,
+                .deliverImmediately
+            )
+            NotificationCenter.default.addObserver(
+                forName: kInternalStopTimer,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                let d = UserDefaults(suiteName: "group.com.calmparent.shared")
+                let timerType = d?.string(forKey: "pendingTimerType") ?? ""
+                let elapsedSeconds = d?.integer(forKey: "pendingTimerElapsed") ?? 0
+                self?.sendEvent("onTimerStopRequest", ["timerType": timerType, "elapsedSeconds": elapsedSeconds])
+            }
+
+            // Timer: Switch Side
+            CFNotificationCenterAddObserver(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                nil,
+                _darwinSwitchSideCallback,
+                kDarwinSwitchSide as CFString,
+                nil,
+                .deliverImmediately
+            )
+            NotificationCenter.default.addObserver(
+                forName: kInternalSwitchSide,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                let d = UserDefaults(suiteName: "group.com.calmparent.shared")
+                let newSide = d?.string(forKey: "pendingBreastSide") ?? ""
+                self?.sendEvent("onTimerSwitchSideRequest", ["newSide": newSide])
+            }
+        }
         
         // MARK: - Babysitter Shift Methods
         
@@ -351,6 +554,42 @@ public class ActivityKitManager: Module {
                 guard let activity = self.whiteNoiseActivity as? Activity<WhiteNoiseActivityAttributes> else { return false }
                 Task { await activity.end(dismissalPolicy: .immediate) }
                 self.whiteNoiseActivity = nil
+                return true
+            }
+            return false
+        }
+
+        AsyncFunction("pauseWhiteNoise") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.whiteNoiseActivity as? Activity<WhiteNoiseActivityAttributes> else { return false }
+                let s = activity.content.state
+                if !s.isPaused {
+                    let elapsed = s.elapsedSeconds + Int(Date().timeIntervalSince(s.startTime))
+                    let newState = WhiteNoiseActivityAttributes.ContentState(
+                        startTime: s.startTime,
+                        isPaused: true,
+                        elapsedSeconds: elapsed
+                    )
+                    Task { await activity.update(ActivityContent(state: newState, staleDate: nil)) }
+                }
+                return true
+            }
+            return false
+        }
+
+        AsyncFunction("resumeWhiteNoise") { () -> Bool in
+            if #available(iOS 16.2, *) {
+                guard let activity = self.whiteNoiseActivity as? Activity<WhiteNoiseActivityAttributes> else { return false }
+                let s = activity.content.state
+                if s.isPaused {
+                    let newStart = Date().addingTimeInterval(-Double(s.elapsedSeconds))
+                    let newState = WhiteNoiseActivityAttributes.ContentState(
+                        startTime: newStart,
+                        isPaused: false,
+                        elapsedSeconds: s.elapsedSeconds
+                    )
+                    Task { await activity.update(ActivityContent(state: newState, staleDate: nil)) }
+                }
                 return true
             }
             return false

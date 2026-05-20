@@ -37,12 +37,13 @@ const calculateAge = (birthDate: any, t: (key: string, opts?: any) => string): s
     } else if (diffDays < 30) {
         const weeks = Math.floor(diffDays / 7);
         return t('age.weeks', { count: weeks });
-    } else if (diffDays < 365) {
-        const months = Math.floor(diffDays / 30);
-        return t('age.months', { count: months });
     } else {
-        const years = Math.floor(diffDays / 365);
-        const months = Math.floor((diffDays % 365) / 30);
+        const totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+        if (totalMonths < 12) {
+            return t('age.months', { count: totalMonths });
+        }
+        const years = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
         return months > 0 ? t('age.yearsMonths', { count: years, months }) : t('age.oneYear');
     }
 };
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
-        elevation: 2,
+        elevation: 0,
     },
     mainRow: {
         flexDirection: 'row-reverse',

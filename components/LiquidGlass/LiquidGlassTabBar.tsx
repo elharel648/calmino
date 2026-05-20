@@ -47,6 +47,8 @@ const BAR_H = 62;
 const BAR_R = 34;
 const CONTAINER_H = BAR_H;
 const BOTTOM_OFFSET = 28;
+const FAB_COLUMN_W = 68; // space reserved for the FAB on the right
+const TAB_AREA_PADDING = 8; // horizontal padding inside the tab row
 
 // Screens where the tab bar should be completely hidden
 const FULLSCREEN_SCREENS: string[] = [];
@@ -55,6 +57,97 @@ import { useScrollTracking } from '../../context/ScrollTrackingContext';
 import { useQuickActions } from '../../context/QuickActionsContext';
 import { Plus } from 'lucide-react-native';
 
+
+// ─── Animated Tab Item ───────────────────────────────────────────────────────
+const AnimatedTabItem = React.memo(({
+  route,
+  isFocused,
+  options,
+  isDarkMode,
+  onPress,
+  onLongPress,
+}: any) => {
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const translateY = React.useRef(new Animated.Value(0)).current;
+  
+  React.useEffect(() => {
+    if (isFocused) {
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(scale, { toValue: 0.82, duration: 60, useNativeDriver: true }),
+          Animated.spring(scale, { toValue: 1, damping: 14, stiffness: 240, mass: 0.8, useNativeDriver: true })
+        ]),
+        Animated.sequence([
+          Animated.timing(translateY, { toValue: 3, duration: 60, useNativeDriver: true }),
+          Animated.spring(translateY, { toValue: 0, damping: 14, stiffness: 240, mass: 0.8, useNativeDriver: true })
+        ])
+      ]).start();
+    }
+  }, [isFocused, scale, translateY]);
+
+  const IconComponent = options.tabBarIcon;
+  const accessibilityLabel = options.tabBarAccessibilityLabel ?? options.title ?? route.name;
+
+  // For the active label we can render text if the IconComponent returns it, 
+  // but usually IconComponent renders both icon and text in our custom tab bar setup.
+
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={isFocused ? { selected: true } : {}}
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      activeOpacity={0.8}
+      style={styles.tab}
+    >
+      <Animated.View style={[styles.iconWrap, { transform: [{ scale }, { translateY }] }]}>
+        {IconComponent &&
+          IconComponent({
+            focused: isFocused,
+            color: isFocused
+              ? ACTIVE_COLOR
+              : isDarkMode
+                ? 'rgba(255,255,255,0.5)'
+                : 'rgba(0,0,0,0.4)',
+            size: 24,
+          })}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+});
+
+// ─── Animated FAB ────────────────────────────────────────────────────────────
+const AnimatedFAB = React.memo(({ onPress, onLongPress }: any) => {
+  const scale = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, { toValue: 0.85, damping: 18, stiffness: 300, useNativeDriver: true }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, { toValue: 1, damping: 14, stiffness: 220, mass: 0.8, useNativeDriver: true }).start();
+  };
+
+  return (
+    <Animated.View style={[styles.fab, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        style={StyleSheet.absoluteFill}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        delayLongPress={500}
+        activeOpacity={0.9}
+      >
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Plus size={22} color="#fff" strokeWidth={2.8} />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
+
 // ─── Component ───────────────────────────────────────────────────────────────
 const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
   ({ state, descriptors, navigation }) => {
@@ -62,6 +155,27 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
     const insets = useSafeAreaInsets();
     const { setFabSheetVisible, setSosEditVisible } = useQuickActions();
     
+    // ── Active tab indicator animation ───────────────────────────
+    const tabCount = state.routes.length;
+    const tabAreaW = BAR_W - FAB_COLUMN_W - TAB_AREA_PADDING * 2;
+    const tabW = tabAreaW / tabCount;
+    const indicatorW = tabW * 0.72;
+    const indicatorH = BAR_H - 18;
+
+    const indicatorLeft = React.useRef(
+      new Animated.Value(TAB_AREA_PADDING + state.index * tabW + (tabW - indicatorW) / 2)
+    ).current;
+
+    React.useEffect(() => {
+      Animated.spring(indicatorLeft, {
+        toValue: TAB_AREA_PADDING + state.index * tabW + (tabW - indicatorW) / 2,
+        useNativeDriver: false,
+        damping: 18,
+        stiffness: 260,
+        mass: 0.7,
+      }).start();
+    }, [state.index, tabW, indicatorW]);
+
     // Responsive scroll tracking
     const { scrollY } = useScrollTracking();
     
@@ -130,43 +244,63 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
     const safeBottom = Math.max(insets.bottom, BOTTOM_OFFSET);
 
     return (
-      <Animated.View style={[styles.outer, { paddingBottom: safeBottom, transform: [{ translateY }], opacity }]}>
-        {/* Safe area bottom tint fill */}
-        <View
-          style={[
-            styles.bottomFill,
-            {
-              height: safeBottom,
-              backgroundColor: isDarkMode
-                ? 'rgba(18,18,22,0.88)'
-                : 'rgba(255,255,255,0.88)',
-            },
-          ]}
-        />
-
+      <Animated.View style={[styles.outer, { bottom: safeBottom, transform: [{ translateY }], opacity }]}>
         <View style={styles.container}>
           {useLiquidGlass ? (
             /* ─── Liquid Glass Path (iOS 26+) ────────────────────── */
             <LiquidGlassContainerView style={styles.glassContainer}>
+              {/* Main bar */}
               <LiquidGlassView
                 effect="regular"
                 colorScheme={isDarkMode ? 'dark' : 'light'}
                 style={styles.barGlass}
               />
+              {/* Active tab indicator — merges with bar via liquid glass */}
+              <Animated.View
+                style={[
+                  styles.indicatorBase,
+                  {
+                    left: indicatorLeft,
+                    width: indicatorW,
+                    height: indicatorH,
+                    top: (BAR_H - indicatorH) / 2,
+                  },
+                ]}
+              >
+                <LiquidGlassView
+                  effect="regular"
+                  colorScheme={isDarkMode ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
+              </Animated.View>
             </LiquidGlassContainerView>
           ) : (
             /* ─── Fallback Path (older iOS / Android) ────────────── */
             <View style={styles.glassContainer}>
               {Platform.OS === 'ios' ? (
-                <BlurView
-                  tint={
-                    isDarkMode
-                      ? 'systemChromeMaterialDark'
-                      : 'systemChromeMaterial'
-                  }
-                  intensity={80}
-                  style={[styles.barGlass, { overflow: 'hidden' }]}
-                />
+                <>
+                  <BlurView
+                    tint={isDarkMode ? 'systemChromeMaterialDark' : 'systemChromeMaterial'}
+                    intensity={80}
+                    style={[styles.barGlass, { overflow: 'hidden' }]}
+                  />
+                  {/* Animated active pill fallback */}
+                  <Animated.View
+                    style={[
+                      styles.indicatorBase,
+                      styles.indicatorFallback,
+                      {
+                        left: indicatorLeft,
+                        width: indicatorW,
+                        height: indicatorH,
+                        top: (BAR_H - indicatorH) / 2,
+                        backgroundColor: isDarkMode
+                          ? 'rgba(255,255,255,0.13)'
+                          : 'rgba(0,0,0,0.07)',
+                      },
+                    ]}
+                  />
+                </>
               ) : (
                 <View
                   style={[
@@ -183,58 +317,32 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
           )}
 
           {/* ─── FAB (+) button — left side ──────────────────────── */}
-          <TouchableOpacity
-            style={styles.fab}
+          <AnimatedFAB
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setFabSheetVisible(true);
             }}
             onLongPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               setSosEditVisible(true);
             }}
-            delayLongPress={500}
-            activeOpacity={0.85}
-          >
-            <Plus size={22} color="#fff" strokeWidth={2.8} />
-          </TouchableOpacity>
+          />
 
           {/* ─── Tab Items Layer (on top of glass via zIndex) ────── */}
           <View style={styles.tabsRow} pointerEvents="box-none">
             {state.routes.map((route, index) => {
               const { options } = descriptors[route.key];
               const isFocused = state.index === index;
-              const IconComponent = options.tabBarIcon;
-
-              const accessibilityLabel =
-                options.tabBarAccessibilityLabel ??
-                options.title ??
-                route.name;
-
               return (
-                <TouchableOpacity
+                <AnimatedTabItem
                   key={route.key}
-                  accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
-                  accessibilityLabel={accessibilityLabel}
+                  route={route}
+                  isFocused={isFocused}
+                  options={options}
+                  isDarkMode={isDarkMode}
                   onPress={() => handleTabPress(route, isFocused)}
                   onLongPress={() => handleTabLongPress(route)}
-                  activeOpacity={0.7}
-                  style={styles.tab}
-                >
-                  <View style={styles.iconWrap}>
-                    {IconComponent &&
-                      IconComponent({
-                        focused: isFocused,
-                        color: isFocused
-                          ? ACTIVE_COLOR
-                          : isDarkMode
-                            ? 'rgba(255,255,255,0.5)'
-                            : 'rgba(0,0,0,0.4)',
-                        size: 24,
-                      })}
-                  </View>
-                </TouchableOpacity>
+                />
               );
             })}
           </View>
@@ -267,9 +375,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     left: 0,
-    right: 68, // Stop before the FAB to create visual separation
+    right: 0, // Full width — FAB sits on top of the glass bar
     height: BAR_H,
     borderRadius: BAR_R,
+  },
+
+  // ── Active tab indicator ──────────────────────────────────────
+  indicatorBase: {
+    position: 'absolute',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  indicatorFallback: {
+    borderRadius: 20,
   },
 
   // ── Tab items layer ───────────────────────────────────────────
@@ -307,7 +425,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 0,
   },
   iconWrap: {
     alignItems: 'center',
@@ -315,13 +433,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
 
-  // ── Bottom safe area tint ─────────────────────────────────────
-  bottomFill: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
 });
 
 export default LiquidGlassTabBar;

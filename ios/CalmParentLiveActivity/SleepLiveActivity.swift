@@ -8,6 +8,14 @@ import AppIntents
 private let sleepColor = Color(red: 0.45, green: 0.42, blue: 1.0)
 private let darkBg = Color(red: 0.02, green: 0.02, blue: 0.08)
 
+private func formatSleepElapsed(_ seconds: Int) -> String {
+    let h = seconds / 3600
+    let m = (seconds % 3600) / 60
+    let s = seconds % 60
+    if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
+    return String(format: "%02d:%02d", m, s)
+}
+
 // MARK: - Sleep Live Activity
 
 @available(iOS 16.2, *)
@@ -37,9 +45,10 @@ struct SleepLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if context.state.isPaused {
-                        Text("מושהה")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.orange)
+                        Text(formatSleepElapsed(context.state.activeSeconds))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundColor(.orange.opacity(0.85))
                             .padding(.trailing, 8)
                     } else {
                         Text(context.state.startTime, style: .timer)
@@ -56,17 +65,50 @@ struct SleepLiveActivity: Widget {
                             .fill(Color.white.opacity(0.12))
                             .frame(height: 0.5)
                             .padding(.bottom, 10)
-                        Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 15, weight: .bold))
-                                Text("שמירה וסיום")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        if #available(iOS 17.0, *) {
+                            HStack(spacing: 10) {
+                                if context.state.isPaused {
+                                    Button(intent: ResumeTimerIntent()) {
+                                        Label("המשך", systemImage: "play.fill")
+                                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                                            .foregroundStyle(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .background(sleepColor.opacity(0.7), in: Capsule())
+                                    }.buttonStyle(.plain)
+                                } else {
+                                    Button(intent: PauseTimerIntent()) {
+                                        Label("השהה", systemImage: "pause.fill")
+                                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                                            .foregroundStyle(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .background(sleepColor.opacity(0.85), in: Capsule())
+                                    }.buttonStyle(.plain)
+                                }
+                                Button(intent: StopTimerIntent()) {
+                                    Label("סיום", systemImage: "checkmark")
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.75))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(.white.opacity(0.12), in: Capsule())
+                                }.buttonStyle(.plain)
                             }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(sleepColor.opacity(0.9), in: Capsule())
+                            .padding(.bottom, 4)
+                        } else {
+                            Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 15, weight: .bold))
+                                    Text("שמירה וסיום")
+                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(sleepColor.opacity(0.9), in: Capsule())
+                            }
                         }
                     }
                     .padding(.bottom, 4)
@@ -173,18 +215,50 @@ struct SleepLockScreenView: View {
                     }
                 }
 
-                // Full-width stop capsule
-                Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
-                    HStack(spacing: 8) {
-                        Text("שמירה וסיום")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
+                // Full-width action buttons
+                if #available(iOS 17.0, *) {
+                    HStack(spacing: 10) {
+                        if context.state.isPaused {
+                            Button(intent: ResumeTimerIntent()) {
+                                Label("המשך", systemImage: "play.fill")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(sleepColor.opacity(0.85), in: Capsule())
+                            }.buttonStyle(.plain)
+                        } else {
+                            Button(intent: PauseTimerIntent()) {
+                                Label("השהה", systemImage: "pause.fill")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(.white.opacity(0.15), in: Capsule())
+                            }.buttonStyle(.plain)
+                        }
+                        Button(intent: StopTimerIntent()) {
+                            Label("סיום", systemImage: "checkmark")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(sleepColor.opacity(0.9), in: Capsule())
+                        }.buttonStyle(.plain)
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(sleepColor.opacity(0.9), in: Capsule())
+                } else {
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=sleep")!) {
+                        HStack(spacing: 8) {
+                            Text("שמירה וסיום")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(sleepColor.opacity(0.9), in: Capsule())
+                    }
                 }
             }
             .padding(.horizontal, 20)

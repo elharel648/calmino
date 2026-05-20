@@ -120,6 +120,34 @@ export const ProfileSkeleton = () => (
     </View>
 );
 
+// ─── Reports Skeleton ─────────────────────────────────────────────────────────
+export const ReportsSkeleton = () => {
+    const { isDarkMode } = useTheme();
+    const bgColor = isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)';
+    return (
+        <View style={s.reportsContainer}>
+            <View style={s.statsGrid}>
+                {[...Array(4)].map((_, i) => (
+                    <View key={i} style={[s.reportsCard, { backgroundColor: bgColor }]}>
+                        <View style={s.reportsCardHeaderRow}>
+                            <SkeletonBone width={40} height={40} borderRadius={12} />
+                            <SkeletonBone width={30} height={30} borderRadius={15} />
+                        </View>
+                        <View style={s.reportsCardBottom}>
+                            <SkeletonBone width={80} height={32} borderRadius={8} style={{ marginBottom: 8 }} />
+                            <SkeletonBone width={50} height={14} borderRadius={5} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+            <View style={[s.reportsChartCard, { backgroundColor: bgColor }]}>
+                <SkeletonBone width={140} height={20} borderRadius={6} style={{ marginBottom: 20 }} />
+                <SkeletonBone width="100%" height={140} borderRadius={12} />
+            </View>
+        </View>
+    );
+};
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
     // Stats
@@ -171,5 +199,27 @@ const s = StyleSheet.create({
         paddingVertical: 14,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: 'rgba(0,0,0,0.06)',
+    },
+
+    // Reports
+    reportsContainer: { width: '100%' },
+    statsGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
+    reportsCard: {
+        width: '48%',
+        height: 165,
+        borderRadius: 24,
+        padding: 18,
+        marginBottom: 14,
+        justifyContent: 'space-between',
+    },
+    reportsCardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', width: '100%' },
+    reportsCardBottom: { alignItems: 'flex-end', width: '100%' },
+    reportsChartCard: {
+        width: '100%',
+        height: 220,
+        borderRadius: 24,
+        padding: 20,
+        marginTop: 6,
+        alignItems: 'flex-end'
     },
 });

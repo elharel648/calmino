@@ -559,6 +559,92 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting notifications:', error);
                       }
 
+                      // 5.1 Delete invites created by this user
+                      try {
+                        const invitesSnapshot = await getDocs(query(collection(db, 'invites'), where('createdBy', '==', userId)));
+                        await Promise.all(invitesSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        logger.log('✅ Deleted all invites');
+                      } catch (error) {
+                        logger.error('Error deleting invites:', error);
+                      }
+
+                      // 5.2 Delete bookings where user is parent
+                      try {
+                        const bookingsSnapshot = await getDocs(query(collection(db, 'bookings'), where('parentId', '==', userId)));
+                        await Promise.all(bookingsSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        logger.log('✅ Deleted all bookings');
+                      } catch (error) {
+                        logger.error('Error deleting bookings:', error);
+                      }
+
+                      // 5.3 Delete active shifts (as parent or babysitter)
+                      try {
+                        const [shiftsAsParent, shiftsAsSitter] = await Promise.all([
+                          getDocs(query(collection(db, 'activeShifts'), where('parentId', '==', userId))),
+                          getDocs(query(collection(db, 'activeShifts'), where('babysitterId', '==', userId))),
+                        ]);
+                        await Promise.all([
+                          ...shiftsAsParent.docs.map(d => deleteDoc(d.ref)),
+                          ...shiftsAsSitter.docs.map(d => deleteDoc(d.ref)),
+                        ]);
+                        logger.log('✅ Deleted all activeShifts');
+                      } catch (error) {
+                        logger.error('Error deleting activeShifts:', error);
+                      }
+
+                      // 5.4 Delete reviews written by this user
+                      try {
+                        const reviewsSnapshot = await getDocs(query(collection(db, 'reviews'), where('parentId', '==', userId)));
+                        await Promise.all(reviewsSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        logger.log('✅ Deleted all reviews');
+                      } catch (error) {
+                        logger.error('Error deleting reviews:', error);
+                      }
+
+                      // 5.5 Delete sitter profile + photos (if exists)
+                      try {
+                        const sitterRef = doc(db, 'sitters', userId);
+                        const sitterSnap = await getDoc(sitterRef);
+                        if (sitterSnap.exists()) {
+                          const sitterData = sitterSnap.data();
+                          if (sitterData.photoUrl) await deleteStorageObjectByUrl(sitterData.photoUrl);
+                          if (Array.isArray(sitterData.photos)) {
+                            await Promise.all(sitterData.photos.map((url: string) => deleteStorageObjectByUrl(url)));
+                          }
+                          await deleteDoc(sitterRef);
+                        }
+                        logger.log('✅ Deleted sitter profile');
+                      } catch (error) {
+                        logger.error('Error deleting sitter profile:', error);
+                      }
+
+                      // 5.6 Delete growth measurements
+                      try {
+                        const growthSnapshot = await getDocs(query(collection(db, 'growthMeasurements'), where('createdBy', '==', userId)));
+                        await Promise.all(growthSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        logger.log('✅ Deleted all growthMeasurements');
+                      } catch (error) {
+                        logger.error('Error deleting growthMeasurements:', error);
+                      }
+
+                      // 5.7 Delete teeth records
+                      try {
+                        const teethSnapshot = await getDocs(query(collection(db, 'teeth'), where('createdBy', '==', userId)));
+                        await Promise.all(teethSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        logger.log('✅ Deleted all teeth records');
+                      } catch (error) {
+                        logger.error('Error deleting teeth records:', error);
+                      }
+
+                      // 5.8 Delete reminders subcollection
+                      try {
+                        const remindersSnapshot = await getDocs(collection(db, 'users', userId, 'reminders'));
+                        await Promise.all(remindersSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        logger.log('✅ Deleted all reminders');
+                      } catch (error) {
+                        logger.error('Error deleting reminders:', error);
+                      }
+
                       // 6. Delete user document from Firestore + Storage
                       let savedDisplayName = '';
                       try {
@@ -1189,7 +1275,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   listItem: {
     flexDirection: 'row-reverse',
@@ -1319,7 +1405,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 0,
   },
   sendButtonContent: {
     flexDirection: 'row-reverse',
@@ -1408,7 +1494,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 0,
   },
   // ─── Success state ───────────────────────────────────────────────────
   successContainer: {

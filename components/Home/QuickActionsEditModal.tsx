@@ -122,7 +122,7 @@ const QuickActionsEditModal: React.FC<QuickActionsEditModalProps> = memo(({ visi
                             shadowOffset: { width: 0, height: 1 },
                             shadowOpacity: isDarkMode ? 0 : 0.04,
                             shadowRadius: 4,
-                            elevation: 1,
+                            elevation: 0,
                         },
                         isHidden && {
                             opacity: 0.5,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.12,
         shadowRadius: 6,
-        elevation: 3,
+        elevation: 0,
     },
     itemLabel: {
         flex: 1,

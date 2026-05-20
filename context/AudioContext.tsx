@@ -5,6 +5,14 @@ import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { liveActivityService } from '../services/liveActivityService';
 
+// Native event emitter for Live Activity → RN stop signal
+let _activityKitEmitter: any = null;
+try {
+  const { requireNativeModule, EventEmitter } = require('expo-modules-core');
+  const mod = requireNativeModule('ActivityKitManager');
+  _activityKitEmitter = new EventEmitter(mod);
+} catch {}
+
 // Safe import — requires full native rebuild after first install
 let VolumeManager: any = null;
 try {
@@ -122,6 +130,46 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
     }, []);
 
+    // Listen for stop signal from Live Activity X button (Darwin notification → native event)
+    useEffect(() => {
+        if (Platform.OS !== 'ios' || !_activityKitEmitter) return;
+        const sub = _activityKitEmitter.addListener('onWhiteNoiseStopRequest', () => {
+            // Activity already ended by the intent — stop audio and clean up state directly
+            // without calling liveActivityService.stopWhiteNoise() to avoid double-end
+            if (fadeIntervalRef.current) { clearInterval(fadeIntervalRef.current); fadeIntervalRef.current = null; }
+            if (timerRef.current)        { clearInterval(timerRef.current);         timerRef.current = null; }
+            if (soundRef.current) {
+                const s = soundRef.current;
+                soundRef.current = null;
+                s.stopAsync().catch(() => {});
+                s.unloadAsync().catch(() => {});
+            }
+            setActiveSound(null);
+            setSleepTimer(null);
+            setTimeRemaining(null);
+        });
+        return () => sub.remove();
+    }, []);
+
+    // Listen for pause/resume signals from Live Activity buttons
+    useEffect(() => {
+        if (Platform.OS !== 'ios' || !_activityKitEmitter) return;
+        const pauseSub = _activityKitEmitter.addListener('onWhiteNoisePauseRequest', () => {
+            if (soundRef.current) {
+                soundRef.current.pauseAsync().catch(() => {});
+            }
+        });
+        const resumeSub = _activityKitEmitter.addListener('onWhiteNoiseResumeRequest', () => {
+            if (soundRef.current) {
+                soundRef.current.playAsync().catch(() => {});
+            }
+        });
+        return () => {
+            pauseSub.remove();
+            resumeSub.remove();
+        };
+    }, []);
+
     const stopSound = async () => {
         try {
             if (timerRef.current) {
@@ -172,6 +220,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     const playSound = async (id: SoundId) => {
+        const loadingTimeout = setTimeout(() => setIsLoading(false), 8000);
         try {
             setIsLoading(true);
 
@@ -236,6 +285,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             logger.log('Error playing sound:', error);
             setActiveSound(null);
         } finally {
+            clearTimeout(loadingTimeout);
             setIsLoading(false);
         }
     };

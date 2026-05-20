@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: 24, padding: 18, marginTop: 20,
     borderWidth: 1,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05, shadowRadius: 16, elevation: 2,
+    shadowOpacity: 0.05, shadowRadius: 16, elevation: 0,
     gap: 16,
   },
   title: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3, textAlign: 'right' },

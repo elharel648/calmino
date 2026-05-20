@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 4,
+        elevation: 0,
     },
     modalTitle: {
         fontSize: 28,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 4,
+        elevation: 0,
     },
     subscribeButtonGradient: {
         paddingVertical: 16,

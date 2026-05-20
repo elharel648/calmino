@@ -23,10 +23,10 @@ export const logger = {
     },
 
     /**
-     * Log errors (always logged, even in production)
+     * Log errors — console.error only in dev (prevents RCTRedBoxController in production).
+     * In production, errors are captured via Crashlytics through the global error handler.
      */
     error: (...args: any[]): void => {
-        // Downgrade Firebase offline errors to warnings
         const isOfflineError = args.some(arg =>
             (typeof arg === 'string' && (arg.includes('offline') || arg.includes('Failed to get document because the client is offline'))) ||
             (arg?.message && (arg.message.includes('offline') || arg.message.includes('Failed to get document because the client is offline'))) ||
@@ -34,11 +34,19 @@ export const logger = {
         );
 
         if (isOfflineError) {
-            console.warn('📶 [Offline]', ...args);
+            if (__DEV__) console.warn('📶 [Offline]', ...args);
             return;
         }
 
-        console.error(...args);
+        if (__DEV__) {
+            console.error(...args);
+        } else {
+            try {
+                const crashlytics = require('@react-native-firebase/crashlytics').default;
+                const message = args.map(a => (a instanceof Error ? a.message : String(a))).join(' ');
+                crashlytics().log(`[logger.error] ${message}`).catch(() => {});
+            } catch (_) {}
+        }
     },
 
     /**

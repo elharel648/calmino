@@ -3,7 +3,7 @@
     "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.1.9",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -59,7 +59,9 @@
           "userTrackingPermission": "Calmino אוספת מידע כדי להציג לך פרסומות מותאמות אישית ולשפר את חוויית השימוש שלך."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-router",
+      "expo-web-browser"
     ],
     "splash": {
       "image": "./assets/splash-clean.png",

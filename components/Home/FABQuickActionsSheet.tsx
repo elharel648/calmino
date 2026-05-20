@@ -124,7 +124,7 @@ const ActionButton = React.memo(({
             <Animated.View style={[
                 styles.iconCircle,
                 { backgroundColor: isActive ? color : color + '22' },
-                isActive && { shadowColor: color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 6 },
+                isActive && { shadowColor: color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 0 },
                 pulseStyle,
             ]}>
                 <IconComp
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -8 },
         shadowOpacity: 0.18,
         shadowRadius: 24,
-        elevation: 12,
+        elevation: 0,
     },
     sheetContent: {
         paddingHorizontal: 20,

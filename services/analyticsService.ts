@@ -1,8 +1,15 @@
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
 import perf from '@react-native-firebase/perf';
-import { AppEventsLogger } from 'react-native-fbsdk-next';
 import { logger } from '../utils/logger';
+
+const getAppEventsLogger = () => {
+  try {
+    return require('react-native-fbsdk-next').AppEventsLogger;
+  } catch {
+    return null;
+  }
+};
 
 const track = async (event: string, params?: Record<string, string | number | boolean>) => {
   try {
@@ -48,7 +55,8 @@ export const analyticsScreen = (screenName: string) =>
 
 export const metaLogCompleteRegistration = (method: 'google' | 'apple' | 'email') => {
   try {
-    AppEventsLogger.logEvent('fb_mobile_complete_registration', {
+    const AppEventsLogger = getAppEventsLogger();
+    AppEventsLogger?.logEvent('fb_mobile_complete_registration', {
       fb_registration_method: method,
     });
   } catch (e) {
@@ -58,7 +66,8 @@ export const metaLogCompleteRegistration = (method: 'google' | 'apple' | 'email'
 
 export const metaLogEvent = (eventName: string, params?: Record<string, string | number>) => {
   try {
-    AppEventsLogger.logEvent(eventName, params);
+    const AppEventsLogger = getAppEventsLogger();
+    AppEventsLogger?.logEvent(eventName, params);
   } catch (e) {
     logger.warn('[Meta] Failed to log event:', eventName, e);
   }

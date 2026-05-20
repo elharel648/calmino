@@ -643,7 +643,7 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                         { label: t('tracking.diapers'), icon: DiaperIcon, color: theme.actionColors.diaper.color, bg: theme.actionColors.diaper.lightColor },
                                         { label: t('health.medicine'), icon: Pill, color: theme.actionColors.supplements.color, bg: theme.actionColors.supplements.lightColor },
                                         { label: t('health.doctorVisit'), icon: Stethoscope, color: theme.actionColors.health.color, bg: theme.actionColors.health.lightColor },
-                                        { label: t('tracking.sleep'), icon: Moon, color: theme.actionColors.sleep.color, bg: theme.actionColors.sleep.lightColor },
+                                        { label: t('tracking.sleep.title'), icon: Moon, color: theme.actionColors.sleep.color, bg: theme.actionColors.sleep.lightColor },
                                     ].map((p, i) => (
                                         <TouchableOpacity
                                             key={i}
@@ -688,13 +688,13 @@ export default function QuickReminderModal({ visible, onClose }: QuickReminderMo
                                 {/* Custom Input - Integrated Design */}
                                 <View style={[styles.customInputWrapper, {
                                     backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-                                    borderColor: message && ![t('tracking.bottle'), t('tracking.diapers'), t('health.medicine'), t('health.doctorVisit'), t('tracking.sleep')].includes(message)
+                                    borderColor: message && ![t('tracking.bottle'), t('tracking.diapers'), t('health.medicine'), t('health.doctorVisit'), t('tracking.sleep.title')].includes(message)
                                         ? theme.primary
                                         : (isDarkMode ? '#333' : '#E5E7EB')
                                 }]}>
                                     <Sparkles
                                         size={18}
-                                        color={message && ![t('tracking.bottle'), t('tracking.diapers'), t('health.medicine'), t('health.doctorVisit'), t('tracking.sleep')].includes(message) ? theme.primary : theme.textTertiary}
+                                        color={message && ![t('tracking.bottle'), t('tracking.diapers'), t('health.medicine'), t('health.doctorVisit'), t('tracking.sleep.title')].includes(message) ? theme.primary : theme.textTertiary}
                                     />
                                     <TextInput
                                         style={[styles.customInput, { color: theme.textPrimary }]}

@@ -81,7 +81,7 @@ export default function BrandedShareModal({
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={styles.overlay}>
                 {Platform.OS === 'ios' && (
-                    <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+                    <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
                 )}
 
                 {/* Close Button */}
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.2,
         shadowRadius: 32,
-        elevation: 4,
+        elevation: 0,
     },
 
     // Decorative corner accents
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
-        elevation: 3,
+        elevation: 0,
     },
     photoInner: {
         width: FRAME_WIDTH - 40,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.4,
         shadowRadius: 16,
-        elevation: 6,
+        elevation: 0,
     },
     shareGradient: {
         flexDirection: 'row-reverse',

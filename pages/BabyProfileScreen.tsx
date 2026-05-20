@@ -398,7 +398,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: isDarkMode ? 0.3 : 0.15,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 0,
   },
   iconWrap: {
     width: 68,
@@ -432,7 +432,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: isDarkMode ? 0.3 : 0.04,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 0,
     borderWidth: isDarkMode ? 1 : 0,
     borderColor: isDarkMode ? theme.border : 'transparent',
   },
@@ -520,7 +520,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: isDarkMode ? 0.4 : 0.15,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 0,
   },
   segmentedPillBoy: {
     right: 3,
@@ -568,7 +568,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
-    elevation: 20,
+    elevation: 0,
   },
   datePickerHandle: {
     width: 40,
@@ -615,12 +615,12 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: isDarkMode ? 0.4 : 0.3,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 0,
   },
   primaryBtnDisabled: {
     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
     shadowOpacity: 0,
-    elevation: 1,
+    elevation: 0,
   },
   primaryBtnText: {
     color: '#FFFFFF',

@@ -3144,7 +3144,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   premiumTimeLabel: {
     fontSize: 11,
@@ -3243,7 +3243,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   premiumBreastTimeLabel: {
     fontSize: 11,
@@ -3298,7 +3298,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   premiumPumpingTimerLabel: {
     fontSize: 11,
@@ -3381,7 +3381,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   premiumSolidsInput: {
     fontSize: 16,
@@ -3410,7 +3410,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 1,
+    elevation: 0,
   },
   premiumNoteInput: {
     fontSize: 14,

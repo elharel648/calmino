@@ -164,10 +164,14 @@ public struct PlayActivityAttributes: ActivityAttributes {
 @available(iOS 16.2, *)
 public struct WhiteNoiseActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        public var startTime: Date
+        public var startTime: Date      // Timer anchor (adjusted on resume to keep elapsed accurate)
+        public var isPaused: Bool
+        public var elapsedSeconds: Int  // Accumulated seconds when paused
 
-        public init(startTime: Date) {
+        public init(startTime: Date, isPaused: Bool = false, elapsedSeconds: Int = 0) {
             self.startTime = startTime
+            self.isPaused = isPaused
+            self.elapsedSeconds = elapsedSeconds
         }
     }
 

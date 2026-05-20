@@ -90,7 +90,7 @@ export const useHomeData = (
 
     const calculateDailyStats = useCallback((events: any[]) => {
         const now = new Date();
-        const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const last24h = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
         let feedCount = 0;
         let sleepMinutes = 0;
@@ -113,13 +113,8 @@ export const useHomeData = (
                         feedCount++;
                         break;
                     case 'sleep':
-                        if (typeof event.duration === 'number') {
+                        if (typeof event.duration === 'number' && event.duration > 0) {
                             sleepMinutes += Math.round(event.duration / 60);
-                        } else if (event.note) {
-                            const match = event.note.match(/(\d+):(\d+)/);
-                            if (match) {
-                                sleepMinutes += parseInt(match[1]) * 60 + parseInt(match[2]);
-                            }
                         }
                         break;
                     case 'diaper':
@@ -258,6 +253,7 @@ export const useHomeData = (
 
             // Push latest data to iOS homescreen widget
             if (Platform.OS === 'ios') {
+                const now = new Date();
                 const currentStatus = snap.exists() ? (snap.data().status || 'awake') : 'awake';
                 const lastDiaper = await getLastEvent(childId, 'diaper', creatorId);
                 const lastHealth = await getLastEvent(childId, 'supplements' as any, creatorId).catch(() => null);
@@ -280,8 +276,8 @@ export const useHomeData = (
                     } else {
                         return;
                     }
-                    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-                    if (eventDate >= last24h) {
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+                    if (eventDate >= todayStart) {
                         if (event.type === 'supplement' || event.type === 'supplements') healthCount++;
                         if (event.type === 'medication') medCount++;
                     }

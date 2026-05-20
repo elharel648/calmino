@@ -112,13 +112,13 @@ const HeaderSection = memo<HeaderSectionProps>(({
             const weekText = weeks === 1 ? t('common.week') : t('age.weeksCount', { count: weeks });
             return genderPrefix ? `${genderPrefix} ${weekText}` : weekText;
         }
-        const months = Math.floor(diffDays / 30);
-        if (months < 12) {
-            const monthText = months === 1 ? t('common.month') : t('age.monthsCount', { count: months });
+        const totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+        if (totalMonths < 12) {
+            const monthText = totalMonths === 1 ? t('common.month') : t('age.monthsCount', { count: totalMonths });
             return genderPrefix ? `${genderPrefix} ${monthText}` : monthText;
         }
-        const years = Math.floor(months / 12);
-        const remainingMonths = months % 12;
+        const years = Math.floor(totalMonths / 12);
+        const remainingMonths = totalMonths % 12;
         if (remainingMonths > 0) {
             const yearText = `${years} ${years === 1 ? t('sitter.year') : t('sitter.years')} ${t('age.andMonths', { count: remainingMonths })}`;
             return genderPrefix ? `${genderPrefix} ${yearText}` : yearText;
@@ -399,7 +399,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.03,
                                 shadowRadius: 8,
-                                elevation: 1,
+                                elevation: 0,
                             }]}
                             onPress={handleAddNewChild}
                             activeOpacity={0.7}
@@ -425,7 +425,7 @@ const HeaderSection = memo<HeaderSectionProps>(({
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.03,
                                 shadowRadius: 8,
-                                elevation: 1,
+                                elevation: 0,
                             }]}
                             onPress={handleJoinWithCode}
                             activeOpacity={0.7}
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.25,
         shadowRadius: 24,
-        elevation: 4,
+        elevation: 0,
     },
     modalClose: {
         position: 'absolute',

@@ -63,6 +63,7 @@ import {
 } from '../components/Reports/PremiumInsights';
 import CinematicReviewScreen from './CinematicReviewScreen';
 import { getWrappedData, WrappedData } from '../services/wrappedService';
+import { ReportsSkeleton } from '../components/Common/SkeletonLoader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -198,6 +199,7 @@ export default function ReportsScreen() {
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
 
   // Premium Download Button Animation
   const [isDownloadPressed, setIsDownloadPressed] = useState(false);
@@ -551,6 +553,7 @@ export default function ReportsScreen() {
       logger.error('ReportsScreen fetchData error:', error);
       // Silent fail - don't show error to user
     } finally {
+      hasLoadedOnce.current = true;
       setLoading(false);
       setRefreshing(false);
       isFetching.current = false;
@@ -1703,7 +1706,7 @@ export default function ReportsScreen() {
             shadowOffset: { width: 0, height: compact ? 4 : 6 },
             shadowOpacity: 0.15,
             shadowRadius: compact ? 8 : 12,
-            elevation: 3,
+            elevation: 0,
             maxWidth: '100%',
           }}>
             <Lock size={compact ? 14 : 18} color={theme.card} strokeWidth={2} />
@@ -1984,9 +1987,9 @@ export default function ReportsScreen() {
       </Animated.View>
 
       {/* Content */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <InlineLoader size="large" color={theme.textPrimary}  />
+      {loading && !hasLoadedOnce.current ? (
+        <View style={{ flex: 1 }}>
+          <ReportsSkeleton />
         </View>
       ) : !activeChild?.childId ? (
         <View style={styles.emptyState}>
@@ -1994,8 +1997,8 @@ export default function ReportsScreen() {
           <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('empty.noChild')}</Text>
         </View>
       ) : (
-        <View style={{ flex: 1 }}>
-          <SummaryTab />
+        <View style={{ flex: 1, opacity: loading ? 0.55 : 1 }}>
+          {SummaryTab()}
         </View>
       )}
 

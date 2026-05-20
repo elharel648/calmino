@@ -22,15 +22,49 @@ struct FeedingLiveActivity: Widget {
                 .colorScheme(.dark)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { EmptyView() }
-                DynamicIslandExpandedRegion(.trailing) { EmptyView() }
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 6) {
+                        Image(systemName: feedingIconName(context.state.mealType))
+                            .foregroundStyle(feedingAccent)
+                        Text(feedingTypeHebrew(context.state.mealType))
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.leading, 8)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.startTime, style: .timer)
+                        .multilineTextAlignment(.trailing)
+                        .monospacedDigit()
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(feedingAccent)
+                        .padding(.trailing, 8)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Link(destination: URL(string: "calmparentapp://stop-timer?type=food") ?? URL(string: "calmparentapp://")!) {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(14)
+                            .background(Color.red.opacity(0.8), in: Circle())
+                    }
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                }
             } compactLeading: {
-                EmptyView()
+                Image(systemName: "drop.fill")
+                    .foregroundColor(.orange)
             } compactTrailing: {
-                EmptyView()
+                Text(context.state.startTime, style: .timer)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 40)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
             } minimal: {
-                EmptyView()
+                Image(systemName: "drop.fill")
+                    .foregroundColor(.orange)
             }
+            .widgetURL(URL(string: "calmparentapp://feeding"))
         }
     }
 }

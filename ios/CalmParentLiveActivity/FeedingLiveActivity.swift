@@ -1,10 +1,19 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Design Tokens
 
 private let feedingAccent = Color(red: 0.96, green: 0.62, blue: 0.04) // Warm amber
+
+private func formatFeedingElapsed(_ seconds: Int) -> String {
+    let h = seconds / 3600
+    let m = (seconds % 3600) / 60
+    let s = seconds % 60
+    if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
+    return String(format: "%02d:%02d", m, s)
+}
 private let feedingGlow = Color(red: 1.0, green: 0.72, blue: 0.15)
 private let pureOledBlack = Color.black
 private let subtleGray = Color(white: 0.1)
@@ -58,9 +67,10 @@ struct FeedingLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 0) {
                         if context.state.isPaused {
-                            Text("מושהה")
+                            Text(formatFeedingElapsed(Int(context.state.progress)))
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(.orange)
+                                .monospacedDigit()
+                                .foregroundColor(.orange.opacity(0.85))
                                 .transition(.scale.combined(with: .opacity))
                         } else {
                             Text(context.state.startTime, style: .timer)
@@ -90,27 +100,60 @@ struct FeedingLiveActivity: Widget {
                             .frame(height: 0.5)
                             .padding(.top, 4)
                         
-                        Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
-                            HStack(spacing: 6) {
-                                Text("שמירה וסיום")
-                                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                                Image(systemName: "stop.circle.fill")
-                                    .font(.system(size: 16, weight: .bold))
+                        if #available(iOS 17.0, *) {
+                            HStack(spacing: 10) {
+                                if context.state.isPaused {
+                                    Button(intent: ResumeTimerIntent()) {
+                                        Label("המשך", systemImage: "play.fill")
+                                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                                            .foregroundStyle(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(feedingAccent.opacity(0.85), in: Capsule())
+                                    }.buttonStyle(.plain)
+                                } else {
+                                    Button(intent: PauseTimerIntent()) {
+                                        Label("השהה", systemImage: "pause.fill")
+                                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                                            .foregroundStyle(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(feedingAccent.opacity(0.85), in: Capsule())
+                                    }.buttonStyle(.plain)
+                                }
+                                Button(intent: StopTimerIntent()) {
+                                    Label("סיום", systemImage: "checkmark")
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.75))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(.white.opacity(0.12), in: Capsule())
+                                }.buttonStyle(.plain)
                             }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(
-                                Capsule()
-                                    .fill(feedingAccent.opacity(0.85))
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
-                            )
-                            .shadow(color: feedingAccent.opacity(0.25), radius: 8, y: 4)
+                            .padding(.horizontal, 4)
+                        } else {
+                            Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
+                                HStack(spacing: 6) {
+                                    Text("שמירה וסיום")
+                                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                                    Image(systemName: "stop.circle.fill")
+                                        .font(.system(size: 16, weight: .bold))
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(
+                                    Capsule()
+                                        .fill(feedingAccent.opacity(0.85))
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                                )
+                                .shadow(color: feedingAccent.opacity(0.25), radius: 8, y: 4)
+                            }
+                            .padding(.horizontal, 4)
                         }
-                        .padding(.horizontal, 4)
                     }
                     .padding(.bottom, 6)
                 }
@@ -192,16 +235,53 @@ struct FeedingLockScreenView: View {
             VStack(spacing: 20) {
                 // חלק עליון: מידע וטיימר (RTL מותאם)
                 HStack(alignment: .center) {
-                    // כפתור עצירה/סיום מהיר בצד שמאל
-                    Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
-                        ZStack {
-                            Circle()
-                                .fill(.white.opacity(0.1))
-                                .frame(width: 44, height: 44)
-                            
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.white)
+                    // כפתורי פעולה מהירה בצד שמאל
+                    if #available(iOS 17.0, *) {
+                        VStack(spacing: 8) {
+                            if context.state.isPaused {
+                                Button(intent: ResumeTimerIntent()) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(.white.opacity(0.1))
+                                            .frame(width: 44, height: 44)
+                                        Image(systemName: "play.fill")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundStyle(.white)
+                                    }
+                                }.buttonStyle(.plain)
+                            } else {
+                                Button(intent: PauseTimerIntent()) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(.white.opacity(0.1))
+                                            .frame(width: 44, height: 44)
+                                        Image(systemName: "pause.fill")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundStyle(.white)
+                                    }
+                                }.buttonStyle(.plain)
+                            }
+                            Button(intent: StopTimerIntent()) {
+                                ZStack {
+                                    Circle()
+                                        .fill(feedingAccent.opacity(0.8))
+                                        .frame(width: 44, height: 44)
+                                    Image(systemName: "stop.fill")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }.buttonStyle(.plain)
+                        }
+                    } else {
+                        Link(destination: URL(string: "calmparentapp://stop-timer?type=\(feedingTypeASCII(context.state.mealType))")!) {
+                            ZStack {
+                                Circle()
+                                    .fill(.white.opacity(0.1))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
                         }
                     }
                     

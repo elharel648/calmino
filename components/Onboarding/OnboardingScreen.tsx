@@ -23,7 +23,7 @@ interface OnboardingSlide {
     icon: React.ComponentType<any>;
     title: string;
     description: string;
-    gradientColors: [string, string];
+    gradientColors: readonly [string, string];
     backgroundColor: string;
 }
 
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
         shadowRadius: 24,
-        elevation: 6,
+        elevation: 0,
     },
     iconShine: {
         position: 'absolute',

@@ -163,7 +163,7 @@ export default function SettingsScreen() {
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.15,
             shadowRadius: 8,
-            elevation: 3,
+            elevation: 0,
           }}>
             <Lock size={16} color={theme.card} strokeWidth={2} />
             <Text style={{ color: theme.card, fontWeight: '700', fontSize: 14 }}>{title}</Text>
@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   guestBannerText: {
     color: '#fff',
@@ -1107,7 +1107,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 5,
+    elevation: 0,
   },
   avatarPlaceholder: {
     width: 110,
@@ -1144,7 +1144,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 0,
   },
   cameraBadgeSmall: {
     position: 'absolute',
@@ -1159,7 +1159,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 0,
   },
   nameRow: {
     flexDirection: 'row-reverse',
@@ -1190,7 +1190,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 0,
   },
   premiumContentMinimal: {
     flexDirection: 'row-reverse',
@@ -1231,7 +1231,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
-    elevation: 4,
+    elevation: 0,
   },
   premiumGradient: {
     padding: 18,
@@ -1256,7 +1256,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   sparklesContainer: {
     padding: 4,
@@ -1304,7 +1304,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
-    elevation: 2,
+    elevation: 0,
   },
   familyInfoHeader: {
     flexDirection: 'row-reverse',
@@ -1399,7 +1399,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
-    elevation: 2,
+    elevation: 0,
   },
   listItem: {
     flexDirection: 'row-reverse',
@@ -1435,7 +1435,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   listItemTextContainer: {
     flex: 1,
@@ -1541,7 +1541,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 5,
+    elevation: 0,
   },
   primaryFamilyGradient: {
     flexDirection: 'row-reverse',
@@ -1565,7 +1565,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 0,
   },
   primaryFamilyTextContainer: {
     flex: 1,
@@ -1596,7 +1596,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 0,
   },
   memberCountText: {
     color: '#fff',
@@ -1612,7 +1612,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    elevation: 3,
+    elevation: 0,
   },
   timeBadgeText: {
     fontSize: 12,
@@ -1627,7 +1627,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    elevation: 3,
+    elevation: 0,
   },
   autoDetectText: {
     fontSize: 12,
@@ -1661,7 +1661,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 0,
   },
   modalTitle: {
     fontSize: 28,
@@ -1755,7 +1755,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 0,
   },
   subscribeButtonGradient: {
     paddingVertical: 16,

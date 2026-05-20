@@ -7,6 +7,14 @@ import quickActionsService from '../services/quickActionsService';
 import { liveActivityService } from '../services/liveActivityService';
 import { useActiveChild } from '../context/ActiveChildContext';
 
+// Module-level emitter for Live Activity intent events (mirrors AudioContext.tsx pattern)
+let _activityKitEmitter: any = null;
+try {
+    const { requireNativeModule, EventEmitter } = require('expo-modules-core');
+    const mod = requireNativeModule('ActivityKitManager');
+    _activityKitEmitter = new EventEmitter(mod);
+} catch {}
+
 const getSleepKey = (childId: string) => `timer_sleep_${childId}`;
 
 const persistSleep = (childId: string, state: { isRunning: boolean; isPaused: boolean; elapsedSeconds: number }) => {
@@ -255,6 +263,53 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }, []);
+
+    // Ref to avoid stale closure in Live Activity intent listeners
+    const activeChildIdRef = useRef(activeChildId);
+    useEffect(() => { activeChildIdRef.current = activeChildId; }, [activeChildId]);
+
+    // Listen for Live Activity button intents fired from the main app process
+    useEffect(() => {
+        if (Platform.OS !== 'ios' || !_activityKitEmitter) return;
+        const subs = [
+            _activityKitEmitter.addListener('onTimerPauseRequest', (e: any) => {
+                if (e.timerType !== 'sleep') return;
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                setTimers(prev => {
+                    const t = prev[childId];
+                    if (!t || t.isPaused || !t.isRunning) return prev;
+                    const updated = { ...t, isPaused: true };
+                    persistSleep(childId, { isRunning: true, isPaused: true, elapsedSeconds: t.elapsedSeconds });
+                    return { ...prev, [childId]: updated };
+                });
+            }),
+            _activityKitEmitter.addListener('onTimerResumeRequest', (e: any) => {
+                if (e.timerType !== 'sleep') return;
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                setTimers(prev => {
+                    const t = prev[childId];
+                    if (!t || !t.isPaused) return prev;
+                    const updated = { ...t, isPaused: false };
+                    persistSleep(childId, { isRunning: true, isPaused: false, elapsedSeconds: t.elapsedSeconds });
+                    return { ...prev, [childId]: updated };
+                });
+            }),
+            _activityKitEmitter.addListener('onTimerStopRequest', (e: any) => {
+                if (e.timerType !== 'sleep') return;
+                const childId = activeChildIdRef.current;
+                if (!childId) return;
+                setTimers(prev => {
+                    const t = prev[childId];
+                    if (!t) return prev;
+                    clearSleep(childId);
+                    return { ...prev, [childId]: { ...t, isRunning: false, isPaused: false } };
+                });
+            }),
+        ];
+        return () => subs.forEach(s => s.remove());
     }, []);
 
     const contextValue = useMemo(() => ({

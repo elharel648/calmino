@@ -1366,7 +1366,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.1,
     shadowRadius: 32,
-    elevation: 2,
+    elevation: 0,
   },
   cardInnerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1592,12 +1592,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 5,
+    elevation: 0,
   },
   mainButtonDisabled: {
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    elevation: 1,
+    elevation: 0,
   },
   gradientBtn: {
     paddingVertical: 17,
@@ -1648,7 +1648,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 2,
+    elevation: 0,
   },
   socialIcon: {
     width: 24,
@@ -1681,7 +1681,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 1,
+    elevation: 0,
   },
   exploreBtnContainer: {
     flexDirection: 'row-reverse',
@@ -1729,7 +1729,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.2,
     shadowRadius: 32,
-    elevation: 4,
+    elevation: 0,
     alignItems: 'center',
   },
   joinModalClose: {
@@ -1798,7 +1798,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 24,
-    elevation: 10,
+    elevation: 0,
   },
   welcomeIconWrap: {
     width: 68,

@@ -42,9 +42,13 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
 
     // Suppress the native iOS volume HUD while modal is open
     useEffect(() => {
-        if (Platform.OS === 'ios') {
-            VolumeManager.showNativeVolumeUI({ enabled: false });
-            return () => { VolumeManager.showNativeVolumeUI({ enabled: true }); };
+        if (Platform.OS === 'ios' && VolumeManager) {
+            try {
+                VolumeManager.showNativeVolumeUI({ enabled: false });
+            } catch {}
+            return () => {
+                try { VolumeManager.showNativeVolumeUI({ enabled: true }); } catch {}
+            };
         }
     }, []);
     // 2 columns always (4 sounds → 2×2 grid)
@@ -184,9 +188,9 @@ export default function WhiteNoiseModal({ visible, onClose }: WhiteNoiseModalPro
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
             {/* Backdrop */}
-            <RNAnimated.View style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
+            <RNAnimated.View style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]} pointerEvents="box-none">
                 <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose}>
-                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
                 </TouchableOpacity>
             </RNAnimated.View>
 
@@ -424,7 +428,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.12,
         shadowRadius: 20,
-        elevation: 3,
+        elevation: 0,
     },
     handleArea: {
         alignItems: 'center',

@@ -509,7 +509,7 @@ export default function MilestonesModal({
                                                 shadowOffset: { width: 0, height: 4 },
                                                 shadowOpacity: 0.35,
                                                 shadowRadius: 8,
-                                                elevation: 4,
+                                                elevation: 0,
                                             }
                                         ]}
                                         onPress={handleSave}
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 5,
+        elevation: 0,
     },
     tabInactive: {
         flexDirection: 'row-reverse',
@@ -895,7 +895,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
-        elevation: 5,
+        elevation: 0,
         position: 'relative',
     },
     emptyTitle: {
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 5,
+        elevation: 0,
     },
     milestoneTexts: {
         flex: 1,
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 4,
+        elevation: 0,
     },
     deleteBtnGradient: {
         padding: 10,
@@ -1033,7 +1033,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 2,
+        elevation: 0,
     },
     inputMinimal: {
         flex: 1,
@@ -1076,7 +1076,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.4,
         shadowRadius: 16,
-        elevation: 6,
+        elevation: 0,
     },
     saveBtnGradient: {
         flexDirection: 'row-reverse',

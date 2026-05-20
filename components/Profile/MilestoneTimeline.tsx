@@ -63,9 +63,8 @@ const MilestoneTimeline = memo(({ milestones, birthDate, onAdd, onDelete }: Mile
     const calculateAgeAtEvent = (eventDate: Date, birth: any): string => {
         if (!birth) return '';
         const birthObj = new Date(birth.seconds * 1000);
-        const months = Math.floor(
-            (eventDate.getTime() - birthObj.getTime()) / (1000 * 60 * 60 * 24 * 30)
-        );
+        const months = (eventDate.getFullYear() - birthObj.getFullYear()) * 12 +
+                       (eventDate.getMonth() - birthObj.getMonth());
         if (months >= 0) {
             return months === 0 ? t('milestone.firstWeeks') : t('milestone.ageMonths', { count: months });
         }

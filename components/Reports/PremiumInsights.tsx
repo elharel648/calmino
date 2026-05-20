@@ -286,7 +286,7 @@ export const ShareSummaryButton: React.FC<ShareButtonProps> = ({ dailyStats, chi
 // AI INSIGHTS GENERATOR
 // =====================================================
 
-export function generateAIInsights(data: InsightData, t: (key: string) => string): {
+export function generateAIInsights(data: InsightData, t: (key: string, options?: any) => string): {
     tips: { tip: string; category: 'sleep' | 'feeding' | 'general' }[];
     patterns: { label: string; value: string; icon: LucideIcon; color: string }[];
     milestones: { title: string; current: number; target: number; unit: string }[];

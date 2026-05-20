@@ -35,6 +35,8 @@ interface LiveActivityService {
     // White Noise
     startWhiteNoise: (soundId: string, soundName: string) => Promise<string>;
     stopWhiteNoise: () => Promise<boolean>;
+    pauseWhiteNoise: () => Promise<boolean>;
+    resumeWhiteNoise: () => Promise<boolean>;
 
     isLiveActivitySupported: () => Promise<boolean>;
     updateWidgetData: (babyName: string, lastFeedTime: string, lastFeedAgo: string, lastSleepTime: string, lastSleepAgo: string, babyStatus: string, lastDiaperAgo: string, lastDiaperType: string, lastFeedType: string, feedCount: number, sleepMinutes: number, diaperCount: number, lastFeedTimestamp: number, lastSleepTimestamp: number, lastDiaperTimestamp: number, lastHealthTimestamp: number, healthCount: number, lastMedicationTimestamp: number, medicationCount: number) => Promise<boolean>;
@@ -320,6 +322,20 @@ class LiveActivityServiceClass implements LiveActivityService {
             logger.warn('Failed to stop WhiteNoise Live Activity:', error);
             return false;
         }
+    }
+
+    async pauseWhiteNoise(): Promise<boolean> {
+        if (Platform.OS !== 'ios') return false;
+        try {
+            return await ActivityKitManager.pauseWhiteNoise();
+        } catch { return false; }
+    }
+
+    async resumeWhiteNoise(): Promise<boolean> {
+        if (Platform.OS !== 'ios') return false;
+        try {
+            return await ActivityKitManager.resumeWhiteNoise();
+        } catch { return false; }
     }
 
     // MARK: - Stop All (called on cold launch to clean up stale activities)

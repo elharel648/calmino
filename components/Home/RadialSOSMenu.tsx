@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
         width: ITEM_SIZE, height: ITEM_SIZE, borderRadius: ITEM_SIZE / 2,
         alignItems: 'center', justifyContent: 'center',
         shadowColor: '#000', shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.22, shadowRadius: 10, elevation: 10,
+        shadowOpacity: 0.22, shadowRadius: 10, elevation: 0,
         borderWidth: 2, borderColor: 'rgba(255,255,255,0.22)',
     },
     nodeActive: {
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
         width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2,
         backgroundColor: '#C8806A', alignItems: 'center', justifyContent: 'center',
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+        shadowOpacity: 0.3, shadowRadius: 8, elevation: 0,
     },
     tooltipContainer: {
         position: 'absolute',
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 12,
-        elevation: 6,
+        elevation: 0,
     },
     tooltipText: {
         color: '#FFFFFF',
