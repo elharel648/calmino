@@ -108,8 +108,8 @@ const GrowthChart = ({
     const yRange = yMax - yMin || 1;
 
     const cW = SCREEN_WIDTH - 64;
-    const cH = 200;
-    const pad = { top: 16, right: 30, bottom: 32, left: 38 };
+    const cH = 210;
+    const pad = { top: 16, right: 30, bottom: 42, left: 38 };
     const iW = cW - pad.left - pad.right;
     const iH = cH - pad.top - pad.bottom;
 
@@ -252,9 +252,13 @@ const GrowthChart = ({
 
                 {/* X-axis labels (months) */}
                 {xTicks.map(m => (
-                    <SvgText key={m} x={toX(m)} y={cH - 3} textAnchor="middle"
+                    <SvgText key={m} x={toX(m)} y={cH - 14} textAnchor="middle"
                         fill={axisColor} fontSize="9">{m}</SvgText>
                 ))}
+
+                {/* X-axis unit label */}
+                <SvgText x={pad.left + iW} y={cH - 2} textAnchor="end"
+                    fill={axisColor} fontSize="8" opacity={0.6}>גיל (חודשים)</SvgText>
 
                 {/* Y-axis labels */}
                 {yTicks.map((v, i) => (
