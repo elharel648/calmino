@@ -38,7 +38,7 @@ if (I18nManager.isRTL || I18nManager.doLeftAndRightSwapInRTL) {
 }
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal, useColorScheme } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeModules, Modal, Appearance } from 'react-native';
 import PremiumLoader from './components/Common/PremiumLoader';
 import * as SplashScreen from 'expo-splash-screen';
 import AnimatedSplashScreen from './components/Premium/AnimatedSplashScreen';
@@ -53,15 +53,21 @@ import { Home, BarChart2, User, Settings, Lock, Baby } from 'lucide-react-native
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import * as LocalAuthentication from 'expo-local-authentication';
-// Utility to race network promises against a strict timeout for poor cellular connection resilience
+// Utility to race network promises against a strict timeout for poor cellular connection resilience.
+// The timeout timer is cleared when the racing promise wins, so we don't leak a pending setTimeout
+// per call (L1 in audit).
 const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number, defaultVal: T): Promise<T> => {
-  return Promise.race([
-    promise.catch((err) => {
-      console.warn(`[fetchWithTimeout] Promise rejected (likely offline), returning default:`, err?.message || err);
-      return defaultVal;
-    }),
-    new Promise<T>((resolve) => setTimeout(() => resolve(defaultVal), ms))
-  ]);
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<T>((resolve) => {
+    timerId = setTimeout(() => resolve(defaultVal), ms);
+  });
+  const racedPromise = promise.catch((err) => {
+    console.warn(`[fetchWithTimeout] Promise rejected (likely offline), returning default:`, err?.message || err);
+    return defaultVal;
+  });
+  return Promise.race([racedPromise, timeoutPromise]).finally(() => {
+    if (timerId) clearTimeout(timerId);
+  });
 };
 import { BlurView } from 'expo-blur';
 import { Canvas, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
@@ -138,9 +144,95 @@ const Tab: any = Platform.OS === 'ios' ? NativeTab : AndroidTab;
 const HomeStack = createNativeStackNavigator();
 const AccountStack = createNativeStackNavigator();
 
+// Per-screen ErrorBoundary HOC (H1 in audit). Wrapping each Stack.Screen's
+// component with its own boundary isolates a screen crash so the navigator,
+// tab bar, and other tabs remain interactive — only the offending screen
+// shows the fallback UI, and Retry re-renders just that screen.
+// Components are wrapped at module scope so identity is stable across
+// MainAppNavigator renders (passing inline wrappers would remount the screen).
+function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>
+): React.ComponentType<P> {
+  const Wrapped: React.FC<P> = (props) => (
+    <ErrorBoundary>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+  Wrapped.displayName = `WithErrorBoundary(${Component.displayName || Component.name || 'Screen'})`;
+  return Wrapped;
+}
+
+// Foreground-notification durable queue: see H3 in the audit.
+// The OS may suspend us mid-Firestore-write inside the notification handler,
+// so we persist a minimal record synchronously to AsyncStorage and drain it
+// on next foreground / app start, when we have the full execution budget.
+const PENDING_NOTIF_KEY = '@calmino_pending_notifs';
+type PendingNotification = {
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  tsMs: number;
+};
+
+const drainPendingNotifications = async (): Promise<void> => {
+  try {
+    const raw = await AsyncStorage.getItem(PENDING_NOTIF_KEY);
+    if (!raw) return;
+    const pending: PendingNotification[] = JSON.parse(raw);
+    if (!Array.isArray(pending) || pending.length === 0) {
+      await AsyncStorage.removeItem(PENDING_NOTIF_KEY);
+      return;
+    }
+    // Clear the queue BEFORE the network write so a transient failure doesn't
+    // cause duplicates on the next drain. The service performs its own dedupe.
+    await AsyncStorage.removeItem(PENDING_NOTIF_KEY);
+    const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
+      'feeding_reminder': 'feed',
+      'sleep_reminder': 'sleep',
+      'supplement_reminder': 'medication',
+      'vaccine_reminder': 'medication',
+      'daily_summary': 'reminder',
+      'custom_reminder': 'reminder',
+      'family_join': 'reminder',
+      'family_removed': 'reminder',
+    };
+    for (const p of pending) {
+      try {
+        await notificationStorageService.saveNotification({
+          userId: p.userId,
+          type: typeMap[p.type] || 'reminder',
+          title: p.title || 'התראה',
+          message: p.message || '',
+          timestamp: new Date(p.tsMs),
+          isRead: false,
+          isUrgent: p.type === 'vaccine_reminder',
+        });
+      } catch (e) {
+        logger.warn('Drain: failed to persist a queued notification:', e);
+      }
+    }
+  } catch (e) {
+    logger.warn('Drain: queue parse/read failed:', e);
+  }
+};
+
 // --- רכיבים עזר ---
 
 // Removed LoaderScreen - using native splash instead
+
+// Themed loading fallback used inside the ThemeProvider tree. Reads the theme
+// background via useTheme() so App.tsx itself no longer needs to subscribe to
+// useColorScheme — see M1 in audit. Identical render to the previous inline View.
+const ThemedLoadingFallback = () => {
+  const { theme } = useTheme();
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+      <LiquidGlassBackground />
+      <PremiumLoader size={48} />
+    </View>
+  );
+};
 
 const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
   const { theme, isDarkMode } = useTheme();
@@ -214,7 +306,7 @@ function MainAppNavigator() {
     <Tab.Screen
       key="Reports"
       name="Reports"
-      component={ReportsScreen}
+      component={ReportsScreenBoundary}
       options={{
         title: t('navigation.reports'),
         tabBarIcon: isAndroid
@@ -264,6 +356,18 @@ function MainAppNavigator() {
 
 // --- הגדרת ה-Stacks ---
 
+// Per-screen ErrorBoundary wrappers (H1 in audit). Defined at module scope so
+// each Stack.Screen / Tab.Screen receives a stable component reference and is
+// not remounted on every parent render. CreateBabyScreen is a hoisted function
+// declaration further down in this file.
+const HomeScreenBoundary = withErrorBoundary(HomeScreen);
+const CreateBabyScreenBoundary = withErrorBoundary(CreateBabyScreen);
+const NotificationsScreenBoundary = withErrorBoundary(NotificationsScreen);
+const SettingsScreenBoundary = withErrorBoundary(SettingsScreen);
+const FullSettingsScreenBoundary = withErrorBoundary(FullSettingsScreen);
+const BlockedUsersScreenBoundary = withErrorBoundary(BlockedUsersScreen);
+const ReportsScreenBoundary = withErrorBoundary(ReportsScreen);
+
 function HomeStackScreen() {
   return (
     <HomeStack.Navigator
@@ -273,9 +377,9 @@ function HomeStackScreen() {
         contentStyle: { backgroundColor: '#F8F6F4' }
       }}
     >
-      <HomeStack.Screen name="Home" component={HomeScreen} />
-      <HomeStack.Screen name="CreateBaby" component={CreateBabyScreen} />
-      <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
+      <HomeStack.Screen name="Home" component={HomeScreenBoundary} />
+      <HomeStack.Screen name="CreateBaby" component={CreateBabyScreenBoundary} />
+      <HomeStack.Screen name="Notifications" component={NotificationsScreenBoundary} />
     </HomeStack.Navigator>
   );
 }
@@ -290,9 +394,9 @@ function AccountStackScreen() {
         contentStyle: { backgroundColor: '#FFFFFF' }
       }}
     >
-      <AccountStack.Screen name="Account" component={SettingsScreen} />
-      <AccountStack.Screen name="FullSettings" component={FullSettingsScreen} />
-      <AccountStack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
+      <AccountStack.Screen name="Account" component={SettingsScreenBoundary} />
+      <AccountStack.Screen name="FullSettings" component={FullSettingsScreenBoundary} />
+      <AccountStack.Screen name="BlockedUsers" component={BlockedUsersScreenBoundary} />
     </AccountStack.Navigator>
   );
 }
@@ -646,8 +750,14 @@ export default function App() {
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
   const biometricsEnabledRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
-  const colorScheme = useColorScheme();
-  const themeBgColor = colorScheme === 'dark' ? '#0F0F0F' : '#F8F6F4';
+  // Tracks the last route name reported to Firebase Analytics so onStateChange
+  // doesn't fire a network call for every internal nav state mutation (mid-gesture,
+  // duplicate transitions, etc.) — only for actual screen changes. See M4 in audit.
+  const previousRouteNameRef = useRef<string | undefined>(undefined);
+  // Theme background for the in-ThemeProvider loading state is read inside the
+  // <ThemedLoadingFallback /> child component via useTheme() — see M1 in audit.
+  // For the pre-ThemeProvider early-return path we use Appearance.getColorScheme()
+  // (one-shot, no subscription) inline at the call site below.
 
   // Request ATT (App Tracking Transparency) permission for Meta Ads attribution
   useEffect(() => {
@@ -712,45 +822,43 @@ export default function App() {
           shouldShowList: true,
         };
 
-        // Try to save to Firebase (but don't block notification if it fails)
+        // Durably enqueue the notification to AsyncStorage instead of doing a
+        // fire-and-forget Firestore write. The OS may suspend the JS runtime
+        // before an awaited Firestore call completes — AsyncStorage commits
+        // before the handler returns, so the notification cannot be lost.
+        // A separate effect drains the queue when the app is foregrounded.
         const userId = auth.currentUser?.uid;
         if (userId) {
-          // Fire-and-forget save to Firebase without risking background suspension via setTimeout
-          (async () => {
-            try {
-              const notificationData = notification.request.content.data as any;
-              const notificationType = notificationData?.type || 'reminder';
-              const typeMap: Record<string, 'feed' | 'sleep' | 'medication' | 'reminder' | 'achievement'> = {
-                'feeding_reminder': 'feed',
-                'sleep_reminder': 'sleep',
-                'supplement_reminder': 'medication',
-                'vaccine_reminder': 'medication',
-                'daily_summary': 'reminder',
-                'custom_reminder': 'reminder',
-                'family_join': 'reminder',
-                'family_removed': 'reminder',
-              };
-
-              // Save notification to Firebase
-              await notificationStorageService.saveNotification({
-                userId,
-                type: typeMap[notificationType] || 'reminder',
-                title: notification.request.content.title || 'התראה',
-                message: notification.request.content.body || '',
-                timestamp: new Date(),
-                isRead: false,
-                isUrgent: notificationType === 'vaccine_reminder',
-              });
-            } catch (error) {
-              logger.error('Failed to save notification:', error);
-              // Don't throw - notification should still show
-            }
-          })();
+          try {
+            const raw = await AsyncStorage.getItem(PENDING_NOTIF_KEY);
+            const pending: PendingNotification[] = raw ? JSON.parse(raw) : [];
+            const content = notification.request.content;
+            pending.push({
+              userId,
+              type: ((content.data as any)?.type as string) || 'reminder',
+              title: content.title || '',
+              message: content.body || '',
+              tsMs: Date.now(),
+            });
+            // Cap to last 50 to bound storage usage on a backlogged device
+            await AsyncStorage.setItem(PENDING_NOTIF_KEY, JSON.stringify(pending.slice(-50)));
+          } catch (e) {
+            // Best-effort: never throw from inside the notification handler
+            logger.warn('Failed to enqueue notification for later save:', e);
+          }
         }
 
         return shouldShow;
       },
     });
+
+    // Effect-scoped state for the navigation-ready poll loop launched on each
+    // notification tap. Tracked here so the effect cleanup can cancel any
+    // in-flight chain — otherwise a stale tryNavigate can fire after the
+    // listener has been removed and call navigateFromNotification on an
+    // unmounted tree (red-box in production).
+    let navPollTimer: ReturnType<typeof setTimeout> | null = null;
+    let navPollCancelled = false;
 
     // Handle notification taps (when user taps on notification from background/closed)
     // This listener is set here in App.tsx to ensure it works globally
@@ -784,12 +892,18 @@ export default function App() {
 
       // Navigate based on notification type
       if (type) {
+        // Cancel any prior in-flight poll from a previous notification tap
+        if (navPollTimer) {
+          clearTimeout(navPollTimer);
+          navPollTimer = null;
+        }
         // Poll until navigation is ready instead of a fixed delay
         const tryNavigate = (attempts = 0) => {
+          if (navPollCancelled) return;
           if (navigationRef.isReady()) {
             navigateFromNotification(type, data);
           } else if (attempts < 20) {
-            setTimeout(() => tryNavigate(attempts + 1), 100);
+            navPollTimer = setTimeout(() => tryNavigate(attempts + 1), 100);
           }
         };
         tryNavigate();
@@ -846,8 +960,29 @@ export default function App() {
 
     return () => {
       responseSubscription.remove();
+      // Cancel any in-flight tryNavigate poll so it can't fire on an unmounted tree
+      navPollCancelled = true;
+      if (navPollTimer) {
+        clearTimeout(navPollTimer);
+        navPollTimer = null;
+      }
     };
   }, []);
+
+  // Drain durable foreground-notification queue (H3 in audit). The notification
+  // handler can only synchronously enqueue to AsyncStorage; the Firestore write
+  // happens here, where the JS runtime has its full execution budget.
+  useEffect(() => {
+    if (!user) return;
+    // Drain immediately on mount / user change, then on every foreground entry
+    drainPendingNotifications();
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        drainPendingNotifications();
+      }
+    });
+    return () => sub.remove();
+  }, [user]);
 
   // Determine if we are ready to hide splash
   const shouldHideSplash = !isAppLoading && (
@@ -874,58 +1009,75 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      // Reload user to ensure we have the latest emailVerified status
-      if (currentUser) {
-        try {
-          // Bound user reload to 2000ms to heavily prioritize getting offline users past the splash screen
-          await fetchWithTimeout(currentUser.reload(), 2000, undefined);
-        } catch (e) {
-          // If reload fails (e.g. network timeout), we continue with cached value
-          logger.log('User reload failed/timed out:', e);
+      // Wrap the whole body in try/catch so an uncaught throw (e.g. Firestore timeout
+      // inside checkBiometricSettingsAndProfile) can't reject this async listener's
+      // promise to the global handler. See L2 in audit.
+      try {
+        // Reload user to ensure we have the latest emailVerified status
+        if (currentUser) {
+          try {
+            // Bound user reload to 2000ms to heavily prioritize getting offline users past the splash screen
+            await fetchWithTimeout(currentUser.reload(), 2000, undefined);
+          } catch (e) {
+            // If reload fails (e.g. network timeout), we continue with cached value
+            logger.log('User reload failed/timed out:', e);
+          }
         }
-      }
 
-      // OAuth providers (Apple, Google) verify identity at provider level
-      // Only require emailVerified for email/password accounts
-      if (currentUser) {
-        const isOAuthUser = currentUser.providerData.some(
-          p => p.providerId === 'apple.com' || p.providerId === 'google.com'
-        );
-        if (currentUser.emailVerified || isOAuthUser) {
-          setHasBabyProfile(null); // Ensure no flicker of BabyProfileScreen while fetching
-          setUser(currentUser);
-          setAnalyticsUser(currentUser.uid, currentUser.displayName || undefined);
-          await checkBiometricSettingsAndProfile(currentUser.uid);
-
-          // Register for push notifications
-          registerForPushNotifications().catch((err) => {
-            logger.log('Push registration:', err);
-          });
-
-          // Initialize notification service and schedule recurring reminders (once per login)
-          notificationService.initialize().then((success) => {
-            if (success) {
-              notificationService.scheduleSupplementReminder();
-              notificationService.scheduleSleepReminder();
-              notificationService.scheduleDailySummary();
+        // OAuth providers (Apple, Google) verify identity at provider level
+        // Only require emailVerified for email/password accounts
+        if (currentUser) {
+          const isOAuthUser = currentUser.providerData.some(
+            p => p.providerId === 'apple.com' || p.providerId === 'google.com'
+          );
+          if (currentUser.emailVerified || isOAuthUser) {
+            setHasBabyProfile(null); // Ensure no flicker of BabyProfileScreen while fetching
+            setUser(currentUser);
+            setAnalyticsUser(currentUser.uid, currentUser.displayName || undefined);
+            try {
+              await checkBiometricSettingsAndProfile(currentUser.uid);
+            } catch (e) {
+              // Don't let a transient Firestore error block the auth flow.
+              // checkBiometricSettingsAndProfile is responsible for releasing the
+              // splash on its own success path.
+              logger.error('checkBiometricSettingsAndProfile failed:', e);
+              setIsAppLoading(false);
             }
-          }).catch((err) => {
-            logger.log('Notification init:', err);
-          });
+
+            // Register for push notifications
+            registerForPushNotifications().catch((err) => {
+              logger.log('Push registration:', err);
+            });
+
+            // Initialize notification service and schedule recurring reminders (once per login)
+            notificationService.initialize().then((success) => {
+              if (success) {
+                notificationService.scheduleSupplementReminder();
+                notificationService.scheduleSleepReminder();
+                notificationService.scheduleDailySummary();
+              }
+            }).catch((err) => {
+              logger.log('Notification init:', err);
+            });
+          } else {
+            // Email/password user who hasn't verified email yet
+            setChildrenReady(false);
+            setUser(null);
+            setHasBabyProfile(null);
+            setIsLocked(false);
+            setIsAppLoading(false);
+          }
         } else {
-          // Email/password user who hasn't verified email yet
+          clearAnalyticsUser();
           setChildrenReady(false);
           setUser(null);
           setHasBabyProfile(null);
           setIsLocked(false);
           setIsAppLoading(false);
         }
-      } else {
-        clearAnalyticsUser();
-        setChildrenReady(false);
-        setUser(null);
-        setHasBabyProfile(null);
-        setIsLocked(false);
+      } catch (err) {
+        // Last-ditch safety net: log and release the splash so the user is never stranded.
+        logger.error('onAuthStateChanged handler error:', err);
         setIsAppLoading(false);
       }
     });
@@ -1055,8 +1207,12 @@ export default function App() {
 
   // Show premium loading state while checking baby profile to prevent white screen flash
   if (!isGuestMode && hasBabyProfile === null) {
+    // This branch renders BEFORE the ThemeProvider mounts, so we can't read from
+    // useTheme(). Appearance.getColorScheme() is a synchronous one-shot read
+    // (no subscription, no extra re-renders) and is correct on cold start.
+    const earlyBg = Appearance.getColorScheme() === 'dark' ? '#0F0F0F' : '#F8F6F4';
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: earlyBg }}>
         <LiquidGlassBackground />
         <PremiumLoader size={48} />
       </View>
@@ -1121,11 +1277,12 @@ export default function App() {
                                 <NavigationContainer
                                   ref={navigationRef}
                                   onStateChange={async () => {
-                                    const route = navigationRef.current?.getCurrentRoute();
-                                    if (route?.name) {
+                                    const currentName = navigationRef.current?.getCurrentRoute()?.name;
+                                    if (currentName && currentName !== previousRouteNameRef.current) {
+                                      previousRouteNameRef.current = currentName;
                                       analytics().logScreenView({
-                                        screen_name: route.name,
-                                        screen_class: route.name,
+                                        screen_name: currentName,
+                                        screen_class: currentName,
                                       }).catch(() => {});
                                     }
                                   }}
@@ -1153,10 +1310,7 @@ export default function App() {
                                   <MainAppNavigator />
                                 </NavigationContainer>
                               ) : (
-                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeBgColor }}>
-                                  <LiquidGlassBackground />
-                                  <PremiumLoader size={48} />
-                                </View>
+                                <ThemedLoadingFallback />
                               )}
                               <RadialSOSMenu />
                             </SafeAreaProvider>

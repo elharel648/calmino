@@ -128,13 +128,23 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
     useEffect(() => {
         if (!activeChildId || timers[activeChildId]) return;
         const restore = async () => {
+            // JSON.parse is wrapped per-key so a single corrupted AsyncStorage
+            // entry (e.g. half-written after force-quit) can't blow up the whole
+            // restore and surface as an unhandled promise rejection. Audit HIGH crash.
             const types = ['pumping', 'bottle', 'breast'] as const;
             const updates: any = {};
             for (const type of types) {
                 const raw = await AsyncStorage.getItem(getFoodKey(activeChildId, type)).catch(() => null);
                 if (!raw) continue;
-                const saved = JSON.parse(raw);
-                if (!saved.isRunning) continue;
+                let saved: any = null;
+                try {
+                    saved = JSON.parse(raw);
+                } catch (parseErr) {
+                    // Corrupted entry — drop it so the next save overwrites cleanly
+                    AsyncStorage.removeItem(getFoodKey(activeChildId, type)).catch(() => {});
+                    continue;
+                }
+                if (!saved?.isRunning) continue;
                 const elapsed = saved.elapsedSeconds + (saved.isPaused ? 0 : Math.floor((Date.now() - saved.savedAt) / 1000));
                 updates[type] = { ...INITIAL_STATE[type], ...saved, elapsedSeconds: elapsed };
             }
@@ -142,7 +152,11 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
                 setTimers(prev => ({ ...prev, [activeChildId]: { ...(prev[activeChildId] || INITIAL_STATE), ...updates } }));
             }
         };
-        restore();
+        // Catch any unforeseen reject so the fire-and-forget IIFE can't crash the app
+        restore().catch((err) => {
+            // eslint-disable-next-line no-console
+            console.warn('FoodTimerContext restore failed:', err);
+        });
     }, [activeChildId]);
 
     const updateChildState = useCallback((childId: string, updates: Partial<FoodTimerState>) => {

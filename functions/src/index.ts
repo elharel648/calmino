@@ -1,11 +1,24 @@
 import * as admin from 'firebase-admin';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 
 admin.initializeApp();
 
 const db = admin.firestore();
+
+// HTML escape for user-supplied strings that get interpolated into branded
+// email bodies. The Firebase Trigger-Email extension renders the `html` field
+// as HTML in the recipient's inbox — any unescaped `<script>` / `<img onerror>`
+// / `<style>` from user-controlled fields would execute or alter the email.
+// See workflow findings under sendPasswordResetEmailBranded, sendWelcomeEmail,
+// onFamilyInviteCreated, onChatMessageCreated.
+function escapeHtml(s: unknown): string {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+    ));
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // EOF
@@ -97,8 +110,20 @@ function calminoEmailTemplate(heTitle: string, heBody: string, enTitle: string =
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const sendVerificationEmail = onCall(async (request) => {
-    // Accept explicit email payload to bypass Android Native token initialization hang during Firebase Auth signup
-    const email = request.auth?.token?.email || request.data?.email;
+    // Caller MUST be authenticated (prevents email enumeration & email-bomb abuse).
+    // The payload-email fallback exists for the Android signup window where the
+    // auth token hasn't yet propagated `email` — but we still require an authed caller.
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'יש להתחבר');
+    }
+    const authedEmail = request.auth.token?.email;
+    const payloadEmail = request.data?.email;
+    // If both are present, they must match — prevents an authed user from triggering
+    // a verification email targeting a different account.
+    if (authedEmail && payloadEmail && authedEmail !== payloadEmail) {
+        throw new HttpsError('permission-denied', 'אימייל לא תואם');
+    }
+    const email = authedEmail || payloadEmail;
     if (!email) throw new HttpsError('invalid-argument', 'יש לספק כתובת מייל');
 
     const userRecord = await admin.auth().getUserByEmail(email);
@@ -113,7 +138,7 @@ export const sendVerificationEmail = onCall(async (request) => {
     const displayName = userRecord.displayName || 'הורה יקר/ה';
 
     const heBodyContent = `
-        <p style="margin:0 0 16px;">שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
+        <p style="margin:0 0 16px;">שלום <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋</p>
         <p style="margin:0 0 24px;">נשאר רק צעד אחד קטן — לחצו על הכפתור למטה כדי לאמת את כתובת המייל שלכם, ולהתחיל להשתמש ב-Calmino.</p>
 
         <div style="text-align:center;margin:40px 0;">
@@ -136,7 +161,7 @@ export const sendVerificationEmail = onCall(async (request) => {
         </div>`;
 
     const enBodyContent = `
-        <p style="margin:0 0 16px;">Hi <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
+        <p style="margin:0 0 16px;">Hi <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋</p>
         <p style="margin:0 0 24px;">Just one small step left — click the button below to verify your email address and start using Calmino.</p>
 
         <div style="text-align:center;margin:40px 0;">
@@ -199,7 +224,7 @@ export const sendPasswordResetEmailBranded = onCall(async (request) => {
 
     const heBody = `
         <p style="margin:0 0 16px;">
-            ${displayName ? `שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>` : ''}
+            ${displayName ? `שלום <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋<br/><br/>` : ''}
             קיבלנו בקשה לאיפוס הסיסמא לחשבון ה-Calmino שלך.<br/>
             לחצו על הכפתור למטה כדי לבחור סיסמא חדשה.
         </p>
@@ -220,7 +245,7 @@ export const sendPasswordResetEmailBranded = onCall(async (request) => {
 
     const enBody = `
         <p style="margin:0 0 16px;">
-            ${displayName ? `Hi <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>` : ''}
+            ${displayName ? `Hi <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋<br/><br/>` : ''}
             We received a request to reset your Calmino password.<br/>
             Click the button below to choose a new, secure password.
         </p>
@@ -274,7 +299,7 @@ export const sendWelcomeEmail = onDocumentCreated('users/{userId}', async (event
 
     const bodyContent = `
         <p style="margin:0 0 16px;color:#334155;font-size:16px;">
-            שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋
+            שלום <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋
         </p>
         <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">
             אנחנו כל כך שמחים שהצטרפת ל-<strong style="color:#C8806A;font-weight:700;">Calmino</strong>!<br/>
@@ -356,12 +381,12 @@ export const onFamilyInviteCreated = onDocumentCreated('invites/{inviteCode}', a
     {
         // ── FAMILY MEMBER INVITE ──
         const bodyContent = `
-            <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
+            <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${escapeHtml(creatorName)}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
             <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלה, שינה, גדילה, ועוד.</p>
             
             <div style="background:linear-gradient(135deg,#C8806A,#D4A373);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
                 <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד ההצטרפות:</p>
-                <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${inviteCode}</p>
+                <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${escapeHtml(inviteCode)}</p>
             </div>
             
             <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
@@ -419,6 +444,18 @@ export const joinFamilyByCode = onCall(async (request) => {
     if (!code || code.trim().length !== 6) {
         throw new HttpsError('invalid-argument', 'קוד לא תקין');
     }
+
+    // ── Brute-force guard: max 10 attempts per UID per rolling hour ──
+    // Without this, an attacker can sweep the 10⁶ numeric-code space via Cloud Functions auto-scale.
+    const throttleRef = db.doc(`_throttle/joinFamily_${uid}`);
+    const nowMs = Date.now();
+    const throttleSnap = await throttleRef.get();
+    const prevAttempts: number[] = throttleSnap.exists ? (throttleSnap.data()?.attempts || []) : [];
+    const recentAttempts = prevAttempts.filter((t) => nowMs - t < 3600_000);
+    if (recentAttempts.length >= 10) {
+        throw new HttpsError('resource-exhausted', 'יותר מדי ניסיונות, נסה שוב מאוחר יותר');
+    }
+    await throttleRef.set({ attempts: [...recentAttempts, nowMs] });
 
     const trimmedCode = code.trim();
 
@@ -691,10 +728,10 @@ export const onChatMessageCreated = onDocumentCreated('chats/{chatId}/messages/{
         const previewText = text.length > 100 ? text.substring(0, 100) + '...' : text;
 
         const bodyContent = `
-            <p style="color:#636e72;line-height:1.8;font-size:15px;">יש לך הודעה חדשה מ-<strong>${senderName || 'משתמש'}</strong>:</p>
-            
+            <p style="color:#636e72;line-height:1.8;font-size:15px;">יש לך הודעה חדשה מ-<strong>${escapeHtml(senderName || 'משתמש')}</strong>:</p>
+
             <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;border-right:4px solid #C8806A;">
-                <p style="color:#2d3436;margin:0;font-size:15px;line-height:1.6;">${previewText}</p>
+                <p style="color:#2d3436;margin:0;font-size:15px;line-height:1.6;">${escapeHtml(previewText)}</p>
             </div>
             
             <p style="color:#636e72;line-height:1.8;font-size:15px;">פתחו את Calmino כדי להשיב 💬</p>`;
@@ -862,3 +899,125 @@ export const onFamilyMemberJoined = onDocumentUpdated('families/{familyId}', asy
         }
     }
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BROADCAST NOTIFICATION — Admin-only push to all users or by platform
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Params:
+//   mode        'test' | 'broadcast'
+//   title       string
+//   body        string
+//   data        object (optional, extra payload)
+//
+//   -- test mode --
+//   testEmail   string  (find user by email)
+//   testToken   string  (send directly to a specific Expo token)
+//
+//   -- broadcast mode --
+//   platform    'ios' | 'android' | 'all'
+//
+// Returns: { sent, failed, total, mode, platform }
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Admin secret is loaded from Firebase Functions secrets at runtime ──────
+// Set with: firebase functions:secrets:set ADMIN_BROADCAST_SECRET
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const EXPO_BATCH    = 100;
+
+export const broadcastNotification = onRequest(
+  { cors: true, secrets: ['ADMIN_BROADCAST_SECRET'] },
+  async (req, res) => {
+    // ── Secret key check ──────────────────────────────────────────────────
+    const adminSecret = process.env.ADMIN_BROADCAST_SECRET;
+    if (!adminSecret) {
+      res.status(500).json({ error: 'Server misconfigured: ADMIN_BROADCAST_SECRET not set' });
+      return;
+    }
+    const secret = req.headers['x-admin-secret'] ?? req.body?.secret;
+    if (secret !== adminSecret) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { mode, platform, title, body, testEmail, testToken, data } = req.body as {
+      mode: 'test' | 'broadcast';
+      platform?: 'ios' | 'android' | 'all';
+      title: string;
+      body: string;
+      testEmail?: string;
+      testToken?: string;
+      data?: Record<string, string>;
+    };
+
+    if (!title || !body) { res.status(400).json({ error: 'title ו-body נדרשים' }); return; }
+    if (mode !== 'test' && mode !== 'broadcast') { res.status(400).json({ error: 'mode חייב להיות test או broadcast' }); return; }
+
+    // ── Collect tokens ────────────────────────────────────────────────────
+    let tokens: string[] = [];
+
+    if (mode === 'test') {
+      if (testToken) {
+        tokens = [testToken];
+      } else if (testEmail) {
+        const snap = await db.collection('users').where('email', '==', testEmail).limit(1).get();
+        if (snap.empty) { res.status(404).json({ error: `לא נמצא משתמש: ${testEmail}` }); return; }
+        const token = snap.docs[0].data()?.pushToken;
+        if (!token) { res.status(404).json({ error: 'למשתמש אין pushToken' }); return; }
+        tokens = [token];
+      } else {
+        res.status(400).json({ error: 'test mode מצריך testToken או testEmail' });
+        return;
+      }
+    } else {
+      // Paginate so a single .get() doesn't materialize the entire users
+      // collection into RAM (audit MEDIUM finding). 500 docs/page keeps memory
+      // bounded while still being efficient on modest user bases.
+      const PAGE = 500;
+      let q: FirebaseFirestore.Query = db.collection('users')
+        .where('pushToken', '!=', null)
+        .orderBy('pushToken')
+        .orderBy('__name__');
+      if (platform && platform !== 'all') q = q.where('platform', '==', platform);
+      let lastDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const pagedQ: FirebaseFirestore.Query = lastDoc ? q.startAfter(lastDoc).limit(PAGE) : q.limit(PAGE);
+        const snap: FirebaseFirestore.QuerySnapshot = await pagedQ.get();
+        if (snap.empty) break;
+        for (const d of snap.docs) {
+          const t = d.data().pushToken as string;
+          if (t?.startsWith('ExponentPushToken[')) tokens.push(t);
+        }
+        if (snap.docs.length < PAGE) break;
+        lastDoc = snap.docs[snap.docs.length - 1] as FirebaseFirestore.QueryDocumentSnapshot;
+      }
+    }
+
+    if (tokens.length === 0) { res.json({ sent: 0, failed: 0, total: 0, message: 'אין מכשירים עם טוקן פעיל' }); return; }
+
+    // ── Send in batches of 100 ────────────────────────────────────────────
+    let sent = 0, failed = 0;
+
+    for (let i = 0; i < tokens.length; i += EXPO_BATCH) {
+      const chunk = tokens.slice(i, i + EXPO_BATCH);
+      try {
+        const r = await fetch(EXPO_PUSH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(chunk.map(to => ({
+            to, title, body, sound: 'default', ...(data ?? {}),
+          }))),
+        });
+        const json = await r.json() as { data: Array<{ status: string }> };
+        (json.data ?? []).forEach(r => r.status === 'ok' ? sent++ : failed++);
+      } catch (e) {
+        failed += chunk.length;
+        console.error('Expo push batch error:', e);
+      }
+    }
+
+    console.log(`📲 done — sent:${sent} failed:${failed} total:${tokens.length} mode:${mode} platform:${platform ?? 'all'}`);
+    res.json({ sent, failed, total: tokens.length, mode, platform: platform ?? 'all' });
+  }
+);

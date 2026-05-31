@@ -6,7 +6,7 @@
     "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
       "@react-native-firebase/app",
@@ -94,8 +94,8 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505",
-              "calmparentapp"
+              "calmparentapp",
+              "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505"
             ]
           }
         ]

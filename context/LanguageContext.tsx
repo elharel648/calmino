@@ -156,8 +156,15 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const isRTL = RTL_LANGUAGES.includes(language);
 
+  // Memoize the context value so every consumer of useLanguage() doesn't
+  // re-render on every render of LanguageProvider (audit MEDIUM perf).
+  const contextValue = React.useMemo(
+    () => ({ language, setLanguage, t, isRTL }),
+    [language, setLanguage, t, isRTL]
+  );
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, isRTL }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );

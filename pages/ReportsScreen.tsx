@@ -505,7 +505,9 @@ export default function ReportsScreen() {
         diapers: labels.map(l => dayMap[l].diapers || 0)
       });
 
-      // Fetch previous period for comparison
+      // Fetch previous period for comparison — bounded to match the primary query
+      // (which uses limit(500)). Without this cap a heavy-history child could pull
+      // thousands of docs just to compute summary stats. Audit HIGH security/perf.
       if (timeRange !== 'custom') {
         const prevStart = subDays(start, daysInRange);
         const prevEnd = subDays(start, 1);
@@ -514,7 +516,8 @@ export default function ReportsScreen() {
           collection(db, 'events'),
           where('childId', '==', activeChild?.childId),
           where('timestamp', '>=', Timestamp.fromDate(prevStart)),
-          where('timestamp', '<=', Timestamp.fromDate(endOfDay(prevEnd)))
+          where('timestamp', '<=', Timestamp.fromDate(endOfDay(prevEnd))),
+          limit(500)
         );
 
         const prevSnapshot = await getDocs(prevQ);

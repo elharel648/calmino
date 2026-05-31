@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface ClockTimerConfig {
     duration?: number; // Countdown duration in seconds
@@ -12,6 +12,14 @@ export function useClockTimer(config: ClockTimerConfig = {}) {
     const [remainingSeconds, setRemainingSeconds] = useState(duration || 0);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+    // Store onComplete in a ref so the interval effect doesn't tear down + restart
+    // every render when callers pass an inline function (the common pattern).
+    // Without this, the countdown effectively pauses and restarts each render. Audit HIGH.
+    const onCompleteRef = useRef(onComplete);
+    useEffect(() => {
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
+
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | null = null;
 
@@ -22,9 +30,8 @@ export function useClockTimer(config: ClockTimerConfig = {}) {
                     setRemainingSeconds((prev) => {
                         if (prev <= 1) {
                             setIsRunning(false);
-                            if (onComplete) {
-                                onComplete();
-                            }
+                            const cb = onCompleteRef.current;
+                            if (cb) cb();
                             return 0;
                         }
                         return prev - 1;
@@ -39,7 +46,7 @@ export function useClockTimer(config: ClockTimerConfig = {}) {
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isRunning, duration, onComplete]);
+    }, [isRunning, duration]);
 
     const start = useCallback(() => {
         setIsRunning(true);

@@ -19,7 +19,7 @@ import { Award, Calendar, FileText, Plus, Trash2, Clock, Sparkles } from 'lucide
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withDelay, interpolate } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, withDelay, interpolate, cancelAnimation } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import { useBabyProfile } from '../../hooks/useBabyProfile';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -135,6 +135,18 @@ export default function MilestonesModal({
             pulse1.value = 0; pulse2.value = 0;
             iconBounce.value = 0; sparkle1.value = 0; sparkle2.value = 0;
         }
+
+        // Stop all UI-thread pulse loops on unmount. The else-branch above
+        // already interrupts them when visible flips false, but a component
+        // unmount (e.g. parent navigates away) wouldn't go through that path
+        // and the withRepeat loops would keep ticking on the GPU.
+        return () => {
+            cancelAnimation(pulse1);
+            cancelAnimation(pulse2);
+            cancelAnimation(iconBounce);
+            cancelAnimation(sparkle1);
+            cancelAnimation(sparkle2);
+        };
     }, [visible]);
 
     // Swipe down to dismiss
@@ -285,25 +297,29 @@ export default function MilestonesModal({
         return formatDate(d);
     };
 
-    // Sort milestones by date (newest first)
-    const sortedMilestones = [...milestones].sort((a, b) => {
-        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
-        return dateB.getTime() - dateA.getTime();
-    });
+    // Sort + group derivations are memoized so they only re-run when the
+    // underlying milestones array changes — not on every keystroke / tab switch.
+    const sortedMilestones = useMemo(() => {
+        return [...milestones].sort((a, b) => {
+            const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+            const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+            return dateB.getTime() - dateA.getTime();
+        });
+    }, [milestones]);
 
-    // Group milestones by month
-    const groupedMilestones = sortedMilestones.reduce((acc, milestone) => {
-        const dateObj = milestone.date?.toDate ? milestone.date.toDate() : new Date(milestone.date);
-        const monthKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}`;
-        const monthLabel = dateObj.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+    const groupedMilestones = useMemo(() => {
+        return sortedMilestones.reduce((acc, milestone) => {
+            const dateObj = milestone.date?.toDate ? milestone.date.toDate() : new Date(milestone.date);
+            const monthKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}`;
+            const monthLabel = dateObj.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
 
-        if (!acc[monthKey]) {
-            acc[monthKey] = { label: monthLabel, items: [] };
-        }
-        acc[monthKey].items.push(milestone);
-        return acc;
-    }, {} as Record<string, { label: string; items: Milestone[] }>);
+            if (!acc[monthKey]) {
+                acc[monthKey] = { label: monthLabel, items: [] };
+            }
+            acc[monthKey].items.push(milestone);
+            return acc;
+        }, {} as Record<string, { label: string; items: Milestone[] }>);
+    }, [sortedMilestones]);
 
     if (!visible) return null;
 
@@ -431,7 +447,11 @@ export default function MilestonesModal({
                                     <View style={styles.rowMinimal}>
                                         <View style={[styles.inputWrapper, {
                                             backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
-                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                            shadowColor: isDarkMode ? 'transparent' : '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: isDarkMode ? 0 : 0.1,
+                                            shadowRadius: isDarkMode ? 0 : 8,
                                         }]}>
                                             <TextInput
                                                 style={[styles.inputMinimal, { color: theme.textPrimary }]}
@@ -450,7 +470,11 @@ export default function MilestonesModal({
                                         <TouchableOpacity
                                             style={[styles.inputWrapper, {
                                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
-                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'
+                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                                shadowColor: isDarkMode ? 'transparent' : '#000',
+                                                shadowOffset: { width: 0, height: 2 },
+                                                shadowOpacity: isDarkMode ? 0 : 0.1,
+                                                shadowRadius: isDarkMode ? 0 : 8,
                                             }]}
                                             onPress={() => {
                                                 setShowDatePicker(true);
@@ -476,7 +500,11 @@ export default function MilestonesModal({
                                             height: 'auto',
                                             minHeight: 80,
                                             backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
-                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'
+                                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                            shadowColor: isDarkMode ? 'transparent' : '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: isDarkMode ? 0 : 0.1,
+                                            shadowRadius: isDarkMode ? 0 : 8,
                                         }]}>
                                             <TextInput
                                                 style={[styles.notesInputMinimal, { color: theme.textPrimary }]}
@@ -505,10 +533,10 @@ export default function MilestonesModal({
                                                 borderColor: 'transparent',
                                                 backgroundColor: theme.actionColors.milestones.color,
                                                 opacity: !title.trim() || loading ? 0.5 : 1,
-                                                shadowColor: theme.actionColors.milestones.color,
+                                                shadowColor: isDarkMode ? 'transparent' : theme.actionColors.milestones.color,
                                                 shadowOffset: { width: 0, height: 4 },
-                                                shadowOpacity: 0.35,
-                                                shadowRadius: 8,
+                                                shadowOpacity: isDarkMode ? 0 : 0.35,
+                                                shadowRadius: isDarkMode ? 0 : 8,
                                                 elevation: 0,
                                             }
                                         ]}
@@ -1029,10 +1057,6 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
         elevation: 0,
     },
     inputMinimal: {

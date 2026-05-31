@@ -31,8 +31,8 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505</string>
           <string>calmparentapp</string>
+          <string>com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505</string>
         </array>
       </dict>
       <dict>
@@ -144,7 +144,7 @@
       <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UIUserInterfaceStyle</key>
-    <string>Light</string>
+    <string>Automatic</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
   </dict>

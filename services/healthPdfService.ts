@@ -10,6 +10,16 @@ import { db } from './firebaseConfig';
 import { logger } from '../utils/logger';
 import { VACCINE_SCHEDULE } from '../types/profile';
 
+// Escapes user-controlled strings before they are interpolated into the HTML
+// passed to expo-print. Without this, malicious child names / notes / illness
+// labels saved by another family member could inject styles or scripts into
+// the generated PDF (audit HIGH security finding).
+const escapeHtml = (s: unknown): string => {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+};
+
 interface HealthPdfOptions {
     childId: string;
     childName: string;
@@ -107,11 +117,11 @@ function generateHealthHTML(data: {
             const severityLabel = a.severity === 'severe' ? 'חמור' : a.severity === 'moderate' ? 'בינוני' : 'קל';
             return `
                 <tr>
-                    <td style="padding: 10px 12px; border-bottom: 1px solid #F3F4F6;">${a.name}</td>
+                    <td style="padding: 10px 12px; border-bottom: 1px solid #F3F4F6;">${escapeHtml(a.name)}</td>
                     <td style="padding: 10px 12px; border-bottom: 1px solid #F3F4F6;">
                         <span style="background: ${severityColor}15; color: ${severityColor}; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 12px;">${severityLabel}</span>
                     </td>
-                    <td style="padding: 10px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${a.note || '-'}</td>
+                    <td style="padding: 10px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${escapeHtml(a.note || '-')}</td>
                     <td style="padding: 10px 12px; border-bottom: 1px solid #F3F4F6; color: #9CA3AF; font-size: 12px;">${formatDate(new Date(a.diagnosisDate))}</td>
                 </tr>
             `;
@@ -125,9 +135,9 @@ function generateHealthHTML(data: {
         return `
             <tr>
                 <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6;">
-                    <span style="color: ${tempColor}; font-weight: 700;">${e.value}°C</span>
+                    <span style="color: ${tempColor}; font-weight: 700;">${escapeHtml(e.value)}°C</span>
                 </td>
-                <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${e.note || '-'}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${escapeHtml(e.note || '-')}</td>
                 <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #9CA3AF; font-size: 12px;">${formatDateTime(new Date(e.timestamp))}</td>
             </tr>
         `;
@@ -136,8 +146,8 @@ function generateHealthHTML(data: {
     // Illness section
     const illnessHTML = illnessEntries.slice(0, 15).map((e: any) => `
         <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; font-weight: 600;">${e.illness || e.name || '-'}</td>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${e.note || '-'}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; font-weight: 600;">${escapeHtml(e.illness || e.name || '-')}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #6B7280;">${escapeHtml(e.note || '-')}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: #9CA3AF; font-size: 12px;">${formatDate(new Date(e.timestamp))}</td>
         </tr>
     `).join('');
@@ -303,7 +313,7 @@ function generateHealthHTML(data: {
                 <h1>🏥 דוח בריאות</h1>
                 <div class="subtitle">Health Report</div>
                 <div class="child-info">
-                    <div class="child-name">${childName}</div>
+                    <div class="child-name">${escapeHtml(childName)}</div>
                     ${birthDate ? `<div style="color: #6B7280; font-size: 12px; margin-top: 2px;">תאריך לידה: ${formatDate(new Date(birthDate))}</div>` : ''}
                 </div>
             </div>
@@ -331,7 +341,7 @@ function generateHealthHTML(data: {
                         <div class="alert-title">⚠️ אלרגיות ורגישויות ידועות</div>
                         ${allergies.map(a => {
                             const label = a.severity === 'severe' ? '🔴 חמור' : a.severity === 'moderate' ? '🟡 בינוני' : '🟢 קל';
-                            return `<div style="margin-top: 4px;">• <strong>${a.name}</strong> — ${label} ${a.note ? `(${a.note})` : ''}</div>`;
+                            return `<div style="margin-top: 4px;">• <strong>${escapeHtml(a.name)}</strong> — ${label} ${a.note ? `(${escapeHtml(a.note)})` : ''}</div>`;
                         }).join('')}
                     </div>
                 </div>

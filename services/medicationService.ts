@@ -8,6 +8,22 @@ import { Platform, Alert } from 'react-native';
 import i18n from './i18n';
 const t = i18n.t.bind(i18n);
 
+// Surface deferred-write failures to Crashlytics so silent data loss becomes
+// visible in production (audit HIGH crash finding).
+const reportDeferredWriteFailure = (label: string, err: unknown) => {
+    logger.warn(`Deferred ${label} failed:`, err);
+    if (Platform.OS === 'web') return;
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const crashlytics = require('@react-native-firebase/crashlytics').default;
+        const e = err instanceof Error ? err : new Error(String(err));
+        crashlytics().log(`Deferred ${label} failed`);
+        crashlytics().recordError(e);
+    } catch (_) {
+        // No-op: Crashlytics unavailable
+    }
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Medication Service — CRUD + Notification Scheduling + Calendar Integration
 // Stores medications in babies/{babyId}/medications subcollection
@@ -25,8 +41,9 @@ export const addMedication = async (babyId: string, med: Omit<Medication, 'id' |
             createdAt: new Date().toISOString(),
         };
 
-        // Fire and forget to avoid hanging offline
-        setDoc(doc(db, 'babies', babyId, 'medications', medId), medication).catch(e => logger.warn('Deferred setDoc failed:', e));
+        // Fire and forget to avoid hanging offline. Failures route to Crashlytics.
+        setDoc(doc(db, 'babies', babyId, 'medications', medId), medication)
+            .catch(e => reportDeferredWriteFailure('setDoc(medication)', e));
 
         // Schedule notifications if enabled
         if (medication.remindersEnabled) {
@@ -70,8 +87,9 @@ export const deleteMedication = async (babyId: string, medId: string): Promise<b
         // Cancel notifications for this medication
         await cancelMedicationNotifications(medId);
 
-        // Fire and forget to avoid hanging offline
-        deleteDoc(doc(db, 'babies', babyId, 'medications', medId)).catch(e => logger.warn('Deferred deleteDoc failed:', e));
+        // Fire and forget to avoid hanging offline. Failures route to Crashlytics.
+        deleteDoc(doc(db, 'babies', babyId, 'medications', medId))
+            .catch(e => reportDeferredWriteFailure('deleteDoc(medication)', e));
         logger.log('💊 Medication deleted:', medId);
         return true;
     } catch (error) {

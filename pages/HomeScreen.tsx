@@ -238,7 +238,10 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
         };
         const fn = actionMap[pendingFABAction];
         if (fn) {
-            setTimeout(() => { fn(); clearFABAction(); }, 200);
+            // Track + clear timer on unmount so a navigation-away within 200ms
+            // doesn't try to setState on an unmounted screen (audit MEDIUM crash).
+            const t = setTimeout(() => { fn(); clearFABAction(); }, 200);
+            return () => clearTimeout(t);
         } else {
             clearFABAction();
         }

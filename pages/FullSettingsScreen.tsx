@@ -15,8 +15,7 @@ import { StyleSheet,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Share,
-  Switch } from 'react-native';
+  Share } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -51,9 +50,10 @@ import {
 import { auth, db, callFirebaseFunction } from '../services/firebaseConfig';
 import LegalModal from '../components/Legal/LegalModal';
 import { deleteUser, signOut, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, deleteField, orderBy, startAfter, limit, writeBatch, type Query } from 'firebase/firestore';
 import { getStorage, ref, deleteObject } from 'firebase/storage';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, ThemePreference } from '../context/ThemeContext';
+import { LiquidSegmentedControl } from '../components/LiquidGlass/LiquidSegmentedControl';
 import { useLanguage } from '../context/LanguageContext';
 import { Language } from '../types';
 import { useNotifications } from '../hooks/useNotifications';
@@ -77,9 +77,41 @@ const LANGUAGES = [
   { key: 'de', labelKey: 'settings.german' },
 ];
 
+// Neutralizes HTML metacharacters before user-supplied text is interpolated into
+// an email body that the Firebase Trigger-Email extension will render as HTML.
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
+// Pages through a Firestore query (bounded memory) and deletes each page in a
+// writeBatch chunk that stays under Firestore's 500-op ceiling. Used by the
+// account-deletion flow where users may have thousands of docs per collection.
+// See H6 (and its extension) in audit.
+const paginatedBatchDelete = async (baseQuery: Query, pageSize: number = 400): Promise<number> => {
+  let totalDeleted = 0;
+  let lastDoc: any = null;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const pagedQuery = lastDoc
+      ? query(baseQuery, orderBy('__name__'), startAfter(lastDoc), limit(pageSize))
+      : query(baseQuery, orderBy('__name__'), limit(pageSize));
+    const snapshot = await getDocs(pagedQuery);
+    if (snapshot.empty) break;
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    totalDeleted += snapshot.docs.length;
+
+    if (snapshot.docs.length < pageSize) break;
+    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+  }
+  return totalDeleted;
+};
+
 
 export default function SettingsScreen() {
-  const { isDarkMode, setDarkMode, theme, themePreference, setThemePreference } = useTheme();
+  const { isDarkMode, theme, themePreference, setThemePreference } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
@@ -160,11 +192,6 @@ if (data.settings.language !== undefined) {
     }
   };
 
-  const handleDarkModeToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setDarkMode(value);
-  };
-
   const handleLanguageSelect = async (langKey: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const lang = langKey as Language;
@@ -231,11 +258,11 @@ if (data.settings.language !== undefined) {
             html: `
               <div dir="rtl" style="font-family: sans-serif; max-width: 500px;">
                 <h2 style="color: #C8806A;">${t('settings.contactTitle')}</h2>
-                <p><strong>שם:</strong> ${userData.name || t('common.unknown')}</p>
-                <p><strong>${t('settings.contactEmailLabel')}:</strong> ${user.email || t('common.unknown')}</p>
+                <p><strong>שם:</strong> ${escapeHtml(userData.name || t('common.unknown'))}</p>
+                <p><strong>${t('settings.contactEmailLabel')}:</strong> ${escapeHtml(user.email || t('common.unknown'))}</p>
                 <hr/>
                 <p><strong>${t('settings.contactMessageLabel')}:</strong></p>
-                <p style="background: #f5f5f5; padding: 12px; border-radius: 8px;">${contactMessage}</p>
+                <p style="background: #f5f5f5; padding: 12px; border-radius: 8px;">${escapeHtml(contactMessage)}</p>
               </div>
             `,
           },
@@ -404,73 +431,105 @@ if (data.settings.language !== undefined) {
                         }
                       };
 
-                      // 1. Delete all children (babies) created by this user
+                      // 1. Delete all children (babies) and their events.
+                      // Paginated to bound memory (long-time users may have many babies and
+                      // each baby may have thousands of events). Events are deleted via
+                      // writeBatch chunks of 400 to stay under Firestore's 500-op limit.
                       try {
-                        const babiesQuery = query(
-                          collection(db, 'babies'),
-                          where('parentId', '==', userId)
-                        );
-                        const babiesSnapshot = await getDocs(babiesQuery);
-                        const deleteBabyPromises = babiesSnapshot.docs.map(async (babyDoc) => {
-                          const babyId = babyDoc.id;
-                          const babyData = babyDoc.data();
-                          
-                          // Delete baby's avatar from Storage
-                          if (babyData.photoUrl) {
-                             await deleteStorageObjectByUrl(babyData.photoUrl);
-                          }
-                          // Delete ALL of the baby's album photos from Storage
-                          if (babyData.album && typeof babyData.album === 'object') {
-                             const albumUrls = Object.values(babyData.album) as string[];
-                             await Promise.all(albumUrls.map(url => deleteStorageObjectByUrl(url)));
+                        const BABIES_PAGE_SIZE = 50;
+                        const EVENTS_BATCH_SIZE = 400;
+                        let lastBabyDoc: any = null;
+
+                        // Outer loop: page through the user's babies
+                        // eslint-disable-next-line no-constant-condition
+                        while (true) {
+                          const babiesQuery = lastBabyDoc
+                            ? query(
+                                collection(db, 'babies'),
+                                where('parentId', '==', userId),
+                                orderBy('__name__'),
+                                startAfter(lastBabyDoc),
+                                limit(BABIES_PAGE_SIZE)
+                              )
+                            : query(
+                                collection(db, 'babies'),
+                                where('parentId', '==', userId),
+                                orderBy('__name__'),
+                                limit(BABIES_PAGE_SIZE)
+                              );
+                          const babiesSnapshot = await getDocs(babiesQuery);
+                          if (babiesSnapshot.empty) break;
+
+                          for (const babyDoc of babiesSnapshot.docs) {
+                            const babyId = babyDoc.id;
+                            const babyData = babyDoc.data();
+
+                            // Delete baby's avatar from Storage
+                            if (babyData.photoUrl) {
+                              await deleteStorageObjectByUrl(babyData.photoUrl);
+                            }
+                            // Delete ALL of the baby's album photos from Storage
+                            if (babyData.album && typeof babyData.album === 'object') {
+                              const albumUrls = Object.values(babyData.album) as string[];
+                              await Promise.all(albumUrls.map(url => deleteStorageObjectByUrl(url)));
+                            }
+
+                            // Delete this baby's events in paginated writeBatch chunks
+                            let lastEventDoc: any = null;
+                            // eslint-disable-next-line no-constant-condition
+                            while (true) {
+                              const eventsQuery = lastEventDoc
+                                ? query(
+                                    collection(db, 'events'),
+                                    where('childId', '==', babyId),
+                                    orderBy('__name__'),
+                                    startAfter(lastEventDoc),
+                                    limit(EVENTS_BATCH_SIZE)
+                                  )
+                                : query(
+                                    collection(db, 'events'),
+                                    where('childId', '==', babyId),
+                                    orderBy('__name__'),
+                                    limit(EVENTS_BATCH_SIZE)
+                                  );
+                              const eventsSnapshot = await getDocs(eventsQuery);
+                              if (eventsSnapshot.empty) break;
+
+                              const eventsBatch = writeBatch(db);
+                              eventsSnapshot.docs.forEach(d => eventsBatch.delete(d.ref));
+                              await eventsBatch.commit();
+
+                              if (eventsSnapshot.docs.length < EVENTS_BATCH_SIZE) break;
+                              lastEventDoc = eventsSnapshot.docs[eventsSnapshot.docs.length - 1];
+                            }
+
+                            // Delete the baby document itself
+                            await deleteDoc(doc(db, 'babies', babyId));
                           }
 
-                          // Delete all events for this baby
-                          const eventsQuery = query(
-                            collection(db, 'events'),
-                            where('childId', '==', babyId)
-                          );
-                          const eventsSnapshot = await getDocs(eventsQuery);
-                          const deleteEventPromises = eventsSnapshot.docs.map((eventDoc) =>
-                            deleteDoc(doc(db, 'events', eventDoc.id))
-                          );
-                          await Promise.all(deleteEventPromises);
-                          // Delete the baby
-                          await deleteDoc(doc(db, 'babies', babyId));
-                        });
-                        await Promise.all(deleteBabyPromises);
+                          if (babiesSnapshot.docs.length < BABIES_PAGE_SIZE) break;
+                          lastBabyDoc = babiesSnapshot.docs[babiesSnapshot.docs.length - 1];
+                        }
                         logger.log('✅ Deleted all babies and their events');
                       } catch (error) {
                         logger.error('Error deleting babies:', error);
                       }
 
-                      // 2. Delete all events created by this user (fallback for old data)
+                      // 2. Delete all events created by this user (fallback for old data) — paginated
                       try {
-                        const eventsQuery = query(
-                          collection(db, 'events'),
-                          where('userId', '==', userId)
+                        await paginatedBatchDelete(
+                          query(collection(db, 'events'), where('userId', '==', userId))
                         );
-                        const eventsSnapshot = await getDocs(eventsQuery);
-                        const deleteEventPromises = eventsSnapshot.docs.map((eventDoc) =>
-                          deleteDoc(doc(db, 'events', eventDoc.id))
-                        );
-                        await Promise.all(deleteEventPromises);
                         logger.log('✅ Deleted all user events');
                       } catch (error) {
                         logger.error('Error deleting events:', error);
                       }
 
-                      // 2.5 Delete all dailyLogs (Charts Data) created by this user
+                      // 2.5 Delete all dailyLogs (Charts Data) created by this user — paginated
                       try {
-                        const logsQuery = query(
-                          collection(db, 'dailyLogs'),
-                          where('parentId', '==', userId)
+                        await paginatedBatchDelete(
+                          query(collection(db, 'dailyLogs'), where('parentId', '==', userId))
                         );
-                        const logsSnapshot = await getDocs(logsQuery);
-                        const deleteLogsPromises = logsSnapshot.docs.map((logDoc) =>
-                          deleteDoc(doc(db, 'dailyLogs', logDoc.id))
-                        );
-                        await Promise.all(deleteLogsPromises);
                         logger.log('✅ Deleted all dailyLogs');
                       } catch (error) {
                         logger.error('Error deleting dailyLogs:', error);
@@ -506,96 +565,101 @@ if (data.settings.language !== undefined) {
                         logger.error('Error leaving family:', error);
                       }
 
-                      // 4. Remove user from chats (update participants list)
+                      // 4. Remove user from chats (update participants list) — paginated to avoid OOM
                       try {
-                        const chatsQuery = query(
-                          collection(db, 'chats'),
-                          where('participants', 'array-contains', userId)
-                        );
-                        const chatsSnapshot = await getDocs(chatsQuery);
-                        const updateChatPromises = chatsSnapshot.docs
-                          .filter((chatDoc) => {
-                            const data = chatDoc.data();
-                            return data.participants && Array.isArray(data.participants) && data.participants.includes(userId);
-                          })
-                          .map(async (chatDoc) => {
-                            try {
-                              const chatData = chatDoc.data();
-                              const participants = chatData.participants || [];
-                              const updatedParticipants = participants.filter((id: string) => id !== userId);
+                        const CHATS_PAGE_SIZE = 100;
+                        let lastChatDoc: any = null;
+                        // eslint-disable-next-line no-constant-condition
+                        while (true) {
+                          const baseChatsQuery = query(
+                            collection(db, 'chats'),
+                            where('participants', 'array-contains', userId)
+                          );
+                          const pagedChatsQuery = lastChatDoc
+                            ? query(baseChatsQuery, orderBy('__name__'), startAfter(lastChatDoc), limit(CHATS_PAGE_SIZE))
+                            : query(baseChatsQuery, orderBy('__name__'), limit(CHATS_PAGE_SIZE));
+                          const chatsSnapshot = await getDocs(pagedChatsQuery);
+                          if (chatsSnapshot.empty) break;
 
-                              // If only one participant left or none, we can't delete due to security rules
-                              // Just remove the user from participants
-                              if (updatedParticipants.length > 0) {
-                                await updateDoc(doc(db, 'chats', chatDoc.id), {
-                                  participants: updatedParticipants
-                                });
-                              }
-                            } catch (chatError) {
-                              // Ignore individual chat errors and continue
-                              logger.warn('Error updating chat:', chatDoc.id, chatError);
-                            }
-                          });
-                        await Promise.all(updateChatPromises);
+                          // Apply per-chat updates inside this page (batched would be cleaner but
+                          // each update needs filter logic on the doc's own data, not blind delete).
+                          await Promise.all(
+                            chatsSnapshot.docs
+                              .filter((chatDoc) => {
+                                const data = chatDoc.data();
+                                return data.participants && Array.isArray(data.participants) && data.participants.includes(userId);
+                              })
+                              .map(async (chatDoc) => {
+                                try {
+                                  const chatData = chatDoc.data();
+                                  const participants = chatData.participants || [];
+                                  const updatedParticipants = participants.filter((id: string) => id !== userId);
+                                  if (updatedParticipants.length > 0) {
+                                    await updateDoc(doc(db, 'chats', chatDoc.id), {
+                                      participants: updatedParticipants,
+                                    });
+                                  }
+                                } catch (chatError) {
+                                  logger.warn('Error updating chat:', chatDoc.id, chatError);
+                                }
+                              })
+                          );
+
+                          if (chatsSnapshot.docs.length < CHATS_PAGE_SIZE) break;
+                          lastChatDoc = chatsSnapshot.docs[chatsSnapshot.docs.length - 1];
+                        }
                         logger.log('✅ Removed user from all chats');
                       } catch (error) {
                         // Continue even if there's an error - user deletion should not fail due to chats
                         logger.error('Error updating chats:', error);
                       }
 
-                      // 5. Delete notifications for this user
+                      // 5. Delete notifications for this user — paginated
                       try {
-                        const notificationsQuery = query(
-                          collection(db, 'notifications'),
-                          where('userId', '==', userId)
+                        await paginatedBatchDelete(
+                          query(collection(db, 'notifications'), where('userId', '==', userId))
                         );
-                        const notificationsSnapshot = await getDocs(notificationsQuery);
-                        const deleteNotificationPromises = notificationsSnapshot.docs.map((notificationDoc) =>
-                          deleteDoc(doc(db, 'notifications', notificationDoc.id))
-                        );
-                        await Promise.all(deleteNotificationPromises);
                         logger.log('✅ Deleted all notifications');
                       } catch (error) {
                         logger.error('Error deleting notifications:', error);
                       }
 
-                      // 5.1 Delete invites created by this user
+                      // 5.1 Delete invites created by this user — paginated
                       try {
-                        const invitesSnapshot = await getDocs(query(collection(db, 'invites'), where('createdBy', '==', userId)));
-                        await Promise.all(invitesSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        await paginatedBatchDelete(
+                          query(collection(db, 'invites'), where('createdBy', '==', userId))
+                        );
                         logger.log('✅ Deleted all invites');
                       } catch (error) {
                         logger.error('Error deleting invites:', error);
                       }
 
-                      // 5.2 Delete bookings where user is parent
+                      // 5.2 Delete bookings where user is parent — paginated
                       try {
-                        const bookingsSnapshot = await getDocs(query(collection(db, 'bookings'), where('parentId', '==', userId)));
-                        await Promise.all(bookingsSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        await paginatedBatchDelete(
+                          query(collection(db, 'bookings'), where('parentId', '==', userId))
+                        );
                         logger.log('✅ Deleted all bookings');
                       } catch (error) {
                         logger.error('Error deleting bookings:', error);
                       }
 
-                      // 5.3 Delete active shifts (as parent or babysitter)
+                      // 5.3 Delete active shifts (as parent or babysitter) — both paginated in parallel
                       try {
-                        const [shiftsAsParent, shiftsAsSitter] = await Promise.all([
-                          getDocs(query(collection(db, 'activeShifts'), where('parentId', '==', userId))),
-                          getDocs(query(collection(db, 'activeShifts'), where('babysitterId', '==', userId))),
-                        ]);
                         await Promise.all([
-                          ...shiftsAsParent.docs.map(d => deleteDoc(d.ref)),
-                          ...shiftsAsSitter.docs.map(d => deleteDoc(d.ref)),
+                          paginatedBatchDelete(query(collection(db, 'activeShifts'), where('parentId', '==', userId))),
+                          paginatedBatchDelete(query(collection(db, 'activeShifts'), where('babysitterId', '==', userId))),
                         ]);
                         logger.log('✅ Deleted all activeShifts');
                       } catch (error) {
                         logger.error('Error deleting activeShifts:', error);
                       }
 
-                      // 5.4 Delete reviews written by this user
+                      // 5.4 Delete reviews written by this user — paginated
                       try {
-                        const reviewsSnapshot = await getDocs(query(collection(db, 'reviews'), where('parentId', '==', userId)));
-                        await Promise.all(reviewsSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        await paginatedBatchDelete(
+                          query(collection(db, 'reviews'), where('parentId', '==', userId))
+                        );
                         logger.log('✅ Deleted all reviews');
                       } catch (error) {
                         logger.error('Error deleting reviews:', error);
@@ -618,28 +682,31 @@ if (data.settings.language !== undefined) {
                         logger.error('Error deleting sitter profile:', error);
                       }
 
-                      // 5.6 Delete growth measurements
+                      // 5.6 Delete growth measurements — paginated
                       try {
-                        const growthSnapshot = await getDocs(query(collection(db, 'growthMeasurements'), where('createdBy', '==', userId)));
-                        await Promise.all(growthSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        await paginatedBatchDelete(
+                          query(collection(db, 'growthMeasurements'), where('createdBy', '==', userId))
+                        );
                         logger.log('✅ Deleted all growthMeasurements');
                       } catch (error) {
                         logger.error('Error deleting growthMeasurements:', error);
                       }
 
-                      // 5.7 Delete teeth records
+                      // 5.7 Delete teeth records — paginated
                       try {
-                        const teethSnapshot = await getDocs(query(collection(db, 'teeth'), where('createdBy', '==', userId)));
-                        await Promise.all(teethSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        await paginatedBatchDelete(
+                          query(collection(db, 'teeth'), where('createdBy', '==', userId))
+                        );
                         logger.log('✅ Deleted all teeth records');
                       } catch (error) {
                         logger.error('Error deleting teeth records:', error);
                       }
 
-                      // 5.8 Delete reminders subcollection
+                      // 5.8 Delete reminders subcollection — paginated
                       try {
-                        const remindersSnapshot = await getDocs(collection(db, 'users', userId, 'reminders'));
-                        await Promise.all(remindersSnapshot.docs.map(d => deleteDoc(d.ref)));
+                        await paginatedBatchDelete(
+                          query(collection(db, 'users', userId, 'reminders'))
+                        );
                         logger.log('✅ Deleted all reminders');
                       } catch (error) {
                         logger.error('Error deleting reminders:', error);
@@ -694,8 +761,21 @@ if (data.settings.language !== undefined) {
                           );
                           return;
                         } else {
-                          // Ignore other errors, just sign out to clean state
+                          // Non-reauth auth failure (network, auth/too-many-requests, etc.).
+                          // Firestore data is already deleted; the Auth record persists.
+                          // Surface the failure to the user (do NOT show the success haptic),
+                          // sign out for a clean state, and stop the success path here.
                           logger.error('Error deleting Auth:', authErr);
+                          Alert.alert(
+                            t('settings.deleteAccountFailedTitle') || t('common.error'),
+                            t('settings.deleteAccountFailedMessage') ||
+                              'מחיקת החשבון נכשלה. נא לנסות שוב או לפנות לתמיכה.'
+                          );
+                          try {
+                            await clearUserCache();
+                            await signOut(auth);
+                          } catch (_) {}
+                          return;
                         }
                       }
 
@@ -771,8 +851,8 @@ if (data.settings.language !== undefined) {
           </View>
 
           <View style={[styles.listContainer, { backgroundColor: theme.card }]}>
-            <View style={[styles.listItem, styles.listItemFirst]}>
-              <View style={styles.listItemContent}>
+            <View style={[styles.listItem, styles.listItemFirst, { flexDirection: 'column', alignItems: 'stretch', paddingBottom: 16 }]}>
+              <View style={[styles.listItemContent, { marginBottom: 14 }]}>
                 <View style={[styles.listItemIcon, { backgroundColor: theme.actionColors.sleep.color }]}>
                   <Moon size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
@@ -780,15 +860,15 @@ if (data.settings.language !== undefined) {
                   <Text style={[styles.listItemText, { color: theme.textPrimary }]}>{t('settings.nightMode')}</Text>
                 </View>
               </View>
-              <Switch
-                value={isDarkMode}
-                onValueChange={(val) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setThemePreference(val ? 'dark' : 'light');
-                }}
-                trackColor={{ false: theme.divider, true: '#C8806A' }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor={theme.divider}
+              <LiquidSegmentedControl<ThemePreference>
+                segments={[
+                  { value: 'auto',  label: t('settings.themeAuto') },
+                  { value: 'light', label: t('settings.themeLight') },
+                  { value: 'dark',  label: t('settings.themeDark') },
+                ]}
+                selected={themePreference}
+                onChange={setThemePreference}
+                isDarkMode={isDarkMode}
               />
             </View>
 

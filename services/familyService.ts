@@ -178,6 +178,14 @@ export const joinFamily = async (
 
     const trimmedCode = inviteCode.trim();
 
+    // Reject codes containing characters that aren't valid in a Firestore doc ID
+    // (slashes, control chars, etc.) — they'd break the doc() path and could
+    // be used to probe other paths. Codes are 6 alphanumeric chars by design.
+    // Audit MEDIUM security.
+    if (!/^[A-Za-z0-9]{1,32}$/.test(trimmedCode)) {
+        return { success: false, message: t('joinFamily.error.invalidCode') || 'קוד לא תקין' };
+    }
+
     try {
         // ── Step 1: Check guest invite (invites/{code}) ──
         const inviteDoc = await getDoc(doc(db, 'invites', trimmedCode));

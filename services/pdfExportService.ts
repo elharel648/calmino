@@ -9,6 +9,13 @@ import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/
 import { db } from './firebaseConfig';
 import { logger } from '../utils/logger';
 
+// Escapes user-controlled strings before HTML interpolation (audit HIGH finding).
+const escapeHtml = (s: unknown): string => {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+};
+
 interface ExportOptions {
     childId: string;
     childName: string;
@@ -93,7 +100,7 @@ function generateReportHTML(
                 <tr>
                     <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${typeEmoji} ${getTypeLabel(event.type)}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${formatDateTime(timestamp)}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${note}${duration}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(note)}${duration}</td>
                 </tr>
             `;
         })
@@ -105,9 +112,9 @@ function generateReportHTML(
             return `
                 <tr>
                     <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${formatDate(date)}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${growth.weight || '-'} ק"ג</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${growth.height || '-'} ס"מ</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${growth.headCircumference || '-'} ס"מ</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(growth.weight || '-')} ק"ג</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(growth.height || '-')} ס"מ</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #E5E7EB;">${escapeHtml(growth.headCircumference || '-')} ס"מ</td>
                 </tr>
             `;
         })
@@ -169,7 +176,7 @@ function generateReportHTML(
             </style>
         </head>
         <body>
-            <h1>דוח מעקב - ${childName}</h1>
+            <h1>דוח מעקב - ${escapeHtml(childName)}</h1>
             <div class="subtitle">
                 תקופה: ${formatDate(startDate)} - ${formatDate(endDate)}<br>
                 נוצר ב: ${formatDate(new Date())}<br>

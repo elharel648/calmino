@@ -48,10 +48,10 @@ class ErrorBoundary extends Component<Props, State> {
             logger.log('Component stack:', errorInfo.componentStack);
         }
 
-        this.setState({
-            error,
-            errorInfo,
-        });
+        // Only update errorInfo here — `error` and `hasError` were already set by
+        // getDerivedStateFromError. Re-setting them would force a second render
+        // with identical values. See L5 in audit.
+        this.setState({ errorInfo });
 
         // Send to Firebase Crashlytics in production (only if available)
         if (!__DEV__ && Platform.OS !== 'web' && crashlytics) {

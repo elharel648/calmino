@@ -46,7 +46,9 @@ class NotificationStorageService {
                 where('title', '==', notification.title),
                 where('message', '==', notification.message),
                 where('timestamp', '>=', Timestamp.fromDate(thirtySecondsAgo)),
-                orderBy('timestamp', 'desc')
+                orderBy('timestamp', 'desc'),
+                // Only existence is checked below — fetching 1 is enough (audit MEDIUM perf).
+                limit(1)
             );
 
             const duplicateSnapshot = await getDocs(duplicateCheck);
@@ -78,10 +80,14 @@ class NotificationStorageService {
         if (!userId) return;
 
         try {
+            // Only need to look at the (maxCount + 100) newest docs to find the
+            // overflow tail. Previously this fetched every notification document
+            // for the user — potentially thousands — every save. Audit MEDIUM perf.
             const q = query(
                 collection(db, this.collectionName),
                 where('userId', '==', userId),
-                orderBy('timestamp', 'desc')
+                orderBy('timestamp', 'desc'),
+                limit(maxCount + 100)
             );
 
             const snapshot = await getDocs(q);

@@ -178,7 +178,13 @@ export const useHomeData = (
             // Calculate daily stats from history - check if user is guest
             // Get user's family and access level
             const currentUserId = auth.currentUser?.uid;
-            const userDoc = await getDoc(doc(db, 'users', creatorId || ''));
+            // Guard against undefined creatorId: doc(db, 'users', '') would throw
+            // "Document path... must point to a specific document" (audit HIGH crash finding).
+            if (!creatorId) {
+                logger.warn('useHomeData: creatorId is undefined, skipping family lookup');
+                return;
+            }
+            const userDoc = await getDoc(doc(db, 'users', creatorId));
             const familyId = userDoc.exists() ? userDoc.data()?.familyId : null;
             let historyAccessDays: number | undefined;
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import Toast, { ToastConfig, ToastType } from '../components/Toast';
 
 interface ToastContextType {
@@ -38,8 +38,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         showToast({ message, type: 'info', duration });
     }, [showToast]);
 
+    // Memoize the context value so consumers of useToast() (likely many screens)
+    // don't re-render on every ToastProvider render (audit MEDIUM perf).
+    const contextValue = useMemo(
+        () => ({ showToast, showSuccess, showError, showWarning, showInfo }),
+        [showToast, showSuccess, showError, showWarning, showInfo]
+    );
+
     return (
-        <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo }}>
+        <ToastContext.Provider value={contextValue}>
             {children}
             {toast && (
                 <Toast

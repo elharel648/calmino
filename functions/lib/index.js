@@ -33,13 +33,24 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onFamilyMemberJoined = exports.onBookingCreated = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onReviewCreated = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = void 0;
+exports.broadcastNotification = exports.onFamilyMemberJoined = exports.onChatMessageCreated = exports.joinFamilyByCode = exports.onFamilyInviteCreated = exports.sendWelcomeEmail = exports.sendPasswordResetEmailBranded = exports.sendVerificationEmail = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
 const firestore_2 = require("firebase-functions/v2/firestore");
 admin.initializeApp();
 const db = admin.firestore();
+// HTML escape for user-supplied strings that get interpolated into branded
+// email bodies. The Firebase Trigger-Email extension renders the `html` field
+// as HTML in the recipient's inbox — any unescaped `<script>` / `<img onerror>`
+// / `<style>` from user-controlled fields would execute or alter the email.
+// See workflow findings under sendPasswordResetEmailBranded, sendWelcomeEmail,
+// onFamilyInviteCreated, onChatMessageCreated.
+function escapeHtml(s) {
+    if (s === null || s === undefined)
+        return '';
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 // ══════════════════════════════════════════════════════════════════════════════
 // EOF
 // ══════════════════════════════════════════════════════════════════════════════
@@ -126,8 +137,20 @@ function calminoEmailTemplate(heTitle, heBody, enTitle = '', enBody = '') {
 // 0️⃣ SEND VERIFICATION EMAIL — Branded replacement for Firebase's plain email
 // ══════════════════════════════════════════════════════════════════════════════
 exports.sendVerificationEmail = (0, https_1.onCall)(async (request) => {
-    // Accept explicit email payload to bypass Android Native token initialization hang during Firebase Auth signup
-    const email = request.auth?.token?.email || request.data?.email;
+    // Caller MUST be authenticated (prevents email enumeration & email-bomb abuse).
+    // The payload-email fallback exists for the Android signup window where the
+    // auth token hasn't yet propagated `email` — but we still require an authed caller.
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'יש להתחבר');
+    }
+    const authedEmail = request.auth.token?.email;
+    const payloadEmail = request.data?.email;
+    // If both are present, they must match — prevents an authed user from triggering
+    // a verification email targeting a different account.
+    if (authedEmail && payloadEmail && authedEmail !== payloadEmail) {
+        throw new https_1.HttpsError('permission-denied', 'אימייל לא תואם');
+    }
+    const email = authedEmail || payloadEmail;
     if (!email)
         throw new https_1.HttpsError('invalid-argument', 'יש לספק כתובת מייל');
     const userRecord = await admin.auth().getUserByEmail(email);
@@ -138,7 +161,7 @@ exports.sendVerificationEmail = (0, https_1.onCall)(async (request) => {
     const verificationLink = await admin.auth().generateEmailVerificationLink(email);
     const displayName = userRecord.displayName || 'הורה יקר/ה';
     const heBodyContent = `
-        <p style="margin:0 0 16px;">שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
+        <p style="margin:0 0 16px;">שלום <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋</p>
         <p style="margin:0 0 24px;">נשאר רק צעד אחד קטן — לחצו על הכפתור למטה כדי לאמת את כתובת המייל שלכם, ולהתחיל להשתמש ב-Calmino.</p>
 
         <div style="text-align:center;margin:40px 0;">
@@ -160,7 +183,7 @@ exports.sendVerificationEmail = (0, https_1.onCall)(async (request) => {
             <p style="color:#C8806A;font-size:11px;word-break:break-all;margin:0;direction:ltr;background:#F1F5F9;padding:12px;border-radius:8px;">${verificationLink}</p>
         </div>`;
     const enBodyContent = `
-        <p style="margin:0 0 16px;">Hi <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋</p>
+        <p style="margin:0 0 16px;">Hi <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋</p>
         <p style="margin:0 0 24px;">Just one small step left — click the button below to verify your email address and start using Calmino.</p>
 
         <div style="text-align:center;margin:40px 0;">
@@ -218,7 +241,7 @@ exports.sendPasswordResetEmailBranded = (0, https_1.onCall)(async (request) => {
     const resetLink = await admin.auth().generatePasswordResetLink(email);
     const heBody = `
         <p style="margin:0 0 16px;">
-            ${displayName ? `שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>` : ''}
+            ${displayName ? `שלום <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋<br/><br/>` : ''}
             קיבלנו בקשה לאיפוס הסיסמא לחשבון ה-Calmino שלך.<br/>
             לחצו על הכפתור למטה כדי לבחור סיסמא חדשה.
         </p>
@@ -238,7 +261,7 @@ exports.sendPasswordResetEmailBranded = (0, https_1.onCall)(async (request) => {
         </div>`;
     const enBody = `
         <p style="margin:0 0 16px;">
-            ${displayName ? `Hi <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋<br/><br/>` : ''}
+            ${displayName ? `Hi <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋<br/><br/>` : ''}
             We received a request to reset your Calmino password.<br/>
             Click the button below to choose a new, secure password.
         </p>
@@ -287,7 +310,7 @@ exports.sendWelcomeEmail = (0, firestore_2.onDocumentCreated)('users/{userId}', 
     const displayName = userData.displayName || userData.name || 'הורה יקר/ה';
     const bodyContent = `
         <p style="margin:0 0 16px;color:#334155;font-size:16px;">
-            שלום <strong style="color:#0f172a;font-weight:700;">${displayName}</strong> 👋
+            שלום <strong style="color:#0f172a;font-weight:700;">${escapeHtml(displayName)}</strong> 👋
         </p>
         <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.8;">
             אנחנו כל כך שמחים שהצטרפת ל-<strong style="color:#C8806A;font-weight:700;">Calmino</strong>!<br/>
@@ -360,57 +383,15 @@ exports.onFamilyInviteCreated = (0, firestore_2.onDocumentCreated)('invites/{inv
         creatorName = creatorDoc.data()?.displayName || creatorDoc.data()?.name || 'מישהו';
     }
     catch (e) { /* fallback to default */ }
-    // Determine if this is a guest/babysitter invite or family invite
-    const isGuestInvite = invite.type === 'guest' || invite.childId;
-    if (isGuestInvite) {
-        // ── 3️⃣ BABYSITTER GUEST INVITE ──
-        let childName = 'התינוק';
-        if (invite.childId) {
-            try {
-                const childDoc = await db.doc(`babies/${invite.childId}`).get();
-                childName = childDoc.data()?.name || 'התינוק';
-            }
-            catch (e) { /* fallback */ }
-        }
-        const bodyContent = `
-            <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך לשמור על <strong>${childName}</strong> דרך Calmino!</p>
-            
-            <div style="background:linear-gradient(135deg,#C8806A,#D4A373);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
-                <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד הגישה שלך:</p>
-                <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${inviteCode}</p>
-                <p style="color:rgba(255,255,255,0.7);margin:12px 0 0;font-size:13px;">⏰ הקוד תקף ל-24 שעות</p>
-            </div>
-            
-            <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
-                <p style="color:#2d3436;font-weight:600;margin:0 0 12px;">איך להצטרף:</p>
-                <p style="color:#636e72;margin:6px 0;">1. הורידו את אפליקציית <strong>Calmino</strong></p>
-                <p style="color:#636e72;margin:6px 0;">2. הירשמו וגשו להגדרות</p>
-                <p style="color:#636e72;margin:6px 0;">3. לחצו "הצטרף עם קוד" והזינו את הקוד למעלה</p>
-            </div>`;
-        await db.collection('mail').add({
-            to: [targetEmail],
-            headers: {
-                'X-Priority': '1',
-                'X-Mailer': 'Calmino App',
-                'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
-            },
-            message: {
-                subject: `${creatorName} הזמין/ה אותך לשמור על ${childName} - Calmino`,
-                text: `${creatorName} הזמין/ה אותך לשמור על ${childName} דרך Calmino. קוד הגישה: ${inviteCode}. הורד את האפליקציה והזן את הקוד.`,
-                html: calminoEmailTemplate('!קיבלת הזמנה לשמרטפות', bodyContent),
-            },
-        });
-        console.log(`✅ Babysitter invite email queued for ${targetEmail}`);
-    }
-    else {
+    {
         // ── FAMILY MEMBER INVITE ──
         const bodyContent = `
-            <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${creatorName}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
+            <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${escapeHtml(creatorName)}</strong> הזמין/ה אותך להצטרף למשפחה ב-Calmino!</p>
             <p style="color:#636e72;line-height:1.8;font-size:15px;">כשתצטרפו, תוכלו לראות את כל המידע על התינוק בזמן אמת — האכלה, שינה, גדילה, ועוד.</p>
             
             <div style="background:linear-gradient(135deg,#C8806A,#D4A373);border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
                 <p style="color:rgba(255,255,255,0.85);margin:0 0 8px;font-size:14px;">קוד ההצטרפות:</p>
-                <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${inviteCode}</p>
+                <p style="color:#ffffff;margin:0;font-size:36px;font-weight:700;letter-spacing:8px;">${escapeHtml(inviteCode)}</p>
             </div>
             
             <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;">
@@ -434,57 +415,6 @@ exports.onFamilyInviteCreated = (0, firestore_2.onDocumentCreated)('invites/{inv
         });
         console.log(`✅ Family invite email queued for ${targetEmail}`);
     }
-});
-// ══════════════════════════════════════════════════════════════════════════════
-// 4️⃣ NEW REVIEW EMAIL — Sent to babysitter when a parent leaves a review
-// ══════════════════════════════════════════════════════════════════════════════
-exports.onReviewCreated = (0, firestore_2.onDocumentCreated)('reviews/{reviewId}', async (event) => {
-    const snapshot = event.data;
-    if (!snapshot)
-        return;
-    const review = snapshot.data();
-    const sitterId = review.babysitterId || review.sitterId;
-    if (!sitterId)
-        return;
-    // Get sitter email
-    const sitterDoc = await db.doc(`users/${sitterId}`).get();
-    if (!sitterDoc.exists)
-        return;
-    const sitterEmail = sitterDoc.data()?.email;
-    if (!sitterEmail)
-        return;
-    const sitterName = sitterDoc.data()?.displayName || sitterDoc.data()?.name || 'בייביסיטר';
-    const parentName = review.parentName || 'הורה';
-    const rating = review.rating || 5;
-    const comment = review.comment || review.text || '';
-    // Generate stars
-    const stars = '⭐'.repeat(Math.min(rating, 5));
-    const bodyContent = `
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">שלום <strong>${sitterName}</strong> 👋</p>
-        <p style="color:#636e72;line-height:1.8;font-size:15px;"><strong>${parentName}</strong> השאיר/ה לך דירוג חדש!</p>
-        
-        <div style="background:#f8f9fa;border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
-            <p style="font-size:32px;margin:0;">${stars}</p>
-            <p style="color:#2d3436;font-size:18px;font-weight:600;margin:12px 0 0;">${rating}/5</p>
-            ${comment ? `<p style="color:#636e72;font-style:italic;margin:16px 0 0;font-size:15px;">"${comment}"</p>` : ''}
-        </div>
-        
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">פתחו את האפליקציה כדי לראות את כל הדירוגים שלכם.</p>
-        <p style="color:#636e72;line-height:1.8;font-size:15px;">המשיכו ככה! 💪</p>`;
-    await db.collection('mail').add({
-        to: [sitterEmail],
-        headers: {
-            'X-Priority': '1',
-            'X-Mailer': 'Calmino App',
-            'List-Unsubscribe': '<mailto:calminogroup@gmail.com?subject=unsubscribe>',
-        },
-        message: {
-            subject: `קיבלת דירוג חדש מ${parentName}! - Calmino`,
-            text: `שלום ${sitterName}, ${parentName} השאיר/ה לך דירוג ${rating}/5. ${comment ? `"${comment}"` : ''} פתחו את Calmino לפרטים.`,
-            html: calminoEmailTemplate('!קיבלת דירוג חדש', bodyContent),
-        },
-    });
-    console.log(`✅ Review email queued for sitter ${sitterId}`);
 });
 // ══════════════════════════════════════════════════════════════════════════════
 // 5️⃣ CHAT EMAIL — Sent when user receives a message and is offline
@@ -513,6 +443,17 @@ exports.joinFamilyByCode = (0, https_1.onCall)(async (request) => {
     if (!code || code.trim().length !== 6) {
         throw new https_1.HttpsError('invalid-argument', 'קוד לא תקין');
     }
+    // ── Brute-force guard: max 10 attempts per UID per rolling hour ──
+    // Without this, an attacker can sweep the 10⁶ numeric-code space via Cloud Functions auto-scale.
+    const throttleRef = db.doc(`_throttle/joinFamily_${uid}`);
+    const nowMs = Date.now();
+    const throttleSnap = await throttleRef.get();
+    const prevAttempts = throttleSnap.exists ? (throttleSnap.data()?.attempts || []) : [];
+    const recentAttempts = prevAttempts.filter((t) => nowMs - t < 3600_000);
+    if (recentAttempts.length >= 10) {
+        throw new https_1.HttpsError('resource-exhausted', 'יותר מדי ניסיונות, נסה שוב מאוחר יותר');
+    }
+    await throttleRef.set({ attempts: [...recentAttempts, nowMs] });
     const trimmedCode = code.trim();
     // ── Step 1: Check guest invite (invites/{code}) ──────────────────────────
     const inviteRef = db.doc(`invites/${trimmedCode}`);
@@ -702,7 +643,7 @@ exports.onChatMessageCreated = (0, firestore_2.onDocumentCreated)('chats/{chatId
     if (!receiverId)
         return;
     // Get sender name
-    const senderName = chatData.parentId === senderId ? chatData.parentName : chatData.sitterName;
+    const senderName = chatData.parentName || chatData.senderName || 'משתמש';
     // Get receiver data
     const userDoc = await db.doc(`users/${receiverId}`).get();
     if (!userDoc.exists)
@@ -746,10 +687,10 @@ exports.onChatMessageCreated = (0, firestore_2.onDocumentCreated)('chats/{chatId
     if (!isOnline && userData.email) {
         const previewText = text.length > 100 ? text.substring(0, 100) + '...' : text;
         const bodyContent = `
-            <p style="color:#636e72;line-height:1.8;font-size:15px;">יש לך הודעה חדשה מ-<strong>${senderName || 'משתמש'}</strong>:</p>
-            
+            <p style="color:#636e72;line-height:1.8;font-size:15px;">יש לך הודעה חדשה מ-<strong>${escapeHtml(senderName || 'משתמש')}</strong>:</p>
+
             <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:24px 0;border-right:4px solid #C8806A;">
-                <p style="color:#2d3436;margin:0;font-size:15px;line-height:1.6;">${previewText}</p>
+                <p style="color:#2d3436;margin:0;font-size:15px;line-height:1.6;">${escapeHtml(previewText)}</p>
             </div>
             
             <p style="color:#636e72;line-height:1.8;font-size:15px;">פתחו את Calmino כדי להשיב 💬</p>`;
@@ -767,48 +708,6 @@ exports.onChatMessageCreated = (0, firestore_2.onDocumentCreated)('chats/{chatId
             },
         });
         console.log(`✅ Chat email queued for offline user ${receiverId}`);
-    }
-});
-exports.onBookingCreated = (0, firestore_2.onDocumentCreated)('bookings/{bookingId}', async (event) => {
-    const snapshot = event.data;
-    if (!snapshot)
-        return;
-    const booking = snapshot.data();
-    const receiverId = booking.sitterId; // Assuming sitter receives the request
-    // Get receiver push token
-    const userDoc = await db.doc(`users/${receiverId}`).get();
-    if (!userDoc.exists)
-        return;
-    const pushToken = userDoc.data()?.pushToken;
-    if (!pushToken || !pushToken.startsWith('ExponentPushToken['))
-        return;
-    try {
-        const message = {
-            to: pushToken,
-            sound: 'default',
-            title: 'בקשת בייביסיטר חדשה!',
-            body: `${booking.parentName} שלח/ה לך בקשה לשמירה ב-${new Date(booking.startTime).toLocaleDateString('he-IL')}`,
-            data: { type: 'booking_new', bookingId: event.params.bookingId },
-            channelId: 'booking',
-        };
-        const response = await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Accept-encoding': 'gzip, deflate',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(message),
-        });
-        if (response.ok) {
-            console.log(`Push notification sent to ${receiverId} for new booking ${event.params.bookingId}`);
-        }
-        else {
-            console.error(`Push notification HTTP error: ${response.status}`, await response.text());
-        }
-    }
-    catch (error) {
-        console.error('Error sending push for booking:', error);
     }
 });
 // ══════════════════════════════════════════════════════════════════════════════
@@ -829,7 +728,7 @@ exports.onFamilyMemberJoined = (0, firestore_2.onDocumentUpdated)('families/{fam
     for (const newMemberId of newMemberIds) {
         const newMember = afterMembers[newMemberId];
         const memberName = newMember.name || 'משתמש חדש';
-        const roleText = newMember.role === 'guest' ? 'כאורח/בייביסיטר' : 'כחבר משפחה';
+        const roleText = newMember.role === 'guest' ? 'כאורח' : 'כחבר משפחה';
         const babyName = afterData.babyName || 'המשפחה';
         // Find all admins to notify
         for (const [uid, memberData] of Object.entries(afterMembers)) {
@@ -942,5 +841,128 @@ exports.onFamilyMemberJoined = (0, firestore_2.onDocumentUpdated)('families/{fam
             console.error('Error saving in-app notification for removal:', error);
         }
     }
+});
+// ══════════════════════════════════════════════════════════════════════════════
+// BROADCAST NOTIFICATION — Admin-only push to all users or by platform
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Params:
+//   mode        'test' | 'broadcast'
+//   title       string
+//   body        string
+//   data        object (optional, extra payload)
+//
+//   -- test mode --
+//   testEmail   string  (find user by email)
+//   testToken   string  (send directly to a specific Expo token)
+//
+//   -- broadcast mode --
+//   platform    'ios' | 'android' | 'all'
+//
+// Returns: { sent, failed, total, mode, platform }
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Admin secret is loaded from Firebase Functions secrets at runtime ──────
+// Set with: firebase functions:secrets:set ADMIN_BROADCAST_SECRET
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const EXPO_BATCH = 100;
+exports.broadcastNotification = (0, https_1.onRequest)({ cors: true, secrets: ['ADMIN_BROADCAST_SECRET'] }, async (req, res) => {
+    // ── Secret key check ──────────────────────────────────────────────────
+    const adminSecret = process.env.ADMIN_BROADCAST_SECRET;
+    if (!adminSecret) {
+        res.status(500).json({ error: 'Server misconfigured: ADMIN_BROADCAST_SECRET not set' });
+        return;
+    }
+    const secret = req.headers['x-admin-secret'] ?? req.body?.secret;
+    if (secret !== adminSecret) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+    const { mode, platform, title, body, testEmail, testToken, data } = req.body;
+    if (!title || !body) {
+        res.status(400).json({ error: 'title ו-body נדרשים' });
+        return;
+    }
+    if (mode !== 'test' && mode !== 'broadcast') {
+        res.status(400).json({ error: 'mode חייב להיות test או broadcast' });
+        return;
+    }
+    // ── Collect tokens ────────────────────────────────────────────────────
+    let tokens = [];
+    if (mode === 'test') {
+        if (testToken) {
+            tokens = [testToken];
+        }
+        else if (testEmail) {
+            const snap = await db.collection('users').where('email', '==', testEmail).limit(1).get();
+            if (snap.empty) {
+                res.status(404).json({ error: `לא נמצא משתמש: ${testEmail}` });
+                return;
+            }
+            const token = snap.docs[0].data()?.pushToken;
+            if (!token) {
+                res.status(404).json({ error: 'למשתמש אין pushToken' });
+                return;
+            }
+            tokens = [token];
+        }
+        else {
+            res.status(400).json({ error: 'test mode מצריך testToken או testEmail' });
+            return;
+        }
+    }
+    else {
+        // Paginate so a single .get() doesn't materialize the entire users
+        // collection into RAM (audit MEDIUM finding). 500 docs/page keeps memory
+        // bounded while still being efficient on modest user bases.
+        const PAGE = 500;
+        let q = db.collection('users')
+            .where('pushToken', '!=', null)
+            .orderBy('pushToken')
+            .orderBy('__name__');
+        if (platform && platform !== 'all')
+            q = q.where('platform', '==', platform);
+        let lastDoc = null;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const pagedQ = lastDoc ? q.startAfter(lastDoc).limit(PAGE) : q.limit(PAGE);
+            const snap = await pagedQ.get();
+            if (snap.empty)
+                break;
+            for (const d of snap.docs) {
+                const t = d.data().pushToken;
+                if (t?.startsWith('ExponentPushToken['))
+                    tokens.push(t);
+            }
+            if (snap.docs.length < PAGE)
+                break;
+            lastDoc = snap.docs[snap.docs.length - 1];
+        }
+    }
+    if (tokens.length === 0) {
+        res.json({ sent: 0, failed: 0, total: 0, message: 'אין מכשירים עם טוקן פעיל' });
+        return;
+    }
+    // ── Send in batches of 100 ────────────────────────────────────────────
+    let sent = 0, failed = 0;
+    for (let i = 0; i < tokens.length; i += EXPO_BATCH) {
+        const chunk = tokens.slice(i, i + EXPO_BATCH);
+        try {
+            const r = await fetch(EXPO_PUSH_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(chunk.map(to => ({
+                    to, title, body, sound: 'default', ...(data ?? {}),
+                }))),
+            });
+            const json = await r.json();
+            (json.data ?? []).forEach(r => r.status === 'ok' ? sent++ : failed++);
+        }
+        catch (e) {
+            failed += chunk.length;
+            console.error('Expo push batch error:', e);
+        }
+    }
+    console.log(`📲 done — sent:${sent} failed:${failed} total:${tokens.length} mode:${mode} platform:${platform ?? 'all'}`);
+    res.json({ sent, failed, total: tokens.length, mode, platform: platform ?? 'all' });
 });
 //# sourceMappingURL=index.js.map

@@ -380,8 +380,32 @@ export const ActiveChildProvider: React.FC<ActiveChildProviderProps> = ({ childr
         // Initial load
         refreshChildren();
 
-        // Listen to user document changes
-        const unsubscribe = onSnapshot(doc(db, 'users', userId), () => {
+        // Listen to user document changes. Refresh only when fields that affect
+        // the children list actually changed — any unrelated user-doc write
+        // (lastSeen, language, FCM tokens, settings) used to trigger 4+ Firestore
+        // queries + a loop of getDocs per guest family. See audit HIGH perf finding.
+        let lastFamilyId: string | null | undefined;
+        let lastGuestChildIdsKey: string | undefined;
+        let isFirstSnapshot = true;
+
+        const unsubscribe = onSnapshot(doc(db, 'users', userId), (snap) => {
+            if (isFirstSnapshot) {
+                // The very first snapshot just records baseline state — the
+                // initial refreshChildren() call above already fetched data.
+                isFirstSnapshot = false;
+                const data = snap.data();
+                lastFamilyId = data?.familyId ?? null;
+                lastGuestChildIdsKey = JSON.stringify(data?.guestChildIds || []);
+                return;
+            }
+            const data = snap.data();
+            const currentFamilyId = data?.familyId ?? null;
+            const currentGuestChildIdsKey = JSON.stringify(data?.guestChildIds || []);
+            if (currentFamilyId === lastFamilyId && currentGuestChildIdsKey === lastGuestChildIdsKey) {
+                return; // unrelated change — skip refresh
+            }
+            lastFamilyId = currentFamilyId;
+            lastGuestChildIdsKey = currentGuestChildIdsKey;
             refreshChildren();
         }, (error) => {
             logger.warn('ActiveChildContext onSnapshot error:', error);

@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { useColorScheme, Platform } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 import { auth, db } from '../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -157,13 +157,27 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const { t } = useLanguage();
-    const systemColorScheme = useColorScheme();
     const [themePreference, setThemePreferenceState] = useState<ThemePreference>('auto');
     const [manualDarkMode, setManualDarkMode] = useState(false);
 
-    // Resolve actual dark mode based on preference
+    // Appearance.addChangeListener below is the canonical subscription.
+    // We deliberately do NOT call useColorScheme() here — it would create a
+    // second subscription that re-renders ThemeProvider for no benefit. The
+    // initial value comes from Appearance.getColorScheme() (one-shot read).
+    const [appearanceScheme, setAppearanceScheme] = useState<'light' | 'dark'>(
+        () => (Appearance.getColorScheme() ?? 'light') as 'light' | 'dark'
+    );
+
+    useEffect(() => {
+        const sub = Appearance.addChangeListener(({ colorScheme }) => {
+            setAppearanceScheme((colorScheme ?? 'light') as 'light' | 'dark');
+        });
+        return () => sub.remove();
+    }, []);
+
+    // Use appearanceScheme (explicit listener) as source of truth for auto mode
     const isDarkMode = themePreference === 'auto'
-        ? systemColorScheme === 'dark'
+        ? appearanceScheme === 'dark'
         : themePreference === 'dark';
 
     // Load theme preference — AsyncStorage first (instant), then Firestore (sync)
@@ -226,7 +240,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     const setThemePreference = (pref: ThemePreference) => {
         setThemePreferenceState(pref);
-        const newDark = pref === 'auto' ? systemColorScheme === 'dark' : pref === 'dark';
+        const newDark = pref === 'auto' ? appearanceScheme === 'dark' : pref === 'dark';
         setManualDarkMode(newDark);
         saveThemeToStorage(newDark, pref);
     };
@@ -256,7 +270,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         toggleTheme,
         setDarkMode,
         setThemePreference,
-    }), [isDarkMode, theme, themePreference, systemColorScheme]);
+    }), [isDarkMode, theme, themePreference]);
 
     return (
         <ThemeContext.Provider value={contextValue}>

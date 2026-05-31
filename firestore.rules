@@ -49,6 +49,13 @@ service cloud.firestore {
     }
 
     // ===================
+    // THROTTLE COLLECTION (server-only — used by Cloud Functions for rate limits)
+    // ===================
+    match /_throttle/{doc} {
+      allow read, write: if false;
+    }
+
+    // ===================
     // USERS COLLECTION
     // ===================
     match /users/{userId} {

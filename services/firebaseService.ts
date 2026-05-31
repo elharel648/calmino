@@ -1,5 +1,25 @@
 import { logger } from '../utils/logger';
 import { analyticsLogBabyEvent } from './analyticsService';
+import { Platform } from 'react-native';
+
+// Records deferred-write failures to Crashlytics so silent data loss in the
+// fire-and-forget paths below becomes visible in production. We swallow
+// crashlytics errors so a missing native module (web, simulator) can't break
+// the data path. See audit HIGH crash finding.
+const reportDeferredWriteFailure = (label: string, err: unknown) => {
+    logger.warn(`Deferred ${label} failed:`, err);
+    if (Platform.OS === 'web') return;
+    try {
+        // Lazy require to avoid hard dependency on the native module at module load
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const crashlytics = require('@react-native-firebase/crashlytics').default;
+        const e = err instanceof Error ? err : new Error(String(err));
+        crashlytics().log(`Deferred ${label} failed`);
+        crashlytics().recordError(e);
+    } catch (_) {
+        // No-op: Crashlytics unavailable
+    }
+};
 // services/firebaseService.ts
 import {
   collection,
@@ -167,8 +187,9 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       const eventRef = doc(db, EVENTS_COLLECTION, data.id);
       const updateData = { ...eventData } as any;
       delete updateData.id;
-      // Fire and forget to avoid hanging offline
-      updateDoc(eventRef, updateData).catch(e => logger.warn('Deferred updateDoc failed:', e));
+      // Fire and forget to avoid hanging offline. Failures route to Crashlytics
+      // (was logger.warn only) so silent data loss becomes visible in prod.
+      updateDoc(eventRef, updateData).catch(e => reportDeferredWriteFailure('updateDoc(event)', e));
       logger.log('✅ Event queued for update with ID:', data.id);
       return data.id;
     } else {
@@ -176,7 +197,7 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       delete insertData.id;
       // Use synchronous doc() + fire-and-forget setDoc() to avoid hanging on strict offline modes
       const newDocRef = doc(eventsRef);
-      setDoc(newDocRef, insertData).catch(e => logger.warn('Deferred setDoc failed:', e));
+      setDoc(newDocRef, insertData).catch(e => reportDeferredWriteFailure('setDoc(event)', e));
       logger.log('✅ Event queued for save with ID:', newDocRef.id);
       
       // Trigger store review logic since a new event was tracked successfully

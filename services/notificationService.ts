@@ -4,7 +4,7 @@ import * as Calendar from 'expo-calendar';
 import { Platform, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db, auth } from './firebaseConfig';
-import { collection, query, where, getDocs, orderBy, Timestamp, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, orderBy, Timestamp, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { logger } from '../utils/logger';
 import Constants from 'expo-constants';
 
@@ -863,30 +863,32 @@ class NotificationService {
         }
     }
 
-    // Cancel a reminder
+    // Cancel a reminder — also cancels the scheduled local notification so the
+    // user doesn't keep receiving alerts for a deleted reminder. Audit HIGH crash
+    // finding (previously only Firestore doc was deleted).
     async cancelReminder(id: string): Promise<boolean> {
         const userId = auth.currentUser?.uid;
         if (!userId) return false;
 
         try {
-            // 1. Get the document to find the notificationId
-            // We need to fetch it before deleting
-            // However, since we are using Firestore, we can just get it.
-            // But wait, getCustomReminders already returns notificationId if we cached it.
-            // But here we only have ID.
+            const reminderRef = doc(db, `users/${userId}/reminders`, id);
 
-            // Let's try to fetch it first.
-            // Actually, for optimization, we can't easily fetch a single doc without 'getDoc' import.
-            // But I can assume 'deleteDoc' is fine.
-            // To properly cancel the local notification, I would need the notificationId.
-            // Since I cannot easily add 'getDoc' right now without checking imports (it is imported as 'doc', but 'getDoc' is not in the imports list I saw in line 1-8),
-            // I will check imports. 
-            // 'getDocs' is imported. 'doc' is imported. 'getDoc' is NOT imported in line 7.
-            // I'll skip fetching for now to minimize risk of import errors, 
-            // BUT I will correctly remove the duplicate function which is the main issue.
+            // 1. Look up the local notificationId BEFORE deleting the Firestore doc
+            try {
+                const snap = await getDoc(reminderRef);
+                if (snap.exists()) {
+                    const notificationId = snap.data()?.notificationId;
+                    if (notificationId && typeof notificationId === 'string') {
+                        await Notifications.cancelScheduledNotificationAsync(notificationId).catch(() => {});
+                    }
+                }
+            } catch (e) {
+                // Don't block the Firestore delete if the local cancel fails
+                logger.warn('Failed to cancel local notification before deleting reminder:', e);
+            }
 
-            await deleteDoc(doc(db, `users/${userId}/reminders`, id));
-            logger.debug('🔔 Reminder deleted from Firestore:', id);
+            await deleteDoc(reminderRef);
+            logger.debug('🔔 Reminder deleted from Firestore + local notification cancelled:', id);
             return true;
         } catch (error) {
             logger.error('Failed to cancel reminder:', error);

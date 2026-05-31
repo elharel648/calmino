@@ -174,6 +174,8 @@
     "deleteAccountYes": "Sí, Eliminar Todo",
     "deleteAccountReauthTitle": "Se requiere reautenticación",
     "deleteAccountReauthMessage": "Para eliminar tu cuenta, inicia sesión de nuevo e inténtalo otra vez.",
+    "deleteAccountFailedTitle": "Error al eliminar la cuenta",
+    "deleteAccountFailedMessage": "No se pudo completar la eliminación de la cuenta. Inténtalo de nuevo o contacta con soporte.",
     "hours": "horas",
     "notificationsAndReminders": "Notificaciones y Recordatorios",
     "enabled": "Activado",
