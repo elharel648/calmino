@@ -228,6 +228,20 @@ exports.sendPasswordResetEmailBranded = (0, https_1.onCall)(async (request) => {
     const email = request.data?.email;
     if (!email)
         throw new https_1.HttpsError('invalid-argument', 'נדרשת כתובת מייל');
+    // ── Rate limit: max 3 attempts per email per rolling hour ──
+    // This function is intentionally callable WITHOUT auth (user forgot password
+    // — they can't sign in). Without rate limiting, anyone with the URL could
+    // spam any inbox via our SMTP. Email used as key (no UID available).
+    const sanitizedEmail = String(email).replace(/[^a-zA-Z0-9._+-]/g, '_').slice(0, 200);
+    const throttleRef = db.doc(`_throttle/passwordReset_${sanitizedEmail}`);
+    const nowMs = Date.now();
+    const throttleSnap = await throttleRef.get();
+    const prevAttempts = throttleSnap.exists ? (throttleSnap.data()?.attempts || []) : [];
+    const recentAttempts = prevAttempts.filter((t) => nowMs - t < 3600_000);
+    if (recentAttempts.length >= 3) {
+        throw new https_1.HttpsError('resource-exhausted', 'יותר מדי ניסיונות לאיפוס סיסמה. נסה שוב בעוד שעה.');
+    }
+    await throttleRef.set({ attempts: [...recentAttempts, nowMs] });
     // Verify user exists (don't leak info — just silently succeed if not found)
     let displayName = '';
     try {
