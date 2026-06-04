@@ -154,8 +154,7 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         };
         // Catch any unforeseen reject so the fire-and-forget IIFE can't crash the app
         restore().catch((err) => {
-            // eslint-disable-next-line no-console
-            console.warn('FoodTimerContext restore failed:', err);
+            logger.warn('FoodTimerContext restore failed:', err);
         });
     }, [activeChildId]);
 
