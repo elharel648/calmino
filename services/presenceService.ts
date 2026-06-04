@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 // presenceService.ts - Real-time presence tracking for family members
-import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, collection, Unsubscribe } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, collection, query, limit, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from './firebaseConfig';
 import { AppState, AppStateStatus } from 'react-native';
 import i18n from './i18n';
@@ -87,8 +87,9 @@ export const subscribeToFamilyPresence = (
         emitPresence();
     });
 
-    // Listen to entire presence subcollection - single listener instead of N individual getDoc calls
-    const presenceUnsub = onSnapshot(collection(db, 'families', familyId, 'presence'), (snapshot) => {
+    // Listen to entire presence subcollection - single listener instead of N individual getDoc calls.
+    // Cap at 50 so a runaway/large presence collection can't flood the listener (families are small).
+    const presenceUnsub = onSnapshot(query(collection(db, 'families', familyId, 'presence'), limit(50)), (snapshot) => {
         presenceMap = {};
         snapshot.forEach((presenceDoc) => {
             const data = presenceDoc.data();
