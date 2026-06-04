@@ -184,8 +184,25 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
         });
     }, []);
 
-    // --- Global Interval for Pumping ---
+    // Whether ANY child has a running (non-paused) timer of each type. These are
+    // booleans, so they only change identity when crossing the active/idle boundary —
+    // the per-second elapsed updates keep them `true` and don't re-create the interval.
+    const hasActivePumping = useMemo(
+        () => Object.values(timers).some(t => t.pumping.isRunning && !t.pumping.isPaused),
+        [timers]
+    );
+    const hasActiveBottle = useMemo(
+        () => Object.values(timers).some(t => t.bottle.isRunning && !t.bottle.isPaused),
+        [timers]
+    );
+    const hasActiveBreast = useMemo(
+        () => Object.values(timers).some(t => t.breast.isRunning && !t.breast.isPaused),
+        [timers]
+    );
+
+    // --- Global Interval for Pumping (only ticks while a pumping timer is active) ---
     useEffect(() => {
+        if (!hasActivePumping) return;
         pumpingLastTick.current = Date.now();
         pumpingTimerRef.current = setInterval(() => {
             const now = Date.now();
@@ -217,11 +234,12 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
                 });
             }
         }, 1000);
-        return () => { if (pumpingTimerRef.current) clearInterval(pumpingTimerRef.current); };
-    }, []);
+        return () => { if (pumpingTimerRef.current) { clearInterval(pumpingTimerRef.current); pumpingTimerRef.current = null; } };
+    }, [hasActivePumping]);
 
-    // --- Global Interval for Bottle ---
+    // --- Global Interval for Bottle (only ticks while a bottle timer is active) ---
     useEffect(() => {
+        if (!hasActiveBottle) return;
         bottleLastTick.current = Date.now();
         bottleTimerRef.current = setInterval(() => {
             const now = Date.now();
@@ -253,11 +271,12 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
                 });
             }
         }, 1000);
-        return () => { if (bottleTimerRef.current) clearInterval(bottleTimerRef.current); };
-    }, []);
+        return () => { if (bottleTimerRef.current) { clearInterval(bottleTimerRef.current); bottleTimerRef.current = null; } };
+    }, [hasActiveBottle]);
 
-    // --- Global Interval for Breastfeeding ---
+    // --- Global Interval for Breastfeeding (only ticks while a breast timer is active) ---
     useEffect(() => {
+        if (!hasActiveBreast) return;
         breastLastTick.current = Date.now();
         breastTimerRef.current = setInterval(() => {
             const now = Date.now();
@@ -284,8 +303,8 @@ export const FoodTimerProvider = ({ children }: FoodTimerProviderProps) => {
                 });
             }
         }, 1000);
-        return () => { if (breastTimerRef.current) clearInterval(breastTimerRef.current); };
-    }, []);
+        return () => { if (breastTimerRef.current) { clearInterval(breastTimerRef.current); breastTimerRef.current = null; } };
+    }, [hasActiveBreast]);
 
 
     // === PUMPING ACTIONS ===
