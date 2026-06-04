@@ -1,25 +1,13 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View, TouchableOpacity, Text, StyleSheet,
-  Animated, Platform,
+  Animated, Platform, StyleProp, ViewStyle,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 
-let LiquidGlassView: any = null;
-let LiquidGlassContainerView: any = null;
-let isLiquidGlassSupported = false;
-
-try {
-  const LG = require('@callstack/liquid-glass');
-  LiquidGlassView = LG.LiquidGlassView;
-  LiquidGlassContainerView = LG.LiquidGlassContainerView;
-  isLiquidGlassSupported = LG.isLiquidGlassSupported;
-} catch {}
-
-const TRAY_H = 42;
-const TRAY_R = 24;
-const INSET = 3;
+const TRAY_H = 44;
+const TRAY_R = 12;
+const INSET  = 3;
 
 export interface LiquidSegment<T extends string> {
   value: T;
@@ -32,7 +20,7 @@ interface Props<T extends string> {
   selected: T;
   onChange: (value: T) => void;
   isDarkMode?: boolean;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function LiquidSegmentedControl<T extends string>({
@@ -46,7 +34,6 @@ export function LiquidSegmentedControl<T extends string>({
   const [segWidths, setSegWidths] = useState<number[]>([]);
   const indicatorX = useRef(new Animated.Value(INSET)).current;
   const [indicatorW, setIndicatorW] = useState(0);
-  const colorScheme = isDarkMode ? 'dark' : 'light';
 
   const handleSegLayout = useCallback((index: number, w: number) => {
     setSegWidths(prev => {
@@ -75,37 +62,33 @@ export function LiquidSegmentedControl<T extends string>({
     onChange(value);
   };
 
-  const activeTextColor  = isDarkMode ? '#fff' : '#000';
-  const inactiveTextColor = isDarkMode ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.38)';
+  const trayBg    = isDarkMode ? '#2C2C2E' : '#E5E5EA';
+  const pillBg    = isDarkMode ? '#48484A' : '#FFFFFF';
+  const activeColor   = isDarkMode ? '#FFFFFF' : '#000000';
+  const inactiveColor = isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.40)';
 
-  // ── Shared inner content (labels + sliding indicator) ───────────────────────
-  const renderInner = () => (
-    <>
-      {/* Sliding active indicator */}
+  return (
+    <View style={[styles.tray, { backgroundColor: trayBg }, style]}>
+      {/* Sliding pill */}
       {indicatorW > 0 && (
         <Animated.View
           style={[
-            styles.indicator,
+            styles.pill,
             {
               left: indicatorX,
               width: indicatorW,
-              top: INSET,
-              bottom: INSET,
-              borderRadius: TRAY_R - INSET,
-              backgroundColor: isDarkMode
-                ? 'rgba(255,255,255,0.18)'
-                : 'rgba(255,255,255,0.85)',
-              // subtle shadow so it "lifts" above the tray
+              backgroundColor: pillBg,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: isDarkMode ? 0.3 : 0.12,
-              shadowRadius: 4,
+              shadowRadius: 3,
+              elevation: 2,
             },
           ]}
         />
       )}
 
-      {/* Labels layer (zIndex above indicator) */}
+      {/* Labels */}
       <View style={styles.labelsRow} pointerEvents="box-none">
         {segments.map((seg, i) => (
           <TouchableOpacity
@@ -116,82 +99,18 @@ export function LiquidSegmentedControl<T extends string>({
             activeOpacity={0.75}
           >
             {seg.icon}
-            <Text style={[styles.label, { color: selected === seg.value ? activeTextColor : inactiveTextColor }]}>
+            <Text style={[
+              styles.label,
+              {
+                color: selected === seg.value ? activeColor : inactiveColor,
+                fontWeight: selected === seg.value ? '600' : '400',
+              },
+            ]}>
               {seg.label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
-    </>
-  );
-
-  // ── Liquid Glass path (iOS 26+) ─────────────────────────────────────────────
-  if (isLiquidGlassSupported && LiquidGlassContainerView && LiquidGlassView) {
-    return (
-      <LiquidGlassContainerView style={[styles.tray, style]}>
-        <LiquidGlassView
-          effect="regular"
-          colorScheme={colorScheme}
-          style={[StyleSheet.absoluteFill, { borderRadius: TRAY_R }]}
-        />
-        {/* Replace the solid indicator with its own LiquidGlassView */}
-        {indicatorW > 0 && (
-          <Animated.View
-            style={[
-              styles.indicator,
-              {
-                left: indicatorX,
-                width: indicatorW,
-                top: INSET,
-                bottom: INSET,
-                borderRadius: TRAY_R - INSET,
-              },
-            ]}
-          >
-            <LiquidGlassView
-              effect="regular"
-              colorScheme={colorScheme}
-              style={StyleSheet.absoluteFill}
-            />
-          </Animated.View>
-        )}
-        <View style={styles.labelsRow} pointerEvents="box-none">
-          {segments.map((seg, i) => (
-            <TouchableOpacity
-              key={seg.value}
-              style={styles.segBtn}
-              onPress={() => handlePress(seg.value)}
-              onLayout={e => handleSegLayout(i, e.nativeEvent.layout.width)}
-              activeOpacity={0.75}
-            >
-              {seg.icon}
-              <Text style={[styles.label, { color: selected === seg.value ? activeTextColor : inactiveTextColor }]}>
-                {seg.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </LiquidGlassContainerView>
-    );
-  }
-
-  // ── Blur / fallback path (iOS < 26, Android) ────────────────────────────────
-  // BlurView gives a frosted-glass tray that looks premium on every device.
-  return (
-    <View style={[styles.tray, style, { overflow: 'hidden' }]}>
-      <BlurView
-        tint={isDarkMode ? 'systemChromeMaterialDark' : 'systemChromeMaterial'}
-        intensity={70}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Tray tint overlay */}
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: isDarkMode ? 'rgba(30,30,38,0.35)' : 'rgba(255,255,255,0.35)' },
-        ]}
-      />
-      {renderInner()}
     </View>
   );
 }
@@ -202,8 +121,11 @@ const styles = StyleSheet.create({
     borderRadius: TRAY_R,
     flexDirection: 'row',
   },
-  indicator: {
+  pill: {
     position: 'absolute',
+    top: INSET,
+    bottom: INSET,
+    borderRadius: TRAY_R - INSET,
   },
   labelsRow: {
     flex: 1,
@@ -219,7 +141,7 @@ const styles = StyleSheet.create({
     height: TRAY_H,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    letterSpacing: -0.2,
   },
 });

@@ -907,12 +907,46 @@ exports.broadcastNotification = (0, https_1.onRequest)({ cors: true, secrets: ['
             tokens = [testToken];
         }
         else if (testEmail) {
+            // 1) Try Firestore users collection by email field
+            let token;
+            let userDocData;
+            let foundVia = '';
+            let resolvedUid = '';
             const snap = await db.collection('users').where('email', '==', testEmail).limit(1).get();
-            if (snap.empty) {
-                res.status(404).json({ error: `לא נמצא משתמש: ${testEmail}` });
+            if (!snap.empty) {
+                userDocData = snap.docs[0].data();
+                token = userDocData?.pushToken;
+                foundVia = 'firestore-email-field';
+                resolvedUid = snap.docs[0].id;
+            }
+            // 2) Fallback — resolve email via Firebase Auth, then read users/{uid}
+            if (!token) {
+                try {
+                    const userRecord = await admin.auth().getUserByEmail(testEmail);
+                    resolvedUid = userRecord.uid;
+                    const doc = await db.collection('users').doc(userRecord.uid).get();
+                    userDocData = doc.data();
+                    token = userDocData?.pushToken;
+                    foundVia = 'firebase-auth-fallback';
+                }
+                catch (e) {
+                    res.status(404).json({ error: `לא נמצא משתמש: ${testEmail}` });
+                    return;
+                }
+            }
+            // ── Diagnose mode: return everything we found, don't send ────────────
+            if (req.body.diagnose) {
+                res.json({
+                    diagnose: true,
+                    foundVia,
+                    uid: resolvedUid,
+                    email: userDocData?.email ?? '(not stored)',
+                    platform: userDocData?.platform ?? '(not stored)',
+                    pushToken: token ? token.slice(0, 40) + '...' : '(none)',
+                    pushTokenUpdatedAt: userDocData?.pushTokenUpdatedAt?.toDate?.()?.toISOString() ?? '(unknown)',
+                });
                 return;
             }
-            const token = snap.docs[0].data()?.pushToken;
             if (!token) {
                 res.status(404).json({ error: 'למשתמש אין pushToken' });
                 return;
@@ -958,6 +992,7 @@ exports.broadcastNotification = (0, https_1.onRequest)({ cors: true, secrets: ['
     }
     // ── Send in batches of 100 ────────────────────────────────────────────
     let sent = 0, failed = 0;
+    const errors = [];
     for (let i = 0; i < tokens.length; i += EXPO_BATCH) {
         const chunk = tokens.slice(i, i + EXPO_BATCH);
         try {
@@ -969,14 +1004,28 @@ exports.broadcastNotification = (0, https_1.onRequest)({ cors: true, secrets: ['
                 }))),
             });
             const json = await r.json();
-            (json.data ?? []).forEach(r => r.status === 'ok' ? sent++ : failed++);
+            (json.data ?? []).forEach((item, idx) => {
+                if (item.status === 'ok') {
+                    sent++;
+                }
+                else {
+                    failed++;
+                    errors.push({
+                        token: chunk[idx].slice(0, 30) + '...',
+                        status: item.status,
+                        message: item.message,
+                        details: item.details,
+                    });
+                }
+            });
         }
         catch (e) {
             failed += chunk.length;
             console.error('Expo push batch error:', e);
+            errors.push({ token: '(batch)', status: 'network_error', message: String(e) });
         }
     }
     console.log(`📲 done — sent:${sent} failed:${failed} total:${tokens.length} mode:${mode} platform:${platform ?? 'all'}`);
-    res.json({ sent, failed, total: tokens.length, mode, platform: platform ?? 'all' });
+    res.json({ sent, failed, total: tokens.length, mode, platform: platform ?? 'all', ...(errors.length ? { errors } : {}) });
 });
 //# sourceMappingURL=index.js.map

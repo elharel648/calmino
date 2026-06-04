@@ -10,6 +10,7 @@ import AppIntents
 import ActivityKit
 import Foundation
 import CoreFoundation
+import WidgetKit
 
 // MARK: - Shared Constants
 
@@ -26,7 +27,7 @@ enum TimerAction: String {
 
 struct SharedTimerState {
     static let defaults = UserDefaults(suiteName: appGroupID)
-    
+
     static func writePendingAction(_ action: TimerAction, timerType: String, elapsedSeconds: Int? = nil, side: String? = nil) {
         defaults?.set(action.rawValue, forKey: "pendingTimerAction")
         defaults?.set(timerType, forKey: "pendingTimerType")
@@ -36,6 +37,43 @@ struct SharedTimerState {
         }
         if let s = side {
             defaults?.set(s, forKey: "pendingTimerSide")
+        }
+    }
+
+    // ───── Home Screen Widget mirror ────────────────────────────────────────
+    // The Home Screen Widget reads widget_activeTimer* keys. Live Activity
+    // intents must mirror their state changes here too, otherwise the widget
+    // keeps showing the old pause/run state until the user re-opens the app.
+
+    static func setWidgetTimerPaused(_ isPaused: Bool) {
+        defaults?.set(isPaused, forKey: "widget_activeTimerIsPaused")
+        defaults?.synchronize()
+        reloadWidget()
+    }
+
+    static func clearWidgetActiveTimer() {
+        defaults?.removeObject(forKey: "widget_activeTimerType")
+        defaults?.removeObject(forKey: "widget_activeTimerStartedAt")
+        defaults?.removeObject(forKey: "widget_activeTimerLabel")
+        defaults?.removeObject(forKey: "widget_activeTimerIsPaused")
+        defaults?.synchronize()
+        reloadWidget()
+    }
+
+    // When resuming after a pause we need to push the start time forward by the
+    // paused duration so the widget's `Text(_, style: .timer)` keeps counting
+    // from the right place — otherwise it would jump to include paused time.
+    static func adjustWidgetStartForResume(elapsedSecondsBeforePause: Int) {
+        let newStart = Date().timeIntervalSince1970 - Double(elapsedSecondsBeforePause)
+        defaults?.set(newStart, forKey: "widget_activeTimerStartedAt")
+        defaults?.set(false, forKey: "widget_activeTimerIsPaused")
+        defaults?.synchronize()
+        reloadWidget()
+    }
+
+    private static func reloadWidget() {
+        if #available(iOS 14.0, *) {
+            WidgetCenter.shared.reloadTimelines(ofKind: "LastEventWidget")
         }
     }
 }
@@ -249,7 +287,7 @@ struct PauseTimerIntent: LiveActivityIntent {
                 let elapsed = Int(Date().timeIntervalSince(start))
                 let l = currentState.leftSideSeconds + (currentState.activeSide == "left" ? elapsed : 0)
                 let r = currentState.rightSideSeconds + (currentState.activeSide == "right" ? elapsed : 0)
-                
+
                 let newState = BreastfeedingActivityAttributes.ContentState(
                     leftSideSeconds: l,
                     rightSideSeconds: r,
@@ -263,7 +301,11 @@ struct PauseTimerIntent: LiveActivityIntent {
         }
 
         // WhiteNoise (Only Stop supported usually, but just in case)
-        
+
+        // Mirror paused state into the Home Screen Widget so the widget swaps
+        // its Pause button for a Resume button immediately.
+        SharedTimerState.setWidgetTimerPaused(true)
+
         return .result()
     }
 }
@@ -327,6 +369,12 @@ struct ResumeTimerIntent: LiveActivityIntent {
             }
         }
 
+        // Mirror resume into the Home Screen Widget. Push the start timestamp
+        // back by the elapsed seconds we tracked so the running timer picks up
+        // from where it left off (and not from 00:00).
+        let elapsedBeforePause = SharedTimerState.defaults?.integer(forKey: "pendingTimerElapsed") ?? 0
+        SharedTimerState.adjustWidgetStartForResume(elapsedSecondsBeforePause: elapsedBeforePause)
+
         return .result()
     }
 }
@@ -377,6 +425,11 @@ struct StopTimerIntent: LiveActivityIntent {
                 nil, nil, true
             )
         }
+
+        // Clear the Home Screen Widget's running-timer state so the row falls
+        // back to "last X ago" right away.
+        SharedTimerState.clearWidgetActiveTimer()
+
         return .result()
     }
 }

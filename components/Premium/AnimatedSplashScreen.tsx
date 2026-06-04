@@ -51,8 +51,8 @@ const SCATTER_POSITIONS: [number, number][] = [
 ];
 
 const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimationComplete, isReadyToStart }) => {
-    const { theme } = useTheme();
-    
+    const { theme, isDarkMode } = useTheme();
+
     // Master progress: 0 = scattered, 1 = assembled
     const assembleProgress = useSharedValue(0);
     const opacity = useSharedValue(1);
@@ -61,9 +61,8 @@ const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ onAnimation
     // Controls: 0 = show segments, 1 = show final merged logo only
     const showFinal = useSharedValue(0);
 
-    const BRAND_DARK = '#111827'; 
-    const isDark = theme.background === '#121212' || theme.background === '#000000';
-    const logoColor = isDark ? '#FFFFFF' : BRAND_DARK;
+    const BRAND_DARK = '#111827';
+    const logoColor = isDarkMode ? '#FFFFFF' : BRAND_DARK;
 
     useEffect(() => {
         if (isReadyToStart) {

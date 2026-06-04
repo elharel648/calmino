@@ -20,8 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, FadeIn, FadeInDown, withDelay, withTiming } from 'react-native-reanimated';
-import { ANIMATIONS } from '../utils/designSystem';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, SlidersHorizontal, Film } from 'lucide-react-native';
 import DiaperIcon from '../components/Common/DiaperIcon';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
@@ -105,32 +104,12 @@ type TimeRange = 'day' | 'week' | 'month' | 'custom';
 type TabName = 'summary';
 type MetricType = 'sleep' | 'food' | 'diapers' | 'supplements' | null;
 
-const AnimatedCard = ({ index, children }: { index: number; children: React.ReactNode }) => {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = 0;
-    progress.value = withDelay(
-      index * 40,
-      Platform.OS === 'android'
-        ? withTiming(1, { duration: 350 })
-        : withSpring(1, { damping: 18, stiffness: 150 })
-    );
-  }, [index, progress]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [
-      { translateY: Platform.OS === 'android' ? 0 : 15 * (1 - progress.value) }
-    ]
-  }));
-
-  return (
-    <Animated.View style={[{ width: '48%', marginBottom: 14 }, animatedStyle]}>
-      {children}
-    </Animated.View>
-  );
-};
+// Static grid cell — no entrance animation, just the 2-column layout slot.
+const AnimatedCard = ({ children }: { index?: number; children: React.ReactNode }) => (
+  <View style={{ width: '48%', marginBottom: 14 }}>
+    {children}
+  </View>
+);
 
 export default function ReportsScreen() {
   const { theme, isDarkMode } = useTheme();
@@ -197,7 +176,10 @@ export default function ReportsScreen() {
     }).catch((e) => logger.warn('Failed to load stats order:', e));
   }, []);
 
-  const [loading, setLoading] = useState(false);
+  // Start in loading state: we always fetch on mount, so the skeleton should show
+  // immediately instead of briefly flashing empty cards (which also double-fires the
+  // entrance animation). See fetchData's no-child early return below for the reset.
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedOnce = useRef(false);
 
@@ -287,7 +269,7 @@ export default function ReportsScreen() {
 
   // Fetch data
   const fetchData = async () => {
-    if (!activeChild?.childId) return;
+    if (!activeChild?.childId) { setLoading(false); return; }
 
     // Prevent concurrent fetches
     if (isFetching.current) return;
@@ -1924,8 +1906,7 @@ export default function ReportsScreen() {
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
 
       {/* Header - Enhanced */}
-      <Animated.View
-        entering={ANIMATIONS.fadeInDown(0, 400)}
+      <View
         style={[styles.header, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)', borderBottomColor: theme.border }]}
       >
         <View style={styles.headerTop}>
@@ -1987,7 +1968,7 @@ export default function ReportsScreen() {
             </Text>
           </TouchableOpacity>
         )}
-      </Animated.View>
+      </View>
 
       {/* Content */}
       {loading && !hasLoadedOnce.current ? (

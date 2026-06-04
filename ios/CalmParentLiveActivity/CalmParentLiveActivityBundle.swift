@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct CalmParentLiveActivityBundle: WidgetBundle {
     var body: some Widget {
+        LastEventWidget()
         if #available(iOS 16.2, *) {
             SleepLiveActivity()
             FeedingLiveActivity()

@@ -42,7 +42,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform, AppState, NativeMod
 import PremiumLoader from './components/Common/PremiumLoader';
 import * as SplashScreen from 'expo-splash-screen';
 import AnimatedSplashScreen from './components/Premium/AnimatedSplashScreen';
-import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef, DefaultTheme, type Theme } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -141,6 +141,18 @@ import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 const NativeTab = createNativeBottomTabNavigator();
 const AndroidTab = createBottomTabNavigator();
 const Tab: any = Platform.OS === 'ios' ? NativeTab : AndroidTab;
+
+// Forced light theme — `background` is the color React Navigation paints behind
+// scenes during transitions, preventing the dark-flash between tabs.
+const AppLightTheme: Theme = {
+  ...DefaultTheme,
+  dark: false,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#F8F6F4',
+    card: '#FFFFFF',
+  },
+};
 const HomeStack = createNativeStackNavigator();
 const AccountStack = createNativeStackNavigator();
 
@@ -336,13 +348,15 @@ function MainAppNavigator() {
     : [homeScreen, reportsScreen, accountScreen];
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#F8F6F4' }}>
       <Tab.Navigator
         id={undefined}
         initialRouteName="Home"
         screenOptions={{
           tabBarActiveTintColor: '#C8806A',
           headerShown: false,
+          // v7: scene background during transitions (replaces v6 `sceneContainerStyle`)
+          sceneStyle: { backgroundColor: '#F8F6F4' },
         }}
         {...(isAndroid && { tabBar: (props: any) => <LiquidGlassTabBar {...props} /> })}
       >
@@ -428,6 +442,7 @@ function LiveActivityURLHandler() {
   const sleepTimer = useSleepTimer();
   const { activeChild } = useActiveChild();
   const audio = useAudio();
+  const { triggerFABAction } = useQuickActions();
 
   // Listen for Darwin notification (from extension StopTimerIntent) to stop white noise in background
   useEffect(() => {
@@ -636,6 +651,19 @@ function LiveActivityURLHandler() {
           } catch (error) {
             logger.error('Error switching breastfeeding side from Live Activity:', error);
           }
+        } else if (url.href.includes('track/food') || url.href.includes('track/feeding')) {
+          // Home Screen Widget — opens the food tracking modal via QuickActions FAB
+          await new Promise(r => setTimeout(r, 250));
+          triggerFABAction('food');
+        } else if (url.href.includes('track/sleep')) {
+          await new Promise(r => setTimeout(r, 250));
+          triggerFABAction('sleep');
+        } else if (url.href.includes('track/diaper')) {
+          await new Promise(r => setTimeout(r, 250));
+          triggerFABAction('diaper');
+        } else if (url.href.includes('track/medication') || url.href.includes('track/medicine')) {
+          await new Promise(r => setTimeout(r, 250));
+          triggerFABAction('healthMedications');
         }
       } catch (error) {
         logger.error('Error handling URL:', error);
@@ -724,8 +752,28 @@ function LiveActivityURLHandler() {
     coldLaunchTimer = setTimeout(tryColdLaunchSync, 500);
 
     const appStateSubscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') syncFromIntent();
+      if (state === 'active') {
+        syncFromIntent();
+        syncWidgetIfReady();
+      }
     });
+
+    // Standalone Home Screen Widget sync — runs independently of HomeScreen so
+    // the widget has fresh data even if the user never opens the Home tab.
+    const syncWidgetIfReady = () => {
+      if (Platform.OS !== 'ios') return;
+      if (!auth.currentUser?.uid || !activeChild?.childId) return;
+      import('./services/widgetSyncService').then(({ syncWidget }) => {
+        syncWidget({
+          userId: auth.currentUser!.uid,
+          childId: activeChild.childId!,
+          childName: activeChild.childName || 'התינוק שלי',
+        }).catch(e => logger.warn('widgetSync error:', e));
+      }).catch(() => {});
+    };
+
+    // Run once on mount and again whenever activeChild changes.
+    syncWidgetIfReady();
 
     return () => {
       cancelled = true;
@@ -1258,7 +1306,7 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8F6F4' }} onLayout={onLayoutRootView}>
       <ErrorBoundary>
         <ScrollTrackingProvider>
           <LanguageProvider>
@@ -1276,6 +1324,7 @@ export default function App() {
                               {(!user || isGuestMode || childrenReady) ? (
                                 <NavigationContainer
                                   ref={navigationRef}
+                                  theme={AppLightTheme}
                                   onStateChange={async () => {
                                     const currentName = navigationRef.current?.getCurrentRoute()?.name;
                                     if (currentName && currentName !== previousRouteNameRef.current) {

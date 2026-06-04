@@ -259,10 +259,25 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     <Text style={[styles.greetingSmall, { color: theme.textSecondary }]}>
                         {greeting},
                     </Text>
-                    {/* Line 2: large bold name */}
-                    <Text style={[styles.greetingName, { color: theme.textPrimary }]}>
-                        {profile.name}
-                    </Text>
+                    {/* Line 2: large bold name + add-child plus */}
+                    <View style={styles.nameRow}>
+                        <Text style={[styles.greetingName, { color: theme.textPrimary }]}>
+                            {profile.name}
+                        </Text>
+                        {allChildren.length === 1 && (
+                            <TouchableOpacity
+                                style={[styles.singleChildAddBtn, {
+                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                }]}
+                                onPress={handlePlusPress}
+                                activeOpacity={0.7}
+                                accessibilityLabel={t('header.addChild')}
+                            >
+                                <Plus size={16} color={theme.textSecondary} strokeWidth={2.5} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                     {/* Line 3: age + today's date */}
                     <Text style={[styles.ageText, { color: theme.textSecondary }]}>
                         {ageText} · {birthDateStr}
@@ -355,24 +370,6 @@ const HeaderSection = memo<HeaderSectionProps>(({
                 </View>
             )}
 
-            {/* Single child - show add button inline */}
-            {allChildren.length === 1 && (
-                <TouchableOpacity
-                    style={[styles.singleChildAddBtn, {
-                        borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                    }]}
-                    onPress={handlePlusPress}
-                    activeOpacity={0.7}
-                >
-                    <Text style={[styles.singleChildAddText, { color: theme.textSecondary }]}>{t('header.addChild')}</Text>
-                    <View style={[styles.addChildPlusCircle, {
-                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                    }]}>
-                        <Plus size={12} color={theme.textSecondary} strokeWidth={2.5} />
-                    </View>
-                </TouchableOpacity>
-            )}
 
 
 
@@ -497,27 +494,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SPACING.md,
     },
-    singleChildAddBtn: {
+    nameRow: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 20,
-        borderWidth: 1,
-        alignSelf: 'flex-end',
-        marginBottom: SPACING.md,
+        gap: 10,
     },
-    addChildPlusCircle: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
+    singleChildAddBtn: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    singleChildAddText: {
-        ...TYPOGRAPHY.labelSmall,
-        fontWeight: '500',
+        borderWidth: 1,
     },
     avatarsContainer: {
         flexDirection: 'row-reverse',

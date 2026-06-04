@@ -658,6 +658,30 @@ public class ActivityKitManager: Module {
             defaults?.removeObject(forKey: "pendingTimerTimestamp")
             defaults?.synchronize()
         }
+
+        // MARK: - Active Timer Mirror (for Home Screen Widget)
+        // Writes the currently-running timer to the App Group so the widget can
+        // render a live counting timer on the home screen, mirroring the Live
+        // Activity that's already shown on the lock screen / Dynamic Island.
+        // Passing `timerType = nil` clears the active timer state.
+        Function("updateActiveTimer") { (timerType: String?, startedAt: Double, label: String?, isPaused: Bool) -> Void in
+            let d = UserDefaults(suiteName: "group.com.calmparent.shared")
+            if let timerType = timerType, !timerType.isEmpty {
+                d?.set(timerType, forKey: "widget_activeTimerType")
+                d?.set(startedAt, forKey: "widget_activeTimerStartedAt")
+                d?.set(label ?? "", forKey: "widget_activeTimerLabel")
+                d?.set(isPaused, forKey: "widget_activeTimerIsPaused")
+            } else {
+                d?.removeObject(forKey: "widget_activeTimerType")
+                d?.removeObject(forKey: "widget_activeTimerStartedAt")
+                d?.removeObject(forKey: "widget_activeTimerLabel")
+                d?.removeObject(forKey: "widget_activeTimerIsPaused")
+            }
+            d?.synchronize()
+            if #available(iOS 14.0, *) {
+                WidgetCenter.shared.reloadTimelines(ofKind: "LastEventWidget")
+            }
+        }
     }
 
 }

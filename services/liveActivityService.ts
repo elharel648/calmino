@@ -102,6 +102,20 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    // Mirror the currently-running timer to the Home Screen Widget App Group
+    // so the widget can show a live counting timer (the same way the Live
+    // Activity does on the lock screen / Dynamic Island).
+    private syncActiveTimer(type: 'feeding' | 'pumping' | 'bottle' | 'breastfeeding' | 'sleep' | null, label: string = '', isPaused: boolean = false) {
+        if (Platform.OS !== 'ios' || !ActivityKitManager?.updateActiveTimer) return;
+        try {
+            const startedAt = type ? Date.now() / 1000 : 0;
+            ActivityKitManager.updateActiveTimer(type, startedAt, label, isPaused);
+        } catch (e) {
+            logger.warn('syncActiveTimer failed:', e);
+        }
+    }
+
     // MARK: - Pumping Timer
     async startPumpingTimer(parentName: string = 'הורה', childName: string = 'תינוק'): Promise<string> {
         if (Platform.OS === 'android') {
@@ -112,6 +126,7 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
+        this.syncActiveTimer('pumping', 'שאיבה');
         return this.safeStartActivity(
             () => ActivityKitManager.startMeal(childName, '', 'שאיבה', [], 0),
             'Pumping'
@@ -132,6 +147,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         try {
             await ActivityKitManager.stopMeal();
             this.activityId = null;
+            this.syncActiveTimer(null);
             logger.log('✅ Pumping Live Activity stopped');
             return true;
         } catch (error: any) {
@@ -150,6 +166,7 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
+        this.syncActiveTimer('bottle', 'בקבוק');
         return this.safeStartActivity(
             () => ActivityKitManager.startMeal(childName, '', 'בקבוק', [], 0),
             'Bottle'
@@ -170,6 +187,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         try {
             await ActivityKitManager.stopMeal();
             this.activityId = null;
+            this.syncActiveTimer(null);
             logger.log('✅ Bottle Live Activity stopped');
             return true;
         } catch (error: any) {
@@ -188,6 +206,7 @@ class LiveActivityServiceClass implements LiveActivityService {
             throw new Error('Live Activities not supported');
         }
 
+        this.syncActiveTimer('sleep', 'שינה');
         return this.safeStartActivity(
             () => ActivityKitManager.startSleep(childName, '', 'שינה', false),
             'Sleep'
@@ -207,6 +226,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         try {
             await ActivityKitManager.stopSleep();
             this.activityId = null;
+            this.syncActiveTimer(null);
             logger.log('✅ Sleep Live Activity stopped');
             return true;
         } catch (error: any) {
@@ -226,6 +246,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         }
 
         const mealType = side === 'left' ? 'breastfeeding-left' : 'breastfeeding-right';
+        this.syncActiveTimer('breastfeeding', side === 'left' ? 'הנקה — צד שמאל' : 'הנקה — צד ימין');
         return this.safeStartActivity(
             () => ActivityKitManager.startMeal(childName, '', mealType, [], 0),
             `Breastfeeding (${side})`
@@ -257,6 +278,7 @@ class LiveActivityServiceClass implements LiveActivityService {
         try {
             await ActivityKitManager.stopMeal();
             this.activityId = null;
+            this.syncActiveTimer(null);
             logger.log('✅ Breastfeeding Live Activity stopped');
             return true;
         } catch (error: any) {

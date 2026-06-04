@@ -975,9 +975,45 @@ export const broadcastNotification = onRequest(
       if (testToken) {
         tokens = [testToken];
       } else if (testEmail) {
+        // 1) Try Firestore users collection by email field
+        let token: string | undefined;
+        let userDocData: FirebaseFirestore.DocumentData | undefined;
+        let foundVia: string = '';
+        let resolvedUid: string = '';
         const snap = await db.collection('users').where('email', '==', testEmail).limit(1).get();
-        if (snap.empty) { res.status(404).json({ error: `לא נמצא משתמש: ${testEmail}` }); return; }
-        const token = snap.docs[0].data()?.pushToken;
+        if (!snap.empty) {
+          userDocData = snap.docs[0].data();
+          token = userDocData?.pushToken;
+          foundVia = 'firestore-email-field';
+          resolvedUid = snap.docs[0].id;
+        }
+        // 2) Fallback — resolve email via Firebase Auth, then read users/{uid}
+        if (!token) {
+          try {
+            const userRecord = await admin.auth().getUserByEmail(testEmail);
+            resolvedUid = userRecord.uid;
+            const doc = await db.collection('users').doc(userRecord.uid).get();
+            userDocData = doc.data();
+            token = userDocData?.pushToken;
+            foundVia = 'firebase-auth-fallback';
+          } catch (e) {
+            res.status(404).json({ error: `לא נמצא משתמש: ${testEmail}` });
+            return;
+          }
+        }
+        // ── Diagnose mode: return everything we found, don't send ────────────
+        if ((req.body as { diagnose?: boolean }).diagnose) {
+          res.json({
+            diagnose: true,
+            foundVia,
+            uid: resolvedUid,
+            email: userDocData?.email ?? '(not stored)',
+            platform: userDocData?.platform ?? '(not stored)',
+            pushToken: token ? token.slice(0, 40) + '...' : '(none)',
+            pushTokenUpdatedAt: userDocData?.pushTokenUpdatedAt?.toDate?.()?.toISOString() ?? '(unknown)',
+          });
+          return;
+        }
         if (!token) { res.status(404).json({ error: 'למשתמש אין pushToken' }); return; }
         tokens = [token];
       } else {
@@ -1013,6 +1049,7 @@ export const broadcastNotification = onRequest(
 
     // ── Send in batches of 100 ────────────────────────────────────────────
     let sent = 0, failed = 0;
+    const errors: Array<{ token: string; status: string; message?: string; details?: unknown }> = [];
 
     for (let i = 0; i < tokens.length; i += EXPO_BATCH) {
       const chunk = tokens.slice(i, i + EXPO_BATCH);
@@ -1024,15 +1061,28 @@ export const broadcastNotification = onRequest(
             to, title, body, sound: 'default', ...(data ?? {}),
           }))),
         });
-        const json = await r.json() as { data: Array<{ status: string }> };
-        (json.data ?? []).forEach(r => r.status === 'ok' ? sent++ : failed++);
+        const json = await r.json() as { data: Array<{ status: string; message?: string; details?: unknown }> };
+        (json.data ?? []).forEach((item, idx) => {
+          if (item.status === 'ok') {
+            sent++;
+          } else {
+            failed++;
+            errors.push({
+              token: chunk[idx].slice(0, 30) + '...',
+              status: item.status,
+              message: item.message,
+              details: item.details,
+            });
+          }
+        });
       } catch (e) {
         failed += chunk.length;
         console.error('Expo push batch error:', e);
+        errors.push({ token: '(batch)', status: 'network_error', message: String(e) });
       }
     }
 
     console.log(`📲 done — sent:${sent} failed:${failed} total:${tokens.length} mode:${mode} platform:${platform ?? 'all'}`);
-    res.json({ sent, failed, total: tokens.length, mode, platform: platform ?? 'all' });
+    res.json({ sent, failed, total: tokens.length, mode, platform: platform ?? 'all', ...(errors.length ? { errors } : {}) });
   }
 );

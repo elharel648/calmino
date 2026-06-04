@@ -75,19 +75,19 @@ async function savePushToken(userId: string, token: string): Promise<void> {
     try {
         const userRef = doc(db, 'users', userId);
         const userDoc = await getDoc(userRef);
+        const email = auth.currentUser?.email ?? null;
+
+        const payload: Record<string, unknown> = {
+            pushToken: token,
+            pushTokenUpdatedAt: new Date(),
+            platform: Platform.OS,
+        };
+        if (email) payload.email = email;
 
         if (userDoc.exists()) {
-            await updateDoc(userRef, {
-                pushToken: token,
-                pushTokenUpdatedAt: new Date(),
-                platform: Platform.OS,
-            });
+            await updateDoc(userRef, payload);
         } else {
-            await setDoc(userRef, {
-                pushToken: token,
-                pushTokenUpdatedAt: new Date(),
-                platform: Platform.OS,
-            }, { merge: true });
+            await setDoc(userRef, payload, { merge: true });
         }
 
         logger.log('✅ Push token saved to Firebase');
