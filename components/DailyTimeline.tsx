@@ -307,12 +307,18 @@ interface DailyTimelineProps {
 
 const INITIAL_VISIBLE_COUNT = 4;
 
+const _rgbaCache = new Map<string, string>();
 const hexToRgba = (hex: string, alpha: number): string => {
   if (!hex || !hex.startsWith('#') || hex.length < 7) return hex;
+  const key = `${hex}|${alpha}`;
+  const cached = _rgbaCache.get(key);
+  if (cached !== undefined) return cached;
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
+  const out = `rgba(${r},${g},${b},${alpha})`;
+  _rgbaCache.set(key, out);
+  return out;
 };
 
 const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false, onEditEvent }) => {
@@ -754,8 +760,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const hasMore = events.length > INITIAL_VISIBLE_COUNT;
 
   // Hide reporter badge when all events share the same reporter
-  const uniqueReporters = new Set(events.map(e => e.creatorId || e.userId).filter(Boolean));
-  let showReporterBadge = uniqueReporters.size > 1;
+  const showReporterBadge = useMemo(
+    () => new Set(events.map(e => e.creatorId || e.userId).filter(Boolean)).size > 1,
+    [events]
+  );
 
   if (loading) {
     return (
