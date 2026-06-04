@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define all available quick action keys
@@ -100,7 +100,7 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
     };
 
-    const savePreferences = async (order: QuickActionKey[], hidden: QuickActionKey[]) => {
+    const savePreferences = useCallback(async (order: QuickActionKey[], hidden: QuickActionKey[]) => {
         try {
             await Promise.all([
                 AsyncStorage.setItem(STORAGE_KEY_ORDER, JSON.stringify(order)),
@@ -109,9 +109,9 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
         } catch {
             // AsyncStorage can fail on simulator - non-critical
         }
-    };
+    }, []);
 
-    const moveAction = (key: QuickActionKey, direction: 'up' | 'down') => {
+    const moveAction = useCallback((key: QuickActionKey, direction: 'up' | 'down') => {
         const index = actionOrder.indexOf(key);
         if (index === -1) return;
 
@@ -123,57 +123,70 @@ export const QuickActionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
         setActionOrder(newOrder);
         savePreferences(newOrder, hiddenActions);
-    };
+    }, [actionOrder, hiddenActions, savePreferences]);
 
-    const toggleActionVisibility = (key: QuickActionKey) => {
+    const toggleActionVisibility = useCallback((key: QuickActionKey) => {
         const newHidden = hiddenActions.includes(key)
             ? hiddenActions.filter(k => k !== key)
             : [...hiddenActions, key];
 
         setHiddenActions(newHidden);
         savePreferences(actionOrder, newHidden);
-    };
+    }, [hiddenActions, actionOrder, savePreferences]);
 
-    const resetToDefault = () => {
+    const resetToDefault = useCallback(() => {
         setActionOrder(DEFAULT_ORDER);
         setHiddenActions([]);
         savePreferences(DEFAULT_ORDER, []);
-    };
+    }, [savePreferences]);
 
-    const isProtected = (key: QuickActionKey) => PROTECTED_ACTIONS.includes(key);
+    const isProtected = useCallback((key: QuickActionKey) => PROTECTED_ACTIONS.includes(key), []);
+
+    const setActionOrderPersisted = useCallback((order: QuickActionKey[]) => {
+        setActionOrder(order);
+        savePreferences(order, hiddenActions);
+    }, [hiddenActions, savePreferences]);
+
+    const triggerFABAction = useCallback((action: QuickActionKey) => {
+        setPendingFABAction(action);
+        setFabSheetVisible(false);
+    }, []);
+
+    const clearFABAction = useCallback(() => setPendingFABAction(null), []);
+
+    const setSosActions = useCallback((actions: QuickActionKey[]) => {
+        setSosActionsState(actions);
+        AsyncStorage.setItem(STORAGE_KEY_SOS, JSON.stringify(actions)).catch(() => {});
+    }, []);
+
+    const value = useMemo<QuickActionsContextType>(() => ({
+        actionOrder,
+        hiddenActions,
+        isEditMode,
+        setEditMode,
+        setActionOrder: setActionOrderPersisted,
+        moveAction,
+        toggleActionVisibility,
+        resetToDefault,
+        isProtected,
+        fabSheetVisible,
+        setFabSheetVisible,
+        pendingFABAction,
+        triggerFABAction,
+        clearFABAction,
+        sosActions,
+        setSosActions,
+        sosEditVisible,
+        setSosEditVisible,
+    }), [
+        actionOrder, hiddenActions, isEditMode, fabSheetVisible, pendingFABAction,
+        sosActions, sosEditVisible,
+        setActionOrderPersisted, moveAction, toggleActionVisibility, resetToDefault,
+        isProtected, triggerFABAction, clearFABAction, setSosActions,
+    ]);
 
     return (
-        <QuickActionsContext.Provider
-            value={{
-                actionOrder,
-                hiddenActions,
-                isEditMode,
-                setEditMode,
-                setActionOrder: (order: QuickActionKey[]) => {
-                    setActionOrder(order);
-                    savePreferences(order, hiddenActions);
-                },
-                moveAction,
-                toggleActionVisibility,
-                resetToDefault,
-                isProtected,
-                fabSheetVisible,
-                setFabSheetVisible,
-                pendingFABAction,
-                triggerFABAction: (action: QuickActionKey) => {
-                    setPendingFABAction(action);
-                    setFabSheetVisible(false);
-                },
-                clearFABAction: () => setPendingFABAction(null),
-                sosActions,
-                setSosActions: (actions: QuickActionKey[]) => {
-                    setSosActionsState(actions);
-                    AsyncStorage.setItem(STORAGE_KEY_SOS, JSON.stringify(actions)).catch(() => {});
-                },
-                sosEditVisible,
-                setSosEditVisible,
-            }}
-        >
+        <QuickActionsContext.Provider value={value}>
             {children}
         </QuickActionsContext.Provider>
     );
