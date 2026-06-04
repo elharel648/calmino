@@ -259,6 +259,16 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
     return (
       <Animated.View style={[styles.outer, { bottom: safeBottom, transform: [{ translateY }], opacity }]}>
         <View style={styles.container}>
+          {/* Opaque base so the bar's color always follows the APP theme — not the
+              system appearance, nor whatever content scrolls behind the translucent
+              blur/glass material rendered on top of it. */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.barGlass,
+              { backgroundColor: isDarkMode ? 'rgba(28,28,30,0.92)' : 'rgba(255,255,255,0.9)' },
+            ]}
+          />
           {useLiquidGlass ? (
             /* ─── Liquid Glass Path (iOS 26+) ────────────────────── */
             <LiquidGlassContainerView style={styles.glassContainer}>
@@ -293,7 +303,7 @@ const LiquidGlassTabBar: React.FC<BottomTabBarProps> = React.memo(
               {Platform.OS === 'ios' ? (
                 <>
                   <BlurView
-                    tint={isDarkMode ? 'systemChromeMaterialDark' : 'systemChromeMaterial'}
+                    tint={isDarkMode ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
                     intensity={80}
                     style={[styles.barGlass, { overflow: 'hidden' }]}
                   />
