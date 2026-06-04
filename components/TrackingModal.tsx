@@ -21,6 +21,15 @@ import AndroidHebrewCalendar from './Common/AndroidHebrewCalendar';
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TIME_PICKER_STYLE = { width: 300, height: 216, alignSelf: 'center' as const };
 
+// iOS spinner pickers follow the *system* appearance by default, so when the
+// device is in Dark Mode but our card is light (or vice-versa) the digits render
+// in a matching color and become invisible (white-on-white). Force the picker's
+// appearance + text color to our own theme so the clock is always visible.
+const getIosPickerProps = (theme: any, isDarkMode: boolean) =>
+  Platform.OS === 'ios'
+    ? { textColor: theme.textPrimary, themeVariant: (isDarkMode ? 'dark' : 'light') as 'dark' | 'light' }
+    : {};
+
 
 const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 5;
@@ -157,6 +166,7 @@ const IsolatedDurationPicker = ({
   onChange,
   onDone,
   theme,
+  isDarkMode,
   t,
   locale,
 }: {
@@ -165,6 +175,7 @@ const IsolatedDurationPicker = ({
   onChange: (h: number, m: number) => void;
   onDone: () => void;
   theme: any;
+  isDarkMode: boolean;
   t: any;
   locale?: string;
 }) => {
@@ -227,6 +238,7 @@ const IsolatedDurationPicker = ({
         is24Hour={true}
         minuteInterval={1}
         display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
         style={{ width: '100%', height: 180 }}
         onChange={(event, selectedDate) => {
           if (selectedDate) setDate(selectedDate);
@@ -1721,6 +1733,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   mode="time"
                   is24Hour={true}
                   display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
                   onChange={(event, selectedTime) => {
                     if (selectedTime) setFoodStartTime(selectedTime);
                   }}
@@ -1756,6 +1769,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                   mode="time"
                   is24Hour={true}
                   display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
                   onChange={(event, selectedTime) => {
                     if (selectedTime) setFoodEndTime(selectedTime);
                   }}
@@ -1913,6 +1927,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               }}
               theme={theme}
+              isDarkMode={isDarkMode}
               t={t}
               locale="he-IL"
             />
@@ -2006,6 +2021,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                       mode="time"
                       is24Hour={true}
                       display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
                       onChange={(event, date) => {
                         if (date) {
                           setSleepStartTimeDate(date);
@@ -2055,6 +2071,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                       mode="time"
                       is24Hour={true}
                       display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
                       onChange={(event, date) => {
                         if (date) {
                           setSleepEndTimeDate(date);
@@ -2272,6 +2289,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               mode="date"
               maximumDate={new Date()}
               display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
               locale="he-IL"
               onChange={(event, selectedDate) => {
                 if (selectedDate) {
@@ -2337,6 +2355,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
                 mode="time"
                 is24Hour={true}
                 display="spinner"
+        {...getIosPickerProps(theme, isDarkMode)}
                 onChange={(event, selectedTime) => {
                   if (selectedTime) {
                     const updated = new Date(diaperTime);
