@@ -3,7 +3,7 @@
     "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -71,7 +71,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harel.calmparentapp",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -146,7 +146,10 @@
     },
     "updates": {
       "enabled": true,
-      "url": "https://u.expo.dev/0af00389-5a5c-48ad-aa91-1b083f8e494e"
+      "url": "https://u.expo.dev/0af00389-5a5c-48ad-aa91-1b083f8e494e",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     },
     "runtimeVersion": "1.1.4"
   }

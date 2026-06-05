@@ -11,7 +11,7 @@ import { View,
     KeyboardAvoidingView,
     Animated,
     Alert } from 'react-native';
-import { X, Users, LogIn, CheckCircle, QrCode } from 'lucide-react-native';
+import { X, Users, LogIn, CheckCircle, QrCode, Lightbulb } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { joinFamily } from '../../services/familyService';
@@ -282,10 +282,13 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                             </TouchableOpacity>
 
                             {/* Tip */}
-                            <Text style={[styles.tip, { color: theme.textSecondary }]}>
-                                {t('joinFamily.tipFamily')}{'\n'}
-                                {t('joinFamily.tipGuest')}
-                            </Text>
+                            <View style={styles.tipRow}>
+                                <Text style={[styles.tip, { color: theme.textSecondary }]}>
+                                    {t('joinFamily.tipFamily')}{'\n'}
+                                    {t('joinFamily.tipGuest')}
+                                </Text>
+                                <Lightbulb size={16} color={theme.textSecondary} strokeWidth={2} />
+                            </View>
                         </>
                     )}
                 </View>
@@ -393,6 +396,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         color: '#fff',
+    },
+    tipRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
     },
     tip: {
         fontSize: 12,

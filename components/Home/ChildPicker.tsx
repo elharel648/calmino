@@ -218,7 +218,7 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                         onPress={handleAddChild}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : 'rgba(200,128,106,0.1)' }]}>
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(200,128,106,0.22)' : 'rgba(200,128,106,0.15)' }]}>
                                             <UserPlus size={18} color="#C8806A" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
@@ -243,8 +243,8 @@ const ChildPicker: React.FC<ChildPickerProps> = ({ onChildSelect, onAddChild, on
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : 'rgba(125,175,143,0.1)' }]}>
-                                            <Link size={18} color="#7DAF8F" strokeWidth={2} />
+                                        <View style={[styles.addOptionIcon, { backgroundColor: isDarkMode ? 'rgba(106,156,137,0.22)' : 'rgba(106,156,137,0.15)' }]}>
+                                            <Link size={18} color="#6A9C89" strokeWidth={2} />
                                         </View>
                                         <View style={styles.addOptionText}>
                                             <Text style={[styles.addOptionTitle, { color: theme.textPrimary }]}>{t('child.joinWithCode')}</Text>

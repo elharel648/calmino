@@ -7,6 +7,8 @@ import {
     collection,
     query,
     where,
+    limit,
+    documentId,
     getDocs,
     deleteField,
     serverTimestamp,
@@ -140,7 +142,8 @@ export const getMyFamily = async (): Promise<Family | null> => {
         // Fallback: search for family where user is a member
         const q = query(
             collection(db, 'families'),
-            where(`members.${userId}.role`, 'in', ['admin', 'member', 'viewer'])
+            where(`members.${userId}.role`, 'in', ['admin', 'member', 'viewer']),
+            limit(1),
         );
         const snapshot = await getDocs(q);
 
@@ -154,6 +157,24 @@ export const getMyFamily = async (): Promise<Family | null> => {
         logger.log('Error getting family:', error);
         return null;
     }
+};
+
+/**
+ * Read a family document while the current user is NOT yet a member.
+ *
+ * The Firestore `get` rule on /families requires existing membership, so a direct
+ * getDoc() is denied during the join flow ("Missing or insufficient permissions").
+ * The `list` rule, however, permits any authenticated user a query limited to 1 result
+ * — it was added specifically to support invite-code joins. Querying by document id with
+ * limit(1) therefore lets a prospective member verify the family before joining.
+ */
+const getFamilyDocForJoin = async (familyId: string) => {
+    const snap = await getDocs(query(
+        collection(db, 'families'),
+        where(documentId(), '==', familyId),
+        limit(1),
+    ));
+    return snap.empty ? null : snap.docs[0];
 };
 
 /**
@@ -205,8 +226,8 @@ export const joinFamily = async (
             }
 
             const { familyId, childId } = invite;
-            const familyDoc2 = await getDoc(doc(db, 'families', familyId));
-            if (!familyDoc2.exists()) return { success: false, message: t('joinFamily.error.familyNotFound') };
+            const familyDoc2 = await getFamilyDocForJoin(familyId);
+            if (!familyDoc2) return { success: false, message: t('joinFamily.error.familyNotFound') };
 
             const familyData = familyDoc2.data();
             if (familyData.members?.[userId]) {
@@ -279,6 +300,7 @@ export const joinFamily = async (
         const familyQuery = query(
             collection(db, 'families'),
             where('inviteCode', '==', trimmedCode),
+            limit(1),
         );
         const familySnapshot = await getDocs(familyQuery);
 
@@ -327,9 +349,15 @@ export const joinFamily = async (
             isGuest: false,
         };
     } catch (error: any) {
-        const msg: string = error?.message || t('joinFamily.error.generic');
-        logger.log('joinFamily error:', error?.code, msg);
-        return { success: false, message: msg };
+        // Never surface raw Firebase error strings (e.g. "Missing or insufficient permissions")
+        // to the user — they are English and unfriendly. A permission-denied here almost always
+        // means the entered code is invalid/expired, so map it to the Hebrew invalid-code message.
+        const code: string = error?.code || '';
+        const message = code === 'permission-denied'
+            ? t('joinFamily.error.invalidCode')
+            : t('joinFamily.error.generic');
+        logger.log('joinFamily error:', code, error?.message);
+        return { success: false, message };
     }
 };
 
@@ -657,9 +685,9 @@ export const joinAsGuest = async (
             return { success: false, message: t('joinFamily.error.ownInvite') };
         }
 
-        // SECURITY: Verify family exists
-        const familyDoc = await getDoc(doc(db, 'families', familyId));
-        if (!familyDoc.exists()) {
+        // SECURITY: Verify family exists (limit(1) query — non-members can't getDoc, see getFamilyDocForJoin)
+        const familyDoc = await getFamilyDocForJoin(familyId);
+        if (!familyDoc) {
             return { success: false, message: t('joinFamily.error.familyNotFound') };
         }
 

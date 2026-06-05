@@ -10,7 +10,7 @@ import { View,
     
     Alert,
     Linking } from 'react-native';
-import { X, Copy, Share2, RefreshCw, Users, Check, Info, MessageCircle } from 'lucide-react-native';
+import { X, Copy, Share2, RefreshCw, Users, Check, Info, MessageCircle, Lightbulb } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
@@ -147,7 +147,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
 
                             {/* Invite Code Box */}
                             <View style={[styles.codeBox, {
-                                backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.1)' : '#F5F3FF',
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8F9FA',
                             }]}>
                                 <Text style={[styles.codeLabel, { color: theme.textSecondary }]}>{t('familyInvite.codeLabel')}</Text>
                                 {inviteCode ? (
@@ -160,7 +160,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                                 backgroundColor="transparent"
                                             />
                                         </View>
-                                        <Text style={styles.code}>{inviteCode}</Text>
+                                        <Text style={[styles.code, { color: theme.textPrimary }]}>{inviteCode}</Text>
                                     </>
                                 ) : (
                                     <View style={styles.noCodeContainer}>
@@ -188,9 +188,9 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                             {copied ? (
                                                 <Check size={18} color="#7DAF8F" />
                                             ) : (
-                                                <Copy size={18} color="#C8806A" />
+                                                <Copy size={18} color={theme.textPrimary} />
                                             )}
-                                            <Text style={[styles.codeBtnText, copied && { color: '#7DAF8F' }]}>
+                                            <Text style={[styles.codeBtnText, { color: theme.textPrimary }, copied && { color: '#7DAF8F' }]}>
                                                 {copied ? t('familyInvite.copied') : t('familyInvite.copy')}
                                             </Text>
                                         </TouchableOpacity>
@@ -203,8 +203,8 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                             onPress={handleRefreshCode}
                                             disabled={refreshing}
                                         >
-                                            <RefreshCw size={18} color="#C8806A" style={refreshing ? { opacity: 0.5 } : {}} />
-                                            <Text style={styles.codeBtnText}>{t('familyInvite.refresh')}</Text>
+                                            <RefreshCw size={18} color={theme.textPrimary} style={refreshing ? { opacity: 0.5 } : {}} />
+                                            <Text style={[styles.codeBtnText, { color: theme.textPrimary }]}>{t('familyInvite.refresh')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
@@ -216,14 +216,17 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                 onPress={handleShare}
                                 disabled={!inviteCode}
                             >
-                                <MessageCircle size={20} color="#25D366" />
+                                <MessageCircle size={20} color="#FFFFFF" />
                                 <Text style={styles.shareBtnText}>{t('familyInvite.shareWhatsapp')}</Text>
                             </TouchableOpacity>
 
                             {/* Tip */}
-                            <Text style={[styles.tip, { color: theme.textSecondary }]}>
-                                {t('familyInvite.tip')}
-                            </Text>
+                            <View style={styles.tipRow}>
+                                <Text style={[styles.tip, { color: theme.textSecondary }]}>
+                                    {t('familyInvite.tip')}
+                                </Text>
+                                <Lightbulb size={16} color={theme.textSecondary} strokeWidth={2} />
+                            </View>
                         </>
                     )}
                 </View>
@@ -317,9 +320,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        backgroundColor: 'rgba(37, 211, 102, 0.10)',
+        backgroundColor: '#57B894',
         borderWidth: 1,
-        borderColor: 'rgba(37, 211, 102, 0.30)',
+        borderColor: '#57B894',
         paddingVertical: 16,
         borderRadius: 14,
         marginBottom: 16,
@@ -327,7 +330,13 @@ const styles = StyleSheet.create({
     shareBtnText: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1DA851',
+        color: '#FFFFFF',
+    },
+    tipRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
     },
     tip: {
         fontSize: 12,

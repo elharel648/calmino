@@ -401,10 +401,10 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             onPress={handleAddNewChild}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { 
-                                backgroundColor: isDarkMode ? 'rgba(200,128,106,0.15)' : 'rgba(200,128,106,0.1)',
+                            <View style={[styles.modalOptionIcon, {
+                                backgroundColor: '#C8806A',
                             }]}>
-                                <UserPlus size={22} color="#C8806A" strokeWidth={2} />
+                                <UserPlus size={22} color="#FFFFFF" strokeWidth={2} />
                             </View>
                             <View style={styles.modalOptionText}>
                                 <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.registerNewChild')}</Text>
@@ -427,10 +427,10 @@ const HeaderSection = memo<HeaderSectionProps>(({
                             onPress={handleJoinWithCode}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.modalOptionIcon, { 
-                                backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : 'rgba(125,175,143,0.1)',
+                            <View style={[styles.modalOptionIcon, {
+                                backgroundColor: '#6A9C89',
                             }]}>
-                                <Link2 size={22} color="#7DAF8F" strokeWidth={2} />
+                                <Link2 size={22} color="#FFFFFF" strokeWidth={2} />
                             </View>
                             <View style={styles.modalOptionText}>
                                 <Text style={[styles.modalOptionTitle, { color: theme.textPrimary }]}>{t('header.joinWithCode')}</Text>
