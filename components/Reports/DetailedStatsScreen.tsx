@@ -44,6 +44,15 @@ interface DetailedStatsScreenProps {
 
 type FeedingSubType = 'all' | 'bottle' | 'breast_right' | 'breast_left' | 'solids' | 'pumping';
 
+// Stronger-than-lightColor tint so low-chroma categories (e.g. navy "sleep") still read as colored
+const hexToRgba = (hex: string, alpha: number) => {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export default function DetailedStatsScreen({
     onClose,
     metricType,
@@ -653,7 +662,7 @@ export default function DetailedStatsScreen({
                 )}
 
                 {/* Main Stats Card */}
-                <View style={[styles.statsCard, { backgroundColor: config.lightBg }]}>
+                <View style={[styles.statsCard, { backgroundColor: hexToRgba(config.color, 0.16) }]}>
                     <Text style={[styles.avgLabel, { color: theme.textSecondary }]}>{config.avgLabel}</Text>
                     <View style={styles.mainValue}>
                         <Text style={[styles.valueNumber, { color: config.color }]}>{formattedAvg.main}</Text>
@@ -703,8 +712,8 @@ export default function DetailedStatsScreen({
                     {goalsProgress.map((goal, index) => (
                         <View key={index} style={[styles.goalCard, { backgroundColor: theme.card }]}>
                             <View style={styles.goalHeader}>
-                                <View style={[styles.goalIconWrap, { backgroundColor: config.lightBg }]}>
-                                    <IconComponent size={16} color={config.color} />
+                                <View style={[styles.goalIconWrap, { backgroundColor: config.color }]}>
+                                    <IconComponent size={16} color="#FFFFFF" />
                                 </View>
                                 <Text style={[styles.goalTitle, { color: theme.textPrimary }]}>{goal.title}</Text>
                             </View>
@@ -741,8 +750,8 @@ export default function DetailedStatsScreen({
                         </Text>
                     </View>
                     <View style={[styles.comparisonCard, { backgroundColor: theme.card }]}>
-                        <View style={[styles.comparisonIconWrap, { backgroundColor: config.lightBg }]}>
-                            <IconComponent size={20} color={config.color} />
+                        <View style={[styles.comparisonIconWrap, { backgroundColor: config.color }]}>
+                            <IconComponent size={20} color="#FFFFFF" />
                         </View>
                         <View style={styles.comparisonContent}>
                             <Text style={[styles.comparisonLabel, { color: theme.textSecondary }]}>{config.title}</Text>
@@ -775,8 +784,8 @@ export default function DetailedStatsScreen({
                                 key={index}
                                 style={[styles.insightCard, { backgroundColor: theme.card }]}
                             >
-                                <View style={[styles.insightIconWrap, { backgroundColor: config.lightBg }]}>
-                                    <InsightIcon size={18} color={config.color} strokeWidth={1.5} />
+                                <View style={[styles.insightIconWrap, { backgroundColor: config.color }]}>
+                                    <InsightIcon size={18} color="#FFFFFF" strokeWidth={1.5} />
                                 </View>
                                 <View style={styles.insightContent}>
                                     <Text style={[styles.insightLabel, { color: theme.textSecondary }]}>
@@ -956,7 +965,7 @@ const styles = StyleSheet.create({
     insightIconWrap: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1010,7 +1019,7 @@ const styles = StyleSheet.create({
     goalIconWrap: {
         width: 32,
         height: 32,
-        borderRadius: 10,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1047,7 +1056,7 @@ const styles = StyleSheet.create({
     comparisonIconWrap: {
         width: 48,
         height: 48,
-        borderRadius: 14,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },

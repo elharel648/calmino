@@ -801,9 +801,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   if (events.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
-        </View>
+        {!useGrouping && (
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>{t('timeline.title')}</Text>
+          </View>
+        )}
 
         <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <PremiumEmptyIcon theme={theme} isDarkMode={isDarkMode} />
@@ -912,6 +914,18 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                       ? `${config.label} · ${timeStr}`   // Show category + time so there's useful info
                       : '';            // title has real content (e.g. "בקבוק 120מ"ל") — no need to repeat category
 
+                  // Pill-timeline geometry (matches the home "סדר היום" design)
+                  const isFirst = index === 0;
+                  const isLast = index === visibleDayEvents.length - 1;
+                  const durationSec = (event.duration as number) || 0;
+                  const pillHeight = Math.max(64, Math.min(64 + (durationSec / 60) * 0.4, 124));
+                  const fmtT = (d: any) => (d && typeof d.toLocaleTimeString === 'function')
+                    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : null;
+                  const grpStart = fmtT((event as any).startTime);
+                  const grpEnd = fmtT((event as any).endTime);
+                  const timeDisplay = grpStart && grpEnd ? `${grpStart}–${grpEnd}` : timeStr;
+
                   return (
                     <AnimatedTimelineItem
                       key={event.id}
@@ -926,33 +940,38 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             <SwipeableRow
                               onDelete={triggerDelete}
                             >
-                            {/* Simple 3-part RTL row: [time] [content] [icon] */}
-                            <TouchableOpacity 
-                              activeOpacity={0.7} 
-                              onPress={() => onEditEvent?.(event)} 
-                              style={[styles.historyRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            {/* Pill-timeline row — same design as the home "סדר היום" */}
+                            <TouchableOpacity
+                              activeOpacity={0.65}
+                              onPress={() => onEditEvent?.(event)}
+                              style={styles.elegantEventRow}
                             >
-
-                              {/* LEFT (RTL: last in JSX): time */}
-                              <Text style={[styles.historyTime, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1} adjustsFontSizeToFit>{timeStr}</Text>
-
-                              {/* CENTER: title + subtitle */}
-                              <View style={styles.historyContent}>
-                                <Text style={[styles.historyTitle, { color: theme.textPrimary, fontSize: 14, fontWeight: '600', letterSpacing: -0.3 }]} numberOfLines={1}>
-                                  {details}
-                                </Text>
-                                {subtitle ? (
-                                  <Text style={[styles.historySubtext, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontSize: 13, fontWeight: '400', marginTop: 2 }]} numberOfLines={1}>
-                                    {subtitle}
-                                  </Text>
-                                ) : null}
+                              {/* RIGHT (RTL: first in JSX): rail + capsule pill */}
+                              <View style={styles.elegantTrack}>
+                                <View style={[styles.elegantLineTop, {
+                                  borderColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)'),
+                                }]} />
+                                <View style={[styles.elegantIconWrapper, { backgroundColor: config.color, height: pillHeight }]}>
+                                  <Icon size={22} color="#FFFFFF" strokeWidth={2} />
+                                </View>
+                                <View style={[styles.elegantLineBottom, {
+                                  borderColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)'),
+                                }]} />
                               </View>
 
-                              {/* RIGHT (RTL: first in JSX): icon badge */}
-                              <View style={[styles.historyIconBadge, { backgroundColor: hexToRgba(config.color, isDarkMode ? 0.15 : 0.1) }]}>
-                                <Icon size={17} color={config.color} strokeWidth={2.5} />
+                              {/* LEFT: details (right-aligned) + time anchored on the far left */}
+                              <View style={styles.elegantCardContainer}>
+                                <View style={styles.elegantCard}>
+                                  <View style={styles.elegantCardTextContainer}>
+                                    {details !== config.label && (
+                                      <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                                    )}
+                                    <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
+                                    {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textTertiary }]} numberOfLines={2} ellipsizeMode="tail">{subtext}</Text> : null}
+                                  </View>
+                                  <Text style={[styles.elegantSideTime, { color: config.color }]}>{timeDisplay}</Text>
+                                </View>
                               </View>
-
                             </TouchableOpacity>
                           </SwipeableRow>
                           </PremiumTimelineEvent>
@@ -1018,6 +1037,17 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
               hour12: false
             });
 
+            // NEW DESIGN: capsule pill by default (taller than wide), grows with duration
+            const durationSec = (event.duration as number) || 0;
+            const pillHeight = Math.max(64, Math.min(64 + (durationSec / 60) * 0.4, 124));
+            // Show a start–end range when the event has both, else the single time
+            const fmtT = (d: any) => (d && typeof d.toLocaleTimeString === 'function')
+              ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+              : null;
+            const startStr = fmtT((event as any).startTime);
+            const endStr = fmtT((event as any).endTime);
+            const timeDisplay = startStr && endStr ? `${startStr}–${endStr}` : timeStr;
+
             // Calculate colors for the continuous line
             const prevConfig = isFirst ? null : (TYPE_CONFIG[visibleEvents[index - 1].type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food);
             const prevColor = prevConfig ? prevConfig.color : 'transparent';
@@ -1050,10 +1080,11 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     {/* MIDDLE: TRACK */}
                     <View style={styles.elegantTrack}>
                       <View style={[styles.elegantLineTop, {
-                        backgroundColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'),
+                        borderColor: isFirst ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)'),
                       }]} />
                       <View style={[styles.elegantIconWrapper, {
                         backgroundColor: config.color,
+                        height: pillHeight,
                       }]}>
                         <Icon size={22} color="#FFFFFF" strokeWidth={2} />
                         {showBadge && (
@@ -1071,26 +1102,23 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         )}
                       </View>
                       <View style={[styles.elegantLineBottom, {
-                        backgroundColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'),
+                        borderColor: isLast ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)'),
                       }]} />
                     </View>
 
-                    {/* LEFT: CONTENT */}
+                    {/* LEFT: CONTENT — title/details hug the right, time anchors the left so the row fills the width */}
                     <View style={styles.elegantCardContainer}>
                       <View style={styles.elegantCard}>
                         <View style={styles.elegantCardTextContainer}>
-                          {/* Category + time on same row */}
-                          <View style={styles.metaRow}>
-                            {details !== config.label && (
-                              <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
-                            )}
-                            <Text style={[styles.inlineTime, { color: theme.textSecondary }]}>{timeStr}</Text>
-                          </View>
+                          {details !== config.label && (
+                            <Text style={[styles.elegantCategoryLabel, { color: config.color }]}>{config.label}</Text>
+                          )}
                           <Text style={[styles.elegantCardTitle, { color: theme.textPrimary }]} numberOfLines={2}>{details}</Text>
                           {subtext ? <Text style={[styles.elegantCardSubtext, { color: theme.textTertiary }]} numberOfLines={2} ellipsizeMode="tail">{subtext}</Text> : null}
                         </View>
-                        </View>
+                        <Text style={[styles.elegantSideTime, { color: config.color }]}>{timeDisplay}</Text>
                       </View>
+                    </View>
                   </TouchableOpacity>
                     </SwipeableRow>
                     </PremiumTimelineEvent>
@@ -1109,9 +1137,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             style={[
               styles.expandButton,
               {
-                borderWidth: 0.75,
-                borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.025)',
+                borderWidth: 0,
+                backgroundColor: theme.primaryLight,
               }
             ]}
             onPress={() => {
@@ -1124,13 +1151,13 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           >
             {isExpanded ? (
               <>
-                <ChevronUp size={13} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
-                <Text style={[styles.expandText, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('timeline.showLess')}</Text>
+                <ChevronUp size={13} color={theme.primary} strokeWidth={2.5} />
+                <Text style={[styles.expandText, { color: theme.primary }]}>{t('timeline.showLess')}</Text>
               </>
             ) : (
               <>
-                <Text style={[styles.expandText, { color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
-                <ChevronDown size={13} color={isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'} strokeWidth={2.5} />
+                <Text style={[styles.expandText, { color: theme.primary }]}>{t('timeline.showMore', { count: events.length - INITIAL_VISIBLE_COUNT })}</Text>
+                <ChevronDown size={13} color={theme.primary} strokeWidth={2.5} />
               </>
             )}
           </TouchableOpacity>
@@ -1144,7 +1171,7 @@ DailyTimeline.displayName = 'DailyTimeline';
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: SPACING.xl,
+    marginTop: SPACING.sm,
     marginBottom: SPACING.xxl,
   },
 
@@ -1525,7 +1552,7 @@ const styles = StyleSheet.create({
   // ===== ELEGANT TIMELINE (HOME/FLAT VIEW) =====
   elegantEventRow: {
     flexDirection: 'row-reverse',
-    minHeight: 76,
+    minHeight: 90,
     alignItems: 'stretch',
   },
   elegantTimeBlock: { width: 0 },
@@ -1547,19 +1574,19 @@ const styles = StyleSheet.create({
     width: 62,
     alignItems: 'center',
   },
-  elegantLineTop: { width: 1.5, flex: 1 },
-  elegantLineBottom: { width: 1.5, flex: 1 },
+  elegantLineTop: { width: 0, flex: 1, borderLeftWidth: 2, borderStyle: 'dotted' },
+  elegantLineBottom: { width: 0, flex: 1, borderLeftWidth: 2, borderStyle: 'dotted' },
   elegantIconWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 46,
+    height: 64,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 3,
+    marginVertical: 1,
   },
   elegantCardContainer: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: 20,
     paddingRight: 16,
   },
   elegantCard: {
@@ -1568,7 +1595,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 14,
-    minHeight: 66,
+    minHeight: 64,
     overflow: 'hidden',
   },
   accentStrip: { width: 0 },
@@ -1582,6 +1609,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.2,
+  },
+  elegantSideTime: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    minWidth: 52,
+    marginLeft: 28,
+    textAlign: 'left',
   },
   elegantCardTitle: {
     fontSize: 16,

@@ -98,6 +98,7 @@ interface WeeklyData {
   food: number[];
   sleep: number[];
   diapers: number[];
+  supplements: number[];
 }
 
 type TimeRange = 'day' | 'week' | 'month' | 'custom';
@@ -152,7 +153,7 @@ export default function ReportsScreen() {
 
   const [prevWeekStats, setPrevWeekStats] = useState<DailyStats | null>(null);
   const [timeInsights, setTimeInsights] = useState<TimeInsights | null>(null);
-  const [weeklyData, setWeeklyData] = useState<WeeklyData>({ labels: [], food: [], sleep: [], diapers: [] });
+  const [weeklyData, setWeeklyData] = useState<WeeklyData>({ labels: [], food: [], sleep: [], diapers: [], supplements: [] });
   const [dayBreakdown, setDayBreakdown] = useState<{ [day: string]: DailyStats }>({});
 
   // Stats Order
@@ -230,6 +231,11 @@ export default function ReportsScreen() {
   });
 
   const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [selectedHistoryDay, setSelectedHistoryDay] = useState<Date | null>(null); // history week-strip filter
+  const [historyAnchor, setHistoryAnchor] = useState<Date>(() => startOfDay(new Date())); // rightmost day of the history week strip
+  const [historyWindowEvents, setHistoryWindowEvents] = useState<any[]>([]); // events fetched on-demand for the visible week
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [weeklyGoals, setWeeklyGoals] = useState<{
     sleepDaysGoal: number;
     sleepDaysMet: number;
@@ -484,7 +490,8 @@ export default function ReportsScreen() {
         labels: displayLabels,
         food: labels.map(l => dayMap[l].food || 0),
         sleep: labels.map(l => parseFloat(dayMap[l].sleep.toFixed(1)) || 0),
-        diapers: labels.map(l => dayMap[l].diapers || 0)
+        diapers: labels.map(l => dayMap[l].diapers || 0),
+        supplements: labels.map(l => dayMap[l].supplements || 0)
       });
 
       // Fetch previous period for comparison — bounded to match the primary query
@@ -1113,6 +1120,87 @@ export default function ReportsScreen() {
     };
   }, [dailyStats, prevWeekStats]);
 
+  const HEB_DAY_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+  const HEB_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  const today = startOfDay(new Date());
+  const monthLabel = `${HEB_MONTHS[historyAnchor.getMonth()]} ${historyAnchor.getFullYear()}`;
+  const canPageForward = !isSameDay(historyAnchor, today) && historyAnchor < today;
+
+  // On-demand fetch: load the 7-day window ending at the anchor (older history isn't preloaded)
+  const fetchHistoryWindow = useCallback(async (anchor: Date) => {
+    if (!activeChild?.childId) return;
+    const windowStart = startOfDay(subDays(anchor, 6));
+    const windowEnd = endOfDay(anchor);
+    try {
+      const q = query(
+        collection(db, 'events'),
+        where('childId', '==', activeChild.childId),
+        where('timestamp', '>=', Timestamp.fromDate(windowStart)),
+        where('timestamp', '<=', Timestamp.fromDate(windowEnd)),
+        orderBy('timestamp', 'desc'),
+        limit(500)
+      );
+      const snap = await getDocs(q);
+      setHistoryWindowEvents(snap.docs.map(d => {
+        const data = d.data();
+        const dateObj = data.timestamp instanceof Timestamp ? data.timestamp.toDate() : new Date(data.timestamp);
+        return { id: d.id, ...data, dateObj };
+      }));
+    } catch (e) {
+      logger.error('history window fetch failed', e);
+    }
+  }, [activeChild?.childId]);
+
+  // Reload the window whenever the modal opens or the anchor moves
+  useEffect(() => {
+    if (showHistoryModal) fetchHistoryWindow(historyAnchor);
+  }, [showHistoryModal, historyAnchor, fetchHistoryWindow]);
+
+  // Week strip: 7 days ending at the anchor (anchor on the right under RTL) with per-day category dots
+  const historyWeek = useMemo(() => {
+    const colorFor = (type: string) => {
+      if (type === 'food' || type === 'feeding') return theme.actionColors.food.color;
+      if (type === 'sleep') return theme.actionColors.sleep.color;
+      if (type === 'diaper') return theme.actionColors.diaper.color;
+      if (type === 'supplements') return theme.actionColors.supplements.color;
+      if (type === 'custom') return theme.actionColors.tools.color;
+      return theme.actionColors.custom.color;
+    };
+    return Array.from({ length: 7 }, (_, i) => subDays(historyAnchor, i)).map((date) => {
+      const dayEvents = historyWindowEvents.filter(e => e.dateObj && isSameDay(e.dateObj, date));
+      const dots: string[] = [];
+      for (const e of dayEvents) {
+        const c = colorFor(e.type);
+        if (!dots.includes(c)) dots.push(c);
+        if (dots.length >= 4) break;
+      }
+      return { date, dots, count: dayEvents.length };
+    });
+  }, [historyWindowEvents, historyAnchor, theme]);
+
+  // Events shown in the modal — filtered to the selected day, or the whole visible week
+  const historyEvents = useMemo(
+    () => (selectedHistoryDay
+      ? historyWindowEvents.filter(e => e.dateObj && isSameDay(e.dateObj, selectedHistoryDay))
+      : historyWindowEvents),
+    [historyWindowEvents, selectedHistoryDay]
+  );
+
+  // Last 18 months for the jump picker (newest first)
+  const monthOptions = useMemo(
+    () => Array.from({ length: 18 }, (_, i) => subMonths(today, i)),
+    [today]
+  );
+
+  const goToMonth = (m: Date) => {
+    // Anchor to the last day of that month, capped at today
+    const endOfThatMonth = endOfDay(subDays(addDays(new Date(m.getFullYear(), m.getMonth() + 1, 1), 0), 1));
+    const anchor = endOfThatMonth > today ? today : startOfDay(endOfThatMonth);
+    setSelectedHistoryDay(null);
+    setHistoryAnchor(anchor);
+    setShowMonthPicker(false);
+  };
+
   // Generate AI Insight
 
 
@@ -1420,7 +1508,6 @@ export default function ReportsScreen() {
   };
 
   // History Modal State
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
 
 
@@ -1493,6 +1580,7 @@ export default function ReportsScreen() {
                 accentColor={theme.actionColors.supplements.color}
                 iconColor="#FFFFFF"
                 iconBg={theme.actionColors.supplements.color}
+                sparklineData={weeklyData.supplements}
                 onPress={() => isPremium ? setSelectedMetric('supplements') : setShowPaywall(true)}
               />
             </AnimatedCard>
@@ -2033,6 +2121,52 @@ export default function ReportsScreen() {
             <Text style={[styles.historyModalTitle, { color: theme.textPrimary }]}>{t('reports.history.fullHistory')}</Text>
             <View style={{ width: 40 }} />
           </View>
+
+          {/* Month nav: ChevronRight = older week, ChevronLeft = newer week, label opens month picker */}
+          <View style={styles.historyMonthNav}>
+            <TouchableOpacity
+              style={styles.historyNavBtn}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => { setSelectedHistoryDay(null); setHistoryAnchor(subDays(historyAnchor, 7)); }}
+            >
+              <ChevronRight size={22} color={theme.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => setShowMonthPicker(true)}>
+              <Text style={[styles.historyMonthLabel, { color: theme.textPrimary }]}>{monthLabel}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.historyNavBtn, !canPageForward && { opacity: 0.3 }]}
+              disabled={!canPageForward}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => { setSelectedHistoryDay(null); const next = addDays(historyAnchor, 7); setHistoryAnchor(next > today ? today : next); }}
+            >
+              <ChevronLeft size={22} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Week strip — tap a day to filter the list, tap again to show all */}
+          <View style={[styles.historyWeekStrip, { borderColor: theme.border }]}>
+            {historyWeek.map(({ date, dots }) => {
+              const active = !!selectedHistoryDay && isSameDay(date, selectedHistoryDay);
+              return (
+                <TouchableOpacity
+                  key={date.toISOString()}
+                  style={styles.historyWeekDay}
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedHistoryDay(active ? null : date)}
+                >
+                  <Text style={[styles.historyWeekLetter, { color: theme.textTertiary }]}>{HEB_DAY_LETTERS[date.getDay()]}</Text>
+                  <View style={[styles.historyWeekDateWrap, active && { backgroundColor: theme.primary }]}>
+                    <Text style={[styles.historyWeekDate, { color: active ? '#FFFFFF' : theme.textPrimary }]}>{date.getDate()}</Text>
+                  </View>
+                  <View style={styles.historyWeekDots}>
+                    {dots.map((c, i) => <View key={i} style={[styles.historyWeekDot, { backgroundColor: c }]} />)}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: 40 }}
@@ -2041,10 +2175,39 @@ export default function ReportsScreen() {
             <DailyTimeline
               childId={activeChild?.childId}
               showOnlyToday={false}
-              preloadedEvents={allEvents}
+              preloadedEvents={historyEvents}
               useGrouping={true}
             />
           </ScrollView>
+
+          {/* Month/year jump picker */}
+          {showMonthPicker && (
+            <TouchableOpacity
+              style={styles.monthPickerOverlay}
+              activeOpacity={1}
+              onPress={() => setShowMonthPicker(false)}
+            >
+              <View style={[styles.monthPickerSheet, { backgroundColor: theme.card }]}>
+                <Text style={[styles.monthPickerTitle, { color: theme.textPrimary }]}>{t('reports.history.fullHistory')}</Text>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {monthOptions.map((m) => {
+                    const isActive = m.getMonth() === historyAnchor.getMonth() && m.getFullYear() === historyAnchor.getFullYear();
+                    return (
+                      <TouchableOpacity
+                        key={`${m.getFullYear()}-${m.getMonth()}`}
+                        style={styles.monthPickerRow}
+                        onPress={() => goToMonth(m)}
+                      >
+                        <Text style={[styles.monthPickerText, { color: isActive ? theme.primary : theme.textPrimary, fontWeight: isActive ? '800' : '500' }]}>
+                          {HEB_MONTHS[m.getMonth()]} {m.getFullYear()}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </Modal>
     </View>
@@ -2125,10 +2288,10 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20, justifyContent: 'space-between' },
   editStatsBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16 },
   editStatsText: { fontSize: 13, fontWeight: '600' },
-  statCard: { width: '100%', minHeight: 165, padding: 18, borderRadius: 24, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 24, elevation: 0, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' },
+  statCard: { width: '100%', minHeight: 185, padding: 18, borderRadius: 24, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 24, elevation: 0, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' },
   cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' },
   cardBottomSection: { width: '100%', alignItems: 'flex-end', marginTop: 'auto' },
-  statIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  statIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   statValueRow: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 6 },
   statValue: { fontSize: 28, fontWeight: '800', letterSpacing: -0.8 },
   statLabel: { fontSize: 13, fontWeight: '500', marginBottom: 2 },
@@ -2139,7 +2302,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: '600', textAlign: 'right', marginBottom: 12 },
   insightsList: { gap: 10 },
   insightCard: { flexDirection: 'row-reverse', alignItems: 'center', padding: 14, borderRadius: 14, gap: 12 },
-  insightIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  insightIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   insightContent: { flex: 1, alignItems: 'flex-end' },
   insightTitle: { fontSize: 12, marginBottom: 2 },
   insightValue: { fontSize: 18, fontWeight: '700' },
@@ -2196,7 +2359,7 @@ const styles = StyleSheet.create({
   goalsSectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 16 },
   goalItem: { marginBottom: 16 },
   goalItemHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 8 },
-  goalIconWrap: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  goalIconWrap: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   goalItemTitle: { flex: 1, fontSize: 14, fontWeight: '500', textAlign: 'right' },
   goalItemProgress: { fontSize: 12 },
   goalProgressBar: { height: 8, borderRadius: 4, overflow: 'hidden' },
@@ -2248,6 +2411,45 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
+  historyMonthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  historyNavBtn: { padding: 4 },
+  historyMonthLabel: { fontSize: 16, fontWeight: '700' },
+  historyWeekStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  monthPickerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  monthPickerSheet: {
+    width: '100%',
+    maxHeight: '70%',
+    borderRadius: 20,
+    padding: 16,
+  },
+  monthPickerTitle: { fontSize: 16, fontWeight: '700', textAlign: 'center', marginBottom: 10 },
+  monthPickerRow: { paddingVertical: 14, alignItems: 'center' },
+  monthPickerText: { fontSize: 16 },
+  historyWeekDay: { alignItems: 'center', flex: 1 },
+  historyWeekLetter: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  historyWeekDateWrap: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  historyWeekDate: { fontSize: 15, fontWeight: '700' },
+  historyWeekDots: { flexDirection: 'row', gap: 3, marginTop: 6, height: 6 },
+  historyWeekDot: { width: 5, height: 5, borderRadius: 2.5 },
   closeButton: {
     padding: 8,
     borderRadius: 20,
@@ -2262,7 +2464,7 @@ const styles = StyleSheet.create({
   comparisonSection: { borderRadius: 20, padding: 20, marginTop: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 0 },
   comparisonGrid: { flexDirection: 'row-reverse', justifyContent: 'space-between', gap: 8 },
   comparisonItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  comparisonIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  comparisonIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   comparisonLabel: { fontSize: 12, marginBottom: 4 },
   comparisonValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   comparisonValue: { fontSize: 18, fontWeight: '700' },
@@ -2278,7 +2480,7 @@ const styles = StyleSheet.create({
 
   // Premium Streak Badge
   streakBadgePremium: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 16, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 16, borderWidth: 1, alignSelf: 'center' },
-  streakIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  streakIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   streakTextWrap: { alignItems: 'center' },
   streakNumber: { fontSize: 22, fontWeight: '800' },
   streakDaysLabel: { fontSize: 11, fontWeight: '500', marginTop: -2 },

@@ -176,10 +176,10 @@ GrowthStatCube.displayName = 'GrowthStatCube';
 
 const styles = StyleSheet.create({
     statCard: {
-        width: (SCREEN_WIDTH - 52) / 2,
-        height: 165,
-        padding: 16,
-        borderRadius: 20,
+        width: '100%',
+        height: 185,
+        padding: 18,
+        borderRadius: 24,
         alignItems: 'flex-end',
         justifyContent: 'space-between',
         shadowColor: '#000',
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     statIconWrap: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 12,

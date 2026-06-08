@@ -593,8 +593,8 @@ export default function SettingsScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.familyActionContent}>
-                    <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                      <UserPlus size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                    <View style={[styles.familyActionIcon, { backgroundColor: theme.primary }]}>
+                      <UserPlus size={18} color="#FFFFFF" strokeWidth={2} />
                     </View>
                     <View style={styles.familyActionText}>
                       <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
@@ -619,8 +619,8 @@ export default function SettingsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.familyActionContent}>
-                  <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                    <Users size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                  <View style={[styles.familyActionIcon, { backgroundColor: theme.actionColors.whiteNoise.color }]}>
+                    <Users size={18} color="#FFFFFF" strokeWidth={2} />
                   </View>
                   <View style={styles.familyActionText}>
                     <View style={styles.familyActionTitleRow}>
@@ -647,8 +647,8 @@ export default function SettingsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.familyActionContent}>
-                  <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                    <LinkIcon size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                  <View style={[styles.familyActionIcon, { backgroundColor: theme.actionColors.diaper.color }]}>
+                    <LinkIcon size={18} color="#FFFFFF" strokeWidth={2} />
                   </View>
                   <View style={styles.familyActionText}>
                     <View style={styles.familyActionTitleRow}>
@@ -734,8 +734,8 @@ export default function SettingsScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.familyActionContent}>
-                <View style={[styles.familyActionIcon, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }]}>
-                  <Baby size={18} color={isDarkMode ? '#fff' : '#000'} strokeWidth={2} />
+                <View style={[styles.familyActionIcon, { backgroundColor: theme.actionColors.supplements.color }]}>
+                  <Baby size={18} color="#FFFFFF" strokeWidth={2} />
                 </View>
                 <View style={styles.familyActionText}>
                   <Text style={[styles.familyActionTitle, { color: theme.textPrimary }]}>
@@ -1427,7 +1427,7 @@ const styles = StyleSheet.create({
   listItemIcon: {
     width: 48,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 14,
@@ -1495,7 +1495,7 @@ const styles = StyleSheet.create({
   familyActionIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1557,7 +1557,7 @@ const styles = StyleSheet.create({
   primaryFamilyIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
