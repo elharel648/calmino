@@ -107,8 +107,8 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                 >
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                     <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>{t('account.createFamily')}</Text>
-                    <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                        <UserPlus size={16} color="#C8806A" />
+                    <View style={[styles.iconCircle, { backgroundColor: theme.actionColors.health.color }]}>
+                        <UserPlus size={16} color="#FFFFFF" />
                     </View>
                 </TouchableOpacity>
 
@@ -119,8 +119,8 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                 >
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                     <Text style={[styles.simpleRowText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                    <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
-                        <Link size={16} color="#10B981" />
+                    <View style={[styles.iconCircle, { backgroundColor: theme.actionColors.tools.color }]}>
+                        <Link size={16} color="#FFFFFF" />
                     </View>
                 </TouchableOpacity>
             </View>
@@ -226,8 +226,8 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     >
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                         <Text style={[styles.actionText, { color: theme.textPrimary }]}>{t('account.inviteFamily')}</Text>
-                        <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(99,102,241,0.15)' : '#EEF2FF' }]}>
-                            <UserPlus size={14} color="#C8806A" />
+                        <View style={[styles.actionIcon, { backgroundColor: theme.actionColors.health.color }]}>
+                            <UserPlus size={14} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
                 )}
@@ -240,8 +240,8 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     >
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                         <Text style={[styles.actionText, { color: theme.textPrimary }]}>{t('account.inviteGuest')}</Text>
-                        <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5' }]}>
-                            <Users size={14} color="#10B981" />
+                        <View style={[styles.actionIcon, { backgroundColor: theme.actionColors.growth.color }]}>
+                            <Users size={14} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
                 )}
@@ -253,8 +253,8 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                 >
                     <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                     <Text style={[styles.actionText, { color: theme.textPrimary }]}>{t('account.joinWithCode')}</Text>
-                    <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(245,158,11,0.15)' : '#FFF7ED' }]}>
-                        <Link size={14} color="#F59E0B" />
+                    <View style={[styles.actionIcon, { backgroundColor: theme.actionColors.tools.color }]}>
+                        <Link size={14} color="#FFFFFF" />
                     </View>
                 </TouchableOpacity>
 
@@ -266,8 +266,8 @@ export const FamilyMembersCard: React.FC<FamilyMembersCardProps> = ({
                     >
                         <ChevronLeft size={16} color={isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
                         <Text style={[styles.actionText, { color: '#EF4444' }]}>{t('settings.leaveFamilyTitle')}</Text>
-                        <View style={[styles.actionIcon, { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.15)' : '#FEE2E2' }]}>
-                            <LogOut size={14} color="#EF4444" />
+                        <View style={[styles.actionIcon, { backgroundColor: '#CD8B87' }]}>
+                            <LogOut size={14} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
                 )}
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     actionIcon: {
         width: 28,
         height: 28,
-        borderRadius: 8,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },

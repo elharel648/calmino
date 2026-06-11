@@ -1474,6 +1474,14 @@
     "gotCodeFromPartner": "هل تلقيت رمزاً من شريكك؟",
     "selectChild": "اختر طفلاً"
   },
+  "addBaby": {
+    "subtitle": "اضغط هنا لإنشاء ملف شخصي لطفلك",
+    "chooseHow": "اختر كيف تريد أن تبدأ",
+    "createTitle": "إنشاء ملف طفل جديد",
+    "createSubtitle": "أنا الوالد وأريد أن أبدأ بالتسجيل",
+    "joinTitle": "الانضمام برمز دعوة",
+    "joinSubtitle": "تلقيت رمزًا من أحد الوالدين لمتابعة الطفل"
+  },
   "onboarding": {
     "start": "لنبدأ",
     "welcome": "مرحباً",

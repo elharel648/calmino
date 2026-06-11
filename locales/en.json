@@ -1312,6 +1312,14 @@
     "gotCodeFromPartner": "Got a code from your partner?",
     "selectChild": "Select child"
   },
+  "addBaby": {
+    "subtitle": "Tap here to create a profile for your child",
+    "chooseHow": "Choose how you'd like to get started",
+    "createTitle": "Create a new child profile",
+    "createSubtitle": "I'm the parent and want to start tracking",
+    "joinTitle": "Join with an invite code",
+    "joinSubtitle": "I got a code from a parent to follow the child"
+  },
   "onboarding": {
     "start": "Get Started",
     "welcome": "Welcome",

@@ -1312,6 +1312,14 @@
     "gotCodeFromPartner": "קיבלת קוד מהשותף?",
     "selectChild": "בחר ילד"
   },
+  "addBaby": {
+    "subtitle": "לחץ כאן כדי ליצור פרופיל לילד שלך",
+    "chooseHow": "בחר כיצד ברצונך להתחיל",
+    "createTitle": "יצירת פרופיל ילד חדש",
+    "createSubtitle": "אני ההורה ורוצה להתחיל לתעד",
+    "joinTitle": "הצטרף עם קוד הזמנה",
+    "joinSubtitle": "קיבלתי קוד מהורה לצפות בילד"
+  },
   "onboarding": {
     "start": "התחל",
     "welcome": "ברוכים הבאים",

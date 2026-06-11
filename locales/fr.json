@@ -1474,6 +1474,14 @@
     "gotCodeFromPartner": "Vous avez reçu un code de votre partenaire ?",
     "selectChild": "Sélectionner l'enfant"
   },
+  "addBaby": {
+    "subtitle": "Appuyez ici pour créer un profil pour votre enfant",
+    "chooseHow": "Choisissez comment vous souhaitez commencer",
+    "createTitle": "Créer un nouveau profil d'enfant",
+    "createSubtitle": "Je suis le parent et je souhaite commencer le suivi",
+    "joinTitle": "Rejoindre avec un code d'invitation",
+    "joinSubtitle": "J'ai reçu un code d'un parent pour suivre l'enfant"
+  },
   "onboarding": {
     "start": "Commencer",
     "welcome": "Bienvenue",

@@ -1474,6 +1474,14 @@
     "gotCodeFromPartner": "Code von deinem Partner erhalten?",
     "selectChild": "Kind auswählen"
   },
+  "addBaby": {
+    "subtitle": "Tippe hier, um ein Profil für dein Kind zu erstellen",
+    "chooseHow": "Wähle, wie du beginnen möchtest",
+    "createTitle": "Neues Kinderprofil erstellen",
+    "createSubtitle": "Ich bin das Elternteil und möchte mit dem Dokumentieren beginnen",
+    "joinTitle": "Mit Einladungscode beitreten",
+    "joinSubtitle": "Ich habe einen Code von einem Elternteil erhalten, um das Kind zu begleiten"
+  },
   "onboarding": {
     "start": "Loslegen",
     "welcome": "Willkommen",

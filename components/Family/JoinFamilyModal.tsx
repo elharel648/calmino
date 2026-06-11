@@ -190,7 +190,13 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                     ) : scanning ? (
                         <View style={{ height: 400, borderRadius: 20, overflow: 'hidden' }}>
                             <View style={styles.header}>
-                                <TouchableOpacity onPress={() => setScanning(false)} style={styles.closeBtn}>
+                                <TouchableOpacity
+                                    onPress={() => setScanning(false)}
+                                    style={styles.closeBtn}
+                                    accessibilityLabel={t('common.close')}
+                                    accessibilityRole="button"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
                                     <X size={22} color={theme.textPrimary} />
                                 </TouchableOpacity>
                                 <Text style={[styles.title, { color: theme.textPrimary }]}>{t('joinFamily.scannerTitle')}</Text>
@@ -212,7 +218,13 @@ export const JoinFamilyModal: React.FC<JoinFamilyModalProps> = ({
                         <>
                             {/* Header */}
                             <View style={styles.header}>
-                                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                                <TouchableOpacity
+                                    onPress={onClose}
+                                    style={styles.closeBtn}
+                                    accessibilityLabel={t('common.close')}
+                                    accessibilityRole="button"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
                                     <X size={22} color={theme.textSecondary} />
                                 </TouchableOpacity>
                                 <Text style={[styles.title, { color: theme.textPrimary }]}>{t('joinFamily.title')}</Text>

@@ -56,7 +56,7 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                 <View style={styles.textBlock}>
                     <Text style={[styles.title, { color: theme.textPrimary }]}>{t('child.addChild')}</Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        לחץ כאן כדי ליצור פרופיל לילד שלך
+                        {t('addBaby.subtitle')}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -75,7 +75,7 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                         </View>
 
                         <Text style={[styles.modalDescription, { color: theme.textSecondary }]}>
-                            בחר כיצד ברצונך להתחיל
+                            {t('addBaby.chooseHow')}
                         </Text>
 
                         {/* Option 1: Create Own Baby */}
@@ -92,10 +92,10 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                             </LinearGradient>
                             <View style={styles.optionText}>
                                 <Text style={[styles.optionTitle, { color: theme.textPrimary }]}>
-                                    יצירת פרופיל ילד חדש
+                                    {t('addBaby.createTitle')}
                                 </Text>
                                 <Text style={[styles.optionSubtitle, { color: theme.textSecondary }]}>
-                                    אני ההורה ורוצה להתחיל לתעד
+                                    {t('addBaby.createSubtitle')}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -114,10 +114,10 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
                             </LinearGradient>
                             <View style={styles.optionText}>
                                 <Text style={[styles.optionTitle, { color: theme.textPrimary }]}>
-                                    הצטרף עם קוד הזמנה
+                                    {t('addBaby.joinTitle')}
                                 </Text>
                                 <Text style={[styles.optionSubtitle, { color: theme.textSecondary }]}>
-                                    קיבלתי קוד מהורה לצפות בילד
+                                    {t('addBaby.joinSubtitle')}
                                 </Text>
                             </View>
                         </TouchableOpacity>

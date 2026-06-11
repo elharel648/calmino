@@ -319,8 +319,8 @@ const PercentileCard = ({ icon: Icon, label, value, unit, percentile, change, co
 
     return (
         <View style={[percStyles.card, { backgroundColor: theme.card }]}>
-            <View style={[percStyles.iconWrap, { backgroundColor: bgColor }]}>
-                <Icon size={20} color={color} strokeWidth={2} />
+            <View style={[percStyles.iconWrap, { backgroundColor: color }]}>
+                <Icon size={20} color="#FFFFFF" strokeWidth={2} />
             </View>
             <View style={percStyles.content}>
                 <Text style={[percStyles.label, { color: theme.textSecondary }]}>{label}</Text>
@@ -354,7 +354,7 @@ const PercentileCard = ({ icon: Icon, label, value, unit, percentile, change, co
 
 const percStyles = StyleSheet.create({
     card: { flexDirection: 'row-reverse', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12 },
-    iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     content: { flex: 1, marginRight: 12, alignItems: 'flex-end' },
     label: { fontSize: 12, marginBottom: 2 },
     valueRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },

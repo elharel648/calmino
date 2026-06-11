@@ -52,7 +52,7 @@ const MetricRow = memo(({ icon: Icon, label, value, unit, percentile, change, co
             {/* Right side - info */}
             <View style={styles.metricInfo}>
                 <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
-                    <Icon size={18} color={color} strokeWidth={2.5} />
+                    <Icon size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <View style={styles.metricTexts}>
                     <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>{label}</Text>
@@ -171,7 +171,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
                     percentile={percentiles.weight}
                     change={changes?.weight}
                     color="#C8806A"
-                    iconBg="#EFF6FF"
+                    iconBg={theme.actionColors.growth.color}
                 />
 
                 <View style={[styles.divider, { backgroundColor: theme.divider }]} />
@@ -184,7 +184,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
                     percentile={percentiles.height}
                     change={changes?.height}
                     color="#7DAF8F"
-                    iconBg="rgba(125,175,143,0.10)"
+                    iconBg={theme.actionColors.teeth.color}
                 />
 
                 <View style={[styles.divider, { backgroundColor: theme.divider }]} />
@@ -197,7 +197,7 @@ const GrowthPercentileCard = memo(({ stats, ageInMonths, gender, childId, onEdit
                     percentile={percentiles.head}
                     change={changes?.headCircumference}
                     color="#8B5CF6"
-                    iconBg="#F5F3FF"
+                    iconBg={theme.actionColors.tools.color}
                 />
             </View>
 
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 36,
         height: 36,
-        borderRadius: 10,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },

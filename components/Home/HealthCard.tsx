@@ -1083,7 +1083,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                         <View style={styles.modalOverlayCenter}>
                             <TouchableWithoutFeedback>
                                 <View style={[styles.datePickerCard, { width: '85%', padding: 24, alignItems: 'center' }]}>
-                                    <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                                    <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDarkMode ? 'rgba(205,139,135,0.15)' : '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                                         <Trash2 size={28} color="#EF4444" />
                                     </View>
                                     
@@ -1654,7 +1654,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                 </TouchableOpacity>
 
                 {showIllnessStartPicker && Platform.OS !== 'android' && (
-                    <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
+                    <View style={{ backgroundColor: isDarkMode ? theme.cardSecondary : '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                         <DateTimePicker
                             value={illnessStartDate}
                             mode="date"
@@ -1723,7 +1723,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                 flexDirection: 'row-reverse',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                backgroundColor: '#F0FDF4',
+                                backgroundColor: isDarkMode ? 'rgba(106,156,137,0.15)' : '#F0FDF4',
                                 borderRadius: 14,
                                 padding: 14,
                                 borderWidth: 1.5,
@@ -1742,7 +1742,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                         </TouchableOpacity>
 
                         {showIllnessEndPicker && illnessEndDate && Platform.OS !== 'android' && (
-                            <View style={{ backgroundColor: '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
+                            <View style={{ backgroundColor: isDarkMode ? theme.cardSecondary : '#FAFAFE', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                                 <DateTimePicker
                                     value={illnessEndDate}
                                     mode="date"
@@ -1983,7 +1983,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                 ))}
                                 {med.remindersEnabled && (
                                     <View style={{
-                                        backgroundColor: '#FEF3C7',
+                                        backgroundColor: isDarkMode ? 'rgba(212,163,115,0.18)' : '#FEF3C7',
                                         paddingHorizontal: 8,
                                         paddingVertical: 5,
                                         borderRadius: 8,
@@ -2011,7 +2011,7 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: 6,
-                                    backgroundColor: '#F0FDF4',
+                                    backgroundColor: isDarkMode ? 'rgba(106,156,137,0.15)' : '#F0FDF4',
                                     borderRadius: 12,
                                     paddingVertical: 10,
                                     borderWidth: 1,
@@ -2488,14 +2488,14 @@ const HealthCard = memo(({ dynamicStyles, visible, onClose, initialScreen }: Hea
 
                                             {/* Vaccine-specific: show date badges */}
                                             {item.type === 'vaccine' && item.appointmentDate ? (
-                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: isDarkMode ? 'rgba(85,122,157,0.18)' : '#EEF2FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
                                                     <Bell size={13} color="#6366F1" />
                                                     <Text style={{ fontSize: 13, color: '#6366F1', fontWeight: '600' }}>
                                                         {t('health.vaccineTitle', { name: new Date(item.appointmentDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) })}
                                                     </Text>
                                                 </View>
                                             ) : item.type === 'vaccine' && (item.isDone || item.note?.startsWith('בוצע')) ? (
-                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                                                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 6, backgroundColor: isDarkMode ? 'rgba(106,156,137,0.15)' : '#F0FDF4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
                                                     <Check size={13} color="#10B981" />
                                                     <Text style={{ fontSize: 13, color: '#10B981', fontWeight: '600' }}>
                                                         {item.note}
@@ -2796,7 +2796,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     // Upload
     uploadSection: { flexDirection: 'row', gap: 12, marginBottom: 24 },
     uploadButton: { flex: 1, backgroundColor: theme.card, borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border, minHeight: 100 },
-    uploadButtonSuccess: { backgroundColor: '#F0FDF4', borderColor: '#10B981' },
+    uploadButtonSuccess: { backgroundColor: isDarkMode ? 'rgba(106,156,137,0.15)' : '#F0FDF4', borderColor: '#10B981' },
     uploadButtonText: { fontSize: 14, color: theme.textSecondary, marginTop: 8, fontWeight: '500' },
     uploadButtonTextSuccess: { fontSize: 12, color: '#10B981', marginTop: 8, fontWeight: '600' },
     uploadPreview: { width: 50, height: 50, borderRadius: 8 },
@@ -2814,7 +2814,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
 
     saveButton: { marginTop: 16 },
     saveButtonSolid: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24, alignItems: 'center', backgroundColor: theme.cardSecondary, borderWidth: 1, borderColor: theme.border },
-    saveButtonSuccess: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+    saveButtonSuccess: { backgroundColor: isDarkMode ? 'rgba(106,156,137,0.15)' : '#ECFDF5', borderColor: '#10B981' },
     saveButtonText: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
 });
 

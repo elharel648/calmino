@@ -97,8 +97,8 @@ const AnimatedSupplementRow = ({ type, name, isDone, onToggle, Icon, theme, isDa
             }
         ]}>
             <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} activeOpacity={1}>
-                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
-                    <Icon size={18} color={theme.textTertiary} strokeWidth={2}/>
+                <View style={[styles.iconBox, { backgroundColor: theme.actionColors.supplements.color }]}>
+                    <Icon size={18} color="#FFFFFF" strokeWidth={2}/>
                 </View>
             </TouchableOpacity>
             
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     iconBox: {
         width: 38,
         height: 38,
-        borderRadius: 10,
+        borderRadius: 19,
         alignItems: 'center',
         justifyContent: 'center',
     },

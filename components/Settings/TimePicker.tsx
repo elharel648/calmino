@@ -87,8 +87,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 disabled={disabled}
             >
                 <View style={styles.content}>
-                    <View style={[styles.iconContainer, { backgroundColor: `${ACCENT_COLOR}15` }]}>
-                        <Clock size={16} color={disabled ? theme.textSecondary : ACCENT_COLOR} />
+                    <View style={[styles.iconContainer, { backgroundColor: ACCENT_COLOR }]}>
+                        <Clock size={16} color="#FFFFFF" />
                     </View>
                     <Text style={[styles.label, { color: disabled ? theme.textSecondary : theme.textPrimary }]}>
                         {label}
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 32,
         height: 32,
-        borderRadius: 8,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },

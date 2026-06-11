@@ -271,7 +271,7 @@ const FABQuickActionsSheet: React.FC = () => {
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <TouchableOpacity onPress={handleEdit} style={styles.editBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                        <TouchableOpacity onPress={handleEdit} style={styles.editBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel={t('fab.edit')} accessibilityRole="button">
                             <SlidersHorizontal size={17} color={theme.textSecondary} strokeWidth={1.8} />
                             <Text style={[styles.editLabel, { color: theme.textSecondary }]}>{t('fab.edit')}</Text>
                         </TouchableOpacity>
@@ -281,7 +281,7 @@ const FABQuickActionsSheet: React.FC = () => {
                             <Text style={[styles.timeCtx, { color: theme.textTertiary }]}>{t(timeContextKey())}</Text>
                         </View>
 
-                        <TouchableOpacity onPress={handleClose} style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }]} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                        <TouchableOpacity onPress={handleClose} style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }]} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel={t('common.close')} accessibilityRole="button">
                             <X size={18} color={theme.textSecondary} strokeWidth={2.2} />
                         </TouchableOpacity>
                     </View>

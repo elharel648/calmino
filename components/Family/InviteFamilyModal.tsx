@@ -122,7 +122,13 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                 <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
                     {/* Header */}
                     <View style={styles.header}>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={styles.closeBtn}
+                            accessibilityLabel={t('common.close')}
+                            accessibilityRole="button"
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
                             <X size={22} color={theme.textSecondary} />
                         </TouchableOpacity>
                         <Text style={[styles.title, { color: theme.textPrimary }]}>{t('familyInvite.title')}</Text>
@@ -184,6 +190,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                                 borderColor: copied ? '#7DAF8F' : (isDarkMode ? 'rgba(255,255,255,0.12)' : '#E5E7EB'),
                                             }, copied && { backgroundColor: isDarkMode ? 'rgba(125,175,143,0.15)' : '#F0F7F3' }]}
                                             onPress={handleCopyCode}
+                                            accessibilityRole="button"
                                         >
                                             {copied ? (
                                                 <Check size={18} color="#7DAF8F" />
@@ -202,6 +209,7 @@ export const InviteFamilyModal: React.FC<InviteFamilyModalProps> = ({
                                             }]}
                                             onPress={handleRefreshCode}
                                             disabled={refreshing}
+                                            accessibilityRole="button"
                                         >
                                             <RefreshCw size={18} color={theme.textPrimary} style={refreshing ? { opacity: 0.5 } : {}} />
                                             <Text style={[styles.codeBtnText, { color: theme.textPrimary }]}>{t('familyInvite.refresh')}</Text>
