@@ -572,7 +572,7 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             </View>
 
                             {/* Network error banner */}
-                            {false && homeDataError && (
+                            {homeDataError && (
                                 <View style={styles.errorBanner}>
                                     <WifiOff size={14} color="#fff" strokeWidth={2} />
                                     <Text style={styles.errorBannerText}>{t('home.connectionError')}</Text>

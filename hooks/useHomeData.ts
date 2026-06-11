@@ -330,6 +330,10 @@ export const useHomeData = (
     useEffect(() => {
         if (!childId) return;
         let isFirst = true;
+        // Debounce: coalesce a rapid burst of events (e.g. several logs in the
+        // same minute) into a single refresh after 800ms of quiet, instead of
+        // firing a full home-data refetch per snapshot.
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
         const q = query(
             collection(db, 'events'),
             where('childId', '==', childId),
@@ -338,9 +342,13 @@ export const useHomeData = (
         );
         const unsub = onSnapshot(q, () => {
             if (isFirst) { isFirst = false; return; } // skip initial snapshot
-            refreshRef.current();
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => { refreshRef.current(); }, 800);
         }, () => { }); // ignore listener errors silently
-        return () => unsub();
+        return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            unsub();
+        };
     }, [childId]);
 
     return {

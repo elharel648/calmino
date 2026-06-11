@@ -307,13 +307,13 @@ QuickActions.displayName = 'QuickActions';
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: SPACING.xxl,
+        marginBottom: 10,
     },
     header: {
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: SPACING.xl,
+        marginBottom: SPACING.md,
         paddingHorizontal: SPACING.xs,
     },
     sectionTitle: {

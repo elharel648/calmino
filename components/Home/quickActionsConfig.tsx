@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Utensils, Moon, Music, Music2, Bird, CloudRain, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Baby, Milk, Waves, Stethoscope, Syringe, Heart, Thermometer, MapPin, ShieldAlert, ClipboardList } from 'lucide-react-native';
+import { Utensils, Moon, Music, Music2, Bird, CloudRain, Pill, Plus, HeartPulse, TrendingUp, Award, Sparkles, Lightbulb, Bell, TriangleAlert, Milk, Droplets, Stethoscope, Syringe, Heart, Thermometer, MapPin, ShieldAlert, ClipboardList } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { QuickActionKey } from '../../context/QuickActionsContext';
 import DiaperIcon from '../Common/DiaperIcon';
@@ -21,11 +21,21 @@ export const TeethIcon = ({ size, color, strokeWidth = 2 }: { size: number; colo
     </Svg>
 );
 
-const BreastfeedingSideIcon = ({ size, color, strokeWidth = 2, side }: { size: number; color: string; strokeWidth?: number; side: 'R' | 'L' }) => (
+// Recognizable nursing pictogram (Material Symbols "breastfeeding", Apache-2.0).
+// Filled glyph — reads clearly as breastfeeding, not a "smiley baby".
+export const BreastfeedingGlyph = ({ size, color }: { size: number; color: string; strokeWidth?: number }) => (
+    <Svg width={size} height={size} viewBox="0 -960 960 960" fill={color}>
+        <Path d="M477-80q-42 0-81.5-9T324-112q-46-20-75-48.5T220-224v-231q0-31 23.5-57t60.5-46q38-20 83.5-31t92.5-11q47 0 92.5 11t83.5 31q38 20 61 46t23 57v231q0 17-7.5 33T711-161q-14 14-32.5 26.5T637-112q1-5 3-28 0-58-41-99t-99-41q-43 0-76 23t-50 59q32 8 58.5 11t46.5 3q17 0 27.5-1t13.5-1v104q-11 1-21.5 1.5T477-80Zm123-220q33 0 56.5-23.5T680-380q0-33-23.5-56.5T600-460q-33 0-56.5 23.5T520-380q0 33 23.5 56.5T600-300ZM480-640q50 0 85-34.5t35-85.5q0-50-35-85t-85-35q-51 0-85.5 35T360-760q0 51 34.5 85.5T480-640Z" />
+    </Svg>
+);
+
+const BreastfeedingSideIcon = ({ size, color, side }: { size: number; color: string; strokeWidth?: number; side: 'R' | 'L' }) => (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-        <Baby size={size * 0.78} color={color} strokeWidth={strokeWidth} />
-        <View style={{ position: 'absolute', bottom: 0, right: side === 'R' ? 0 : undefined, left: side === 'L' ? 0 : undefined, width: size * 0.38, height: size * 0.38, borderRadius: size * 0.19, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: size * 0.22, fontWeight: '800', color: '#fff', lineHeight: size * 0.26 }}>{side}</Text>
+        <BreastfeedingGlyph size={size * 0.82} color={color} />
+        {/* L / R badge — fixed dark chip + white letter so it stays readable on BOTH
+            a selected (tinted) tile and an unselected (white) tile. */}
+        <View style={{ position: 'absolute', bottom: -size * 0.04, right: side === 'R' ? -size * 0.04 : undefined, left: side === 'L' ? -size * 0.04 : undefined, width: size * 0.48, height: size * 0.48, borderRadius: size * 0.24, backgroundColor: '#2C2C2E', borderWidth: size * 0.055, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: size * 0.28, fontWeight: '900', color: '#fff', lineHeight: size * 0.32 }}>{side}</Text>
         </View>
     </View>
 );
@@ -60,9 +70,9 @@ export const QUICK_ACTION_BASE_CONFIG: Record<QuickActionKey, QuickActionMeta> =
     nightLight: { icon: Lightbulb, labelKey: 'actions.nightLight', activeLabelKey: 'actions.nightLight' },
     quickReminder: { icon: Bell, labelKey: 'actions.quickReminder', activeLabelKey: 'actions.quickReminder' },
     custom: { icon: Plus, labelKey: 'actions.custom', activeLabelKey: 'actions.custom', hasBorder: true },
-    breastfeeding: { icon: Baby, labelKey: 'actions.breastfeeding', activeLabelKey: 'actions.active.breastfeeding' },
+    breastfeeding: { icon: BreastfeedingGlyph, labelKey: 'actions.breastfeeding', activeLabelKey: 'actions.active.breastfeeding' },
     breastfeedingRight: { icon: BreastfeedingRIcon, labelKey: 'actions.breastfeedingRight', activeLabelKey: 'actions.active.breastfeeding' },
     breastfeedingLeft: { icon: BreastfeedingLIcon, labelKey: 'actions.breastfeedingLeft', activeLabelKey: 'actions.active.breastfeeding' },
     bottle: { icon: Milk, labelKey: 'actions.bottle', activeLabelKey: 'actions.active.bottle' },
-    pumping: { icon: Waves, labelKey: 'actions.pumping', activeLabelKey: 'actions.active.pumping' },
+    pumping: { icon: Droplets, labelKey: 'actions.pumping', activeLabelKey: 'actions.active.pumping' },
 };

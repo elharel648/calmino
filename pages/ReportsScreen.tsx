@@ -21,6 +21,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
+import { ANIMATIONS } from '../utils/designSystem';
 import { X, TrendingUp, TrendingDown, ChevronRight, ChevronLeft, Share2, Download, Calendar, Activity, Moon, Utensils, Pill, RefreshCw, Trophy, Award, Clock, BarChart2, Check, GripVertical, Edit2, Baby, Lock, SlidersHorizontal, Film } from 'lucide-react-native';
 import DiaperIcon from '../components/Common/DiaperIcon';
 import StatsEditModal, { DEFAULT_STATS_ORDER, STATS_ORDER_KEY, StatKey } from '../components/Reports/StatsEditModal';
@@ -31,11 +32,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { format, addDays, subDays, isSameDay, startOfDay, endOfDay, subWeeks, subMonths, differenceInDays, differenceInHours } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
 import { useBabyProfile } from '../hooks/useBabyProfile';
 import * as Haptics from 'expo-haptics';
 import ChildPicker from '../components/Home/ChildPicker';
@@ -106,15 +108,23 @@ type TabName = 'summary';
 type MetricType = 'sleep' | 'food' | 'diapers' | 'supplements' | null;
 
 // Static grid cell — no entrance animation, just the 2-column layout slot.
-const AnimatedCard = ({ children }: { index?: number; children: React.ReactNode }) => (
-  <View style={{ width: '48%', marginBottom: 14 }}>
+const AnimatedCard = ({ index = 0, children }: { index?: number; children: React.ReactNode }) => (
+  <Animated.View
+    entering={ANIMATIONS.fadeInDown(80 + index * 70)}
+    style={{ width: '48%', marginBottom: 14 }}
+  >
     {children}
-  </View>
+  </Animated.View>
 );
 
 export default function ReportsScreen() {
   const { theme, isDarkMode } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { showError } = useToast();
+  const dateFnsLocale = useMemo(() => {
+    const locales: Record<string, any> = { he, en: enUS, es, ar, fr, de };
+    return locales[language] || he;
+  }, [language]);
   const { activeChild } = useActiveChild();
   const { baby } = useBabyProfile(activeChild?.childId);
 
@@ -462,7 +472,9 @@ export default function ReportsScreen() {
       const todayDate = new Date();
       for (let i = 0; i < numSlots; i++) {
         const date = subDays(todayDate, i);
-        const dateKey = format(date, 'yyyy-MM-dd');
+        // dayMap is keyed 'dd/MM' (see its construction above) — using any other
+        // format here left the per-day goal bars permanently empty (audit HIGH).
+        const dateKey = format(date, 'dd/MM');
         const dayData = dayMap[dateKey];
         perDayLogged.push(dayData ? (dayData.foodCount > 0 || dayData.sleepCount > 0 || dayData.diapers > 0) : false);
         perDaySleep.push(dayData ? dayData.sleep >= 8 : false);
@@ -543,7 +555,8 @@ export default function ReportsScreen() {
 
     } catch (error) {
       logger.error('ReportsScreen fetchData error:', error);
-      // Silent fail - don't show error to user
+      // Surface the failure — stale/zero stats with no feedback look like real data (audit HIGH)
+      showError(t('home.connectionError'));
     } finally {
       hasLoadedOnce.current = true;
       setLoading(false);
@@ -1120,15 +1133,19 @@ export default function ReportsScreen() {
     };
   }, [dailyStats, prevWeekStats]);
 
-  const HEB_DAY_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
-  const HEB_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  // Locale-aware day/month names — the history calendar must follow the app language
+  const dayLetter = (d: Date) => format(d, 'EEEEE', { locale: dateFnsLocale });
+  const monthName = (d: Date) => format(d, 'MMMM', { locale: dateFnsLocale });
   const today = startOfDay(new Date());
-  const monthLabel = `${HEB_MONTHS[historyAnchor.getMonth()]} ${historyAnchor.getFullYear()}`;
+  const monthLabel = `${monthName(historyAnchor)} ${historyAnchor.getFullYear()}`;
   const canPageForward = !isSameDay(historyAnchor, today) && historyAnchor < today;
 
-  // On-demand fetch: load the 7-day window ending at the anchor (older history isn't preloaded)
+  // On-demand fetch: load the 7-day window ending at the anchor (older history isn't preloaded).
+  // A sequence token discards out-of-order responses when the user pages weeks quickly.
+  const historyFetchSeq = useRef(0);
   const fetchHistoryWindow = useCallback(async (anchor: Date) => {
     if (!activeChild?.childId) return;
+    const seq = ++historyFetchSeq.current;
     const windowStart = startOfDay(subDays(anchor, 6));
     const windowEnd = endOfDay(anchor);
     try {
@@ -1141,6 +1158,7 @@ export default function ReportsScreen() {
         limit(500)
       );
       const snap = await getDocs(q);
+      if (seq !== historyFetchSeq.current) return; // a newer week was requested meanwhile
       setHistoryWindowEvents(snap.docs.map(d => {
         const data = d.data();
         const dateObj = data.timestamp instanceof Timestamp ? data.timestamp.toDate() : new Date(data.timestamp);
@@ -1156,7 +1174,9 @@ export default function ReportsScreen() {
     if (showHistoryModal) fetchHistoryWindow(historyAnchor);
   }, [showHistoryModal, historyAnchor, fetchHistoryWindow]);
 
-  // Week strip: 7 days ending at the anchor (anchor on the right under RTL) with per-day category dots
+  // Week strip: 7 days ending at the anchor. Rendered with flexDirection 'row' so the
+  // anchor (newest day) is leftmost and the oldest is rightmost — matching Hebrew
+  // calendar reading order (time flows right→left).
   const historyWeek = useMemo(() => {
     const colorFor = (type: string) => {
       if (type === 'food' || type === 'feeding') return theme.actionColors.food.color;
@@ -1186,10 +1206,14 @@ export default function ReportsScreen() {
     [historyWindowEvents, selectedHistoryDay]
   );
 
-  // Last 18 months for the jump picker (newest first)
+  // Last 18 months for the jump picker (newest first).
+  // [] deps on purpose: `today` is a fresh object every render, which made this memo a no-op.
   const monthOptions = useMemo(
-    () => Array.from({ length: 18 }, (_, i) => subMonths(today, i)),
-    [today]
+    () => {
+      const base = startOfDay(new Date());
+      return Array.from({ length: 18 }, (_, i) => subMonths(base, i));
+    },
+    []
   );
 
   const goToMonth = (m: Date) => {
@@ -1601,7 +1625,12 @@ export default function ReportsScreen() {
               {renderLockedSection(
                 <TouchableOpacity
                   style={[styles.statCard, { backgroundColor: theme.card }]}
-                  onPress={() => setShowHistoryModal(true)}
+                  onPress={() => {
+                    // Fresh view on every open: current week, unfiltered
+                    setSelectedHistoryDay(null);
+                    setHistoryAnchor(startOfDay(new Date()));
+                    setShowHistoryModal(true);
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.cardHeaderRow}>
@@ -2069,9 +2098,9 @@ export default function ReportsScreen() {
           <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('empty.noChild')}</Text>
         </View>
       ) : (
-        <View style={{ flex: 1, opacity: loading ? 0.55 : 1 }}>
+        <Animated.View entering={ANIMATIONS.fadeIn(0, 250)} style={{ flex: 1, opacity: loading ? 0.55 : 1 }}>
           {SummaryTab()}
-        </View>
+        </Animated.View>
       )}
 
       {/* Date Pickers */}
@@ -2112,7 +2141,12 @@ export default function ReportsScreen() {
       />
 
       {/* History Log Modal */}
-      <Modal visible={showHistoryModal} animationType="slide" presentationStyle="pageSheet">
+      <Modal
+        visible={showHistoryModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowHistoryModal(false)}
+      >
         <View style={[styles.historyModalContainer, { backgroundColor: theme.background }]}>
           <View style={[styles.historyHeader, { borderColor: theme.border }]}>
             <TouchableOpacity onPress={() => setShowHistoryModal(false)} style={[styles.closeButton, { backgroundColor: theme.cardSecondary }]}>
@@ -2154,8 +2188,11 @@ export default function ReportsScreen() {
                   style={styles.historyWeekDay}
                   activeOpacity={0.7}
                   onPress={() => setSelectedHistoryDay(active ? null : date)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={format(date, 'EEEE, d MMMM yyyy', { locale: dateFnsLocale })}
                 >
-                  <Text style={[styles.historyWeekLetter, { color: theme.textTertiary }]}>{HEB_DAY_LETTERS[date.getDay()]}</Text>
+                  <Text style={[styles.historyWeekLetter, { color: theme.textTertiary }]}>{dayLetter(date)}</Text>
                   <View style={[styles.historyWeekDateWrap, active && { backgroundColor: theme.primary }]}>
                     <Text style={[styles.historyWeekDate, { color: active ? '#FFFFFF' : theme.textPrimary }]}>{date.getDate()}</Text>
                   </View>
@@ -2177,6 +2214,10 @@ export default function ReportsScreen() {
               showOnlyToday={false}
               preloadedEvents={historyEvents}
               useGrouping={true}
+              onEventDeleted={(eventId) =>
+                // Keep the parent copy in sync so day-filtering doesn't resurrect deleted rows
+                setHistoryWindowEvents(prev => prev.filter(e => e.id !== eventId))
+              }
             />
           </ScrollView>
 
@@ -2199,7 +2240,7 @@ export default function ReportsScreen() {
                         onPress={() => goToMonth(m)}
                       >
                         <Text style={[styles.monthPickerText, { color: isActive ? theme.primary : theme.textPrimary, fontWeight: isActive ? '800' : '500' }]}>
-                          {HEB_MONTHS[m.getMonth()]} {m.getFullYear()}
+                          {monthName(m)} {m.getFullYear()}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -2403,7 +2444,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    // pageSheet modals already sit below the notch — 60 left ~40pt of dead space
+    paddingTop: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
   },

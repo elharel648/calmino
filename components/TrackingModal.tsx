@@ -3,6 +3,7 @@ import { logger } from '../utils/logger';
 
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, Keyboard } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
+import { BreastfeedingGlyph } from './Home/quickActionsConfig';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +15,7 @@ import { useActiveChild } from '../context/ActiveChildContext';
 import { useToast } from '../context/ToastContext';
 import quickActionsService from '../services/quickActionsService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, withDelay, FadeIn, FadeOut, Easing, runOnJS, withRepeat, interpolate, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import AndroidHebrewCalendar from './Common/AndroidHebrewCalendar';
@@ -552,6 +554,19 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           return rawNote;
         };
 
+        // Legacy records may store startTime/endTime as Date / Firestore Timestamp
+        // instead of the current "HH:MM" string — normalize before any .split(),
+        // otherwise editing such an event crashes (audit HIGH).
+        const toTimeString = (v: any): string | null => {
+          if (!v) return null;
+          if (typeof v === 'string') return v;
+          const d = typeof v.toDate === 'function' ? v.toDate() : v;
+          if (typeof d?.getHours === 'function') {
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          }
+          return null;
+        };
+
         if (editingEvent) {
           setSaveSuccess(false);
           const eventDate = editingEvent.timestamp ? (editingEvent.timestamp instanceof Date ? editingEvent.timestamp : new Date(editingEvent.timestamp)) : new Date(now);
@@ -561,10 +576,12 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             setFoodType(editingEvent.subType || 'bottle');
             setFoodNote(cleanNote(editingEvent.note));
             
-            if (editingEvent.startTime && editingEvent.endTime) {
+            const foodStartStr = toTimeString(editingEvent.startTime);
+            const foodEndStr = toTimeString(editingEvent.endTime);
+            if (foodStartStr && foodEndStr) {
               setFoodMode('timerange');
-              const [sH, sM] = editingEvent.startTime.split(':').map(Number);
-              const [eH, eM] = editingEvent.endTime.split(':').map(Number);
+              const [sH, sM] = foodStartStr.split(':').map(Number);
+              const [eH, eM] = foodEndStr.split(':').map(Number);
               const sDate = new Date(eventDate); sDate.setHours(sH, sM, 0, 0);
               const eDate = new Date(eventDate); eDate.setHours(eH, eM, 0, 0);
               setFoodStartTime(sDate);
@@ -592,16 +609,18 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             }
           } else if (type === 'sleep') {
             setSleepNote(cleanNote(editingEvent.note));
-            if (editingEvent.startTime && editingEvent.endTime) {
+            const sleepStartStr = toTimeString(editingEvent.startTime);
+            const sleepEndStr = toTimeString(editingEvent.endTime);
+            if (sleepStartStr && sleepEndStr) {
               setSleepMode('timerange');
-              const [sH, sM] = editingEvent.startTime.split(':').map(Number);
-              const [eH, eM] = editingEvent.endTime.split(':').map(Number);
+              const [sH, sM] = sleepStartStr.split(':').map(Number);
+              const [eH, eM] = sleepEndStr.split(':').map(Number);
               const sDate = new Date(eventDate); sDate.setHours(sH, sM, 0, 0);
               const eDate = new Date(eventDate); eDate.setHours(eH, eM, 0, 0);
               setSleepStartTimeDate(sDate);
               setSleepEndTimeDate(eDate);
-              setSleepStartTime(editingEvent.startTime);
-              setSleepEndTime(editingEvent.endTime);
+              setSleepStartTime(sleepStartStr);
+              setSleepEndTime(sleepEndStr);
             } else if (editingEvent.duration) {
                setSleepMode('duration');
                const totalMins = Math.floor(editingEvent.duration / 60);
@@ -1246,7 +1265,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
             ) : (leftTimer > 0 || rightTimer > 0) ? (
               <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>{formatTime(leftTimer + rightTimer)}</Text>
             ) : (
-              <Milk size={20} color={foodType === 'breast' ? theme.primary : theme.textTertiary} strokeWidth={1.5} />
+              <BreastfeedingGlyph size={20} color={foodType === 'breast' ? theme.primary : theme.textTertiary} />
             )}
           </View>
           <Text style={[styles.foodTabText, { color: theme.textSecondary }, foodType === 'breast' && [styles.activeFoodTabText, { color: theme.primary }]]}>{t('tracking.breast')}</Text>
@@ -1717,6 +1736,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       {/* Food Start Time Picker Modal */}
       {showFoodStartTimePicker && (
         <View style={styles.timePickerOverlay}>
+          <BlurView intensity={isDarkMode ? 40 : 25} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill}><View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)' }]} /></BlurView>
           <View style={styles.timePickerContainer}>
             {Platform.OS === 'android' ? (
               <AndroidTimePicker
@@ -1753,6 +1773,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       {/* Food End Time Picker Modal */}
       {showFoodEndTimePicker && (
         <View style={styles.timePickerOverlay}>
+          <BlurView intensity={isDarkMode ? 40 : 25} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill}><View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)' }]} /></BlurView>
           <View style={styles.timePickerContainer}>
             {Platform.OS === 'android' ? (
               <AndroidTimePicker
@@ -2002,6 +2023,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           {/* Sleep Start Time Picker Modal */}
           {showSleepStartPicker && (
             <View style={styles.timePickerOverlay}>
+              <BlurView intensity={isDarkMode ? 40 : 25} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill}><View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)' }]} /></BlurView>
               <View style={styles.timePickerContainer}>
                 {Platform.OS === 'android' ? (
                   <AndroidTimePicker
@@ -2052,6 +2074,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           {/* Sleep End Time Picker Modal */}
           {showSleepEndPicker && (
             <View style={styles.timePickerOverlay}>
+              <BlurView intensity={isDarkMode ? 40 : 25} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill}><View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)' }]} /></BlurView>
               <View style={styles.timePickerContainer}>
                 {Platform.OS === 'android' ? (
                   <AndroidTimePicker
@@ -2269,6 +2292,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       {/* Diaper Date Picker Modal */}
       {showDiaperDatePicker && Platform.OS !== 'android' && (
         <View style={styles.timePickerOverlay}>
+          <BlurView intensity={isDarkMode ? 40 : 25} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill}><View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)' }]} /></BlurView>
           <View style={styles.timePickerContainer}>
             {/* Done button — small, top-right */}
             {Platform.OS === 'ios' && (
@@ -2322,6 +2346,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
       {/* Diaper Time Picker Modal */}
       {showDiaperTimePicker && (
         <View style={styles.timePickerOverlay}>
+          <BlurView intensity={isDarkMode ? 40 : 25} tint={isDarkMode ? 'dark' : 'light'} style={StyleSheet.absoluteFill}><View style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)' }]} /></BlurView>
           <View style={styles.timePickerContainer}>
             {/* Done button — small, top-right */}
             {Platform.OS === 'ios' && (
@@ -3483,7 +3508,7 @@ const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   saveBtnText: { color: theme.card, fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
 
   // Time Picker Overlay - Premium Design
-  timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  timePickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   timePickerContainer: { backgroundColor: theme.card, borderRadius: 24, paddingVertical: 24, paddingHorizontal: 20, width: '90%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 0 },
   timePickerDoneBtn: { marginTop: 20, paddingHorizontal: 40, paddingVertical: 12, backgroundColor: theme.primary, borderRadius: 24, width: 'auto', minWidth: 140, alignItems: 'center' },
   timePickerDoneBtnText: { color: theme.card, fontSize: 17, fontWeight: '600' },

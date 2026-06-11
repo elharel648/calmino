@@ -70,7 +70,7 @@ export const COLORS = {
             breastfeeding:      { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' }, // Lilac Mauve
             breastfeedingRight: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.15)', accentColor: '#B5838D' },
             breastfeedingLeft:  { color: '#9B7FBD', lightColor: 'rgba(155, 127, 189, 0.15)', accentColor: '#9B7FBD' }, // Soft Purple
-            bottle:             { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.15)', accentColor: '#D4A373' }, // Muted Mustard
+            bottle:             { color: '#6A8EAE', lightColor: 'rgba(106, 142, 174, 0.15)', accentColor: '#6A8EAE' }, // Periwinkle — distinct from food's mustard
             pumping:            { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.15)', accentColor: '#83C5BE' }, // Muted Teal
         },
     },
@@ -133,7 +133,7 @@ export const COLORS = {
             breastfeeding:      { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
             breastfeedingRight: { color: '#B5838D', lightColor: 'rgba(181, 131, 141, 0.22)', accentColor: '#B5838D' },
             breastfeedingLeft:  { color: '#9B7FBD', lightColor: 'rgba(155, 127, 189, 0.22)', accentColor: '#9B7FBD' },
-            bottle:             { color: '#D4A373', lightColor: 'rgba(212, 163, 115, 0.22)', accentColor: '#D4A373' },
+            bottle:             { color: '#6A8EAE', lightColor: 'rgba(106, 142, 174, 0.22)', accentColor: '#6A8EAE' },
             pumping:            { color: '#83C5BE', lightColor: 'rgba(131, 197, 190, 0.22)', accentColor: '#83C5BE' },
         },
     }
@@ -179,6 +179,22 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const isDarkMode = themePreference === 'auto'
         ? appearanceScheme === 'dark'
         : themePreference === 'dark';
+
+    // Sync the NATIVE appearance (UI trait collection) with the app's theme.
+    // iOS 26 native components — notably the liquid-glass bottom tab bar —
+    // pick their material (light/dark) from the system trait, NOT our JS theme.
+    // If the user forces "light" while the device is in dark mode, the glass
+    // samples the dark trait and turns grey (most visible mid tab-switch).
+    // Overriding here keeps the liquid-glass effect but renders it in the right
+    // variant. In 'auto' we clear the override so it follows the system again.
+    useEffect(() => {
+        if (Platform.OS === 'android') return;
+        if (themePreference === 'auto') {
+            Appearance.setColorScheme(null);
+        } else {
+            Appearance.setColorScheme(themePreference === 'dark' ? 'dark' : 'light');
+        }
+    }, [themePreference]);
 
     // Load theme preference — AsyncStorage first (instant), then Firestore (sync)
     useEffect(() => {

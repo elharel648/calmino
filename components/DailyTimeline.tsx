@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Animated as RNAnimated } from 'react-native';
-import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText, HelpCircle, MousePointer2, PlusCircle } from 'lucide-react-native';
+import { Utensils, Moon, ChevronDown, ChevronUp, X, Plus, Pill, AlertCircle, RefreshCw, Sparkles, FileText, HelpCircle, MousePointer2, PlusCircle, Milk, Droplets, Apple } from 'lucide-react-native';
+import { BreastfeedingGlyph } from './Home/quickActionsConfig';
 import DiaperIcon from './Common/DiaperIcon';
 import { CUSTOM_ICON_MAP } from './Home/AddCustomActionModal';
 import Svg, { Path } from 'react-native-svg';
@@ -19,6 +20,33 @@ import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Format one end of an event's time range. startTime/endTime are stored as
+// "HH:MM" strings by TrackingModal, but may also arrive as Date / Firestore
+// Timestamp from older records — handle all three.
+const formatTimePoint = (v: any): string | null => {
+  if (!v) return null;
+  if (typeof v === 'string') return v;
+  const d = typeof v.toDate === 'function' ? v.toDate() : v;
+  return typeof d?.toLocaleTimeString === 'function'
+    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+    : null;
+};
+
+// Build the "start–end" display for an event. Falls back to deriving the range
+// from duration for timer-based saves (those stamp `timestamp` at stop ⇒ end).
+const buildTimeDisplay = (event: any, timeStr: string): string => {
+  const start = formatTimePoint(event.startTime);
+  const end = formatTimePoint(event.endTime);
+  if (start && end) return start === end ? start : `${start}–${end}`;
+  const durationSec = (event.duration as number) || 0;
+  if (durationSec > 60 && event.timestamp instanceof Date) {
+    const startD = new Date(event.timestamp.getTime() - durationSec * 1000);
+    const startStr = startD.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${startStr}–${timeStr}`;
+  }
+  return timeStr;
+};
 
 // ─── Pulsing 'now' dot ───────────────────────────────────────────────────────
 const PulseDot = () => {
@@ -302,6 +330,8 @@ interface DailyTimelineProps {
   preloadedEvents?: any[];
   useGrouping?: boolean;
   onEditEvent?: (event: TimelineEvent) => void;
+  // Notify the owner of preloadedEvents so its copy doesn't resurrect deleted rows
+  onEventDeleted?: (eventId: string) => void;
 }
 
 
@@ -321,7 +351,7 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return out;
 };
 
-const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false, onEditEvent }) => {
+const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = '', showOnlyToday = false, preloadedEvents, useGrouping = false, onEditEvent, onEventDeleted }) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { family } = useFamily();
@@ -364,6 +394,35 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
       color: theme.actionColors.teeth.accentColor,
       lightColor: theme.actionColors.teeth.lightColor,
       label: t('profile.teeth'),
+    },
+  };
+
+  // Food sub-types get their own icon/color so breastfeeding, bottle and pumping
+  // are distinguishable at a glance (matches the quick-actions iconography).
+  const FOOD_SUBTYPE_CONFIG: Record<string, { icon: any; color: string; lightColor: string; label: string }> = {
+    breast: {
+      icon: BreastfeedingGlyph,
+      color: theme.actionColors.breastfeeding.accentColor,
+      lightColor: theme.actionColors.breastfeeding.lightColor,
+      label: t('actions.breastfeeding'),
+    },
+    bottle: {
+      icon: Milk,
+      color: theme.actionColors.bottle.accentColor,
+      lightColor: theme.actionColors.bottle.lightColor,
+      label: t('actions.bottle'),
+    },
+    pumping: {
+      icon: Droplets,
+      color: theme.actionColors.pumping.accentColor,
+      lightColor: theme.actionColors.pumping.lightColor,
+      label: t('actions.pumping'),
+    },
+    solids: {
+      icon: Apple,
+      color: theme.actionColors.food.accentColor,
+      lightColor: theme.actionColors.food.lightColor,
+      label: t('actions.food'),
     },
   };
 
@@ -516,6 +575,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
     try {
       await deleteEvent(eventId);
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+      onEventDeleted?.(eventId);
       showSuccess(t('common.deletedSuccess'), 3000);
     } catch (error) {
       showError(t('errors.deleteError'));
@@ -863,6 +923,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                 {/* Events for this date — limited to EVENTS_PER_DAY unless expanded */}
                 {visibleDayEvents.map((event, index) => {
                   let config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+                  if (event.type === 'food' && event.subType && FOOD_SUBTYPE_CONFIG[event.subType]) {
+                    config = { ...config, ...FOOD_SUBTYPE_CONFIG[event.subType] };
+                  }
                   const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
                   // Override color for health-related custom events
                   if (event.type === 'custom' && event.subType === 'vaccine') {
@@ -919,12 +982,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   const isLast = index === visibleDayEvents.length - 1;
                   const durationSec = (event.duration as number) || 0;
                   const pillHeight = Math.max(64, Math.min(64 + (durationSec / 60) * 0.4, 124));
-                  const fmtT = (d: any) => (d && typeof d.toLocaleTimeString === 'function')
-                    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
-                    : null;
-                  const grpStart = fmtT((event as any).startTime);
-                  const grpEnd = fmtT((event as any).endTime);
-                  const timeDisplay = grpStart && grpEnd ? `${grpStart}–${grpEnd}` : timeStr;
+                  const timeDisplay = buildTimeDisplay(event, timeStr);
 
                   return (
                     <AnimatedTimelineItem
@@ -944,7 +1002,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                             <TouchableOpacity
                               activeOpacity={0.65}
                               onPress={() => onEditEvent?.(event)}
-                              style={styles.elegantEventRow}
+                              style={[styles.elegantEventRow, { minHeight: pillHeight + 28 }]}
                             >
                               {/* RIGHT (RTL: first in JSX): rail + capsule pill */}
                               <View style={styles.elegantTrack}>
@@ -1020,6 +1078,9 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           /* Regular Flat Rendering (Fallback or Today View) */
           visibleEvents.map((event, index) => {
             let config = TYPE_CONFIG[event.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food;
+            if (event.type === 'food' && event.subType && FOOD_SUBTYPE_CONFIG[event.subType]) {
+              config = { ...config, ...FOOD_SUBTYPE_CONFIG[event.subType] };
+            }
             const Icon = (event.type === 'custom' && event.subType && CUSTOM_ICON_MAP[event.subType]) ? CUSTOM_ICON_MAP[event.subType] : config.icon;
             // Override color for health-related custom events
             if (event.type === 'custom' && event.subType === 'vaccine') {
@@ -1040,13 +1101,8 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
             // NEW DESIGN: capsule pill by default (taller than wide), grows with duration
             const durationSec = (event.duration as number) || 0;
             const pillHeight = Math.max(64, Math.min(64 + (durationSec / 60) * 0.4, 124));
-            // Show a start–end range when the event has both, else the single time
-            const fmtT = (d: any) => (d && typeof d.toLocaleTimeString === 'function')
-              ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
-              : null;
-            const startStr = fmtT((event as any).startTime);
-            const endStr = fmtT((event as any).endTime);
-            const timeDisplay = startStr && endStr ? `${startStr}–${endStr}` : timeStr;
+            // Show a start–end range (stored or derived from duration), else the single time
+            const timeDisplay = buildTimeDisplay(event, timeStr);
 
             // Calculate colors for the continuous line
             const prevConfig = isFirst ? null : (TYPE_CONFIG[visibleEvents[index - 1].type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.food);
@@ -1075,7 +1131,7 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                   <TouchableOpacity
                     activeOpacity={0.65}
                     onPress={() => onEditEvent?.(event)}
-                    style={styles.elegantEventRow}
+                    style={[styles.elegantEventRow, { minHeight: pillHeight + 28 }]}
                   >
                     {/* MIDDLE: TRACK */}
                     <View style={styles.elegantTrack}>

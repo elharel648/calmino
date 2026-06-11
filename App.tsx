@@ -268,13 +268,19 @@ const BiometricLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
 // --- Floating FAB (hovering above the native tab bar) ---
 function FloatingFAB() {
   const { setFabSheetVisible, setSosEditVisible } = useQuickActions();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const fabBottom = useRef<number | null>(null);
-  if (fabBottom.current === null) fabBottom.current = insets.bottom + 56;
+  // Align the FAB's vertical centre with the native tab bar.
+  // iOS 26+: floating pill bar — tuned empirically to sit on the bar's centre line.
+  // iOS < 26: classic docked bar (~49pt + inset) — keep the FAB hovering above it.
+  const isLiquidGlassBar = Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26;
+  const fabBottom = isLiquidGlassBar
+    ? Math.max(insets.bottom, 28) - 8
+    : insets.bottom + 56;
 
   return (
     <TouchableOpacity
-      style={[styles.floatingFab, { bottom: fabBottom.current }]}
+      style={[styles.floatingFab, { bottom: fabBottom }]}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setFabSheetVisible(true);
@@ -285,6 +291,8 @@ function FloatingFAB() {
       }}
       delayLongPress={500}
       activeOpacity={0.85}
+      accessibilityLabel={t('fab.title')}
+      accessibilityRole="button"
     >
       <Plus size={22} color="#fff" strokeWidth={2.8} />
     </TouchableOpacity>
@@ -1396,7 +1404,7 @@ const styles = StyleSheet.create({
   unlockButtonText: { fontSize: 16, fontWeight: 'bold' },
   floatingFab: {
     position: 'absolute',
-    right: 24,
+    right: 10,
     width: 52,
     height: 52,
     borderRadius: 26,

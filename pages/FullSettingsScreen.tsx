@@ -65,6 +65,7 @@ import { TimePicker } from '../components/Settings/TimePicker';
 import PremiumNotificationSettings from '../components/Settings/PremiumNotificationSettings';
 import { useMedications } from '../hooks/useMedications';
 import { useGuest } from '../context/GuestContext';
+import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
 import { analyticsDeleteAccount } from '../services/analyticsService';
 
@@ -113,6 +114,7 @@ const paginatedBatchDelete = async (baseQuery: Query, pageSize: number = 400): P
 export default function SettingsScreen() {
   const { isDarkMode, theme, themePreference, setThemePreference } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { showError } = useToast();
   const navigation = useNavigation<any>();
   const { activeChild, allChildren, setActiveChild, refreshChildren } = useActiveChild();
   const { meds, customSupplements, refresh: refreshMeds } = useMedications(activeChild?.childId);
@@ -189,6 +191,8 @@ if (data.settings.language !== undefined) {
       }
     } catch (error) {
       logger.log('Failed to save setting:', key);
+      // Surface the failure — a silently lost setting looks like a saved one (audit HIGH)
+      showError(t('settings.saveError'));
     }
   };
 
@@ -288,9 +292,12 @@ if (data.settings.language !== undefined) {
   const clearUserCache = async () => {
     try {
       const allKeys = await AsyncStorage.getAllKeys();
-      const keysToRemove = allKeys.filter(k => 
+      const keysToRemove = allKeys.filter(k =>
         k === 'offline_childrenList' ||
         k.startsWith('history_cache_') ||
+        // Per-child cached event history (baby names + events) — must not survive
+        // sign-out on a shared device. Audit MEDIUM security (PII retention).
+        k.startsWith('offline_history_') ||
         k === '@offline_queue'
       );
       if (keysToRemove.length > 0) await AsyncStorage.multiRemove(keysToRemove);

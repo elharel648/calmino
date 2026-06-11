@@ -261,7 +261,12 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     </Text>
                     {/* Line 2: large bold name + add-child plus */}
                     <View style={styles.nameRow}>
-                        <Text style={[styles.greetingName, { color: theme.textPrimary }]}>
+                        <Text
+                            style={[styles.greetingName, { color: theme.textPrimary }]}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.7}
+                        >
                             {profile.name}
                         </Text>
                         {allChildren.length === 1 && (
@@ -290,6 +295,8 @@ const HeaderSection = memo<HeaderSectionProps>(({
                     <TouchableOpacity
                         style={styles.notificationBell}
                         activeOpacity={0.6}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('notifications.title')}
                         onPress={() => {
                             if (Platform.OS !== 'web') {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -448,7 +455,7 @@ HeaderSection.displayName = 'HeaderSection';
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: SPACING.xxl,
+        marginBottom: 10,
     },
 
     // Top Row
@@ -469,11 +476,11 @@ const styles = StyleSheet.create({
         textAlign: 'right',
     },
     greetingName: {
-        fontSize: 30,
+        fontSize: 26,
         fontWeight: '700',
-        letterSpacing: -0.7,
+        letterSpacing: -0.6,
         marginTop: -2,
-        lineHeight: 36,
+        lineHeight: 32,
         textAlign: 'right',
     },
     ageText: {
