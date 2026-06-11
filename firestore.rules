@@ -42,10 +42,29 @@ service cloud.firestore {
       return isMember && babyParentId == familyDoc.data.createdBy;
     }
 
-    // Check guest access — guests have guestChildIds array in their user doc (1 get, no family read)
+    // Check guest access — guests have guestChildIds array in their user doc (1 get, no family read).
+    // These fields are written EXCLUSIVELY by the joinFamilyByCode Cloud Function (Admin SDK);
+    // owner writes may only shrink them (see users rule), so they are trustworthy here.
+    // The 24h guest window is enforced via guestAccess[guestFamilyId].expiresAt — fail closed.
     function hasGuestAccessToBaby(babyId) {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc != null && userDoc.data.get('guestChildIds', []).hasAny([babyId]);
+      return userDoc != null
+        && userDoc.data.get('guestChildIds', []).hasAny([babyId])
+        && userDoc.data.get('guestAccess', {}).get(userDoc.data.get('guestFamilyId', ''), {}).get('expiresAt', timestamp.date(1970, 1, 1)) > request.time;
+    }
+
+    // Owner writes to their own user doc may only SHRINK guest-access state
+    // (sign-out / leave-guest cleanup). Granting or extending guest access happens
+    // exclusively via the joinFamilyByCode Cloud Function — never from the client.
+    function guestGrantNotEscalated() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['guestChildIds', 'guestAccess', 'guestFamilyId'])
+        || (
+          request.resource.data.get('guestChildIds', []).hasOnly(resource.data.get('guestChildIds', []))
+          && request.resource.data.get('guestAccess', {}).diff(resource.data.get('guestAccess', {})).addedKeys().size() == 0
+          && request.resource.data.get('guestAccess', {}).diff(resource.data.get('guestAccess', {})).changedKeys().size() == 0
+          && (!request.resource.data.keys().hasAny(['guestFamilyId'])
+              || request.resource.data.get('guestFamilyId', '') == resource.data.get('guestFamilyId', ''))
+        );
     }
 
     // ===================
@@ -68,12 +87,24 @@ service cloud.firestore {
       allow list: if isOwner(userId) ||
                      (isAuthenticated() && resource.data.get('isSitter', false) == true && resource.data.get('sitterActive', false) == true && request.query.limit <= 100);
 
-      // Write: only owner
-      allow write: if isOwner(userId);
+      // Create: owner only, and never with guest-access fields (those are granted
+      // exclusively by the joinFamilyByCode Cloud Function via the Admin SDK)
+      allow create: if isOwner(userId) &&
+                       !request.resource.data.keys().hasAny(['guestChildIds', 'guestAccess', 'guestFamilyId']);
 
-      // Allow any authenticated user to update profile view counter and rating stats
-      allow update: if isAuthenticated() &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews', 'sitterRating', 'sitterReviewCount', 'sitterBadges']);
+      // Update: owner may write anything EXCEPT granting/extending guest access
+      allow update: if (isOwner(userId) && guestGrantNotEscalated()) ||
+                       // OR any authenticated user may bump sitter stats — bounded to
+                       // +1 increments and a sane rating range to prevent stat inflation
+                       (isAuthenticated() &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalProfileViews', 'sitterRating', 'sitterReviewCount', 'sitterBadges']) &&
+                        request.resource.data.get('sitterRating', 0) >= 0 &&
+                        request.resource.data.get('sitterRating', 0) <= 5 &&
+                        request.resource.data.get('totalProfileViews', 0) <= resource.data.get('totalProfileViews', 0) + 1 &&
+                        request.resource.data.get('sitterReviewCount', 0) <= resource.data.get('sitterReviewCount', 0) + 1);
+
+      // Delete: only owner
+      allow delete: if isOwner(userId);
 
       // Reminders subcollection
       match /reminders/{reminderId} {
@@ -97,17 +128,17 @@ service cloud.firestore {
       // Create: any authenticated
       allow create: if isAuthenticated();
       
-      // Update: admins of the family, OR
-      // a user leaving (removing only their own key), OR
-      // a user joining (adding only their own key to members)
+      // Update: admins of the family, OR a user leaving (removing ONLY their own key).
+      // Self-JOIN was removed: joins happen exclusively via the joinFamilyByCode
+      // Cloud Function (Admin SDK), which assigns the role server-side — closing
+      // the hole where a client could self-insert as 'admin'.
       allow update: if isAuthenticated() && (
         resource.data.members[request.auth.uid].role == 'admin' ||
-        // Allow self-leave: user removes ONLY themselves from members
+        // Self-leave: only the caller's own key is removed; nothing added or changed
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-         request.resource.data.members.diff(resource.data.members).removedKeys().hasOnly([request.auth.uid])) ||
-        // Allow self-join: user adds ONLY themselves to members
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-         request.resource.data.members.diff(resource.data.members).addedKeys().hasOnly([request.auth.uid]))
+         request.resource.data.members.diff(resource.data.members).removedKeys().hasOnly([request.auth.uid]) &&
+         request.resource.data.members.diff(resource.data.members).addedKeys().size() == 0 &&
+         request.resource.data.members.diff(resource.data.members).changedKeys().size() == 0)
       );
       
       // Delete: only creator (who should be an admin)
@@ -169,10 +200,15 @@ service cloud.firestore {
         hasGuestAccessToBaby(resource.data.childId)
       );
       
-      // Create: must be the creator (userId) or parentId — prevents writing to other users' children
+      // Create: must be the creator (userId/parentId) AND actually have access to the
+      // child — blocks injecting events into a stranger's timeline with a harvested childId
       allow create: if isAuthenticated() && (
         request.resource.data.userId == request.auth.uid ||
         request.resource.data.parentId == request.auth.uid
+      ) && (
+        isParentOfBaby(request.resource.data.childId) ||
+        hasFamilyAccessToBaby(request.resource.data.childId) ||
+        hasGuestAccessToBaby(request.resource.data.childId)
       );
       
       // Update/Delete: creator, parent field, or actual parent of the baby (for account deletion)
@@ -188,14 +224,16 @@ service cloud.firestore {
     // INVITES COLLECTION
     // ===================
     match /invites/{inviteCode} {
-      // Read: any authenticated user (needed for client-side join by invite code)
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      // Allow creator to update, OR allow any authenticated user to mark as used
-      allow update: if isAuthenticated() && (
-        resource.data.createdBy == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedBy', 'usedAt'])
-      );
+      // Read: creator only. Joins resolve the code SERVER-SIDE via the
+      // joinFamilyByCode Cloud Function (throttled 10 attempts/hour), so the
+      // client never needs to read foreign invites — this closes both bulk
+      // enumeration and direct brute-force of the 6-digit code space.
+      allow get: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      allow list: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      // Create: creator must stamp themselves (no forging invites for others)
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      // Update/Delete: creator only ('used' marking is done by the Cloud Function)
+      allow update: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
     }
 

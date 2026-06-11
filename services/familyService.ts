@@ -8,7 +8,6 @@ import {
     query,
     where,
     limit,
-    documentId,
     getDocs,
     deleteField,
     serverTimestamp,
@@ -18,7 +17,7 @@ import {
     arrayUnion,
     Unsubscribe
 } from 'firebase/firestore';
-import { db, auth } from './firebaseConfig';
+import { db, auth, callFirebaseFunction } from './firebaseConfig';
 import { logger } from '../utils/logger';
 import i18n from './i18n';
 const t = i18n.t.bind(i18n);
@@ -160,25 +159,7 @@ export const getMyFamily = async (): Promise<Family | null> => {
 };
 
 /**
- * Read a family document while the current user is NOT yet a member.
- *
- * The Firestore `get` rule on /families requires existing membership, so a direct
- * getDoc() is denied during the join flow ("Missing or insufficient permissions").
- * The `list` rule, however, permits any authenticated user a query limited to 1 result
- * — it was added specifically to support invite-code joins. Querying by document id with
- * limit(1) therefore lets a prospective member verify the family before joining.
- */
-const getFamilyDocForJoin = async (familyId: string) => {
-    const snap = await getDocs(query(
-        collection(db, 'families'),
-        where(documentId(), '==', familyId),
-        limit(1),
-    ));
-    return snap.empty ? null : snap.docs[0];
-};
-
-/**
- * Join a family using invite code — fully client-side via Firestore.
+ * Join a family using invite code — server-side via the joinFamilyByCode Cloud Function.
  * Handles both guest codes (invites collection) and family codes (families collection).
  *
  * @param inviteCode  6-digit invite code
@@ -207,157 +188,49 @@ export const joinFamily = async (
         return { success: false, message: t('joinFamily.error.invalidCode') || 'קוד לא תקין' };
     }
 
+    // ── Server-side join (security hardening) ──────────────────────────────
+    // All membership writes now go through the deployed `joinFamilyByCode`
+    // Cloud Function: it enforces brute-force throttling (10 attempts/hour),
+    // invite expiry/used checks, and writes the member/guest fields with the
+    // Admin SDK — so Firestore rules no longer permit client-side self-joins.
     try {
-        // ── Step 1: Check guest invite (invites/{code}) ──
-        const inviteDoc = await getDoc(doc(db, 'invites', trimmedCode));
+        const result = await callFirebaseFunction('joinFamilyByCode', {
+            code: trimmedCode,
+            force,
+        }) as {
+            success: boolean;
+            message?: string;
+            requiresLeave?: boolean;
+            currentFamilyName?: string;
+            familyId?: string;
+            isGuest?: boolean;
+        };
 
-        if (inviteDoc.exists()) {
-            const invite = inviteDoc.data();
-            const expiresAt = invite.expiresAt?.toDate ? invite.expiresAt.toDate() : new Date(invite.expiresAt);
-
-            if (new Date() > expiresAt) {
-                return { success: false, message: t('joinFamily.error.expiredCode') };
-            }
-            if (invite.used) {
-                return { success: false, message: t('joinFamily.error.usedCode') };
-            }
-            if (invite.createdBy === userId) {
-                return { success: false, message: t('joinFamily.error.ownInvite') };
-            }
-
-            const { familyId, childId } = invite;
-            const familyDoc2 = await getFamilyDocForJoin(familyId);
-            if (!familyDoc2) return { success: false, message: t('joinFamily.error.familyNotFound') };
-
-            const familyData = familyDoc2.data();
-            if (familyData.members?.[userId]) {
-                return { success: false, message: t('joinFamily.error.alreadyMember') };
-            }
-
-            // Check if user is already in another family
-            const userDoc = await getDoc(doc(db, 'users', userId));
-            const existingFamilyId = userDoc.data()?.familyId;
-            if (existingFamilyId && existingFamilyId !== familyId) {
-                if (!force) {
-                    const existingFamilyDoc = await getDoc(doc(db, 'families', existingFamilyId));
-                    const existingFamilyName = existingFamilyDoc.data()?.babyName || t('joinFamily.existingFamilyFallback');
-                    return { success: false, message: t('joinFamily.error.alreadyInOther'), requiresLeave: true, currentFamilyName: existingFamilyName };
-                }
-                // force=true: leave current family first
-                await leaveFamily();
-            }
-
-            const expiresAt24h = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-            // Add guest to family
-            await updateDoc(doc(db, 'families', familyId), {
-                [`members.${userId}`]: {
-                    role: 'guest',
-                    name: auth.currentUser.displayName || t('family.guestDisplayName'),
-                    email: auth.currentUser.email || '',
-                    photoURL: auth.currentUser.photoURL || null,
-                    joinedAt: serverTimestamp(),
-                    accessLevel: 'actions_only',
-                    historyAccessDays: 1,
-                    invitedBy: invite.createdBy,
-                    expiresAt: expiresAt24h,
-                },
-            });
-
-            // Update user doc
-            await setDoc(doc(db, 'users', userId), {
-                guestFamilyId: familyId,
-                guestChildIds: arrayUnion(childId),
-                guestAccess: {
-                    [familyId]: {
-                        role: 'guest',
-                        childId,
-                        accessLevel: 'actions_only',
-                        joinedAt: serverTimestamp(),
-                        expiresAt: expiresAt24h,
-                    },
-                },
-            }, { merge: true });
-
-            // Mark invite as used
-            await updateDoc(doc(db, 'invites', trimmedCode), {
-                used: true,
-                usedBy: userId,
-                usedAt: serverTimestamp(),
-            });
-
-            const childDoc = await getDoc(doc(db, 'babies', childId));
-            const childName = childDoc.exists() ? childDoc.data()?.name || t('family.babyFallback') : t('family.babyFallback');
-
+        if (result?.requiresLeave) {
             return {
-                success: true,
-                message: t('family.guestSuccess', { childName }),
-                isGuest: true,
+                success: false,
+                message: t('joinFamily.error.alreadyInOther'),
+                requiresLeave: true,
+                currentFamilyName: result.currentFamilyName,
             };
         }
 
-        // ── Step 2: Check family invite code (families collection query) ──
-        const familyQuery = query(
-            collection(db, 'families'),
-            where('inviteCode', '==', trimmedCode),
-            limit(1),
-        );
-        const familySnapshot = await getDocs(familyQuery);
-
-        if (familySnapshot.empty) {
-            return { success: false, message: t('joinFamily.error.invalidCode') };
-        }
-
-        const familyDoc3 = familySnapshot.docs[0];
-        const familyId = familyDoc3.id;
-        const familyData = familyDoc3.data();
-
-        if (familyData.members?.[userId]) {
-            return { success: false, message: t('joinFamily.error.alreadyMember') };
-        }
-
-        // Check if user is already in another family
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        const existingFamilyId = userDoc.data()?.familyId;
-        if (existingFamilyId && existingFamilyId !== familyId) {
-            if (!force) {
-                const existingFamilyDoc = await getDoc(doc(db, 'families', existingFamilyId));
-                const existingFamilyName = existingFamilyDoc.data()?.babyName || t('joinFamily.existingFamilyFallback');
-                return { success: false, message: t('joinFamily.error.alreadyInOther'), requiresLeave: true, currentFamilyName: existingFamilyName };
-            }
-            await leaveFamily();
-        }
-
-        // Add member to family
-        await updateDoc(doc(db, 'families', familyId), {
-            [`members.${userId}`]: {
-                role: 'member',
-                name: auth.currentUser.displayName || t('family.newMemberName'),
-                email: auth.currentUser.email || '',
-                photoURL: auth.currentUser.photoURL || null,
-                joinedAt: serverTimestamp(),
-                accessLevel: 'full',
-            },
-        });
-
-        // Update user's familyId
-        await setDoc(doc(db, 'users', userId), { familyId }, { merge: true });
-
         return {
-            success: true,
-            message: t('family.memberSuccess', { familyName: familyData.babyName || t('family.familyFallback') }),
-            isGuest: false,
+            success: !!result?.success,
+            message: result?.message || (result?.success ? '' : t('joinFamily.error.generic')),
+            isGuest: result?.isGuest,
         };
     } catch (error: any) {
-        // Never surface raw Firebase error strings (e.g. "Missing or insufficient permissions")
-        // to the user — they are English and unfriendly. A permission-denied here almost always
-        // means the entered code is invalid/expired, so map it to the Hebrew invalid-code message.
-        const code: string = error?.code || '';
-        const message = code === 'permission-denied'
-            ? t('joinFamily.error.invalidCode')
-            : t('joinFamily.error.generic');
-        logger.log('joinFamily error:', code, error?.message);
-        return { success: false, message };
+        // The callable throws HttpsError with curated Hebrew user-facing
+        // messages (expired / used / own-invite / throttle). Surface those;
+        // map anything else (network failures, non-JSON) to the generic error.
+        const serverMessage: string = error?.message || '';
+        const isCuratedMessage = /[֐-׿]/.test(serverMessage);
+        logger.log('joinFamily error:', serverMessage);
+        return {
+            success: false,
+            message: isCuratedMessage ? serverMessage : t('joinFamily.error.generic'),
+        };
     }
 };
 
@@ -642,110 +515,13 @@ export const createGuestInvite = async (
  * @param inviteCode - The 6-digit invite code
  * @returns Result with success status and child info
  */
+// DEPRECATED: kept for API compatibility. All joins are now server-side via
+// joinFamilyByCode (see joinFamily) — direct client writes are denied by rules.
 export const joinAsGuest = async (
     inviteCode: string
 ): Promise<{ success: boolean; message: string; childId?: string; familyId?: string }> => {
-    const userId = getCurrentUserId();
-    if (!userId) return { success: false, message: t('joinFamily.error.mustLogin') };
-
-    const user = auth.currentUser;
-    if (!user) return { success: false, message: t('joinFamily.error.mustLogin') };
-
-    try {
-        // Find the invite
-        const trimmedCode = inviteCode.trim();
-        logger.log('🔍 joinAsGuest: Looking for invite code:', trimmedCode);
-
-        const inviteDoc = await getDoc(doc(db, 'invites', trimmedCode));
-
-        if (!inviteDoc.exists()) {
-            logger.log('❌ joinAsGuest: Invite not found in Firestore');
-            return { success: false, message: t('joinFamily.error.invalidCode') };
-        }
-
-        logger.log('✅ joinAsGuest: Found invite:', inviteDoc.data());
-
-        const inviteData = inviteDoc.data();
-
-        // Check if invite is expired
-        const expiresAt = inviteData.expiresAt?.toDate ? inviteData.expiresAt.toDate() : new Date(inviteData.expiresAt);
-        if (new Date() > expiresAt) {
-            return { success: false, message: t('joinFamily.error.expiredCode') };
-        }
-
-        // Check if invite was already used
-        if (inviteData.used) {
-            return { success: false, message: t('joinFamily.error.usedCode') };
-        }
-
-        const { familyId, childId } = inviteData;
-
-        // SECURITY: Prevent self-invite
-        if (inviteData.createdBy === userId) {
-            return { success: false, message: t('joinFamily.error.ownInvite') };
-        }
-
-        // SECURITY: Verify family exists (limit(1) query — non-members can't getDoc, see getFamilyDocForJoin)
-        const familyDoc = await getFamilyDocForJoin(familyId);
-        if (!familyDoc) {
-            return { success: false, message: t('joinFamily.error.familyNotFound') };
-        }
-
-        const familyData = familyDoc.data();
-
-        // SECURITY: Check if already a member
-        if (familyData.members?.[userId]) {
-            return { success: false, message: t('joinFamily.error.alreadyMember') };
-        }
-
-        // Add guest to family with limited access
-        await updateDoc(doc(db, 'families', familyId), {
-            [`members.${userId}`]: {
-                role: 'guest',
-                name: user.displayName || 'Guest',
-                email: user.email || '',
-                joinedAt: serverTimestamp(),
-                accessLevel: 'actions_only',
-                invitedBy: inviteData.createdBy,
-            }
-        });
-
-        // Update user's guestAccess, guestFamilyId, and guestChildIds (required by Firestore rules)
-        await setDoc(doc(db, 'users', userId), {
-            guestFamilyId: familyId,
-            guestAccess: {
-                [familyId]: {
-                    role: 'guest',
-                    childId,
-                    accessLevel: 'actions_only',
-                    joinedAt: serverTimestamp(),
-                    expiresAt: inviteData.expiresAt, // needed for expiry check in ActiveChildContext
-                }
-            },
-            guestChildIds: arrayUnion(childId),
-        }, { merge: true });
-
-        // Mark invite as used
-        await updateDoc(doc(db, 'invites', inviteCode), {
-            used: true,
-            usedBy: userId,
-            usedAt: serverTimestamp(),
-        });
-
-        // Get child name for success message
-        const childDoc = await getDoc(doc(db, 'babies', childId));
-        const childName = childDoc.exists() ? childDoc.data()?.name || t('family.babyFallback') : t('family.babyFallback');
-
-        return {
-            success: true,
-            message: t('family.guestSuccess', { childName }),
-            childId,
-            familyId,
-        };
-    } catch (error) {
-        logger.log('Error joining as guest:', error);
-        return { success: false, message: t('joinFamily.error.generic') };
-    }
+    const result = await joinFamily(inviteCode);
+    return { success: result.success, message: result.message };
 };
 
 /**
