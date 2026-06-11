@@ -14,3 +14,12 @@ android/build/
 android/local.properties
 
 PageLand/
+
+# Local marketing/media work — never ship or commit
+ad-video/
+assets/111.mp4
+assets/33354.mp4
+assets/*.mov
+assets/עותק של calmino_preview33.mp4
+.agents/
+skills-lock.json

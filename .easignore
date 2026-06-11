@@ -28,3 +28,11 @@ ios/DerivedData/
 .env.local
 ios_backup/
 android_backup/
+
+# Local marketing/media work — keep out of EAS upload tarball (553MB!)
+ad-video/
+assets/111.mp4
+assets/33354.mp4
+assets/*.mov
+.agents/
+skills-lock.json

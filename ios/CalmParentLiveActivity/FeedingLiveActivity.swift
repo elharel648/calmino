@@ -184,7 +184,9 @@ struct FeedingLiveActivity: Widget {
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(feedingAccent)
                             .monospacedDigit()
-                            .fixedSize(horizontal: true, vertical: false)
+                            .lineLimit(1)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 52)
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
