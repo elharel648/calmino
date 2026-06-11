@@ -1,0 +1,22 @@
+# Critical flow: stats tab → full-history modal with week strip + month nav.
+# Runs on a warm app (only flow 01 cold-starts) to avoid dev-bundle re-downloads.
+appId: com.harel.calmparentapp
+---
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "פעולות מהירות"
+    timeout: 60000
+- tapOn:
+    point: "50%,96%"   # סטטיסטיקות tab (native bar ignores text taps)
+- extendedWaitUntil:
+    visible: ".*יומן.*"
+    timeout: 30000
+- tapOn: ".*יומן.*"
+- extendedWaitUntil:
+    visible: "היסטוריה מלאה"
+    timeout: 15000
+# close so the next flow starts from a clean tab
+- tapOn: "סגור"
+- tapOn:
+    point: "75%,96%"   # back to בית tab

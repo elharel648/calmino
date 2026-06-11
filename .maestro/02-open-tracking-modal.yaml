@@ -1,0 +1,23 @@
+# Critical flow: quick action opens the food tracking modal with its tabs.
+# Opens and closes without saving (no data writes). Runs warm after flow 01.
+appId: com.harel.calmparentapp
+---
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "פעולות מהירות"
+    timeout: 60000
+- tapOn: "אוכל"
+- extendedWaitUntil:
+    visible: "בקבוק"
+    timeout: 10000
+- assertVisible: "הנקה"
+- assertVisible: "שאיבה"
+# close by tapping the visible backdrop strip ABOVE the sheet
+# (the backdrop element's centre is hidden behind the card, so tap by point)
+- tapOn:
+    point: "50%,6%"
+# verify the modal actually closed — home is interactive again
+- extendedWaitUntil:
+    visible: "סדר היום"
+    timeout: 10000

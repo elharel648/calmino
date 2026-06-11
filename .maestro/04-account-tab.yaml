@@ -1,0 +1,14 @@
+# Critical flow: account tab renders the family section and invite actions.
+# Runs warm; RN merges card texts into one a11y label, so match with .* regex.
+appId: com.harel.calmparentapp
+---
+- launchApp:
+    stopApp: false
+- tapOn:
+    point: "25%,96%"   # חשבון tab (native bar ignores text taps)
+- extendedWaitUntil:
+    visible: ".*הזמן למשפחה.*"
+    timeout: 30000
+- assertVisible: ".*הצטרף עם קוד.*"
+- tapOn:
+    point: "75%,96%"   # back to בית tab

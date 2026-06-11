@@ -1,5 +1,9 @@
 import 'react-native-gesture-handler';
-import { I18nManager } from 'react-native';
+import { I18nManager, LogBox } from 'react-native';
+
+// Dev only: silence the on-screen LogBox banner — it overlays the tab bar and
+// swallows taps (breaks Maestro E2E runs). Warnings still print to Metro.
+if (__DEV__) LogBox.ignoreAllLogs(true);
 import * as Updates from 'expo-updates';
 
 // Global error handler — catches JS errors before they become non-std C++ exceptions

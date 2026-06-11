@@ -2456,6 +2456,8 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
               style={StyleSheet.absoluteFill}
               activeOpacity={1}
               onPress={dismissModal}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
             />
           </Animated.View>
 

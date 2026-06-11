@@ -1,0 +1,9 @@
+# Smoke: the app boots to the home screen with its core sections visible.
+appId: com.harel.calmparentapp
+---
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "פעולות מהירות"
+    timeout: 90000
+- assertVisible: "סדר היום"

@@ -2149,7 +2149,12 @@ export default function ReportsScreen() {
       >
         <View style={[styles.historyModalContainer, { backgroundColor: theme.background }]}>
           <View style={[styles.historyHeader, { borderColor: theme.border }]}>
-            <TouchableOpacity onPress={() => setShowHistoryModal(false)} style={[styles.closeButton, { backgroundColor: theme.cardSecondary }]}>
+            <TouchableOpacity
+              onPress={() => setShowHistoryModal(false)}
+              style={[styles.closeButton, { backgroundColor: theme.cardSecondary }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
+            >
               <X size={24} color={theme.textPrimary} />
             </TouchableOpacity>
             <Text style={[styles.historyModalTitle, { color: theme.textPrimary }]}>{t('reports.history.fullHistory')}</Text>
