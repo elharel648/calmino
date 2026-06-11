@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, Keyboard } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BreastfeedingGlyph } from './Home/quickActionsConfig';
+import { formatTimePoint } from '../utils/eventTime';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -557,15 +558,7 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         // Legacy records may store startTime/endTime as Date / Firestore Timestamp
         // instead of the current "HH:MM" string — normalize before any .split(),
         // otherwise editing such an event crashes (audit HIGH).
-        const toTimeString = (v: any): string | null => {
-          if (!v) return null;
-          if (typeof v === 'string') return v;
-          const d = typeof v.toDate === 'function' ? v.toDate() : v;
-          if (typeof d?.getHours === 'function') {
-            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-          }
-          return null;
-        };
+        const toTimeString = formatTimePoint;
 
         if (editingEvent) {
           setSaveSuccess(false);

@@ -18,35 +18,9 @@ import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
+import { buildTimeDisplay } from '../utils/eventTime';
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Format one end of an event's time range. startTime/endTime are stored as
-// "HH:MM" strings by TrackingModal, but may also arrive as Date / Firestore
-// Timestamp from older records — handle all three.
-const formatTimePoint = (v: any): string | null => {
-  if (!v) return null;
-  if (typeof v === 'string') return v;
-  const d = typeof v.toDate === 'function' ? v.toDate() : v;
-  return typeof d?.toLocaleTimeString === 'function'
-    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
-    : null;
-};
-
-// Build the "start–end" display for an event. Falls back to deriving the range
-// from duration for timer-based saves (those stamp `timestamp` at stop ⇒ end).
-const buildTimeDisplay = (event: any, timeStr: string): string => {
-  const start = formatTimePoint(event.startTime);
-  const end = formatTimePoint(event.endTime);
-  if (start && end) return start === end ? start : `${start}–${end}`;
-  const durationSec = (event.duration as number) || 0;
-  if (durationSec > 60 && event.timestamp instanceof Date) {
-    const startD = new Date(event.timestamp.getTime() - durationSec * 1000);
-    const startStr = startD.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
-    return `${startStr}–${timeStr}`;
-  }
-  return timeStr;
-};
 
 // ─── Pulsing 'now' dot ───────────────────────────────────────────────────────
 const PulseDot = () => {
