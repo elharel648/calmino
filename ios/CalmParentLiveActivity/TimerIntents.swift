@@ -434,6 +434,84 @@ struct StopTimerIntent: LiveActivityIntent {
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// HOME SCREEN WIDGET — interactive intents (iOS 17+)
+// These run in-place from the home screen widget WITHOUT opening the app.
+//   • Start  → pure widget state (App Group). No app dependency.
+//   • Stop   → queues a save the app drains on next foreground.
+//   • Log    → queues an instant event the app saves on next foreground.
+// ══════════════════════════════════════════════════════════════════════════
+
+@available(iOS 17.0, *)
+struct StartHomeTimerIntent: AppIntent {
+    static var title: LocalizedStringResource = "התחל טיימר"
+    static var isDiscoverable: Bool = false
+
+    @Parameter(title: "type") var timerType: String
+    @Parameter(title: "label") var label: String
+
+    init() { timerType = ""; label = "" }
+    init(timerType: String, label: String) { self.timerType = timerType; self.label = label }
+
+    func perform() async throws -> some IntentResult {
+        let d = SharedTimerState.defaults
+        d?.set(timerType, forKey: "widget_activeTimerType")
+        d?.set(Date().timeIntervalSince1970, forKey: "widget_activeTimerStartedAt")
+        d?.set(label, forKey: "widget_activeTimerLabel")
+        d?.set(false, forKey: "widget_activeTimerIsPaused")
+        d?.synchronize()
+        WidgetCenter.shared.reloadTimelines(ofKind: "LastEventWidget")
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+struct StopHomeTimerIntent: AppIntent {
+    static var title: LocalizedStringResource = "סיים טיימר"
+    static var isDiscoverable: Bool = false
+
+    func perform() async throws -> some IntentResult {
+        let d = SharedTimerState.defaults
+        let type = d?.string(forKey: "widget_activeTimerType") ?? ""
+        let start = d?.double(forKey: "widget_activeTimerStartedAt") ?? 0
+        let elapsed = start > 0 ? max(0, Int(Date().timeIntervalSince1970 - start)) : 0
+
+        // Queue the save for the app to flush to Firebase on next foreground
+        if !type.isEmpty {
+            SharedTimerState.writePendingAction(.stop, timerType: type, elapsedSeconds: elapsed)
+            // Optimistic "last X" so the tile shows "עכשיו" immediately
+            if type.contains("sleep") { d?.set(Date().timeIntervalSince1970, forKey: "widget_lastSleepTimestamp") }
+            else { d?.set(Date().timeIntervalSince1970, forKey: "widget_lastFeedTimestamp") }
+        }
+        SharedTimerState.clearWidgetActiveTimer() // also reloads the widget
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+struct LogHomeEventIntent: AppIntent {
+    static var title: LocalizedStringResource = "תיעוד מהיר"
+    static var isDiscoverable: Bool = false
+
+    // eventType encodes subtype as "diaper:wet" (parsed app-side); subType optional
+    @Parameter(title: "event") var event: String
+
+    init() { event = "" }
+    init(event: String) { self.event = event }
+
+    func perform() async throws -> some IntentResult {
+        let d = SharedTimerState.defaults
+        d?.set("logEvent", forKey: "pendingTimerAction")
+        d?.set(event, forKey: "pendingTimerType")
+        d?.set(Date().timeIntervalSince1970, forKey: "pendingTimerTimestamp")
+        // Optimistic last-timestamp so the tile updates without waiting for sync
+        if event.hasPrefix("diaper") { d?.set(Date().timeIntervalSince1970, forKey: "widget_lastDiaperTimestamp") }
+        d?.synchronize()
+        WidgetCenter.shared.reloadTimelines(ofKind: "LastEventWidget")
+        return .result()
+    }
+}
+
 @available(iOS 16.2, *)
 struct SwitchSideIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "החלף צד"

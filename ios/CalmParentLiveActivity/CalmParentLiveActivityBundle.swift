@@ -4,8 +4,7 @@ import SwiftUI
 @main
 struct CalmParentLiveActivityBundle: WidgetBundle {
     var body: some Widget {
-        // LastEventWidget() — home-screen widget hidden from this release (not ready yet).
-        // Re-add this line while developing it; keep hidden for store builds.
+        LastEventWidget() // Home-screen tracker: interactive quick-log + last-event times
         if #available(iOS 16.2, *) {
             SleepLiveActivity()
             FeedingLiveActivity()

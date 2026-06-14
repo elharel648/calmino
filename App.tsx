@@ -727,8 +727,19 @@ function LiveActivityURLHandler() {
           } else if (pending.action === 'switchSide') {
             const fauxUrl = 'calmino://switch-side';
             await handleURL({ url: fauxUrl });
+
+          } else if (pending.action === 'logEvent') {
+            // Instant event logged from the home-screen widget (e.g. diaper).
+            // timerType encodes "type" or "type:subType" (e.g. "diaper:wet").
+            const [evType, subType] = String(pending.timerType || '').split(':');
+            if (auth.currentUser && activeChild?.childId && evType) {
+              const data: any = { type: evType, timestamp: new Date() };
+              if (subType) data.subType = subType;
+              await saveEventToFirebase(auth.currentUser.uid, activeChild.childId, data);
+              logger.log('🪟 widget logEvent saved:', evType, subType || '');
+            }
           }
-          
+
           await liveActivityService.clearPendingTimerAction();
         }
       } catch (err) {

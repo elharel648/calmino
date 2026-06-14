@@ -8,20 +8,36 @@ import AppIntents
 
 private let widgetAppGroupID = "group.com.calmparent.shared"
 
-// Muted / pastel palette — pulled from the in-app Quick Actions design.
-// Deliberately desaturated for a calm, premium feel (no candy colors).
-private let bfAccent       = Color(red: 0.85, green: 0.35, blue: 0.55)  // warm pink (matches BreastfeedingLiveActivity)
-private let bottleAccent   = Color(red: 0.56, green: 0.66, blue: 0.78)  // muted slate blue
-private let diaperAccent   = Color(red: 0.48, green: 0.72, blue: 0.62)  // muted sage / teal
-private let sleepAccent    = Color(red: 0.48, green: 0.72, blue: 0.62)  // same sage — moon family
-private let medicineAccent = Color(red: 0.83, green: 0.60, blue: 0.42)  // muted amber
+extension Color {
+    init(hex: UInt32) {
+        self.init(
+            .sRGB,
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255,
+            opacity: 1
+        )
+    }
+}
 
-// Surface
-private let surfaceHi = Color(red: 0.12, green: 0.12, blue: 0.14)
-private let surfaceLo = Color(red: 0.06, green: 0.06, blue: 0.08)
-private let rowHairline = Color.white.opacity(0.05)
+// The app's actionColors palette (context/ThemeContext.tsx) — the widget speaks
+// the exact same color language as the in-app quick actions and timeline.
+private let bfAccent       = Color(hex: 0xB5838D) // breastfeeding mauve
+private let bottleAccent   = Color(hex: 0x6A8EAE) // bottle periwinkle
+private let diaperAccent   = Color(hex: 0x6A9C89) // diaper sage
+private let sleepAccent    = Color(hex: 0x4A6572) // sleep navy
+private let primaryTint    = Color(hex: 0xC8806A) // terracotta primary
 
+// Warm, light surface — matches the app's #F8F6F4 background, not a dark card.
+private let surfaceTop    = Color(hex: 0xFBF9F7)
+private let surfaceBot    = Color(hex: 0xF1EBE5)
+private let inkPrimary    = Color(hex: 0x2B2B2E)
+private let inkSecondary  = Color.black.opacity(0.45)
+private let inkTertiary   = Color.black.opacity(0.30)
+
+// =====================================================================
 // MARK: - Snapshot
+// =====================================================================
 
 struct LastEventsSnapshot {
     var babyName: String
@@ -41,8 +57,14 @@ struct LastEventsSnapshot {
     var activeTimerLabel: String?
     var activeTimerIsPaused: Bool
 
-    var isSleeping: Bool { babyStatus == "sleeping" || activeTimerType == "sleep" }
-    var hasActiveTimer: Bool { activeTimerType != nil && (activeTimerStartedAt ?? 0) > 0 }
+    var isSleeping: Bool { babyStatus == "sleeping" || (activeTimerType == "sleep" && hasActiveTimer) }
+    // A "running" timer older than 12h is stale state the app failed to clear
+    // (force-quit mid-timer) — a 168h timer is worse than none.
+    var hasActiveTimer: Bool {
+        guard let t = activeTimerType, !t.isEmpty,
+              let start = activeTimerStartedAt, start > 0 else { return false }
+        return Date().timeIntervalSince1970 - start < 12 * 3600
+    }
 
     static let empty = LastEventsSnapshot(
         babyName: "התינוק שלי", babyStatus: "awake",
@@ -61,7 +83,9 @@ private func nonEmpty(_ s: String?) -> String? {
     return s
 }
 
+// =====================================================================
 // MARK: - Provider
+// =====================================================================
 
 struct LastEventEntry: TimelineEntry {
     let date: Date
@@ -105,35 +129,568 @@ struct LastEventProvider: TimelineProvider {
     }
 }
 
-// MARK: - Widget Definition
+// =====================================================================
+// MARK: - SVG path porting (exact app icons)
+// =====================================================================
+
+// Minimal SVG path → SwiftUI Path parser (M/L/H/V/C/S/Q/T/Z, abs+rel).
+// Lets the widget render the app's own custom glyphs pixel-for-pixel.
+private func svgPath(_ d: String) -> Path {
+    var path = Path()
+    let chars = Array(d)
+    var i = 0
+    var cur = CGPoint.zero
+    var startPt = CGPoint.zero
+    var lastCtrl = CGPoint.zero
+    var lastCmd: Character = " "
+
+    func skipSep() { while i < chars.count, " ,\n\t\r".contains(chars[i]) { i += 1 } }
+    func readNum() -> CGFloat {
+        skipSep()
+        var s = ""
+        if i < chars.count, chars[i] == "-" || chars[i] == "+" { s.append(chars[i]); i += 1 }
+        while i < chars.count, chars[i].isNumber || chars[i] == "." { s.append(chars[i]); i += 1 }
+        return CGFloat(Double(s) ?? 0)
+    }
+    func isCmd(_ c: Character) -> Bool { "MmLlHhVvCcSsQqTtZz".contains(c) }
+
+    while i < chars.count {
+        skipSep()
+        guard i < chars.count else { break }
+        var cmd = chars[i]
+        if isCmd(cmd) { i += 1 }
+        else {
+            cmd = lastCmd == "M" ? "L" : (lastCmd == "m" ? "l" : lastCmd) // implicit repeat
+            if !isCmd(cmd) { break }
+        }
+        switch cmd {
+        case "M": cur = CGPoint(x: readNum(), y: readNum()); path.move(to: cur); startPt = cur
+        case "m": cur = CGPoint(x: cur.x + readNum(), y: cur.y + readNum()); path.move(to: cur); startPt = cur
+        case "L": cur = CGPoint(x: readNum(), y: readNum()); path.addLine(to: cur)
+        case "l": cur = CGPoint(x: cur.x + readNum(), y: cur.y + readNum()); path.addLine(to: cur)
+        case "H": cur.x = readNum(); path.addLine(to: cur)
+        case "h": cur.x += readNum(); path.addLine(to: cur)
+        case "V": cur.y = readNum(); path.addLine(to: cur)
+        case "v": cur.y += readNum(); path.addLine(to: cur)
+        case "C", "c":
+            let rel = cmd == "c"
+            let c1 = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            let c2 = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            let end = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            path.addCurve(to: end, control1: c1, control2: c2); lastCtrl = c2; cur = end
+        case "S", "s":
+            let rel = cmd == "s"
+            let c1 = "CcSs".contains(lastCmd) ? CGPoint(x: 2*cur.x - lastCtrl.x, y: 2*cur.y - lastCtrl.y) : cur
+            let c2 = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            let end = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            path.addCurve(to: end, control1: c1, control2: c2); lastCtrl = c2; cur = end
+        case "Q", "q":
+            let rel = cmd == "q"
+            let c1 = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            let end = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            path.addQuadCurve(to: end, control: c1); lastCtrl = c1; cur = end
+        case "T", "t":
+            let rel = cmd == "t"
+            let c1 = "QqTt".contains(lastCmd) ? CGPoint(x: 2*cur.x - lastCtrl.x, y: 2*cur.y - lastCtrl.y) : cur
+            let end = CGPoint(x: (rel ? cur.x : 0) + readNum(), y: (rel ? cur.y : 0) + readNum())
+            path.addQuadCurve(to: end, control: c1); lastCtrl = c1; cur = end
+        case "Z", "z": path.closeSubpath(); cur = startPt
+        default: break
+        }
+        lastCmd = cmd
+    }
+    return path
+}
+
+// Fit an SVG-space path into a target square frame.
+private func fitted(_ path: Path, viewBox: CGRect, into side: CGFloat) -> Path {
+    let s = min(side / viewBox.width, side / viewBox.height)
+    let tx = (side - viewBox.width * s) / 2 - viewBox.minX * s
+    let ty = (side - viewBox.height * s) / 2 - viewBox.minY * s
+    return path.applying(CGAffineTransform(a: s, b: 0, c: 0, d: s, tx: tx, ty: ty))
+}
+
+private enum AppIconKind { case breastfeeding, diaper }
+
+// The two icons SF Symbols can't represent — rendered from the app's own SVG.
+private struct AppIcon: View {
+    let kind: AppIconKind
+    var side: CGFloat = 20
+    var color: Color = .white
+
+    var body: some View {
+        switch kind {
+        case .breastfeeding:
+            let d = "M477-80q-42 0-81.5-9T324-112q-46-20-75-48.5T220-224v-231q0-31 23.5-57t60.5-46q38-20 83.5-31t92.5-11q47 0 92.5 11t83.5 31q38 20 61 46t23 57v231q0 17-7.5 33T711-161q-14 14-32.5 26.5T637-112q1-5 3-28 0-58-41-99t-99-41q-43 0-76 23t-50 59q32 8 58.5 11t46.5 3q17 0 27.5-1t13.5-1v104q-11 1-21.5 1.5T477-80Zm123-220q33 0 56.5-23.5T680-380q0-33-23.5-56.5T600-460q-33 0-56.5 23.5T520-380q0 33 23.5 56.5T600-300ZM480-640q50 0 85-34.5t35-85.5q0-50-35-85T480-960q-51 0-85.5 35T360-760q0 51 34.5 85.5T480-640Z"
+            fitted(svgPath(d), viewBox: CGRect(x: 0, y: -960, width: 960, height: 960), into: side)
+                .fill(color)
+                .frame(width: side, height: side)
+        case .diaper:
+            let lw = side / 24 * 1.9
+            let vb = CGRect(x: 0, y: 0, width: 24, height: 24)
+            let waist = "M5 4 C4.4 4 4 4.4 4 5 L4 8.5 L20 8.5 L20 5 C20 4.4 19.6 4 19 4 Z"
+            let body  = "M4 8.5 L4 17.5 C4 20 6 22 8.5 22 L15.5 22 C18 22 20 20 20 17.5 L20 8.5 Z"
+            let lTab  = "M4 7 L1.5 7 C1 7 1 7.5 1 8 L1 10.5 C1 11 1.5 11.5 2 11.5 L4 11.5"
+            let rTab  = "M20 7 L22.5 7 C23 7 23 7.5 23 8 L23 10.5 C23 11 22.5 11.5 22 11.5 L20 11.5"
+            let heart = "M12 18 C12 18 9 15.8 9 13.8 C9 12.6 9.9 12 10.8 12.5 C11.2 12.7 11.6 13.1 12 13.6 C12.4 13.1 12.8 12.7 13.2 12.5 C14.1 12 15 12.6 15 13.8 C15 15.8 12 18 12 18 Z"
+            ZStack {
+                fitted(svgPath(waist), viewBox: vb, into: side).stroke(color, style: StrokeStyle(lineWidth: lw, lineCap: .round, lineJoin: .round))
+                fitted(svgPath(body), viewBox: vb, into: side).stroke(color, style: StrokeStyle(lineWidth: lw, lineCap: .round, lineJoin: .round))
+                fitted(svgPath(lTab), viewBox: vb, into: side).stroke(color, style: StrokeStyle(lineWidth: lw * 0.85, lineCap: .round, lineJoin: .round))
+                fitted(svgPath(rTab), viewBox: vb, into: side).stroke(color, style: StrokeStyle(lineWidth: lw * 0.85, lineCap: .round, lineJoin: .round))
+                fitted(svgPath(heart), viewBox: vb, into: side).fill(color)
+            }
+            .frame(width: side, height: side)
+        }
+    }
+}
+
+// =====================================================================
+// MARK: - Tile model
+// =====================================================================
+
+private enum IconSource { case app(AppIconKind); case sf(String) }
+
+// A quick sub-action shown as a small circle on the leading edge of a row
+// (e.g. L/R for breastfeeding, wet/dirty for diaper, stop for a live timer).
+private struct QuickAction {
+    enum Kind { case sf(String); case sfColor(String, Color); case text(String) }
+    let kind: Kind
+    let timerStart: String?  // non-nil → StartHomeTimerIntent(timerType:)
+    let logEvent: String?    // non-nil → LogHomeEventIntent(event:)
+    let isStop: Bool         // true → StopHomeTimerIntent
+    var showsPlay: Bool = false  // render a tiny ▶ next to the label (= "starts a timer")
+    var wide: Bool = false       // pill instead of circle (for L ▶ / R ▶)
+    var filled: Bool = false     // solid pastel fill + white glyph (primary Play button)
+}
+
+private struct Tile {
+    let icon: IconSource
+    let accent: Color
+    let label: String
+    let lastAt: Double?
+    let isLive: Bool
+    let liveStart: Double?
+    let isPaused: Bool
+    let timerType: String?   // non-nil → tappable timer (start/stop)
+    let logEvent: String?    // non-nil → instant LogHomeEventIntent payload
+    let fallbackURL: String  // iOS 16 deep-link fallback
+    var quickActions: [QuickAction] = []  // leading-edge sub-action buttons (rows)
+}
+
+private func bottleSF() -> String {
+    if #available(iOS 17.0, *) { return "waterbottle.fill" }
+    return "drop.fill"
+}
+
+private func tilesFor(_ s: LastEventsSnapshot) -> [Tile] {
+    let live = s.hasActiveTimer
+    func liveFor(_ types: [String]) -> (Bool, Double?) {
+        guard live, let t = s.activeTimerType, types.contains(t) else { return (false, nil) }
+        return (true, s.activeTimerStartedAt)
+    }
+    let bf = liveFor(["breastfeeding"])
+    let bottle = liveFor(["bottle", "feeding", "pumping"])
+    let sleep = liveFor(["sleep"])
+
+    // Quick actions per row. When a timer is live, the only action is "stop".
+    let stop = QuickAction(kind: .sf("stop.fill"), timerStart: nil, logEvent: nil, isStop: true)
+    // Breastfeeding: L ▶ / R ▶ pills — the play glyph signals "starts a timer".
+    let bfActions: [QuickAction] = bf.0 ? [stop] : [
+        QuickAction(kind: .text("R"), timerStart: "breastfeeding:right", logEvent: nil, isStop: false, showsPlay: true, wide: true),
+        QuickAction(kind: .text("L"), timerStart: "breastfeeding:left",  logEvent: nil, isStop: false, showsPlay: true, wide: true),
+    ]
+    // Wet = blue droplet, dirty = brown swirl — visually distinct at a glance.
+    let diaperActions: [QuickAction] = [
+        QuickAction(kind: .sfColor("drop.fill", Color(hex: 0x6A8EAE)),       timerStart: nil, logEvent: "diaper:wet",   isStop: false),
+        QuickAction(kind: .sfColor("hurricane", Color(hex: 0xA9744F)),       timerStart: nil, logEvent: "diaper:dirty", isStop: false),
+    ]
+    // Bottle + sleep: a solid pastel Play button (▶) that starts the timer.
+    let playBottle = QuickAction(kind: .sf("play.fill"), timerStart: "bottle", logEvent: nil, isStop: false, filled: true)
+    let playSleep  = QuickAction(kind: .sf("play.fill"), timerStart: "sleep",  logEvent: nil, isStop: false, filled: true)
+
+    return [
+        Tile(icon: .app(.breastfeeding), accent: bfAccent, label: "הנקה",
+             lastAt: s.lastFeedingAt, isLive: bf.0, liveStart: bf.1, isPaused: bf.0 && s.activeTimerIsPaused,
+             timerType: "breastfeeding", logEvent: nil, fallbackURL: "calmparentapp://track/food",
+             quickActions: bfActions),
+        Tile(icon: .sf(bottleSF()), accent: bottleAccent, label: "בקבוק",
+             lastAt: s.lastFeedingAt, isLive: bottle.0, liveStart: bottle.1, isPaused: bottle.0 && s.activeTimerIsPaused,
+             timerType: "bottle", logEvent: nil, fallbackURL: "calmparentapp://track/food",
+             quickActions: bottle.0 ? [stop] : [playBottle]),
+        Tile(icon: .app(.diaper), accent: diaperAccent, label: "חיתול",
+             lastAt: s.lastDiaperAt, isLive: false, liveStart: nil, isPaused: false,
+             timerType: nil, logEvent: "diaper", fallbackURL: "calmparentapp://track/diaper",
+             quickActions: diaperActions),
+        Tile(icon: .sf("moon.fill"), accent: sleepAccent, label: "שינה",
+             lastAt: s.lastSleepAt, isLive: sleep.0, liveStart: sleep.1, isPaused: sleep.0 && s.activeTimerIsPaused,
+             timerType: "sleep", logEvent: nil, fallbackURL: "calmparentapp://track/sleep",
+             quickActions: sleep.0 ? [stop] : [playSleep]),
+    ]
+}
+
+// =====================================================================
+// MARK: - Building blocks
+// =====================================================================
+
+// Renders either a ported app icon or an SF Symbol, white, centered.
+private struct Glyph: View {
+    let icon: IconSource
+    let side: CGFloat
+    var body: some View {
+        switch icon {
+        case .app(let kind): AppIcon(kind: kind, side: side, color: .white)
+        case .sf(let name):
+            Image(systemName: name)
+                .font(.system(size: side, weight: .semibold))
+                .foregroundStyle(Color.white)
+        }
+    }
+}
+
+// Filled pastel circle + white glyph — the app-wide icon language.
+private struct IconBadge: View {
+    let tile: Tile
+    var size: CGFloat = 40
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(tile.accent.gradient)
+                .frame(width: size, height: size)
+                .shadow(color: tile.accent.opacity(0.35), radius: tile.isLive ? 6 : 3, y: 1.5)
+            if tile.isLive {
+                Circle().stroke(tile.accent.opacity(0.55), lineWidth: 2).frame(width: size + 6, height: size + 6)
+            }
+            Glyph(icon: tile.icon, side: size * 0.46)
+        }
+    }
+}
+
+// One stat tile. Whole tile is a single interactive Button (iOS 17+) or Link.
+private struct StatTile: View {
+    let tile: Tile
+    var iconSize: CGFloat = 40
+
+    var body: some View {
+        if #available(iOS 17.0, *) {
+            Button(intent: makeIntent()) { content }.buttonStyle(.plain)
+        } else {
+            Link(destination: URL(string: tile.fallbackURL)!) { content }
+        }
+    }
+
+    @available(iOS 17.0, *)
+    private func makeIntent() -> any AppIntent {
+        if let ev = tile.logEvent { return LogHomeEventIntent(event: ev) }
+        if tile.isLive { return StopHomeTimerIntent() }
+        return StartHomeTimerIntent(timerType: tile.timerType ?? "", label: tile.label)
+    }
+
+    private var content: some View {
+        VStack(spacing: 5) {
+            IconBadge(tile: tile, size: iconSize)
+            valueText.lineLimit(1).minimumScaleFactor(0.6)
+            Text(tile.isLive ? "\(tile.label) ●" : tile.label)
+                .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                .foregroundStyle(tile.isLive ? tile.accent : inkSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var valueText: some View {
+        if tile.isLive, let start = tile.liveStart {
+            if tile.isPaused {
+                Text("מושהה").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(Color.orange)
+            } else {
+                Text(Date(timeIntervalSince1970: start), style: .timer)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(inkPrimary).monospacedDigit().multilineTextAlignment(.center)
+            }
+        } else {
+            Text(relativeShort(tile.lastAt))
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(tile.lastAt == nil ? inkTertiary : inkPrimary)
+        }
+    }
+}
+
+// A small circular sub-action button on a row's leading edge (L/R, wet/dirty, stop).
+private struct QuickActionButton: View {
+    let action: QuickAction
+    let accent: Color
+    var body: some View {
+        if #available(iOS 17.0, *) {
+            Button(intent: intent) { circle }.buttonStyle(.plain)
+        } else {
+            circle
+        }
+    }
+    @available(iOS 17.0, *)
+    private var intent: any AppIntent {
+        if action.isStop { return StopHomeTimerIntent() }
+        if let ev = action.logEvent { return LogHomeEventIntent(event: ev) }
+        return StartHomeTimerIntent(timerType: action.timerStart ?? "", label: "")
+    }
+    private var strokeColor: Color {
+        if case let .sfColor(_, c) = action.kind { return c }
+        return accent
+    }
+    @ViewBuilder private var circle: some View {
+        if action.wide {
+            // Pill: text (L/R) + a small play triangle → reads as "tap to start".
+            HStack(spacing: 4) {
+                if case let .text(t) = action.kind {
+                    Text(t).font(.system(size: 13, weight: .heavy, design: .rounded)).foregroundStyle(accent)
+                }
+                if action.showsPlay {
+                    Image(systemName: "play.fill").font(.system(size: 8, weight: .black)).foregroundStyle(accent.opacity(0.75))
+                }
+            }
+            .frame(width: 42, height: 30)
+            .background(
+                Capsule().fill(accent.opacity(0.12))
+                    .overlay(Capsule().stroke(accent.opacity(0.45), lineWidth: 1.2))
+            )
+        } else {
+            let solid = action.isStop || action.filled
+            ZStack {
+                Circle().stroke(strokeColor.opacity(solid ? 0 : 0.5), lineWidth: 1.4)
+                Circle().fill(solid ? AnyShapeStyle(accent.gradient) : AnyShapeStyle(strokeColor.opacity(0.10)))
+                    .shadow(color: solid ? accent.opacity(0.3) : .clear, radius: 2.5, y: 1)
+                glyph(solid: solid)
+            }
+            .frame(width: 30, height: 30)
+        }
+    }
+
+    @ViewBuilder private func glyph(solid: Bool) -> some View {
+        switch action.kind {
+        case .sf(let name):
+            Image(systemName: name)
+                .font(.system(size: name == "play.fill" ? 11 : 12, weight: .bold))
+                .foregroundStyle(solid ? .white : accent)
+                .offset(x: name == "play.fill" ? -1 : 0)  // optically center the triangle
+        case .sfColor(let name, let c):
+            Image(systemName: name)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(c)
+        case .text(let t):
+            Text(t).font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(accent)
+        }
+    }
+}
+
+// One rich event row: [quick actions] · [time + label] · [icon badge].
+// Tapping the row body starts/logs the primary action; side circles do sub-actions.
+private struct EventRow: View {
+    let tile: Tile
+    var body: some View {
+        HStack(spacing: 8) {
+            // Leading: sub-action circles (mirrored to the left edge in RTL).
+            HStack(spacing: 6) {
+                ForEach(Array(tile.quickActions.enumerated()), id: \.offset) { _, qa in
+                    QuickActionButton(action: qa, accent: tile.accent)
+                }
+            }
+            Spacer(minLength: 4)
+            // Trailing: time + label (text), then the pastel icon badge.
+            VStack(alignment: .trailing, spacing: 1) {
+                timeText
+                Text(tile.isLive ? "\(tile.label) ●" : tile.label)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(tile.isLive ? tile.accent : inkSecondary)
+            }
+            IconBadge(tile: tile, size: 36)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 2)
+    }
+    @ViewBuilder private var timeText: some View {
+        if tile.isLive, let start = tile.liveStart {
+            if tile.isPaused {
+                Text("מושהה").font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.orange)
+            } else {
+                Text(Date(timeIntervalSince1970: start), style: .timer)
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .foregroundStyle(inkPrimary).monospacedDigit()
+                    .lineLimit(1).minimumScaleFactor(0.6).multilineTextAlignment(.trailing)
+            }
+        } else {
+            Text(relativeShort(tile.lastAt))
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .foregroundStyle(tile.lastAt == nil ? inkTertiary : inkPrimary)
+                .lineLimit(1).minimumScaleFactor(0.7)
+        }
+    }
+}
+
+// Header: baby name + live-timer capsule / sleep state.
+private struct HeaderBar: View {
+    let snapshot: LastEventsSnapshot
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: snapshot.isSleeping ? "moon.zzz.fill" : "sparkles")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(snapshot.isSleeping ? sleepAccent : primaryTint)
+            Text(snapshot.babyName)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(inkPrimary).lineLimit(1)
+            Spacer(minLength: 4)
+            if snapshot.hasActiveTimer, let start = snapshot.activeTimerStartedAt {
+                HStack(spacing: 5) {
+                    Circle().fill(accentForActive(snapshot.activeTimerType)).frame(width: 6, height: 6)
+                    if snapshot.activeTimerIsPaused {
+                        Text("מושהה").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(Color.orange)
+                    } else {
+                        Text(Date(timeIntervalSince1970: start), style: .timer)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(inkPrimary).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(maxWidth: 62).fixedSize(horizontal: true, vertical: false)
+                    }
+                }
+                .padding(.horizontal, 9).padding(.vertical, 4)
+                .background(Capsule().fill(Color.black.opacity(0.05)))
+            } else if snapshot.isSleeping {
+                Text("ישן/ה 💤").font(.system(size: 11, weight: .semibold, design: .rounded)).foregroundStyle(inkSecondary)
+            }
+        }
+    }
+    private func accentForActive(_ type: String?) -> Color {
+        switch type {
+        case "breastfeeding": return bfAccent
+        case "bottle", "feeding", "pumping": return bottleAccent
+        default: return sleepAccent
+        }
+    }
+}
+
+// "Today" summary line — large family only.
+private struct TodayBar: View {
+    let snapshot: LastEventsSnapshot
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("היום").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(inkTertiary)
+            Spacer()
+            item("\(snapshot.feedCount)", "האכלות", bfAccent)
+            dot
+            item("\(snapshot.diaperCount)", "חיתולים", diaperAccent)
+            dot
+            item(sleepText, "שינה", sleepAccent)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.04)))
+    }
+    private var sleepText: String {
+        let h = snapshot.sleepMinutes / 60, m = snapshot.sleepMinutes % 60
+        if h == 0 { return "\(m) דק'" }
+        if m == 0 { return "\(h) שע'" }
+        return "\(h):" + String(format: "%02d", m)
+    }
+    private var dot: some View { Circle().fill(Color.black.opacity(0.15)).frame(width: 3, height: 3) }
+    private func item(_ v: String, _ l: String, _ tint: Color) -> some View {
+        HStack(spacing: 4) {
+            Text(v).font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(tint).monospacedDigit()
+            Text(l).font(.system(size: 10.5, weight: .medium, design: .rounded)).foregroundStyle(inkSecondary)
+        }
+    }
+}
+
+// =====================================================================
+// MARK: - Family views
+// =====================================================================
+
+private struct SmallView: View {
+    let snapshot: LastEventsSnapshot
+    var body: some View {
+        let tiles = tilesFor(snapshot)
+        let hero = tiles.first(where: { $0.isLive })
+            ?? tiles.filter({ $0.lastAt != nil }).max(by: { ($0.lastAt ?? 0) < ($1.lastAt ?? 0) })
+            ?? tiles[0]
+        VStack(spacing: 6) {
+            HStack {
+                Text(snapshot.babyName).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(inkSecondary).lineLimit(1)
+                Spacer()
+                if snapshot.isSleeping {
+                    Image(systemName: "moon.zzz.fill").font(.system(size: 10, weight: .semibold)).foregroundStyle(sleepAccent)
+                }
+            }
+            Spacer(minLength: 0)
+            IconBadge(tile: hero, size: 48)
+            Group {
+                if hero.isLive, let start = hero.liveStart, !hero.isPaused {
+                    Text(Date(timeIntervalSince1970: start), style: .timer)
+                        .font(.system(size: 23, weight: .heavy, design: .rounded)).foregroundStyle(inkPrimary).monospacedDigit()
+                } else {
+                    Text(relativeShort(hero.lastAt))
+                        .font(.system(size: 22, weight: .heavy, design: .rounded))
+                        .foregroundStyle(hero.lastAt == nil ? inkTertiary : inkPrimary)
+                }
+            }
+            .lineLimit(1).minimumScaleFactor(0.5)
+            Text(hero.isLive ? "\(hero.label) עכשיו" : hero.label)
+                .font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(inkSecondary)
+            Spacer(minLength: 0)
+        }
+        .widgetURL(URL(string: "calmparentapp://home"))
+    }
+}
+
+private var rowHairline: some View {
+    Rectangle().fill(Color.black.opacity(0.06)).frame(height: 1)
+}
+
+private struct MediumView: View {
+    let snapshot: LastEventsSnapshot
+    var body: some View {
+        let tiles = tilesFor(snapshot)
+        VStack(spacing: 2) {
+            HeaderBar(snapshot: snapshot).padding(.bottom, 2)
+            ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
+                EventRow(tile: tile)
+                    .frame(maxHeight: .infinity)
+                if idx < tiles.count - 1 { rowHairline.padding(.horizontal, 2) }
+            }
+        }
+    }
+}
+
+private struct LargeView: View {
+    let snapshot: LastEventsSnapshot
+    var body: some View {
+        let tiles = tilesFor(snapshot)
+        VStack(spacing: 0) {
+            HeaderBar(snapshot: snapshot).padding(.bottom, 8)
+            ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
+                EventRow(tile: tile)
+                    .frame(maxHeight: .infinity)
+                if idx < tiles.count - 1 { rowHairline }
+            }
+            rowHairline.padding(.vertical, 4)
+            TodayBar(snapshot: snapshot)
+        }
+    }
+}
+
+// =====================================================================
+// MARK: - Widget definition
+// =====================================================================
 
 struct LastEventWidget: Widget {
     let kind: String = "LastEventWidget"
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LastEventProvider()) { entry in
-            BackgroundWrap { LastEventWidgetView(entry: entry) }
+            BackgroundWrap {
+                LastEventWidgetView(entry: entry)
+                    .environment(\.layoutDirection, .rightToLeft)
+            }
         }
         .configurationDisplayName("המעקב של התינוק")
-        .description("הנקה, בקבוק, חיתול, שינה — במבט אחד.")
+        .description("הנקה, בקבוק, חיתול, שינה — תיעוד מהיר במבט אחד.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
-
-private struct BackgroundWrap<Content: View>: View {
-    @ViewBuilder let content: () -> Content
-    var body: some View {
-        if #available(iOS 17.0, *) {
-            content().containerBackground(for: .widget) { gradient }
-        } else {
-            ZStack { gradient.ignoresSafeArea(); content() }
-        }
-    }
-    private var gradient: some View {
-        LinearGradient(colors: [surfaceHi, surfaceLo], startPoint: .top, endPoint: .bottom)
-    }
-}
-
-// MARK: - Top-level switcher
 
 struct LastEventWidgetView: View {
     let entry: LastEventEntry
@@ -147,430 +704,17 @@ struct LastEventWidgetView: View {
     }
 }
 
-// =====================================================================
-// MARK: - Row model
-// =====================================================================
-
-private enum RowKind { case breastfeeding, bottle, diaper, sleep, medicine }
-
-private struct EventRow {
-    let kind: RowKind
-    let label: String
-    let iconName: String
-    let accent: Color
-    let lastAt: Double?
-    let isActive: Bool
-    let activeStart: Double?
-    let isPaused: Bool
-    let actions: [RowAction]
-    let openURL: String
-}
-
-private struct RowAction {
-    let symbol: String
-    let url: String
-}
-
-private func rowsFor(_ s: LastEventsSnapshot) -> [EventRow] {
-    [
-        EventRow(
-            kind: .breastfeeding,
-            label: "הנקה",
-            iconName: "heart.fill",   // matches FeedingLiveActivity / BreastfeedingLiveActivity
-            accent: bfAccent,
-            lastAt: s.lastFeedingAt,
-            isActive: s.activeTimerType == "breastfeeding",
-            activeStart: s.activeTimerType == "breastfeeding" ? s.activeTimerStartedAt : nil,
-            isPaused: s.activeTimerIsPaused,
-            actions: [
-                // SF Symbols letter glyphs are lower-case ("l.circle.fill" / "r.circle.fill").
-                // Using "L.circle" would render as an empty circle.
-                RowAction(symbol: "l.circle.fill", url: "calmparentapp://track/food?subType=breast-left"),
-                RowAction(symbol: "r.circle.fill", url: "calmparentapp://track/food?subType=breast-right")
-            ],
-            openURL: "calmparentapp://track/food"
-        ),
-        EventRow(
-            kind: .bottle,
-            label: "בקבוק",
-            iconName: "drop.fill",
-            accent: bottleAccent,
-            lastAt: s.lastFeedingAt,
-            isActive: s.activeTimerType == "bottle" || s.activeTimerType == "feeding" || s.activeTimerType == "pumping",
-            activeStart: (s.activeTimerType == "bottle" || s.activeTimerType == "feeding" || s.activeTimerType == "pumping") ? s.activeTimerStartedAt : nil,
-            isPaused: s.activeTimerIsPaused,
-            actions: [
-                RowAction(symbol: "plus", url: "calmparentapp://track/food")
-            ],
-            openURL: "calmparentapp://track/food"
-        ),
-        EventRow(
-            kind: .diaper,
-            label: "חיתול",
-            iconName: "leaf.fill",
-            accent: diaperAccent,
-            lastAt: s.lastDiaperAt,
-            isActive: false,
-            activeStart: nil,
-            isPaused: false,
-            actions: [
-                RowAction(symbol: "drop", url: "calmparentapp://track/diaper?subType=wet"),
-                RowAction(symbol: "leaf", url: "calmparentapp://track/diaper?subType=poo")
-            ],
-            openURL: "calmparentapp://track/diaper"
-        ),
-        EventRow(
-            kind: .sleep,
-            label: "שינה",
-            iconName: "moon.fill",
-            accent: sleepAccent,
-            lastAt: s.lastSleepAt,
-            isActive: s.activeTimerType == "sleep",
-            activeStart: s.activeTimerType == "sleep" ? s.activeTimerStartedAt : nil,
-            isPaused: s.activeTimerIsPaused,
-            actions: [
-                RowAction(symbol: "play", url: "calmparentapp://track/sleep")
-            ],
-            openURL: "calmparentapp://track/sleep"
-        ),
-        EventRow(
-            kind: .medicine,
-            label: "תרופה",
-            iconName: "pills.fill",
-            accent: medicineAccent,
-            lastAt: s.lastMedicineAt,
-            isActive: false,
-            activeStart: nil,
-            isPaused: false,
-            actions: [
-                RowAction(symbol: "plus", url: "calmparentapp://track/medication")
-            ],
-            openURL: "calmparentapp://track/medication"
-        )
-    ]
-}
-
-// =====================================================================
-// MARK: - Header
-// =====================================================================
-
-private struct WidgetHeader: View {
-    let babyName: String
-    let isSleeping: Bool
-
+private struct BackgroundWrap<Content: View>: View {
+    @ViewBuilder let content: () -> Content
     var body: some View {
-        HStack(spacing: 8) {
-            Spacer()
-            Text(babyName)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.92))
-                .lineLimit(1)
-            Image(systemName: isSleeping ? "moon.stars.fill" : "moon.stars")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(sleepAccent)
-        }
-    }
-}
-
-// =====================================================================
-// MARK: - Bottom status / timer row
-// =====================================================================
-
-private struct StatusRow: View {
-    let snapshot: LastEventsSnapshot
-
-    var body: some View {
-        let active = snapshot.hasActiveTimer
-        let tint = active ? accentForActive(snapshot.activeTimerType) : sleepAccent
-        let label = active
-            ? (snapshot.activeTimerLabel ?? labelFor(snapshot.activeTimerType))
-            : (snapshot.isSleeping ? "שינה" : "סטטוס")
-
-        HStack(spacing: 10) {
-            // LEFT: pause / resume / stop when active, else play to start sleep
-            HStack(spacing: 6) {
-                if active {
-                    if #available(iOS 17.0, *) {
-                        if snapshot.activeTimerIsPaused {
-                            Button(intent: ResumeTimerIntent()) { miniIcon("play.fill", tint: tint, filled: true) }
-                                .buttonStyle(.plain)
-                        } else {
-                            Button(intent: PauseTimerIntent()) { miniIcon("pause.fill", tint: tint, filled: false) }
-                                .buttonStyle(.plain)
-                        }
-                        Button(intent: StopTimerIntent()) { miniIcon("stop.fill", tint: tint, filled: true) }
-                            .buttonStyle(.plain)
-                    } else {
-                        Link(destination: URL(string: "calmparentapp://home")!) { miniIcon("pause.fill", tint: tint, filled: false) }
-                        Link(destination: URL(string: "calmparentapp://home")!) { miniIcon("stop.fill", tint: tint, filled: true) }
-                    }
-                } else {
-                    Link(destination: URL(string: "calmparentapp://track/sleep")!) { miniIcon("play.fill", tint: tint, filled: false) }
-                }
-            }
-
-            // CENTER: timer or status
-            VStack(alignment: .center, spacing: 1) {
-                if active, let start = snapshot.activeTimerStartedAt {
-                    if snapshot.activeTimerIsPaused {
-                        Text("מושהה")
-                            .font(.system(size: 16, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Color.orange)
-                            .monospacedDigit()
-                    } else {
-                        Text(Date(timeIntervalSince1970: start), style: .timer)
-                            .font(.system(size: 18, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Color.white)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.65)
-                    }
-                } else {
-                    Text(relativeShort(snapshot.lastSleepAt))
-                        .font(.system(size: 16, weight: .heavy, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.9))
-                        .monospacedDigit()
-                }
-                Text(label)
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.5))
-            }
-            .frame(maxWidth: .infinity)
-
-            // RIGHT: status icon
-            Image(systemName: snapshot.isSleeping ? "moon.zzz.fill" : "moon.stars")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(tint)
-        }
-        .padding(.top, 6)
-    }
-
-    private func accentForActive(_ type: String?) -> Color {
-        switch type {
-        case "breastfeeding": return bfAccent
-        case "bottle", "feeding", "pumping": return bottleAccent
-        case "sleep": return sleepAccent
-        default: return sleepAccent
-        }
-    }
-
-    private func labelFor(_ type: String?) -> String {
-        switch type {
-        case "breastfeeding": return "הנקה"
-        case "bottle", "feeding": return "בקבוק"
-        case "pumping": return "שאיבה"
-        case "sleep": return "שינה"
-        default: return "—"
-        }
-    }
-}
-
-// =====================================================================
-// MARK: - Event row view
-// =====================================================================
-
-private struct EventRowView: View {
-    let row: EventRow
-
-    var body: some View {
-        HStack(spacing: 10) {
-            // LEFT: action buttons (interactive when active)
-            HStack(spacing: 6) {
-                if row.isActive {
-                    activeControls
-                } else {
-                    ForEach(0..<row.actions.count, id: \.self) { i in
-                        deepLinkButton(row.actions[i])
-                    }
-                }
-            }
-
-            // CENTER: time / live timer
-            timeContent
-                .frame(maxWidth: .infinity, alignment: .trailing)
-
-            // RIGHT: label + type icon
-            HStack(spacing: 8) {
-                Text(row.label)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.92))
-                ZStack {
-                    Circle()
-                        .fill(row.accent.opacity(0.20))
-                        .frame(width: 26, height: 26)
-                    Image(systemName: row.iconName)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(row.accent)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    @ViewBuilder
-    private var timeContent: some View {
-        if row.isActive, let start = row.activeStart {
-            if row.isPaused {
-                Text("מושהה")
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color.orange)
-            } else {
-                Text(Date(timeIntervalSince1970: start), style: .timer)
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color.white)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        } else {
-            Text(relativeShort(row.lastAt))
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.85))
-                .monospacedDigit()
-        }
-    }
-
-    @ViewBuilder
-    private var activeControls: some View {
         if #available(iOS 17.0, *) {
-            if row.isPaused {
-                Button(intent: ResumeTimerIntent()) { miniIcon("play.fill", tint: row.accent, filled: true) }
-                    .buttonStyle(.plain)
-            } else {
-                Button(intent: PauseTimerIntent()) { miniIcon("pause.fill", tint: row.accent, filled: false) }
-                    .buttonStyle(.plain)
-            }
-            Button(intent: StopTimerIntent()) { miniIcon("stop.fill", tint: row.accent, filled: true) }
-                .buttonStyle(.plain)
+            content().containerBackground(for: .widget) { gradient }
         } else {
-            Link(destination: URL(string: row.openURL)!) { miniIcon("pause.fill", tint: row.accent, filled: false) }
-            Link(destination: URL(string: row.openURL)!) { miniIcon("stop.fill", tint: row.accent, filled: true) }
+            ZStack { gradient.ignoresSafeArea(); content() }
         }
     }
-
-    @ViewBuilder
-    private func deepLinkButton(_ action: RowAction) -> some View {
-        Link(destination: URL(string: action.url)!) {
-            miniIcon(action.symbol, tint: row.accent, filled: false)
-        }
-    }
-}
-
-// Small consistent action pill — outlined when secondary, filled when destructive/primary.
-private func miniIcon(_ symbol: String, tint: Color, filled: Bool) -> some View {
-    ZStack {
-        Circle()
-            .fill(filled ? tint.opacity(0.85) : Color.white.opacity(0.04))
-            .frame(width: 24, height: 24)
-        Circle()
-            .stroke(tint.opacity(filled ? 0 : 0.55), lineWidth: 1)
-            .frame(width: 24, height: 24)
-        Image(systemName: symbol)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(filled ? Color.white : tint)
-    }
-}
-
-// =====================================================================
-// MARK: - Small
-// =====================================================================
-
-private struct SmallView: View {
-    let snapshot: LastEventsSnapshot
-
-    var body: some View {
-        VStack(spacing: 4) {
-            WidgetHeader(babyName: snapshot.babyName, isSleeping: snapshot.isSleeping)
-                .padding(.bottom, 2)
-
-            let rows = rowsFor(snapshot)
-            let primary = rows.first(where: { $0.isActive }) ?? rows.first(where: { $0.lastAt != nil }) ?? rows[0]
-
-            HStack(spacing: 6) {
-                Spacer()
-                Text(primary.label)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.55))
-                Image(systemName: primary.iconName)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(primary.accent)
-            }
-
-            HStack {
-                Spacer()
-                if primary.isActive, let start = primary.activeStart {
-                    Text(Date(timeIntervalSince1970: start), style: .timer)
-                        .font(.system(size: 34, weight: .heavy, design: .rounded))
-                        .foregroundStyle(Color.white)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                } else {
-                    Text(relativeShort(primary.lastAt))
-                        .font(.system(size: 34, weight: .heavy, design: .rounded))
-                        .foregroundStyle(Color.white)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                }
-            }
-
-            Spacer(minLength: 0)
-            StatusRow(snapshot: snapshot)
-        }
-        .widgetURL(URL(string: "calmparentapp://home"))
-    }
-}
-
-// =====================================================================
-// MARK: - Medium — header + 3 rows
-// =====================================================================
-
-private struct MediumView: View {
-    let snapshot: LastEventsSnapshot
-
-    var body: some View {
-        let rows = rowsFor(snapshot).filter { $0.kind != .medicine && $0.kind != .sleep }
-        VStack(spacing: 4) {
-            WidgetHeader(babyName: snapshot.babyName, isSleeping: snapshot.isSleeping)
-                .padding(.bottom, 2)
-
-            ForEach(0..<rows.count, id: \.self) { idx in
-                EventRowView(row: rows[idx])
-                if idx < rows.count - 1 {
-                    Divider().background(rowHairline)
-                }
-            }
-
-            Spacer(minLength: 0)
-            StatusRow(snapshot: snapshot)
-        }
-    }
-}
-
-// =====================================================================
-// MARK: - Large — header + 4 rows + status
-// =====================================================================
-
-private struct LargeView: View {
-    let snapshot: LastEventsSnapshot
-
-    var body: some View {
-        let rows = rowsFor(snapshot).filter { $0.kind != .sleep }
-        VStack(spacing: 4) {
-            WidgetHeader(babyName: snapshot.babyName, isSleeping: snapshot.isSleeping)
-                .padding(.bottom, 4)
-
-            ForEach(0..<rows.count, id: \.self) { idx in
-                EventRowView(row: rows[idx])
-                if idx < rows.count - 1 {
-                    Divider().background(rowHairline)
-                }
-            }
-
-            Spacer(minLength: 0)
-            StatusRow(snapshot: snapshot)
-        }
+    private var gradient: some View {
+        LinearGradient(colors: [surfaceTop, surfaceBot], startPoint: .top, endPoint: .bottom)
     }
 }
 
@@ -579,7 +723,7 @@ private struct LargeView: View {
 // =====================================================================
 
 private func relativeShort(_ epoch: Double?) -> String {
-    guard let epoch, epoch > 0 else { return "—" }
+    guard let epoch, epoch > 0 else { return "טרם תועד" }
     let diff = max(0, Date().timeIntervalSince1970 - epoch)
     if diff < 60 { return "עכשיו" }
     let m = Int(diff / 60)
@@ -587,11 +731,7 @@ private func relativeShort(_ epoch: Double?) -> String {
     let h = Int(diff / 3600)
     if h < 24 {
         let remMin = (Int(diff) % 3600) / 60
-        if remMin == 0 { return "\(h) שע'" }
-        return "\(h):\(String(format: "%02d", remMin))"
+        return remMin == 0 ? "\(h) שע'" : "\(h):\(String(format: "%02d", remMin))"
     }
     return "\(Int(diff / 86400)) ימים"
 }
-
-// Previews removed — `#Preview` requires iOS 17+ at compile time and the
-// CalmParentLiveActivity target deploys to iOS 16.1.
