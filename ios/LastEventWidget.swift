@@ -36,6 +36,42 @@ private let inkSecondary  = Color.black.opacity(0.45)
 private let inkTertiary   = Color.black.opacity(0.30)
 
 // =====================================================================
+// MARK: - User configuration (editable widget)
+// =====================================================================
+
+// The set of actions a user can place in a widget slot. Long-press the widget
+// → "Edit Widget" → pick which rows to show (e.g. swap Diaper for White Noise).
+@available(iOS 17.0, *)
+enum WidgetRowKind: String, AppEnum {
+    case breastfeeding, bottle, diaper, sleep, whiteNoise, pumping, medicine, none
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "פעולה"
+    static var caseDisplayRepresentations: [WidgetRowKind: DisplayRepresentation] = [
+        .breastfeeding: "הנקה",
+        .bottle:        "בקבוק",
+        .diaper:        "חיתול",
+        .sleep:         "שינה",
+        .whiteNoise:    "רעש לבן",
+        .pumping:       "שאיבה",
+        .medicine:      "תרופה",
+        .none:          "— ריק —",
+    ]
+}
+
+@available(iOS 17.0, *)
+struct SelectRowsIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "התאמת הווידג'ט"
+    static var description = IntentDescription("בחר אילו פעולות יופיעו במעקב התינוק.")
+
+    @Parameter(title: "שורה 1", default: .breastfeeding) var row1: WidgetRowKind
+    @Parameter(title: "שורה 2", default: .bottle)        var row2: WidgetRowKind
+    @Parameter(title: "שורה 3", default: .diaper)        var row3: WidgetRowKind
+    @Parameter(title: "שורה 4", default: .sleep)         var row4: WidgetRowKind
+
+    var rows: [WidgetRowKind] { [row1, row2, row3, row4] }
+}
+
+// =====================================================================
 // MARK: - Snapshot
 // =====================================================================
 
@@ -48,6 +84,8 @@ struct LastEventsSnapshot {
     var lastDiaperAt: Double?
     var lastDiaperType: String?
     var lastMedicineAt: Double?
+    var lastWhiteNoiseAt: Double?
+    var lastPumpingAt: Double?
     var feedCount: Int
     var sleepMinutes: Int
     var diaperCount: Int
@@ -70,7 +108,7 @@ struct LastEventsSnapshot {
         babyName: "התינוק שלי", babyStatus: "awake",
         lastFeedingAt: nil, lastFeedingType: nil,
         lastSleepAt: nil, lastDiaperAt: nil, lastDiaperType: nil,
-        lastMedicineAt: nil,
+        lastMedicineAt: nil, lastWhiteNoiseAt: nil, lastPumpingAt: nil,
         feedCount: 0, sleepMinutes: 0, diaperCount: 0,
         activeTimerType: nil, activeTimerStartedAt: nil,
         activeTimerLabel: nil, activeTimerIsPaused: false
@@ -90,42 +128,68 @@ private func nonEmpty(_ s: String?) -> String? {
 struct LastEventEntry: TimelineEntry {
     let date: Date
     let snapshot: LastEventsSnapshot
+    var rows: [String] = []  // user-chosen row kinds (raw values), empty = default order
 }
 
+// Shared loader so both the static (iOS 16) and configurable (iOS 17+) providers
+// read the exact same App Group data.
+private func loadWidgetSnapshot() -> LastEventsSnapshot {
+    guard let d = UserDefaults(suiteName: widgetAppGroupID) else { return .empty }
+    return LastEventsSnapshot(
+        babyName: nonEmpty(d.string(forKey: "widget_babyName")) ?? "התינוק שלי",
+        babyStatus: d.string(forKey: "widget_babyStatus") ?? "awake",
+        lastFeedingAt:   nonZero(d.double(forKey: "widget_lastFeedTimestamp")),
+        lastFeedingType: nonEmpty(d.string(forKey: "widget_lastFeedType")),
+        lastSleepAt:     nonZero(d.double(forKey: "widget_lastSleepTimestamp")),
+        lastDiaperAt:    nonZero(d.double(forKey: "widget_lastDiaperTimestamp")),
+        lastDiaperType:  nonEmpty(d.string(forKey: "widget_lastDiaperType")),
+        lastMedicineAt:  nonZero(d.double(forKey: "widget_lastMedicationTimestamp")),
+        lastWhiteNoiseAt: nonZero(d.double(forKey: "widget_lastWhiteNoiseTimestamp")),
+        lastPumpingAt:    nonZero(d.double(forKey: "widget_lastPumpingTimestamp")),
+        feedCount:    d.integer(forKey: "widget_feedCount"),
+        sleepMinutes: d.integer(forKey: "widget_sleepMinutes"),
+        diaperCount:  d.integer(forKey: "widget_diaperCount"),
+        activeTimerType:      nonEmpty(d.string(forKey: "widget_activeTimerType")),
+        activeTimerStartedAt: nonZero(d.double(forKey: "widget_activeTimerStartedAt")),
+        activeTimerLabel:     nonEmpty(d.string(forKey: "widget_activeTimerLabel")),
+        activeTimerIsPaused:  d.bool(forKey: "widget_activeTimerIsPaused")
+    )
+}
+
+private func refreshDate(for snap: LastEventsSnapshot) -> Date {
+    let now = Date()
+    return snap.hasActiveTimer
+        ? Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now
+        : Calendar.current.date(byAdding: .minute, value: 10, to: now) ?? now
+}
+
+// iOS 17+: configurable provider — reads the user's row selection.
+@available(iOS 17.0, *)
+struct LastEventConfigurableProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> LastEventEntry {
+        LastEventEntry(date: Date(), snapshot: .empty)
+    }
+    func snapshot(for configuration: SelectRowsIntent, in context: Context) async -> LastEventEntry {
+        LastEventEntry(date: Date(), snapshot: loadWidgetSnapshot(), rows: configuration.rows.map { $0.rawValue })
+    }
+    func timeline(for configuration: SelectRowsIntent, in context: Context) async -> Timeline<LastEventEntry> {
+        let snap = loadWidgetSnapshot()
+        let entry = LastEventEntry(date: Date(), snapshot: snap, rows: configuration.rows.map { $0.rawValue })
+        return Timeline(entries: [entry], policy: .after(refreshDate(for: snap)))
+    }
+}
+
+// iOS 16 fallback: static provider, default rows.
 struct LastEventProvider: TimelineProvider {
     func placeholder(in context: Context) -> LastEventEntry {
         LastEventEntry(date: Date(), snapshot: .empty)
     }
     func getSnapshot(in context: Context, completion: @escaping (LastEventEntry) -> Void) {
-        completion(LastEventEntry(date: Date(), snapshot: loadSnapshot()))
+        completion(LastEventEntry(date: Date(), snapshot: loadWidgetSnapshot()))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<LastEventEntry>) -> Void) {
-        let snap = loadSnapshot()
-        let now = Date()
-        let refresh = snap.hasActiveTimer
-            ? Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now
-            : Calendar.current.date(byAdding: .minute, value: 10, to: now) ?? now
-        completion(Timeline(entries: [LastEventEntry(date: now, snapshot: snap)], policy: .after(refresh)))
-    }
-    private func loadSnapshot() -> LastEventsSnapshot {
-        guard let d = UserDefaults(suiteName: widgetAppGroupID) else { return .empty }
-        return LastEventsSnapshot(
-            babyName: nonEmpty(d.string(forKey: "widget_babyName")) ?? "התינוק שלי",
-            babyStatus: d.string(forKey: "widget_babyStatus") ?? "awake",
-            lastFeedingAt:   nonZero(d.double(forKey: "widget_lastFeedTimestamp")),
-            lastFeedingType: nonEmpty(d.string(forKey: "widget_lastFeedType")),
-            lastSleepAt:     nonZero(d.double(forKey: "widget_lastSleepTimestamp")),
-            lastDiaperAt:    nonZero(d.double(forKey: "widget_lastDiaperTimestamp")),
-            lastDiaperType:  nonEmpty(d.string(forKey: "widget_lastDiaperType")),
-            lastMedicineAt:  nonZero(d.double(forKey: "widget_lastMedicationTimestamp")),
-            feedCount:    d.integer(forKey: "widget_feedCount"),
-            sleepMinutes: d.integer(forKey: "widget_sleepMinutes"),
-            diaperCount:  d.integer(forKey: "widget_diaperCount"),
-            activeTimerType:      nonEmpty(d.string(forKey: "widget_activeTimerType")),
-            activeTimerStartedAt: nonZero(d.double(forKey: "widget_activeTimerStartedAt")),
-            activeTimerLabel:     nonEmpty(d.string(forKey: "widget_activeTimerLabel")),
-            activeTimerIsPaused:  d.bool(forKey: "widget_activeTimerIsPaused")
-        )
+        let snap = loadWidgetSnapshot()
+        completion(Timeline(entries: [LastEventEntry(date: Date(), snapshot: snap)], policy: .after(refreshDate(for: snap))))
     }
 }
 
@@ -283,50 +347,76 @@ private func bottleSF() -> String {
     return "drop.fill"
 }
 
-private func tilesFor(_ s: LastEventsSnapshot) -> [Tile] {
+// Build a single tile for a given row kind, wired to live-timer state.
+private func tileFor(_ kind: String, _ s: LastEventsSnapshot) -> Tile? {
     let live = s.hasActiveTimer
     func liveFor(_ types: [String]) -> (Bool, Double?) {
         guard live, let t = s.activeTimerType, types.contains(t) else { return (false, nil) }
         return (true, s.activeTimerStartedAt)
     }
-    let bf = liveFor(["breastfeeding"])
-    let bottle = liveFor(["bottle", "feeding", "pumping"])
-    let sleep = liveFor(["sleep"])
-
-    // Quick actions per row. When a timer is live, the only action is "stop".
     let stop = QuickAction(kind: .sf("stop.fill"), timerStart: nil, logEvent: nil, isStop: true)
-    // Breastfeeding: L ▶ / R ▶ pills — the play glyph signals "starts a timer".
-    let bfActions: [QuickAction] = bf.0 ? [stop] : [
-        QuickAction(kind: .text("R"), timerStart: "breastfeeding:right", logEvent: nil, isStop: false, showsPlay: true, wide: true),
-        QuickAction(kind: .text("L"), timerStart: "breastfeeding:left",  logEvent: nil, isStop: false, showsPlay: true, wide: true),
-    ]
-    // Wet = blue droplet, dirty = brown swirl — visually distinct at a glance.
-    let diaperActions: [QuickAction] = [
-        QuickAction(kind: .sfColor("drop.fill", Color(hex: 0x6A8EAE)),       timerStart: nil, logEvent: "diaper:wet",   isStop: false),
-        QuickAction(kind: .sfColor("hurricane", Color(hex: 0xA9744F)),       timerStart: nil, logEvent: "diaper:dirty", isStop: false),
-    ]
-    // Bottle + sleep: a solid pastel Play button (▶) that starts the timer.
-    let playBottle = QuickAction(kind: .sf("play.fill"), timerStart: "bottle", logEvent: nil, isStop: false, filled: true)
-    let playSleep  = QuickAction(kind: .sf("play.fill"), timerStart: "sleep",  logEvent: nil, isStop: false, filled: true)
+    func play(_ type: String) -> QuickAction {
+        QuickAction(kind: .sf("play.fill"), timerStart: type, logEvent: nil, isStop: false, filled: true)
+    }
 
-    return [
-        Tile(icon: .app(.breastfeeding), accent: bfAccent, label: "הנקה",
-             lastAt: s.lastFeedingAt, isLive: bf.0, liveStart: bf.1, isPaused: bf.0 && s.activeTimerIsPaused,
-             timerType: "breastfeeding", logEvent: nil, fallbackURL: "calmparentapp://track/food",
-             quickActions: bfActions),
-        Tile(icon: .sf(bottleSF()), accent: bottleAccent, label: "בקבוק",
-             lastAt: s.lastFeedingAt, isLive: bottle.0, liveStart: bottle.1, isPaused: bottle.0 && s.activeTimerIsPaused,
-             timerType: "bottle", logEvent: nil, fallbackURL: "calmparentapp://track/food",
-             quickActions: bottle.0 ? [stop] : [playBottle]),
-        Tile(icon: .app(.diaper), accent: diaperAccent, label: "חיתול",
-             lastAt: s.lastDiaperAt, isLive: false, liveStart: nil, isPaused: false,
-             timerType: nil, logEvent: "diaper", fallbackURL: "calmparentapp://track/diaper",
-             quickActions: diaperActions),
-        Tile(icon: .sf("moon.fill"), accent: sleepAccent, label: "שינה",
-             lastAt: s.lastSleepAt, isLive: sleep.0, liveStart: sleep.1, isPaused: sleep.0 && s.activeTimerIsPaused,
-             timerType: "sleep", logEvent: nil, fallbackURL: "calmparentapp://track/sleep",
-             quickActions: sleep.0 ? [stop] : [playSleep]),
-    ]
+    switch kind {
+    case "breastfeeding":
+        let l = liveFor(["breastfeeding"])
+        let actions: [QuickAction] = l.0 ? [stop] : [
+            QuickAction(kind: .text("R"), timerStart: "breastfeeding:right", logEvent: nil, isStop: false, showsPlay: true, wide: true),
+            QuickAction(kind: .text("L"), timerStart: "breastfeeding:left",  logEvent: nil, isStop: false, showsPlay: true, wide: true),
+        ]
+        return Tile(icon: .app(.breastfeeding), accent: bfAccent, label: "הנקה",
+                    lastAt: s.lastFeedingAt, isLive: l.0, liveStart: l.1, isPaused: l.0 && s.activeTimerIsPaused,
+                    timerType: "breastfeeding", logEvent: nil, fallbackURL: "calmparentapp://track/food", quickActions: actions)
+    case "bottle":
+        let l = liveFor(["bottle", "feeding"])
+        return Tile(icon: .sf(bottleSF()), accent: bottleAccent, label: "בקבוק",
+                    lastAt: s.lastFeedingAt, isLive: l.0, liveStart: l.1, isPaused: l.0 && s.activeTimerIsPaused,
+                    timerType: "bottle", logEvent: nil, fallbackURL: "calmparentapp://track/food",
+                    quickActions: l.0 ? [stop] : [play("bottle")])
+    case "diaper":
+        let actions = [
+            QuickAction(kind: .sfColor("drop.fill", Color(hex: 0x6A8EAE)), timerStart: nil, logEvent: "diaper:wet",   isStop: false),
+            QuickAction(kind: .sfColor("hurricane", Color(hex: 0xA9744F)), timerStart: nil, logEvent: "diaper:dirty", isStop: false),
+        ]
+        return Tile(icon: .app(.diaper), accent: diaperAccent, label: "חיתול",
+                    lastAt: s.lastDiaperAt, isLive: false, liveStart: nil, isPaused: false,
+                    timerType: nil, logEvent: "diaper", fallbackURL: "calmparentapp://track/diaper", quickActions: actions)
+    case "sleep":
+        let l = liveFor(["sleep"])
+        return Tile(icon: .sf("moon.fill"), accent: sleepAccent, label: "שינה",
+                    lastAt: s.lastSleepAt, isLive: l.0, liveStart: l.1, isPaused: l.0 && s.activeTimerIsPaused,
+                    timerType: "sleep", logEvent: nil, fallbackURL: "calmparentapp://track/sleep",
+                    quickActions: l.0 ? [stop] : [play("sleep")])
+    case "whiteNoise":
+        let l = liveFor(["white_noise", "whitenoise"])
+        return Tile(icon: .sf("waveform"), accent: Color(hex: 0x7E8CA8), label: "רעש לבן",
+                    lastAt: s.lastWhiteNoiseAt, isLive: l.0, liveStart: l.1, isPaused: l.0 && s.activeTimerIsPaused,
+                    timerType: "white_noise", logEvent: nil, fallbackURL: "calmparentapp://whitenoise",
+                    quickActions: l.0 ? [stop] : [play("white_noise")])
+    case "pumping":
+        let l = liveFor(["pumping"])
+        return Tile(icon: .sf("drop.triangle.fill"), accent: Color(hex: 0x9C8AAE), label: "שאיבה",
+                    lastAt: s.lastPumpingAt, isLive: l.0, liveStart: l.1, isPaused: l.0 && s.activeTimerIsPaused,
+                    timerType: "pumping", logEvent: nil, fallbackURL: "calmparentapp://track/food",
+                    quickActions: l.0 ? [stop] : [play("pumping")])
+    case "medicine":
+        return Tile(icon: .sf("pills.fill"), accent: Color(hex: 0xC8806A), label: "תרופה",
+                    lastAt: s.lastMedicineAt, isLive: false, liveStart: nil, isPaused: false,
+                    timerType: nil, logEvent: "medicine", fallbackURL: "calmparentapp://track/health",
+                    quickActions: [QuickAction(kind: .sf("plus"), timerStart: nil, logEvent: "medicine", isStop: false)])
+    default:
+        return nil  // "none" → empty slot
+    }
+}
+
+// Default order when the user hasn't configured the widget (or on iOS 16).
+private let defaultRowKinds = ["breastfeeding", "bottle", "diaper", "sleep"]
+
+private func tilesFor(_ s: LastEventsSnapshot, rows: [String] = []) -> [Tile] {
+    let kinds = rows.isEmpty ? defaultRowKinds : rows
+    return kinds.compactMap { tileFor($0, s) }
 }
 
 // =====================================================================
@@ -603,11 +693,13 @@ private struct TodayBar: View {
 
 private struct SmallView: View {
     let snapshot: LastEventsSnapshot
+    var rows: [String] = []
     var body: some View {
-        let tiles = tilesFor(snapshot)
+        let tiles = tilesFor(snapshot, rows: rows)
         let hero = tiles.first(where: { $0.isLive })
             ?? tiles.filter({ $0.lastAt != nil }).max(by: { ($0.lastAt ?? 0) < ($1.lastAt ?? 0) })
-            ?? tiles[0]
+            ?? tiles.first
+            ?? tileFor("breastfeeding", snapshot)!
         VStack(spacing: 6) {
             HStack {
                 Text(snapshot.babyName).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(inkSecondary).lineLimit(1)
@@ -659,11 +751,12 @@ private func topTiles(_ tiles: [Tile], limit: Int) -> [Tile] {
 
 private struct MediumView: View {
     let snapshot: LastEventsSnapshot
+    var rows: [String] = []
     var body: some View {
         // Medium is only ~158pt tall — 4 rows + header get crushed & clipped.
         // Show the 3 most relevant rows (a live timer always wins) so each row
         // gets real breathing room. Large shows all four.
-        let tiles = topTiles(tilesFor(snapshot), limit: 3)
+        let tiles = topTiles(tilesFor(snapshot, rows: rows), limit: 3)
         VStack(spacing: 3) {
             HeaderBar(snapshot: snapshot)
             ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
@@ -677,8 +770,9 @@ private struct MediumView: View {
 
 private struct LargeView: View {
     let snapshot: LastEventsSnapshot
+    var rows: [String] = []
     var body: some View {
-        let tiles = tilesFor(snapshot)
+        let tiles = tilesFor(snapshot, rows: rows)
         VStack(spacing: 0) {
             HeaderBar(snapshot: snapshot).padding(.bottom, 8)
             ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
@@ -699,15 +793,28 @@ private struct LargeView: View {
 struct LastEventWidget: Widget {
     let kind: String = "LastEventWidget"
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: LastEventProvider()) { entry in
-            BackgroundWrap {
-                LastEventWidgetView(entry: entry)
-                    .environment(\.layoutDirection, .rightToLeft)
+        if #available(iOS 17.0, *) {
+            // Configurable: long-press → "Edit Widget" to choose which rows show.
+            return AppIntentConfiguration(kind: kind, intent: SelectRowsIntent.self, provider: LastEventConfigurableProvider()) { entry in
+                BackgroundWrap {
+                    LastEventWidgetView(entry: entry)
+                        .environment(\.layoutDirection, .rightToLeft)
+                }
             }
+            .configurationDisplayName("המעקב של התינוק")
+            .description("בחר אילו פעולות יופיעו — תיעוד מהיר במבט אחד.")
+            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        } else {
+            return StaticConfiguration(kind: kind, provider: LastEventProvider()) { entry in
+                BackgroundWrap {
+                    LastEventWidgetView(entry: entry)
+                        .environment(\.layoutDirection, .rightToLeft)
+                }
+            }
+            .configurationDisplayName("המעקב של התינוק")
+            .description("הנקה, בקבוק, חיתול, שינה — תיעוד מהיר במבט אחד.")
+            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         }
-        .configurationDisplayName("המעקב של התינוק")
-        .description("הנקה, בקבוק, חיתול, שינה — תיעוד מהיר במבט אחד.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
@@ -716,9 +823,9 @@ struct LastEventWidgetView: View {
     @Environment(\.widgetFamily) var family
     var body: some View {
         switch family {
-        case .systemSmall:  SmallView(snapshot: entry.snapshot)
-        case .systemMedium: MediumView(snapshot: entry.snapshot)
-        default:            LargeView(snapshot: entry.snapshot)
+        case .systemSmall:  SmallView(snapshot: entry.snapshot, rows: entry.rows)
+        case .systemMedium: MediumView(snapshot: entry.snapshot, rows: entry.rows)
+        default:            LargeView(snapshot: entry.snapshot, rows: entry.rows)
         }
     }
 }
