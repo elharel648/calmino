@@ -641,12 +641,31 @@ private var rowHairline: some View {
     Rectangle().fill(Color.black.opacity(0.06)).frame(height: 1)
 }
 
+// Pick the N most relevant tiles for the compact (medium) layout:
+// any live timer first, then by most-recent event, preserving the canonical
+// row order within each group so the layout doesn't jump around.
+private func topTiles(_ tiles: [Tile], limit: Int) -> [Tile] {
+    guard tiles.count > limit else { return tiles }
+    let indexed = Array(tiles.enumerated())
+    let sorted = indexed.sorted { a, b in
+        if a.element.isLive != b.element.isLive { return a.element.isLive }
+        let ta = a.element.lastAt ?? 0, tb = b.element.lastAt ?? 0
+        if ta != tb { return ta > tb }
+        return a.offset < b.offset
+    }
+    let chosen = Set(sorted.prefix(limit).map { $0.offset })
+    return indexed.filter { chosen.contains($0.offset) }.map { $0.element }
+}
+
 private struct MediumView: View {
     let snapshot: LastEventsSnapshot
     var body: some View {
-        let tiles = tilesFor(snapshot)
-        VStack(spacing: 2) {
-            HeaderBar(snapshot: snapshot).padding(.bottom, 2)
+        // Medium is only ~158pt tall — 4 rows + header get crushed & clipped.
+        // Show the 3 most relevant rows (a live timer always wins) so each row
+        // gets real breathing room. Large shows all four.
+        let tiles = topTiles(tilesFor(snapshot), limit: 3)
+        VStack(spacing: 3) {
+            HeaderBar(snapshot: snapshot)
             ForEach(Array(tiles.enumerated()), id: \.offset) { idx, tile in
                 EventRow(tile: tile)
                     .frame(maxHeight: .infinity)
