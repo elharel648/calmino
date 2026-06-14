@@ -691,15 +691,27 @@ private struct TodayBar: View {
 // MARK: - Family views
 // =====================================================================
 
+// Pick the single tile the small widget should feature: a live timer if any,
+// else the most recent event, else the first row. Extracted so the SmallView
+// body stays simple enough for the Swift type-checker.
+private func heroTile(_ snapshot: LastEventsSnapshot, rows: [String]) -> Tile {
+    let tiles = tilesFor(snapshot, rows: rows)
+    if let live = tiles.first(where: { $0.isLive }) { return live }
+    var best: Tile? = nil
+    var bestAt: Double = -1
+    for t in tiles {
+        if let at = t.lastAt, at > bestAt { best = t; bestAt = at }
+    }
+    if let best = best { return best }
+    if let first = tiles.first { return first }
+    return tileFor("breastfeeding", snapshot)!
+}
+
 private struct SmallView: View {
     let snapshot: LastEventsSnapshot
     var rows: [String] = []
     var body: some View {
-        let tiles = tilesFor(snapshot, rows: rows)
-        let hero = tiles.first(where: { $0.isLive })
-            ?? tiles.filter({ $0.lastAt != nil }).max(by: { ($0.lastAt ?? 0) < ($1.lastAt ?? 0) })
-            ?? tiles.first
-            ?? tileFor("breastfeeding", snapshot)!
+        let hero = heroTile(snapshot, rows: rows)
         VStack(spacing: 6) {
             HStack {
                 Text(snapshot.babyName).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(inkSecondary).lineLimit(1)
@@ -790,31 +802,20 @@ private struct LargeView: View {
 // MARK: - Widget definition
 // =====================================================================
 
+// Editable + interactive widget — iOS 17+ (AppIntentConfiguration + Button(intent:)).
+@available(iOS 17.0, *)
 struct LastEventWidget: Widget {
     let kind: String = "LastEventWidget"
     var body: some WidgetConfiguration {
-        if #available(iOS 17.0, *) {
-            // Configurable: long-press → "Edit Widget" to choose which rows show.
-            return AppIntentConfiguration(kind: kind, intent: SelectRowsIntent.self, provider: LastEventConfigurableProvider()) { entry in
-                BackgroundWrap {
-                    LastEventWidgetView(entry: entry)
-                        .environment(\.layoutDirection, .rightToLeft)
-                }
+        AppIntentConfiguration(kind: kind, intent: SelectRowsIntent.self, provider: LastEventConfigurableProvider()) { entry in
+            BackgroundWrap {
+                LastEventWidgetView(entry: entry)
+                    .environment(\.layoutDirection, .rightToLeft)
             }
-            .configurationDisplayName("המעקב של התינוק")
-            .description("בחר אילו פעולות יופיעו — תיעוד מהיר במבט אחד.")
-            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
-        } else {
-            return StaticConfiguration(kind: kind, provider: LastEventProvider()) { entry in
-                BackgroundWrap {
-                    LastEventWidgetView(entry: entry)
-                        .environment(\.layoutDirection, .rightToLeft)
-                }
-            }
-            .configurationDisplayName("המעקב של התינוק")
-            .description("הנקה, בקבוק, חיתול, שינה — תיעוד מהיר במבט אחד.")
-            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         }
+        .configurationDisplayName("המעקב של התינוק")
+        .description("בחר אילו פעולות יופיעו — תיעוד מהיר במבט אחד.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
