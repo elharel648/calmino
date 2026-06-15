@@ -18,6 +18,7 @@ import {
     Unsubscribe
 } from 'firebase/firestore';
 import { db, auth, callFirebaseFunction } from './firebaseConfig';
+import { isValidInviteCode } from '../utils/callableResponse';
 import { logger } from '../utils/logger';
 import i18n from './i18n';
 const t = i18n.t.bind(i18n);
@@ -180,11 +181,12 @@ export const joinFamily = async (
 
     const trimmedCode = inviteCode.trim();
 
-    // Reject codes containing characters that aren't valid in a Firestore doc ID
-    // (slashes, control chars, etc.) — they'd break the doc() path and could
-    // be used to probe other paths. Codes are 6 alphanumeric chars by design.
-    // Audit MEDIUM security.
-    if (!/^[A-Za-z0-9]{1,32}$/.test(trimmedCode)) {
+    // Codes are exactly 6 digits by design (see createFamily / createGuestInvite).
+    // Validated via the shared helper that's kept in lock-step with the server's
+    // `length !== 6` check (functions/src/index.ts) so a code can never pass the
+    // client and then be rejected by the function — that asymmetry produced
+    // confusing failures.
+    if (!isValidInviteCode(trimmedCode)) {
         return { success: false, message: t('joinFamily.error.invalidCode') || 'קוד לא תקין' };
     }
 

@@ -1,5 +1,6 @@
 // services/firebaseConfig.ts
 import { logger } from '../utils/logger';
+import { parseCallableResponse } from '../utils/callableResponse';
 import { Platform } from 'react-native';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth } from 'firebase/auth';
@@ -146,13 +147,14 @@ export const callFirebaseFunction = async (name: string, data?: object): Promise
       throw new Error(`Function ${name} returned non-JSON response (status ${response.status})`);
     }
 
-    if (!response.ok || responseData?.error) {
-      logger.error(`Error calling ${name}:`, responseData?.error?.message || responseData);
-      throw new Error(responseData?.error?.message || `Function ${name} failed`);
+    // Unwrap via the shared, unit-tested helper. It handles the v2 "result"
+    // vs v1/SDK "data" key difference that silently broke the family join flow.
+    const parsed = parseCallableResponse(response.ok, responseData);
+    if (!parsed.ok) {
+      logger.error(`Error calling ${name}:`, parsed.errorMessage || responseData);
+      throw new Error(parsed.errorMessage || `Function ${name} failed`);
     }
-
-    // Callable functions always return data wrapped in {"data": ...}
-    return responseData.data;
+    return parsed.payload;
   } catch (err) {
     logger.error(`Firebase function fetch error (${name}):`, err);
     throw err;
