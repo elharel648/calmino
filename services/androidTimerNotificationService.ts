@@ -22,6 +22,13 @@ const loadNotifee = async () => {
     }
 };
 
+// Android live-timer notifications are DELIBERATELY disabled: the ongoing
+// notification needs a foreground service, and Google Play's foreground-service
+// review (demo-video requirement) blocked the release — see commit 409be529.
+// Flip this flag only together with re-declaring the foreground service and
+// submitting the Play Console justification video.
+export const ANDROID_TIMER_NOTIFICATIONS_ENABLED = false;
+
 const CHANNEL_ID = 'calmino-timer';
 const NOTIFICATION_ID = 'calmino-active-timer';
 
@@ -62,7 +69,7 @@ class AndroidTimerNotificationService {
      * Start a persistent timer notification
      */
     async startTimer(timerType: string, childName: string = 'תינוק'): Promise<string> {
-        return '';
+        if (!ANDROID_TIMER_NOTIFICATIONS_ENABLED) return '';
 
         try {
             await this.ensureChannel();
@@ -117,7 +124,7 @@ class AndroidTimerNotificationService {
      * Pause the active timer notification
      */
     async pauseTimer(): Promise<boolean> {
-        return false;
+        if (!ANDROID_TIMER_NOTIFICATIONS_ENABLED) return false;
 
         try {
             await loadNotifee();
@@ -167,7 +174,7 @@ class AndroidTimerNotificationService {
      * Resume the paused timer notification
      */
     async resumeTimer(): Promise<boolean> {
-        return false;
+        if (!ANDROID_TIMER_NOTIFICATIONS_ENABLED) return false;
 
         try {
             await loadNotifee();
@@ -221,7 +228,7 @@ class AndroidTimerNotificationService {
      * Stop and dismiss the timer notification
      */
     async stopTimer(): Promise<boolean> {
-        return false;
+        if (!ANDROID_TIMER_NOTIFICATIONS_ENABLED) return false;
 
         try {
             await loadNotifee();

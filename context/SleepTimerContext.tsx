@@ -156,7 +156,9 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
                 .catch(error => logger.warn('⚠️ Sleep Live Activity not supported:', error));
         } else if (Platform.OS === 'android' && activeChild) {
             liveActivityService.startSleepTimer(undefined, activeChild.childName)
-                .then(() => logger.log('✅ Android Sleep Timer Notification started for child:', activeChildId))
+                .then((id) => logger.log(id
+                    ? `✅ Android Sleep Timer Notification started for child: ${activeChildId}`
+                    : '⏭️ Android Sleep Timer Notification skipped (disabled)'))
                 .catch(error => logger.warn('⚠️ Android Sleep Timer Notification failed:', error));
         }
     }, [activeChildId, activeChild?.childName, updateChildState]);
