@@ -18,6 +18,8 @@ import { useGuest } from '../context/GuestContext';
 // Components
 import HeaderSection from '../components/Home/HeaderSection';
 import QuickActions from '../components/Home/QuickActions';
+import DailyInsightCard from '../components/Home/DailyInsightCard';
+import { clockString } from '../utils/eventTime';
 import ShareStatusButton from '../components/Home/ShareStatusButton';
 import HealthCard from '../components/Home/HealthCard';
 import ChildPicker from '../components/Home/ChildPicker';
@@ -631,11 +633,17 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                                         const mins = Math.floor(seconds / 60);
                                         const secs = seconds % 60;
                                         const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                                        // Same start-stamped semantics as TrackingModal:
+                                        // the timer stops "now", so now is the END
+                                        const sleepEnd = new Date();
+                                        const sleepStart = new Date(sleepEnd.getTime() - seconds * 1000);
                                         await handleSaveTracking({
                                             type: 'sleep',
                                             note: `${t('home.share.sleepDuration')}: ${timeStr}`,
                                             duration: seconds,
-                                            timestamp: new Date()
+                                            timestamp: sleepStart,
+                                            startTime: clockString(sleepStart),
+                                            endTime: clockString(sleepEnd)
                                         });
                                     }}
                                     meds={meds}
@@ -646,6 +654,11 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             </View>
 
                             <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => { setIsHealthOpen(false); setHealthInitialScreen('menu'); }} initialScreen={healthInitialScreen} />
+
+                            <DailyInsightCard
+                                childId={profile.id}
+                                refreshTrigger={timelineRefresh}
+                            />
 
                             <DailyTimeline
                                 refreshTrigger={timelineRefresh}

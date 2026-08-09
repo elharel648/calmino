@@ -2309,5 +2309,13 @@
     "reminderBody": "הגיע הזמן לקחת {name} ({dosage})",
     "dosageNote": "מינון: {dosage}",
     "calendarNotes": "מינון: {dosage}{notes}\n\n⚠️ מידע כללי בלבד. יש להתייעץ עם רופא."
+  },
+  "insight": {
+      "title": "התובנה היומית",
+      "bedtimeSuggestion": "על סמך השינה של היום, שעת שינה מומלצת הערב: {start}–{end}",
+      "daySleepMore": "שינת היום ארוכה ב-{min} דקות מהממוצע, אז ההירדמות עשויה להתאחר מעט",
+      "daySleepLess": "שינת היום קצרה ב-{min} דקות מהממוצע, אז אולי כדאי להקדים מעט",
+      "basedOnNights": "מבוסס על {count} הלילות המתועדים האחרונים",
+      "collecting": "עוד קצת תיעוד ואלמד את הדפוס — אחרי {needed} לילות מתועדים אמליץ על שעת שינה מותאמת אישית ({tracked}/{needed})"
   }
 }

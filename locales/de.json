@@ -2220,5 +2220,13 @@
     "reminderBody": "Zeit für {name} ({dosage})",
     "dosageNote": "Dosis: {dosage}",
     "calendarNotes": "Dosis: {dosage}{notes}\n\n⚠️ Nur allgemeine Informationen. Arzt konsultieren."
+  },
+  "insight": {
+      "title": "Tages-Einblick",
+      "bedtimeSuggestion": "Basierend auf dem heutigen Schlaf, empfohlene Schlafenszeit heute Abend: {start}–{end}",
+      "daySleepMore": "Der Tagschlaf war {min} Min. länger als der Durchschnitt, das Einschlafen kann sich etwas verschieben",
+      "daySleepLess": "Der Tagschlaf war {min} Min. kürzer als der Durchschnitt, eine etwas frühere Schlafenszeit kann helfen",
+      "basedOnNights": "Basierend auf den letzten {count} erfassten Nächten",
+      "collecting": "Noch etwas Tracking und ich lerne das Muster — nach {needed} erfassten Nächten schlage ich eine persönliche Schlafenszeit vor ({tracked}/{needed})"
   }
 }

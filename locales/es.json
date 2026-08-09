@@ -2220,5 +2220,13 @@
     "reminderBody": "Es hora de tomar {name} ({dosage})",
     "dosageNote": "Dosis: {dosage}",
     "calendarNotes": "Dosis: {dosage}{notes}\n\n⚠️ Solo información general. Consulte a un médico."
+  },
+  "insight": {
+      "title": "Perspectiva del día",
+      "bedtimeSuggestion": "Según el sueño de hoy, hora de dormir sugerida esta noche: {start}–{end}",
+      "daySleepMore": "El sueño diurno fue {min} min más largo que el promedio, así que dormirse puede retrasarse un poco",
+      "daySleepLess": "El sueño diurno fue {min} min más corto que el promedio, así que adelantar un poco la hora puede ayudar",
+      "basedOnNights": "Basado en las últimas {count} noches registradas",
+      "collecting": "Un poco más de registro y aprenderé el patrón — tras {needed} noches registradas sugeriré una hora de dormir personalizada ({tracked}/{needed})"
   }
 }
