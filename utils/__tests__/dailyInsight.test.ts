@@ -19,10 +19,26 @@ const sleep = (start: Date, durationMin: number): InsightEvent => ({
 });
 
 describe('computeDailyInsight', () => {
-  it('returns collecting state with fewer than 3 tracked nights', () => {
+  it('no bedtime window with fewer than 3 tracked nights, but still reports progress', () => {
     const events = [sleep(daysAgo(1, 19, 30), 600), sleep(daysAgo(2, 19, 30), 600)];
     const insight = computeDailyInsight(events, NOW);
-    expect(insight).toEqual({ type: 'collecting', nightsTracked: 2, nightsNeeded: 3 });
+    expect(insight.bedtimeWindow).toBeNull();
+    expect(insight.nightsTracked).toBe(2);
+    expect(insight.nightsNeeded).toBe(3);
+  });
+
+  it('computes awake-for from the most recent sleep end', () => {
+    // nap today 13:00–14:30 → awake 2.5h at 17:00
+    const events = [sleep(daysAgo(0, 13, 0), 90)];
+    const insight = computeDailyInsight(events, NOW);
+    expect(insight.awakeForMin).toBe(150);
+    expect(insight.todayDaySleepMin).toBe(90);
+  });
+
+  it('ignores a stale sleep end (> 16h ago) for awake-for', () => {
+    const events = [sleep(daysAgo(3, 13, 0), 90)];
+    const insight = computeDailyInsight(events, NOW);
+    expect(insight.awakeForMin).toBeNull();
   });
 
   it('suggests a window around the average bedtime when day sleep is typical', () => {
@@ -38,13 +54,10 @@ describe('computeDailyInsight', () => {
       sleep(daysAgo(0, 13, 0), 90),
     ];
     const insight = computeDailyInsight(events, NOW);
-    expect(insight.type).toBe('bedtime');
-    if (insight.type === 'bedtime') {
-      expect(insight.windowStart).toBe('19:20');
-      expect(insight.windowEnd).toBe('19:40');
-      expect(insight.daySleepDeltaMin).toBe(0);
-      expect(insight.nightsTracked).toBe(3);
-    }
+    expect(insight.bedtimeWindow).toEqual({ start: '19:20', end: '19:40' });
+    expect(insight.daySleepDeltaMin).toBe(0);
+    expect(insight.avgDaySleepMin).toBe(90);
+    expect(insight.nightsTracked).toBe(3);
   });
 
   it('shifts bedtime later when today had more daytime sleep', () => {
@@ -58,13 +71,8 @@ describe('computeDailyInsight', () => {
       sleep(daysAgo(0, 13, 0), 120),
     ];
     const insight = computeDailyInsight(events, NOW);
-    if (insight.type === 'bedtime') {
-      expect(insight.daySleepDeltaMin).toBe(60);
-      expect(insight.windowStart).toBe('19:40'); // 19:30 + 20 - 10
-      expect(insight.windowEnd).toBe('20:00');
-    } else {
-      throw new Error('expected bedtime insight');
-    }
+    expect(insight.daySleepDeltaMin).toBe(60);
+    expect(insight.bedtimeWindow).toEqual({ start: '19:40', end: '20:00' });
   });
 
   it('caps the shift at 30 minutes', () => {
@@ -77,12 +85,7 @@ describe('computeDailyInsight', () => {
       sleep(daysAgo(0, 10, 0), 210),
     ];
     const insight = computeDailyInsight(events, NOW);
-    if (insight.type === 'bedtime') {
-      expect(insight.windowStart).toBe('19:50');
-      expect(insight.windowEnd).toBe('20:10');
-    } else {
-      throw new Error('expected bedtime insight');
-    }
+    expect(insight.bedtimeWindow).toEqual({ start: '19:50', end: '20:10' });
   });
 
   it('counts a post-midnight bedtime as late night, not as a nap', () => {
@@ -92,12 +95,8 @@ describe('computeDailyInsight', () => {
       sleep(daysAgo(3, 22, 30), 480),
     ];
     const insight = computeDailyInsight(events, NOW);
-    expect(insight.type).toBe('bedtime');
-    if (insight.type === 'bedtime') {
-      // avg of 24.5h, 23.5h, 22.5h = 23.5h → 23:30
-      expect(insight.windowStart).toBe('23:20');
-      expect(insight.windowEnd).toBe('23:40');
-    }
+    // avg of 24.5h, 23.5h, 22.5h = 23.5h → 23:30
+    expect(insight.bedtimeWindow).toEqual({ start: '23:20', end: '23:40' });
   });
 
   it('handles legacy end-stamped records via eventTimeRange', () => {
@@ -110,19 +109,18 @@ describe('computeDailyInsight', () => {
     });
     const events = [legacyNight(1), legacyNight(2), legacyNight(3)];
     const insight = computeDailyInsight(events, NOW);
-    expect(insight.type).toBe('bedtime');
-    if (insight.type === 'bedtime') {
-      expect(insight.windowStart).toBe('19:20');
-      expect(insight.windowEnd).toBe('19:40');
-    }
+    expect(insight.bedtimeWindow).toEqual({ start: '19:20', end: '19:40' });
   });
 
   it('ignores non-sleep events and empty input', () => {
-    expect(computeDailyInsight([], NOW)).toEqual({ type: 'collecting', nightsTracked: 0, nightsNeeded: 3 });
+    const empty = computeDailyInsight([], NOW);
+    expect(empty.bedtimeWindow).toBeNull();
+    expect(empty.awakeForMin).toBeNull();
+    expect(empty.todayDaySleepMin).toBe(0);
     const events: InsightEvent[] = [
       { type: 'food', timestamp: daysAgo(1, 19, 30), duration: 600 },
       { type: 'diaper', timestamp: daysAgo(1, 20, 0) },
     ];
-    expect(computeDailyInsight(events, NOW).type).toBe('collecting');
+    expect(computeDailyInsight(events, NOW).nightsTracked).toBe(0);
   });
 });

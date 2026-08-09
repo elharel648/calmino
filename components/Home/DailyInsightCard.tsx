@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Moon, Sparkles } from 'lucide-react-native';
+import { Moon, Sun, Sparkles, BedDouble } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useSleepTimer } from '../../context/SleepTimerContext';
 import { getRecentHistory } from '../../services/firebaseService';
 import { computeDailyInsight, DailyInsight } from '../../utils/dailyInsight';
 import { analyticsDailyInsightViewed } from '../../services/analyticsService';
@@ -15,11 +16,26 @@ interface DailyInsightCardProps {
   refreshTrigger?: number;
 }
 
+/** 135 → "2:15" */
+const asClockDuration = (minutes: number): string => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}` : `${m}`;
+};
+
 const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps) => {
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
+  const sleepTimer = useSleepTimer();
   const [insight, setInsight] = useState<DailyInsight | null>(null);
-  const loggedType = useRef<string | null>(null);
+  const logged = useRef(false);
+  // Re-render each minute so the live "awake for" / "sleeping for" row ticks
+  const [, setMinuteTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setMinuteTick(v => v + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (!childId) return;
@@ -33,15 +49,42 @@ const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps
   }, [childId, refreshTrigger]);
 
   useEffect(() => {
-    if (insight && loggedType.current !== insight.type) {
-      loggedType.current = insight.type;
-      analyticsDailyInsightViewed(insight.type);
+    if (insight && !logged.current) {
+      logged.current = true;
+      analyticsDailyInsightViewed(insight.bedtimeWindow ? 'bedtime' : 'collecting');
     }
   }, [insight]);
 
   if (!insight) return null;
 
-  const accent = theme.actionColors.sleep.accentColor;
+  const sleepAccent = theme.actionColors.sleep.accentColor;
+  const foodAccent = theme.actionColors.food.accentColor;
+  const isSleeping = sleepTimer.isRunning && !sleepTimer.isPaused;
+
+  // Row 1 — live status: sleeping now (from the running timer) or awake-for
+  let statusRow: { icon: React.ReactNode; text: string; strong: string } | null = null;
+  if (isSleeping) {
+    statusRow = {
+      icon: <Moon size={17} color={sleepAccent} strokeWidth={2.2} />,
+      text: t('insight.sleepingNow'),
+      strong: asClockDuration(Math.max(1, Math.round(sleepTimer.elapsedSeconds / 60))),
+    };
+  } else if (insight.awakeForMin !== null && insight.awakeForMin >= 1) {
+    statusRow = {
+      icon: <Sun size={17} color={foodAccent} strokeWidth={2.2} />,
+      text: t('insight.awakeFor'),
+      strong: asClockDuration(insight.awakeForMin),
+    };
+  }
+
+  // Row 2 — today's daytime sleep (+ comparison to the baby's own average)
+  const showDayRow = insight.todayDaySleepMin > 0;
+  let dayDeltaText: string | null = null;
+  if (showDayRow && insight.daySleepDeltaMin !== null && Math.abs(insight.daySleepDeltaMin) >= 15) {
+    dayDeltaText = insight.daySleepDeltaMin > 0
+      ? t('insight.aboveAvg', { min: insight.daySleepDeltaMin })
+      : t('insight.belowAvg', { min: Math.abs(insight.daySleepDeltaMin) });
+  }
 
   return (
     <Animated.View
@@ -52,35 +95,59 @@ const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps
       }]}
     >
       <View style={styles.headerRow}>
-        <View style={[styles.iconWrap, { backgroundColor: `${accent}1F` }]}>
-          {insight.type === 'bedtime'
-            ? <Moon size={18} color={accent} strokeWidth={2} />
-            : <Sparkles size={18} color={accent} strokeWidth={2} />}
+        <View style={[styles.iconWrap, { backgroundColor: `${sleepAccent}1F` }]}>
+          <Sparkles size={16} color={sleepAccent} strokeWidth={2} />
         </View>
         <Text style={[styles.title, { color: theme.textPrimary }]}>
           {t('insight.title')}
         </Text>
       </View>
 
-      {insight.type === 'bedtime' ? (
-        <>
-          <Text style={[styles.body, { color: theme.textPrimary }]}>
-            {t('insight.bedtimeSuggestion', { start: insight.windowStart, end: insight.windowEnd })}
+      {statusRow && (
+        <View style={styles.row}>
+          {statusRow.icon}
+          <Text style={[styles.rowText, { color: theme.textPrimary }]}>
+            {statusRow.text}{' '}
+            <Text style={[styles.rowStrong, { color: theme.textPrimary }]}>{statusRow.strong}</Text>
           </Text>
-          {Math.abs(insight.daySleepDeltaMin) >= 15 && (
-            <Text style={[styles.subline, { color: theme.textSecondary }]}>
-              {insight.daySleepDeltaMin > 0
-                ? t('insight.daySleepMore', { min: insight.daySleepDeltaMin })
-                : t('insight.daySleepLess', { min: Math.abs(insight.daySleepDeltaMin) })}
+        </View>
+      )}
+
+      {showDayRow && (
+        <View style={styles.row}>
+          <Sun size={17} color={theme.textTertiary} strokeWidth={2} />
+          <Text style={[styles.rowText, { color: theme.textPrimary }]}>
+            {t('insight.daySleepSoFar')}{' '}
+            <Text style={[styles.rowStrong, { color: theme.textPrimary }]}>
+              {asClockDuration(insight.todayDaySleepMin)}
             </Text>
-          )}
-          <Text style={[styles.trustLine, { color: theme.textTertiary }]}>
-            {t('insight.basedOnNights', { count: insight.nightsTracked })}
+            {dayDeltaText ? <Text style={{ color: theme.textSecondary }}> · {dayDeltaText}</Text> : null}
           </Text>
-        </>
+        </View>
+      )}
+
+      {insight.bedtimeWindow ? (
+        <View style={styles.row}>
+          <BedDouble size={17} color={sleepAccent} strokeWidth={2} />
+          <Text style={[styles.rowText, { color: theme.textPrimary }]}>
+            {t('insight.bedtimeShort')}{' '}
+            <Text style={[styles.rowStrong, { color: sleepAccent }]}>
+              {insight.bedtimeWindow.start}–{insight.bedtimeWindow.end}
+            </Text>
+          </Text>
+        </View>
       ) : (
-        <Text style={[styles.body, { color: theme.textSecondary }]}>
-          {t('insight.collecting', { tracked: insight.nightsTracked, needed: insight.nightsNeeded })}
+        <View style={styles.row}>
+          <BedDouble size={17} color={theme.textTertiary} strokeWidth={2} />
+          <Text style={[styles.rowText, { color: theme.textSecondary }]}>
+            {t('insight.collectingShort', { tracked: insight.nightsTracked, needed: insight.nightsNeeded })}
+          </Text>
+        </View>
+      )}
+
+      {insight.bedtimeWindow && (
+        <Text style={[styles.trustLine, { color: theme.textTertiary }]}>
+          {t('insight.basedOnNights', { count: insight.nightsTracked })}
         </Text>
       )}
     </Animated.View>
@@ -100,12 +167,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -115,21 +182,25 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     flex: 1,
   },
-  body: {
-    fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 23,
-    textAlign: 'left',
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
   },
-  subline: {
-    fontSize: 13,
-    marginTop: 6,
-    lineHeight: 19,
+  rowText: {
+    fontSize: 15,
+    lineHeight: 21,
     textAlign: 'left',
+    flex: 1,
+  },
+  rowStrong: {
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   trustLine: {
     fontSize: 12,
-    marginTop: 8,
+    marginTop: 2,
     textAlign: 'left',
   },
 });

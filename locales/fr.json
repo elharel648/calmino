@@ -2227,6 +2227,13 @@
       "daySleepMore": "Le sommeil de jour a duré {min} min de plus que la moyenne, l'endormissement peut donc être un peu plus tardif",
       "daySleepLess": "Le sommeil de jour a duré {min} min de moins que la moyenne, un coucher un peu plus tôt peut aider",
       "basedOnNights": "Basé sur les {count} dernières nuits suivies",
-      "collecting": "Encore un peu de suivi et j'apprendrai le rythme — après {needed} nuits suivies, je suggérerai une heure de coucher personnalisée ({tracked}/{needed})"
+      "collecting": "Encore un peu de suivi et j'apprendrai le rythme — après {needed} nuits suivies, je suggérerai une heure de coucher personnalisée ({tracked}/{needed})",
+      "sleepingNow": "Dort depuis",
+      "awakeFor": "Éveillé depuis",
+      "daySleepSoFar": "Sommeil de jour jusqu'ici :",
+      "aboveAvg": "{min} min au-dessus de la moyenne",
+      "belowAvg": "{min} min en dessous de la moyenne",
+      "bedtimeShort": "Coucher suggéré ce soir :",
+      "collectingShort": "Après {needed} nuits suivies, je suggérerai une heure de coucher ({tracked}/{needed})"
   }
 }

@@ -1,11 +1,12 @@
 /**
  * Rule-based Daily Insight — the first slice of "the app knows my baby".
  *
- * Computes tonight's suggested bedtime window from the baby's OWN last-7-days
- * pattern (no LLM involved): average bedtime, adjusted by how today's daytime
- * sleep compares to the baby's daytime average. Honest by design: with fewer
- * than MIN_NIGHTS tracked nights it returns a "collecting" state instead of
- * guessing (trust > confidence theater).
+ * Computes a live status snapshot from the baby's OWN data (no LLM involved):
+ * how long the baby has been awake, today's daytime sleep vs the 7-day
+ * average, and tonight's suggested bedtime window (average bedtime adjusted
+ * by today's day-sleep surplus/deficit). Honest by design: with fewer than
+ * MIN_NIGHTS tracked nights the bedtime window is null and the card shows a
+ * "collecting" progress line instead of guessing (trust > confidence theater).
  *
  * Pure and Date-injectable so it stays unit-testable, like eventTime.ts.
  */
@@ -20,22 +21,20 @@ export interface InsightEvent {
   endTime?: unknown;
 }
 
-export type DailyInsight =
-  | {
-      type: 'bedtime';
-      /** "HH:MM" bounds of the suggested window */
-      windowStart: string;
-      windowEnd: string;
-      /** Today's daytime sleep minus the 7-day average, in minutes (rounded). */
-      daySleepDeltaMin: number;
-      /** How many tracked nights back the suggestion (for the trust line). */
-      nightsTracked: number;
-    }
-  | {
-      type: 'collecting';
-      nightsTracked: number;
-      nightsNeeded: number;
-    };
+export interface DailyInsight {
+  /** Minutes since the last sleep ended; null when unknown or implausibly stale. */
+  awakeForMin: number | null;
+  /** Total daytime (nap) sleep logged today, in minutes. */
+  todayDaySleepMin: number;
+  /** Average daytime sleep across previous tracked days; null with no history. */
+  avgDaySleepMin: number | null;
+  /** todayDaySleepMin - avgDaySleepMin (rounded); null when no average exists. */
+  daySleepDeltaMin: number | null;
+  /** Tonight's suggested "HH:MM" window; null until MIN_NIGHTS nights are tracked. */
+  bedtimeWindow: { start: string; end: string } | null;
+  nightsTracked: number;
+  nightsNeeded: number;
+}
 
 const MIN_NIGHTS = 3;
 const LOOKBACK_DAYS = 7;
@@ -48,6 +47,8 @@ const DAY_START_MIN = 6 * 60;
 const SHIFT_RATIO = 1 / 3;
 const MAX_SHIFT_MIN = 30;
 const WINDOW_HALF_MIN = 10;
+/** An "awake for" older than this is stale data, not a real awake window. */
+const MAX_AWAKE_MIN = 16 * 60;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const toClock = (minutes: number): string => {
@@ -67,8 +68,12 @@ export const computeDailyInsight = (events: InsightEvent[], now: Date = new Date
   const bedtimesMin: number[] = [];
   // Daytime sleep minutes bucketed per calendar day key
   const daySleepByDay = new Map<string, number>();
+  // Most recent sleep end → "awake for"
+  let lastSleepEnd: Date | null = null;
 
   for (const { start, end } of sleeps) {
+    if (end <= now && (!lastSleepEnd || end > lastSleepEnd)) lastSleepEnd = end;
+
     let startMin = start.getHours() * 60 + start.getMinutes();
     if (startMin < 4 * 60) startMin += 24 * 60; // 00:30 bedtime = "24.5h"
     const isNight = startMin >= NIGHT_START_MIN && startMin <= NIGHT_END_MIN;
@@ -82,29 +87,36 @@ export const computeDailyInsight = (events: InsightEvent[], now: Date = new Date
     }
   }
 
-  if (bedtimesMin.length < MIN_NIGHTS) {
-    return { type: 'collecting', nightsTracked: bedtimesMin.length, nightsNeeded: MIN_NIGHTS };
-  }
-
-  const avgBedtime = bedtimesMin.reduce((s, v) => s + v, 0) / bedtimesMin.length;
+  const awakeRaw = lastSleepEnd ? Math.round((now.getTime() - lastSleepEnd.getTime()) / 60000) : null;
+  const awakeForMin = awakeRaw !== null && awakeRaw >= 0 && awakeRaw <= MAX_AWAKE_MIN ? awakeRaw : null;
 
   // Today's daytime sleep vs the average of previous tracked days
   const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-  const todayDaySleep = daySleepByDay.get(todayKey) || 0;
+  const todayDaySleepMin = Math.round(daySleepByDay.get(todayKey) || 0);
   const previousDays = [...daySleepByDay.entries()].filter(([key]) => key !== todayKey).map(([, v]) => v);
-  const avgDaySleep = previousDays.length > 0
-    ? previousDays.reduce((s, v) => s + v, 0) / previousDays.length
-    : todayDaySleep;
+  const avgDaySleepMin = previousDays.length > 0
+    ? Math.round(previousDays.reduce((s, v) => s + v, 0) / previousDays.length)
+    : null;
+  const daySleepDeltaMin = avgDaySleepMin !== null ? todayDaySleepMin - avgDaySleepMin : null;
 
-  const delta = todayDaySleep - avgDaySleep;
-  const shift = Math.max(-MAX_SHIFT_MIN, Math.min(MAX_SHIFT_MIN, delta * SHIFT_RATIO));
-  const center = avgBedtime + shift;
+  let bedtimeWindow: { start: string; end: string } | null = null;
+  if (bedtimesMin.length >= MIN_NIGHTS) {
+    const avgBedtime = bedtimesMin.reduce((s, v) => s + v, 0) / bedtimesMin.length;
+    const shift = Math.max(-MAX_SHIFT_MIN, Math.min(MAX_SHIFT_MIN, (daySleepDeltaMin ?? 0) * SHIFT_RATIO));
+    const center = avgBedtime + shift;
+    bedtimeWindow = {
+      start: toClock(center - WINDOW_HALF_MIN),
+      end: toClock(center + WINDOW_HALF_MIN),
+    };
+  }
 
   return {
-    type: 'bedtime',
-    windowStart: toClock(center - WINDOW_HALF_MIN),
-    windowEnd: toClock(center + WINDOW_HALF_MIN),
-    daySleepDeltaMin: Math.round(delta),
+    awakeForMin,
+    todayDaySleepMin,
+    avgDaySleepMin,
+    daySleepDeltaMin,
+    bedtimeWindow,
     nightsTracked: bedtimesMin.length,
+    nightsNeeded: MIN_NIGHTS,
   };
 };

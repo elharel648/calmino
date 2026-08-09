@@ -2227,6 +2227,13 @@
       "daySleepMore": "El sueño diurno fue {min} min más largo que el promedio, así que dormirse puede retrasarse un poco",
       "daySleepLess": "El sueño diurno fue {min} min más corto que el promedio, así que adelantar un poco la hora puede ayudar",
       "basedOnNights": "Basado en las últimas {count} noches registradas",
-      "collecting": "Un poco más de registro y aprenderé el patrón — tras {needed} noches registradas sugeriré una hora de dormir personalizada ({tracked}/{needed})"
+      "collecting": "Un poco más de registro y aprenderé el patrón — tras {needed} noches registradas sugeriré una hora de dormir personalizada ({tracked}/{needed})",
+      "sleepingNow": "Durmiendo ahora desde hace",
+      "awakeFor": "Despierto desde hace",
+      "daySleepSoFar": "Sueño diurno hasta ahora:",
+      "aboveAvg": "{min} min sobre el promedio",
+      "belowAvg": "{min} min bajo el promedio",
+      "bedtimeShort": "Hora de dormir sugerida esta noche:",
+      "collectingShort": "Tras {needed} noches registradas sugeriré una hora de dormir ({tracked}/{needed})"
   }
 }
