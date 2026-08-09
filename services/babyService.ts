@@ -135,126 +135,6 @@ export const updateBabyData = async (babyId: string, dataToUpdate: any) => {
   await updateDoc(babyRef, dataToUpdate);
 };
 
-// --- פונקציה חדשה: הוספת רשומת יומן (עם ערך אמיתי) ---
-export const addDailyLogEntry = async (type: 'sleep' | 'food' | 'general', value: number) => {
-  const user = auth.currentUser;
-  if (!user) return;
-  await addDoc(collection(db, 'dailyLogs'), {
-    parentId: user.uid,
-    timestamp: Timestamp.now(),
-    type: type,
-    value: value, // לדוגמה: 300 מ"ל, 1.5 שעות
-  });
-};
-
-// --- פונקציה חכמה לדוחות: מחליפה את getWeeklyActivity ---
-export const getReportData = async (range: 'week' | 'month' | 'day', reportType: 'sleep' | 'food' | 'general') => {
-  const user = auth.currentUser;
-  if (!user) return { labels: [], data: [], summary: 0 };
-
-  const today = new Date();
-  let startDate: Date;
-  let labelLength: number;
-  let timeFormat: 'day' | 'hour' | 'monthDay';
-
-  if (range === 'day') {
-    // 24 שעות אחרונות
-    startDate = new Date(today.getTime() - (24 * 60 * 60 * 1000));
-    labelLength = 24;
-    timeFormat = 'hour';
-  } else if (range === 'month') {
-    // 30 ימים אחרונים
-    startDate = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
-    labelLength = 30;
-    timeFormat = 'monthDay';
-  } else { // 'week' (7 ימים אחרונים)
-    startDate = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
-    labelLength = 7;
-    timeFormat = 'day';
-  }
-
-  const q = query(
-    collection(db, 'dailyLogs'),
-    where('parentId', '==', user.uid),
-    where('type', '==', reportType), // סינון לפי סוג (שינה/אוכל)
-    where('timestamp', '>=', Timestamp.fromDate(startDate))
-  );
-
-  const snapshot = await getDocs(q);
-
-  // מבנה נתונים לסכומים יומיים/שעתיים
-  const aggregates: { [key: string]: { sum: number, count: number } } = {};
-  const dayNames = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"];
-
-  // אתחול מערך התוצאות
-  const results: { key: string, sum: number, count: number }[] = [];
-  for (let i = 0; i < labelLength; i++) {
-    const d = new Date(today.getTime() - ((labelLength - 1 - i) * 24 * 60 * 60 * 1000));
-    let key = '';
-    let label = '';
-
-    if (timeFormat === 'day') {
-      key = d.getDate().toString();
-      label = dayNames[d.getDay()];
-    } else if (timeFormat === 'monthDay') {
-      key = d.getDate().toString();
-      label = d.getDate().toString();
-    } else { // hour
-      key = (i).toString();
-      label = `${i}:00`;
-    }
-
-    aggregates[key] = { sum: 0, count: 0 };
-    results.push({ key, sum: 0, count: 0 }); // כדי לשמור על סדר נכון
-  }
-
-  // ספירת וסיכום רשומות
-  snapshot.forEach(doc => {
-    const entry = doc.data();
-    const date = entry.timestamp.toDate();
-    let key: string;
-
-    if (timeFormat === 'day') {
-      key = date.getDate().toString();
-    } else if (timeFormat === 'monthDay') {
-      key = date.getDate().toString();
-    } else { // hour
-      key = date.getHours().toString();
-    }
-
-    // מציאת הפריט המתאים במערך ה-results
-    const resultItem = results.find(item => {
-      if (timeFormat === 'day' || timeFormat === 'monthDay') return item.key === key;
-      // ל-day format אנחנו צריכים לדעת איזה יום בשבוע זה, אבל ה-key הוא רק המספר.
-      // לשם הפשטות, נסתמך על זה שהיומן מסודר כרונולוגית
-      return false; // פשוט נסמוך על הצבירה ב-aggregates
-    });
-
-    // צבירה
-    if (!aggregates[key]) {
-      aggregates[key] = { sum: 0, count: 0 };
-    }
-    aggregates[key].sum += entry.value;
-    aggregates[key].count++;
-  });
-
-  // יצירת מערך סופי לגרף (לפי ממוצע)
-  const finalLabels = Object.keys(aggregates).map(k => {
-    if (timeFormat === 'day') {
-      // מציאת יום בשבוע לפי המיקום
-      const d = new Date(today.getTime() - ((labelLength - 1 - results.findIndex(r => r.key === k)) * 24 * 60 * 60 * 1000));
-      return dayNames[d.getDay()];
-    }
-    return k;
-  });
-
-  const finalData = Object.values(aggregates).map(agg => agg.count > 0 ? parseFloat((agg.sum / agg.count).toFixed(1)) : 0);
-  const totalSum = Object.values(aggregates).reduce((total, agg) => total + agg.sum, 0);
-
-  return { labels: finalLabels, data: finalData, totalSum, totalCount: snapshot.docs.length };
-};
-
-
 // --- פונקציות קיימות (שומרות על מבנה) ---
 // NOTE: This function now accepts a Storage URL instead of base64
 // Use uploadAlbumPhoto from imageUploadService.ts to upload the image first
@@ -345,7 +225,7 @@ export const checkIfBabyExists = async (): Promise<boolean> => {
       }
     }
   } catch (e) {
-    logger.warn('checkIfBabyExists failed, returning fallback true', e);
+    logger.warn('checkIfBabyExists failed, returning fallback false', e);
   }
   
   return false;
