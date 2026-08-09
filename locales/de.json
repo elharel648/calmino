@@ -1139,6 +1139,7 @@
     "deleteBtn": "Löschen",
     "accountDeleted": "Konto gelöscht",
     "deleteError": "Löschen nicht möglich",
+    "eventNotOwner": "Nur die Person, die dieses Ereignis erfasst hat, oder ein Elternteil des Babys kann es bearbeiten oder löschen",
     "editLink": "Link bearbeiten",
     "connectNew": "Konto verbinden",
     "linkOrUsername": "Link oder Benutzername",

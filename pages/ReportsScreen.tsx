@@ -33,6 +33,7 @@ import { db } from '../services/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { format, addDays, subDays, isSameDay, startOfDay, endOfDay, subWeeks, subMonths, differenceInDays, differenceInHours } from 'date-fns';
 import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
+import { eventTimeRange } from '../utils/eventTime';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { useActiveChild } from '../context/ActiveChildContext';
 import { useTheme } from '../context/ThemeContext';
@@ -381,17 +382,21 @@ export default function ReportsScreen() {
           const hours = data.duration / 3600;
           stats.sleep += hours;
           stats.sleepCount += 1;
-          if (dayMap[dayKey]) {
-            dayMap[dayKey].sleep += hours;
-            dayMap[dayKey].sleepCount += 1;
+          // Attribute the night to when the sleep STARTED — legacy timer
+          // records are end-stamped, which shifted them onto the wrong day
+          const { start: sleepStart } = eventTimeRange({ ...data, timestamp: dateObj } as any);
+          const sleepDayKey = format(sleepStart, 'dd/MM');
+          if (dayMap[sleepDayKey]) {
+            dayMap[sleepDayKey].sleep += hours;
+            dayMap[sleepDayKey].sleepCount += 1;
           }
 
           // Track sleep patterns
-          const hour = dateObj.getHours();
+          const hour = sleepStart.getHours();
           if (hour >= 18 || hour < 6) sleepTimes.push(hour);
           if (data.duration > maxSleepDuration) maxSleepDuration = data.duration;
 
-          const dayName = format(dateObj, 'EEEE', { locale: he });
+          const dayName = format(sleepStart, 'EEEE', { locale: he });
           sleepByDay[dayName] = (sleepByDay[dayName] || 0) + hours;
         }
 

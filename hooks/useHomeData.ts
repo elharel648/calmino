@@ -6,6 +6,7 @@ import { doc, updateDoc, getDoc, getDocs, onSnapshot, collection, query, where, 
 import { db, auth } from '../services/firebaseConfig';
 import { getLastEvent, formatTimeFromTimestamp, getRecentHistory } from '../services/firebaseService';
 import { HomeDataState } from '../types/home';
+import { eventTimeRange } from '../utils/eventTime';
 import { liveActivityService } from '../services/liveActivityService';
 
 interface DailyStats {
@@ -122,9 +123,10 @@ export const useHomeData = (
                         break;
                 }
             } else if (event.type === 'sleep' && typeof event.duration === 'number' && event.duration > 0) {
-                // Overnight sleep: started before last 24h but ended within it
-                const endDate = new Date(eventDate.getTime() + event.duration * 1000);
-                if (endDate >= last24h) {
+                // Overnight sleep: started before today but ended within it
+                // (eventTimeRange resolves legacy end-stamped timer records)
+                const { end } = eventTimeRange({ ...event, timestamp: eventDate });
+                if (end >= last24h) {
                     sleepMinutes += Math.round(event.duration / 60);
                 }
             }
@@ -178,15 +180,18 @@ export const useHomeData = (
             // Calculate daily stats from history - check if user is guest
             // Get user's family and access level
             const currentUserId = auth.currentUser?.uid;
+            let historyAccessDays: number | undefined;
+
             // Guard against undefined creatorId: doc(db, 'users', '') would throw
-            // "Document path... must point to a specific document" (audit HIGH crash finding).
+            // "Document path... must point to a specific document". Only the
+            // family lookup needs it — daily stats, growth and the widget push
+            // below must still run (bailing out froze them until the next refresh).
+            const familyId = creatorId
+                ? await getDoc(doc(db, 'users', creatorId)).then(d => (d.exists() ? d.data()?.familyId : null))
+                : null;
             if (!creatorId) {
                 logger.warn('useHomeData: creatorId is undefined, skipping family lookup');
-                return;
             }
-            const userDoc = await getDoc(doc(db, 'users', creatorId));
-            const familyId = userDoc.exists() ? userDoc.data()?.familyId : null;
-            let historyAccessDays: number | undefined;
 
             if (familyId) {
                 const familyDoc = await getDoc(doc(db, 'families', familyId));

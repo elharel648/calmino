@@ -187,6 +187,13 @@ export const saveEventToFirebase = async (userId: string, childId: string, data:
       const eventRef = doc(db, EVENTS_COLLECTION, data.id);
       const updateData = { ...eventData } as any;
       delete updateData.id;
+      // Editing must not reassign the event to the editor: rewriting these
+      // changed the "reported by" badge and locked the original logger out
+      // of editing their own entry (rules match creator/userId).
+      delete updateData.userId;
+      delete updateData.creatorId;
+      delete updateData.reporterName;
+      delete updateData.reporterPhotoUrl;
       // Fire and forget to avoid hanging offline. Failures route to Crashlytics
       // (was logger.warn only) so silent data loss becomes visible in prod.
       updateDoc(eventRef, updateData).catch(e => reportDeferredWriteFailure('updateDoc(event)', e));
@@ -244,6 +251,12 @@ export const getLastEvent = async (childId: string, eventType: 'food' | 'sleep' 
       );
       const snap2 = await getDocs(q2);
       doc2 = !snap2.empty ? snap2.docs[0] : null;
+      // The fallback exists for legacy events that have no childId, so it can't
+      // filter by childId in the query — but it must not surface another child's
+      // event in a multi-child family.
+      if (doc2 && doc2.data().childId && doc2.data().childId !== childId) {
+        doc2 = null;
+      }
     }
 
     // Compare and return the latest
@@ -296,7 +309,10 @@ export const getRecentHistory = async (childId: string, _creatorId?: string, his
       where('childId', '==', childId),
       where('timestamp', '>=', startTimestamp),
       orderBy('timestamp', 'desc'),
-      limit(100) // Increased limit for more history
+      // Newborn cadence is ~25 events/day (feeds + diapers + naps), so 7 days
+      // can exceed 300 — limit(100) silently dropped the oldest days. The
+      // 7-day where-clause is the real bound; this is just a safety cap.
+      limit(500)
     );
 
     const snapshot = await getDocs(q);
@@ -366,7 +382,7 @@ export const deleteEvent = async (eventId: string) => {
   try {
     const eventRef = doc(db, EVENTS_COLLECTION, eventId);
     // Fire and forget to avoid hanging offline 
-    deleteDoc(eventRef).catch(e => logger.warn('Deferred deleteDoc failed:', e));
+    deleteDoc(eventRef).catch(e => reportDeferredWriteFailure('deleteDoc(event)', e));
     return true;
   } catch (error) {
     throw error;

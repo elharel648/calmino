@@ -1139,6 +1139,7 @@
     "deleteBtn": "Supprimer",
     "accountDeleted": "Compte supprimé",
     "deleteError": "Impossible de supprimer",
+    "eventNotOwner": "Seule la personne qui a enregistré cet événement ou un parent du bébé peut le modifier ou le supprimer",
     "editLink": "Modifier le lien",
     "connectNew": "Connecter un compte",
     "linkOrUsername": "Lien ou pseudo",

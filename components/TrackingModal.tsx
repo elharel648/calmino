@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, ScrollView, Alert, Dimensions, Keyboard } from 'react-native';
 import { X, Check, Droplets, Play, Pause, Moon, Utensils, Apple, Milk, Plus, Minus, Calendar, ChevronLeft, ChevronRight, ChevronUp, Clock, Hourglass, Timer, MessageSquare, Sparkles, Layers } from 'lucide-react-native';
 import { BreastfeedingGlyph } from './Home/quickActionsConfig';
-import { formatTimePoint } from '../utils/eventTime';
+import { formatTimePoint, clockString } from '../utils/eventTime';
 import DiaperIcon from './Common/DiaperIcon';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -998,6 +998,11 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         // Set timestamp to start time
         const startDate = new Date(selectedDate);
         startDate.setHours(startHours, startMinutes, 0, 0);
+        // Same future-start guard as sleep: a night feed logged the next
+        // morning must not be stamped hours in the future.
+        if (startDate.getTime() > Date.now()) {
+          startDate.setDate(startDate.getDate() - 1);
+        }
         data.timestamp = startDate;
 
         const h = Math.floor(durationMins / 60);
@@ -1068,6 +1073,15 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         durationText = `${t('tracking.sleepDuration')}: ${sleepContext.formatTime(sleepContext.elapsedSeconds)}`;
         data.duration = sleepContext.elapsedSeconds;
         if (sleepContext.isRunning || (sleepContext as any).isPaused) sleepContext.stop();
+        // The timer stops "now", so now is the END. Stamp the START so every
+        // consumer can uniformly compute end = timestamp + duration (legacy
+        // timer records were end-stamped, which duplicated overnight sleeps
+        // into a future day group), and persist explicit endpoints.
+        const timerEnd = new Date();
+        const timerStart = new Date(timerEnd.getTime() - sleepContext.elapsedSeconds * 1000);
+        data.timestamp = timerStart;
+        data.startTime = clockString(timerStart);
+        data.endTime = clockString(timerEnd);
       } else if (sleepMode === 'duration') {
         const totalMinutes = (sleepHours * 60) + sleepMinutes;
         if (totalMinutes > 0) {
@@ -1075,6 +1089,14 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
           const m = totalMinutes % 60;
           durationText = `${t('tracking.sleepDuration')}: ${h}:${String(m).padStart(2, '0')}`;
           data.duration = totalMinutes * 60;
+          // Only a DATE is picked in duration mode; the wall-clock time is
+          // "when it was logged", which in practice is after the wake — so
+          // treat it as the END and back-derive the start for stamping.
+          const durEnd = new Date(selectedDate);
+          const durStart = new Date(durEnd.getTime() - totalMinutes * 60 * 1000);
+          data.timestamp = durStart;
+          data.startTime = clockString(durStart);
+          data.endTime = clockString(durEnd);
         }
       } else if (sleepMode === 'timerange') {
         // Always use the Date objects as they are the source of truth
@@ -1106,6 +1128,12 @@ export default function TrackingModal({ visible, type, onClose, onSave, editingE
         // Set timestamp to start time (use selectedDate as base, then set the time)
         const startDate = new Date(selectedDate);
         startDate.setHours(startHours, startMinutes, 0, 0);
+        // Logging last night's 21:00→06:30 in the morning leaves selectedDate
+        // on "today", which would stamp a start hours in the future — the
+        // sleep then sorts as the newest event and lands on the wrong night.
+        if (startDate.getTime() > Date.now()) {
+          startDate.setDate(startDate.getDate() - 1);
+        }
         data.timestamp = startDate;
 
         const h = Math.floor(durationMins / 60);

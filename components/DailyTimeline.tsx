@@ -9,6 +9,7 @@ import { getRecentHistory, deleteEvent } from '../services/firebaseService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useFamily } from '../hooks/useFamily';
+import { useActiveChild } from '../context/ActiveChildContext';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withTiming, withRepeat, Easing, runOnJS, withSpring, Layout, ZoomOut } from 'react-native-reanimated';
 import { ANIMATIONS, TYPOGRAPHY, SPACING } from '../utils/designSystem';
 import * as Haptics from 'expo-haptics';
@@ -18,7 +19,7 @@ import { TimelineSkeleton } from './Home/SkeletonLoader';
 import SwipeableRow from './SwipeableRow';
 import { useToast } from '../context/ToastContext';
 import { logger } from '../utils/logger';
-import { buildTimeDisplay } from '../utils/eventTime';
+import { buildTimeDisplay, eventTimeRange } from '../utils/eventTime';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -329,7 +330,28 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
   const { theme, isDarkMode } = useTheme();
   const { t } = useLanguage();
   const { family } = useFamily();
+  const { activeChild } = useActiveChild();
   const { showSuccess, showError } = useToast();
+
+  // Mirrors the firestore.rules update/delete condition (creator, legacy owner
+  // fields, or the baby's parent). Firestore writes are fire-and-forget for
+  // offline support, so a server-rejected edit/delete would otherwise show
+  // "success" and silently revert on the next sync.
+  const canModifyEvent = useCallback((event: TimelineEvent) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return false;
+    if (event.userId === uid || event.creatorId === uid || event.parentId === uid) return true;
+    const eventChildId = event.childId || childId;
+    return activeChild?.parentUid === uid && activeChild?.childId === eventChildId;
+  }, [activeChild?.parentUid, activeChild?.childId, childId]);
+
+  const handleEditPress = useCallback((event: TimelineEvent) => {
+    if (!canModifyEvent(event)) {
+      showError(t('errors.eventNotOwner'));
+      return;
+    }
+    onEditEvent?.(event);
+  }, [canModifyEvent, onEditEvent, showError, t]);
 
   // Get translated TYPE_CONFIG with theme-aware colors
   const TYPE_CONFIG = {
@@ -468,9 +490,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
           // Normal check: event started today
           if (isSameDay(eventDate, today)) return true;
           // Overnight sleep: event started yesterday but ended today
+          // (eventTimeRange handles legacy end-stamped timer/duration records)
           if (event.type === 'sleep' && event.duration && event.duration > 0) {
-            const endDate = new Date(eventDate.getTime() + event.duration * 1000);
-            if (isSameDay(endDate, today)) return true;
+            const { start, end } = eventTimeRange(event as any);
+            if (isSameDay(start, today) || isSameDay(end, today)) return true;
           }
           return false;
         });
@@ -519,16 +542,21 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
 
     events.forEach(event => {
       const date = new Date(event.timestamp);
-      // Always add to the start day
+      // Always add to the stamped day
       addToDay(date, event);
 
-      // Overnight sleep: also add to the end day
+      // Overnight sleep: also add to the other day it touches.
+      // eventTimeRange resolves the real start/end (legacy timer/duration
+      // records are end-stamped) so a late-evening sleep is never duplicated
+      // into a future-dated group.
       if (event.type === 'sleep' && event.duration && event.duration > 0) {
-        const endDate = new Date(date.getTime() + event.duration * 1000);
-        if (endDate.getDate() !== date.getDate() ||
-            endDate.getMonth() !== date.getMonth() ||
-            endDate.getFullYear() !== date.getFullYear()) {
-          addToDay(endDate, event);
+        const { start, end } = eventTimeRange(event as any);
+        for (const boundary of [start, end]) {
+          if (boundary.getDate() !== date.getDate() ||
+              boundary.getMonth() !== date.getMonth() ||
+              boundary.getFullYear() !== date.getFullYear()) {
+            addToDay(boundary, event);
+          }
         }
       }
     });
@@ -970,12 +998,12 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                         >
                           <PremiumTimelineEvent isRecent={isRecentEvent(event.timestamp)}>
                             <SwipeableRow
-                              onDelete={triggerDelete}
+                              onDelete={canModifyEvent(event) ? triggerDelete : undefined}
                             >
                             {/* Pill-timeline row — same design as the home "סדר היום" */}
                             <TouchableOpacity
                               activeOpacity={0.65}
-                              onPress={() => onEditEvent?.(event)}
+                              onPress={() => handleEditPress(event)}
                               style={[styles.elegantEventRow, { minHeight: pillHeight + 28 }]}
                             >
                               {/* RIGHT (RTL: first in JSX): rail + capsule pill */}
@@ -1101,10 +1129,10 @@ const DailyTimeline = memo<DailyTimelineProps>(({ refreshTrigger = 0, childId = 
                     entering={ANIMATIONS.springUp(ANIMATIONS.stagger(index, 40))}
                   >
                     <PremiumTimelineEvent isRecent={isRecent}>
-                      <SwipeableRow onDelete={triggerDelete}>
+                      <SwipeableRow onDelete={canModifyEvent(event) ? triggerDelete : undefined}>
                   <TouchableOpacity
                     activeOpacity={0.65}
-                    onPress={() => onEditEvent?.(event)}
+                    onPress={() => handleEditPress(event)}
                     style={[styles.elegantEventRow, { minHeight: pillHeight + 28 }]}
                   >
                     {/* MIDDLE: TRACK */}

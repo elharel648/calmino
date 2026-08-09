@@ -1965,6 +1965,7 @@
     "deleteBtn": "Delete",
     "accountDeleted": "Sitter account deleted. You can register again anytime.",
     "deleteError": "Could not delete, try again",
+    "eventNotOwner": "Only the person who logged this event or the baby's parent can edit or delete it",
     "editLink": "Edit profile link",
     "connectNew": "Connect new account",
     "linkOrUsername": "Link or username",

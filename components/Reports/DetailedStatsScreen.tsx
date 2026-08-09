@@ -17,6 +17,7 @@ import DiaperIcon from '../Common/DiaperIcon';
 import * as Haptics from 'expo-haptics';
 import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, eachWeekOfInterval, differenceInHours } from 'date-fns';
 import { he, enUS, es, ar, fr, de } from 'date-fns/locale';
+import { eventTimeRange } from '../../utils/eventTime';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
@@ -295,7 +296,13 @@ export default function DetailedStatsScreen({
                     const segments: { value: number; color: string }[] = [];
 
                     if (metricType === 'sleep') {
-                        dayEvents.filter((e: any) => e.type === 'sleep').forEach((e: any, i: number) => {
+                        // Sleep is attributed to the day it STARTED — eventTimeRange
+                        // resolves legacy end-stamped timer records too
+                        events.filter((e: any) => {
+                            if (e.type !== 'sleep') return false;
+                            const { start } = eventTimeRange({ ...e, timestamp: new Date(e.timestamp) });
+                            return start >= dayStart && start <= dayEnd;
+                        }).forEach((e: any, i: number) => {
                             const hours = (e.duration || 0) / 3600;
                             value += hours;
                             segments.push({

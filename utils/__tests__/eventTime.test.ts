@@ -1,4 +1,4 @@
-import { clockString, formatTimePoint, buildTimeDisplay } from '../eventTime';
+import { clockString, formatTimePoint, buildTimeDisplay, eventTimeRange } from '../eventTime';
 
 // Build a local Date at a given wall-clock time (today's date, deterministic clock)
 const at = (h: number, m: number) => {
@@ -97,5 +97,38 @@ describe('buildTimeDisplay', () => {
 
   it('one-sided range (start only) falls back to the single time', () => {
     expect(buildTimeDisplay({ startTime: '09:00' }, '09:00')).toBe('09:00');
+  });
+});
+
+describe('eventTimeRange', () => {
+  it('start-stamped event with explicit endpoints: end = timestamp + duration', () => {
+    const ts = at(21, 0);
+    const { start, end } = eventTimeRange({
+      timestamp: ts, duration: 2 * 3600, startTime: '21:00', endTime: '23:00',
+    });
+    expect(start.getTime()).toBe(ts.getTime());
+    expect(end.getTime()).toBe(ts.getTime() + 2 * 3600 * 1000);
+  });
+
+  it('legacy end-stamped record (duration, no endpoints): start = timestamp - duration', () => {
+    // 2.5h timer sleep stopped at 23:30 — must NOT roll into tomorrow
+    const ts = at(23, 30);
+    const { start, end } = eventTimeRange({ timestamp: ts, duration: 2.5 * 3600 });
+    expect(end.getTime()).toBe(ts.getTime());
+    expect(start.getTime()).toBe(ts.getTime() - 2.5 * 3600 * 1000);
+    expect(end.getDate()).toBe(ts.getDate()); // same day, no future group
+  });
+
+  it('event without duration: start = end = timestamp', () => {
+    const ts = at(10, 15);
+    const { start, end } = eventTimeRange({ timestamp: ts });
+    expect(start.getTime()).toBe(ts.getTime());
+    expect(end.getTime()).toBe(ts.getTime());
+  });
+
+  it('one-sided explicit endpoint still counts as start-stamped', () => {
+    const ts = at(9, 0);
+    const { start } = eventTimeRange({ timestamp: ts, duration: 3600, startTime: '09:00' });
+    expect(start.getTime()).toBe(ts.getTime());
   });
 });

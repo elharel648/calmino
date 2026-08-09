@@ -36,6 +36,31 @@ export const formatTimePoint = (v: unknown): string | null => {
  *   (timer saves stamp `timestamp` at stop, i.e. the END of the event)
  * - otherwise → the provided single-time fallback
  */
+/**
+ * Resolve an event's actual [start, end] Dates from its stored fields.
+ *
+ * New events (TrackingModal, all modes) stamp `timestamp` at the START and
+ * carry explicit "HH:MM" startTime/endTime. Legacy timer/duration records
+ * have a duration but no startTime/endTime, and their `timestamp` was taken
+ * when the entry was logged — i.e. at the END of the event. Treating those
+ * as start-stamped is what duplicated overnight sleeps into a future-dated
+ * day group, so they are detected here and shifted back by their duration.
+ */
+export const eventTimeRange = (event: {
+  timestamp: Date;
+  duration?: number;
+  startTime?: unknown;
+  endTime?: unknown;
+}): { start: Date; end: Date } => {
+  const durationMs = (event.duration || 0) * 1000;
+  const hasExplicitEnds = !!formatTimePoint(event.startTime) || !!formatTimePoint(event.endTime);
+  if (!hasExplicitEnds && durationMs > 0) {
+    // Legacy end-stamped record
+    return { start: new Date(event.timestamp.getTime() - durationMs), end: new Date(event.timestamp) };
+  }
+  return { start: new Date(event.timestamp), end: new Date(event.timestamp.getTime() + durationMs) };
+};
+
 export const buildTimeDisplay = (
   event: { startTime?: unknown; endTime?: unknown; duration?: number; timestamp?: unknown },
   timeStr: string,

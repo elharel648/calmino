@@ -1139,6 +1139,7 @@
     "deleteBtn": "حذف",
     "accountDeleted": "تم الحذف",
     "deleteError": "تعذر الحذف",
+    "eventNotOwner": "فقط من سجّل هذا الحدث أو والد الطفل يمكنه تعديله أو حذفه",
     "editLink": "تعديل الرابط",
     "connectNew": "ربط حساب",
     "linkOrUsername": "رابط أو اسم مستخدم",
