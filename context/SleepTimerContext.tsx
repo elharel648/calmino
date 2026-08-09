@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import quickActionsService from '../services/quickActionsService';
 import { liveActivityService } from '../services/liveActivityService';
 import { useActiveChild } from '../context/ActiveChildContext';
+import { analyticsSleepTimerStarted } from '../services/analyticsService';
 
 // Module-level emitter for Live Activity intent events (mirrors AudioContext.tsx pattern)
 let _activityKitEmitter: any = null;
@@ -148,6 +149,7 @@ export const SleepTimerProvider = ({ children }: SleepTimerProviderProps) => {
             elapsedSeconds: 0,
         });
         persistSleep(activeChildId, { isRunning: true, isPaused: false, elapsedSeconds: 0 });
+        analyticsSleepTimerStarted();
 
         // Start Live Activity / Android Notification in background (fire-and-forget)
         if (Platform.OS === 'ios' && activeChild) {

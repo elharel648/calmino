@@ -40,8 +40,45 @@ export const clearAnalyticsUser = () => {
 };
 
 // Baby events
-export const analyticsLogBabyEvent = (eventType: string) =>
+export const analyticsLogBabyEvent = (eventType: string) => {
   track('log_baby_event', { event_type: eventType });
+  markFirstTrackingEvent(eventType);
+};
+
+// ── Product funnel events ───────────────────────────────────────────
+// The activation funnel we actually measure:
+// first_open (auto) → sign_up → baby_created → first_tracking_event →
+// log_baby_event (repeat) → paywall_viewed → subscription_started
+
+export const analyticsBabyCreated = () =>
+  track('baby_created');
+
+// Fired once per install, alongside the first log_baby_event — a better
+// activation marker than app opens ("did they actually use the product?")
+const FIRST_TRACKING_KEY = 'analytics_first_tracking_logged';
+const markFirstTrackingEvent = async (eventType: string) => {
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const already = await AsyncStorage.getItem(FIRST_TRACKING_KEY);
+    if (already) return;
+    await AsyncStorage.setItem(FIRST_TRACKING_KEY, '1');
+    track('first_tracking_event', { event_type: eventType });
+  } catch {
+    // Never let analytics break tracking
+  }
+};
+
+export const analyticsPaywallViewed = (source: string) =>
+  track('paywall_viewed', { source });
+
+export const analyticsSubscriptionStarted = (plan: string) =>
+  track('subscription_started', { plan });
+
+export const analyticsSleepTimerStarted = () =>
+  track('sleep_timer_started');
+
+export const analyticsDailyInsightViewed = (insightType: string) =>
+  track('daily_insight_viewed', { insight_type: insightType });
 
 // Account
 export const analyticsDeleteAccount = () =>

@@ -24,6 +24,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useGuest } from '../context/GuestContext';
 import JoinFamilyModal from '../components/Family/JoinFamilyModal';
 import { TYPOGRAPHY, SPACING } from '../utils/designSystem';
+import { analyticsBabyCreated } from '../services/analyticsService';
 
 type BabyProfileScreenProps = {
   onProfileSaved: () => void;
@@ -80,6 +81,7 @@ export default function BabyProfileScreen({ onProfileSaved, onSkip, onClose }: B
 
     try {
       await saveBabyProfile(name, lastName, birthDate, gender);
+      analyticsBabyCreated();
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (onProfileSaved) {
         onProfileSaved();

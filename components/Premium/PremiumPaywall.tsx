@@ -19,6 +19,7 @@ import { BlurView } from 'expo-blur';
 import Animated from 'react-native-reanimated';
 import { ANIMATIONS } from '../../utils/designSystem';
 import { initRemoteConfig, getPaywallConfig } from '../../services/remoteConfigService';
+import { analyticsPaywallViewed, analyticsSubscriptionStarted } from '../../services/analyticsService';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface PremiumPaywallProps {
@@ -48,6 +49,10 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
         initRemoteConfig().then(() => setRc(getPaywallConfig()));
     }, []);
 
+    useEffect(() => {
+        if (visible) analyticsPaywallViewed(trigger || 'unknown');
+    }, [visible, trigger]);
+
     const monthlyPackage = offerings?.current?.monthly;
     const annualPackage = offerings?.current?.annual;
 
@@ -64,6 +69,7 @@ const PremiumPaywall: React.FC<PremiumPaywallProps> = ({ visible, onClose, trigg
         try {
             const success = await purchase(pkg);
             if (success) {
+                analyticsSubscriptionStarted(selectedPlan);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert(t('premium.welcomeTitle'), t('premium.welcomeMsg'), [
                     { text: t('premium.excellent'), onPress: onClose }
