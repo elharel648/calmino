@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, I18nManager } from 'react-native';
 import { Moon, Sun, Sparkles, BedDouble } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
@@ -25,8 +25,18 @@ const asClockDuration = (minutes: number): string => {
 
 const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps) => {
   const { theme, isDarkMode } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const sleepTimer = useSleepTimer();
+
+  // When the system layout direction (I18nManager) already matches the app
+  // language, RN flips rows and left/right styles by itself; when it doesn't
+  // (e.g. RTL language before the restart that applies forceRTL), flip manually.
+  const rowDirection = I18nManager.isRTL === isRTL
+    ? ('row' as const)
+    : ('row-reverse' as const);
+  const textAlign = I18nManager.isRTL
+    ? ('left' as const) // remapped to physical right by RN under RTL
+    : isRTL ? ('right' as const) : ('left' as const);
   const [insight, setInsight] = useState<DailyInsight | null>(null);
   const logged = useRef(false);
   // Re-render each minute so the live "awake for" / "sleeping for" row ticks
@@ -94,19 +104,19 @@ const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps
         borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
       }]}
     >
-      <View style={styles.headerRow}>
+      <View style={[styles.headerRow, { flexDirection: rowDirection }]}>
         <View style={[styles.iconWrap, { backgroundColor: `${sleepAccent}1F` }]}>
           <Sparkles size={16} color={sleepAccent} strokeWidth={2} />
         </View>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>
+        <Text style={[styles.title, { color: theme.textPrimary, textAlign }]}>
           {t('insight.title')}
         </Text>
       </View>
 
       {statusRow && (
-        <View style={styles.row}>
+        <View style={[styles.row, { flexDirection: rowDirection }]}>
           {statusRow.icon}
-          <Text style={[styles.rowText, { color: theme.textPrimary }]}>
+          <Text style={[styles.rowText, { color: theme.textPrimary, textAlign }]}>
             {statusRow.text}{' '}
             <Text style={[styles.rowStrong, { color: theme.textPrimary }]}>{statusRow.strong}</Text>
           </Text>
@@ -114,9 +124,9 @@ const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps
       )}
 
       {showDayRow && (
-        <View style={styles.row}>
+        <View style={[styles.row, { flexDirection: rowDirection }]}>
           <Sun size={17} color={theme.textTertiary} strokeWidth={2} />
-          <Text style={[styles.rowText, { color: theme.textPrimary }]}>
+          <Text style={[styles.rowText, { color: theme.textPrimary, textAlign }]}>
             {t('insight.daySleepSoFar')}{' '}
             <Text style={[styles.rowStrong, { color: theme.textPrimary }]}>
               {asClockDuration(insight.todayDaySleepMin)}
@@ -127,9 +137,9 @@ const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps
       )}
 
       {insight.bedtimeWindow ? (
-        <View style={styles.row}>
+        <View style={[styles.row, { flexDirection: rowDirection }]}>
           <BedDouble size={17} color={sleepAccent} strokeWidth={2} />
-          <Text style={[styles.rowText, { color: theme.textPrimary }]}>
+          <Text style={[styles.rowText, { color: theme.textPrimary, textAlign }]}>
             {t('insight.bedtimeShort')}{' '}
             <Text style={[styles.rowStrong, { color: sleepAccent }]}>
               {insight.bedtimeWindow.start}–{insight.bedtimeWindow.end}
@@ -137,16 +147,16 @@ const DailyInsightCard = ({ childId, refreshTrigger = 0 }: DailyInsightCardProps
           </Text>
         </View>
       ) : (
-        <View style={styles.row}>
+        <View style={[styles.row, { flexDirection: rowDirection }]}>
           <BedDouble size={17} color={theme.textTertiary} strokeWidth={2} />
-          <Text style={[styles.rowText, { color: theme.textSecondary }]}>
+          <Text style={[styles.rowText, { color: theme.textSecondary, textAlign }]}>
             {t('insight.collectingShort', { tracked: insight.nightsTracked, needed: insight.nightsNeeded })}
           </Text>
         </View>
       )}
 
       {insight.bedtimeWindow && (
-        <Text style={[styles.trustLine, { color: theme.textTertiary }]}>
+        <Text style={[styles.trustLine, { color: theme.textTertiary, textAlign }]}>
           {t('insight.basedOnNights', { count: insight.nightsTracked })}
         </Text>
       )}
