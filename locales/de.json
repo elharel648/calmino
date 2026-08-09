@@ -2234,6 +2234,7 @@
       "aboveAvg": "{min} Min. über dem Durchschnitt",
       "belowAvg": "{min} Min. unter dem Durchschnitt",
       "bedtimeShort": "Empfohlene Schlafenszeit heute:",
-      "collectingShort": "Nach {needed} erfassten Nächten schlage ich eine Schlafenszeit vor ({tracked}/{needed})"
+      "collectingShort": "Nach {needed} erfassten Nächten schlage ich eine Schlafenszeit vor ({tracked}/{needed})",
+      "daySleepLabel": "Tagschlaf heute"
   }
 }

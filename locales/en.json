@@ -2321,6 +2321,7 @@
       "aboveAvg": "{min} min above average",
       "belowAvg": "{min} min below average",
       "bedtimeShort": "Suggested bedtime tonight:",
-      "collectingShort": "{needed} tracked nights and I'll suggest a bedtime ({tracked}/{needed})"
+      "collectingShort": "{needed} tracked nights and I'll suggest a bedtime ({tracked}/{needed})",
+      "daySleepLabel": "Day sleep today"
   }
 }

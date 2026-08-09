@@ -2323,6 +2323,7 @@
       "aboveAvg": "{min} דק' מעל הממוצע",
       "belowAvg": "{min} דק' מתחת לממוצע",
       "bedtimeShort": "שעת שינה מומלצת הערב:",
-      "collectingShort": "עוד {needed} לילות מתועדים ואמליץ על שעת שינה ({tracked}/{needed})"
+      "collectingShort": "עוד {needed} לילות מתועדים ואמליץ על שעת שינה ({tracked}/{needed})",
+      "daySleepLabel": "שנת יום היום"
   }
 }

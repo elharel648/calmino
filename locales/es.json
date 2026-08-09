@@ -2234,6 +2234,7 @@
       "aboveAvg": "{min} min sobre el promedio",
       "belowAvg": "{min} min bajo el promedio",
       "bedtimeShort": "Hora de dormir sugerida esta noche:",
-      "collectingShort": "Tras {needed} noches registradas sugeriré una hora de dormir ({tracked}/{needed})"
+      "collectingShort": "Tras {needed} noches registradas sugeriré una hora de dormir ({tracked}/{needed})",
+      "daySleepLabel": "Sueño diurno hoy"
   }
 }

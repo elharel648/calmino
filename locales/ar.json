@@ -2234,6 +2234,7 @@
       "aboveAvg": "{min} دقيقة فوق المعدل",
       "belowAvg": "{min} دقيقة تحت المعدل",
       "bedtimeShort": "وقت النوم المقترح الليلة:",
-      "collectingShort": "بعد {needed} ليالٍ مسجلة سأقترح وقت النوم ({tracked}/{needed})"
+      "collectingShort": "بعد {needed} ليالٍ مسجلة سأقترح وقت النوم ({tracked}/{needed})",
+      "daySleepLabel": "نوم النهار اليوم"
   }
 }

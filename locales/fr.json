@@ -2234,6 +2234,7 @@
       "aboveAvg": "{min} min au-dessus de la moyenne",
       "belowAvg": "{min} min en dessous de la moyenne",
       "bedtimeShort": "Coucher suggéré ce soir :",
-      "collectingShort": "Après {needed} nuits suivies, je suggérerai une heure de coucher ({tracked}/{needed})"
+      "collectingShort": "Après {needed} nuits suivies, je suggérerai une heure de coucher ({tracked}/{needed})",
+      "daySleepLabel": "Sommeil de jour"
   }
 }
