@@ -98,7 +98,16 @@
               "com.googleusercontent.apps.16421819020-muvdskd7ppjnfcrnal4lsra01pqjr505"
             ]
           }
-        ]
+        ],
+        "CFBundleLocalizations": [
+          "he",
+          "en",
+          "ar",
+          "de",
+          "es",
+          "fr"
+        ],
+        "CFBundleDevelopmentRegion": "he"
       }
     },
     "android": {
