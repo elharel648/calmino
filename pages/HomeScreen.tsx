@@ -18,7 +18,6 @@ import { useGuest } from '../context/GuestContext';
 // Components
 import HeaderSection from '../components/Home/HeaderSection';
 import QuickActions from '../components/Home/QuickActions';
-import DailyInsightCard from '../components/Home/DailyInsightCard';
 import { clockString } from '../utils/eventTime';
 import ShareStatusButton from '../components/Home/ShareStatusButton';
 import HealthCard from '../components/Home/HealthCard';
@@ -654,11 +653,6 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
                             </View>
 
                             <HealthCard dynamicStyles={dynamicStyles} visible={isHealthOpen} onClose={() => { setIsHealthOpen(false); setHealthInitialScreen('menu'); }} initialScreen={healthInitialScreen} />
-
-                            <DailyInsightCard
-                                childId={profile.id}
-                                refreshTrigger={timelineRefresh}
-                            />
 
                             <DailyTimeline
                                 refreshTrigger={timelineRefresh}

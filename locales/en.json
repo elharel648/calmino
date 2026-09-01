@@ -2307,21 +2307,5 @@
     "reminderBody": "Time to take {name} ({dosage})",
     "dosageNote": "Dosage: {dosage}",
     "calendarNotes": "Dosage: {dosage}{notes}\n\n⚠️ General information only. Consult a doctor."
-  },
-  "insight": {
-      "title": "Daily insight",
-      "bedtimeSuggestion": "Based on today's sleep, tonight's suggested bedtime: {start}–{end}",
-      "daySleepMore": "Daytime sleep ran {min} min above average, so falling asleep may drift a little later",
-      "daySleepLess": "Daytime sleep ran {min} min below average, so a slightly earlier bedtime may help",
-      "basedOnNights": "Based on the last {count} tracked nights",
-      "collecting": "A little more tracking and I'll learn the pattern — after {needed} tracked nights I'll suggest a personalized bedtime ({tracked}/{needed})",
-      "sleepingNow": "Sleeping now for",
-      "awakeFor": "Awake for",
-      "daySleepSoFar": "Day sleep so far:",
-      "aboveAvg": "{min} min above average",
-      "belowAvg": "{min} min below average",
-      "bedtimeShort": "Suggested bedtime tonight:",
-      "collectingShort": "{needed} tracked nights and I'll suggest a bedtime ({tracked}/{needed})",
-      "daySleepLabel": "Day sleep today"
   }
 }

@@ -77,9 +77,6 @@ export const analyticsSubscriptionStarted = (plan: string) =>
 export const analyticsSleepTimerStarted = () =>
   track('sleep_timer_started');
 
-export const analyticsDailyInsightViewed = (insightType: string) =>
-  track('daily_insight_viewed', { insight_type: insightType });
-
 // Account
 export const analyticsDeleteAccount = () =>
   track('delete_account');

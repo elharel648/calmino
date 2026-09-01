@@ -2220,21 +2220,5 @@
     "reminderBody": "حان وقت أخذ {name} ({dosage})",
     "dosageNote": "الجرعة: {dosage}",
     "calendarNotes": "الجرعة: {dosage}{notes}\n\n⚠️ معلومات عامة فقط. استشر الطبيب."
-  },
-  "insight": {
-      "title": "رؤية اليوم",
-      "bedtimeSuggestion": "استنادًا إلى نوم اليوم، وقت النوم المقترح الليلة: {start}–{end}",
-      "daySleepMore": "نوم النهار أطول بـ {min} دقيقة من المعدل، لذا قد يتأخر النوم قليلًا",
-      "daySleepLess": "نوم النهار أقصر بـ {min} دقيقة من المعدل، لذا قد يفيد تقديم وقت النوم قليلًا",
-      "basedOnNights": "استنادًا إلى آخر {count} ليالٍ مسجلة",
-      "collecting": "القليل من التتبع بعد وسأتعلم النمط — بعد {needed} ليالٍ مسجلة سأقترح وقت نوم مخصصًا ({tracked}/{needed})",
-      "sleepingNow": "نائم الآن منذ",
-      "awakeFor": "مستيقظ منذ",
-      "daySleepSoFar": "نوم النهار حتى الآن:",
-      "aboveAvg": "{min} دقيقة فوق المعدل",
-      "belowAvg": "{min} دقيقة تحت المعدل",
-      "bedtimeShort": "وقت النوم المقترح الليلة:",
-      "collectingShort": "بعد {needed} ليالٍ مسجلة سأقترح وقت النوم ({tracked}/{needed})",
-      "daySleepLabel": "نوم النهار اليوم"
   }
 }
