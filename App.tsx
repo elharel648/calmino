@@ -98,6 +98,7 @@ import OnboardingCarousel, { ONBOARDING_KEY } from './components/Onboarding/Onbo
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { checkIfBabyExists } from './services/babyService';
+import { waitForSignup } from './services/signupGate';
 import { SleepTimerProvider, useSleepTimer } from './context/SleepTimerContext';
 import { FoodTimerProvider, useFoodTimer } from './context/FoodTimerContext';
 import { saveEventToFirebase } from './services/firebaseService';
@@ -123,15 +124,13 @@ import Reanimated, {
   Easing,
 } from 'react-native-reanimated';
 import { navigationRef, navigateFromNotification } from './services/navigationService';
-import { registerForPushNotifications } from './services/pushNotificationService';
+import { hasLoggedFirstEvent, requestTrackingPermission, setupPushIfActivated } from './services/activationService';
 import * as Notifications from 'expo-notifications';
 import { notificationStorageService } from './services/notificationStorageService';
-import { notificationService } from './services/notificationService';
 import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
 import analytics from '@react-native-firebase/analytics';
 import { setAnalyticsUser, clearAnalyticsUser } from './services/analyticsService';
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 
 // --- Android Foreground Service Registration (Disabled) ---
 // if (Platform.OS === 'android' && NativeModules.NotifeeApiModule) {
@@ -371,6 +370,12 @@ function MainAppNavigator() {
           sceneStyle: { backgroundColor: '#F8F6F4' },
         }}
         {...(isAndroid && { tabBar: (props: any) => <LiquidGlassTabBar {...props} /> })}
+        // Pin the native iOS tab bar to LTR. Since 1.2.3 declares Hebrew in
+        // CFBundleLocalizations, its default 'locale' direction became RTL and
+        // mirrored the SwiftUI bar on top of our LTR-locked RN root (see the
+        // I18nManager lock at the top) — Account/Reports taps stopped landing.
+        // tabScreens already reverses the order manually for RTL languages.
+        {...(!isAndroid && { layoutDirection: 'ltr' as const })}
       >
         {tabScreens}
       </Tab.Navigator>
@@ -834,11 +839,8 @@ export default function App() {
   useEffect(() => {
     if (Platform.OS !== 'ios' || showAnimatedSplash || !user) return;
     const timer = setTimeout(async () => {
-      try {
-        await requestTrackingPermissionsAsync();
-      } catch (e) {
-        logger.warn('ATT request failed:', e);
-      }
+      // New users are asked after their first log (activationService)
+      if (await hasLoggedFirstEvent()) await requestTrackingPermission();
     }, 1000);
     return () => clearTimeout(timer);
   }, [showAnimatedSplash, user]);
@@ -1095,49 +1097,29 @@ export default function App() {
           }
         }
 
-        // OAuth providers (Apple, Google) verify identity at provider level
-        // Only require emailVerified for email/password accounts
+        // Email/password users get in before verifying their email: blocking
+        // here stranded ~40% of email signups. The verification email is still
+        // sent at signup, and Firestore rules don't depend on email_verified.
         if (currentUser) {
-          const isOAuthUser = currentUser.providerData.some(
-            p => p.providerId === 'apple.com' || p.providerId === 'google.com'
-          );
-          if (currentUser.emailVerified || isOAuthUser) {
-            setHasBabyProfile(null); // Ensure no flicker of BabyProfileScreen while fetching
-            setUser(currentUser);
-            setAnalyticsUser(currentUser.uid, currentUser.displayName || undefined);
-            try {
-              await checkBiometricSettingsAndProfile(currentUser.uid);
-            } catch (e) {
-              // Don't let a transient Firestore error block the auth flow.
-              // checkBiometricSettingsAndProfile is responsible for releasing the
-              // splash on its own success path.
-              logger.error('checkBiometricSettingsAndProfile failed:', e);
-              setIsAppLoading(false);
-            }
-
-            // Register for push notifications
-            registerForPushNotifications().catch((err) => {
-              logger.log('Push registration:', err);
-            });
-
-            // Initialize notification service and schedule recurring reminders (once per login)
-            notificationService.initialize().then((success) => {
-              if (success) {
-                notificationService.scheduleSupplementReminder();
-                notificationService.scheduleSleepReminder();
-                notificationService.scheduleDailySummary();
-              }
-            }).catch((err) => {
-              logger.log('Notification init:', err);
-            });
-          } else {
-            // Email/password user who hasn't verified email yet
-            setChildrenReady(false);
-            setUser(null);
-            setHasBabyProfile(null);
-            setIsLocked(false);
+          // A fresh email signup is still saving the profile and joining the
+          // invite family; checking for a baby before it lands misroutes partners.
+          await waitForSignup();
+          setHasBabyProfile(null); // Ensure no flicker of BabyProfileScreen while fetching
+          setUser(currentUser);
+          setAnalyticsUser(currentUser.uid, currentUser.displayName || undefined);
+          try {
+            await checkBiometricSettingsAndProfile(currentUser.uid);
+          } catch (e) {
+            // Don't let a transient Firestore error block the auth flow.
+            // checkBiometricSettingsAndProfile is responsible for releasing the
+            // splash on its own success path.
+            logger.error('checkBiometricSettingsAndProfile failed:', e);
             setIsAppLoading(false);
           }
+
+          // Push + recurring reminders (once per login). New users get the
+          // permission prompt after their first log instead — see activationService.
+          setupPushIfActivated();
         } else {
           clearAnalyticsUser();
           setChildrenReady(false);
@@ -1157,7 +1139,7 @@ export default function App() {
 
   // Set up global presence tracking when user is logged in
   useEffect(() => {
-    if (user && user.emailVerified) {
+    if (user) {
       const cleanupPresence = setupGlobalPresenceListener();
       return () => {
         cleanupPresence();
@@ -1203,8 +1185,12 @@ export default function App() {
         }
       }
 
-      // 2000ms timeout for checking baby exists, defaults to true (assuming returning users mostly have babies)
-      const babyExists = await fetchWithTimeout(checkIfBabyExists(), 2000, true);
+      // Returning users: 2000ms timeout, defaults to true (they mostly have babies).
+      // New accounts: wait longer and default to false — defaulting to true on a
+      // slow network skipped baby creation and dropped them on an empty Home.
+      const created = Date.parse(auth.currentUser?.metadata.creationTime || '');
+      const isNewAccount = !isNaN(created) && Date.now() - created < 24 * 60 * 60 * 1000;
+      const babyExists = await fetchWithTimeout(checkIfBabyExists(), isNewAccount ? 8000 : 2000, !isNewAccount);
       setHasBabyProfile(babyExists);
       setIsAppLoading(false);
       if (needsUnlock) setTimeout(() => authenticateUser(), 100);

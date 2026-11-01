@@ -55,7 +55,7 @@ export const analyticsBabyCreated = () =>
 
 // Fired once per install, alongside the first log_baby_event — a better
 // activation marker than app opens ("did they actually use the product?")
-const FIRST_TRACKING_KEY = 'analytics_first_tracking_logged';
+export const FIRST_TRACKING_KEY = 'analytics_first_tracking_logged';
 const markFirstTrackingEvent = async (eventType: string) => {
   try {
     const AsyncStorage = require('@react-native-async-storage/async-storage').default;
@@ -63,6 +63,8 @@ const markFirstTrackingEvent = async (eventType: string) => {
     if (already) return;
     await AsyncStorage.setItem(FIRST_TRACKING_KEY, '1');
     track('first_tracking_event', { event_type: eventType });
+    // Lazy require: activationService imports this module
+    require('./activationService').requestDeferredPermissions();
   } catch {
     // Never let analytics break tracking
   }

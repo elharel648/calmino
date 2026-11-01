@@ -41,6 +41,7 @@ import {
 import { auth, db, callFirebaseFunction } from '../services/firebaseConfig';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { joinFamily } from '../services/familyService';
+import { beginSignup } from '../services/signupGate';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
@@ -165,7 +166,6 @@ export default function LoginScreen({
 
   // Confetti celebration
   const [showConfetti, setShowConfetti] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [agreedToAge, setAgreedToAge] = useState(false);
 
@@ -405,55 +405,12 @@ export default function LoginScreen({
     }
 
     setLoading(true);
+    let endSignup: (() => void) | undefined;
 
     try {
       if (isLogin) {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        let user = userCredential.user;
-        await user.reload(); // Refresh user data to get latest emailVerified status
-
-        if (!user.emailVerified) {
-          setLoading(false);
-          Alert.alert(
-            t('auth.emailVerificationRequired'),
-            t('auth.emailVerificationMessage'),
-            [
-              {
-                text: t('auth.resendEmail'),
-                onPress: async () => {
-                  try {
-                    await callFirebaseFunction('sendVerificationEmail', { email: user.email });
-                    Alert.alert(t('auth.emailSent'), t('auth.emailSentMessage'));
-                  } catch (e) {
-                    Alert.alert(t('common.error'), t('auth.cannotSendEmail'));
-                  }
-                }
-              },
-              {
-                text: t('auth.verifiedLogin'),
-                onPress: async () => {
-                  setLoading(true);
-                  try {
-                    await user.reload();
-                    if (user.emailVerified) {
-                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      setAttempts(0);
-                      onLoginSuccess();
-                    } else {
-                      setLoading(false);
-                      Alert.alert(t('auth.notVerifiedYet'), t('auth.notVerifiedMessage'));
-                    }
-                  } catch (error) {
-                    setLoading(false);
-                    Alert.alert(t('common.error'), t('auth.verificationError'));
-                  }
-                }
-              },
-              { text: t('common.cancel'), style: 'cancel', onPress: () => auth.signOut() }
-            ]
-          );
-          return;
-        }
+        // Unverified email users are let in too (App.tsx no longer gates on it)
+        await signInWithEmailAndPassword(auth, email, password);
 
         analyticsLogin('email');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -474,11 +431,18 @@ export default function LoginScreen({
           return;
         }
 
+        // Keep App from entering until the profile is saved and the family joined
+        endSignup = beginSignup();
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         analyticsSignUp('email');
         metaLogCompleteRegistration('email');
         await updateProfile(userCredential.user, { displayName: displayName.trim() });
-        await callFirebaseFunction('sendVerificationEmail', { email: email.trim() });
+        // The account already exists: a failed email shouldn't read as a failed signup
+        try {
+          await callFirebaseFunction('sendVerificationEmail', { email: email.trim() });
+        } catch (e) {
+          logger.warn('sendVerificationEmail failed:', e);
+        }
 
         // Save user agreement and profile to Firestore
         const userRef = doc(db, 'users', userCredential.user.uid);
@@ -514,12 +478,10 @@ export default function LoginScreen({
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setLoading(false);
-        setShowConfetti(true);
-
-        // Sign out immediately so they have to log in (and trigger the verification check)
-        await auth.signOut();
-
-        setShowSuccessModal(true);
+        // Stay signed in — App lets unverified users straight in to create
+        // their baby profile; the verification email was sent above. No toast
+        // here: this screen unmounts as soon as endSignup() lets App in.
+        onLoginSuccess();
       }
     } catch (error: any) {
       // Error logged via logger in catch block
@@ -567,6 +529,7 @@ export default function LoginScreen({
       Alert.alert(t('common.error'), msg);
     } finally {
       setLoading(false);
+      endSignup?.();
     }
   };
 
@@ -1287,26 +1250,6 @@ export default function LoginScreen({
         onClose={() => setLegalModal(null)}
       />
 
-      <Modal visible={showSuccessModal} transparent animationType="fade">
-        <View style={styles.welcomeOverlay}>
-          <View style={[styles.welcomeCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.welcomeIconWrap, { backgroundColor: isDarkMode ? 'rgba(200, 128, 106, 0.15)' : 'rgba(200, 128, 106, 0.1)' }]}>
-              <Check size={32} color="#C8806A" strokeWidth={2.5} />
-            </View>
-            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>{t('login.welcomeJoined')}</Text>
-            <Text style={[styles.welcomeMessage, { color: theme.textSecondary }]}>
-              {t('login.accountCreated')}
-            </Text>
-            <TouchableOpacity
-              style={[styles.welcomeBtn, { backgroundColor: theme.primary }]}
-              onPress={() => { setShowSuccessModal(false); setIsLogin(true); }}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.welcomeBtnText}>{t('login.letsStart')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View >
   );
 }
