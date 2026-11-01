@@ -127,6 +127,7 @@ import { registerForPushNotifications } from './services/pushNotificationService
 import * as Notifications from 'expo-notifications';
 import { notificationStorageService } from './services/notificationStorageService';
 import { notificationService } from './services/notificationService';
+import { retentionScheduler } from './services/retention';
 import { setupGlobalPresenceListener } from './services/presenceService';
 import { logger } from './utils/logger';
 import analytics from '@react-native-firebase/analytics';
@@ -1115,6 +1116,14 @@ export default function App() {
                 notificationService.scheduleSupplementReminder();
                 notificationService.scheduleSleepReminder();
                 notificationService.scheduleDailySummary();
+
+                // Retention/engagement layer: record the session anchor and
+                // schedule the lifecycle notifications (D0/D1/D3/D7) once.
+                // Guarded by `success` so it only runs when notifications are
+                // permitted, matching the recurring-reminder behavior above.
+                retentionScheduler.recordSessionStart().catch((err) => {
+                  logger.log('Retention session register:', err);
+                });
               }
             }).catch((err) => {
               logger.log('Notification init:', err);

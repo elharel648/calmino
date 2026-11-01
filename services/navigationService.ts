@@ -88,10 +88,42 @@ export function navigateToNotifications() {
 }
 
 /**
+ * Route a structured deep-link payload (used by retention notifications).
+ * `screen` is a semantic key — see RetentionDeepLinkScreen in
+ * services/retention/notificationCopyConfig.ts — so copy/config never hard-code
+ * localized route names. Returns true if it handled the navigation.
+ */
+export function navigateToDeepLinkScreen(screen?: string, params?: object): boolean {
+    if (!screen) return false;
+    logger.log('🔔 Deep-link navigate to screen:', screen, params);
+
+    switch (screen) {
+        // Retention deep-link targets. QUICK_ENTRY + DAILY_TIMELINE both live on
+        // the Home screen (quick-action buttons + DailyTimeline); INSIGHTS_WEEKLY
+        // maps to the Reports/statistics tab.
+        case 'QUICK_ENTRY':
+        case 'DAILY_TIMELINE':
+            navigateToHome();
+            return true;
+        case 'INSIGHTS_WEEKLY':
+            navigateToReports();
+            return true;
+        default:
+            return false;
+    }
+}
+
+/**
  * Navigate based on notification type
  */
 export function navigateFromNotification(type: string, data?: any) {
     logger.log('🔔 Navigating from notification:', type);
+
+    // Structured payload (retention notifications): route by explicit screen key
+    // before falling back to the legacy type-based switch below.
+    if (data?.screen && navigateToDeepLinkScreen(data.screen, data.params)) {
+        return;
+    }
 
     switch (type) {
         case 'feeding_reminder':
