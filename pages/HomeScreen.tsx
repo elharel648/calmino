@@ -48,6 +48,7 @@ import { saveEventToFirebase, formatTimeFromTimestamp } from '../services/fireba
 import { useToast } from '../context/ToastContext';
 import { useQuickActions } from '../context/QuickActionsContext';
 import { undoService } from '../services/undoService';
+import { retentionScheduler } from '../services/retention';
 import { getBabyDataById } from '../services/babyService';
 import { Timestamp } from 'firebase/firestore';
 import { logger } from '../utils/logger';
@@ -125,6 +126,14 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
     useEffect(() => {
         fetchBabyData();
     }, [fetchBabyData]);
+
+    // Keep the retention scheduler's baby gender in sync so gendered copy (D0)
+    // renders correctly before it fires — even for users who never log an action.
+    useEffect(() => {
+        if (gender) {
+            retentionScheduler.syncBabyGender(gender).catch(() => {});
+        }
+    }, [gender]);
 
     // Derive profile from active child
     const profile = useMemo(() => {
@@ -386,6 +395,14 @@ export default function HomeScreen({ navigation }: { navigation: HomeScreenNavig
             logger.log(`⏱️ [PERF] saveEventToFirebase done in ${Date.now() - t0}ms`);
 
             showSuccess(t('common.savedSuccess'));
+
+            // Retention invalidation: a core action was logged → cancel pending
+            // re-engagement reminders (onboarding/inactivity) and re-arm the
+            // inactivity timer forward. Passes the baby gender so gendered copy
+            // stays correct. Fire-and-forget; never blocks the save.
+            retentionScheduler.onCoreActionLogged(profile.gender).catch((err) => {
+                logger.log('Retention invalidation:', err);
+            });
 
             // Schedule feeding reminder if this was a food event
             if (data.type === 'food') {

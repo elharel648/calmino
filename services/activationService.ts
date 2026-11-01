@@ -8,6 +8,7 @@ import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { FIRST_TRACKING_KEY } from './analyticsService';
 import { registerForPushNotifications } from './pushNotificationService';
 import { notificationService } from './notificationService';
+import { retentionScheduler } from './retention';
 import { logger } from '../utils/logger';
 
 export const hasLoggedFirstEvent = async (): Promise<boolean> => {
@@ -45,6 +46,14 @@ export const setupPushAndReminders = () => {
       notificationService.scheduleSupplementReminder();
       notificationService.scheduleSleepReminder();
       notificationService.scheduleDailySummary();
+
+      // Retention/engagement layer: record the session anchor and
+      // schedule the lifecycle notifications (D0/D1/D3/D7) once.
+      // Guarded by `success` so it only runs when notifications are
+      // permitted, matching the recurring-reminder behavior above.
+      retentionScheduler.recordSessionStart().catch((err) => {
+        logger.log('Retention session register:', err);
+      });
     }
   }).catch((err) => {
     logger.log('Notification init:', err);
