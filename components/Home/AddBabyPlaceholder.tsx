@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../../context/LanguageContext';
+import { useGuest } from '../../context/GuestContext';
 
 interface AddBabyPlaceholderProps {
     onCreateBaby: () => void;
@@ -15,9 +16,17 @@ const AddBabyPlaceholder: React.FC<AddBabyPlaceholderProps> = ({ onCreateBaby, o
     const { theme } = useTheme();
     const { t } = useLanguage();
     const [showModal, setShowModal] = useState(false);
+    const { isGuest, promptLogin } = useGuest();
 
     const handlePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        // Guests can't save a child. Ask them to log in here, before any sheet
+        // opens: iOS can't present the login prompt on top of the add-child
+        // sheet, so gating on Save left guests with a button that did nothing.
+        if (isGuest) {
+            promptLogin();
+            return;
+        }
         setShowModal(true);
     };
 

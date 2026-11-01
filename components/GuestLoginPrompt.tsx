@@ -12,7 +12,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LogIn, X, Sparkles, ShieldCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInUp, Easing } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useGuest } from '../context/GuestContext';
@@ -53,7 +53,7 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
       <View style={styles.overlay}>
         {/* Card */}
         <Animated.View
-          entering={FadeInUp.springify().damping(18).stiffness(140)}
+          entering={FadeInUp.duration(240).easing(Easing.out(Easing.cubic))}
           style={[styles.card, {
             backgroundColor: isDarkMode ? 'rgba(30,30,40,0.95)' : 'rgba(255,255,255,0.97)',
           }]}
@@ -81,7 +81,6 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
 
           {/* Icon with glow */}
           <Animated.View
-            entering={FadeInDown.delay(100).springify().damping(16)}
             style={styles.iconSection}
           >
             <View style={[styles.iconGlow, {
@@ -98,7 +97,7 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
           </Animated.View>
 
           {/* Text */}
-          <Animated.View entering={FadeInDown.delay(150).springify().damping(16)}>
+          <Animated.View>
             <Text style={[styles.title, { color: theme.textPrimary }]}>
               {t('guest.loginRequiredTitle')}
             </Text>
@@ -109,7 +108,6 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
 
           {/* Login button */}
           <Animated.View
-            entering={FadeInDown.delay(200).springify().damping(16)}
             style={styles.buttonContainer}
           >
             <TouchableOpacity
@@ -144,7 +142,6 @@ export default function GuestLoginPrompt({ onLoginPress }: GuestLoginPromptProps
 
           {/* Trust footer */}
           <Animated.View
-            entering={FadeInDown.delay(250).springify().damping(16)}
             style={styles.trustFooter}
           >
             <ShieldCheck size={13} color={theme.textTertiary} strokeWidth={2} />
