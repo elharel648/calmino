@@ -71,7 +71,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harel.calmparentapp",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
