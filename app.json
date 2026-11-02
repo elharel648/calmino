@@ -3,7 +3,7 @@
     "name": "Calmino",
     "slug": "CalmParentApp",
     "scheme": "calmparentapp",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -71,7 +71,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harel.calmparentapp",
-      "buildNumber": "11",
+      "buildNumber": "12",
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.security.application-groups": [
