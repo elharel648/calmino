@@ -41,8 +41,11 @@ private struct WidgetStartHelpers {
     }
 
     /// Writes a pending "start" action so the JS app can sync on next foreground.
+    /// Single pending slot: never overwrite an unsynced action (e.g. a lock-screen
+    /// stop that still has to be saved) with a start, which JS doesn't act on.
     static func writePendingStart(timerType: String, side: String? = nil) {
         let d = UserDefaults(suiteName: appGroupID)
+        if d?.string(forKey: "pendingTimerAction") != nil { return }
         d?.set("start", forKey: "pendingTimerAction")
         d?.set(timerType, forKey: "pendingTimerType")
         d?.set(Date().timeIntervalSince1970, forKey: "pendingTimerTimestamp")

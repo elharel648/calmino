@@ -15,5 +15,12 @@ struct CalmParentLiveActivityBundle: WidgetBundle {
             BreastfeedingLiveActivity()
             WhiteNoiseLiveActivity()
         }
+        // Control Center / Lock Screen / Action button quick starts.
+        if #available(iOS 18.0, *) {
+            StartSleepControl()
+            StartBreastfeedingLeftControl()
+            StartBreastfeedingRightControl()
+            StartBottleControl()
+        }
     }
 }

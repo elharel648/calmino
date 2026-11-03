@@ -1,0 +1,10 @@
+/* Hebrew Siri phrases for CalminoShortcuts (CalminoAppShortcuts.swift). */
+"Start sleep in ${applicationName}" = "התחל שינה ב${applicationName}";
+"Start a nap in ${applicationName}" = "התחל תנומה ב${applicationName}";
+"${applicationName} sleep" = "${applicationName} שינה";
+"Start breastfeeding left in ${applicationName}" = "התחל הנקה צד שמאל ב${applicationName}";
+"${applicationName} left side" = "${applicationName} צד שמאל";
+"Start breastfeeding right in ${applicationName}" = "התחל הנקה צד ימין ב${applicationName}";
+"${applicationName} right side" = "${applicationName} צד ימין";
+"Start a bottle in ${applicationName}" = "התחל בקבוק ב${applicationName}";
+"${applicationName} bottle" = "${applicationName} בקבוק";
